@@ -47,6 +47,10 @@ abstract final class MetaKey {
   /// The last contract board and payments this phone read for a project, as JSON.
   static String contractorOverview(int projectId) => 'contractor.overview.$projectId';
 
+  /// The last contractor portal this phone read, as JSON. One per phone: a
+  /// contractor login has no projects, and signing out clears it.
+  static const portal = 'portal.snapshot';
+
   /// The recent progress entries the server listed for each floor of a project, as JSON.
   static String floorEntries(int projectId) => 'floor_entries.$projectId';
 

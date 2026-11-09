@@ -2337,6 +2337,176 @@ class AppLocalizationsHi extends AppLocalizations {
   String get photosWaiting => 'भेजना बाकी';
 
   @override
+  String get portalBillDeductions => 'कटौतियाँ';
+
+  @override
+  String get portalBillFinal => 'अंतिम बिल';
+
+  @override
+  String get portalBillGross => 'कुल राशि';
+
+  @override
+  String get portalBillGst => 'GST';
+
+  @override
+  String portalBillLineQty(String qty, String unit, String rate) {
+    return '$qty $unit × $rate';
+  }
+
+  @override
+  String portalBillLineSoFar(String qty, String unit) {
+    return 'अब तक $qty $unit';
+  }
+
+  @override
+  String get portalBillLines => 'बिल किया गया काम';
+
+  @override
+  String get portalBillLinesOnline =>
+      'इस बिल की मदें एक बार ऑनलाइन खुलने पर लोड होंगी।';
+
+  @override
+  String get portalBillNet => 'देय राशि';
+
+  @override
+  String get portalBillPeriod => 'अवधि';
+
+  @override
+  String portalBillPeriodRange(String from, String to) {
+    return '$from से $to';
+  }
+
+  @override
+  String get portalBillRetentionReleased => 'लौटाया गया रिटेंशन';
+
+  @override
+  String portalBillsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count बिल',
+      one: '1 बिल',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalBillsTitle => 'बिल';
+
+  @override
+  String portalDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दिन बाकी',
+      one: '1 दिन बाकी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalDeadlineLabel => 'अंतिम तारीख़';
+
+  @override
+  String get portalDueToday => 'आज आख़िरी दिन';
+
+  @override
+  String portalLineDone(String done, String total, String unit) {
+    return '$total $unit में से $done पूरा';
+  }
+
+  @override
+  String portalLineRate(String rate, String unit) {
+    return 'प्रति $unit $rate';
+  }
+
+  @override
+  String portalLineWorth(String done, String total) {
+    return '$total में से $done का काम';
+  }
+
+  @override
+  String get portalLoading => 'आपके ठेके लोड हो रहे हैं';
+
+  @override
+  String get portalNoBillsMessage =>
+      'कंपनी ने जो बिल मंज़ूर किए, वे यहाँ दिखेंगे।';
+
+  @override
+  String get portalNoBillsTitle => 'अभी कोई बिल नहीं';
+
+  @override
+  String get portalNoContractsMessage => 'आपको दिए गए वर्क ऑर्डर यहाँ दिखेंगे।';
+
+  @override
+  String get portalNoDataMessage =>
+      'अपने ठेके लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद ऑफ़लाइन भी खुलेंगे।';
+
+  @override
+  String get portalNoPaymentsMessage =>
+      'कंपनी ने जो भुगतान मंज़ूर किए, वे यहाँ दिखेंगे।';
+
+  @override
+  String get portalNoPaymentsTitle => 'अभी कोई भुगतान नहीं';
+
+  @override
+  String get portalNotFoundMessage => 'इसे लोड करने के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String get portalNotFoundTitle => 'यह अभी इस फ़ोन पर नहीं है';
+
+  @override
+  String portalOverdueBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दिन की देरी',
+      one: '1 दिन की देरी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String portalPaidVsWork(String paid, String work) {
+    return 'भुगतान $paid · किया गया काम $work';
+  }
+
+  @override
+  String portalPaymentsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count भुगतान',
+      one: '1 भुगतान',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalPaymentsTitle => 'भुगतान';
+
+  @override
+  String get portalRefusedMessage =>
+      'यह लॉगिन अभी ठेकेदार पोर्टल नहीं खोल सकता। यह लॉगिन देने वाली कंपनी से पूछें।';
+
+  @override
+  String get portalRefusedTitle => 'पोर्टल बंद है';
+
+  @override
+  String portalSavedAgo(String ago) {
+    return 'अपडेट: $ago';
+  }
+
+  @override
+  String get portalTitle => 'ठेकेदार पोर्टल';
+
+  @override
+  String get portalWorkComplete => 'काम पूरा';
+
+  @override
+  String get portalYourContracts => 'आपके सभी ठेके';
+
+  @override
   String get progressAdd => 'आज का काम जोड़ें';
 
   @override

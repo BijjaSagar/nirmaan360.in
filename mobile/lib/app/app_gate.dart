@@ -77,6 +77,9 @@ class GateState extends Equatable {
 
   bool get canManageProjects => can('project.manage');
 
+  /// A subcontractor's login: the portal and settings, and nothing else.
+  bool get isContractor => user?.isContractor ?? false;
+
   /// The stored choice, then the server's, then the phone's language.
   String? get localeCode {
     final code = storedLocale ?? user?.locale;
@@ -239,6 +242,7 @@ class AppGate extends Cubit<GateState> {
       a.signingIn != b.signingIn ||
       a.canApprove != b.canApprove ||
       a.canManageProjects != b.canManageProjects ||
+      a.isContractor != b.isContractor ||
       a.ready != b.ready;
 
   /// Exact paths that need a permission. Anything else is open once signed in.
@@ -267,7 +271,13 @@ class AppGate extends Cubit<GateState> {
     if (!s.isSignedIn) return atSignIn ? null : Routes.signIn;
     if (atSignIn) {
       if (s.signingIn) return null;
+      if (s.isContractor) return Routes.portal;
       return s.hasProject ? Routes.home : Routes.projects;
+    }
+    if (s.isContractor) {
+      // No project picker, no tabs, no site screens: the portal, and settings
+      // so the language can change and the person can sign out.
+      return Routes.isPortal(path) || path == Routes.settings ? null : Routes.portal;
     }
     if (!s.hasProject) {
       // Settings stays open so someone on the wrong account can sign out
@@ -281,6 +291,8 @@ class AppGate extends Cubit<GateState> {
       if (!(onPurpose && s.canManageProjects)) return Routes.home;
     }
     if (!s.canApprove && path.startsWith(Routes.approvals)) return Routes.home;
+    // The portal belongs to contractor logins. The server would refuse the site team anyway.
+    if (Routes.isPortal(path)) return Routes.home;
     final String? needed = _pathPermissions[path];
     if (needed != null && !s.can(needed)) return Routes.home;
     return null;

@@ -2347,6 +2347,176 @@ class AppLocalizationsMr extends AppLocalizations {
   String get photosWaiting => 'पाठवायचा बाकी';
 
   @override
+  String get portalBillDeductions => 'कपाती';
+
+  @override
+  String get portalBillFinal => 'अंतिम बिल';
+
+  @override
+  String get portalBillGross => 'एकूण रक्कम';
+
+  @override
+  String get portalBillGst => 'GST';
+
+  @override
+  String portalBillLineQty(String qty, String unit, String rate) {
+    return '$qty $unit × $rate';
+  }
+
+  @override
+  String portalBillLineSoFar(String qty, String unit) {
+    return 'आतापर्यंत $qty $unit';
+  }
+
+  @override
+  String get portalBillLines => 'बिल केलेले काम';
+
+  @override
+  String get portalBillLinesOnline =>
+      'या बिलातील बाबी एकदा ऑनलाइन उघडल्यावर लोड होतील.';
+
+  @override
+  String get portalBillNet => 'देय रक्कम';
+
+  @override
+  String get portalBillPeriod => 'कालावधी';
+
+  @override
+  String portalBillPeriodRange(String from, String to) {
+    return '$from ते $to';
+  }
+
+  @override
+  String get portalBillRetentionReleased => 'परत केलेले रिटेन्शन';
+
+  @override
+  String portalBillsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count बिले',
+      one: '1 बिल',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalBillsTitle => 'बिले';
+
+  @override
+  String portalDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दिवस बाकी',
+      one: '1 दिवस बाकी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalDeadlineLabel => 'अंतिम तारीख';
+
+  @override
+  String get portalDueToday => 'आज अंतिम दिवस';
+
+  @override
+  String portalLineDone(String done, String total, String unit) {
+    return '$total $unit पैकी $done पूर्ण';
+  }
+
+  @override
+  String portalLineRate(String rate, String unit) {
+    return 'प्रति $unit $rate';
+  }
+
+  @override
+  String portalLineWorth(String done, String total) {
+    return '$total पैकी $done चे काम';
+  }
+
+  @override
+  String get portalLoading => 'तुमचे ठेके लोड होत आहेत';
+
+  @override
+  String get portalNoBillsMessage => 'कंपनीने मंजूर केलेली बिले इथे दिसतील.';
+
+  @override
+  String get portalNoBillsTitle => 'अजून बिले नाहीत';
+
+  @override
+  String get portalNoContractsMessage =>
+      'तुम्हाला दिलेल्या वर्क ऑर्डर इथे दिसतील.';
+
+  @override
+  String get portalNoDataMessage =>
+      'तुमचे ठेके लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर ऑफलाइनही उघडतील.';
+
+  @override
+  String get portalNoPaymentsMessage =>
+      'कंपनीने मंजूर केलेली देयके इथे दिसतील.';
+
+  @override
+  String get portalNoPaymentsTitle => 'अजून देयके नाहीत';
+
+  @override
+  String get portalNotFoundMessage => 'ते लोड करण्यासाठी इंटरनेटशी जोडा.';
+
+  @override
+  String get portalNotFoundTitle => 'हे अजून या फोनवर नाही';
+
+  @override
+  String portalOverdueBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दिवस उशीर',
+      one: '1 दिवस उशीर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String portalPaidVsWork(String paid, String work) {
+    return 'अदा $paid · झालेले काम $work';
+  }
+
+  @override
+  String portalPaymentsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count देयके',
+      one: '1 देयक',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalPaymentsTitle => 'देयके';
+
+  @override
+  String get portalRefusedMessage =>
+      'हे लॉगिन सध्या ठेकेदार पोर्टल उघडू शकत नाही. हे लॉगिन देणाऱ्या कंपनीला विचारा.';
+
+  @override
+  String get portalRefusedTitle => 'पोर्टल बंद आहे';
+
+  @override
+  String portalSavedAgo(String ago) {
+    return 'अपडेट: $ago';
+  }
+
+  @override
+  String get portalTitle => 'ठेकेदार पोर्टल';
+
+  @override
+  String get portalWorkComplete => 'काम पूर्ण';
+
+  @override
+  String get portalYourContracts => 'तुमचे सर्व ठेके';
+
+  @override
   String get progressAdd => 'आजचे काम नोंदवा';
 
   @override

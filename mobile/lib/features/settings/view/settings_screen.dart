@@ -140,6 +140,11 @@ class _WhoList extends StatelessWidget {
           title: user.name,
           subtitle: user.roleLabel.isEmpty ? null : user.roleLabel,
         ),
+        if (user.isContractor && (user.contractorName?.isNotEmpty ?? false))
+          LedgerListTile(
+            leading: const Icon(Icons.engineering_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+            title: user.contractorName!,
+          ),
         if (user.organizationName.isNotEmpty)
           LedgerListTile(
             leading: const Icon(Icons.business_outlined, size: N360IconSize.lg, color: N360Colors.ink2),

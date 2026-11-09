@@ -5,6 +5,7 @@ import 'dart:async';
 
 import '../features/approvals/data/approval_repository.dart';
 import '../features/contractor_control/data/contractor_repository.dart';
+import '../features/contractor_portal/data/portal_repository.dart';
 import '../features/attendance/data/attendance_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/dpr/data/dpr_repository.dart';
@@ -40,6 +41,7 @@ class AppServices {
     required this.material,
     required this.siteAlerts,
     required this.contractors,
+    required this.portal,
     required this.projectImages,
     required this.db,
     required this.api,
@@ -50,7 +52,7 @@ class AppServices {
     required this.context,
     this._onDispose,
   }) : photos = PhotoCapture(),
-       auth = AuthRepository(context),
+       auth = AuthRepository(context, portal),
        projects = ProjectRepository(context),
        home = HomeRepository(context),
        dpr = DprRepository(context),
@@ -145,6 +147,7 @@ class AppServices {
     final material = MaterialRepository(context);
     final siteAlerts = SiteAlertsRepository(context);
     final contractors = ContractorRepository(context);
+    final portal = PortalRepository(context);
     final projectImages = ProjectImageRepository(context);
     engine.afterPull = (sentSomething) async {
       // Separately, so a failure in one does not leave the other stale.
@@ -167,6 +170,7 @@ class AppServices {
       material: material,
       siteAlerts: siteAlerts,
       contractors: contractors,
+      portal: portal,
       projectImages: projectImages,
       db: db,
       api: api,
@@ -207,6 +211,9 @@ class AppServices {
   final MaterialRepository material;
   final SiteAlertsRepository siteAlerts;
   final ContractorRepository contractors;
+
+  /// The contractor portal: all a contractor login reads.
+  final PortalRepository portal;
   final ProjectImageRepository projectImages;
 
   /// Restores the session and starts the triggers. Offline-safe.

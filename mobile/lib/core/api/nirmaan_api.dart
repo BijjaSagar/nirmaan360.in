@@ -231,6 +231,25 @@ abstract interface class NirmaanApi {
   /// first, in Laravel's page shape.
   Future<Map<String, dynamic>> siteAlerts(int projectId);
 
+  // Contractor portal. Read only, and the only calls a contractor login may
+  // make besides `me` and sign-out: the server refuses everything else.
+
+  /// `GET /contractor-portal`: `{contractor, summary, contracts}`.
+  Future<Map<String, dynamic>> portalOverview();
+
+  /// `GET /contractor-portal/work-orders/{workOrder}`: one contract with its
+  /// `lines`, `parts`, `payments` and `bills`.
+  Future<Map<String, dynamic>> portalContract(int workOrderId);
+
+  /// `GET /contractor-portal/payments`: every payment counted as paid.
+  Future<List<Map<String, dynamic>>> portalPayments();
+
+  /// `GET /contractor-portal/bills`: every bill the company has approved.
+  Future<List<Map<String, dynamic>>> portalBills();
+
+  /// `GET /contractor-portal/bills/{bill}`: the bill with its `items` and `deductions`.
+  Future<Map<String, dynamic>> portalBill(int billId);
+
   // Site progress. Reads fill a cache on the phone. Writes are replayed from
   // the outbox with their `client_uuid`, so a retry cannot record work twice.
 

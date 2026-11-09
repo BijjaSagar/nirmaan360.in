@@ -23,6 +23,10 @@ import '../features/petty_cash/view/wallet_form_screen.dart';
 import '../features/contractor_control/view/contract_detail_screen.dart';
 import '../features/contractor_control/view/contractor_screen.dart';
 import '../features/contractor_control/view/payment_form_screen.dart';
+import '../features/contractor_portal/view/portal_bill_screen.dart';
+import '../features/contractor_portal/view/portal_contract_screen.dart';
+import '../features/contractor_portal/view/portal_home_screen.dart';
+import '../features/contractor_portal/view/portal_lists_screen.dart';
 import '../features/site_alerts/bloc/site_alerts_cubit.dart';
 import '../features/site_alerts/view/site_dashboard_screen.dart';
 import '../features/site_progress/view/floor_progress_screen.dart';
@@ -76,6 +80,18 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         routes: <RouteBase>[_route('form', (_) => const BoqFormScreen())],
       ),
       _route(Routes.settings, (_) => const SettingsScreen()),
+      // The contractor portal: all a contractor login can open. `payments`,
+      // `bills` and `contracts/:id` come before nothing that would swallow them.
+      _route(
+        Routes.portal,
+        (_) => const PortalHomeScreen(),
+        routes: <RouteBase>[
+          _route('payments', (_) => const PortalPaymentsScreen()),
+          _route('bills', (_) => const PortalBillsScreen()),
+          _route('bills/:id', (s) => PortalBillScreen(billId: int.parse(s.pathParameters['id']!))),
+          _route('contracts/:id', (s) => PortalContractScreen(workOrderId: int.parse(s.pathParameters['id']!))),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         pageBuilder: (context, state, shell) => _page(state, HomeShell(navigationShell: shell)),
         branches: <StatefulShellBranch>[

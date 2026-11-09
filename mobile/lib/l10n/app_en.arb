@@ -1045,6 +1045,156 @@
   "photosNotSent": "Not sent",
   "photosOpen": "Open photo",
   "photosWaiting": "Waiting to send",
+  "portalBillDeductions": "Deductions",
+  "portalBillFinal": "Final bill",
+  "portalBillGross": "Gross amount",
+  "portalBillGst": "GST",
+  "portalBillLineQty": "{qty} {unit} at {rate}",
+  "@portalBillLineQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "portalBillLineSoFar": "So far {qty} {unit}",
+  "@portalBillLineSoFar": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "portalBillLines": "Work billed",
+  "portalBillLinesOnline": "The lines of this bill load once it has been opened online.",
+  "portalBillNet": "Net payable",
+  "portalBillPeriod": "Period",
+  "portalBillPeriodRange": "{from} to {to}",
+  "@portalBillPeriodRange": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "portalBillRetentionReleased": "Retention released",
+  "portalBillsCount": "{count, plural, =1{1 bill} other{{count} bills}}",
+  "@portalBillsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalBillsTitle": "Bills",
+  "portalDaysLeft": "{count, plural, =1{1 day left} other{{count} days left}}",
+  "@portalDaysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalDeadlineLabel": "Deadline",
+  "portalDueToday": "Due today",
+  "portalLineDone": "{done} of {total} {unit} done",
+  "@portalLineDone": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLineRate": "{rate} per {unit}",
+  "@portalLineRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLineWorth": "Worth {done} of {total}",
+  "@portalLineWorth": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLoading": "Loading your contracts",
+  "portalNoBillsMessage": "Bills the company has approved will show here.",
+  "portalNoBillsTitle": "No bills yet",
+  "portalNoContractsMessage": "Work orders given to you will show here.",
+  "portalNoDataMessage": "Connect to the internet once to load your contracts. After that they open offline.",
+  "portalNoPaymentsMessage": "Payments the company has approved will show here.",
+  "portalNoPaymentsTitle": "No payments yet",
+  "portalNotFoundMessage": "Connect to the internet to load it.",
+  "portalNotFoundTitle": "Not on this phone yet",
+  "portalOverdueBy": "{count, plural, =1{1 day late} other{{count} days late}}",
+  "@portalOverdueBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalPaidVsWork": "Paid {paid} · Work done {work}",
+  "@portalPaidVsWork": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "work": {
+        "type": "String"
+      }
+    }
+  },
+  "portalPaymentsCount": "{count, plural, =1{1 payment} other{{count} payments}}",
+  "@portalPaymentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalPaymentsTitle": "Payments",
+  "portalRefusedMessage": "This login cannot open the contractor portal right now. Ask the company that gave you this login.",
+  "portalRefusedTitle": "Portal not open",
+  "portalSavedAgo": "Updated {ago}",
+  "@portalSavedAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "portalTitle": "Contractor portal",
+  "portalWorkComplete": "Work complete",
+  "portalYourContracts": "All your contracts",
   "progressAdd": "Add today's work",
   "progressBeforeFinishing": "Before finishing check",
   "progressBehind": "Behind by {percent}",

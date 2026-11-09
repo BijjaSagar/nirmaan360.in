@@ -153,6 +153,9 @@ class FakeApi implements NirmaanApi {
   /// Every `pull` `since` value received, in order.
   final List<String?> pullCalls = [];
 
+  /// How many times `GET /me` was asked.
+  int meReads = 0;
+
   /// Every upload received, in order, including retries.
   final List<UploadRequest> uploadCalls = [];
 
@@ -333,6 +336,7 @@ class FakeApi implements NirmaanApi {
   @override
   Future<Map<String, dynamic>> me() async {
     _guard();
+    meReads++;
     return user;
   }
 
@@ -1587,6 +1591,269 @@ class FakeApi implements NirmaanApi {
     });
     contractorPaymentFiles.add(filePath);
     return _presentContractor(stored);
+  }
+
+  // Contractor portal --------------------------------------------------------
+
+  /// Turns the signed-in user into a contractor login, as `GET /me` describes
+  /// one: no site permission at all, and the portal alone.
+  void becomeContractor({int partyId = 2, String name = 'Shree Formwork Works'}) {
+    user = {
+      'id': 7,
+      'name': 'Ramesh Pawar',
+      'email': 'contractor@demo.test',
+      'role': 'contractor',
+      'role_label': 'Contractor',
+      'kind': 'contractor',
+      'contractor': {'party_id': partyId, 'name': name},
+      'locale': 'en',
+      'organization': {
+        'id': 1,
+        'name': 'Sahyadri Infra Pvt Ltd',
+        'features': ['site', 'measurement', 'contractor_portal', 'price_watch'],
+      },
+      'can': {
+        for (final key in (user['can'] as Map).keys) key: false,
+        'contractor_portal.view': true,
+      },
+    };
+  }
+
+  Row portalOverviewBody = {
+    'contractor': {'party_id': 2, 'name': 'Shree Formwork Works'},
+    'summary': {
+      'contract_value': '2133000.00',
+      'earned': '1000000.00',
+      'paid': '1200000.00',
+      'advance': '100000.00',
+      'balance_money': '933000.00',
+      'work_pct': '46.88',
+      'paid_pct': '56.26',
+      'gap_pct': '9.38',
+      'status': 'red',
+      'label': 'Paid 56.26%, Work 46.88%',
+      'balance_work_pct': '53.12',
+      'balance_work_value': '1133000.00',
+      'contracts': 2,
+      'contracts_ahead': 1,
+    },
+    'contracts': [
+      {
+        'id': 1,
+        'number': 'WO-KT-B-001',
+        'title': 'Slab casting and shuttering',
+        'contract_status': 'ACTIVE',
+        'project_name': 'Kalyani Tower B',
+        'project_code': 'KT-B',
+        'start_date': '2026-09-01',
+        'contract_value': '1333000.00',
+        'earned': '1000000.00',
+        'paid': '1200000.00',
+        'advance': '100000.00',
+        'balance_money': '133000.00',
+        'work_pct': '75.02',
+        'paid_pct': '90.02',
+        'gap_pct': '15.00',
+        'status': 'red',
+        'label': 'Paid 90.02%, Work 75.02%',
+        'balance_work_pct': '24.98',
+        'balance_work_value': '333000.00',
+        'deadline': '2026-11-19',
+        'deadline_label': 'Before Lakshmi Puja',
+        'days_left': 10,
+        'time_state': 'on_track',
+      },
+      {
+        'id': 5,
+        'number': 'WO-MH-07-004',
+        'title': 'Brick masonry',
+        'contract_status': 'ACTIVE',
+        'project_name': 'Mahalaxmi Heights',
+        'project_code': 'MH-07',
+        'start_date': null,
+        'contract_value': '800000.00',
+        'earned': '0.00',
+        'paid': '0.00',
+        'advance': '0.00',
+        'balance_money': '800000.00',
+        'work_pct': '0.00',
+        'paid_pct': '0.00',
+        'gap_pct': '0.00',
+        'status': 'green',
+        'label': 'Paid 0%, Work 0%',
+        'balance_work_pct': '100.00',
+        'balance_work_value': '800000.00',
+        'deadline': '2026-11-01',
+        'deadline_label': null,
+        'days_left': -8,
+        'time_state': 'overdue',
+      },
+    ],
+  };
+
+  Row _portalPayment(int id, String number, String paidOn, String amount, {bool reversal = false, bool advance = false}) => {
+    'id': id,
+    'number': number,
+    'paid_on': paidOn,
+    'amount': amount,
+    'mode': 'bank',
+    'mode_label': 'Bank',
+    'paid_to': 'Shree Formwork Works',
+    'reference': 'UTR-$id',
+    'is_advance': advance,
+    'is_reversal': reversal,
+    'work_order_id': 1,
+    'work_order_number': 'WO-KT-B-001',
+    'work_order_title': 'Slab casting and shuttering',
+    'project': 'Kalyani Tower B',
+    'against': null,
+  };
+
+  late List<Row> portalPaymentRows = [
+    _portalPayment(3, 'CP-2026-27-0003', '2026-11-05', '600000.00'),
+    _portalPayment(2, 'CP-2026-27-0002', '2026-10-20', '500000.00'),
+    _portalPayment(1, 'CP-2026-27-0001', '2026-09-10', '100000.00', advance: true),
+  ];
+
+  Row _portalBill(int id, String number, String status, {String? paidAt}) => {
+    'id': id,
+    'number': number,
+    'is_final': false,
+    'status': status,
+    'work_order_id': 1,
+    'work_order_number': 'WO-KT-B-001',
+    'project': 'Kalyani Tower B',
+    'period_from': '2026-10-01',
+    'period_to': '2026-10-31',
+    'gross_amount': '200000.00',
+    'deduction_total': '10000.00',
+    'gst_amount': '0.00',
+    'retention_released': '0.00',
+    'net_payable': '190000.00',
+    'paid_amount': status == 'PAID' ? '190000.00' : '0.00',
+    'paid_at': paidAt,
+  };
+
+  late List<Row> portalBillRows = [
+    _portalBill(2, 'WO-KT-B-001/RA/2', 'APPROVED'),
+    _portalBill(1, 'WO-KT-B-001/RA/1', 'PAID', paidAt: '2026-10-15'),
+  ];
+
+  /// The contract details, keyed by work order. Built from the overview rows
+  /// when a test has not set its own.
+  Map<int, Row> portalContractOverride = {};
+  bool portalContractsMore = false;
+
+  /// A scripted failure for the next portal reads, e.g. a 403.
+  ApiFailure? portalFailure;
+  int portalReads = 0;
+  int portalContractReads = 0;
+  int portalBillReads = 0;
+
+  void _portalGuard() {
+    _guard();
+    final failure = portalFailure;
+    if (failure != null) throw failure;
+    portalReads++;
+  }
+
+  @override
+  Future<Map<String, dynamic>> portalOverview() async {
+    _portalGuard();
+    return portalOverviewBody;
+  }
+
+  @override
+  Future<Map<String, dynamic>> portalContract(int workOrderId) async {
+    _portalGuard();
+    portalContractReads++;
+    final custom = portalContractOverride[workOrderId];
+    if (custom != null) return custom;
+    final rows = (portalOverviewBody['contracts'] as List).cast<Row>();
+    final row = rows.where((r) => r['id'] == workOrderId).firstOrNull;
+    if (row == null) throw const ServerFailure('Not found', statusCode: 404);
+    return {
+      ...row,
+      'lines': [
+        {
+          'id': 11,
+          'boq_item_id': 3,
+          'code': '2.1',
+          'description': 'RCC M25 in slabs and beams including shuttering',
+          'unit': 'cum',
+          'qty': '620.000',
+          'rate': '2150.00',
+          'value': '1333000.00',
+          'done_qty': '465.250',
+          'done_value': '1000287.50',
+          'balance_qty': '154.750',
+          'work_pct': '75.04',
+        },
+      ],
+      'parts': [
+        {
+          'id': 1,
+          'title': 'Plinth complete',
+          'amount': '500000.00',
+          'paid': '500000.00',
+          'balance': '0.00',
+          'state': 'paid',
+          'done': true,
+          'done_on': '2026-10-02',
+        },
+        {
+          'id': 2,
+          'title': 'First slab',
+          'amount': '400000.00',
+          'paid': '100000.00',
+          'balance': '300000.00',
+          'state': 'part_paid',
+          'done': false,
+          'done_on': null,
+        },
+      ],
+      'payments': portalPaymentRows.where((p) => p['work_order_id'] == workOrderId).toList(),
+      'bills': portalBillRows.where((b) => b['work_order_id'] == workOrderId).toList(),
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> portalPayments() async {
+    _portalGuard();
+    return portalPaymentRows;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> portalBills() async {
+    _portalGuard();
+    return portalBillRows;
+  }
+
+  @override
+  Future<Map<String, dynamic>> portalBill(int billId) async {
+    _portalGuard();
+    portalBillReads++;
+    final row = portalBillRows.where((b) => b['id'] == billId).firstOrNull;
+    if (row == null) throw const ServerFailure('Not found', statusCode: 404);
+    return {
+      ...row,
+      'items': [
+        {
+          'code': '2.1',
+          'description': 'RCC M25 in slabs and beams including shuttering',
+          'unit': 'cum',
+          'rate': '4000.00',
+          'prev_qty': '0.000',
+          'current_qty': '50.000',
+          'cumulative_qty': '50.000',
+          'current_amount': '200000.00',
+          'cumulative_amount': '200000.00',
+        },
+      ],
+      'deductions': [
+        {'label': 'Retention', 'pct': '5.00', 'amount': '10000.00'},
+      ],
+    };
   }
 
   // Site dashboard and alerts ----------------------------------------------

@@ -284,6 +284,16 @@ Needs the `site_control` plan feature. `contractor.view` reads, `contractor.requ
 - Requests still waiting are laid over the list. The figure someone without `money.view` typed is never shown back, in the list, the Sync Center or the outbox title.
 - The bill opens from `GET /contractor-payments/{id}/bill` for `money.view`. A PDF cannot be drawn on the phone, so it says to open it on the website. Approving stays on the approvals screen or the website.
 
+### Contractor portal
+
+A subcontractor can sign in. `GET /me` and the login reply carry `kind` (`contractor` or `staff`), `contractor` (`party_id`, `name`) and `can['contractor_portal.view']`; a reply from an older server has no `kind` and is staff. Needs the `contractor_portal` plan feature. `ContractorPortalGate` refuses a contractor with a 403 everywhere except `/contractor-portal*`, `/me`, sign-out and language, so the app must not make any other call for one.
+
+- A `kind == contractor` login lands on the portal at `/portal` and nowhere else: no project picker, no site tabs, no sync pull or push, no site tiles. The gate sends every other path to the portal, except Settings (language, who is signed in, sign out). A member of staff who opens a `/portal` path goes Home.
+- `SyncEngine.syncNow` returns at once for a contractor, so the timer, a resume, the network coming back, the Sync Center and the background task all end there with no call. The saved user (`session.user` with `kind` and `contractor`) is what the background task reads. The sign-in does not pull: it reads the portal instead. `afterPull` never runs.
+- The app reads `GET /contractor-portal` (`{contractor, summary, contracts}`), `/payments`, `/bills`, `/work-orders/{id}` (lines, parts, payments, bills) for up to 30 contracts, and `/bills/{id}` (items, deductions) for up to 30 bills, a few at a time. The whole answer is kept as one value under `portal.snapshot`, so every portal page opens offline. Home reads again when the copy is older than 10 minutes and on pull to refresh; a contract or bill is read again when it is opened. Each refresh asks `GET /me` first, so a changed permission, plan or kind reaches a phone that never pulls.
+- Everything is read only. A 403 or 404 on the overview, or a login without the permission or plan, keeps `refused` and the page says so calmly. A failed read keeps the last copy. A copy whose `party_id` is not this login's is never shown. Sign-out clears it with the rest of the phone.
+- The server's figures are shown as sent. `status` and the `label` text are not used: the page words the comparison itself ("Paid 56% · Work done 47%") in the app's language. Days left are counted on the phone from `deadline`, so a copy kept for a week is still right.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/api/api_failure.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/session/current_user.dart';
@@ -7,6 +8,7 @@ import '../../../core/session/session_controller.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/failures.dart';
 import '../../../core/sync/sync_status.dart';
+import '../../contractor_portal/data/portal_repository.dart';
 
 class SignInResult {
   const SignInResult({required this.user, required this.firstSync});
@@ -19,9 +21,10 @@ class SignInResult {
 }
 
 class AuthRepository {
-  AuthRepository(this._ctx);
+  AuthRepository(this._ctx, this._portal);
 
   final DataContext _ctx;
+  final PortalRepository _portal;
 
   CurrentUser? get currentUser => _ctx.session.user;
 
@@ -55,8 +58,25 @@ class AuthRepository {
     }
 
     await _ctx.session.startSession(login.token, user);
-    final firstSync = await _ctx.sync.syncNow();
+    // A contractor login has no sites to pull and nothing to send: the portal
+    // is its first read. The site team's first pull is exactly as it was.
+    final firstSync = user.isContractor ? await _readPortal() : await _ctx.sync.syncNow();
     return SignInResult(user: user, firstSync: firstSync);
+  }
+
+  /// The contractor's first read, reported the way a sync run is. Failing
+  /// leaves the portal to try again when it opens.
+  Future<SyncRunResult> _readPortal() async {
+    try {
+      await _portal.refresh();
+      return const SyncRunResult(SyncOutcome.success);
+    } on OfflineFailure catch (e) {
+      return SyncRunResult(SyncOutcome.offline, error: e);
+    } on AuthExpired catch (e) {
+      return SyncRunResult(SyncOutcome.authExpired, error: e);
+    } on ApiFailure catch (e) {
+      return SyncRunResult(SyncOutcome.serverError, error: e);
+    }
   }
 
   /// Signs out and clears local data.

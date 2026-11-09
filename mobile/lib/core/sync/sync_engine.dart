@@ -151,7 +151,27 @@ class SyncEngine {
     return result;
   }
 
+  /// A contractor login has no sites: the server refuses its push and its pull
+  /// with a 403, and there is nothing of its own to send. Every way in to a
+  /// sync (the timer, a write, connectivity, resume, the sign-in, the
+  /// background task, the outbox screen) ends here, so this is the one place
+  /// that has to know. The portal reads itself; see `PortalRepository`.
+  Future<bool> _isContractorLogin() async {
+    final CurrentUser? signedIn = _session?.user;
+    if (signedIn != null) return signedIn.isContractor;
+    // The background task has no session of its own, only the saved user.
+    try {
+      final raw = await _db.readMeta(MetaKey.sessionUser);
+      if (raw == null) return false;
+      return CurrentUser.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>()).isContractor;
+    } on Object {
+      return false;
+    }
+  }
+
   Future<SyncRunResult> _runOnce() async {
+    if (await _isContractorLogin()) return const SyncRunResult(SyncOutcome.success);
+
     final wait = await _rateLimitRemaining();
     if (wait != null) {
       _issue = SyncIssue.rateLimited;

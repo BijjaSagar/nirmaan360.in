@@ -2378,6 +2378,177 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photosWaiting => 'Waiting to send';
 
   @override
+  String get portalBillDeductions => 'Deductions';
+
+  @override
+  String get portalBillFinal => 'Final bill';
+
+  @override
+  String get portalBillGross => 'Gross amount';
+
+  @override
+  String get portalBillGst => 'GST';
+
+  @override
+  String portalBillLineQty(String qty, String unit, String rate) {
+    return '$qty $unit at $rate';
+  }
+
+  @override
+  String portalBillLineSoFar(String qty, String unit) {
+    return 'So far $qty $unit';
+  }
+
+  @override
+  String get portalBillLines => 'Work billed';
+
+  @override
+  String get portalBillLinesOnline =>
+      'The lines of this bill load once it has been opened online.';
+
+  @override
+  String get portalBillNet => 'Net payable';
+
+  @override
+  String get portalBillPeriod => 'Period';
+
+  @override
+  String portalBillPeriodRange(String from, String to) {
+    return '$from to $to';
+  }
+
+  @override
+  String get portalBillRetentionReleased => 'Retention released';
+
+  @override
+  String portalBillsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bills',
+      one: '1 bill',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalBillsTitle => 'Bills';
+
+  @override
+  String portalDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days left',
+      one: '1 day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalDeadlineLabel => 'Deadline';
+
+  @override
+  String get portalDueToday => 'Due today';
+
+  @override
+  String portalLineDone(String done, String total, String unit) {
+    return '$done of $total $unit done';
+  }
+
+  @override
+  String portalLineRate(String rate, String unit) {
+    return '$rate per $unit';
+  }
+
+  @override
+  String portalLineWorth(String done, String total) {
+    return 'Worth $done of $total';
+  }
+
+  @override
+  String get portalLoading => 'Loading your contracts';
+
+  @override
+  String get portalNoBillsMessage =>
+      'Bills the company has approved will show here.';
+
+  @override
+  String get portalNoBillsTitle => 'No bills yet';
+
+  @override
+  String get portalNoContractsMessage =>
+      'Work orders given to you will show here.';
+
+  @override
+  String get portalNoDataMessage =>
+      'Connect to the internet once to load your contracts. After that they open offline.';
+
+  @override
+  String get portalNoPaymentsMessage =>
+      'Payments the company has approved will show here.';
+
+  @override
+  String get portalNoPaymentsTitle => 'No payments yet';
+
+  @override
+  String get portalNotFoundMessage => 'Connect to the internet to load it.';
+
+  @override
+  String get portalNotFoundTitle => 'Not on this phone yet';
+
+  @override
+  String portalOverdueBy(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days late',
+      one: '1 day late',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String portalPaidVsWork(String paid, String work) {
+    return 'Paid $paid · Work done $work';
+  }
+
+  @override
+  String portalPaymentsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count payments',
+      one: '1 payment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalPaymentsTitle => 'Payments';
+
+  @override
+  String get portalRefusedMessage =>
+      'This login cannot open the contractor portal right now. Ask the company that gave you this login.';
+
+  @override
+  String get portalRefusedTitle => 'Portal not open';
+
+  @override
+  String portalSavedAgo(String ago) {
+    return 'Updated $ago';
+  }
+
+  @override
+  String get portalTitle => 'Contractor portal';
+
+  @override
+  String get portalWorkComplete => 'Work complete';
+
+  @override
+  String get portalYourContracts => 'All your contracts';
+
+  @override
   String get progressAdd => 'Add today\'s work';
 
   @override

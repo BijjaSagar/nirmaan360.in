@@ -4366,6 +4366,240 @@ abstract class AppLocalizations {
   /// **'Waiting to send'**
   String get photosWaiting;
 
+  /// No description provided for @portalBillDeductions.
+  ///
+  /// In en, this message translates to:
+  /// **'Deductions'**
+  String get portalBillDeductions;
+
+  /// No description provided for @portalBillFinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Final bill'**
+  String get portalBillFinal;
+
+  /// No description provided for @portalBillGross.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross amount'**
+  String get portalBillGross;
+
+  /// No description provided for @portalBillGst.
+  ///
+  /// In en, this message translates to:
+  /// **'GST'**
+  String get portalBillGst;
+
+  /// No description provided for @portalBillLineQty.
+  ///
+  /// In en, this message translates to:
+  /// **'{qty} {unit} at {rate}'**
+  String portalBillLineQty(String qty, String unit, String rate);
+
+  /// No description provided for @portalBillLineSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'So far {qty} {unit}'**
+  String portalBillLineSoFar(String qty, String unit);
+
+  /// No description provided for @portalBillLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Work billed'**
+  String get portalBillLines;
+
+  /// No description provided for @portalBillLinesOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'The lines of this bill load once it has been opened online.'**
+  String get portalBillLinesOnline;
+
+  /// No description provided for @portalBillNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Net payable'**
+  String get portalBillNet;
+
+  /// No description provided for @portalBillPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get portalBillPeriod;
+
+  /// No description provided for @portalBillPeriodRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} to {to}'**
+  String portalBillPeriodRange(String from, String to);
+
+  /// No description provided for @portalBillRetentionReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Retention released'**
+  String get portalBillRetentionReleased;
+
+  /// No description provided for @portalBillsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 bill} other{{count} bills}}'**
+  String portalBillsCount(int count);
+
+  /// No description provided for @portalBillsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills'**
+  String get portalBillsTitle;
+
+  /// No description provided for @portalDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day left} other{{count} days left}}'**
+  String portalDaysLeft(int count);
+
+  /// No description provided for @portalDeadlineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline'**
+  String get portalDeadlineLabel;
+
+  /// No description provided for @portalDueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Due today'**
+  String get portalDueToday;
+
+  /// No description provided for @portalLineDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} {unit} done'**
+  String portalLineDone(String done, String total, String unit);
+
+  /// No description provided for @portalLineRate.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} per {unit}'**
+  String portalLineRate(String rate, String unit);
+
+  /// No description provided for @portalLineWorth.
+  ///
+  /// In en, this message translates to:
+  /// **'Worth {done} of {total}'**
+  String portalLineWorth(String done, String total);
+
+  /// No description provided for @portalLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your contracts'**
+  String get portalLoading;
+
+  /// No description provided for @portalNoBillsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills the company has approved will show here.'**
+  String get portalNoBillsMessage;
+
+  /// No description provided for @portalNoBillsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No bills yet'**
+  String get portalNoBillsTitle;
+
+  /// No description provided for @portalNoContractsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Work orders given to you will show here.'**
+  String get portalNoContractsMessage;
+
+  /// No description provided for @portalNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load your contracts. After that they open offline.'**
+  String get portalNoDataMessage;
+
+  /// No description provided for @portalNoPaymentsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments the company has approved will show here.'**
+  String get portalNoPaymentsMessage;
+
+  /// No description provided for @portalNoPaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No payments yet'**
+  String get portalNoPaymentsTitle;
+
+  /// No description provided for @portalNotFoundMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to load it.'**
+  String get portalNotFoundMessage;
+
+  /// No description provided for @portalNotFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on this phone yet'**
+  String get portalNotFoundTitle;
+
+  /// No description provided for @portalOverdueBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day late} other{{count} days late}}'**
+  String portalOverdueBy(int count);
+
+  /// No description provided for @portalPaidVsWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid {paid} · Work done {work}'**
+  String portalPaidVsWork(String paid, String work);
+
+  /// No description provided for @portalPaymentsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 payment} other{{count} payments}}'**
+  String portalPaymentsCount(int count);
+
+  /// No description provided for @portalPaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get portalPaymentsTitle;
+
+  /// No description provided for @portalRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This login cannot open the contractor portal right now. Ask the company that gave you this login.'**
+  String get portalRefusedMessage;
+
+  /// No description provided for @portalRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Portal not open'**
+  String get portalRefusedTitle;
+
+  /// No description provided for @portalSavedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {ago}'**
+  String portalSavedAgo(String ago);
+
+  /// No description provided for @portalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractor portal'**
+  String get portalTitle;
+
+  /// No description provided for @portalWorkComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Work complete'**
+  String get portalWorkComplete;
+
+  /// No description provided for @portalYourContracts.
+  ///
+  /// In en, this message translates to:
+  /// **'All your contracts'**
+  String get portalYourContracts;
+
   /// No description provided for @progressAdd.
   ///
   /// In en, this message translates to:

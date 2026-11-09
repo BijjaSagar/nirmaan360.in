@@ -66,4 +66,15 @@ abstract final class Routes {
   static const materialReceive = '/material/receive';
   static const materialUse = '/material/use';
   static const materialCount = '/material/count';
+
+  /// The contractor portal: where a contractor login lives. A member of
+  /// staff never reaches it, and a contractor reaches nothing else but settings.
+  static const portal = '/portal';
+  static String portalContract(int workOrderId) => '/portal/contracts/$workOrderId';
+  static const portalPayments = '/portal/payments';
+  static const portalBills = '/portal/bills';
+  static String portalBill(int billId) => '/portal/bills/$billId';
+
+  /// True for the portal's own pages, and no other path.
+  static bool isPortal(String path) => path == portal || path.startsWith('$portal/');
 }
