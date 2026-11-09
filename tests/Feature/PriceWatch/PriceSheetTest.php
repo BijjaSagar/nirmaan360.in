@@ -135,6 +135,30 @@ class PriceSheetTest extends PriceWatchTestCase
         $this->assertSame(0, MaterialPrice::count());
     }
 
+    /** The board's columns are varchar(160), varchar(20) and decimal(15,2): a sheet past them is refused on every database, not only where the column enforces it. */
+    public function test_values_the_board_cannot_hold_are_refused_before_anything_is_saved(): void
+    {
+        $file = $this->workbook([
+            ['material', 'rate', 'unit', 'date', 'source'],
+            ['Cement', '1e400', 'bag', '2026-11-08', 'Rate beyond any column'],
+            ['Cement', '99999999999999', 'bag', '2026-11-08', 'One digit too many'],
+            [str_repeat('x', 161), 10, 'bag', '2026-11-08', 'Name too long'],
+            ['Fly ash', 10, str_repeat('k', 21), '2026-11-08', 'Unit too long'],
+            ['Cement', '9999999999999', 'bag', '2026-11-08', 'The largest rate the column holds'],
+        ]);
+
+        $this->upload($file, ['add_missing' => '1'])->assertSessionHasErrors('file');
+
+        $this->assertSame([
+            'Row 2: the rate is larger than '.inr('9999999999999').'.',
+            'Row 3: the rate is larger than '.inr('9999999999999').'.',
+            'Row 4: the material name is longer than 160 characters.',
+            'Row 5: the unit is longer than 20 characters.',
+        ], session('errors')->get('file'));
+        $this->assertSame(0, MaterialPrice::count());
+        $this->assertSame(2, PriceWatchMaterial::count());
+    }
+
     public function test_a_sheet_without_the_headings_or_rows_and_a_file_that_is_not_a_workbook_are_refused(): void
     {
         $this->upload($this->workbook([['Cement', 395, 'bag', '2026-11-08']]))->assertSessionHasErrors(['file' => 'The sheet needs a heading row with material, rate, unit, date and source. Download the template to see the layout.']);

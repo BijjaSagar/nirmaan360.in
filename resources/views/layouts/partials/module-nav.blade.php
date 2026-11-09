@@ -1,6 +1,10 @@
 @php
+    // On the offline plan only the pages OfflinePlanGate leaves open are offered.
+    $offlinePolicy = app(\App\Services\OfflinePlan\OfflinePlanPolicy::class);
+    $offline = $offlinePolicy->isOffline($organization);
     $moduleGroups = collect(\App\Support\Modules::nav($place, $organization))
         ->filter(fn ($item) => ! $item['can'] || auth()->user()->can($item['can']))
+        ->filter(fn ($item) => ! $offline || $offlinePolicy->allowsRouteName($item['route']))
         ->groupBy('group');
     $href = fn ($item) => isset($project) ? route($item['route'], $project) : route($item['route']);
 @endphp

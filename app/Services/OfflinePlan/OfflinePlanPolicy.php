@@ -69,9 +69,13 @@ final class OfflinePlanPolicy
             return true;
         }
 
-        $name = (string) $route->getName();
+        return $this->allowsRouteName($route->getName());
+    }
 
-        return $name !== '' && Str::is(self::WEB_ALLOWED, $name);
+    /** Whether a signed-in page with this route name stays open on the offline plan. The menu shows only these. */
+    public function allowsRouteName(?string $name): bool
+    {
+        return $name !== null && $name !== '' && Str::is(self::WEB_ALLOWED, $name);
     }
 
     /** @return array<string, mixed> */

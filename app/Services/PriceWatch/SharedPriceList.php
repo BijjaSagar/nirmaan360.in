@@ -7,6 +7,7 @@ use App\Models\PriceWatchSharedPrice;
 use App\Models\User;
 use App\Support\Dec;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The platform admin's shared list: one current price per material key, with its date and
@@ -26,10 +27,15 @@ class SharedPriceList
         ];
     }
 
-    /** Add a material to the list, or move an existing one's price on. The key is made from the name when blank. */
+    /** Add a material to the list, or move an existing one's price on. The key is made from the name when blank, cut to what the column holds. */
     public function save(array $data, User $by): PriceWatchSharedPrice
     {
-        $key = filled($data['key'] ?? null) ? $data['key'] : Str::slug($data['name'], '_');
+        $key = filled($data['key'] ?? null) ? $data['key'] : rtrim(mb_substr(Str::slug($data['name'], '_'), 0, 40), '_');
+
+        if ($key === '') {
+            throw ValidationException::withMessages(['key' => __('Give this material a key in English letters, such as cement or aac_blocks: its name cannot be turned into one.')]);
+        }
+
         $row = PriceWatchSharedPrice::firstOrNew(['key' => $key]);
         $old = $row->exists ? $row->only(['name', 'unit', 'rate', 'priced_on', 'source']) : null;
 

@@ -137,6 +137,11 @@ class ContractorPortalAccessTest extends TestCase
 
         $this->get("/contractor-portal/access/{$this->party->id}")->assertForbidden();
         $this->post("/contractor-portal/access/{$this->party->id}/invitations", ['email' => 'ramesh@example.com'])->assertForbidden();
+
+        // The staff screens share the portal's route prefix, which the contractor gate lets through: the permission alone keeps a contractor out.
+        $this->actingAs(User::factory()->create(['organization_id' => $this->organization->id, 'role' => User::CONTRACTOR_ROLE, 'contractor_party_id' => $this->party->id, 'is_active' => true]));
+        $this->get("/contractor-portal/access/{$this->party->id}")->assertForbidden();
+        $this->post("/contractor-portal/access/{$this->party->id}/invitations", ['email' => 'self@example.com'])->assertForbidden();
         $this->assertSame(0, TeamInvitation::withoutGlobalScopes()->count());
     }
 

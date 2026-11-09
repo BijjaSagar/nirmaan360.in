@@ -7,6 +7,7 @@ use App\Models\BillingPayment;
 use App\Models\DeviceLicence;
 use App\Models\MeasurementEntry;
 use App\Models\Organization;
+use App\Models\Party;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\BillingService;
@@ -168,6 +169,50 @@ class OfflinePlanGateTest extends ApiTestCase
         $this->actingAs($this->member($this->offlineTenant(), 'owner'));
 
         $this->get('/billing')->assertOk()->assertSee('Offline devices')->assertSee(route('offline.devices.index'));
+    }
+
+    /** The menu offers only the pages the gate leaves open, instead of links that all land on the devices page. */
+    public function test_the_menu_on_the_offline_plan_offers_only_the_pages_that_open(): void
+    {
+        $organization = $this->offlineTenant();
+        $this->actingAs($this->member($organization, 'owner'));
+        $this->makeProject($organization);
+
+        $page = $this->get('/offline/devices')->assertOk();
+
+        foreach (['offline.devices.index', 'devices.index', 'billing.index', 'settings.edit'] as $open) {
+            $page->assertSee(route($open), false);
+        }
+
+        foreach (['dashboard', 'projects.index', 'approvals.index', 'workers.index', 'team.index', 'audit.index'] as $closed) {
+            $page->assertDontSee(route($closed), false);
+        }
+
+        $page->assertDontSee('>'.__('Dashboard').'<', false)->assertDontSee(__('Approvals'))->assertDontSee(__('Audit log'));
+
+        // Someone without billing rights is left with their own devices page and nothing that would bounce them.
+        $this->actingAs($this->member($organization, 'engineer'));
+        $engineer = $this->get('/offline/devices')->assertOk();
+        $engineer->assertSee(route('devices.index'), false)->assertDontSee(route('dashboard'), false)->assertDontSee(route('projects.index'), false)->assertDontSee(route('workers.index'), false);
+    }
+
+    /** A contractor login has no page on the offline plan, so it is refused outright rather than bounced between the two gates for ever. */
+    public function test_a_contractor_login_on_the_offline_plan_is_refused_rather_than_sent_round_in_circles(): void
+    {
+        $organization = $this->offlineTenant();
+        $party = Party::create(['organization_id' => $organization->id, 'type' => 'subcontractor', 'name' => 'Shree Formwork']);
+        $contractor = User::factory()->create(['organization_id' => $organization->id, 'role' => User::CONTRACTOR_ROLE, 'contractor_party_id' => $party->id, 'is_active' => true]);
+
+        $this->actingAs($contractor);
+        $this->get('/contractor-portal')->assertForbidden();
+        $this->get('/contractor-portal/payments')->assertForbidden();
+        $this->get('/offline/devices')->assertRedirect(route('contractor-portal.home'));
+        $this->get('/dashboard')->assertRedirect(route('contractor-portal.home'));
+        $this->post('/logout')->assertRedirect('/');
+
+        $this->signIn($contractor);
+        $this->getJson(self::API.'/contractor-portal')->assertForbidden()->assertJsonPath('code', 'offline_plan');
+        $this->getJson(self::API.'/me')->assertOk()->assertJsonPath('user.kind', 'contractor');
     }
 
     public function test_the_owner_frees_a_phone_from_the_web_and_never_another_companys(): void
