@@ -26,7 +26,7 @@ class HireBillController extends Controller
             ->withQueryString();
 
         $owed = AssetHireBill::where('status', 'FINAL')->get(['net_payable'])
-            ->reduce(fn ($carry, $bill) => $carry->plus(Dec::of($bill->net_payable)), Dec::of(0));
+            ->reduce(fn ($carry, $hireBill) => $carry->plus(Dec::of($hireBill->net_payable)), Dec::of(0));
 
         return view('modules.assets.hire.index', ['bills' => $bills, 'status' => $status, 'owed' => Dec::money($owed)]);
     }
@@ -51,33 +51,33 @@ class HireBillController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $bill = $this->service->generate($request->validate($this->service->rules($request->user())), $request->user());
+        $hireBill = $this->service->generate($request->validate($this->service->rules($request->user())), $request->user());
 
-        return redirect()->route('hire-bills.show', $bill)->with('success', __('Draft hire bill created.'));
+        return redirect()->route('hire-bills.show', $hireBill)->with('success', __('Draft hire bill created.'));
     }
 
-    public function show(AssetHireBill $bill): View
+    public function show(AssetHireBill $hireBill): View
     {
-        return view('modules.assets.hire.show', ['bill' => $bill->load('asset.vendor', 'vendor', 'creator', 'logs')]);
+        return view('modules.assets.hire.show', ['bill' => $hireBill->load('asset.vendor', 'vendor', 'creator', 'logs')]);
     }
 
-    public function finalize(AssetHireBill $bill): RedirectResponse
+    public function finalize(AssetHireBill $hireBill): RedirectResponse
     {
-        $this->service->finalize($bill);
+        $this->service->finalize($hireBill);
 
         return back()->with('success', __('Hire bill finalised.'));
     }
 
-    public function paid(Request $request, AssetHireBill $bill): RedirectResponse
+    public function paid(Request $request, AssetHireBill $hireBill): RedirectResponse
     {
-        $this->service->markPaid($bill, $request->validate($this->service->payRules()));
+        $this->service->markPaid($hireBill, $request->validate($this->service->payRules()));
 
         return back()->with('success', __('Hire bill marked as paid.'));
     }
 
-    public function cancel(Request $request, AssetHireBill $bill): RedirectResponse
+    public function cancel(Request $request, AssetHireBill $hireBill): RedirectResponse
     {
-        $this->service->cancel($bill, $request->validate($this->service->cancelRules())['reason']);
+        $this->service->cancel($hireBill, $request->validate($this->service->cancelRules())['reason']);
 
         return back()->with('success', __('Hire bill cancelled. Its machine logs can be billed again.'));
     }

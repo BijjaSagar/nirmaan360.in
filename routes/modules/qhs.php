@@ -56,5 +56,5 @@ Route::middleware('feature:qhs')->group(function () {
 
     // Files on the records above. Permission is checked per record type inside the controller.
     Route::post('/qhs-files/{type}/{id}', [AttachmentController::class, 'store'])->name('qhs-files.store');
-    Route::get('/qhs-files/{attachment}', [AttachmentController::class, 'show'])->name('qhs-files.show');
+    Route::get('/qhs-files/{fieldAttachment}', [AttachmentController::class, 'show'])->name('qhs-files.show');
 });

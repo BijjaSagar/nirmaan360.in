@@ -30,13 +30,13 @@ class AttachmentController extends Controller
         return back()->with('success', __('File added.'));
     }
 
-    public function show(Request $request, FieldAttachment $attachment): StreamedResponse
+    public function show(Request $request, FieldAttachment $fieldAttachment): StreamedResponse
     {
-        $prefix = AttachmentService::prefixFor((string) $attachment->attachable_type);
+        $prefix = AttachmentService::prefixFor((string) $fieldAttachment->attachable_type);
 
         abort_unless($prefix !== null && $request->user()->can("{$prefix}.view"), 403);
-        abort_unless(Storage::exists($attachment->path), 404);
+        abort_unless(Storage::exists($fieldAttachment->path), 404);
 
-        return Storage::response($attachment->path, $attachment->original_name);
+        return Storage::response($fieldAttachment->path, $fieldAttachment->original_name);
     }
 }

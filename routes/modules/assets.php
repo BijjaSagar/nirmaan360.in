@@ -44,8 +44,8 @@ Route::middleware('feature:assets')->group(function () {
     Route::get('/hire-bills/create', [HireBillController::class, 'create'])->middleware('can:asset.bill')->name('hire-bills.create');
     Route::post('/hire-bills/preview', [HireBillController::class, 'preview'])->middleware('can:asset.bill')->name('hire-bills.preview');
     Route::post('/hire-bills', [HireBillController::class, 'store'])->middleware('can:asset.bill')->name('hire-bills.store');
-    Route::get('/hire-bills/{bill}', [HireBillController::class, 'show'])->middleware('can:asset.bill')->name('hire-bills.show');
-    Route::post('/hire-bills/{bill}/finalize', [HireBillController::class, 'finalize'])->middleware('can:asset.bill')->name('hire-bills.finalize');
-    Route::post('/hire-bills/{bill}/paid', [HireBillController::class, 'paid'])->middleware('can:asset.bill')->name('hire-bills.paid');
-    Route::post('/hire-bills/{bill}/cancel', [HireBillController::class, 'cancel'])->middleware('can:asset.bill')->name('hire-bills.cancel');
+    Route::get('/hire-bills/{hireBill}', [HireBillController::class, 'show'])->middleware('can:asset.bill')->name('hire-bills.show');
+    Route::post('/hire-bills/{hireBill}/finalize', [HireBillController::class, 'finalize'])->middleware('can:asset.bill')->name('hire-bills.finalize');
+    Route::post('/hire-bills/{hireBill}/paid', [HireBillController::class, 'paid'])->middleware('can:asset.bill')->name('hire-bills.paid');
+    Route::post('/hire-bills/{hireBill}/cancel', [HireBillController::class, 'cancel'])->middleware('can:asset.bill')->name('hire-bills.cancel');
 });
