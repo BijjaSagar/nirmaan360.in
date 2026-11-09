@@ -281,7 +281,8 @@ class SiteProgressApiTest extends SiteProgressTestCase
         $this->postJson(self::API."/progress/entries/{$entry->id}/resolve")->assertForbidden();
         $this->postJson(self::API."/progress/entries/{$entry->id}/photos", ['photo' => UploadedFile::fake()->image('p.jpg')])->assertForbidden();
         $this->postJson($this->url('stages/cells'), ['project_floor_id' => $this->flat->id, 'trade' => 'plumbing', 'stage' => 'core_cutting', 'status' => 'done'])->assertForbidden();
-        $this->postJson(self::API.'/stage-cells/1/photos', ['photo' => UploadedFile::fake()->image('p.jpg')])->assertForbidden();
+        // A real cell: ids do not start at 1 on PostgreSQL, and an unknown one is 404 before the permission is checked.
+        $this->postJson(self::API.'/stage-cells/'.MepStageCell::firstOrFail()->id.'/photos', ['photo' => UploadedFile::fake()->image('p.jpg')])->assertForbidden();
         $this->getJson($this->url('progress/summary'))->assertOk();
     }
 

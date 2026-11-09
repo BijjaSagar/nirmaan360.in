@@ -16,6 +16,7 @@ use App\Services\SiteControl\WorkProgress;
 use App\Support\Dec;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -400,6 +401,59 @@ class WorkPaymentRatioTest extends TestCase
         $this->assertSame('66.67', $rollup['work_pct']);
         $this->assertSame('73.33', $rollup['paid_pct']);
         $this->assertSame(1, $rollup['contracts_ahead']);
+    }
+
+    /** The first contractor left at 70% and the line was given to a second contract. The 70% is one piece of work, not two. */
+    public function test_a_re_let_line_does_not_count_the_same_work_on_both_contracts(): void
+    {
+        $party = $this->contractorNamed('Came back under a new contract');
+        $first = $this->contract($this->item, '100.000', '1000.00', $party);
+        $this->workDone($this->item, '70');
+        $this->paid($first, '70000');
+        $first->update(['status' => 'CLOSED']);
+        $second = $this->contract($this->item, '100.000', '1000.00', $party);
+
+        $rows = $this->ratio()->forWorkOrders(collect([$first->refresh(), $second]))->keyBy(fn (array $row) => $row['work_order']->id);
+        $rollup = app(ContractorLedgerService::class)->forContractor($party)['summary'];
+
+        $this->assertSame('70.00', $rows[$second->id]['work_pct']);
+        $this->assertSame('0.00', $rows[$first->id]['work_pct']);
+        $this->assertSame('70000.00', Dec::money(Dec::of($rows[$first->id]['earned'])->plus(Dec::of($rows[$second->id]['earned']))));
+        $this->assertSame('35.00', $rollup['work_pct']);
+        $this->assertSame('35.00', $rollup['paid_pct']);
+    }
+
+    public function test_the_board_and_the_company_ledger_do_not_run_a_query_for_every_contract(): void
+    {
+        $build = function (int $count): void {
+            foreach (range(1, $count) as $i) {
+                $item = $this->makeBoqItem($this->project, '100.000', '1000.00');
+                $order = $this->contract($item);
+                $this->workDone($item, '50');
+                $this->paid($order, '20000');
+            }
+        };
+
+        $count = function (callable $run): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $run();
+            $queries = count(DB::getQueryLog());
+            DB::disableQueryLog();
+
+            return $queries;
+        };
+
+        $build(2);
+        $boardForTwo = $count(fn () => $this->ratio()->forProject($this->project));
+        $ledgerForTwo = $count(fn () => app(ContractorLedgerService::class)->contractors());
+
+        $build(6);
+        $boardForEight = $count(fn () => $this->ratio()->forProject($this->project));
+        $ledgerForEight = $count(fn () => app(ContractorLedgerService::class)->contractors());
+
+        $this->assertSame($boardForTwo, $boardForEight, "Board ran {$boardForTwo} queries for 2 contracts and {$boardForEight} for 8.");
+        $this->assertSame($ledgerForTwo, $ledgerForEight, "Ledger ran {$ledgerForTwo} queries for 2 contracts and {$ledgerForEight} for 8.");
     }
 
     public function test_ra_bill_payments_are_reported_but_never_counted(): void

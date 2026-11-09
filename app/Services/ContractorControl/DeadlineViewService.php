@@ -21,18 +21,18 @@ class DeadlineViewService
     {
         $today = ($today ?? today())->copy()->startOfDay();
 
-        $contracts = WorkOrder::with('party')
-            ->where('project_id', $project->id)
-            ->where('status', 'ACTIVE')
-            ->get()
-            ->map(function (WorkOrder $workOrder) use ($project, $today) {
+        $workOrders = WorkOrder::with('party')->where('project_id', $project->id)->where('status', 'ACTIVE')->get();
+        $figures = $this->progress->workOrderFigures($workOrders);
+
+        $contracts = $workOrders
+            ->map(function (WorkOrder $workOrder) use ($project, $today, $figures) {
                 $date = $workOrder->end_date ?? $project->deadline_date;
 
                 return [
                     'work_order' => $workOrder,
                     'party' => $workOrder->party,
                     'deadline_label' => $workOrder->end_date ? $workOrder->deadline_label : null,
-                    ...$this->measure($this->progress->workOrderPercent($workOrder), $date, $workOrder->start_date ?? $project->start_date, $today),
+                    ...$this->measure($figures[$workOrder->id]['percent'], $date, $workOrder->start_date ?? $project->start_date, $today),
                 ];
             })
             ->sortBy(fn (array $row) => $row['days_left'] ?? PHP_INT_MAX)
