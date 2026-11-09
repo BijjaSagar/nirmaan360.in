@@ -53,7 +53,7 @@ void main() {
     final uuid = await filled();
     await show(tester, uuid);
 
-    expect(find.text('Rain'), findsOneWidget);
+    expect(find.textContaining('Rain'), findsOneWidget);
     final RollingNumber hero = tester.widget(find.byType(RollingNumber));
     expect(hero.value, '33');
     expect(find.text('15.500'), findsOneWidget);
@@ -72,7 +72,7 @@ void main() {
     await show(tester, uuid);
 
     expect(stampLabels(tester), ['On phone']);
-    expect(find.text('Waiting to send'), findsOneWidget);
+    expect(find.textContaining('Not sent yet'), findsOneWidget);
     expect(find.text('Saved on phone, will send when network returns'), findsOneWidget);
     expect(find.text('Sent'), findsNothing);
   });
@@ -99,7 +99,7 @@ void main() {
     await show(tester, uuid);
 
     expect(find.text('Recheck helpers'), findsOneWidget);
-    expect(stampLabels(tester), ['Returned']);
+    expect(stampLabels(tester), contains('Returned'));
     expect(find.text('Correct and send again'), findsOneWidget);
   });
 

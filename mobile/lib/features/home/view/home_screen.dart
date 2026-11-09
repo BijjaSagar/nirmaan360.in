@@ -5,10 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_format.dart';
 import '../../../app/app_gate.dart';
 import '../../../app/routes.dart';
-import '../../../app/shell/offline_slot.dart';
 import '../../../app/shell/sync_status_cubit.dart';
-import '../../../app/widgets/brand_mark.dart';
-import '../../../app/widgets/labelled_tile.dart';
 import '../../../app/widgets/press_row.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
@@ -22,10 +19,9 @@ import '../data/home_repository.dart';
 
 /// The site engineer's day at a glance.
 ///
-/// Top to bottom: who and where, anything sent back for correction, what a new
-/// site still needs, how far the building has come, and today's four jobs in
-/// the thumb zone. Measuring and approving live on the bottom bar, so they are
-/// not repeated here.
+/// Top to bottom: the site and how the sending is going, anything sent back
+/// for correction, what a new site still needs, how far the building has come,
+/// and today's figures two across. One white page, hairlines, one colour.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -46,50 +42,47 @@ class _HomeView extends StatelessWidget {
 
   final ProjectRow project;
 
-  /// The least the progress card needs above the pinned tiles.
-  static const double _cardRoom = 200;
-
   @override
   Widget build(BuildContext context) {
-    final double scale = N360TextScale.of(context).scale(1);
-
     return Material(
       type: MaterialType.transparency,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return BlocBuilder<HomeCubit, HomeState>(
-            builder: (context, state) {
-              final List<_TileSpec> tiles = _tilesFor(context, state);
-              // Up to two rows of tiles stay in the thumb zone. If they would
-              // crush the progress card, everything scrolls together instead.
-              final int rows = (tiles.length / 2).ceil();
-              final double panel =
-                  rows == 0 ? 0 : rows * StatTile.minHeight * scale + (rows - 1) * _ActionGrid.gap + N360Space.sm;
-              final bool pinGrid =
-                  rows > 0 && rows <= 2 && constraints.maxHeight - _HomeHeader.height * scale - panel >= _cardRoom;
-              final Widget grid = _ActionGrid(tiles: tiles);
-              return Column(
+      child: BlocBuilder<HomeCubit, HomeState>(
+        builder: (context, state) {
+          final List<_SetupStep> steps = _SetupStep.visibleFor(context, state.setup);
+          final bool setupPending = steps.any((step) => !step.done);
+          // With the BOQ still to add, the setup card already says so, and says
+          // what to do about it. The empty progress card would only repeat it.
+          final bool boqStepOpen = steps.any((step) => step.isBoq && !step.done);
+          final bool showProgress = state.progress != null || !boqStepOpen;
+          final List<_TileSpec> tiles = _tilesFor(context, state);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),
+            child: StaggeredRise(
+              index: 0,
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   _HomeHeader(project: project),
-                  Expanded(
-                    child: Stack(
-                      children: <Widget>[
-                        Positioned.fill(
-                          child: _HomeList(project: project, state: state, trailing: pinGrid || rows == 0 ? null : grid),
-                        ),
-                        if (pinGrid) const Positioned(left: 0, right: 0, bottom: 0, child: _ScrollFade()),
-                      ],
+                  const SizedBox(height: N360Space.md),
+                  if (state.returned.isNotEmpty) ...<Widget>[
+                    LedgerList(
+                      children: <Widget>[for (final item in state.returned) _ReturnedRow(item: item)],
                     ),
-                  ),
-                  if (pinGrid)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.xs),
-                      child: grid,
-                    ),
+                    const SizedBox(height: N360Space.cardGap),
+                  ],
+                  if (setupPending) ...<Widget>[
+                    _SetupCard(steps: steps),
+                    const SizedBox(height: N360Space.cardGap),
+                  ],
+                  if (showProgress) ...<Widget>[
+                    _ProgressCard(project: project, progress: state.progress),
+                    const SizedBox(height: N360Space.cardGap),
+                  ],
+                  _TileGrid(tiles: tiles),
                 ],
-              );
-            },
+              ),
+            ),
           );
         },
       ),
@@ -102,7 +95,7 @@ class _HomeView extends StatelessWidget {
       DprDayState.draft => (icon: Icons.edit_note, word: t.statusDraft),
       DprDayState.queued => (icon: Icons.schedule, word: t.statusQueued),
       DprDayState.saved => (icon: Icons.cloud_done_outlined, word: t.shellReportSaved),
-      DprDayState.inReview => (icon: Icons.hourglass_top, word: t.statusInReview),
+      DprDayState.inReview => (icon: Icons.hourglass_bottom, word: t.statusInReview),
       DprDayState.approved => (icon: Icons.task_alt, word: t.statusApproved),
       DprDayState.returned => (icon: Icons.undo, word: t.statusReturned),
       DprDayState.rejected => (icon: Icons.block, word: t.statusRejected),
@@ -124,12 +117,12 @@ class _HomeView extends StatelessWidget {
     }
   }
 
-  /// Today's four jobs, in the order a day on site runs: the report, the
-  /// muster, the cash and the problems.
+  /// Today's figures, in the order a day on site runs.
   List<_TileSpec> _tilesFor(BuildContext context, HomeState state) {
     final t = AppLocalizations.of(context);
     final CurrentUser? user = context.select((AppGate gate) => gate.state.user);
     bool can(String permission) => user?.can(permission) ?? false;
+    final bool canApprove = can('measurement.approve') || can('dpr.approve') || can('ra_bill.approve');
     final HomeSummary? data = state.summary;
     final report = _report(t, data?.dprState ?? DprDayState.notStarted);
     final int marked = data?.attendanceMarked ?? 0;
@@ -142,7 +135,7 @@ class _HomeView extends StatelessWidget {
           value: report.word,
           caption: t.shellCaptionToday,
           icon: report.icon,
-          // The one thing still owed today gets the gold.
+          // The one thing still owed today gets the colour.
           emphasized: data?.dprState == DprDayState.notStarted && can('dpr.create'),
           onTap: () => _openReport(context, data, can('dpr.create')),
         ),
@@ -153,6 +146,14 @@ class _HomeView extends StatelessWidget {
           caption: t.shellCaptionMarked,
           icon: Icons.groups_outlined,
           onTap: () => context.push(Routes.attendance),
+        ),
+      if (can('measurement.view'))
+        _TileSpec(
+          title: t.shellTileMeasure,
+          value: '${data?.measurementsToday ?? 0}',
+          caption: t.shellCaptionToday,
+          icon: Icons.architecture,
+          onTap: () => context.go(Routes.measurements),
         ),
       if (can('petty_cash.view'))
         _TileSpec(
@@ -167,45 +168,27 @@ class _HomeView extends StatelessWidget {
           title: t.shellTileIssues,
           value: '${state.openIssues}',
           caption: t.shellCaptionOpen,
-          icon: Icons.report_problem_outlined,
+          icon: Icons.warning_amber_outlined,
           onTap: () => context.push(Routes.issues),
+        ),
+      if (canApprove)
+        _TileSpec(
+          title: t.shellTileApprovals,
+          value: '${state.approvalsCount}',
+          caption: t.shellPillWaiting,
+          icon: Icons.approval_outlined,
+          onTap: () => context.go(Routes.approvals),
         ),
     ];
   }
 }
 
-/// Softens the cut where the list scrolls under the pinned tiles. Painted once.
-class _ScrollFade extends StatelessWidget {
-  const _ScrollFade();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: SizedBox(
-        height: N360Space.lg,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: <Color>[N360Colors.paper.withValues(alpha: 0), N360Colors.paper],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The mark, the site, and two labelled tiles: how the sending is going, and
-/// settings. Tapping the site name opens the picker when there is a choice.
+/// The site is the header. Beside it, how the sending is going, and settings.
+/// Tapping the site name opens the picker when there is a choice to make.
 class _HomeHeader extends StatelessWidget {
   const _HomeHeader({required this.project});
 
   final ProjectRow project;
-
-  /// Its height at normal text size: a labelled tile plus the padding.
-  static const double height = LabelledTile.height + N360Space.sm + N360Space.xs;
 
   @override
   Widget build(BuildContext context) {
@@ -216,98 +199,84 @@ class _HomeHeader extends StatelessWidget {
     final String? location = project.location?.trim().isEmpty ?? true ? null : project.location;
     final String detail = <String>[project.code, ?location].join(' · ');
 
-    final Widget name = Row(
+    final Widget name = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        const ExcludeSemantics(child: BrandMark(size: N360Size.tile)),
-        const SizedBox(width: N360Space.sm + 2),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                project.name,
-                maxLines: 2,
+        Text(
+          project.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: N360Type.fit(N360Type.title, project.name),
+        ),
+        Row(
+          children: <Widget>[
+            Flexible(
+              child: Text(
+                detail,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.fit(N360Type.title, project.name).copyWith(height: 1.25),
+                style: N360Type.fit(N360Type.caption, detail),
               ),
-              // The chevron sits on the smaller line, so the name keeps its width.
-              Row(
-                children: <Widget>[
-                  Flexible(
-                    child: Text(
-                      detail,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.fit(N360Type.caption, detail).copyWith(height: 1.3),
-                    ),
-                  ),
-                  if (canSwitch) const Icon(Icons.expand_more, size: N360IconSize.sm, color: N360Colors.ink2),
-                ],
-              ),
-            ],
-          ),
+            ),
+            if (canSwitch) const Icon(Icons.expand_more, size: N360IconSize.sm, color: N360Colors.ink2),
+          ],
         ),
       ],
     );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.sm, N360Space.xs),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: canSwitch
-                ? Semantics(
-                    container: true,
-                    button: true,
-                    label: '${project.name}. ${t.shellSwitchProject}',
-                    onTap: () => context.push(Routes.projectsSwitch),
-                    child: ExcludeSemantics(
-                      child: PressRow(onTap: () => context.push(Routes.projectsSwitch), child: name),
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: canSwitch
+              ? Semantics(
+                  container: true,
+                  button: true,
+                  label: '${project.name}. ${t.shellSwitchProject}',
+                  onTap: () => context.push(Routes.projectsSwitch),
+                  child: ExcludeSemantics(
+                    child: PressRow(
+                      onTap: () => context.push(Routes.projectsSwitch),
+                      child: Align(alignment: Alignment.centerLeft, child: name),
                     ),
-                  )
-                : name,
-          ),
-          const _SyncTile(),
-          LabelledTile(
-            icon: Icons.settings_outlined,
-            label: t.shellSettings,
-            onTap: () => context.push(Routes.settings),
-          ),
-        ],
-      ),
+                  ),
+                )
+              : name,
+        ),
+        const SizedBox(width: N360Space.sm),
+        const _SyncTag(),
+        const SizedBox(width: N360Space.xs),
+        IconTile(
+          icon: Icons.settings_outlined,
+          semanticLabel: t.shellSettings,
+          onTap: () => context.push(Routes.settings),
+        ),
+      ],
     );
   }
 }
 
-/// Sync state as a tile: a picture, a count and a word, one tap from the outbox.
-class _SyncTile extends StatelessWidget {
-  const _SyncTile();
+/// The sync state as a quiet tag: a glyph, a count and a word, one tap from
+/// the outbox. Offline is said here too, so the page needs no banner.
+class _SyncTag extends StatelessWidget {
+  const _SyncTag();
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     return BlocBuilder<SyncStatusCubit, SyncStatus>(
       builder: (context, status) {
-        final (IconData icon, int? count, String label, Color ink) = switch (status) {
-          SyncStatus(attentionCount: > 0) => (
-              Icons.error_outline,
-              status.attentionCount,
-              t.shellPillAttention,
-              N360Colors.stampRed,
-            ),
-          SyncStatus(isSyncing: true) => (Icons.sync, status.pendingCount, t.shellPillSending, N360Colors.ink2),
-          SyncStatus(pendingCount: > 0) => (Icons.schedule, status.pendingCount, t.shellPillWaiting, N360Colors.ink2),
-          SyncStatus(online: false) => (Icons.cloud_off, null, t.shellOfflineLabel, N360Colors.ink2),
-          _ => (Icons.cloud_done_outlined, null, t.shellPillAllSent, N360Colors.mossInk),
+        final (SyncVisualState state, int? count, String label) = switch (status) {
+          SyncStatus(attentionCount: > 0) => (SyncVisualState.attention, status.attentionCount, t.shellPillAttention),
+          SyncStatus(isSyncing: true) => (SyncVisualState.syncing, status.pendingCount, t.shellPillSending),
+          SyncStatus(pendingCount: > 0) => (SyncVisualState.pending, status.pendingCount, t.shellPillWaiting),
+          SyncStatus(online: false) => (SyncVisualState.offline, null, t.shellOfflineLabel),
+          _ => (SyncVisualState.synced, null, t.shellPillAllSent),
         };
-        return LabelledTile(
-          icon: icon,
+        return SyncPill(
+          state: state,
           label: label,
-          semanticLabel: count == null ? label : '$count $label',
-          badge: count == null || count == 0 ? null : '$count',
-          highlight: count != null && count > 0,
-          labelColor: ink,
+          count: count == null || count == 0 ? null : count,
           onTap: () => context.go(Routes.outbox),
         );
       },
@@ -315,53 +284,81 @@ class _SyncTile extends StatelessWidget {
   }
 }
 
-/// Everything above the tile grid. Returned work always comes first.
-class _HomeList extends StatelessWidget {
-  const _HomeList({required this.project, required this.state, this.trailing});
+/// A document sent back for correction: one row of the returned list, with
+/// the status, what it is, what the checker said, and one tap into fixing it.
+class _ReturnedRow extends StatelessWidget {
+  const _ReturnedRow({required this.item});
 
-  final ProjectRow project;
-  final HomeState state;
-  final Widget? trailing;
+  final ReturnedItem item;
+
+  void _fix(BuildContext context) {
+    final String path = item.kind == ReturnedKind.dpr ? Routes.dprForm : Routes.measurementForm;
+    context.push(Uri(path: path, queryParameters: <String, String>{'uuid': item.uuid}).toString());
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> children = <Widget>[];
-    var rise = 0;
+    final t = AppLocalizations.of(context);
+    final String locale = Localizations.localeOf(context).languageCode;
+    final String date = AppFormat.dayMonth(item.date, locale);
+    final String title = item.kind == ReturnedKind.dpr
+        ? t.shellReturnedDpr(date)
+        : t.shellReturnedMeasurement(item.code ?? '', item.qty ?? '', item.unit ?? '').trim();
+    final String remark = (item.remark?.trim().isNotEmpty ?? false) ? item.remark!.trim() : t.shellReturnedNoRemark;
 
-    for (final item in state.returned) {
-      children.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: N360Space.sm),
-          child: StaggeredRise(index: rise++, child: _ReturnedSlip(item: item)),
+    return PressTarget(
+      onTap: () => _fix(context),
+      semanticsLabel: '${t.shellReturnedTitle}. $title. $remark. ${t.shellReturnedFix}',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.md),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      StatusPill(kind: StampKind.returned, label: t.statusReturned),
+                      const SizedBox(width: N360Space.sm),
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: N360Type.fit(N360Type.bodyStrong, title),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: N360Space.xs),
+                  Text(
+                    remark,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: N360Type.fit(N360Type.body, remark).copyWith(color: N360Colors.ink2),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: N360Space.sm),
+            // The word stays short in every language; a long one gives way
+            // to the row rather than crushing it.
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 112),
+              child: Text(
+                t.shellReturnedFix,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: N360Type.fit(N360Type.label, t.shellReturnedFix).copyWith(color: N360Colors.laterite),
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: N360IconSize.md, color: N360Colors.laterite),
+          ],
         ),
-      );
-    }
-
-    final List<_SetupStep> steps = _SetupStep.visibleFor(context, state.setup);
-    final bool setupPending = steps.any((step) => !step.done);
-    if (setupPending) {
-      children.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: N360Space.sm),
-          child: StaggeredRise(index: rise++, child: _SetupCard(steps: steps)),
-        ),
-      );
-    }
-
-    // With the BOQ still to add, the setup card already says so, and says what
-    // to do about it. The empty progress card would only repeat it.
-    final bool boqStepOpen = steps.any((step) => step.isBoq && !step.done);
-    if (state.progress != null || !boqStepOpen) {
-      children.add(StaggeredRise(index: rise++, child: _ProgressCard(project: project, progress: state.progress)));
-    }
-
-    if (trailing != null) {
-      children.add(Padding(padding: const EdgeInsets.only(top: N360Space.md), child: trailing));
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
-      children: children,
+      ),
+      builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth * 0.4), child: child),
     );
   }
 }
@@ -417,8 +414,8 @@ class _SetupStep {
   }
 }
 
-/// What a new site still needs, in the order to do it. The next step is gold,
-/// so a brand-new owner can see where to tap without reading the rest.
+/// What a new site still needs, in the order to do it. The next step is the
+/// one tinted tile, so a brand-new owner can see where to tap.
 class _SetupCard extends StatelessWidget {
   const _SetupCard({required this.steps});
 
@@ -452,8 +449,7 @@ class _SetupCard extends StatelessWidget {
                       nextLine,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: N360Type.fit(N360Type.caption, nextLine)
-                          .copyWith(color: N360Colors.laterite, fontWeight: FontWeight.w700),
+                      style: N360Type.fit(N360Type.caption, nextLine).copyWith(color: N360Colors.laterite),
                     ),
                   ],
                 ),
@@ -462,7 +458,7 @@ class _SetupCard extends StatelessWidget {
               SquarePercent(fraction: done / steps.length, label: '$done/${steps.length}'),
             ],
           ),
-          const SizedBox(height: N360Space.sm + 2),
+          const SizedBox(height: N360Space.md),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -493,9 +489,11 @@ class _StepTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     void open() => context.push(step.route);
-    final BoxDecoration surface = isNext
-        ? const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.md)
-        : const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md);
+    final BoxDecoration surface = BoxDecoration(
+      color: isNext ? N360Colors.primaryTint : N360Colors.sheet,
+      borderRadius: N360Radius.md,
+      border: Border.all(color: isNext ? N360Colors.primary : N360Colors.rule),
+    );
 
     return Semantics(
       container: true,
@@ -516,9 +514,9 @@ class _StepTile extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      Icon(step.icon, size: N360IconSize.lg, color: N360Colors.ink),
+                      Icon(step.icon, size: N360IconSize.lg, color: isNext ? N360Colors.laterite : N360Colors.ink2),
                       const SizedBox(width: N360Space.xs),
-                      Text('${step.count}', style: N360Type.bodyStrong.copyWith(height: 1.2)),
+                      Text('${step.count}', style: N360Type.figure.copyWith(height: 1.2)),
                       const Spacer(),
                       if (step.done) const Icon(Icons.check_circle, size: N360IconSize.sm, color: N360Colors.mossInk),
                     ],
@@ -527,8 +525,7 @@ class _StepTile extends StatelessWidget {
                   Text(
                     step.word,
                     maxLines: 2,
-                    style: N360Type.fit(N360Type.caption, step.word)
-                        .copyWith(color: N360Colors.ink, fontWeight: FontWeight.w600, height: 1.3),
+                    style: N360Type.fit(N360Type.label, step.word).copyWith(height: 1.3),
                   ),
                 ],
               ),
@@ -540,21 +537,17 @@ class _StepTile extends StatelessWidget {
   }
 }
 
-/// The showpiece: how far the building has come.
-///
-/// The title row doubles as the offline slot, so losing the network changes
-/// one line of this card and moves nothing. The hero figure counts up, the bar
-/// fills and the building rises, all once, on entry.
+/// How far the building has come: the figure, the dates, the building beside
+/// them and a thin bar with today marked. The figure counts up, the bar fills
+/// and the building rises, all once, on entry.
 class _ProgressCard extends StatelessWidget {
   const _ProgressCard({required this.project, required this.progress});
 
   final ProjectRow project;
   final HomeProgress? progress;
 
-  /// The drawing sits in the top right beside the figure and the dates; the
-  /// bar runs the full width beneath it.
-  static const double artWidth = 108;
-  static const double _artTop = OfflineSlot.compact - 4;
+  /// The drawing beside the figure, never wider than this.
+  static const double artWidth = 120;
 
   @override
   Widget build(BuildContext context) {
@@ -563,117 +556,65 @@ class _ProgressCard extends StatelessWidget {
     final String today = context.read<AppServices>().context.today;
     final HomeProgress? data = progress;
 
-    // The slot has a fixed height, so these two lines stop growing at 1.1x.
-    final Widget title = MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.1,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.card, 0, artWidth, 0),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                t.shellProgressTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: N360Type.fit(N360Type.heading, t.shellProgressTitle).copyWith(height: 1.3),
-              ),
-              if (data != null)
-                Text(
-                  t.shellProgressBasis,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.fit(N360Type.caption, t.shellProgressBasis).copyWith(height: 1.3),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    final Widget art = ExcludeSemantics(
-      child: BuildingProgressArt(fraction: data?.fraction ?? 0, animateEntry: data != null),
-    );
-
-    return LedgerCard(
-      padding: EdgeInsets.zero,
-      child: Stack(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(N360Space.card, OfflineSlot.compact, N360Space.card, N360Space.md),
-            child: data == null
-                ? const _ProgressEmpty()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.only(right: artWidth),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: RollingNumber(
-                                value: data.percent,
-                                suffix: '%',
-                                style: N360Type.figureHero,
-                                animateEntry: true,
-                                semanticsLabel: t.shellProgressSemantics(data.percent),
-                              ),
-                            ),
-                            const SizedBox(height: N360Space.xxs),
-                            _DatesRow(endDate: project.endDate, today: today, locale: locale),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: N360Space.lg),
-                      HatchedProgressBar(
-                        fraction: data.fraction,
-                        markerLabel: t.commonToday,
-                        height: 24,
-                        semanticLabel: t.shellProgressSemantics(data.percent),
-                      ),
-                    ],
-                  ),
-          ),
-          Positioned(top: _artTop, right: N360Space.sm + 2, width: artWidth, child: art),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: OfflineSlot(online: title, height: OfflineSlot.compact),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Said calmly when the project has no BOQ with a value yet.
-class _ProgressEmpty extends StatelessWidget {
-  const _ProgressEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(right: _ProgressCard.artWidth - N360Space.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
+    final Widget words = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(t.shellProgressTitle, style: N360Type.fit(N360Type.heading, t.shellProgressTitle)),
+        if (data == null) ...<Widget>[
+          const SizedBox(height: N360Space.sm),
           Text(t.shellProgressEmptyTitle, style: N360Type.fit(N360Type.bodyStrong, t.shellProgressEmptyTitle)),
           const SizedBox(height: N360Space.xxs),
           Text(
             t.shellProgressEmptyBody,
             style: N360Type.fit(N360Type.body, t.shellProgressEmptyBody).copyWith(color: N360Colors.ink2),
           ),
-          const SizedBox(height: N360Space.xl),
+        ] else ...<Widget>[
+          Text(t.shellProgressBasis, style: N360Type.fit(N360Type.caption, t.shellProgressBasis)),
+          const SizedBox(height: N360Space.sm),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: RollingNumber(
+              value: data.percent,
+              suffix: '%',
+              style: N360Type.figureHero,
+              animateEntry: true,
+              semanticsLabel: t.shellProgressSemantics(data.percent),
+            ),
+          ),
+          const SizedBox(height: N360Space.sm),
+          _DatesRow(endDate: project.endDate, today: today, locale: locale),
+        ],
+      ],
+    );
+
+    return LedgerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(child: words),
+              const SizedBox(width: N360Space.sm),
+              SizedBox(
+                width: artWidth,
+                child: ExcludeSemantics(
+                  child: BuildingProgressArt(fraction: data?.fraction ?? 0, animateEntry: data != null),
+                ),
+              ),
+            ],
+          ),
+          if (data != null) ...<Widget>[
+            const SizedBox(height: N360Space.sm),
+            HatchedProgressBar(
+              fraction: data.fraction,
+              markerLabel: t.commonToday,
+              semanticLabel: t.shellProgressSemantics(data.percent),
+            ),
+          ],
         ],
       ),
     );
@@ -698,30 +639,26 @@ class _DatesRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Expanded(
-          flex: 3,
-          child: _Fact(
+          child: _Meta(
             label: t.shellProgressEnd,
             value: end == null ? t.shellProgressNoEnd : AppFormat.dayMonthYear(end, locale),
           ),
         ),
-        if (daysLeft != null) ...<Widget>[
-          const SizedBox(width: N360Space.sm),
+        if (daysLeft != null)
           Expanded(
-            flex: 2,
-            child: _Fact(
+            child: _Meta(
               label: late ? t.shellProgressDaysLate : t.shellProgressDaysLeft,
               value: '${daysLeft.abs()}',
               alert: late,
             ),
           ),
-        ],
       ],
     );
   }
 }
 
-class _Fact extends StatelessWidget {
-  const _Fact({required this.label, required this.value, this.alert = false});
+class _Meta extends StatelessWidget {
+  const _Meta({required this.label, required this.value, this.alert = false});
 
   final String label;
   final String value;
@@ -733,105 +670,17 @@ class _Fact extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: N360Type.fit(N360Type.caption, label).copyWith(height: 1.25),
-        ),
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.fit(N360Type.caption, label)),
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
           child: Text(
             value,
             maxLines: 1,
-            style: N360Type.fit(N360Type.bodyStrong, value).copyWith(color: alert ? N360Colors.stampRed : N360Colors.ink),
+            style: N360Type.fit(N360Type.label, value).copyWith(color: alert ? N360Colors.stampRed : N360Colors.ink),
           ),
         ),
       ],
-    );
-  }
-}
-
-/// A document sent back for correction, kept to one compact row: the stamp,
-/// what it is, what the checker said, and one tap into fixing it.
-class _ReturnedSlip extends StatelessWidget {
-  const _ReturnedSlip({required this.item});
-
-  final ReturnedItem item;
-
-  void _fix(BuildContext context) {
-    final String path = item.kind == ReturnedKind.dpr ? Routes.dprForm : Routes.measurementForm;
-    context.push(Uri(path: path, queryParameters: <String, String>{'uuid': item.uuid}).toString());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    final String locale = Localizations.localeOf(context).languageCode;
-    final String date = AppFormat.dayMonth(item.date, locale);
-    final String title = item.kind == ReturnedKind.dpr
-        ? t.shellReturnedDpr(date)
-        : t.shellReturnedMeasurement(item.code ?? '', item.qty ?? '', item.unit ?? '').trim();
-    final String remark = (item.remark?.trim().isNotEmpty ?? false) ? item.remark!.trim() : t.shellReturnedNoRemark;
-
-    return LedgerCard(
-      flat: true,
-      onTap: () => _fix(context),
-      semanticsLabel: '${t.shellReturnedTitle}. $title. $remark. ${t.shellReturnedFix}',
-      padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.sm, N360Space.sm, N360Space.sm),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    RubberStamp(kind: StampKind.returned, label: t.statusReturned, size: StampSize.small),
-                    const SizedBox(width: N360Space.sm),
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: N360Type.fit(N360Type.label, title),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: N360Space.xxs),
-                Text(
-                  remark,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.fit(N360Type.caption, remark).copyWith(height: 1.3, color: N360Colors.ink2),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: N360Space.sm),
-          SizedBox(
-            width: LabelledTile.width,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const IconTile(icon: Icons.edit_outlined, semanticLabel: '', highlight: true),
-                const SizedBox(height: N360Space.xxs),
-                Text(
-                  t.shellReturnedFix,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                  softWrap: false,
-                  style: N360Type.fit(N360Type.label, t.shellReturnedFix)
-                      .copyWith(color: N360Colors.laterite, fontWeight: FontWeight.w700, height: 1.2),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -854,51 +703,48 @@ class _TileSpec {
   final bool emphasized;
 }
 
-/// Today's work, two across, in the thumb zone.
-class _ActionGrid extends StatelessWidget {
-  const _ActionGrid({required this.tiles});
+/// Today's figures, two across. An odd last one runs the full width.
+class _TileGrid extends StatelessWidget {
+  const _TileGrid({required this.tiles});
 
   final List<_TileSpec> tiles;
 
-  static const double gap = N360Space.sm;
-
   @override
   Widget build(BuildContext context) {
+    Widget tile(_TileSpec spec) => StatTile(
+          title: spec.title,
+          value: spec.value,
+          caption: spec.caption,
+          icon: spec.icon,
+          emphasized: spec.emphasized,
+          onTap: spec.onTap,
+        );
+
     final List<Widget> rows = <Widget>[];
     for (var start = 0; start < tiles.length; start += 2) {
-      final List<_TileSpec> row = tiles.sublist(start, (start + 2).clamp(0, tiles.length));
-      rows.add(
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              for (final (i, spec) in row.indexed) ...<Widget>[
-                if (i > 0) const SizedBox(width: gap),
-                Expanded(
-                  child: StaggeredRise(
-                    index: 2 + start + i,
-                    child: StatTile(
-                      title: spec.title,
-                      value: spec.value,
-                      caption: spec.caption,
-                      icon: spec.icon,
-                      emphasized: spec.emphasized,
-                      onTap: spec.onTap,
-                    ),
-                  ),
-                ),
+      if (start + 1 < tiles.length) {
+        rows.add(
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(child: tile(tiles[start])),
+                const SizedBox(width: N360Space.cardGap),
+                Expanded(child: tile(tiles[start + 1])),
               ],
-            ],
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        rows.add(tile(tiles[start]));
+      }
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         for (final (i, row) in rows.indexed) ...<Widget>[
-          if (i > 0) const SizedBox(height: gap),
+          if (i > 0) const SizedBox(height: N360Space.cardGap),
           row,
         ],
       ],

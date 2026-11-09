@@ -70,7 +70,7 @@
     }
   },
   "dprRowsCount": {
-    "en": "{count, plural, =1{1 work item} other{{count} work items}}",
+    "en": "{count, plural, =1{1 item} other{{count} items}}",
     "mr": "{count, plural, =1{1 काम} other{{count} कामे}}",
     "hi": "{count, plural, =1{1 काम} other{{count} काम}}",
     "placeholders": {
@@ -411,12 +411,12 @@
     "hi": "पहले प्रोजेक्ट चुनें"
   },
   "dprSyncPhoneOnly": {
-    "en": "Only on this phone",
-    "mr": "फक्त या फोनवर",
-    "hi": "केवल इस फ़ोन पर"
+    "en": "Phone only",
+    "mr": "फक्त फोनवर",
+    "hi": "केवल फ़ोन पर"
   },
   "dprSyncWaiting": {
-    "en": "Waiting to send",
+    "en": "Not sent yet",
     "mr": "पाठवायचे बाकी",
     "hi": "भेजना बाकी"
   },

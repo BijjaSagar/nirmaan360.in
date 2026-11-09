@@ -379,16 +379,6 @@
     "mr": "पाहणे गरजेचे",
     "hi": "देखना ज़रूरी"
   },
-  "measurementRowCount": {
-    "en": "{count, plural, =1{1 entry} other{{count} entries}}",
-    "mr": "{count, plural, =1{1 नोंद} other{{count} नोंदी}}",
-    "hi": "{count} एंट्री",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "measurementFilterAll": {
     "en": "All",
     "mr": "सर्व",

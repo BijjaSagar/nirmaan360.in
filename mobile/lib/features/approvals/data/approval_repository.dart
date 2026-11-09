@@ -19,13 +19,10 @@ class ApprovalRepository {
 
   /// Newest first.
   Stream<List<ApprovalRow>> watchInbox() {
-    return (_db.select(_db.approvalsInbox)
-          ..orderBy([(t) => OrderingTerm.desc(t.submittedAt)]))
-        .watch();
+    return (_db.select(_db.approvalsInbox)..orderBy([(t) => OrderingTerm.desc(t.submittedAt)])).watch();
   }
 
-  Stream<int> watchCount() =>
-      watchInbox().map((items) => items.where((i) => i.canAct).length);
+  Stream<int> watchCount() => watchInbox().map((items) => items.where((i) => i.canAct).length);
 
   /// Fetches the inbox. Throws [OfflineFailure] when offline.
   Future<void> refresh() async {
@@ -33,49 +30,33 @@ class ApprovalRepository {
     await _db.transaction(() async {
       await _db.delete(_db.approvalsInbox).go();
       await _db.batch((batch) {
-        batch.insertAll(
-          _db.approvalsInbox,
-          response.items.map(approvalCompanion).toList(),
-        );
+        batch.insertAll(_db.approvalsInbox, response.items.map(approvalCompanion).toList());
       });
     });
   }
 
   /// Throws [OfflineFailure] when offline. Safe to retry after any failure:
   /// the same `client_uuid` is reused until the server has answered.
-  Future<void> approve(int approvalId, {String? remark}) =>
-      _act(approvalId, 'approve', remark);
+  Future<void> approve(int approvalId, {String? remark}) => _act(approvalId, 'approve', remark);
 
   /// Sends the document back for correction. Same retry safety as [approve].
-  Future<void> sendBack(int approvalId, {required String remark}) =>
-      _act(approvalId, 'return', remark);
+  Future<void> sendBack(int approvalId, {required String remark}) => _act(approvalId, 'return', remark);
 
   Future<void> _act(int approvalId, String action, String? remark) async {
     if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
 
-    final item =
-        await (_db.select(_db.approvalsInbox)
-              ..where((t) => t.id.equals(approvalId)))
-            .getSingleOrNull();
+    final item = await (_db.select(_db.approvalsInbox)..where((t) => t.id.equals(approvalId))).getSingleOrNull();
 
-    final key =
-        'idempotency.approval.$approvalId.$action.${item?.currentLevel ?? 0}';
+    final key = 'idempotency.approval.$approvalId.$action.${item?.currentLevel ?? 0}';
     var clientUuid = await _db.readMeta(key);
     if (clientUuid == null) {
       clientUuid = newUuid();
       await _db.writeMeta(key, clientUuid);
     }
 
-    await _ctx.api.actOnApproval(
-      approvalId,
-      action: action,
-      clientUuid: clientUuid,
-      remark: remark,
-    );
+    await _ctx.api.actOnApproval(approvalId, action: action, clientUuid: clientUuid, remark: remark);
 
     await _db.deleteMeta(key);
-    await (_db.delete(_db.approvalsInbox)
-          ..where((t) => t.id.equals(approvalId)))
-        .go();
+    await (_db.delete(_db.approvalsInbox)..where((t) => t.id.equals(approvalId))).go();
   }
 }

@@ -6,6 +6,7 @@ import 'package:nirmaan360/core/money/money.dart';
 import 'package:nirmaan360/features/dpr/view/widgets/add_work_sheet.dart';
 import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
 import 'package:nirmaan360/features/measurement/view/widgets/boq_picker_sheet.dart';
+import 'package:nirmaan360/features/issues/view/widgets/group_slice.dart';
 import 'package:nirmaan360/features/projects/view/boq_missing_prompt.dart';
 import 'package:nirmaan360/features/projects/view/boq_form_screen.dart';
 import 'package:nirmaan360/features/projects/view/boq_screen.dart';
@@ -54,7 +55,8 @@ void main() {
 
     expect(find.text('Superstructure'), findsOneWidget);
     expect(find.text('RCC work 2.1'), findsOneWidget);
-    expect(find.text('Balance 620.000 cum'), findsOneWidget);
+    expect(find.text('Balance'), findsOneWidget);
+    expect(find.text('620.000'), findsOneWidget);
     expect(find.text('Add item'), findsNothing);
   });
 
@@ -271,29 +273,79 @@ void main() {
 
       await _openBoq(tester, app);
 
-      expect(find.text('Over by 2.000 cum'), findsOneWidget);
-      expect(find.text('Balance 620.000 cum'), findsOneWidget);
+      expect(find.text('Over by'), findsOneWidget);
+      expect(find.text('2.000'), findsOneWidget);
+      expect(find.text('Balance'), findsOneWidget, reason: 'the other line is still within its quantity');
       expect(find.byIcon(Icons.warning_amber), findsOneWidget);
     });
 
-    testWidgets('the code tile is never smaller than a tile and never wider than a cap', (tester) async {
+    testWidgets('balances line up on the right edge, whatever their length', (tester) async {
       setPhone(tester);
       final app = await twoLines();
       addTearDown(app.dispose);
 
       await _openBoq(tester, app);
 
-      // The test font is wider than the real one, so only the bounds are
-      // asserted here; the render test shows the real look.
-      Size tile(String code) => tester.getSize(
-        find.ancestor(of: find.text(code), matching: find.byType(DecoratedBox)).first,
+      // 620.000 and 12.000 differ in length; their right edges are the same,
+      // so the decimal points sit in one column down the list.
+      expect(
+        tester.getTopRight(find.text('620.000')).dx,
+        tester.getTopRight(find.text('12.000')).dx,
       );
-      for (final String code in <String>['2.1', 'FIN-4.1']) {
-        expect(tile(code).height, N360Size.tile, reason: code);
-        expect(tile(code).width, greaterThanOrEqualTo(N360Size.tile), reason: code);
-        expect(tile(code).width, lessThanOrEqualTo(N360Size.tap + N360Space.xs), reason: code);
+    });
+
+    testWidgets('sections are white groups with a heading, a count and hairlines', (tester) async {
+      setPhone(tester);
+      final app = await twoLines();
+      addTearDown(app.dispose);
+
+      await _openBoq(tester, app);
+
+      expect(find.text('Superstructure'), findsOneWidget);
+      // One slice for the heading and one for each line; only the last closes
+      // the group, and only the heading opens it.
+      final slices = tester.widgetList<GroupSlice>(find.byType(GroupSlice)).toList();
+      expect(slices, hasLength(3));
+      expect(slices.map((s) => s.first), <bool>[true, false, false]);
+      expect(slices.map((s) => s.last), <bool>[false, false, true]);
+      expect(find.byType(RuledDivider), findsWidgets);
+    });
+
+    testWidgets('a BOQ of 2,000 lines builds only the rows on screen', (tester) async {
+      setPhone(tester);
+      final api = FakeApi();
+      final app = await TestApp.create(seed: false, api: api);
+      addTearDown(app.dispose);
+      api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      for (var id = 1; id <= 2000; id++) {
+        await api.addBoqItem(id: id, projectId: 1, code: '$id', qty: '100.000');
       }
-      expect(tile('FIN-4.1').width, greaterThanOrEqualTo(tile('2.1').width));
+      // Two sections, so headings are in the list as well as lines.
+      for (var i = 1000; i < 2000; i++) {
+        api.boqItems[i]['section'] = 'Finishing';
+      }
+      await app.sync();
+
+      await _openBoq(tester, app);
+
+      final int built = tester.widgetList(find.byType(SquarePercent)).length;
+      expect(built, greaterThan(3), reason: 'the first lines are there');
+      expect(built, lessThan(30), reason: 'one per visible line, not one per BOQ line');
+      expect(find.text('Item 1'), findsOneWidget);
+      expect(find.text('Item 2000'), findsNothing);
+      expect(find.text('Item 1500'), findsNothing);
+
+      // Scrolling to the very end builds the end, and still only what shows.
+      await tester.scrollUntilVisible(
+        find.text('Item 2000'),
+        4000,
+        scrollable: find.byType(Scrollable).first,
+        maxScrolls: 400,
+      );
+      await tester.pump();
+      expect(find.text('Item 2000'), findsOneWidget);
+      expect(find.text('Item 1'), findsNothing);
+      expect(tester.widgetList(find.byType(SquarePercent)).length, lessThan(30));
     });
 
     testWidgets('shows a skeleton while loading, then the lines', (tester) async {
@@ -351,6 +403,23 @@ void main() {
 
       expect(find.text('e.g. M25 concrete in slab'), findsOneWidget);
       expect(find.text('e.g. Superstructure'), findsOneWidget);
+    });
+
+    testWidgets('units are chips with a full-size target, and picking one selects it', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create(api: FakeApi()..grant('boq.manage'));
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(fieldApp(app.services, const BoqFormScreen()));
+      await pumpDrift(tester);
+
+      expectTapHeight(tester, find.widgetWithText(N360Chip, 'cum'));
+      expect(tester.widget<N360Chip>(find.widgetWithText(N360Chip, 'cum')).selected, isFalse);
+
+      await tester.tap(find.widgetWithText(N360Chip, 'cum'));
+      await tester.pump();
+
+      expect(tester.widget<N360Chip>(find.widgetWithText(N360Chip, 'cum')).selected, isTrue);
     });
 
     testWidgets('the save buttons are large targets and the figures step has its keypad', (tester) async {

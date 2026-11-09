@@ -30,18 +30,18 @@ class LineHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, 0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           LedgerBackKey(onTap: onBack),
           const SizedBox(width: N360Space.sm),
           Expanded(
             child: chosen == null
                 ? _NoLine(l: l, onTap: onChange, spoken: spoken)
-                : LedgerCard(
-                    flat: true,
+                : PressTarget(
                     onTap: onChange,
+                    haptic: N360Haptics.select,
                     semanticsLabel: spoken,
-                    padding: const EdgeInsets.fromLTRB(N360Space.md, 6, N360Space.sm, 7),
+                    builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth * 0.4), child: child),
                     child: _ChosenLine(line: chosen, l: l, compact: compact),
                   ),
           ),
@@ -67,9 +67,9 @@ class _NoLine extends StatelessWidget {
       builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth), child: child),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: N360Colors.goldTint,
+          color: N360Colors.sheet,
           borderRadius: N360Radius.tileRadius,
-          border: Border.all(color: N360Colors.orange, width: 2),
+          border: Border.all(color: N360Colors.primary),
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: N360Size.tap),
@@ -101,51 +101,49 @@ class _ChosenLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final String eyebrow = '${l.measurementItem} ${line.item.code} · ${line.item.unit}';
     final bool overdrawn = line.previewBalance.isNegative;
-    final TextStyle figure = N360Type.figureSmall;
-    final TextStyle tag = N360Type.caption.copyWith(height: 1.25);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    return Row(
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                eyebrow,
-                maxLines: 1,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(eyebrow, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+              Text(
+                line.item.description,
+                maxLines: compact ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.caption.copyWith(height: 1.25),
+                style: N360Type.heading,
               ),
-            ),
-            Text(l.measurementChange, style: N360Type.label.copyWith(color: N360Colors.laterite, height: 1.25)),
-            const Icon(Icons.expand_more, size: N360IconSize.sm, color: N360Colors.laterite),
-          ],
-        ),
-        Text(
-          line.item.description,
-          maxLines: compact ? 1 : 2,
-          overflow: TextOverflow.ellipsis,
-          style: N360Type.heading.copyWith(height: 1.3),
-        ),
-        Row(
-          children: <Widget>[
-            Text('${l.measurementBoqQty} ', style: tag),
-            Flexible(
-              child: Text(formatQty(line.item.qty), maxLines: 1, overflow: TextOverflow.ellipsis, style: figure),
-            ),
-            const SizedBox(width: N360Space.md),
-            Text('${l.measurementBalance} ', style: tag),
-            Flexible(
-              child: Text(
-                formatQty(line.previewBalance),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: figure.copyWith(color: overdrawn ? N360Colors.laterite : N360Colors.ink),
+              Row(
+                children: <Widget>[
+                  Text('${l.measurementBoqQty} ', style: N360Type.caption),
+                  Flexible(
+                    child: Text(
+                      formatQty(line.item.qty),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.figureSmall,
+                    ),
+                  ),
+                  const SizedBox(width: N360Space.sm),
+                  Text('${l.measurementBalance} ', style: N360Type.caption),
+                  Flexible(
+                    child: Text(
+                      formatQty(line.previewBalance),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.figureSmall.copyWith(color: overdrawn ? N360Colors.laterite : N360Colors.ink),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        Text(l.measurementChange, style: N360Type.label.copyWith(color: N360Colors.laterite)),
+        const Icon(Icons.expand_more, size: N360IconSize.sm, color: N360Colors.laterite),
       ],
     );
   }
@@ -169,6 +167,7 @@ class SignToggle extends StatelessWidget {
             icon: Icons.add,
             label: l.measurementAdd,
             selected: !deduction,
+            look: ChoiceLook.solid,
             onTap: () => onChanged(false),
           ),
         ),
@@ -268,8 +267,8 @@ class QuantityBand extends StatelessWidget {
     );
 
     final Widget gauge = line == null || used == null
-        ? _BoqGauge.empty(l: l, compact: compact)
-        : _BoqGauge(l: l, line: line, used: used, deviation: state.deviation, compact: compact);
+        ? _BoqGauge.empty(l: l)
+        : _BoqGauge(l: l, line: line, used: used, deviation: state.deviation);
     final Widget balanceRow = _BalanceRow(state: state, l: l);
 
     if (compact) {
@@ -360,86 +359,32 @@ class QuantityBand extends StatelessWidget {
   }
 }
 
-/// BOQ used so far and with this entry, on the hatched bar. Past BOQ plus
-/// tolerance the whole bar turns to red hatching.
+/// BOQ used so far and with this entry. Past BOQ plus tolerance the bar fills
+/// in the urgent colour.
 class _BoqGauge extends StatelessWidget {
-  const _BoqGauge({
-    required this.l,
-    required BoqLine this.line,
-    required Qty this.used,
-    required this.deviation,
-    required this.compact,
-  });
+  const _BoqGauge({required this.l, required BoqLine this.line, required Qty this.used, required this.deviation});
 
-  const _BoqGauge.empty({required this.l, required this.compact}) : line = null, used = null, deviation = false;
+  const _BoqGauge.empty({required this.l}) : line = null, used = null, deviation = false;
 
   final AppLocalizations l;
   final BoqLine? line;
   final Qty? used;
   final bool deviation;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final double height = compact ? 12 : 16;
     final BoqLine? boq = line;
     final Qty? spoken = used;
-    if (deviation) {
-      return Semantics(
-        container: true,
-        label: l.measurementDeviation,
-        child: ExcludeSemantics(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: SizedBox(
-              height: height,
-              width: double.infinity,
-              child: const CustomPaint(painter: _OverBoqPainter()),
-            ),
-          ),
-        ),
-      );
-    }
     final double fraction = boq == null || spoken == null || spoken.isNegative
         ? 0
         : (shareFraction(spoken, boq.item.qty) ?? 0);
     final String? percent = boq == null || spoken == null ? null : shareLabel(spoken, boq.item.qty);
     return HatchedProgressBar(
-      fraction: fraction,
-      height: height,
-      semanticLabel: percent == null ? null : l.measurementBoqUsed(percent),
+      fraction: deviation ? 1 : fraction,
+      delayed: deviation,
+      semanticLabel: deviation ? l.measurementDeviation : (percent == null ? null : l.measurementBoqUsed(percent)),
     );
   }
-}
-
-class _OverBoqPainter extends CustomPainter {
-  const _OverBoqPainter();
-
-  static const double _step = 11;
-  static const double _width = 4.5;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final RRect shape = RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(10));
-    canvas.drawRRect(shape, Paint()..color = N360Colors.accent);
-    canvas.save();
-    canvas.clipRRect(shape);
-    final double h = size.height;
-    final Path stripes = Path();
-    for (double x = -h; x < size.width + h; x += _step) {
-      stripes
-        ..moveTo(x, h)
-        ..lineTo(x + h, 0)
-        ..lineTo(x + h + _width, 0)
-        ..lineTo(x + _width, h)
-        ..close();
-    }
-    canvas.drawPath(stripes, Paint()..color = N360Colors.sheet.withValues(alpha: 0.38));
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BalanceRow extends StatelessWidget {
@@ -487,8 +432,8 @@ class _BalanceRow extends StatelessWidget {
   }
 }
 
-/// An urgent strip saying this row goes over BOQ plus tolerance, and what
-/// happens next. It warns; it never stops the user saving.
+/// Says this row goes over BOQ plus tolerance, and what happens next. It
+/// warns; it never stops the user saving.
 class DeviationStrip extends StatelessWidget {
   const DeviationStrip({super.key, required this.tolerancePct});
 
@@ -504,26 +449,19 @@ class DeviationStrip extends StatelessWidget {
       label: '${l.measurementDeviation}. $sentence',
       child: ExcludeSemantics(
         child: DecoratedBox(
-          decoration: const BoxDecoration(color: N360Colors.accent, borderRadius: N360Radius.md),
+          decoration: BoxDecoration(
+            color: N360Colors.sheet,
+            borderRadius: N360Radius.cardRadius,
+            border: Border.all(color: N360Colors.stampRed),
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.sm),
             child: Row(
               children: <Widget>[
-                const Icon(Icons.warning_amber, size: N360IconSize.lg, color: N360Colors.ink),
+                StatusPill(kind: StampKind.rejected, label: l.measurementDeviation),
                 const SizedBox(width: N360Space.sm),
                 Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      children: <InlineSpan>[
-                        TextSpan(
-                          text: '${l.measurementDeviation}. ',
-                          style: N360Type.bodyStrong.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        TextSpan(text: sentence),
-                      ],
-                    ),
-                    style: N360Type.bodyStrong.copyWith(height: 1.3),
-                  ),
+                  child: Text(sentence, style: N360Type.label.copyWith(color: N360Colors.ink)),
                 ),
               ],
             ),
@@ -583,7 +521,7 @@ class DetailsKey extends StatelessWidget {
           decoration: BoxDecoration(
             color: N360Colors.sheet,
             borderRadius: N360Radius.tileRadius,
-            border: Border.all(color: N360Colors.rule, width: 1.25),
+            border: Border.all(color: N360Colors.rule),
           ),
           child: child,
         ),
@@ -602,7 +540,7 @@ class DetailsKey extends StatelessWidget {
                   SizedBox.square(
                     dimension: 7,
                     child: DecoratedBox(
-                      decoration: BoxDecoration(color: N360Colors.orange, shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: N360Colors.primary, shape: BoxShape.circle),
                     ),
                   ),
                 ],
@@ -610,11 +548,9 @@ class DetailsKey extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: N360Type.caption.copyWith(color: N360Colors.ink, height: 1.2),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, maxLines: 1, style: N360Type.caption.copyWith(color: N360Colors.ink, height: 1.2)),
               ),
             ),
           ],
@@ -645,9 +581,10 @@ class SignFlipTile extends StatelessWidget {
         builder: (context, depth, child) => Transform.scale(
           scale: pressedScale(depth),
           child: DecoratedBox(
-            decoration: deduction
-                ? const BoxDecoration(color: N360Colors.orange, borderRadius: N360Radius.md)
-                : const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.md),
+            decoration: BoxDecoration(
+              color: deduction ? N360Colors.laterite : N360Colors.primary,
+              borderRadius: N360Radius.tileRadius,
+            ),
             child: child,
           ),
         ),
@@ -656,12 +593,12 @@ class SignFlipTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(deduction ? Icons.remove : Icons.add, size: N360IconSize.lg, color: N360Colors.ink),
+              Icon(deduction ? Icons.remove : Icons.add, size: N360IconSize.lg, color: N360Colors.onPrimary),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(word, style: N360Type.button.copyWith(height: 1.25)),
+                  child: Text(word, style: N360Type.button.copyWith(color: N360Colors.onPrimary)),
                 ),
               ),
             ],

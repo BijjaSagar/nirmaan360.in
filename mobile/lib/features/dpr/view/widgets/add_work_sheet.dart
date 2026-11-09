@@ -263,7 +263,6 @@ class _PickStep extends StatelessWidget {
               final rows = _ordered(found);
               return ListView.builder(
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.symmetric(horizontal: N360Space.lg),
                 itemCount: rows.length,
                 itemBuilder: (context, index) {
                   final BoqLine line = rows[index];
@@ -301,84 +300,23 @@ class _BoqRow extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final item = line.item;
     final Qty? already = added;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: N360Space.sm),
-      child: DprTapPad(
-        onTap: onTap,
-        semanticsLabel: '${item.code} ${item.description}',
-        minHeight: 84,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: N360Colors.sheet,
-            borderRadius: N360Radius.tileRadius,
-            border: Border.fromBorderSide(BorderSide(color: N360Colors.rule)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(N360Space.tile),
-            child: Row(
-              children: <Widget>[
-                DprBoqPercent(line: line),
-                const SizedBox(width: N360Space.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        item.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: N360Type.bodyStrong,
-                      ),
-                      Text(
-                        '${item.code} · ${l.dprBalance} ${dprQty(line.previewBalance)} ${item.unit}',
-                        style: N360Type.caption,
-                      ),
-                      if (already != null || yesterday) ...<Widget>[
-                        const SizedBox(height: 4),
-                        _Tag(
-                          text: already != null
-                              ? '${l.dprAddedTag} ${dprQty(already)}'
-                              : l.dprYesterdayTag,
-                          ink: already != null ? N360Colors.mossInk : N360Colors.laterite,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: N360Space.xs),
-                const Icon(Icons.chevron_right, size: N360IconSize.lg, color: N360Colors.ink2),
-              ],
-            ),
-          ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LedgerListTile(
+          title: item.description,
+          subtitle: <String>[
+            '${item.code} · ${l.dprBalance} ${dprQty(line.previewBalance)} ${item.unit}',
+            if (already != null) '${l.dprAddedTag} ${dprQty(already)}'
+            else if (yesterday) l.dprYesterdayTag,
+          ].join(' · '),
+          leading: DprBoqPercent(line: line),
+          onTap: onTap,
+          semanticsLabel: '${item.code} ${item.description}',
         ),
-      ),
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag({required this.text, required this.ink});
-
-  final String text;
-  final Color ink;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: N360Colors.goldTint,
-        borderRadius: BorderRadius.all(Radius.circular(8)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-        child: Text(
-          text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: N360Type.caption.copyWith(color: ink, fontWeight: FontWeight.w600, height: 1.3),
-        ),
-      ),
+        const RuledDivider(),
+      ],
     );
   }
 }
@@ -449,7 +387,6 @@ class _KeypadStep extends StatelessWidget {
                 const SizedBox(height: N360Space.md),
                 HatchedProgressBar(
                   fraction: dprBoqDone(boq).fraction,
-                  height: 34,
                   semanticLabel: l.dprBoqDonePercent(dprBoqDone(boq).percent),
                 ),
                 const SizedBox(height: N360Space.xs),

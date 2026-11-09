@@ -181,7 +181,7 @@ void main() {
       expect(tester.takeException(), isNull);
       await shot(tester, '${locale}_form_1_picker');
 
-      await tester.tap(find.text('2.1').last);
+      await tester.tap(find.textContaining('2.1 · ').last);
       await tester.pump();
       await pumpDrift(tester, 10);
       await tester.pump(const Duration(milliseconds: 500));

@@ -69,7 +69,7 @@ class _DprWorkRowState extends State<DprWorkRow> {
               children: <Widget>[
                 if (boq != null) ...<Widget>[
                   DprBoqPercent(line: boq),
-                  const SizedBox(width: N360Space.md),
+                  const SizedBox(width: N360Space.tile),
                 ],
                 Expanded(
                   child: Column(

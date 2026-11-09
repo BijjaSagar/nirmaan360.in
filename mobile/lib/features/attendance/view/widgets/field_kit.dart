@@ -125,9 +125,10 @@ class _BackTile extends StatelessWidget {
         child: Transform.scale(
           scale: pressedScale(depth),
           child: DecoratedBox(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: N360Colors.sheet,
-              borderRadius: N360Radius.tileRadius,
+              borderRadius: N360Radius.md,
+              border: Border.all(color: N360Colors.rule),
             ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -143,8 +144,8 @@ class _BackTile extends StatelessWidget {
   }
 }
 
-/// Holds a screen's main action: a floating white panel on the warm foot of the
-/// page, in the thumb zone.
+/// Holds a screen's main action: the button sits directly on the page, in the
+/// thumb zone. There is no panel behind it.
 class FieldActionBar extends StatelessWidget {
   const FieldActionBar({super.key, required this.child});
 
@@ -156,15 +157,12 @@ class FieldActionBar extends StatelessWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          N360Space.md,
-          N360Space.xs,
-          N360Space.md,
+          N360Space.gutter,
           N360Space.sm,
+          N360Space.gutter,
+          N360Space.md,
         ),
-        child: LedgerCard(
-          padding: const EdgeInsets.all(N360Space.tile),
-          child: child,
-        ),
+        child: child,
       ),
     );
   }
@@ -210,11 +208,14 @@ class FieldGroupSliver extends StatelessWidget {
   }
 }
 
-/// A horizontal strip of [FieldChoiceTile]s: the days of the week, the wallets
-/// of a project. Tiles keep their 56dp target and the strip gives them air.
+/// A horizontal strip of [N360Chip]s: the days of the week, the wallets of a
+/// project. Chips keep their 56dp target and the strip gives them air.
 ///
-/// Build each tile in [itemBuilder]; the strip centres it. With [reverse] the
-/// first item sits at the right edge, where the thumb rests.
+/// Build each chip in [itemBuilder]. With [reverse] the first item sits at the
+/// right edge, where the thumb rests, and the strip opens scrolled there.
+///
+/// The row is as high as its chips, not a fixed height: a chip drawn into a
+/// bounded height stretches to fill it.
 class FieldChoiceStrip extends StatelessWidget {
   const FieldChoiceStrip({
     super.key,
@@ -227,30 +228,38 @@ class FieldChoiceStrip extends StatelessWidget {
   final IndexedWidgetBuilder itemBuilder;
   final bool reverse;
 
-  /// A 56dp target with a little room above and below.
-  static const double height = N360Size.tap + N360Space.sm;
-
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: ListView.separated(
-        reverse: reverse,
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-        itemCount: itemCount,
-        separatorBuilder: (_, _) => const SizedBox(width: N360Space.sm),
-        itemBuilder: (context, index) =>
-            Center(child: itemBuilder(context, index)),
+    final List<Widget> chips = <Widget>[
+      for (var i = 0; i < itemCount; i++) itemBuilder(context, i),
+    ];
+    final List<Widget> ordered = reverse ? chips.reversed.toList() : chips;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      reverse: reverse,
+      padding: const EdgeInsets.symmetric(
+        horizontal: N360Space.gutter,
+        vertical: N360Space.xs,
+      ),
+      child: Row(
+        children: <Widget>[
+          for (final (i, chip) in ordered.indexed) ...<Widget>[
+            if (i > 0) const SizedBox(width: N360Space.sm),
+            chip,
+          ],
+        ],
       ),
     );
   }
 }
 
-/// A selectable chip: white at rest, solid ink with white words when chosen.
-/// Ink on white is the strongest contrast the app has, so the choice reads in
-/// direct sun, and orange stays the colour of the one main action. The tile is
-/// light and sits inside a 56dp target, so it is easy to hit in gloves.
+/// A selectable tile for a small choice (today or yesterday, one of a few
+/// people): white with a hairline at rest, the primary tint with a primary edge
+/// when chosen, always with dark words. For a strip of filters use [N360Chip].
+///
+/// With [trailingIcon] the tile is a picker: it looks like a field, reads left
+/// to right and shows its mark at the far edge. The tile is light and sits
+/// inside a 56dp target, so it is easy to hit in gloves.
 class FieldChoiceTile extends StatelessWidget {
   const FieldChoiceTile({
     super.key,
@@ -288,15 +297,14 @@ class FieldChoiceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final String spoken =
         semanticsLabel ?? <String>[label, ?detail, ?trailing].join(', ');
-    final Color primary = selected ? N360Colors.sheet : N360Colors.ink;
-    final Color secondary = selected ? N360Colors.sheet : N360Colors.inkLabel;
     final String? sub = detail;
     final String? count = trailing;
+    final bool picker = trailingIcon != null;
 
     // A tile of fixed width gives its words the room the padding would take.
-    final double inset = width != null && width!.isFinite
-        ? N360Space.sm
-        : N360Space.md;
+    final double inset = picker
+        ? N360Space.card
+        : (width != null && width!.isFinite ? N360Space.sm : N360Space.md);
 
     final Widget text = Column(
       mainAxisSize: MainAxisSize.min,
@@ -306,10 +314,7 @@ class FieldChoiceTile extends StatelessWidget {
           child: Text(
             label,
             maxLines: 1,
-            style: N360Type.fit(
-              N360Type.bodyStrong,
-              label,
-            ).copyWith(color: primary),
+            style: N360Type.fit(N360Type.bodyStrong, label),
           ),
         ),
         if (sub != null)
@@ -318,14 +323,26 @@ class FieldChoiceTile extends StatelessWidget {
             child: Text(
               sub,
               maxLines: 1,
-              style: N360Type.fit(
-                N360Type.caption,
-                sub,
-              ).copyWith(color: secondary),
+              style: N360Type.fit(N360Type.caption, sub),
             ),
           ),
       ],
     );
+
+    final BoxDecoration face = picker
+        ? BoxDecoration(
+            color: N360Colors.sheet,
+            borderRadius: N360Radius.md,
+            border: Border.all(color: N360Colors.ruleStrong),
+          )
+        : BoxDecoration(
+            color: selected ? N360Colors.primaryTint : N360Colors.sheet,
+            borderRadius: N360Radius.tileRadius,
+            border: Border.all(
+              color: selected ? N360Colors.primary : N360Colors.rule,
+              width: selected ? 1.5 : N360Size.hairline,
+            ),
+          );
 
     return PressTarget(
       onTap: onTap,
@@ -342,12 +359,12 @@ class FieldChoiceTile extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             if (icon != null) ...<Widget>[
-              Icon(icon, size: N360IconSize.lg, color: primary),
+              Icon(icon, size: N360IconSize.lg, color: N360Colors.ink2),
               const SizedBox(width: N360Space.sm),
             ],
             if (width == null)
               text
-            else if (trailingIcon != null)
+            else if (picker)
               // A tile that opens a list reads left to right, with its mark
               // at the far edge.
               Expanded(
@@ -360,14 +377,11 @@ class FieldChoiceTile extends StatelessWidget {
               Flexible(child: text),
             if (count != null) ...<Widget>[
               const SizedBox(width: N360Space.sm),
-              Text(
-                count,
-                style: N360Type.bodyStrong.copyWith(color: secondary),
-              ),
+              Text(count, style: N360Type.figureSmall),
             ],
-            if (trailingIcon != null) ...<Widget>[
+            if (picker) ...<Widget>[
               const SizedBox(width: N360Space.sm),
-              Icon(trailingIcon, size: N360IconSize.lg, color: secondary),
+              Icon(trailingIcon, size: N360IconSize.lg, color: N360Colors.ink2),
             ],
           ],
         ),
@@ -379,13 +393,11 @@ class FieldChoiceTile extends StatelessWidget {
           child: SizedBox(
             width: width,
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: selected ? N360Colors.ink : N360Colors.sheet,
-                borderRadius: N360Radius.tileRadius,
-                border: selected ? null : Border.all(color: N360Colors.rule),
-              ),
+              decoration: face,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: N360Size.tile),
+                constraints: BoxConstraints(
+                  minHeight: picker ? N360Size.tap : N360Size.tile,
+                ),
                 child: Center(widthFactor: 1, heightFactor: 1, child: child),
               ),
             ),
@@ -440,9 +452,10 @@ class FieldSideTile extends StatelessWidget {
       builder: (context, depth, child) => Transform.scale(
         scale: pressedScale(depth),
         child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: N360Colors.paper2,
+          decoration: BoxDecoration(
+            color: N360Colors.sheet,
             borderRadius: N360Radius.tileRadius,
+            border: Border.all(color: N360Colors.ruleStrong),
           ),
           child: SizedBox(
             width: _width,

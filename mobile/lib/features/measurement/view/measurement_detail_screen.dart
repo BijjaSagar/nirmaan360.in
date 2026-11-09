@@ -97,7 +97,7 @@ class _DetailView extends StatelessWidget {
                           child: _HeroCard(row: synced, line: state.line),
                         ),
                         ..._notes(context, l, state, synced),
-                        const SizedBox(height: N360Space.md),
+                        const SizedBox(height: N360Space.cardGap),
                         _DimensionCard(entry: entry),
                         if (state.line != null) ...<Widget>[
                           const SizedBox(height: N360Space.md),
@@ -133,54 +133,41 @@ class _DetailView extends StatelessWidget {
   ) {
     final MeasurementRow entry = synced.record;
     final String? remark = entry.returnRemark;
-    const Widget gap = SizedBox(height: N360Space.md);
+    const Widget gap = SizedBox(height: N360Space.cardGap);
     return <Widget>[
       if (remark != null && remark.isNotEmpty) ...<Widget>[
         gap,
-        TintedNote(
-          icon: Icons.reply,
-          ink: N360Colors.haldiInk,
-          fill: N360Colors.goldTint,
-          title: l.measurementApproverSaid,
-          body: remark,
-        ),
+        TintedNote(icon: Icons.reply, ink: N360Colors.haldiInk, title: l.measurementApproverSaid, body: remark),
       ],
       if (entry.deviation) ...<Widget>[
         gap,
         TintedNote(
           icon: Icons.warning_amber,
-          ink: N360Colors.ink,
-          fill: N360Colors.accent,
+          ink: N360Colors.stampRed,
+          edge: N360Colors.stampRed,
           title: l.measurementDeviation,
           body: l.measurementDeviationDetail,
         ),
       ],
       if (entry.status == DocStatus.approved) ...<Widget>[
         gap,
-        TintedNote(
-          icon: Icons.lock_outline,
-          ink: N360Colors.mossInk,
-          fill: N360Colors.paper2,
+        _FinalStatus(
+          kind: StampKind.approved,
+          label: statusWord(l, entry.status),
           title: l.measurementApprovedLockedTitle,
           body: l.measurementApprovedLockedBody,
         ),
       ],
       if (entry.status == DocStatus.inReview && !state.submitWaiting) ...<Widget>[
         gap,
-        TintedNote(
-          icon: Icons.hourglass_top,
-          ink: N360Colors.neel,
-          fill: N360Colors.paper2,
-          body: l.measurementInReviewBody,
-        ),
+        TintedNote(icon: Icons.hourglass_top, ink: N360Colors.neel, body: l.measurementInReviewBody),
       ],
       if (entry.status == DocStatus.rejected) ...<Widget>[
         gap,
-        TintedNote(
-          icon: Icons.block,
-          ink: N360Colors.stampRed,
-          fill: N360Colors.goldTint,
-          title: l.statusRejected,
+        _FinalStatus(
+          kind: StampKind.rejected,
+          label: statusWord(l, entry.status),
+          title: null,
           body: l.measurementRejectedBody,
         ),
       ],
@@ -189,7 +176,6 @@ class _DetailView extends StatelessWidget {
         TintedNote(
           icon: Icons.schedule,
           ink: N360Colors.ink2,
-          fill: N360Colors.paper2,
           title: l.measurementSubmitWaitingTitle,
           body: state.online ? l.measurementSavedOnPhone : l.measurementSendsWhenOnline,
         ),
@@ -283,7 +269,7 @@ class _HeroCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              IconTile(icon: Icons.architecture, semanticLabel: eyebrow),
+              const Icon(Icons.architecture, size: N360IconSize.lg, color: N360Colors.ink2),
               const SizedBox(width: N360Space.md),
               Expanded(
                 child: Column(
@@ -301,7 +287,7 @@ class _HeroCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: N360Space.xs),
-              RubberStamp(kind: stampKindFor(entry.status), label: statusWord(l, entry.status), size: StampSize.small),
+              StatusPill(kind: stampKindFor(entry.status), label: statusWord(l, entry.status)),
             ],
           ),
           const SizedBox(height: N360Space.md),
@@ -362,15 +348,11 @@ class _DimensionCard extends StatelessWidget {
       child: _MiniTile(label: label, value: value),
     );
     return LedgerCard(
-      padding: const EdgeInsets.all(N360Space.sm + 2),
       child: Row(
         children: <Widget>[
           tile(l.measurementNos, dim(entry.nos)),
-          const SizedBox(width: 6),
           tile(l.measurementLength, dim(entry.length)),
-          const SizedBox(width: 6),
           tile(l.measurementBreadth, dim(entry.breadth)),
-          const SizedBox(width: 6),
           tile(l.measurementDepth, dim(entry.depth)),
         ],
       ),
@@ -390,23 +372,17 @@ class _MiniTile extends StatelessWidget {
       container: true,
       label: '$label $value',
       child: ExcludeSemantics(
-        child: DecoratedBox(
-          decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: N360Space.sm),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(value, maxLines: 1, style: N360Type.figure),
-                ),
-              ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value, maxLines: 1, style: N360Type.figure),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -431,14 +407,15 @@ class _BoqCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(l.measurementBoqProgress, style: N360Type.heading),
-          HatchedProgressBar(
-            fraction: fraction,
-            markerLabel: percent,
-            height: 28,
-            semanticLabel: l.measurementBoqUsed(percent),
+          Row(
+            children: <Widget>[
+              Expanded(child: Text(l.measurementBoqProgress, style: N360Type.heading)),
+              Text(percent, style: N360Type.figure),
+            ],
           ),
           const SizedBox(height: N360Space.sm),
+          HatchedProgressBar(fraction: fraction, semanticLabel: l.measurementBoqUsed(percent)),
+          const SizedBox(height: N360Space.md),
           Row(
             children: <Widget>[
               Expanded(
@@ -454,6 +431,31 @@ class _BoqCard extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A document's last word: the big stamp, and what it means.
+class _FinalStatus extends StatelessWidget {
+  const _FinalStatus({required this.kind, required this.label, required this.title, required this.body});
+
+  final StampKind kind;
+  final String label;
+  final String? title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return LedgerCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          RubberStamp(kind: kind, label: label, size: StampSize.large),
+          const SizedBox(height: N360Space.xs),
+          if (title != null) Text(title!, textAlign: TextAlign.center, style: N360Type.bodyStrong),
+          Text(body, textAlign: TextAlign.center, style: N360Type.body),
         ],
       ),
     );
@@ -503,9 +505,20 @@ class _FactsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          BookRow.words(label: l.measurementDateLabel, value: dayLabel(context, entry.measuredOn, today)),
-          if (boq != null) BookRow(label: l.measurementItem, value: boq.item.code, hint: boq.item.description),
-          if (hasLocation) BookRow.words(label: l.measurementLocationLabel, value: entry.location!),
+          BookRow.words(
+            label: l.measurementDateLabel,
+            value: dayLabel(context, entry.measuredOn, today),
+            ruled: boq != null || hasLocation || hasDescription,
+          ),
+          if (boq != null)
+            BookRow(
+              label: l.measurementItem,
+              value: boq.item.code,
+              hint: boq.item.description,
+              ruled: hasLocation || hasDescription,
+            ),
+          if (hasLocation)
+            BookRow.words(label: l.measurementLocationLabel, value: entry.location!, ruled: hasDescription),
           if (hasDescription)
             BookRow.words(label: l.measurementDescriptionLabel, value: entry.description!, ruled: false),
         ],
@@ -541,37 +554,34 @@ class _Actions extends StatelessWidget {
     }
     if (!state.canChange) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.sm, 0, N360Space.sm, N360Space.sm),
-      child: LedgerCard(
-        padding: const EdgeInsets.all(N360Space.sm),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              flex: 4,
-              child: GloveButton(
-                key: const ValueKey<String>('measurement-edit'),
-                label: l.measurementEdit,
-                icon: Icons.edit,
-                kind: GloveButtonKind.secondary,
-                large: true,
-                fullWidth: true,
-                onPressed: onEdit,
-              ),
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            flex: 4,
+            child: GloveButton(
+              key: const ValueKey<String>('measurement-edit'),
+              label: l.measurementEdit,
+              icon: Icons.edit,
+              kind: GloveButtonKind.secondary,
+              large: true,
+              fullWidth: true,
+              onPressed: onEdit,
             ),
-            const SizedBox(width: N360Space.sm),
-            Expanded(
-              flex: 5,
-              child: GloveButton(
-                key: const ValueKey<String>('measurement-detail-send'),
-                label: status == DocStatus.returned ? l.measurementSendAgain : l.measurementSendForApproval,
-                large: true,
-                fullWidth: true,
-                loading: state.busy,
-                onPressed: onSend,
-              ),
+          ),
+          const SizedBox(width: N360Space.sm),
+          Expanded(
+            flex: 5,
+            child: GloveButton(
+              key: const ValueKey<String>('measurement-detail-send'),
+              label: status == DocStatus.returned ? l.measurementSendAgain : l.measurementSendForApproval,
+              large: true,
+              fullWidth: true,
+              loading: state.busy,
+              onPressed: onSend,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

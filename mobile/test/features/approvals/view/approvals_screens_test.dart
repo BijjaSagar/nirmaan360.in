@@ -123,13 +123,14 @@ void main() {
     await pumpBook(tester, app, start: Routes.approvals);
     await settle(tester);
 
-    expect(find.text('2.1 · Footing F12'), findsOneWidget);
+    expect(find.textContaining('2.1 · Footing F12'), findsOneWidget);
     expect(find.textContaining('15.000'), findsWidgets);
     expect(find.textContaining('₹13,95,060.00'), findsOneWidget);
-    expect(find.textContaining('KT-B · Kalyani Tower B'), findsNWidgets(2));
+    expect(find.textContaining('KT-B'), findsNWidgets(2));
     expect(find.textContaining('Sachin More'), findsOneWidget);
     expect(find.textContaining('3 hours ago'), findsWidgets);
-    expect(find.text('2 waiting for you'), findsOneWidget);
+    expect(find.text('Waiting for you'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
   });
 
   testWidgets('a deviation is flagged on the card', (tester) async {
@@ -158,7 +159,7 @@ void main() {
     await pumpBook(tester, app, start: Routes.approvals);
     await settle(tester);
 
-    await tester.tap(find.text('2.1 · Footing F12'));
+    await tester.tap(find.textContaining('2.1 · Footing F12'));
     await settle(tester);
 
     expect(find.text('3 × 5 × 1 = 15.000 cum'), findsOneWidget);
@@ -173,8 +174,8 @@ void main() {
     await settle(tester, ms: 900);
     await settle(tester, ms: 400);
     expect(find.byType(ApprovalDetailScreen), findsNothing);
-    expect(find.text('2.1 · Footing F12'), findsNothing);
-    expect(find.text('RA-7 · Patil Constructions'), findsOneWidget);
+    expect(find.textContaining('2.1 · Footing F12'), findsNothing);
+    expect(find.textContaining('RA-7 · Patil Constructions'), findsOneWidget);
   });
 
   testWidgets('with motion on the approved card is stamped and leaves', (tester) async {
@@ -184,7 +185,7 @@ void main() {
     await pumpBook(tester, app, start: Routes.approvals, disableAnimations: false);
     await settle(tester, ms: 800);
 
-    await tester.tap(find.text('2.1 · Footing F12'));
+    await tester.tap(find.textContaining('2.1 · Footing F12'));
     await settle(tester, ms: 500);
     await tester.tap(find.byKey(_approve));
     await pumpDrift(tester, 10);
@@ -197,7 +198,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await pumpDrift(tester, 10);
     expect(find.byWidgetPredicate((w) => w is RubberStamp && w.label == 'Approved'), findsNothing);
-    expect(find.text('2.1 · Footing F12'), findsNothing);
+    expect(find.textContaining('2.1 · Footing F12'), findsNothing);
     expect(api.acts, hasLength(1));
   });
 
@@ -224,7 +225,7 @@ void main() {
     addTearDown(app.dispose);
     await pumpBook(tester, app, start: Routes.approvals);
     await settle(tester);
-    await tester.tap(find.text('2.1 · Footing F12'));
+    await tester.tap(find.textContaining('2.1 · Footing F12'));
     await settle(tester);
 
     await tester.tap(find.byKey(_sendBack));
@@ -244,7 +245,7 @@ void main() {
     expect(api.acts.single.$4, 'Check the dimensions');
     await settle(tester, ms: 400);
     expect(find.byType(ApprovalDetailScreen), findsNothing);
-    expect(find.text('2.1 · Footing F12'), findsNothing);
+    expect(find.textContaining('2.1 · Footing F12'), findsNothing);
     await tester.pump(const Duration(seconds: 4));
   });
 
@@ -366,7 +367,7 @@ void main() {
     await pumpBook(tester, app, start: Routes.approvals);
     await settle(tester);
 
-    expect(find.text('2.1 · Footing F12'), findsOneWidget);
+    expect(find.textContaining('2.1 · Footing F12'), findsOneWidget);
     expect(tester.widget<GloveButton>(find.byKey(_refresh)).onPressed, isNull);
   });
 

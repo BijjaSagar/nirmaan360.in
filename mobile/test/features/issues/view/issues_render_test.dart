@@ -7,7 +7,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
-import 'package:nirmaan360/features/attendance/view/widgets/field_kit.dart';
+import 'package:nirmaan360/core/design/design.dart';
 import 'package:nirmaan360/features/issues/view/issue_detail_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_form_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_list_screen.dart';
@@ -147,7 +147,7 @@ void main() {
         find.byType(TextField).first,
         'Crack in column C3',
       );
-      await tester.tap(find.byType(FieldChoiceTile).last);
+      await tester.tap(find.byType(N360Chip).last);
       await settle(tester);
       await capture(tester, '${name}_issue_form_filled');
 
@@ -160,7 +160,7 @@ void main() {
         find
             .descendant(
               of: find.byType(BottomSheet),
-              matching: find.byType(FieldChoiceTile),
+              matching: find.byType(LedgerListTile),
             )
             .at(2),
       );

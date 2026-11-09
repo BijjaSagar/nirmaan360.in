@@ -12,7 +12,7 @@ import '../bloc/measurement_book.dart';
 import '../bloc/measurement_list_cubit.dart';
 import 'widgets/book_kit.dart';
 
-/// The measurement book: entries in white cards, a card to a day.
+/// The measurement book: one list to a day.
 class MeasurementListScreen extends StatelessWidget {
   const MeasurementListScreen({super.key});
 
@@ -25,48 +25,25 @@ class MeasurementListScreen extends StatelessWidget {
   }
 }
 
-sealed class _Item {
-  const _Item();
-}
-
-class _DateHead extends _Item {
-  const _DateHead(this.date, this.count);
+class _Day {
+  const _Day(this.date, this.rows);
 
   final String date;
-  final int count;
-}
-
-class _Entry extends _Item {
-  const _Entry(this.row, {required this.first, required this.last, required this.order});
-
-  final SyncedRecord<MeasurementRow> row;
-  final bool first;
-  final bool last;
-
-  /// Position among entries, for the entrance stagger.
-  final int order;
+  final List<SyncedRecord<MeasurementRow>> rows;
 }
 
 class _BookView extends StatelessWidget {
   const _BookView();
 
-  List<_Item> _items(List<SyncedRecord<MeasurementRow>> rows) {
-    final List<_Item> items = <_Item>[];
-    var order = 0;
-    var index = 0;
-    while (index < rows.length) {
-      final String date = rows[index].record.measuredOn;
-      var end = index;
-      while (end < rows.length && rows[end].record.measuredOn == date) {
-        end++;
+  List<_Day> _days(List<SyncedRecord<MeasurementRow>> rows) {
+    final List<_Day> days = <_Day>[];
+    for (final SyncedRecord<MeasurementRow> row in rows) {
+      if (days.isEmpty || days.last.date != row.record.measuredOn) {
+        days.add(_Day(row.record.measuredOn, <SyncedRecord<MeasurementRow>>[]));
       }
-      items.add(_DateHead(date, end - index));
-      for (var i = index; i < end; i++) {
-        items.add(_Entry(rows[i], first: i == index, last: i == end - 1, order: order++));
-      }
-      index = end;
+      days.last.rows.add(row);
     }
-    return items;
+    return days;
   }
 
   @override
@@ -79,19 +56,28 @@ class _BookView extends StatelessWidget {
         child: SafeArea(
           child: BlocBuilder<MeasurementListCubit, MeasurementListState>(
             builder: (context, state) {
-              final List<_Item> items = _items(state.visible);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  if (!state.online && canGoBack)
-                    OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
+                  if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   BookTitleBar(
                     eyebrow: state.projectName,
                     title: l.measurementBookTitle,
                     onBack: canGoBack ? () => context.pop() : null,
                   ),
-                  Expanded(child: _body(context, l, state, items)),
-                  _Footer(state: state, onAdd: () => context.push(Routes.measurementForm)),
+                  _Filters(state: state),
+                  Expanded(child: _body(context, l, state, _days(state.visible))),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+                    child: GloveButton(
+                      key: const ValueKey<String>('measurement-add'),
+                      label: l.measurementAddEntry,
+                      icon: Icons.add,
+                      large: true,
+                      fullWidth: true,
+                      onPressed: () => context.push(Routes.measurementForm),
+                    ),
+                  ),
                 ],
               );
             },
@@ -101,19 +87,19 @@ class _BookView extends StatelessWidget {
     );
   }
 
-  Widget _body(BuildContext context, AppLocalizations l, MeasurementListState state, List<_Item> items) {
+  Widget _body(BuildContext context, AppLocalizations l, MeasurementListState state, List<_Day> days) {
     if (state.loading) {
       return ListView.builder(
         padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
         physics: const NeverScrollableScrollPhysics(),
         itemCount: 4,
         itemBuilder: (context, index) => Padding(
-          padding: const EdgeInsets.only(bottom: N360Space.sm),
+          padding: const EdgeInsets.only(bottom: N360Space.cardGap),
           child: LedgerSkeleton(flat: true, semanticsLabel: l.measurementLoading),
         ),
       );
     }
-    if (items.isEmpty) {
+    if (days.isEmpty) {
       final bool all = state.filter == null;
       return Center(
         child: SingleChildScrollView(
@@ -125,27 +111,34 @@ class _BookView extends StatelessWidget {
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
-      itemCount: items.length,
-      itemBuilder: (context, index) => switch (items[index]) {
-        _DateHead(:final date, :final count) => _DateHeader(date: date, count: count, today: state.today),
-        final _Entry entry => StaggeredRise(
-          index: entry.order,
-          child: _EntryRow(
-            key: ValueKey<String>(entry.row.record.clientUuid),
-            row: entry.row,
-            boq: state.boq[entry.row.record.boqItemId],
-            first: entry.first,
-            last: entry.last,
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+      itemCount: days.length,
+      itemBuilder: (context, index) {
+        final _Day day = days[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: N360Space.cardGap),
+          child: StaggeredRise(
+            index: index,
+            child: LedgerList(
+              header: _DayHeader(date: day.date, count: day.rows.length, today: state.today),
+              children: <Widget>[
+                for (final SyncedRecord<MeasurementRow> row in day.rows)
+                  _EntryTile(
+                    key: ValueKey<String>(row.record.clientUuid),
+                    row: row,
+                    boq: state.boq[row.record.boqItemId],
+                  ),
+              ],
+            ),
           ),
-        ),
+        );
       },
     );
   }
 }
 
-class _DateHeader extends StatelessWidget {
-  const _DateHeader({required this.date, required this.count, required this.today});
+class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.date, required this.count, required this.today});
 
   final String date;
   final int count;
@@ -153,59 +146,18 @@ class _DateHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.xs, N360Space.sm, N360Space.xs, N360Space.sm),
-      child: Row(
-        children: <Widget>[
-          Expanded(child: Text(dayLabel(context, date, today), style: N360Type.heading)),
-          Text(l.measurementRowCount(count), style: N360Type.caption),
-        ],
-      ),
+    return Row(
+      children: <Widget>[
+        Expanded(child: Text(dayLabel(context, date, today), style: N360Type.heading)),
+        Text('$count', style: N360Type.figureSmall.copyWith(color: N360Colors.ink2)),
+      ],
     );
   }
 }
 
-/// One row of a day's card. The first and last rows carry the card's corners.
-class _EntryRow extends StatelessWidget {
-  const _EntryRow({super.key, required this.row, required this.boq, required this.first, required this.last});
-
-  final SyncedRecord<MeasurementRow> row;
-  final BoqItemRow? boq;
-  final bool first;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    final MeasurementRow entry = row.record;
-    final String unit = boq?.unit ?? '';
-    final String qty = '${formatQty(entry.qty)} $unit'.trim();
-    final String status = statusWord(l, entry.status);
-
-    return PressTarget(
-      onTap: () => context.push(Routes.measurementDetail(entry.clientUuid)),
-      haptic: N360Haptics.tap,
-      minHeight: 76,
-      semanticsLabel: '${boq?.code ?? ''} ${entryTitle(entry, boq)}. $qty. $status',
-      builder: (context, depth, child) => Transform.scale(
-        scale: pressedScale(depth * 0.4),
-        child: CustomPaint(
-          painter: _GroupRowPainter(first: first, last: last),
-          child: child,
-        ),
-      ),
-      child: LedgerHero(
-        tag: 'measurement-${entry.clientUuid}',
-        child: MeasurementRowFace(row: row, boq: boq),
-      ),
-    );
-  }
-}
-
-/// The row's words and figures, shared with the flight into the detail page.
-class MeasurementRowFace extends StatelessWidget {
-  const MeasurementRowFace({super.key, required this.row, required this.boq});
+/// One entry: the figure first, as a ledger line reads, then where and how.
+class _EntryTile extends StatelessWidget {
+  const _EntryTile({super.key, required this.row, required this.boq});
 
   final SyncedRecord<MeasurementRow> row;
   final BoqItemRow? boq;
@@ -214,6 +166,11 @@ class MeasurementRowFace extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final MeasurementRow entry = row.record;
+    final BoqItemRow? item = boq;
+    final String qty = '${formatQty(entry.qty)} ${item?.unit ?? ''}'.trim();
+    final String code = item?.code ?? '#${entry.boqItemId}';
+    final String where = entryTitle(entry, item);
+    final String title = where.isEmpty ? code : where;
     final String? factors = bookFactors(
       nos: entry.nos,
       length: entry.length,
@@ -221,91 +178,30 @@ class MeasurementRowFace extends StatelessWidget {
       depth: entry.depth,
       deduction: entry.isDeduction,
     );
-    final bool negative = entry.qty.isNegative;
-    final Color qtyInk = negative ? N360Colors.laterite : N360Colors.ink;
-    final BoqItemRow? item = boq;
-    final String? percent = item == null ? null : shareLabel(entry.qty, item.qty);
-    final double? fraction = item == null ? null : shareFraction(entry.qty, item.qty);
+    final String? sync = syncWord(l, row.syncState);
+    final String meta = <String>[code, ?factors, ?sync].join(' · ');
+    final String status = statusWord(l, entry.status);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.md, N360Space.md, 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              CodeTile(code: item?.code ?? '#${entry.boqItemId}'),
-              const SizedBox(width: N360Space.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      entryTitle(entry, item),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.bodyStrong.copyWith(height: 1.3),
-                    ),
-                    if (factors != null)
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          factors,
-                          maxLines: 1,
-                          style: N360Type.figureSmall.copyWith(color: negative ? N360Colors.laterite : N360Colors.ink2),
-                        ),
-                      ),
-                    if (row.isUnsent) ...<Widget>[const SizedBox(height: 2), SyncMark(state: row.syncState)],
-                  ],
-                ),
-              ),
-              if (percent != null && fraction != null) ...<Widget>[
-                const SizedBox(width: N360Space.sm),
-                Semantics(
-                  label: '$percent ${l.measurementShareOfBoq}',
-                  child: ExcludeSemantics(
-                    child: SquarePercent(fraction: fraction, label: percent),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: N360Size.tile + N360Space.md, top: 2),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text.rich(
-                      TextSpan(
-                        text: formatQty(entry.qty),
-                        children: <InlineSpan>[
-                          if (item != null)
-                            TextSpan(
-                              text: ' ${item.unit}',
-                              style: N360Type.caption.copyWith(color: qtyInk),
-                            ),
-                        ],
-                      ),
-                      style: N360Type.figure.copyWith(color: qtyInk),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: N360Space.sm),
-                RubberStamp(
-                  kind: stampKindFor(entry.status),
-                  label: statusWord(l, entry.status),
-                  size: StampSize.small,
-                ),
-              ],
+    return LedgerHero(
+      tag: 'measurement-${entry.clientUuid}',
+      child: LedgerListTile(
+        title: title,
+        subtitle: meta,
+        semanticsLabel: '$title, $qty, $status, $meta',
+        status: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              qty,
+              maxLines: 1,
+              style: N360Type.figure.copyWith(color: entry.qty.isNegative ? N360Colors.laterite : N360Colors.ink),
             ),
-          ),
-        ],
+            const SizedBox(height: N360Space.xxs),
+            StatusPill(kind: stampKindFor(entry.status), label: status),
+          ],
+        ),
+        onTap: () => context.push(Routes.measurementDetail(entry.clientUuid)),
       ),
     );
   }
@@ -320,47 +216,10 @@ String entryTitle(MeasurementRow entry, BoqItemRow? boq) {
   return boq?.description ?? '';
 }
 
-/// Paints a day's rows as one white card. Rows meet without a seam except for
-/// a faint hairline; only the first and last carry the rounded corners.
-class _GroupRowPainter extends CustomPainter {
-  const _GroupRowPainter({required this.first, required this.last});
-
-  final bool first;
-  final bool last;
-
-  static const Radius _corner = Radius.circular(N360Radius.card);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final RRect face = RRect.fromRectAndCorners(
-      Offset.zero & size,
-      topLeft: first ? _corner : Radius.zero,
-      topRight: first ? _corner : Radius.zero,
-      bottomLeft: last ? _corner : Radius.zero,
-      bottomRight: last ? _corner : Radius.zero,
-    );
-    canvas.drawRRect(face, Paint()..color = N360Colors.sheet);
-    if (!last) {
-      canvas.drawLine(
-        Offset(N360Space.md, size.height - 0.5),
-        Offset(size.width - N360Space.md, size.height - 0.5),
-        Paint()
-          ..color = N360Colors.rule
-          ..strokeWidth = 1,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GroupRowPainter oldDelegate) => oldDelegate.first != first || oldDelegate.last != last;
-}
-
-/// Filter chips and the Add button, down where the thumb is.
-class _Footer extends StatelessWidget {
-  const _Footer({required this.state, required this.onAdd});
+class _Filters extends StatelessWidget {
+  const _Filters({required this.state});
 
   final MeasurementListState state;
-  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -374,47 +233,26 @@ class _Footer extends StatelessWidget {
       (DocStatus.approved, l.statusApproved),
       (DocStatus.rejected, l.statusRejected),
     ];
-
-    return Padding(
-      padding: const EdgeInsets.only(top: N360Space.xs, bottom: N360Space.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          SizedBox(
-            height: N360Size.tap,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-              itemCount: filters.length,
-              itemBuilder: (context, index) {
-                final (String? status, String label) = filters[index];
-                return Padding(
-                  padding: EdgeInsets.only(right: index == filters.length - 1 ? 0 : N360Space.sm),
-                  child: ChoiceTile(
-                    compact: true,
-                    label: label,
-                    count: state.countOf(status),
-                    selected: state.filter == status,
-                    onTap: () => cubit.setFilter(status),
-                  ),
-                );
-              },
+    return SizedBox(
+      height: N360Size.tap,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final (String? status, String label) = filters[index];
+          return Padding(
+            padding: EdgeInsets.only(right: index == filters.length - 1 ? 0 : N360Space.sm),
+            child: UnconstrainedBox(
+              child: N360Chip(
+                label: label,
+                count: '${state.countOf(status)}',
+                selected: state.filter == status,
+                onTap: () => cubit.setFilter(status),
+              ),
             ),
-          ),
-          const SizedBox(height: N360Space.sm),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-            child: GloveButton(
-              key: const ValueKey<String>('measurement-add'),
-              label: l.measurementAddEntry,
-              icon: Icons.add,
-              large: true,
-              fullWidth: true,
-              onPressed: onAdd,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

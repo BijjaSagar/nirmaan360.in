@@ -105,30 +105,25 @@ class _IssueDetailView extends StatelessWidget {
   }
 }
 
-class _Body extends StatefulWidget {
+class _Body extends StatelessWidget {
   const _Body({required this.state});
 
   final IssueDetailState state;
 
   @override
-  State<_Body> createState() => _BodyState();
-}
-
-class _BodyState extends State<_Body> {
-  /// The status the issue had when the page opened. The stamp lands only when
-  /// the status changes while the page is open: that is the moment the work is
-  /// confirmed. Opening an issue just shows it.
-  late final String _openedWith = widget.state.issue!.record.status;
-
-  @override
   Widget build(BuildContext context) {
-    final IssueDetailState state = widget.state;
     final AppLocalizations l = AppLocalizations.of(context);
     final SyncedRecord<IssueRow> record = state.issue!;
     final IssueRow issue = record.record;
     final String? assignee = state.userNames[issue.assignedTo];
     final String? raisedBy = state.userNames[issue.raisedBy];
     final bool hasDescription = issue.description != null && issue.description!.isNotEmpty;
+    final List<Widget> flags = issueFlags(
+      context,
+      issue: issue,
+      today: state.today,
+      syncState: record.syncState,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -158,11 +153,7 @@ class _BodyState extends State<_Body> {
                           ),
                         ),
                         const SizedBox(width: N360Space.sm),
-                        IssueStatusStamp(
-                          status: issue.status,
-                          size: StampSize.medium,
-                          animate: issue.status != _openedWith,
-                        ),
+                        IssueStatusPill(status: issue.status),
                       ],
                     ),
                     if (issue.locationNote != null && issue.locationNote!.isNotEmpty)
@@ -170,21 +161,9 @@ class _BodyState extends State<_Body> {
                         padding: const EdgeInsets.only(top: N360Space.xs),
                         child: IssueMeta(icon: Icons.place_outlined, text: issue.locationNote!),
                       ),
-                    if (isOverdue(issue, state.today)) ...<Widget>[
+                    if (flags.isNotEmpty) ...<Widget>[
                       const SizedBox(height: N360Space.sm),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: OverdueChip(
-                          text: l.issuesOverdue(daysBetween(issue.dueDate!, state.today)),
-                        ),
-                      ),
-                    ],
-                    if (record.syncState != LocalSyncState.synced) ...<Widget>[
-                      const SizedBox(height: N360Space.sm),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: IssueSyncStamp(state: record.syncState),
-                      ),
+                      Wrap(spacing: N360Space.sm, runSpacing: N360Space.xs, children: flags),
                     ],
                   ],
                 ),
@@ -221,7 +200,7 @@ class _BodyState extends State<_Body> {
                     children: <Widget>[
                       LedgerRow(
                         label: l.issuesDetailPriority,
-                        valueWidget: PriorityMarker(priority: issue.priority, compact: true),
+                        valueWidget: PriorityPill(priority: issue.priority),
                       ),
                       LedgerRow(
                         label: l.issuesDetailDue,

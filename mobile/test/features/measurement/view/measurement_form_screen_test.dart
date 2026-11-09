@@ -21,7 +21,7 @@ Future<void> _pickLine(WidgetTester tester, {String code = '2.1'}) async {
   await tester.pump();
   await pumpDrift(tester, 8);
   await tester.pump(const Duration(milliseconds: 100));
-  await tester.tap(find.text(code).last);
+  await tester.tap(find.textContaining('$code · ').last);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
   await pumpDrift(tester, 8);
@@ -75,7 +75,8 @@ void main() {
     await typeKeys(tester, '5');
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byType(HatchedProgressBar), findsNothing);
+    expect(bar().delayed, isTrue);
+    expect(bar().fraction, 1);
     expect(find.textContaining('PM approval'), findsOneWidget);
     expect(tester.widget<SquarePercent>(find.byType(SquarePercent)).label, '625%');
     await tester.pump(const Duration(seconds: 1));
@@ -374,19 +375,19 @@ void main() {
     await pumpDrift(tester, 8);
 
     expect(find.text('Recent'), findsOneWidget);
-    expect(find.text('Plaster coat'), findsOneWidget);
-    expect(find.text('Brick masonry'), findsOneWidget);
+    expect(find.textContaining('Plaster coat'), findsOneWidget);
+    expect(find.textContaining('Brick masonry'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'brick');
     await tester.pump();
     await pumpDrift(tester, 8);
-    expect(find.text('Plaster coat'), findsNothing);
-    expect(find.text('Brick masonry'), findsOneWidget);
+    expect(find.textContaining('Plaster coat'), findsNothing);
+    expect(find.textContaining('Brick masonry'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), '4.2');
     await tester.pump();
     await pumpDrift(tester, 8);
-    expect(find.text('Plaster coat'), findsOneWidget);
+    expect(find.textContaining('Plaster coat'), findsOneWidget);
   });
 
   testWidgets('send for approval saves, queues the submit, and stamps', (tester) async {

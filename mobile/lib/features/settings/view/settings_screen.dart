@@ -78,33 +78,33 @@ class SettingsScreen extends StatelessWidget {
                 children: <Widget>[
                   PageHeader(title: t.shellSettings),
                   const SizedBox(height: N360Space.md),
-                  if (user != null) StaggeredRise(index: 0, child: _WhoCard(user: user, eyebrow: t.shellSettingsSignedIn)),
-                  const SizedBox(height: N360Space.lg),
                   StaggeredRise(
-                    index: 1,
+                    index: 0,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
+                        if (user != null) ...<Widget>[
+                          _WhoList(user: user, eyebrow: t.shellSettingsSignedIn),
+                          const SizedBox(height: N360Space.lg),
+                        ],
                         SectionLabel(t.shellSettingsLanguage),
                         const SizedBox(height: N360Space.xs),
                         LanguageSwitch(
                           current: locale,
                           onChanged: (code) => context.read<AppServices>().auth.setLocale(code),
                         ),
+                        const SizedBox(height: N360Space.lg),
+                        LedgerList(
+                          children: <Widget>[
+                            LedgerListTile(
+                              leading: const Icon(Icons.info_outline, size: N360IconSize.lg, color: N360Colors.ink2),
+                              title: t.shellSettingsVersion,
+                              trailing: Text(AppInfo.label, style: N360Type.figure),
+                            ),
+                          ],
+                        ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: N360Space.lg),
-                  StaggeredRise(
-                    index: 2,
-                    child: LedgerCard(
-                      padding: const EdgeInsets.symmetric(horizontal: N360Space.card),
-                      child: LedgerRow(
-                        label: t.shellSettingsVersion,
-                        value: AppInfo.label,
-                        ruled: false,
-                      ),
                     ),
                   ),
                 ],
@@ -127,47 +127,34 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-/// Who is signed in, like the name block on an ID card.
-class _WhoCard extends StatelessWidget {
-  const _WhoCard({required this.user, required this.eyebrow});
+/// Who is signed in: name and role, the firm, the email, one row each.
+class _WhoList extends StatelessWidget {
+  const _WhoList({required this.user, required this.eyebrow});
 
   final CurrentUser user;
   final String eyebrow;
 
   @override
   Widget build(BuildContext context) {
-    final String initial = user.name.trim().isEmpty ? '?' : user.name.trim().substring(0, 1).toUpperCase();
-    return LedgerCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: N360Size.tile,
-            height: N360Size.tile,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.md),
-            child: Text(initial, style: N360Type.figureLarge.copyWith(height: 1.1)),
+    return LedgerList(
+      header: SectionLabel(eyebrow),
+      children: <Widget>[
+        LedgerListTile(
+          leading: const Icon(Icons.person_outline, size: N360IconSize.lg, color: N360Colors.ink2),
+          title: user.name,
+          subtitle: user.roleLabel.isEmpty ? null : user.roleLabel,
+        ),
+        if (user.organizationName.isNotEmpty)
+          LedgerListTile(
+            leading: const Icon(Icons.business_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+            title: user.organizationName,
           ),
-          const SizedBox(width: N360Space.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                SectionLabel(eyebrow),
-                Text(user.name, style: N360Type.fit(N360Type.heading, user.name)),
-                if (user.roleLabel.isNotEmpty)
-                  Text(
-                    user.roleLabel,
-                    style: N360Type.fit(N360Type.body, user.roleLabel).copyWith(color: N360Colors.ink2),
-                  ),
-                if (user.organizationName.isNotEmpty)
-                  Text(user.organizationName, style: N360Type.fit(N360Type.caption, user.organizationName)),
-                if (user.email.isNotEmpty) Text(user.email, style: N360Type.caption),
-              ],
-            ),
+        if (user.email.isNotEmpty)
+          LedgerListTile(
+            leading: const Icon(Icons.mail_outline, size: N360IconSize.lg, color: N360Colors.ink2),
+            title: user.email,
           ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -205,6 +192,7 @@ class _SignOutSheet extends StatelessWidget {
             const SizedBox(height: N360Space.sm),
             GloveButton(
               label: t.commonCancel,
+              kind: GloveButtonKind.secondary,
               large: true,
               fullWidth: true,
               onPressed: () => Navigator.of(context).pop(false),
@@ -272,9 +260,9 @@ class _UnsentSheet extends StatelessWidget {
   }
 }
 
-/// A red bar that fills while pressed and fires only when full. Letting go
-/// early empties it again. With animations off it is a plain button, because
-/// the warning sheet is already a second step.
+/// A red-edged bar that fills while pressed and fires only when full. Letting
+/// go early empties it again. With animations off it is a plain button,
+/// because the warning sheet is already a second step.
 class _HoldToConfirm extends StatefulWidget {
   const _HoldToConfirm({required this.label, required this.spokenLabel, required this.onConfirmed});
 
@@ -345,7 +333,7 @@ class _HoldToConfirmState extends State<_HoldToConfirm> with SingleTickerProvide
         decoration: BoxDecoration(
           color: N360Colors.sheet,
           borderRadius: N360Radius.tileRadius,
-          border: Border.all(color: N360Colors.stampRed, width: 1.5),
+          border: Border.all(color: N360Colors.stampRed, width: 1.25),
         ),
         child: ClipRRect(
           borderRadius: N360Radius.tileRadius,
@@ -360,7 +348,7 @@ class _HoldToConfirmState extends State<_HoldToConfirm> with SingleTickerProvide
                       alignment: Alignment.centerLeft,
                       widthFactor: _fill.value,
                       heightFactor: 1,
-                      child: ColoredBox(color: N360Colors.stampRed.withValues(alpha: 0.2)),
+                      child: ColoredBox(color: N360Colors.stampRed.withValues(alpha: 0.16)),
                     ),
                   ),
                 ),

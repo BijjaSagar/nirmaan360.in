@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import '../../../../core/db/app_database.dart' show UserRow;
 import '../../../../core/design/design.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../attendance/view/widgets/field_kit.dart';
 import '../../bloc/issue_helpers.dart';
 import '../../data/issue_repository.dart';
 
@@ -18,95 +17,36 @@ String shortDate(BuildContext context, String isoDate) {
 String shortDay(BuildContext context, DateTime moment) =>
     shortDate(context, moment.toLocal().toIso8601String());
 
-({Color tile, Color icon, Color word}) _priorityLook(String priority) => switch (priority) {
-  'critical' => (tile: N360Colors.accent, icon: N360Colors.ink, word: N360Colors.stampRed),
-  'high' => (tile: N360Colors.goldTint, icon: N360Colors.ink, word: N360Colors.laterite),
-  'medium' => (tile: N360Colors.paper2, icon: N360Colors.neel, word: N360Colors.neel),
-  _ => (tile: N360Colors.paper2, icon: N360Colors.ink2, word: N360Colors.ink2),
+/// The pill colour that says how urgent: red for critical, amber for high,
+/// slate for medium, grey for low. The word is always on the pill as well.
+StampKind priorityKind(String priority) => switch (priority) {
+  'critical' => StampKind.rejected,
+  'high' => StampKind.returned,
+  'medium' => StampKind.inReview,
+  _ => StampKind.draft,
 };
 
-/// Priority as a picture and a word, so it never depends on colour alone.
-class PriorityMarker extends StatelessWidget {
-  const PriorityMarker({super.key, required this.priority, this.compact = false});
+/// Priority as a word on a quiet pill, so it never depends on colour alone.
+class PriorityPill extends StatelessWidget {
+  const PriorityPill({super.key, required this.priority});
 
   final String priority;
-
-  /// A single line, for detail rows.
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final Pictogram picture = N360Pictograms.priority(priority);
-    final look = _priorityLook(priority);
-    final String label = l.pictogramLabel(picture);
-
-    Widget tile(double size, double iconSize) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: look.tile,
-        borderRadius: compact ? N360Radius.sm : N360Radius.md,
-      ),
-      child: SizedBox.square(
-        dimension: size,
-        child: Icon(picture.icon, size: iconSize, color: look.icon),
-      ),
-    );
-
-    if (compact) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          tile(N360Size.tileSmall, N360IconSize.md),
-          const SizedBox(width: N360Space.sm),
-          Text(
-            label,
-            style: N360Type.fit(N360Type.bodyStrong, label).copyWith(color: look.word),
-          ),
-        ],
-      );
-    }
-
-    return Semantics(
-      label: label,
-      child: ExcludeSemantics(
-        child: SizedBox(
-          width: N360Size.tap,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              tile(N360Size.tile, N360IconSize.tile),
-              const SizedBox(height: N360Space.xxs),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: N360Type.fit(N360Type.caption, label).copyWith(
-                    color: look.word,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return StatusPill(
+      kind: priorityKind(priority),
+      label: l.pictogramLabel(N360Pictograms.priority(priority)),
     );
   }
 }
 
-/// The status as a stamp, in words.
-class IssueStatusStamp extends StatelessWidget {
-  const IssueStatusStamp({
-    super.key,
-    required this.status,
-    this.size = StampSize.small,
-    this.animate = false,
-  });
+/// The status as a pill, in words.
+class IssueStatusPill extends StatelessWidget {
+  const IssueStatusPill({super.key, required this.status});
 
   final String status;
-  final StampSize size;
-  final bool animate;
 
   static StampKind kindOf(String status) => switch (status) {
     IssueStatus.open => StampKind.returned,
@@ -118,14 +58,16 @@ class IssueStatusStamp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final String label = l.pictogramLabel(N360Pictograms.issueStatus(status));
-    return RubberStamp(kind: kindOf(status), label: label, size: size, animate: animate);
+    return StatusPill(
+      kind: kindOf(status),
+      label: l.pictogramLabel(N360Pictograms.issueStatus(status)),
+    );
   }
 }
 
 /// Nothing when everything is sent; otherwise whether it is still on the phone.
-class IssueSyncStamp extends StatelessWidget {
-  const IssueSyncStamp({super.key, required this.state});
+class IssueSyncPill extends StatelessWidget {
+  const IssueSyncPill({super.key, required this.state});
 
   final LocalSyncState state;
 
@@ -134,51 +76,132 @@ class IssueSyncStamp extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     return switch (state) {
       LocalSyncState.synced => const SizedBox.shrink(),
-      LocalSyncState.queued => RubberStamp(
-        kind: StampKind.queued,
-        label: l.statusQueued,
-        size: StampSize.small,
-      ),
-      LocalSyncState.sending => RubberStamp(
-        kind: StampKind.inReview,
-        label: l.issuesSyncSending,
-        size: StampSize.small,
-      ),
-      LocalSyncState.attention => RubberStamp(
-        kind: StampKind.rejected,
-        label: l.issuesSyncAttention,
-        size: StampSize.small,
-      ),
+      LocalSyncState.queued => StatusPill(kind: StampKind.queued, label: l.statusQueued),
+      LocalSyncState.sending => StatusPill(kind: StampKind.inReview, label: l.issuesSyncSending),
+      LocalSyncState.attention => StatusPill(kind: StampKind.rejected, label: l.issuesSyncAttention),
     };
   }
 }
 
-/// Overdue as a filled chip that reads from arm's length, in the palette's
-/// urgent colour with dark ink on it.
-class OverdueChip extends StatelessWidget {
-  const OverdueChip({super.key, required this.text});
+/// The pills an issue earns by being late, due today or still on the phone.
+/// Empty for an ordinary, sent issue, so most rows stay two lines.
+List<Widget> issueFlags(
+  BuildContext context, {
+  required IssueRow issue,
+  required String today,
+  required LocalSyncState syncState,
+}) {
+  final AppLocalizations l = AppLocalizations.of(context);
+  final bool overdue = isOverdue(issue, today);
+  final bool dueToday = !overdue && issue.dueDate == today && isOpenStatus(issue.status);
+  return <Widget>[
+    if (overdue)
+      StatusPill(
+        kind: StampKind.rejected,
+        label: l.issuesOverdue(daysBetween(issue.dueDate!, today)),
+      ),
+    if (dueToday) StatusPill(kind: StampKind.returned, label: l.issuesDueToday),
+    if (syncState != LocalSyncState.synced) IssueSyncPill(state: syncState),
+  ];
+}
 
-  final String text;
+/// When it is due, or once it is done, when it was resolved.
+String issueDueText(BuildContext context, IssueRow issue) {
+  final AppLocalizations l = AppLocalizations.of(context);
+  final DateTime? resolvedAt = issue.resolvedAt;
+  if (!isOpenStatus(issue.status) && resolvedAt != null) {
+    return l.issuesResolvedOn(shortDay(context, resolvedAt));
+  }
+  final String? due = issue.dueDate;
+  return due == null ? l.issuesNoDueDate : l.issuesDueOn(shortDate(context, due));
+}
+
+/// One issue as a row of a [LedgerList]: the title and its priority pill, one
+/// caption line of where, when and who, and a chevron. A late, due-today or
+/// unsent issue carries a pill for that under the caption.
+///
+/// This is a [LedgerListTile] with a hero title for the flight into the detail
+/// page, and the extra line of pills, which the plain tile has no room for.
+class IssueTile extends StatelessWidget {
+  const IssueTile({
+    super.key,
+    required this.record,
+    required this.today,
+    required this.assignee,
+    required this.onTap,
+  });
+
+  final SyncedRecord<IssueRow> record;
+  final String today;
+  final String? assignee;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: N360Colors.accent, borderRadius: N360Radius.sm),
+    final AppLocalizations l = AppLocalizations.of(context);
+    final IssueRow issue = record.record;
+    final String? where = issue.locationNote?.trim();
+    final String who =
+        assignee ?? (issue.assignedTo == null ? l.issuesUnassigned : l.issuesAssignedUnknown);
+    final String meta = <String>[
+      if (where != null && where.isNotEmpty) where,
+      issueDueText(context, issue),
+      who,
+    ].join(' · ');
+    final List<Widget> flags = issueFlags(
+      context,
+      issue: issue,
+      today: today,
+      syncState: record.syncState,
+    );
+    final String priorityWord = l.pictogramLabel(N360Pictograms.priority(issue.priority));
+
+    return PressTarget(
+      onTap: onTap,
+      semanticsLabel: '$priorityWord, ${issue.title}, $meta',
+      builder: (context, depth, child) =>
+          Transform.scale(scale: pressedScale(depth * 0.4), child: child),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: N360Space.xs),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.tile),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(Icons.warning_amber, size: N360IconSize.sm, color: N360Colors.ink),
-            const SizedBox(width: N360Space.xs),
-            Flexible(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: N360Type.fit(N360Type.label, text).copyWith(color: N360Colors.ink),
-              ),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      LedgerHero(
+                        tag: 'issue-title-${issue.clientUuid}',
+                        child: Text(
+                          issue.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: N360Type.fit(N360Type.bodyStrong, issue.title),
+                        ),
+                      ),
+                      Text(
+                        meta,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: N360Type.fit(N360Type.caption, meta),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: N360Space.sm),
+                PriorityPill(priority: issue.priority),
+                const SizedBox(width: N360Space.sm),
+                const Icon(Icons.chevron_right, size: N360IconSize.lg, color: N360Colors.ink3),
+              ],
             ),
+            if (flags.isNotEmpty) ...<Widget>[
+              const SizedBox(height: N360Space.sm),
+              Wrap(spacing: N360Space.sm, runSpacing: N360Space.xs, children: flags),
+            ],
           ],
         ),
       ),
@@ -186,81 +209,28 @@ class OverdueChip extends StatelessWidget {
   }
 }
 
-/// Due date, with overdue spelled out in words and an icon.
-class DueLine extends StatelessWidget {
-  const DueLine({super.key, required this.issue, required this.today});
-
-  final IssueRow issue;
-  final String today;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    // Once it is done the due date no longer matters; when it was done does.
-    final DateTime? resolvedAt = issue.resolvedAt;
-    if (!isOpenStatus(issue.status) && resolvedAt != null) {
-      return IssueMeta(icon: Icons.task_alt, text: l.issuesResolvedOn(shortDay(context, resolvedAt)));
-    }
-    final String? due = issue.dueDate;
-    if (due == null) {
-      return IssueMeta(icon: Icons.event_busy, text: l.issuesNoDueDate);
-    }
-    if (isOverdue(issue, today)) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: N360Space.xxs),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: OverdueChip(text: l.issuesOverdue(daysBetween(due, today))),
-        ),
-      );
-    }
-    if (due == today && isOpenStatus(issue.status)) {
-      return IssueMeta(
-        icon: Icons.schedule,
-        text: l.issuesDueToday,
-        color: N360Colors.laterite,
-        strong: true,
-      );
-    }
-    return IssueMeta(icon: Icons.event, text: l.issuesDueOn(shortDate(context, due)));
-  }
-}
-
-/// One line of supporting information under an issue title: a caption, or a
-/// label when it is the line that matters.
+/// One line of supporting information on the detail page: an icon, then words.
 class IssueMeta extends StatelessWidget {
-  const IssueMeta({
-    super.key,
-    required this.icon,
-    required this.text,
-    this.color = N360Colors.ink2,
-    this.strong = false,
-  });
+  const IssueMeta({super.key, required this.icon, required this.text});
 
   final IconData icon;
   final String text;
-  final Color color;
-  final bool strong;
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle base = strong ? N360Type.label : N360Type.caption;
-    return Padding(
-      padding: const EdgeInsets.only(top: N360Space.xxs),
-      child: Row(
-        children: <Widget>[
-          Icon(icon, size: strong ? N360IconSize.sm : N360IconSize.xs, color: color),
-          const SizedBox(width: N360Space.xs + N360Space.xxs),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: N360Type.fit(base, text).copyWith(color: color),
-            ),
+    return Row(
+      children: <Widget>[
+        Icon(icon, size: N360IconSize.xs, color: N360Colors.ink2),
+        const SizedBox(width: N360Space.xs + N360Space.xxs),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: N360Type.fit(N360Type.caption, text),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -283,6 +253,7 @@ Future<AssigneeChoice?> showAssigneeSheet(
     context,
     isScrollControlled: true,
     builder: (sheetContext) {
+      final List<UserRow?> people = <UserRow?>[null, ...users];
       return ConstrainedBox(
         constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7),
         child: Column(
@@ -293,20 +264,32 @@ Future<AssigneeChoice?> showAssigneeSheet(
               padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
               child: SheetHeader(title: l.issuesAssigneeSheetTitle),
             ),
+            const RuledDivider(),
             Flexible(
               child: ListView.separated(
                 shrinkWrap: true,
-                padding: ledgerSheetPadding,
-                itemCount: users.length + 1,
-                separatorBuilder: (_, _) => const SizedBox(height: N360Space.sm),
+                padding: const EdgeInsets.only(bottom: N360Space.lg),
+                itemCount: people.length,
+                separatorBuilder: (_, _) => const RuledDivider(indent: N360Space.card),
                 itemBuilder: (context, index) {
-                  final UserRow? user = index == 0 ? null : users[index - 1];
-                  return FieldChoiceTile(
-                    width: double.infinity,
-                    icon: user == null ? Icons.person_off_outlined : Icons.person,
-                    label: user?.name ?? l.issuesUnassigned,
-                    selected: user == null ? current == null : user.id == current,
-                    onTap: () => Navigator.of(sheetContext).pop(AssigneeChoice(user?.id)),
+                  final UserRow? user = people[index];
+                  final bool selected = user == null ? current == null : user.id == current;
+                  return ColoredBox(
+                    color: selected ? N360Colors.primaryTint : N360Colors.sheet,
+                    child: LedgerListTile(
+                      title: user?.name ?? l.issuesUnassigned,
+                      leading: Icon(
+                        user == null ? Icons.person_off_outlined : Icons.person_outline,
+                        size: N360IconSize.lg,
+                        color: N360Colors.ink2,
+                      ),
+                      // A pick list has no chevron: the tick says which is chosen.
+                      trailing: selected
+                          ? const Icon(Icons.check, size: N360IconSize.lg, color: N360Colors.primary)
+                          : const SizedBox.square(dimension: N360IconSize.lg),
+                      semanticsLabel: user?.name ?? l.issuesUnassigned,
+                      onTap: () => Navigator.of(sheetContext).pop(AssigneeChoice(user?.id)),
+                    ),
                   );
                 },
               ),

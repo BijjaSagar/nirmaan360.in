@@ -7,7 +7,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/data/project_repository.dart' show BoqLine;
 import '../bloc/dpr_detail_cubit.dart';
 import '../data/dpr_repository.dart';
-import 'dpr_list_screen.dart' show DprReportFace;
 import 'widgets/dpr_format.dart';
 import 'widgets/dpr_ui.dart';
 import 'widgets/photo_strip.dart';
@@ -96,41 +95,35 @@ class _DprDetailBody extends StatelessWidget {
       );
     }
 
-    Widget card(Widget child) => LedgerCard(padding: const EdgeInsets.all(N360Space.card), child: child);
-
-    Widget nothing() => Padding(
-      padding: const EdgeInsets.only(top: N360Space.sm),
-      child: Text(l.dprNothingRecorded, style: N360Type.body.copyWith(color: N360Colors.inkLabel)),
+    Widget nothing() => Text(
+      l.dprNothingRecorded,
+      style: N360Type.body.copyWith(color: N360Colors.inkLabel),
     );
 
-    // Masthead: the day, where it stands, and the weather on one line.
+    // Masthead: the day, where it stands, and the weather, on one row.
     final String? weather = dpr.weather;
+    final stamp = dprStampFor(l, record);
     add(
-      card(
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            if (state.project != null) ...<Widget>[
-              SectionLabel(state.project!.name),
-              const SizedBox(height: N360Space.xs),
-            ],
-            LedgerHero(
-              tag: dprHeroTag(dpr.clientUuid),
-              child: DprReportFace(record: record, large: true),
-            ),
-            if (weather != null) ...<Widget>[
-              const SizedBox(height: N360Space.sm),
-              Row(
-                children: <Widget>[
-                  Icon(N360Pictograms.weather(weather).icon, size: N360IconSize.md, color: N360Colors.ink2),
-                  const SizedBox(width: N360Space.xs),
-                  Text(l.pictogramLabel(N360Pictograms.weather(weather)), style: N360Type.label),
-                ],
+      LedgerList(
+        children: <Widget>[
+          LedgerHero(
+            tag: dprHeroTag(dpr.clientUuid),
+            child: LedgerListTile(
+              leading: Icon(
+                weather == null ? Icons.calendar_month : N360Pictograms.weather(weather).icon,
+                size: N360IconSize.lg,
+                color: N360Colors.ink2,
               ),
-            ],
-          ],
-        ),
+              title: dprDayLabel(context, l, dpr.reportDate, services.context.today),
+              subtitle: <String>[
+                ?state.project?.name,
+                if (weather != null) l.pictogramLabel(N360Pictograms.weather(weather)),
+                dprSyncText(l, record),
+              ].join(' · '),
+              status: StatusPill(kind: stamp.kind, label: stamp.label),
+            ),
+          ),
+        ],
       ),
     );
 
@@ -165,13 +158,13 @@ class _DprDetailBody extends StatelessWidget {
     final List<ManpowerLine> crew = dpr.manpower.toList()
       ..sort((a, b) => b.count.compareTo(a.count));
     add(
-      card(
-        Column(
+      DprSectionCard(
+        icon: Icons.groups,
+        title: l.dprWorkersOnSite,
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            DprCardTitle(icon: Icons.groups, title: l.dprWorkersOnSite),
-            const SizedBox(height: N360Space.xs),
             RollingNumber(
               value: '$total',
               style: N360Type.figureHero,
@@ -180,9 +173,10 @@ class _DprDetailBody extends StatelessWidget {
               suffixStyle: N360Type.bodyStrong.copyWith(color: N360Colors.ink2, letterSpacing: 0),
               semanticsLabel: l.dprWorkersCount(total),
             ),
-            if (crew.isEmpty)
-              nothing()
-            else ...<Widget>[
+            if (crew.isEmpty) ...<Widget>[
+              const SizedBox(height: N360Space.sm),
+              nothing(),
+            ] else ...<Widget>[
               const SizedBox(height: N360Space.xs),
               for (var i = 0; i < crew.length; i++)
                 _TradeLine(line: crew[i], ruled: i != crew.length - 1),
@@ -194,61 +188,48 @@ class _DprDetailBody extends StatelessWidget {
 
     // Work done.
     add(
-      card(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            DprCardTitle(
-              icon: Icons.assignment_turned_in_outlined,
-              title: l.dprSectionWork,
-              trailing: dpr.workItems.isEmpty
-                  ? null
-                  : Text(l.dprRowsCount(dpr.workItems.length), style: N360Type.label),
-            ),
-            if (dpr.workItems.isEmpty)
-              nothing()
-            else
-              for (final WorkLine line in dpr.workItems)
-                Padding(
-                  padding: const EdgeInsets.only(top: N360Space.md),
-                  child: _WorkLine(
-                    line: line,
-                    boq: line.boqItemId == null ? null : state.boq[line.boqItemId],
-                  ),
-                ),
-          ],
-        ),
+      DprSectionCard(
+        icon: Icons.assignment_turned_in_outlined,
+        title: l.dprSectionWork,
+        trailing: dpr.workItems.isEmpty
+            ? null
+            : Text(l.dprRowsCount(dpr.workItems.length), style: N360Type.label),
+        child: dpr.workItems.isEmpty
+            ? nothing()
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  for (var i = 0; i < dpr.workItems.length; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(height: N360Space.md),
+                    _WorkLine(
+                      line: dpr.workItems[i],
+                      boq: dpr.workItems[i].boqItemId == null
+                          ? null
+                          : state.boq[dpr.workItems[i].boqItemId],
+                    ),
+                  ],
+                ],
+              ),
       ),
     );
 
     // Photos.
     add(
-      card(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            DprCardTitle(
-              icon: Icons.photo_library_outlined,
-              title: l.dprSectionPhotos,
-              trailing: details.photos.isEmpty
-                  ? null
-                  : Text(l.dprPhotosCount(details.photos.length), style: N360Type.label),
-            ),
-            if (details.photos.isEmpty)
-              nothing()
-            else ...<Widget>[
-              const SizedBox(height: N360Space.md),
-              DprPhotoStrip(
+      DprSectionCard(
+        icon: Icons.photo_library_outlined,
+        title: l.dprSectionPhotos,
+        trailing: details.photos.isEmpty
+            ? null
+            : Text(l.dprPhotosCount(details.photos.length), style: N360Type.label),
+        child: details.photos.isEmpty
+            ? nothing()
+            : DprPhotoStrip(
                 photos: details.photos,
                 repository: services.dpr,
                 landed: <Object>{},
                 onRemove: null,
               ),
-            ],
-          ],
-        ),
       ),
     );
 
@@ -256,25 +237,27 @@ class _DprDetailBody extends StatelessWidget {
     final String hindrances = (dpr.hindrances ?? '').trim();
     final String notes = (dpr.summary ?? '').trim();
     add(
-      card(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            DprCardTitle(icon: Icons.edit_note, title: l.dprSectionNotes),
-            if (hindrances.isEmpty && notes.isEmpty) nothing(),
-            if (hindrances.isNotEmpty) ...<Widget>[
-              const SizedBox(height: N360Space.md),
-              Text(l.dprHindrances, style: N360Type.label),
-              Text(hindrances, style: N360Type.body),
-            ],
-            if (notes.isNotEmpty) ...<Widget>[
-              const SizedBox(height: N360Space.md),
-              Text(l.dprNotes, style: N360Type.label),
-              Text(notes, style: N360Type.body),
-            ],
-          ],
-        ),
+      DprSectionCard(
+        icon: Icons.edit_note,
+        title: l.dprSectionNotes,
+        child: (hindrances.isEmpty && notes.isEmpty)
+            ? nothing()
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (hindrances.isNotEmpty) ...<Widget>[
+                    Text(l.dprHindrances, style: N360Type.label),
+                    Text(hindrances, style: N360Type.body),
+                  ],
+                  if (hindrances.isNotEmpty && notes.isNotEmpty)
+                    const SizedBox(height: N360Space.md),
+                  if (notes.isNotEmpty) ...<Widget>[
+                    Text(l.dprNotes, style: N360Type.label),
+                    Text(notes, style: N360Type.body),
+                  ],
+                ],
+              ),
       ),
     );
 

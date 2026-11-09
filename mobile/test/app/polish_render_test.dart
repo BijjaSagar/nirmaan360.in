@@ -158,7 +158,7 @@ void main() {
     }
   }
 
-  testWidgets('the progress card is whole above the tiles with two returned items on a six-inch phone', (tester) async {
+  testWidgets('with two returned items the progress card is whole and the first tiles are on screen', (tester) async {
     final app = await TestApp.create();
     addTearDown(app.dispose);
     await seedReturned(app);
@@ -166,12 +166,11 @@ void main() {
     await seedProgress(app);
     await pumpPolishApp(tester, app, phone: Phone.iphone);
 
-    final Rect card = tester.getRect(find.byType(HatchedProgressBar));
+    final Rect bar = tester.getRect(find.byType(HatchedProgressBar));
     final Rect firstTile = tester.getRect(find.byType(StatTile).first);
-    expect(card.bottom, lessThanOrEqualTo(firstTile.top), reason: 'the bar is cut off by the pinned tiles');
+    expect(bar.bottom, lessThanOrEqualTo(firstTile.top));
+    expect(firstTile.bottom, lessThanOrEqualTo(Phone.iphone.size.height - Phone.iphone.safeBottom - N360Size.bar));
     expect(find.byType(RubberStamp), findsNWidgets(2));
-    // The tiles are pinned: the first row starts in the lower half of the screen.
-    expect(firstTile.top, greaterThan(Phone.iphone.size.height / 2));
     expect(tester.takeException(), isNull);
   });
 
@@ -181,7 +180,7 @@ void main() {
     await pumpPolishApp(tester, app);
 
     expect(find.byType(ProjectPickerScreen), findsOneWidget);
-    await tester.tap(find.text('Settings'));
+    await tester.tap(find.bySemanticsLabel('Settings'));
     await pumpDrift(tester, 10);
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('Sign out'), findsOneWidget);

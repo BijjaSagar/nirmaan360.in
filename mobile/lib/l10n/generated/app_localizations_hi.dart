@@ -83,17 +83,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get approvalsEmptyTitle => 'कुछ बाकी नहीं';
 
   @override
-  String approvalsEyebrow(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count आपके पास बाकी',
-      zero: 'कुछ बाकी नहीं',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get approvalsFailOfflineBody =>
       'आपका फ़ैसला नहीं गया। कुछ भी कतार में नहीं है। नेटवर्क आने पर फिर करें।';
 
@@ -123,6 +112,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get approvalsFailSessionTitle => 'कृपया फिर से साइन इन करें';
+
+  @override
+  String get approvalsForYou => 'आपके पास बाकी';
 
   @override
   String get approvalsGoneBody => 'इस पर पहले ही फ़ैसला हो चुका है।';
@@ -174,6 +166,9 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get approvalsOfflineDetail =>
       'पढ़ सकते हैं, पर मंज़ूरी के लिए नेटवर्क चाहिए।';
+
+  @override
+  String get approvalsOnOthers => 'दूसरों के पास बाकी';
 
   @override
   String get approvalsOpen => 'खोलें';
@@ -277,11 +272,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get approvalsTotal => 'कुल';
-
-  @override
-  String approvalsWaitingOn(String role) {
-    return '$role के पास बाकी';
-  }
 
   @override
   String get approvalsWeather => 'मौसम';
@@ -447,6 +437,9 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get boqBalanceLabel => 'शेष';
+
+  @override
   String get boqEmptyAsk =>
       'BOQ यानी इस प्रोजेक्ट के कामों की सूची। ऑफ़िस से जुड़वाएँ।';
 
@@ -515,6 +508,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get boqFormUnitRequired => 'इकाई चुनें।';
 
   @override
+  String boqItemCode(String code) {
+    return 'आइटम $code';
+  }
+
+  @override
   String boqLinesAdded(int count) {
     return '$count लाइनें जोड़ीं';
   }
@@ -565,6 +563,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String boqOver(String qty, String unit) {
     return '$qty $unit ज़्यादा';
   }
+
+  @override
+  String get boqOverLabel => 'ज़्यादा';
 
   @override
   String get boqRefreshFailed =>
@@ -958,7 +959,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprSyncAttention => 'ध्यान दें';
 
   @override
-  String get dprSyncPhoneOnly => 'केवल इस फ़ोन पर';
+  String get dprSyncPhoneOnly => 'केवल फ़ोन पर';
 
   @override
   String get dprSyncSending => 'भेज रहे हैं';
@@ -1422,11 +1423,6 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get measurementRejectedBody =>
       'यह एंट्री अस्वीकृत है, गिनी नहीं जाएगी। फिर मापना हो तो नई एंट्री करें।';
-
-  @override
-  String measurementRowCount(int count) {
-    return '$count एंट्री';
-  }
 
   @override
   String get measurementSavedOffline =>

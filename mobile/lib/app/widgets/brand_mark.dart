@@ -1,14 +1,16 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/design/design.dart';
 
-/// The app's mark: a rounded tile with a block capital N, drawn in code so it
+/// The app's mark: a square tile with a block capital N, drawn in code so it
 /// is right on the very first frame, before any font has loaded.
 ///
 /// With [launch] it reproduces the native launch artwork. Everywhere else the
-/// tile is the gold of the app's actions, with dark ink on it.
+/// tile is the one primary colour with the letter in white on it.
 class BrandMark extends StatelessWidget {
-  const BrandMark({super.key, this.size = 44, this.launch = false});
+  const BrandMark({super.key, this.size = N360Size.tile, this.launch = false});
 
   final double size;
   final bool launch;
@@ -38,14 +40,11 @@ class _BrandMarkPainter extends CustomPainter {
     final Rect tile = launch
         ? Rect.fromCenter(center: centre, width: unit * _launchSide, height: unit * _launchSide)
         : Offset.zero & size;
-    final RRect shape = RRect.fromRectAndRadius(tile, Radius.circular(unit * (launch ? _launchRadius : 0.3)));
-    final Paint face = Paint();
-    if (launch) {
-      face.color = N360Colors.orange;
-    } else {
-      face.shader = N360Gradients.gold.createShader(tile);
-    }
-    canvas.drawRRect(shape, face);
+    final double radius = launch ? unit * _launchRadius : math.min(unit * 0.25, N360Radius.card);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(tile, Radius.circular(radius)),
+      Paint()..color = N360Colors.primary,
+    );
 
     final double scale = launch ? 1 : 1.3;
     final double x = unit * 0.158 * scale;
@@ -64,10 +63,7 @@ class _BrandMarkPainter extends CustomPainter {
       ..lineTo(-x + bar, -y + neck)
       ..lineTo(-x + bar, y)
       ..close();
-    canvas.drawPath(
-      letter.shift(centre),
-      Paint()..color = launch ? N360Colors.sheet : N360Colors.ink,
-    );
+    canvas.drawPath(letter.shift(centre), Paint()..color = N360Colors.onPrimary);
   }
 
   @override

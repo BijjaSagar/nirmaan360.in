@@ -8,8 +8,8 @@ const SystemUiOverlayStyle _chrome = SystemUiOverlayStyle(
   statusBarColor: Colors.transparent,
   statusBarIconBrightness: Brightness.dark,
   statusBarBrightness: Brightness.light,
-  // The floating bottom bar leaves the foot of the page showing behind it.
-  systemNavigationBarColor: N360Colors.peach,
+  // The bottom bar is white and sits on the system bar, so the two read as one.
+  systemNavigationBarColor: N360Colors.sheet,
   systemNavigationBarIconBrightness: Brightness.dark,
 );
 

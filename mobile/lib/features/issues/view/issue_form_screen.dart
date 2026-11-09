@@ -106,78 +106,68 @@ class _IssueFormViewState extends State<_IssueFormView> {
                       children: <Widget>[
                         StaggeredRise(
                           index: 0,
-                          child: LedgerCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                GloveTextField(
-                                  label: l.issuesFormWhat,
-                                  controller: _title,
-                                  hint: l.issuesFormWhatHint,
-                                  textInputAction: TextInputAction.next,
-                                  errorText: state.problem == IssueFormProblem.titleRequired
-                                      ? l.issuesFormWhatRequired
-                                      : null,
-                                  onChanged: (_) => cubit.clearTitleProblem(),
-                                ),
-                                const SizedBox(height: N360Space.md),
-                                _LabelledBlock(
-                                  label: l.issuesFormPriority,
-                                  child: PictoChoice<String>(
-                                    columns: 4,
-                                    value: state.priority,
-                                    semanticsLabel: l.issuesFormPriority,
-                                    onChanged: cubit.setPriority,
-                                    options: <PictoOption<String>>[
-                                      for (final p in N360Pictograms.issuePriorities)
-                                        PictoOption<String>(
-                                          value: p.key,
-                                          icon: p.icon,
-                                          label: l.pictogramLabel(p),
-                                        ),
-                                    ],
+                          child: GloveTextField(
+                            label: l.issuesFormWhat,
+                            controller: _title,
+                            hint: l.issuesFormWhatHint,
+                            textInputAction: TextInputAction.next,
+                            errorText: state.problem == IssueFormProblem.titleRequired
+                                ? l.issuesFormWhatRequired
+                                : null,
+                            onChanged: (_) => cubit.clearTitleProblem(),
+                          ),
+                        ),
+                        const SizedBox(height: N360Space.lg),
+                        StaggeredRise(
+                          index: 1,
+                          child: GloveTextField(
+                            label: l.issuesFormLocation,
+                            controller: _location,
+                            hint: l.issuesFormLocationHint,
+                            prefixIcon: Icons.place_outlined,
+                            textInputAction: TextInputAction.done,
+                          ),
+                        ),
+                        const SizedBox(height: N360Space.lg),
+                        StaggeredRise(
+                          index: 2,
+                          child: _LabelledBlock(
+                            label: l.issuesFormPriority,
+                            child: PictoChoice<String>(
+                              columns: 4,
+                              value: state.priority,
+                              semanticsLabel: l.issuesFormPriority,
+                              onChanged: cubit.setPriority,
+                              options: <PictoOption<String>>[
+                                for (final p in N360Pictograms.issuePriorities)
+                                  PictoOption<String>(
+                                    value: p.key,
+                                    icon: p.icon,
+                                    label: l.pictogramLabel(p),
                                   ),
-                                ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: N360Space.cardGap),
+                        const SizedBox(height: N360Space.lg),
                         StaggeredRise(
-                          index: 1,
-                          child: LedgerCard(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                GloveTextField(
-                                  label: l.issuesFormLocation,
-                                  controller: _location,
-                                  hint: l.issuesFormLocationHint,
-                                  prefixIcon: Icons.place_outlined,
-                                  textInputAction: TextInputAction.done,
-                                ),
-                                const SizedBox(height: N360Space.md),
-                                _LabelledBlock(
-                                  label: l.issuesFormAssignee,
-                                  child: _AssigneeField(
-                                    name: _assigneeName(state),
-                                    semanticsLabel:
-                                        '${l.issuesFormAssignee}: ${_assigneeName(state) ?? l.issuesUnassigned}',
-                                    onTap: () => _pickAssignee(state),
-                                  ),
-                                ),
-                                const SizedBox(height: N360Space.md),
-                                _LabelledBlock(
-                                  label: l.issuesFormDue,
-                                  child: _DueChips(
-                                    value: state.due,
-                                    onChanged: cubit.setDue,
-                                  ),
-                                ),
-                              ],
+                          index: 3,
+                          child: _LabelledBlock(
+                            label: l.issuesFormAssignee,
+                            child: _AssigneeField(
+                              name: _assigneeName(state),
+                              semanticsLabel:
+                                  '${l.issuesFormAssignee}: ${_assigneeName(state) ?? l.issuesUnassigned}',
+                              onTap: () => _pickAssignee(state),
                             ),
+                          ),
+                        ),
+                        const SizedBox(height: N360Space.lg),
+                        StaggeredRise(
+                          index: 4,
+                          child: _LabelledBlock(
+                            label: l.issuesFormDue,
+                            child: _DueChips(value: state.due, onChanged: cubit.setDue),
                           ),
                         ),
                       ],
@@ -312,28 +302,26 @@ class _DueChips extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Row(
+        Wrap(
+          spacing: N360Space.sm,
           children: <Widget>[
-            for (final (index, (choice, label)) in options.indexed) ...<Widget>[
-              if (index > 0) const SizedBox(width: N360Space.sm),
-              Expanded(
-                child: FieldChoiceTile(
-                  width: double.infinity,
+            for (final (choice, label) in options)
+              // A chip fills the width it is given, so it is asked for only
+              // what its own words need.
+              IntrinsicWidth(
+                child: N360Chip(
                   label: label,
                   selected: value == choice,
                   onTap: () => onChanged(value == choice ? DueChoice.none : choice),
                 ),
               ),
-            ],
           ],
         ),
-        if (value != DueChoice.none) ...<Widget>[
-          const SizedBox(height: N360Space.xs),
+        if (value != DueChoice.none)
           Text(
             l.issuesFormDueClear,
             style: N360Type.fit(N360Type.caption, l.issuesFormDueClear),
           ),
-        ],
       ],
     );
   }

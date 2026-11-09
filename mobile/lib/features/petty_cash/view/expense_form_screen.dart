@@ -258,9 +258,9 @@ class _WalletChoice extends StatelessWidget {
           itemCount: state.wallets.length,
           itemBuilder: (context, index) {
             final WalletLine line = state.wallets[index];
-            return FieldChoiceTile(
+            return N360Chip(
               label: line.wallet.name,
-              detail: line.previewBalance.inr(),
+              count: line.previewBalance.inr(),
               selected: line.wallet.id == state.walletId,
               onTap: () => cubit.setWallet(line.wallet.id),
             );

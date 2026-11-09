@@ -4,16 +4,6 @@
     "mr": "मंजुरी",
     "hi": "मंज़ूरियाँ"
   },
-  "approvalsEyebrow": {
-    "en": "{count, plural, =0{Nothing waiting} =1{1 waiting for you} other{{count} waiting for you}}",
-    "mr": "{count, plural, =0{काहीही बाकी नाही} other{{count} तुमच्याकडे बाकी}}",
-    "hi": "{count, plural, =0{कुछ बाकी नहीं} other{{count} आपके पास बाकी}}",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "approvalsOpen": {
     "en": "Open",
     "mr": "उघडा",
@@ -48,16 +38,6 @@
     "en": "Goes over the BOQ quantity plus tolerance. Project manager must approve.",
     "mr": "BOQ प्रमाण आणि सवलतीपेक्षा जास्त. प्रकल्प व्यवस्थापकाची मंजुरी आवश्यक.",
     "hi": "BOQ मात्रा और छूट से ज़्यादा। प्रोजेक्ट मैनेजर की मंज़ूरी ज़रूरी।"
-  },
-  "approvalsWaitingOn": {
-    "en": "Waiting on {role}",
-    "mr": "{role} यांच्याकडे बाकी",
-    "hi": "{role} के पास बाकी",
-    "placeholders": {
-      "role": {
-        "type": "String"
-      }
-    }
   },
   "approvalsJustNow": {
     "en": "just now",
@@ -438,5 +418,15 @@
     "en": "Net payable",
     "mr": "देय रक्कम",
     "hi": "देय राशि"
+  },
+  "approvalsForYou": {
+    "en": "Waiting for you",
+    "mr": "तुमच्याकडे बाकी",
+    "hi": "आपके पास बाकी"
+  },
+  "approvalsOnOthers": {
+    "en": "Waiting on others",
+    "mr": "इतरांकडे बाकी",
+    "hi": "दूसरों के पास बाकी"
   }
 }

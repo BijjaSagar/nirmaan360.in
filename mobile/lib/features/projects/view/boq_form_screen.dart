@@ -128,27 +128,17 @@ class _AddedCount extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
+    final String text = l.boqLinesAdded(count);
     return Padding(
       padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.sm),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: N360Colors.goldTint,
-          borderRadius: N360Radius.tileRadius,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.tile),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.task_alt, size: N360IconSize.md, color: N360Colors.ink),
-              const SizedBox(width: N360Space.sm),
-              Expanded(
-                child: Text(
-                  l.boqLinesAdded(count),
-                  style: N360Type.fit(N360Type.bodyStrong, l.boqLinesAdded(count)),
-                ),
-              ),
-            ],
-          ),
+      child: LedgerCard(
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.tile),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.task_alt, size: N360IconSize.md, color: N360Colors.mossInk),
+            const SizedBox(width: N360Space.sm),
+            Expanded(child: Text(text, style: N360Type.fit(N360Type.bodyStrong, text))),
+          ],
         ),
       ),
     );
@@ -198,65 +188,67 @@ class _DetailsStep extends StatelessWidget {
             children: <Widget>[
               StaggeredRise(
                 index: 0,
-                child: LedgerCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      GloveTextField(
-                        label: l.boqFormDescription,
-                        controller: description,
-                        hint: l.boqFormDescriptionHint,
-                        maxLines: 3,
-                        textInputAction: TextInputAction.done,
-                        errorText: _descriptionError(l),
-                        onChanged: cubit.setDescription,
-                      ),
-                      const SizedBox(height: N360Space.md),
-                      Text(l.boqFormUnit, style: N360Type.fit(N360Type.label, l.boqFormUnit)),
-                      const SizedBox(height: N360Space.xs),
-                      _UnitChips(units: state.units, value: state.unit, onChanged: cubit.setUnit),
-                      if (unitError != null) ...<Widget>[
-                        const SizedBox(height: N360Space.xs),
-                        FieldInlineError(unitError),
-                      ],
-                    ],
-                  ),
+                child: GloveTextField(
+                  label: l.boqFormDescription,
+                  controller: description,
+                  hint: l.boqFormDescriptionHint,
+                  maxLines: 3,
+                  textInputAction: TextInputAction.done,
+                  errorText: _descriptionError(l),
+                  onChanged: cubit.setDescription,
                 ),
               ),
-              const SizedBox(height: N360Space.md),
+              const SizedBox(height: N360Space.lg),
               StaggeredRise(
                 index: 1,
-                child: LedgerCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      GloveTextField(
-                        label: l.boqFormSection,
-                        controller: section,
-                        hint: l.boqFormSectionHint,
-                        textInputAction: TextInputAction.next,
-                        errorText: state.serverErrors['section'],
-                        onChanged: cubit.setSection,
-                      ),
-                      _SectionSuggestions(
-                        sections: state.sections,
-                        controller: section,
-                        onChosen: cubit.setSection,
-                      ),
-                      const SizedBox(height: N360Space.md),
-                      GloveTextField(
-                        label: l.boqFormCode,
-                        controller: code,
-                        helper: l.boqFormCodeHelper,
-                        textCapitalization: TextCapitalization.characters,
-                        textInputAction: TextInputAction.done,
-                        errorText: state.serverErrors['code'],
-                        onChanged: cubit.setCode,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(l.boqFormUnit, style: N360Type.fit(N360Type.label, l.boqFormUnit)),
+                    const SizedBox(height: N360Space.xs),
+                    _UnitChips(units: state.units, value: state.unit, onChanged: cubit.setUnit),
+                    if (unitError != null) ...<Widget>[
+                      const SizedBox(height: N360Space.xs),
+                      FieldInlineError(unitError),
                     ],
-                  ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: N360Space.lg),
+              StaggeredRise(
+                index: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    GloveTextField(
+                      label: l.boqFormSection,
+                      controller: section,
+                      hint: l.boqFormSectionHint,
+                      textInputAction: TextInputAction.next,
+                      errorText: state.serverErrors['section'],
+                      onChanged: cubit.setSection,
+                    ),
+                    _SectionSuggestions(
+                      sections: state.sections,
+                      controller: section,
+                      onChosen: cubit.setSection,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: N360Space.lg),
+              StaggeredRise(
+                index: 3,
+                child: GloveTextField(
+                  label: l.boqFormCode,
+                  controller: code,
+                  helper: l.boqFormCodeHelper,
+                  textCapitalization: TextCapitalization.characters,
+                  textInputAction: TextInputAction.done,
+                  errorText: state.serverErrors['code'],
+                  onChanged: cubit.setCode,
                 ),
               ),
               if (state.serverMessage != null) ...<Widget>[
@@ -280,7 +272,7 @@ class _DetailsStep extends StatelessWidget {
   }
 }
 
-/// Units as big chips, four across.
+/// Units as chips, one tap each. They wrap; every chip keeps its 56dp target.
 class _UnitChips extends StatelessWidget {
   const _UnitChips({required this.units, required this.value, required this.onChanged});
 
@@ -290,23 +282,16 @@ class _UnitChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = (constraints.maxWidth - N360Space.sm * 3) / 4;
-        return Wrap(
-          spacing: N360Space.sm,
-          runSpacing: N360Space.sm,
-          children: <Widget>[
-            for (final String unit in units)
-              FieldChoiceTile(
-                width: width,
-                label: unit,
-                selected: unit == value,
-                onTap: () => onChanged(unit),
-              ),
-          ],
-        );
-      },
+    return Wrap(
+      spacing: N360Space.sm,
+      children: <Widget>[
+        for (final String unit in units)
+          // A chip fills the width it is given, so it is asked for only what
+          // its own word needs.
+          IntrinsicWidth(
+            child: N360Chip(label: unit, selected: unit == value, onTap: () => onChanged(unit)),
+          ),
+      ],
     );
   }
 }
@@ -338,19 +323,20 @@ class _SectionSuggestions extends StatelessWidget {
         ].take(_maxShown).toList();
         if (matches.isEmpty) return const SizedBox.shrink();
         return Padding(
-          padding: const EdgeInsets.only(top: N360Space.sm),
+          padding: const EdgeInsets.only(top: N360Space.xs),
           child: Wrap(
             spacing: N360Space.sm,
-            runSpacing: N360Space.sm,
             children: <Widget>[
               for (final String section in matches)
-                FieldChoiceTile(
-                  label: section,
-                  selected: section.toLowerCase() == typed,
-                  onTap: () {
-                    controller.text = section;
-                    onChosen(section);
-                  },
+                IntrinsicWidth(
+                  child: N360Chip(
+                    label: section,
+                    selected: section.toLowerCase() == typed,
+                    onTap: () {
+                      controller.text = section;
+                      onChosen(section);
+                    },
+                  ),
                 ),
             ],
           ),
@@ -438,7 +424,6 @@ class _FiguresStep extends StatelessWidget {
                   ],
                   const SizedBox(height: N360Space.sm),
                   LedgerCard(
-                    flat: true,
                     padding: const EdgeInsets.symmetric(horizontal: N360Space.lg, vertical: N360Space.sm),
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(minHeight: N360Size.control),

@@ -239,5 +239,25 @@
         "type": "String"
       }
     }
+  },
+  "boqItemCode": {
+    "en": "Item {code}",
+    "mr": "आयटम {code}",
+    "hi": "आइटम {code}",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "boqBalanceLabel": {
+    "en": "Balance",
+    "mr": "शिल्लक",
+    "hi": "शेष"
+  },
+  "boqOverLabel": {
+    "en": "Over by",
+    "mr": "जास्त",
+    "hi": "ज़्यादा"
   }
 }

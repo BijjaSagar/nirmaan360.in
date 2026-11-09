@@ -88,18 +88,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsEmptyTitle => 'Nothing waiting';
 
   @override
-  String approvalsEyebrow(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count waiting for you',
-      one: '1 waiting for you',
-      zero: 'Nothing waiting',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get approvalsFailOfflineBody =>
       'Your decision was not sent. Nothing was queued. Try again when connected.';
 
@@ -129,6 +117,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsFailSessionTitle => 'Please sign in again';
+
+  @override
+  String get approvalsForYou => 'Waiting for you';
 
   @override
   String get approvalsGoneBody => 'Someone has already decided this one.';
@@ -186,6 +177,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get approvalsOfflineDetail =>
       'You can read these, but approvals need network.';
+
+  @override
+  String get approvalsOnOthers => 'Waiting on others';
 
   @override
   String get approvalsOpen => 'Open';
@@ -289,11 +283,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsTotal => 'Total';
-
-  @override
-  String approvalsWaitingOn(String role) {
-    return 'Waiting on $role';
-  }
 
   @override
   String get approvalsWeather => 'Weather';
@@ -457,6 +446,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get boqBalanceLabel => 'Balance';
+
+  @override
   String get boqEmptyAsk =>
       'A BOQ is the list of work on this project. Ask the office to add it.';
 
@@ -525,6 +517,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boqFormUnitRequired => 'Choose the unit.';
 
   @override
+  String boqItemCode(String code) {
+    return 'Item $code';
+  }
+
+  @override
   String boqLinesAdded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -581,6 +578,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String boqOver(String qty, String unit) {
     return 'Over by $qty $unit';
   }
+
+  @override
+  String get boqOverLabel => 'Over by';
 
   @override
   String get boqRefreshFailed =>
@@ -917,8 +917,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count work items',
-      one: '1 work item',
+      other: '$count items',
+      one: '1 item',
     );
     return '$_temp0';
   }
@@ -981,13 +981,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprSyncAttention => 'Needs attention';
 
   @override
-  String get dprSyncPhoneOnly => 'Only on this phone';
+  String get dprSyncPhoneOnly => 'Phone only';
 
   @override
   String get dprSyncSending => 'Sending';
 
   @override
-  String get dprSyncWaiting => 'Waiting to send';
+  String get dprSyncWaiting => 'Not sent yet';
 
   @override
   String get dprTakePhoto => 'Take photo';
@@ -1463,17 +1463,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get measurementRejectedBody =>
       'This entry was rejected and will not count. Make a new entry if the work needs measuring again.';
-
-  @override
-  String measurementRowCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count entries',
-      one: '1 entry',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get measurementSavedOffline =>

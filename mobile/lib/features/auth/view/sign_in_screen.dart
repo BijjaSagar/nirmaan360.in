@@ -46,7 +46,7 @@ class _SignInViewState extends State<_SignInView> {
 
   /// Height of everything except the graphic: language switch, brand row and
   /// the form card, at normal text size.
-  static const double _fixedHeight = 456;
+  static const double _fixedHeight = 450;
 
   @override
   void dispose() {
@@ -113,9 +113,9 @@ class _SignInViewState extends State<_SignInView> {
                   const SizedBox(height: N360Space.lg),
                   Row(
                     children: <Widget>[
-                      const ExcludeSemantics(child: BrandMark(size: N360Size.tile)),
+                      const ExcludeSemantics(child: BrandMark()),
                       const SizedBox(width: N360Space.md),
-                      Expanded(child: Text(t.appName, style: N360Type.title)),
+                      Expanded(child: Text(t.appName, style: N360Type.fit(N360Type.title, t.appName))),
                     ],
                   ),
                   _Graphic(room: room),
@@ -196,9 +196,7 @@ class _SignInViewState extends State<_SignInView> {
 }
 
 /// The building rising, quietly, in whatever room the screen has left. Only
-/// drawn when there is real room for it, and fixed in size once laid out. The
-/// picker draws the same building at the same size, so the sign-in page
-/// slides away and the site stays.
+/// drawn when there is real room for it, and fixed in size once laid out.
 class _Graphic extends StatelessWidget {
   const _Graphic({required this.room});
 
@@ -206,8 +204,8 @@ class _Graphic extends StatelessWidget {
 
   static const double _minHeight = 130;
 
-  /// Shared with the project picker, so the two screens line up.
-  static const double maxHeight = 250;
+  /// The same ceiling the first-run page gives its drawing.
+  static const double maxHeight = 220;
 
   @override
   Widget build(BuildContext context) {

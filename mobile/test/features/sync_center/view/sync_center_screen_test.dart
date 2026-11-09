@@ -33,7 +33,7 @@ void main() {
     await settle(tester);
 
     expect(find.byType(SlipStack), findsNothing);
-    expect(find.text(en.shellOutboxAllSentStamp.toUpperCase()), findsOneWidget);
+    expect(find.text(en.shellOutboxAllSentStamp), findsOneWidget);
     expect(find.text(en.syncLastSynced(en.shellTimeJustNow)), findsOneWidget);
   });
 
@@ -53,7 +53,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.byType(SlipStack), findsNothing);
-    expect(find.text(en.shellOutboxAllSentStamp.toUpperCase()), findsOneWidget);
+    expect(find.text(en.shellOutboxAllSentStamp), findsOneWidget);
   });
 
   testWidgets('attention items are separate, translated, with retry and discard', (tester) async {

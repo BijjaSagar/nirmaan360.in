@@ -11,10 +11,16 @@ import 'package:nirmaan360/features/sync_center/view/sync_center_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
 import '../../../app/shell_test_helpers.dart';
+import '../../../core/design/test_helpers.dart' show loadRealFonts;
 import '../../../support/test_app.dart';
 
 void main() {
   final en = lookupAppLocalizations(const Locale('en'));
+
+  // The placeholder test font draws every Devanagari code point as a full
+  // square, which triples the width of a Marathi word. Layout here is judged
+  // with the fonts the app ships.
+  setUpAll(loadRealFonts);
 
   Finder rolling(String value) => find.byWidgetPredicate((w) => w is RollingNumber && w.value == value);
 
@@ -30,14 +36,13 @@ void main() {
     expect(find.text(en.shellReportNotStarted), findsOneWidget);
     expect(find.text('1/2'), findsOneWidget);
     expect(find.text('₹1,240'), findsOneWidget);
+    expect(tester.widget<StatTile>(tile(en.shellTileMeasure)).value, '1');
     expect(tester.widget<StatTile>(tile(en.shellTileDaily)).emphasized, isTrue);
-    // Measuring and approving live on the bar, so they are not tiles too.
-    expect(tile(en.shellTileMeasure), findsNothing);
-    expect(find.byType(StatTile), findsNWidgets(4));
+    expect(find.byType(StatTile), findsNWidgets(5));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('tiles follow permission, and approvals sit on the bar', (tester) async {
+  testWidgets('tiles follow permission, and approvals are counted on the bar too', (tester) async {
     final app = await TestApp.create(seed: false, signedIn: false);
     addTearDown(app.dispose);
     final can = app.api.user['can'] as Map;
@@ -51,7 +56,7 @@ void main() {
     expect(tile(en.shellTileDaily), findsOneWidget);
     expect(tile(en.shellTileExpenses), findsOneWidget);
     expect(tile(en.shellTileIssues), findsNothing);
-    expect(tile(en.shellTileApprovals), findsNothing);
+    expect(tile(en.shellTileApprovals), findsOneWidget);
     expect(find.descendant(of: find.byType(N360BottomBar), matching: find.text(en.shellTabApprovals)), findsOneWidget);
   });
 

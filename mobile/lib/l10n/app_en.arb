@@ -30,14 +30,6 @@
   "approvalsDocMeasurement": "Measurement",
   "approvalsEmptyBody": "New approvals will appear here.",
   "approvalsEmptyTitle": "Nothing waiting",
-  "approvalsEyebrow": "{count, plural, =0{Nothing waiting} =1{1 waiting for you} other{{count} waiting for you}}",
-  "@approvalsEyebrow": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "approvalsFailOfflineBody": "Your decision was not sent. Nothing was queued. Try again when connected.",
   "approvalsFailOfflineTitle": "No network",
   "approvalsFailRaceBody": "Someone else acted on this first. Refresh to see what is waiting now.",
@@ -47,6 +39,7 @@
   "approvalsFailServerTitle": "Could not send",
   "approvalsFailSessionBody": "Your session has ended. Your decision was not sent.",
   "approvalsFailSessionTitle": "Please sign in again",
+  "approvalsForYou": "Waiting for you",
   "approvalsGoneBody": "Someone has already decided this one.",
   "approvalsGoneTitle": "No longer waiting",
   "approvalsGross": "Gross value of work",
@@ -74,6 +67,7 @@
   "approvalsNetPayable": "Net payable",
   "approvalsOffline": "No network.",
   "approvalsOfflineDetail": "You can read these, but approvals need network.",
+  "approvalsOnOthers": "Waiting on others",
   "approvalsOpen": "Open",
   "approvalsParty": "Party",
   "approvalsPeriod": "Period",
@@ -108,14 +102,6 @@
   "approvalsSummary": "Summary of work",
   "approvalsTitle": "Approvals",
   "approvalsTotal": "Total",
-  "approvalsWaitingOn": "Waiting on {role}",
-  "@approvalsWaitingOn": {
-    "placeholders": {
-      "role": {
-        "type": "String"
-      }
-    }
-  },
   "approvalsWeather": "Weather",
   "approvalsWorkDone": "Work done",
   "approvalsWorkers": "workers",
@@ -218,6 +204,7 @@
       }
     }
   },
+  "boqBalanceLabel": "Balance",
   "boqEmptyAsk": "A BOQ is the list of work on this project. Ask the office to add it.",
   "boqEmptyExplain": "A BOQ is the list of work on this project, with quantity and rate.",
   "boqEmptyTitle": "No BOQ lines yet",
@@ -240,6 +227,14 @@
   "boqFormTitle": "Add BOQ item",
   "boqFormUnit": "Unit",
   "boqFormUnitRequired": "Choose the unit.",
+  "boqItemCode": "Item {code}",
+  "@boqItemCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "boqLinesAdded": "{count} {count, plural, =1{line} other{lines}} added",
   "@boqLinesAdded": {
     "placeholders": {
@@ -279,6 +274,7 @@
       }
     }
   },
+  "boqOverLabel": "Over by",
   "boqRefreshFailed": "Could not update. Showing what is on this phone.",
   "boqSearchHint": "Code or work",
   "boqSearchLabel": "Search lines",
@@ -417,7 +413,7 @@
   "dprReturnedTitle": "Sent back for correction",
   "dprReviewOffline": "No network now. The report stays on this phone and goes by itself when network returns.",
   "dprReviewTitle": "Check and send",
-  "dprRowsCount": "{count, plural, =1{1 work item} other{{count} work items}}",
+  "dprRowsCount": "{count, plural, =1{1 item} other{{count} items}}",
   "@dprRowsCount": {
     "placeholders": {
       "count": {
@@ -450,9 +446,9 @@
   "dprSendReport": "Send report",
   "dprSiteClosedWrite": "Site closed? Write the reason",
   "dprSyncAttention": "Needs attention",
-  "dprSyncPhoneOnly": "Only on this phone",
+  "dprSyncPhoneOnly": "Phone only",
   "dprSyncSending": "Sending",
-  "dprSyncWaiting": "Waiting to send",
+  "dprSyncWaiting": "Not sent yet",
   "dprTakePhoto": "Take photo",
   "dprTotalWorkers": "Total workers",
   "dprUndo": "Undo",
@@ -655,14 +651,6 @@
   "measurementQuantity": "Quantity",
   "measurementRecentLines": "Recent",
   "measurementRejectedBody": "This entry was rejected and will not count. Make a new entry if the work needs measuring again.",
-  "measurementRowCount": "{count, plural, =1{1 entry} other{{count} entries}}",
-  "@measurementRowCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "measurementSavedOffline": "Saved on phone. It will go when network returns.",
   "measurementSavedOnPhone": "Saved on phone.",
   "measurementSearchHint": "e.g. 2.1 or slab",

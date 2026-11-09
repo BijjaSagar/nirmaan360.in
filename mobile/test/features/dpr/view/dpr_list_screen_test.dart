@@ -48,12 +48,23 @@ void main() {
     await report('2026-11-08', workers: 12);
     await show(tester);
 
-    final Offset newer = tester.getTopLeft(find.text('Sunday'));
-    final Offset older = tester.getTopLeft(find.text('Saturday'));
+    final Offset newer = tester.getTopLeft(find.text('Sun, 8 Nov'));
+    final Offset older = tester.getTopLeft(find.text('Sat, 7 Nov'));
     expect(newer.dy, lessThan(older.dy));
 
     expect(find.textContaining('12 workers'), findsOneWidget);
     expect(find.byType(RubberStamp), findsNWidgets(2));
+  });
+
+  testWidgets('reports are grouped by month in one list', (tester) async {
+    await report(today);
+    await report('2026-10-31');
+    await show(tester);
+
+    expect(find.text('November 2026'), findsOneWidget);
+    expect(find.text('October 2026'), findsOneWidget);
+    expect(find.byType(LedgerListTile), findsNWidgets(2));
+    expect(find.byType(LedgerCard), findsNWidgets(3), reason: 'month card and one list per month');
   });
 
   testWidgets('the month card counts days with a report', (tester) async {
@@ -74,7 +85,7 @@ void main() {
 
     expect(find.text('Missed days'), findsOneWidget);
 
-    await tester.tap(find.text('Sat, 7 Nov'));
+    await tester.tap(find.text('7 Nov'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await pumpDrift(tester, 10);
@@ -92,15 +103,15 @@ void main() {
 
     await show(tester);
 
-    expect(find.text('Only on this phone'), findsOneWidget);
-    expect(find.text('Waiting to send'), findsOneWidget);
+    expect(find.textContaining('Phone only'), findsOneWidget);
+    expect(find.textContaining('Not sent yet'), findsOneWidget);
   });
 
   testWidgets('a report already written today changes the action', (tester) async {
     await report(today);
     await show(tester);
     expect(find.text("Open today's report"), findsOneWidget);
-    expect(find.text('Today'), findsOneWidget);
+    expect(find.textContaining('Today'), findsOneWidget);
   });
 
   testWidgets('a draft row opens the form, a sent one the detail', (tester) async {
@@ -112,7 +123,7 @@ void main() {
     await report('2026-11-07');
     await show(tester);
 
-    await tester.tap(find.text('Sunday'));
+    await tester.tap(find.text('Sun, 8 Nov'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await pumpDrift(tester, 10);
@@ -123,7 +134,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await pumpDrift(tester, 5);
 
-    await tester.tap(find.text('Saturday'));
+    await tester.tap(find.text('Sat, 7 Nov'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await pumpDrift(tester, 10);
@@ -145,7 +156,7 @@ void main() {
     await pumpDrift(tester, 10);
     await tester.pump(const Duration(milliseconds: 700));
 
-    await tester.tap(find.text('Sunday'));
+    await tester.tap(find.text('Sun, 8 Nov'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
 

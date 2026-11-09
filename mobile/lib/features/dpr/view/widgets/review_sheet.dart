@@ -129,7 +129,6 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
                     child: StatTile(
                       title: l.dprSectionWorkers,
                       value: '${state.totalWorkers}',
-                      emphasized: true,
                     ),
                   ),
                   const SizedBox(width: N360Space.sm),

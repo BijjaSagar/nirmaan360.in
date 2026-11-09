@@ -9,6 +9,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/issue_list_cubit.dart';
 import '../data/issue_repository.dart';
+import 'widgets/group_slice.dart';
 import 'widgets/issue_widgets.dart';
 
 class IssueListScreen extends StatelessWidget {
@@ -130,21 +131,7 @@ class _IssueScroll extends StatelessWidget {
                             ),
                     );
                   }
-                  var firstIndex = 0;
-                  return SliverMainAxisGroup(
-                    slivers: <Widget>[
-                      for (final (status, rows) in _sections(state.visible)) ...() {
-                        final int start = firstIndex;
-                        firstIndex += rows.length;
-                        return <Widget>[
-                          SliverToBoxAdapter(
-                            child: _SectionTitle(status: status, count: rows.length),
-                          ),
-                          _IssueGroup(rows: rows, state: state, firstIndex: start),
-                        ];
-                      }(),
-                    ],
-                  );
+                  return _issues(context, state);
               }
             },
           ),
@@ -152,6 +139,70 @@ class _IssueScroll extends StatelessWidget {
       ),
     );
   }
+
+  /// Every status heading and every issue in one lazily built list. A project
+  /// collects closed issues for years, so the list builds only what is on
+  /// screen.
+  Widget _issues(BuildContext context, IssueListState state) {
+    final List<_Entry> entries = <_Entry>[
+      for (final (status, rows) in _sections(state.visible)) ...<_Entry>[
+        _HeadEntry(status, rows.length),
+        for (final (index, record) in rows.indexed)
+          _IssueEntry(record, indexInStatus: index, last: index == rows.length - 1),
+      ],
+    ];
+    return SliverList.builder(
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        return switch (entries[index]) {
+          _HeadEntry(:final status, :final count) => _StatusHead(status: status, count: count),
+          _IssueEntry(:final record, :final indexInStatus, :final last) => StaggeredRise(
+            key: ValueKey<String>(record.record.clientUuid),
+            index: index,
+            child: GroupSlice(
+              first: false,
+              last: last,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (indexInStatus > 0) const RuledDivider(indent: N360Space.card),
+                  IssueTile(
+                    record: record,
+                    today: state.today,
+                    assignee: state.userNames[record.record.assignedTo],
+                    onTap: () => context.push(Routes.issueDetail(record.record.clientUuid)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        };
+      },
+    );
+  }
+}
+
+sealed class _Entry {
+  const _Entry();
+}
+
+/// A status heading: the first slice of its group.
+class _HeadEntry extends _Entry {
+  const _HeadEntry(this.status, this.count);
+
+  final String status;
+  final int count;
+}
+
+class _IssueEntry extends _Entry {
+  const _IssueEntry(this.record, {required this.indexInStatus, required this.last});
+
+  final SyncedRecord<IssueRow> record;
+  final int indexInStatus;
+
+  /// The last issue of its status, so the group closes under it.
+  final bool last;
 }
 
 class _Header extends StatelessWidget {
@@ -189,29 +240,33 @@ class _FilterStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
     return BlocBuilder<IssueListCubit, IssueListState>(
       buildWhen: (a, b) => a.filter != b.filter || !identical(a.all, b.all),
       builder: (context, state) {
-        return SizedBox(
-          height: N360Size.tap + N360Space.sm,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-            itemCount: IssueFilter.values.length,
-            separatorBuilder: (_, _) => const SizedBox(width: N360Space.sm),
-            itemBuilder: (context, index) {
-              final IssueFilter filter = IssueFilter.values[index];
-              return Center(
-                child: FieldChoiceTile(
+        final AppLocalizations l = AppLocalizations.of(context);
+        // Five chips do not fit 360dp, so the strip scrolls; the next chip
+        // showing at the edge says so. It takes its height from the chips.
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(
+            N360Space.gutter,
+            0,
+            N360Space.gutter,
+            N360Space.sm,
+          ),
+          child: Row(
+            children: <Widget>[
+              for (final (index, filter) in IssueFilter.values.indexed) ...<Widget>[
+                if (index > 0) const SizedBox(width: N360Space.sm),
+                N360Chip(
                   label: _label(l, filter),
                   icon: _icon(filter),
-                  trailing: '${state.countFor(filter)}',
+                  count: '${state.countFor(filter)}',
                   selected: filter == state.filter,
                   onTap: () => context.read<IssueListCubit>().setFilter(filter),
                 ),
-              );
-            },
+              ],
+            ],
           ),
         );
       },
@@ -219,8 +274,10 @@ class _FilterStrip extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.status, required this.count});
+/// The heading of a status group: the word and how many, over a full-width
+/// hairline. It is the top slice of the group's white card.
+class _StatusHead extends StatelessWidget {
+  const _StatusHead({required this.status, required this.count});
 
   final String status;
   final int count;
@@ -228,142 +285,29 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final Pictogram picture = N360Pictograms.issueStatus(status);
-    final String word = l.pictogramLabel(picture);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        N360Space.gutter + N360Space.xs,
-        N360Space.sm,
-        N360Space.gutter + N360Space.xs,
-        N360Space.sm,
-      ),
-      child: Row(
+    final String word = l.pictogramLabel(N360Pictograms.issueStatus(status));
+    return GroupSlice(
+      first: true,
+      last: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(picture.icon, size: N360IconSize.sm, color: N360Colors.ink),
-          const SizedBox(width: N360Space.sm),
-          Expanded(child: Text(word, style: N360Type.fit(N360Type.heading, word))),
-          Text('$count', style: N360Type.label.copyWith(color: N360Colors.inkLabel)),
-        ],
-      ),
-    );
-  }
-}
-
-/// One status group on a single white card, with its rows built lazily.
-class _IssueGroup extends StatelessWidget {
-  const _IssueGroup({required this.rows, required this.state, required this.firstIndex});
-
-  final List<SyncedRecord<IssueRow>> rows;
-  final IssueListState state;
-
-  /// Position of this group's first row in the whole list, for the entrance.
-  final int firstIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return FieldGroupSliver(
-      padding: const EdgeInsets.all(N360Space.xs),
-      sliver: SliverList.builder(
-        itemCount: rows.length,
-        itemBuilder: (context, index) {
-          final SyncedRecord<IssueRow> record = rows[index];
-          return StaggeredRise(
-            key: ValueKey<String>(record.record.clientUuid),
-            index: firstIndex + index,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (index > 0)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: N360Space.md),
-                    child: RuledDivider(),
-                  ),
-                _IssueRow(
-                  record: record,
-                  today: state.today,
-                  assignee: state.userNames[record.record.assignedTo],
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.card,
+              N360Space.md,
+              N360Space.card,
+              N360Space.sm,
             ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _IssueRow extends StatelessWidget {
-  const _IssueRow({
-    required this.record,
-    required this.today,
-    required this.assignee,
-  });
-
-  final SyncedRecord<IssueRow> record;
-  final String today;
-  final String? assignee;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    final IssueRow issue = record.record;
-    final bool unsent = record.syncState != LocalSyncState.synced;
-
-    return PressTarget(
-      onTap: () => context.push(Routes.issueDetail(issue.clientUuid)),
-      semanticsLabel: '${l.pictogramLabel(N360Pictograms.priority(issue.priority))}, ${issue.title}',
-      builder: (context, depth, child) => Transform.scale(
-        scale: pressedScale(depth * 0.5),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: N360Space.md),
-          child: child,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          PriorityMarker(priority: issue.priority),
-          const SizedBox(width: N360Space.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
               children: <Widget>[
-                LedgerHero(
-                  tag: 'issue-title-${issue.clientUuid}',
-                  child: Text(
-                    issue.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: N360Type.fit(N360Type.heading, issue.title),
-                  ),
-                ),
-                if (issue.locationNote != null && issue.locationNote!.isNotEmpty)
-                  IssueMeta(icon: Icons.place_outlined, text: issue.locationNote!),
-                DueLine(issue: issue, today: today),
-                // The sync stamp sits on the last line so the title keeps the
-                // whole width of the row.
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: IssueMeta(
-                        icon: Icons.person_outline,
-                        text: assignee ??
-                            (issue.assignedTo == null
-                                ? l.issuesUnassigned
-                                : l.issuesAssignedUnknown),
-                      ),
-                    ),
-                    if (unsent) ...<Widget>[
-                      const SizedBox(width: N360Space.sm),
-                      IssueSyncStamp(state: record.syncState),
-                    ],
-                  ],
-                ),
+                Expanded(child: Text(word, style: N360Type.fit(N360Type.heading, word))),
+                Text('$count', style: N360Type.figureSmall.copyWith(color: N360Colors.ink2)),
               ],
             ),
           ),
+          const RuledDivider(),
         ],
       ),
     );

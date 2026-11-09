@@ -56,4 +56,18 @@ void main() {
     _expectNone(RegExp(r'\bColor\(0x|\bColors\.'), 'use N360Colors');
     _expectNone(RegExp(r'BackdropFilter|ImageFilter'), 'no blur anywhere');
   });
+
+  test('the flat design: no shadows, gradients, tints or old faces', () {
+    _expectNone(RegExp(r'BoxShadow|paintSoftShadow|shadow\s*:'), 'no shadows');
+    _expectNone(RegExp(r'N360Gradients|LinearGradient'), 'no gradients');
+    _expectNone(RegExp(r'goldTint'), 'no tinted wash on totals');
+    _expectNone(
+      RegExp(r'Poppins|DMMono|N360Type\.(poppins|mono)\b'),
+      'one face: Mukta, through N360Type',
+    );
+    _expectNone(
+      RegExp(r'Radius\.circular\('),
+      'radii come from N360Radius, which stops at 12',
+    );
+  });
 }

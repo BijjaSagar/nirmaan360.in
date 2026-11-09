@@ -7,6 +7,7 @@ import '../../../app/routes.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../core/money/money.dart';
+import '../../../core/sync/clock.dart' show dateString;
 import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/petty_cash_cubit.dart';
@@ -153,28 +154,14 @@ class _Wallet extends StatelessWidget {
         child: _WalletSkeleton(label: l.pettyCashLoading),
       );
     }
-    final entries = state.entries;
+    final List<_EntryDay> days = _groupByDay(state.entries);
 
     return SliverMainAxisGroup(
       slivers: <Widget>[
         if (state.wallets.length > 1)
           SliverToBoxAdapter(child: _WalletSwitcher(state: state)),
         SliverToBoxAdapter(child: _BalanceCard(wallet: wallet)),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              N360Space.gutter + N360Space.xs,
-              N360Space.lg,
-              N360Space.gutter + N360Space.xs,
-              N360Space.sm,
-            ),
-            child: Text(
-              l.pettyCashEntries,
-              style: N360Type.fit(N360Type.heading, l.pettyCashEntries),
-            ),
-          ),
-        ),
-        if (entries.isEmpty)
+        if (days.isEmpty)
           SliverToBoxAdapter(
             child: EmptyLedger(
               title: l.pettyCashEntriesEmptyTitle,
@@ -182,33 +169,54 @@ class _Wallet extends StatelessWidget {
             ),
           )
         else
-          FieldGroupSliver(
-            padding: const EdgeInsets.symmetric(
-              horizontal: N360Space.md,
-              vertical: N360Space.xs,
+          // One list per day, built as it scrolls into view, so a long
+          // ledger reads bills only for the days on screen.
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.gutter,
+              N360Space.lg,
+              N360Space.gutter,
+              N360Space.lg,
             ),
-            sliver: SliverList.builder(
-              itemCount: entries.length,
-              itemBuilder: (context, index) {
-                final record = entries[index];
-                return StaggeredRise(
-                  key: ValueKey<String>(record.record.clientUuid),
-                  index: index,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      if (index > 0) const RuledDivider(),
-                      _EntryRow(record: record),
-                    ],
-                  ),
-                );
-              },
+            sliver: SliverList.separated(
+              itemCount: days.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: N360Space.cardGap),
+              itemBuilder: (context, index) => StaggeredRise(
+                key: ValueKey<String>(days[index].date),
+                index: index,
+                child: _EntryDayList(day: days[index]),
+              ),
             ),
           ),
       ],
     );
   }
+}
+
+/// The entries of one day, newest day first as the cubit hands them over.
+class _EntryDay {
+  const _EntryDay({required this.date, required this.entries});
+
+  final String date;
+  final List<SyncedRecord<PettyCashEntryRow>> entries;
+}
+
+List<_EntryDay> _groupByDay(List<SyncedRecord<PettyCashEntryRow>> entries) {
+  final Map<String, List<SyncedRecord<PettyCashEntryRow>>> byDate =
+      <String, List<SyncedRecord<PettyCashEntryRow>>>{};
+  for (final record in entries) {
+    byDate
+        .putIfAbsent(
+          record.record.entryDate,
+          () => <SyncedRecord<PettyCashEntryRow>>[],
+        )
+        .add(record);
+  }
+  return <_EntryDay>[
+    for (final entry in byDate.entries)
+      _EntryDay(date: entry.key, entries: entry.value),
+  ];
 }
 
 class _WalletSwitcher extends StatelessWidget {
@@ -225,9 +233,9 @@ class _WalletSwitcher extends StatelessWidget {
         itemCount: state.wallets.length,
         itemBuilder: (context, index) {
           final WalletLine line = state.wallets[index];
-          return FieldChoiceTile(
+          return N360Chip(
             label: line.wallet.name,
-            detail: line.previewBalance.inr(),
+            count: line.previewBalance.inr(),
             selected: line.wallet.id == state.selectedWalletId,
             onTap: () => cubit.selectWallet(line.wallet.id),
           );
@@ -260,8 +268,8 @@ class _WalletSkeleton extends StatelessWidget {
 }
 
 /// The main figure of the screen. While expenses wait on this phone it is
-/// plainly provisional: a stamp, what is confirmed, what is not sent yet, and a
-/// bar whose hatched part is the money still on its way.
+/// plainly provisional: a pill, what is confirmed, what is not sent yet, and a
+/// thin bar for how much of the confirmed balance is left.
 class _BalanceCard extends StatelessWidget {
   const _BalanceCard({required this.wallet});
 
@@ -314,10 +322,9 @@ class _BalanceCard extends StatelessWidget {
                 // A word, never a bare picture: the figure below is either
                 // final or it says so here.
                 if (provisional)
-                  RubberStamp(
+                  StatusPill(
                     kind: StampKind.queued,
                     label: l.pettyCashProvisional,
-                    size: StampSize.medium,
                   ),
               ],
             ),
@@ -394,15 +401,69 @@ class _Figure extends StatelessWidget {
         Text(label, style: N360Type.fit(N360Type.caption, label)),
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(value, maxLines: 1, style: N360Type.heading),
+          child: Text(value, maxLines: 1, style: N360Type.figure),
         ),
       ],
     );
   }
 }
 
-class _EntryRow extends StatelessWidget {
-  const _EntryRow({required this.record});
+/// One day as a [LedgerList]: the day and how many entries it holds, then a
+/// row per entry with a hairline between rows.
+class _EntryDayList extends StatelessWidget {
+  const _EntryDayList({required this.day});
+
+  final _EntryDay day;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String locale = Localizations.localeOf(context).toString();
+    final String today = context.read<AppServices>().context.today;
+    final DateTime date = DateTime.parse(day.date);
+    final String short = DateFormat('d MMM', locale).format(date);
+    final String yesterday = dateString(
+      DateTime.parse(today).subtract(const Duration(days: 1)),
+    );
+    final String heading = day.date == today
+        ? '${l.pettyCashDayToday} · $short'
+        : day.date == yesterday
+        ? '${l.pettyCashDayYesterday} · $short'
+        : short;
+
+    return LedgerList(
+      header: Row(
+        children: <Widget>[
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                heading,
+                style: N360Type.fit(N360Type.heading, heading),
+              ),
+            ),
+          ),
+          Text(
+            '${day.entries.length}',
+            style: N360Type.figureSmall.copyWith(color: N360Colors.ink2),
+          ),
+        ],
+      ),
+      children: <Widget>[
+        for (final record in day.entries)
+          _EntryTile(
+            key: ValueKey<String>(record.record.clientUuid),
+            record: record,
+          ),
+      ],
+    );
+  }
+}
+
+/// One entry: what it was for, the note on one caption line, a pill while it
+/// is not yet with the office, and the amount.
+class _EntryTile extends StatelessWidget {
+  const _EntryTile({super.key, required this.record});
 
   final SyncedRecord<PettyCashEntryRow> record;
 
@@ -414,83 +475,33 @@ class _EntryRow extends StatelessWidget {
     final bool expense = entry.type == 'expense';
     final Pictogram picture = N360Pictograms.expense(entry.category ?? 'Other');
     final String title = expense ? l.pictogramLabel(picture) : l.pettyCashTopup;
-    final String locale = Localizations.localeOf(context).toString();
-    final String date = DateFormat(
-      'd MMM',
-      locale,
-    ).format(DateTime.parse(entry.entryDate));
+    final String? note = entry.description;
 
-    final String? description = entry.description;
-    final String detail = description == null || description.isEmpty
-        ? date
-        : '$date · $description';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: N360Space.tile),
-      child: Row(
+    return LedgerListTile(
+      leading: Icon(
+        expense ? picture.icon : Icons.south_west,
+        size: N360IconSize.lg,
+        color: expense ? N360Colors.ink2 : N360Colors.mossInk,
+      ),
+      title: title,
+      subtitle: note == null || note.isEmpty ? null : note,
+      status: record.syncState == LocalSyncState.synced
+          ? null
+          : PettySyncStamp(state: record.syncState),
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: expense ? N360Colors.paper2 : N360Colors.moss,
-              borderRadius: N360Radius.md,
-            ),
-            child: SizedBox.square(
-              dimension: N360Size.tile,
-              child: Icon(
-                expense ? picture.icon : Icons.south_west,
-                size: N360IconSize.tile,
-                color: expense ? N360Colors.ink : N360Colors.sheet,
-              ),
+          Text(
+            expense ? entry.amount.inr() : '+${entry.amount.inr()}',
+            style: N360Type.figure.copyWith(
+              color: expense ? N360Colors.ink : N360Colors.mossInk,
             ),
           ),
-          const SizedBox(width: N360Space.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.fit(N360Type.bodyStrong, title),
-                ),
-                Text(
-                  detail,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.fit(
-                    N360Type.caption,
-                    detail,
-                  ).copyWith(color: N360Colors.ink2),
-                ),
-                if (record.syncState != LocalSyncState.synced) ...<Widget>[
-                  const SizedBox(height: N360Space.xs),
-                  PettySyncStamp(state: record.syncState),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: N360Space.sm),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                expense ? entry.amount.inr() : '+${entry.amount.inr()}',
-                style: N360Type.figure.copyWith(
-                  color: expense ? N360Colors.ink : N360Colors.mossInk,
-                ),
-              ),
-              if (entry.hasBill) ...<Widget>[
-                const SizedBox(height: N360Space.xs),
-                BillThumbnail(
-                  load: cubit.billBytes(entry),
-                  size: N360Size.tile,
-                ),
-              ],
-            ],
-          ),
+          if (entry.hasBill) ...<Widget>[
+            const SizedBox(height: N360Space.xs),
+            BillThumbnail(load: cubit.billBytes(entry), size: N360Size.tile),
+          ],
         ],
       ),
     );

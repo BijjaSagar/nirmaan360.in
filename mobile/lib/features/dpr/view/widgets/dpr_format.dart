@@ -15,7 +15,7 @@ import '../dpr_form_screen.dart';
 /// The hero tag shared by a list row and the detail masthead.
 Object dprHeroTag(String clientUuid) => 'dpr-sheet-$clientUuid';
 
-({int day, String month, String weekday, String weekdayShort}) _dateParts(
+({int day, String month, String weekdayShort}) _dateParts(
   BuildContext context,
   String ymd,
 ) {
@@ -25,7 +25,6 @@ Object dprHeroTag(String clientUuid) => 'dpr-sheet-$clientUuid';
   return (
     day: date.day,
     month: _name('MMM', locale, date),
-    weekday: _name('EEEE', locale, date),
     weekdayShort: _name('EEE', locale, date),
   );
 }
@@ -43,13 +42,17 @@ String dprDayMonth(BuildContext context, String ymd) {
   return '${d.day} ${d.month}';
 }
 
-/// "Monday".
-String dprWeekday(BuildContext context, String ymd) => _dateParts(context, ymd).weekday;
+/// "Today, 9 Nov" when [ymd] is [today], otherwise "Mon, 9 Nov". Says today out
+/// loud, because a report against the wrong day is what a tired eye misses.
+String dprDayLabel(BuildContext context, AppLocalizations l, String ymd, String today) {
+  return ymd == today ? '${l.commonToday}, ${dprDayMonth(context, ymd)}' : dprDateLabel(context, ymd);
+}
 
-/// The big day number and short month for a date tile.
-({int day, String month}) dprDateTile(BuildContext context, String ymd) {
-  final d = _dateParts(context, ymd);
-  return (day: d.day, month: d.month);
+/// "November 2026", with western digits like the rest of the app's figures.
+String dprMonthLabel(BuildContext context, String ymd) {
+  final parts = ymd.split('-').map(int.parse).toList();
+  final locale = Localizations.localeOf(context).toString();
+  return '${_name('MMMM', locale, DateTime(parts[0], parts[1], parts[2]))} ${parts[0]}';
 }
 
 String _name(String pattern, String locale, DateTime date) {
@@ -91,6 +94,9 @@ int dprWorkerTotal(DprRow dpr) =>
   SyncedRecord<DprRow> record,
 ) {
   final dpr = record.record;
+  if (record.syncState == LocalSyncState.attention) {
+    return (kind: StampKind.rejected, label: l.dprSyncAttention);
+  }
   final leaving = !dpr.localDraft && record.syncState != LocalSyncState.synced;
   if (leaving && (dpr.status == DocStatus.draft || dpr.status == DocStatus.returned)) {
     return (kind: StampKind.queued, label: l.statusQueued);
@@ -101,6 +107,19 @@ int dprWorkerTotal(DprRow dpr) =>
     DocStatus.returned => (kind: StampKind.returned, label: l.statusReturned),
     DocStatus.rejected => (kind: StampKind.rejected, label: l.statusRejected),
     _ => (kind: StampKind.draft, label: l.statusDraft),
+  };
+}
+
+/// Where a report is on its way to the office, in words. Never "sent" for
+/// anything still on the phone.
+String dprSyncText(AppLocalizations l, SyncedRecord<DprRow> record) {
+  final dpr = record.record;
+  return switch (record.syncState) {
+    LocalSyncState.attention => l.dprSyncAttention,
+    LocalSyncState.sending => l.dprSyncSending,
+    LocalSyncState.queued => l.dprSyncWaiting,
+    LocalSyncState.synced when dpr.localDraft || dpr.serverId == null => l.dprSyncPhoneOnly,
+    LocalSyncState.synced => l.statusSynced,
   };
 }
 

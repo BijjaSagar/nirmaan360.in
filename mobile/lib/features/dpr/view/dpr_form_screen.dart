@@ -323,25 +323,14 @@ class _DprFormBodyState extends State<_DprFormBody> {
       );
     }
 
-    // Which project, which day.
+    // Which day, which project: the one thing that must be right.
     add(
-      Row(
+      LedgerList(
         children: <Widget>[
-          Expanded(
-            flex: 5,
-            child: DprInfoChip(icon: Icons.apartment, text: state.project?.name ?? ''),
-          ),
-          const SizedBox(width: N360Space.sm),
-          Expanded(
-            flex: 4,
-            child: DprInfoChip(
-              icon: Icons.calendar_month,
-              // Says "Today" out loud: a report filed against the wrong day is
-              // the mistake a tired eye makes.
-              text: state.reportDate == services.context.today
-                  ? '${l.commonToday}, ${dprDayMonth(context, state.reportDate)}'
-                  : dprDateLabel(context, state.reportDate),
-            ),
+          LedgerListTile(
+            leading: const Icon(Icons.calendar_month, size: N360IconSize.lg, color: N360Colors.ink2),
+            title: dprDayLabel(context, l, state.reportDate, services.context.today),
+            subtitle: state.project?.name,
           ),
         ],
       ),
@@ -358,33 +347,23 @@ class _DprFormBodyState extends State<_DprFormBody> {
 
     // Weather.
     add(
-      LedgerCard(
-        padding: const EdgeInsets.all(N360Space.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            DprCardTitle(
-              icon: Icons.wb_sunny_outlined,
-              title: l.dprSectionWeather,
-              done: state.weather != null,
-              error: state.problems.contains(DprFormProblem.weather) ? l.dprNeedWeather : null,
-            ),
-            const SizedBox(height: N360Space.md),
-            PictoChoice<String>(
-              columns: 5,
-              semanticsLabel: l.dprSectionWeather,
-              value: state.weather,
-              onChanged: cubit.setWeather,
-              options: <PictoOption<String>>[
-                for (final value in state.weatherOptions)
-                  PictoOption<String>(
-                    value: value,
-                    icon: N360Pictograms.weather(value).icon,
-                    label: l.pictogramLabel(N360Pictograms.weather(value)),
-                  ),
-              ],
-            ),
+      DprSectionCard(
+        icon: Icons.wb_sunny_outlined,
+        title: l.dprSectionWeather,
+        done: state.weather != null,
+        error: state.problems.contains(DprFormProblem.weather) ? l.dprNeedWeather : null,
+        child: PictoChoice<String>(
+          columns: 5,
+          semanticsLabel: l.dprSectionWeather,
+          value: state.weather,
+          onChanged: cubit.setWeather,
+          options: <PictoOption<String>>[
+            for (final value in state.weatherOptions)
+              PictoOption<String>(
+                value: value,
+                icon: N360Pictograms.weather(value).icon,
+                label: l.pictogramLabel(N360Pictograms.weather(value)),
+              ),
           ],
         ),
       ),
@@ -393,20 +372,16 @@ class _DprFormBodyState extends State<_DprFormBody> {
     // Workers, with the figure that matters most, big.
     final List<String> visible = state.visibleTrades;
     add(
-      LedgerCard(
-        padding: const EdgeInsets.all(N360Space.card),
+      DprSectionCard(
+        icon: Icons.groups,
+        title: l.dprWorkersOnSite,
+        done: state.totalWorkers > 0,
+        error: state.problems.contains(DprFormProblem.workers) ? l.dprNeedWorkers : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            DprCardTitle(
-              icon: Icons.groups,
-              title: l.dprWorkersOnSite,
-              done: state.totalWorkers > 0,
-              error: state.problems.contains(DprFormProblem.workers) ? l.dprNeedWorkers : null,
-            ),
             if (state.problems.contains(DprFormProblem.workers)) ...<Widget>[
-              const SizedBox(height: N360Space.sm),
               GloveButton(
                 label: l.dprSiteClosedWrite,
                 icon: Icons.edit_note,
@@ -414,16 +389,18 @@ class _DprFormBodyState extends State<_DprFormBody> {
                 fullWidth: true,
                 onPressed: _openNotes,
               ),
+              const SizedBox(height: N360Space.sm),
             ],
-            const SizedBox(height: N360Space.xs),
             DprWorkerTotal(total: state.totalWorkers, yesterday: state.yesterdayTotal),
             if (state.canCopyYesterday) ...<Widget>[
               const SizedBox(height: N360Space.md),
-              DprActionTile(
-                icon: Icons.history,
+              GloveButton(
                 label: l.dprSameAsYesterday(state.yesterdayTotal!),
-                gold: true,
-                onTap: () => unawaited(_copyYesterday()),
+                icon: Icons.history,
+                kind: GloveButtonKind.secondary,
+                large: true,
+                fullWidth: true,
+                onPressed: () => unawaited(_copyYesterday()),
               ),
             ],
             const SizedBox(height: N360Space.md),
@@ -453,22 +430,18 @@ class _DprFormBodyState extends State<_DprFormBody> {
 
     // Work done.
     add(
-      LedgerCard(
-        padding: const EdgeInsets.all(N360Space.card),
+      DprSectionCard(
+        icon: Icons.assignment_turned_in_outlined,
+        title: l.dprSectionWork,
+        done: state.work.isNotEmpty,
+        trailing: state.work.isEmpty
+            ? null
+            : Text(l.dprRowsCount(state.work.length), style: N360Type.label),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            DprCardTitle(
-              icon: Icons.assignment_turned_in_outlined,
-              title: l.dprSectionWork,
-              done: state.work.isNotEmpty,
-              trailing: state.work.isEmpty
-                  ? null
-                  : Text(l.dprRowsCount(state.work.length), style: N360Type.label),
-            ),
             for (var i = 0; i < state.work.length; i++) ...<Widget>[
-              SizedBox(height: i == 0 ? N360Space.md : N360Space.lg),
               DprLandOnce(
                 key: ValueKey<String>('work-${state.work[i].boqItemId ?? 'free-$i'}'),
                 id: 'work-${state.work[i].boqItemId ?? 'free-$i'}',
@@ -480,16 +453,21 @@ class _DprFormBodyState extends State<_DprFormBody> {
                   onRemove: () => _removeWork(i),
                 ),
               ),
+              const SizedBox(height: N360Space.sm),
+              const RuledDivider(),
+              const SizedBox(height: N360Space.md),
             ],
             if (_undo != null) ...<Widget>[
-              const SizedBox(height: N360Space.sm),
               _UndoRow(onUndo: _undoRemove),
+              const SizedBox(height: N360Space.sm),
             ],
-            const SizedBox(height: N360Space.md),
-            DprActionTile(
-              icon: Icons.add,
+            GloveButton(
               label: l.dprAddWork,
-              onTap: () => unawaited(_openWork(state)),
+              icon: Icons.add,
+              kind: GloveButtonKind.secondary,
+              large: true,
+              fullWidth: true,
+              onPressed: () => unawaited(_openWork(state)),
             ),
           ],
         ),
@@ -498,27 +476,26 @@ class _DprFormBodyState extends State<_DprFormBody> {
 
     // Photos.
     add(
-      LedgerCard(
-        padding: const EdgeInsets.all(N360Space.card),
+      DprSectionCard(
+        icon: Icons.photo_library_outlined,
+        title: l.dprSectionPhotos,
+        done: state.photos.isNotEmpty,
+        trailing: state.photos.isEmpty
+            ? null
+            : Text(l.dprPhotosCount(state.photos.length), style: N360Type.label),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            DprCardTitle(
-              icon: Icons.photo_library_outlined,
-              title: l.dprSectionPhotos,
-              done: state.photos.isNotEmpty,
-              trailing: state.photos.isEmpty
-                  ? null
-                  : Text(l.dprPhotosCount(state.photos.length), style: N360Type.label),
-            ),
-            const SizedBox(height: N360Space.md),
-            DprActionTile(
-              icon: Icons.photo_camera,
+            GloveButton(
               label: l.dprTakePhoto,
-              tall: true,
+              icon: Icons.photo_camera,
+              kind: GloveButtonKind.secondary,
+              large: true,
+              fullWidth: true,
+              loading: state.capturing,
               // Stays tappable at the limit, so the app can say why.
-              onTap: state.capturing ? null : () => unawaited(_takePhoto()),
+              onPressed: () => unawaited(_takePhoto()),
             ),
             if (state.photos.isNotEmpty) ...<Widget>[
               const SizedBox(height: N360Space.md),
@@ -536,50 +513,47 @@ class _DprFormBodyState extends State<_DprFormBody> {
 
     // Hindrances and notes.
     add(
-      LedgerCard(
-        padding: const EdgeInsets.all(N360Space.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            DprCardTitle(
-              icon: Icons.edit_note,
-              title: l.dprSectionNotes,
-              done: state.hindrances.trim().isNotEmpty || state.notes.trim().isNotEmpty,
-              trailing: state.notesOpen ? null : Text(l.dprOptional, style: N360Type.caption),
-            ),
-            const SizedBox(height: N360Space.md),
-            if (state.notesOpen) ...<Widget>[
-              GloveTextField(
-                label: l.dprHindrances,
-                hint: l.dprHindrancesHint,
-                controller: _hindrances,
-                focusNode: _hindrancesFocus,
-                minLines: 3,
-                maxLines: 6,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                onChanged: cubit.setHindrances,
-              ),
-              const SizedBox(height: N360Space.md),
-              GloveTextField(
-                label: l.dprNotes,
-                hint: l.dprNotesHint,
-                controller: _notes,
-                minLines: 3,
-                maxLines: 6,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                onChanged: cubit.setNotes,
-              ),
-            ] else
-              DprActionTile(
-                icon: Icons.add,
+      DprSectionCard(
+        icon: Icons.edit_note,
+        title: l.dprSectionNotes,
+        done: state.hindrances.trim().isNotEmpty || state.notes.trim().isNotEmpty,
+        trailing: state.notesOpen ? null : Text(l.dprOptional, style: N360Type.caption),
+        child: state.notesOpen
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  GloveTextField(
+                    label: l.dprHindrances,
+                    hint: l.dprHindrancesHint,
+                    controller: _hindrances,
+                    focusNode: _hindrancesFocus,
+                    minLines: 3,
+                    maxLines: 6,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    onChanged: cubit.setHindrances,
+                  ),
+                  const SizedBox(height: N360Space.md),
+                  GloveTextField(
+                    label: l.dprNotes,
+                    hint: l.dprNotesHint,
+                    controller: _notes,
+                    minLines: 3,
+                    maxLines: 6,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    onChanged: cubit.setNotes,
+                  ),
+                ],
+              )
+            : GloveButton(
                 label: l.dprAddNotes,
-                onTap: _openNotes,
+                icon: Icons.add,
+                kind: GloveButtonKind.ghost,
+                fullWidth: true,
+                onPressed: _openNotes,
               ),
-          ],
-        ),
       ),
     );
 

@@ -13,7 +13,7 @@ import '../bloc/sync_center_cubit.dart';
 import '../data/sync_repository.dart';
 import 'sync_labels.dart';
 
-/// Where unsent entries wait, and the satisfying moment when they leave.
+/// Where unsent entries wait, and the quiet moment when they have all gone.
 class SyncCenterScreen extends StatelessWidget {
   const SyncCenterScreen({super.key});
 
@@ -179,23 +179,23 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
         final List<Widget> extras = <Widget>[
           if (state.attention.isNotEmpty) ...<Widget>[
             const SizedBox(height: N360Space.md),
-            Text(
-              attentionTitle,
-              style: N360Type.fit(N360Type.heading, attentionTitle).copyWith(color: N360Colors.stampRed),
-            ),
-            const SizedBox(height: N360Space.xs),
-            for (final item in state.attention)
-              Padding(
-                padding: const EdgeInsets.only(bottom: N360Space.sm),
-                child: _AttentionSlip(
-                  item: item,
-                  onRetry: () => context.read<SyncCenterCubit>().retry(item),
-                  onDiscard: () => _discard(item, t),
-                ),
+            LedgerList(
+              header: Text(
+                attentionTitle,
+                style: N360Type.fit(N360Type.heading, attentionTitle).copyWith(color: N360Colors.stampRed),
               ),
+              children: <Widget>[
+                for (final item in state.attention)
+                  _AttentionRow(
+                    item: item,
+                    onRetry: () => context.read<SyncCenterCubit>().retry(item),
+                    onDiscard: () => _discard(item, t),
+                  ),
+              ],
+            ),
           ],
           if (state.stale.isNotEmpty) ...<Widget>[
-            const SizedBox(height: N360Space.lg),
+            const SizedBox(height: N360Space.md),
             _StaleLog(items: state.stale),
           ],
         ];
@@ -262,7 +262,7 @@ class _OutboxLoading extends StatelessWidget {
         children: <Widget>[
           const OfflineSlot(online: _OutboxTitle()),
           LedgerSkeleton(figure: true, lines: 1, semanticsLabel: label),
-          const SizedBox(height: N360Space.sm),
+          const SizedBox(height: N360Space.cardGap),
           LedgerSkeletonList(semanticsLabel: label),
         ],
       ),
@@ -298,15 +298,13 @@ class _LastSynced extends StatelessWidget {
         Row(
           mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
           children: <Widget>[
-            const Icon(Icons.history, size: N360IconSize.md, color: N360Colors.ink2),
+            const Icon(Icons.history, size: N360IconSize.sm, color: N360Colors.ink2),
             const SizedBox(width: N360Space.xs),
-            Flexible(
-              child: Text(lastLine, style: N360Type.fit(N360Type.body, lastLine).copyWith(color: N360Colors.ink2)),
-            ),
+            Flexible(child: Text(lastLine, style: N360Type.fit(N360Type.caption, lastLine))),
           ],
         ),
         if (issue != null)
-          Text(issue, style: N360Type.fit(N360Type.bodyStrong, issue).copyWith(color: N360Colors.haldiInk)),
+          Text(issue, style: N360Type.fit(N360Type.label, issue).copyWith(color: N360Colors.haldiInk)),
       ],
     );
   }
@@ -329,7 +327,6 @@ class _TrayCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         LedgerCard(
-          padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.sm, N360Space.lg, N360Space.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -347,13 +344,14 @@ class _TrayCard extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: N360Space.xs),
               const _LastSynced(),
               const SizedBox(height: N360Space.sm),
-              TickGauge(fraction: sent, ticks: 36, height: 26, semanticLabel: t.syncProgress(peak - waiting, peak)),
+              TickGauge(fraction: sent, ticks: 36, semanticLabel: t.syncProgress(peak - waiting, peak)),
             ],
           ),
         ),
-        const SizedBox(height: N360Space.sm),
+        const SizedBox(height: N360Space.cardGap),
         stack,
       ],
     );
@@ -361,7 +359,7 @@ class _TrayCard extends StatelessWidget {
 }
 
 /// The moment it has all reached the office: the finished building with light
-/// moving through its windows, and the closing stamp under it.
+/// moving through its windows, and the quiet status under it.
 class _AllSent extends StatelessWidget {
   const _AllSent({required this.animate});
 
@@ -380,21 +378,17 @@ class _AllSent extends StatelessWidget {
             child: LoopingArt.allSent(semanticLabel: t.shellOutboxAllSentStamp),
           ),
           const SizedBox(height: N360Space.md),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: RubberStamp(
-              kind: StampKind.synced,
-              label: t.shellOutboxAllSentStamp,
-              size: StampSize.large,
-              animate: animate,
-              onLanded: N360Haptics.success,
-            ),
+          RubberStamp(
+            kind: StampKind.synced,
+            label: t.shellOutboxAllSentStamp,
+            animate: animate,
+            onLanded: N360Haptics.success,
           ),
-          const SizedBox(height: N360Space.md),
+          const SizedBox(height: N360Space.sm),
           Text(
             t.shellOutboxAllSentBody,
             textAlign: TextAlign.center,
-            style: N360Type.fit(N360Type.bodyLarge, t.shellOutboxAllSentBody).copyWith(color: N360Colors.ink2),
+            style: N360Type.fit(N360Type.body, t.shellOutboxAllSentBody).copyWith(color: N360Colors.ink2),
           ),
           const SizedBox(height: N360Space.xs),
           const _LastSynced(centered: true),
@@ -404,8 +398,9 @@ class _AllSent extends StatelessWidget {
   }
 }
 
-class _AttentionSlip extends StatelessWidget {
-  const _AttentionSlip({required this.item, required this.onRetry, required this.onDiscard});
+/// One entry the server would not take: what it is, why, and the two ways out.
+class _AttentionRow extends StatelessWidget {
+  const _AttentionRow({required this.item, required this.onRetry, required this.onDiscard});
 
   final OutboxItem item;
   final VoidCallback onRetry;
@@ -421,17 +416,17 @@ class _AttentionSlip extends StatelessWidget {
     ].take(3).toList();
     final String title = t.syncTypeLabel(item.type);
     final String? subtitle = item.title.isEmpty ? null : item.title;
+    final String reason = t.syncReasonFor(item);
 
-    return LedgerCard(
-      flat: true,
-      padding: const EdgeInsets.all(N360Space.md),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Row(
             children: <Widget>[
-              IconTile(icon: syncTypeIcon(item.type), semanticLabel: title),
+              Icon(syncTypeIcon(item.type), size: N360IconSize.lg, color: N360Colors.ink2),
               const SizedBox(width: N360Space.md),
               Expanded(
                 child: Column(
@@ -445,13 +440,13 @@ class _AttentionSlip extends StatelessWidget {
             ],
           ),
           const SizedBox(height: N360Space.sm),
-          Text(t.syncReasonFor(item), style: N360Type.fit(N360Type.body, t.syncReasonFor(item))),
+          Text(reason, style: N360Type.fit(N360Type.body, reason)),
           for (final detail in details)
             Padding(
               padding: const EdgeInsets.only(top: N360Space.xxs),
               child: Text(detail, style: N360Type.fit(N360Type.caption, detail)),
             ),
-          const SizedBox(height: N360Space.sm),
+          const SizedBox(height: N360Space.md),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -491,30 +486,21 @@ class _StaleLog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    return LedgerList(
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(t.shellOutboxLogTitle, style: N360Type.fit(N360Type.heading, t.shellOutboxLogTitle)),
+          Text(t.syncStaleLog, style: N360Type.fit(N360Type.caption, t.syncStaleLog)),
+        ],
+      ),
       children: <Widget>[
-        SectionLabel(t.shellOutboxLogTitle),
-        const SizedBox(height: N360Space.xs),
-        Text(t.syncStaleLog, style: N360Type.fit(N360Type.body, t.syncStaleLog).copyWith(color: N360Colors.ink2)),
-        const SizedBox(height: N360Space.xs),
-        LedgerCard(
-          padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.xs, N360Space.md, N360Space.xs),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              for (final (index, item) in items.indexed)
-                LedgerRow(
-                  ruled: index < items.length - 1,
-                  label: t.syncTypeLabel(item.type),
-                  value: item.title,
-                  valueStyle: N360Type.figureSmall,
-                ),
-            ],
+        for (final item in items)
+          LedgerListTile(
+            title: t.syncTypeLabel(item.type),
+            trailing: Text(item.title, style: N360Type.figureSmall.copyWith(color: N360Colors.ink2)),
           ),
-        ),
       ],
     );
   }
@@ -585,6 +571,7 @@ class _ConfirmSheet extends StatelessWidget {
             const SizedBox(height: N360Space.sm),
             GloveButton(
               label: keepLabel,
+              kind: GloveButtonKind.secondary,
               large: true,
               fullWidth: true,
               onPressed: () => Navigator.of(context).pop(false),

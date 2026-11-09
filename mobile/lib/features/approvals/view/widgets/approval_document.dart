@@ -334,16 +334,16 @@ class _RailPainter extends CustomPainter {
             ..strokeJoin = StrokeJoin.round,
         );
       case _StationState.current:
-        canvas.drawCircle(Offset(x, y), 9, Paint()..color = N360Colors.goldTint);
+        canvas.drawCircle(Offset(x, y), 9, Paint()..color = N360Colors.primaryTint);
         canvas.drawCircle(
           Offset(x, y),
           9,
           Paint()
-            ..color = N360Colors.orange
+            ..color = N360Colors.primary
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.5,
         );
-        canvas.drawCircle(Offset(x, y), 3.5, Paint()..color = N360Colors.orange);
+        canvas.drawCircle(Offset(x, y), 3.5, Paint()..color = N360Colors.primary);
       case _StationState.upcoming:
         canvas.drawCircle(Offset(x, y), 8, Paint()..color = N360Colors.sheet);
         canvas.drawCircle(

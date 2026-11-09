@@ -238,16 +238,31 @@ class _MusterList extends StatelessWidget {
                 ),
               );
             }
-            var firstIndex = 0;
-            return SliverMainAxisGroup(
-              slivers: <Widget>[
-                for (final group in state.groups)
-                  () {
-                    final int start = firstIndex;
-                    firstIndex += group.workers.length + 1;
-                    return _TradeCard(group: group, firstIndex: start);
-                  }(),
-              ],
+            // Where each trade's first row falls in the whole muster, for the
+            // entrance.
+            final List<int> starts = <int>[];
+            var running = 0;
+            for (final group in state.groups) {
+              starts.add(running);
+              running += group.workers.length + 1;
+            }
+            return SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                N360Space.gutter,
+                0,
+                N360Space.gutter,
+                N360Space.lg,
+              ),
+              sliver: SliverList.separated(
+                itemCount: state.groups.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: N360Space.cardGap),
+                itemBuilder: (context, index) => _TradeList(
+                  key: ValueKey<String>('group-${state.groups[index].trade}'),
+                  group: state.groups[index],
+                  firstIndex: starts[index],
+                ),
+              ),
             );
         }
       },
@@ -277,37 +292,34 @@ class _MusterSkeleton extends StatelessWidget {
   }
 }
 
-/// One trade's workers on a single white card. Rows are built lazily and carry
-/// no surface or shadow of their own.
-class _TradeCard extends StatelessWidget {
-  const _TradeCard({required this.group, required this.firstIndex});
+/// One trade's workers as a [LedgerList]: a heading with the trade's count,
+/// then a hairline between rows. Rows carry no surface or shadow of their own,
+/// and each reads only its own mark.
+class _TradeList extends StatelessWidget {
+  const _TradeList({super.key, required this.group, required this.firstIndex});
 
   final MusterGroup group;
 
-  /// Position of this card's first row in the whole muster, for the entrance.
+  /// Position of this list's heading in the whole muster, for the entrance.
   final int firstIndex;
 
   @override
   Widget build(BuildContext context) {
-    return FieldGroupSliver(
-      sliver: SliverList.builder(
-        itemCount: group.workers.length + 1,
-        itemBuilder: (context, index) {
-          return StaggeredRise(
-            index: firstIndex + index,
-            maxAnimated: 8,
-            child: index == 0
-                ? MusterGroupHeader(
-                    key: ValueKey<String>('group-${group.trade}'),
-                    group: group,
-                  )
-                : MusterRow(
-                    key: ValueKey<int>(group.workers[index - 1].id),
-                    worker: group.workers[index - 1],
-                  ),
-          );
-        },
+    return LedgerList(
+      header: StaggeredRise(
+        index: firstIndex,
+        maxAnimated: 8,
+        child: MusterGroupHeader(group: group),
       ),
+      children: <Widget>[
+        for (final (i, worker) in group.workers.indexed)
+          StaggeredRise(
+            key: ValueKey<int>(worker.id),
+            index: firstIndex + 1 + i,
+            maxAnimated: 8,
+            child: MusterRow(worker: worker),
+          ),
+      ],
     );
   }
 }

@@ -49,7 +49,7 @@ class _DprListBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  DprTopBar(title: l.dprListTitle),
+                  DprTopBar(title: l.dprListTitle, subtitle: state.project?.name),
                   Expanded(
                     child: DprActionLayout(
                       body: _content(context, state, l),
@@ -91,6 +91,7 @@ class _DprListBody extends StatelessWidget {
         ),
       );
     }
+    final groups = _byMonth(state.rows);
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(
         N360Space.gutter,
@@ -98,7 +99,7 @@ class _DprListBody extends StatelessWidget {
         N360Space.gutter,
         DprActionLayout.clearance(context),
       ),
-      itemCount: state.rows.length + 1,
+      itemCount: groups.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
@@ -106,26 +107,57 @@ class _DprListBody extends StatelessWidget {
             child: _MonthCard(state: state),
           );
         }
-        final SyncedRecord<DprRow> record = state.rows[index - 1];
+        final group = groups[index - 1];
         return Padding(
-          key: ValueKey<String>(record.record.clientUuid),
-          padding: const EdgeInsets.only(bottom: N360Space.sm),
+          key: ValueKey<String>(group.first.record.reportDate.substring(0, 7)),
+          padding: const EdgeInsets.only(bottom: N360Space.cardGap),
           child: StaggeredRise(
             index: index,
-            child: _ReportRow(
-              record: record,
-              today: record.record.reportDate == state.today,
-              onTap: () => _open(context, record),
+            child: LedgerList(
+              header: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      dprMonthLabel(context, group.first.record.reportDate),
+                      style: N360Type.heading,
+                    ),
+                  ),
+                  Text('${group.length}', style: N360Type.label),
+                ],
+              ),
+              children: <Widget>[
+                for (final record in group)
+                  _ReportRow(
+                    key: ValueKey<String>(record.record.clientUuid),
+                    record: record,
+                    today: state.today,
+                    onTap: () => _open(context, record),
+                  ),
+              ],
             ),
           ),
         );
       },
     );
   }
+
+  /// Rows arrive newest first, so a month is one unbroken run.
+  static List<List<SyncedRecord<DprRow>>> _byMonth(List<SyncedRecord<DprRow>> rows) {
+    final groups = <List<SyncedRecord<DprRow>>>[];
+    for (final row in rows) {
+      final month = row.record.reportDate.substring(0, 7);
+      if (groups.isEmpty || groups.last.first.record.reportDate.substring(0, 7) != month) {
+        groups.add(<SyncedRecord<DprRow>>[row]);
+      } else {
+        groups.last.add(row);
+      }
+    }
+    return groups;
+  }
 }
 
-/// How many days of this month have a report: the one number that shows whether
-/// the book is being kept.
+/// How many days of this month have a report: the one number that shows
+/// whether the book is being kept.
 class _MonthCard extends StatelessWidget {
   const _MonthCard({required this.state});
 
@@ -138,116 +170,75 @@ class _MonthCard extends StatelessWidget {
     final int filed = state.filedThisMonth;
     final List<String> missed = state.missedDays;
     return LedgerCard(
-        padding: const EdgeInsets.all(N360Space.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      if (state.project != null) SectionLabel(state.project!.name),
-                      Text(l.dprReportsThisMonth, style: N360Type.heading),
-                    ],
-                  ),
-                ),
-                IconTile(icon: Icons.calendar_month, semanticLabel: l.dprReportsThisMonth),
-              ],
-            ),
-            const SizedBox(height: N360Space.xs),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                RollingNumber(value: '$filed', style: N360Type.figureHero, animateEntry: true),
-                const SizedBox(width: N360Space.sm),
-                Flexible(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: N360Space.xs + 2),
-                    child: Text(
-                      l.dprOfDays(days),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.bodyStrong.copyWith(color: N360Colors.ink2),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: N360Space.sm),
-            HatchedProgressBar(
-              fraction: days == 0 ? 0 : (filed / days),
-              height: 32,
-              semanticLabel: '$filed ${l.dprOfDays(days)}',
-            ),
-            if (missed.isNotEmpty) ...<Widget>[
-              const SizedBox(height: N360Space.md),
-              Text(l.dprMissedDays, style: N360Type.label),
-              const SizedBox(height: N360Space.xs),
-              Row(
-                children: <Widget>[
-                  for (var i = 0; i < missed.length && i < 2; i++) ...<Widget>[
-                    if (i > 0) const SizedBox(width: N360Space.sm),
-                    Expanded(child: _MissedDay(ymd: missed[i])),
-                  ],
-                ],
-              ),
-            ],
-          ],
-        ),
-    );
-  }
-}
-
-/// A recent day with no report, one tap from being written.
-class _MissedDay extends StatelessWidget {
-  const _MissedDay({required this.ymd});
-
-  final String ymd;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final String date = dprDateLabel(context, ymd);
-    return DprTapPad(
-      onTap: () => dprOpenForm(context, date: ymd),
-      semanticsLabel: l.dprWriteFor(date),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: N360Colors.paper2,
-          borderRadius: N360Radius.tileRadius,
-        ),
-        child: SizedBox(
-          height: N360Size.tap,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(l.dprReportsThisMonth, style: N360Type.bodyStrong),
+          const SizedBox(height: N360Space.xs),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              const Icon(Icons.add, size: N360IconSize.md, color: N360Colors.ink),
-              const SizedBox(width: N360Space.xs),
+              RollingNumber(value: '$filed', style: N360Type.figureLarge, animateEntry: true),
+              const SizedBox(width: N360Space.sm),
               Flexible(
-                child: Text(
-                  date,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.button,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: N360Space.xxs),
+                  child: Text(
+                    l.dprOfDays(days),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: N360Type.label,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: N360Space.sm),
+          HatchedProgressBar(
+            fraction: days == 0 ? 0 : (filed / days),
+            semanticLabel: '$filed ${l.dprOfDays(days)}',
+          ),
+          if (missed.isNotEmpty) ...<Widget>[
+            const SizedBox(height: N360Space.sm),
+            Text(l.dprMissedDays, style: N360Type.label),
+            Row(
+              children: <Widget>[
+                for (final String ymd in missed.take(2))
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: N360Space.sm),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: N360Chip(
+                          label: dprDayMonth(context, ymd),
+                          icon: Icons.add,
+                          selected: false,
+                          onTap: () => dprOpenForm(context, date: ymd),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
 class _ReportRow extends StatelessWidget {
-  const _ReportRow({required this.record, required this.today, required this.onTap});
+  const _ReportRow({
+    super.key,
+    required this.record,
+    required this.today,
+    required this.onTap,
+  });
 
   final SyncedRecord<DprRow> record;
-  final bool today;
+  final String today;
   final VoidCallback onTap;
 
   @override
@@ -255,109 +246,18 @@ class _ReportRow extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final DprRow dpr = record.record;
     final stamp = dprStampFor(l, record);
-    final String date = dprDateLabel(context, dpr.reportDate);
-    return LedgerCard(
-      onTap: onTap,
-      semanticsLabel:
-          '$date, ${l.dprWorkersCount(dprWorkerTotal(dpr))}, ${l.dprRowsCount(dpr.workItems.length)}, ${stamp.label}',
-      padding: const EdgeInsets.all(N360Space.md),
-      child: LedgerHero(
-        tag: dprHeroTag(dpr.clientUuid),
-        child: DprReportFace(record: record, today: today),
+    final String date = dprDayLabel(context, l, dpr.reportDate, today);
+    final String totals =
+        '${l.dprWorkersCount(dprWorkerTotal(dpr))} · ${l.dprRowsCount(dpr.workItems.length)}';
+    return LedgerHero(
+      tag: dprHeroTag(dpr.clientUuid),
+      child: LedgerListTile(
+        title: date,
+        subtitle: '$totals · ${dprSyncText(l, record)}',
+        status: StatusPill(kind: stamp.kind, label: stamp.label),
+        onTap: onTap,
+        semanticsLabel: '$date, $totals, ${stamp.label}, ${dprSyncText(l, record)}',
       ),
-    );
-  }
-}
-
-/// A report at a glance: the day, totals, where it is, and its stamp. The list
-/// row and the detail masthead share it, so the hero has one shape to fly.
-class DprReportFace extends StatelessWidget {
-  const DprReportFace({
-    super.key,
-    required this.record,
-    this.today = false,
-    this.large = false,
-  });
-
-  final SyncedRecord<DprRow> record;
-  final bool today;
-
-  /// The detail masthead: no totals, because tiles below it carry them.
-  final bool large;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final DprRow dpr = record.record;
-    final stamp = dprStampFor(l, record);
-    final int workers = dprWorkerTotal(dpr);
-
-    final Widget day = Row(
-      children: <Widget>[
-        Flexible(
-          child: Text(
-            dprWeekday(context, dpr.reportDate),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: N360Type.heading,
-          ),
-        ),
-        if (today) ...<Widget>[
-          const SizedBox(width: N360Space.sm),
-          Text(
-            l.commonToday,
-            style: N360Type.caption.copyWith(
-              color: N360Colors.laterite,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ],
-    );
-    final Widget mark = RubberStamp(
-      kind: stamp.kind,
-      label: stamp.label,
-      size: large ? StampSize.medium : StampSize.small,
-    );
-
-    return Row(
-      children: <Widget>[
-        DprDateTile(ymd: dpr.reportDate, today: today),
-        const SizedBox(width: N360Space.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              // The stamp shares the short first line, so the totals get the
-              // full width and never truncate.
-              if (large)
-                day
-              else
-                Row(
-                  children: <Widget>[
-                    Expanded(child: day),
-                    const SizedBox(width: N360Space.sm),
-                    mark,
-                  ],
-                ),
-              if (!large)
-                Text(
-                  '${l.dprWorkersCount(workers)} · ${l.dprRowsCount(dpr.workItems.length)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.body,
-                ),
-              const SizedBox(height: 2),
-              DprSyncTag(record: record),
-            ],
-          ),
-        ),
-        if (large) ...<Widget>[
-          const SizedBox(width: N360Space.sm),
-          mark,
-        ],
-      ],
     );
   }
 }

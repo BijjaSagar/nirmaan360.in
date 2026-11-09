@@ -47,10 +47,11 @@ void main() {
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('Yesterday'), findsOneWidget);
       expect(find.text('Footing F12'), findsOneWidget);
-      expect(find.text('2 × 10'), findsNWidgets(2));
+      expect(find.text('20.000 cum'), findsNWidgets(2));
+      expect(find.textContaining('2 × 10'), findsNWidgets(2));
       expect(find.textContaining('20.000'), findsNWidgets(2));
       expect(_stamp('Draft'), findsNWidgets(2));
-      expect(find.text('On phone'), findsNWidgets(2));
+      expect(find.textContaining('On phone'), findsNWidgets(2));
     });
 
     testWidgets('a deduction reads negative in the book', (tester) async {
@@ -60,8 +61,8 @@ void main() {
       await pumpBook(tester, app, start: Routes.measurements);
       await settle(tester);
 
-      expect(find.text('−2 × 10'), findsOneWidget);
-      expect(find.textContaining('−20.000'), findsOneWidget);
+      expect(find.textContaining('−2 × 10'), findsOneWidget);
+      expect(find.textContaining('−20.000 cum'), findsOneWidget);
     });
 
     testWidgets('a status filter narrows the rows', (tester) async {
@@ -75,16 +76,17 @@ void main() {
 
       await pumpBook(tester, app, start: Routes.measurements);
       await settle(tester);
-      expect(find.text('Footing F12'), findsOneWidget);
-      expect(find.text('Pier P3'), findsOneWidget);
+      expect(find.textContaining('Footing F12'), findsOneWidget);
+      expect(find.textContaining('Pier P3'), findsOneWidget);
 
-      await tester.drag(find.byType(ListView).last, const Offset(-400, 0));
+      final Finder strip = find.byWidgetPredicate((w) => w is ListView && w.scrollDirection == Axis.horizontal);
+      await tester.drag(strip, const Offset(-400, 0));
       await tester.pump();
-      await tester.tap(find.text('Approved'));
+      await tester.tap(find.descendant(of: find.byType(N360Chip), matching: find.text('Approved')));
       await settle(tester);
 
-      expect(find.text('Footing F12'), findsNothing);
-      expect(find.text('Pier P3'), findsOneWidget);
+      expect(find.textContaining('Footing F12'), findsNothing);
+      expect(find.textContaining('Pier P3'), findsOneWidget);
     });
 
     testWidgets('an empty book invites the first entry', (tester) async {
@@ -104,7 +106,7 @@ void main() {
       await pumpBook(tester, app, start: Routes.measurements);
       await settle(tester);
 
-      await tester.tap(find.text('Footing F12'));
+      await tester.tap(find.textContaining('Footing F12'));
       await settle(tester);
       expect(find.byType(MeasurementDetailScreen), findsOneWidget);
       expect(find.text('2 × 10 = 20.000 cum'), findsOneWidget);
@@ -127,14 +129,14 @@ void main() {
       await settle(tester, ms: 900);
 
       expect(find.byType(LedgerHero), findsOneWidget);
-      await tester.tap(find.text('Footing F12'));
+      await tester.tap(find.textContaining('Footing F12'));
       await tester.pump();
       await pumpDrift(tester, 10);
       await tester.pump(const Duration(milliseconds: 150));
       expect(tester.takeException(), isNull);
       await tester.pump(const Duration(seconds: 1));
       await pumpDrift(tester, 10);
-      expect(find.text('Footing F12'), findsWidgets);
+      expect(find.textContaining('Footing F12'), findsWidgets);
       await tester.pump(const Duration(seconds: 1));
     });
   });
@@ -172,7 +174,7 @@ void main() {
       await pumpBook(tester, app, start: Routes.measurementDetail(uuid));
       await settle(tester);
 
-      expect(_stamp('Approved'), findsOneWidget);
+      expect(_stamp('Approved'), findsWidgets);
       expect(find.text('Approved and locked'), findsOneWidget);
       expect(find.textContaining('reversal'), findsOneWidget);
       expect(find.byKey(const ValueKey<String>('measurement-edit')), findsNothing);

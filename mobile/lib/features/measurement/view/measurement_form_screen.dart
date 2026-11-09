@@ -425,9 +425,13 @@ class _ReturnedNote extends StatelessWidget {
       label: '${l.measurementApproverSaid}: $remark',
       child: ExcludeSemantics(
         child: DecoratedBox(
-          decoration: const BoxDecoration(color: N360Colors.goldTint, borderRadius: N360Radius.md),
+          decoration: BoxDecoration(
+            color: N360Colors.sheet,
+            borderRadius: N360Radius.cardRadius,
+            border: Border.all(color: N360Colors.rule),
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.sm),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[

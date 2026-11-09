@@ -3,17 +3,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design/design.dart';
 import '../../l10n/generated/app_localizations.dart';
-import 'labelled_tile.dart';
 
-/// The top of a page pushed over the shell: a back tile with its word, the
-/// page title beside it, and room for one labelled tile on the right.
+/// The top of a page pushed over the shell: a back tile, the title centred
+/// with an optional line under it, and room for one icon tile on the right so
+/// the title stays centred either way.
 class PageHeader extends StatelessWidget {
-  const PageHeader({super.key, required this.title, this.showBack = true, this.trailing});
+  const PageHeader({super.key, required this.title, this.subtitle, this.showBack = true, this.trailing});
 
   final String title;
+
+  /// A small line under the title, such as the project code.
+  final String? subtitle;
   final bool showBack;
 
-  /// Usually a [LabelledTile]. Sits flush with the right edge.
+  /// Usually an [IconTile] with `onTap`. Its space is kept even when absent.
   final Widget? trailing;
 
   @override
@@ -21,22 +24,33 @@ class PageHeader extends StatelessWidget {
     final t = AppLocalizations.of(context);
     return Row(
       children: <Widget>[
-        if (showBack) ...<Widget>[
-          LabelledTile(icon: Icons.arrow_back, label: t.commonBack, onTap: () => context.pop()),
-          const SizedBox(width: N360Space.sm),
-        ],
+        if (showBack)
+          IconTile(icon: Icons.arrow_back, semanticLabel: t.commonBack, onTap: () => context.pop())
+        else
+          const SizedBox(width: N360Size.tap),
         Expanded(
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: N360Type.fit(N360Type.title, title),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                title,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: N360Type.fit(N360Type.title, title),
+              ),
+              if (subtitle != null)
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: N360Type.fit(N360Type.caption, subtitle!),
+                ),
+            ],
           ),
         ),
-        if (trailing != null) ...<Widget>[
-          const SizedBox(width: N360Space.sm),
-          trailing!,
-        ],
+        trailing ?? const SizedBox(width: N360Size.tap),
       ],
     );
   }

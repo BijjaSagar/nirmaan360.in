@@ -27,7 +27,11 @@ class LedgerBackKey extends StatelessWidget {
           child: SizedBox.square(
             dimension: N360Size.tile,
             child: DecoratedBox(
-              decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.sm),
+              decoration: BoxDecoration(
+                color: N360Colors.sheet,
+                borderRadius: N360Radius.md,
+                border: Border.all(color: N360Colors.rule),
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
@@ -71,8 +75,6 @@ class BookTitleBar extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  if (eyebrow != null)
-                    Text(eyebrow!, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
                   Text(
                     title,
                     maxLines: 2,
@@ -80,6 +82,8 @@ class BookTitleBar extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: N360Type.title,
                   ),
+                  if (eyebrow != null)
+                    Text(eyebrow!, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
                 ],
               ),
             ),
@@ -92,10 +96,10 @@ class BookTitleBar extends StatelessWidget {
   }
 }
 
-enum ChoiceLook { gold, deduction }
+enum ChoiceLook { tint, solid, deduction }
 
-/// A rounded tile that can be chosen. Dark ink on the fill either way: the
-/// primary gold when chosen, deep orange for a deduction so it cannot be missed.
+/// A rounded tile that can be chosen. A solid fill is for the one choice a
+/// screen is about; everything else tints with a thin primary edge.
 class ChoiceTile extends StatelessWidget {
   const ChoiceTile({
     super.key,
@@ -103,51 +107,52 @@ class ChoiceTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.icon,
-    this.count,
-    this.look = ChoiceLook.gold,
+    this.look = ChoiceLook.tint,
     this.centered = true,
-    this.compact = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
   final IconData? icon;
-  final int? count;
   final ChoiceLook look;
   final bool centered;
 
-  /// Draws a tile of [N360Size.tile] inside the full [N360Size.tap] target, for
-  /// a row of filters that should stay quiet.
-  final bool compact;
-
   @override
   Widget build(BuildContext context) {
-    final bool deep = selected && look == ChoiceLook.deduction;
-    final BoxDecoration face = !selected
-        ? BoxDecoration(
-            color: N360Colors.sheet,
-            borderRadius: N360Radius.tileRadius,
-            border: Border.all(color: N360Colors.rule, width: 1.25),
-          )
-        : (deep
-              ? const BoxDecoration(color: N360Colors.orange, borderRadius: N360Radius.tileRadius)
-              : const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.tileRadius));
+    final bool filled = selected && look != ChoiceLook.tint;
+    final Color ink = filled ? N360Colors.onPrimary : N360Colors.ink;
+    final BoxDecoration face;
+    if (!selected) {
+      face = BoxDecoration(
+        color: N360Colors.sheet,
+        borderRadius: N360Radius.tileRadius,
+        border: Border.all(color: look == ChoiceLook.tint ? N360Colors.rule : N360Colors.ruleStrong),
+      );
+    } else if (look == ChoiceLook.tint) {
+      face = BoxDecoration(
+        color: N360Colors.primaryTint,
+        borderRadius: N360Radius.tileRadius,
+        border: Border.all(color: N360Colors.primary),
+      );
+    } else {
+      face = BoxDecoration(
+        color: look == ChoiceLook.deduction ? N360Colors.laterite : N360Colors.primary,
+        borderRadius: N360Radius.tileRadius,
+      );
+    }
 
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
-      semanticsLabel: count == null ? label : '$label $count',
+      semanticsLabel: label,
       selected: selected,
-      builder: (context, depth, child) {
-        final Widget tile = DecoratedBox(decoration: face, child: child);
-        return Transform.scale(
-          scale: pressedScale(depth),
-          child: compact ? Center(widthFactor: 1, child: tile) : tile,
-        );
-      },
+      builder: (context, depth, child) => Transform.scale(
+        scale: pressedScale(depth),
+        child: DecoratedBox(decoration: face, child: child),
+      ),
       child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: compact ? N360Size.tile : N360Size.tap),
+        constraints: const BoxConstraints(minHeight: N360Size.tap),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.xs),
           child: Row(
@@ -155,13 +160,17 @@ class ChoiceTile extends StatelessWidget {
             mainAxisAlignment: centered ? MainAxisAlignment.center : MainAxisAlignment.start,
             children: <Widget>[
               if (icon != null) ...<Widget>[
-                Icon(icon, size: N360IconSize.button, color: N360Colors.ink),
+                Icon(icon, size: N360IconSize.button, color: ink),
                 const SizedBox(width: 6),
               ],
               Flexible(
-                child: Text(label, maxLines: centered ? 1 : 2, overflow: TextOverflow.ellipsis, style: N360Type.button),
+                child: Text(
+                  label,
+                  maxLines: centered ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: N360Type.button.copyWith(color: ink),
+                ),
               ),
-              if (count != null) ...<Widget>[const SizedBox(width: 6), Text('$count', style: N360Type.figureSmall)],
             ],
           ),
         ),
@@ -170,55 +179,33 @@ class ChoiceTile extends StatelessWidget {
   }
 }
 
-/// A square tile holding a BOQ code, the way a list row is anchored here.
-class CodeTile extends StatelessWidget {
-  const CodeTile({super.key, required this.code});
-
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: N360Size.tile,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
-        child: Padding(
-          padding: const EdgeInsets.all(N360Space.xs),
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(code, maxLines: 1, style: N360Type.figureSmall),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A tinted note inside or between cards. Icon and words together, always.
+/// A plain note between cards. Icon and words together, always.
 class TintedNote extends StatelessWidget {
   const TintedNote({
     super.key,
     required this.icon,
     required this.ink,
-    required this.fill,
     required this.body,
     this.title,
+    this.edge = N360Colors.rule,
   });
 
   final IconData icon;
   final Color ink;
-  final Color fill;
+  final Color edge;
   final String? title;
   final String body;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(color: fill, borderRadius: N360Radius.md),
+      decoration: BoxDecoration(
+        color: N360Colors.sheet,
+        borderRadius: N360Radius.cardRadius,
+        border: Border.all(color: edge),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(N360Space.md),
+        padding: const EdgeInsets.all(N360Space.card),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -232,8 +219,8 @@ class TintedNote extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  if (title != null) Text(title!, style: N360Type.bodyStrong.copyWith(color: ink, height: 1.3)),
-                  Text(body, style: N360Type.body.copyWith(height: 1.35)),
+                  if (title != null) Text(title!, style: N360Type.bodyStrong.copyWith(color: ink)),
+                  Text(body, style: N360Type.body),
                 ],
               ),
             ),

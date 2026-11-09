@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
 import 'package:nirmaan360/core/design/design.dart';
+import 'package:nirmaan360/features/issues/view/widgets/group_slice.dart';
 import 'package:nirmaan360/features/issues/view/issue_detail_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_form_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_list_screen.dart';
+import 'package:nirmaan360/features/issues/view/widgets/issue_widgets.dart';
 
 import '../../../core/design/test_helpers.dart' show expectTapHeight;
 import '../../attendance/view/field_test_support.dart';
@@ -119,12 +121,92 @@ void main() {
       await tester.pumpWidget(fieldApp(app.services, const IssueListScreen()));
       await pumpDrift(tester);
 
-      // Read the label from the widget: the stamp's letter case is the design
+      // Read the label from the widget: the pill's letter case is the design
       // system's business, not this screen's.
-      expect(tester.widget<RubberStamp>(find.byType(RubberStamp)).label, 'On phone');
+      final Finder onPhone = find.byWidgetPredicate(
+        (w) => w is RubberStamp && w.label == 'On phone',
+      );
+      expect(onPhone, findsOneWidget);
       final Rect title = tester.getRect(find.textContaining('Shuttering panels'));
-      final Rect stamp = tester.getRect(find.byType(RubberStamp));
-      expect(stamp.top, greaterThanOrEqualTo(title.bottom), reason: 'the title keeps the whole width');
+      expect(
+        tester.getRect(onPhone).top,
+        greaterThanOrEqualTo(title.bottom),
+        reason: 'the title keeps the whole width',
+      );
+    });
+
+    testWidgets('each row reads where, when and who on one caption line, with the priority as a pill', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      await app.services.issues.raise(
+        projectId: 1,
+        title: 'Crack in column C3',
+        priority: 'critical',
+        locationNote: 'Grid C',
+        dueDate: '2026-11-20',
+      );
+      await app.sync();
+
+      await tester.pumpWidget(fieldApp(app.services, const IssueListScreen()));
+      await pumpDrift(tester);
+
+      expect(find.text('Grid C · Due 20 Nov · Not assigned'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((w) => w is RubberStamp && w.label == 'Critical'),
+        findsOneWidget,
+      );
+      expect(find.byType(GroupSlice), findsNWidgets(2), reason: 'a heading and a row');
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    });
+
+    testWidgets('a long list of issues builds only the rows on screen', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      for (var i = 1; i <= 400; i++) {
+        final String uuid = await app.services.issues.raise(
+          projectId: 1,
+          title: 'Issue number $i',
+          priority: 'low',
+        );
+        if (i > 200) await app.services.issues.changeStatus(uuid, 'closed');
+      }
+
+      await tester.pumpWidget(fieldApp(app.services, const IssueListScreen()));
+      await pumpDrift(tester);
+
+      final int built = tester.widgetList(find.byType(IssueTile)).length;
+      expect(built, greaterThan(3));
+      expect(built, lessThan(25), reason: 'one per visible issue, not one per issue');
+
+      // The closed group is at the far end; scrolling there builds it lazily.
+      await tester.scrollUntilVisible(
+        find.text('Closed'),
+        4000,
+        scrollable: find.byType(Scrollable).first,
+        maxScrolls: 400,
+      );
+      await tester.pump();
+      expect(find.text('Closed'), findsWidgets);
+      expect(tester.widgetList(find.byType(IssueTile)).length, lessThan(25));
+    });
+
+    testWidgets('a late issue says so on a pill, and a due-today one too', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      await app.services.issues.raise(projectId: 1, title: 'Late', dueDate: '2026-11-06');
+      await app.services.issues.raise(projectId: 1, title: 'Today', dueDate: '2026-11-09');
+      await app.sync();
+
+      await tester.pumpWidget(fieldApp(app.services, const IssueListScreen()));
+      await pumpDrift(tester);
+
+      Finder pill(String label) =>
+          find.byWidgetPredicate((w) => w is RubberStamp && w.label == label);
+      expect(pill('Overdue by 3 days'), findsOneWidget);
+      expect(pill('Due today'), findsOneWidget);
     });
 
     testWidgets('a finished issue says when it was resolved instead of when it was due', (tester) async {
@@ -144,7 +226,7 @@ void main() {
 
       expect(find.textContaining('Resolved '), findsOneWidget);
       expect(find.text('Due 5 Nov'), findsNothing);
-      expect(find.text('Due 14 Nov'), findsOneWidget, reason: 'open work still shows its due date');
+      expect(find.textContaining('Due 14 Nov'), findsOneWidget, reason: 'open work still shows its due date');
     });
 
     testWidgets('shows a skeleton while loading, then the rows', (tester) async {
@@ -200,7 +282,7 @@ void main() {
   });
 
   group('detail', () {
-    testWidgets('the status stamp lands when the status changes, not when the page opens', (tester) async {
+    testWidgets('the status is a pill that follows the change', (tester) async {
       setPhone(tester);
       final app = await TestApp.create();
       addTearDown(app.dispose);
@@ -209,13 +291,16 @@ void main() {
 
       await tester.pumpWidget(fieldApp(app.services, IssueDetailScreen(clientUuid: uuid)));
       await pumpDrift(tester);
-      expect(tester.widget<RubberStamp>(find.byType(RubberStamp)).animate, isFalse);
+      Finder pill(String label) =>
+          find.byWidgetPredicate((w) => w is RubberStamp && w.label == label);
+      expect(pill('Open'), findsOneWidget);
 
       await tester.tap(find.text('Start work'));
       await pumpDrift(tester);
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(tester.widget<RubberStamp>(find.byType(RubberStamp).first).animate, isTrue);
+      expect(pill('In progress'), findsOneWidget);
+      expect(pill('Open'), findsNothing);
       await settleToasts(tester);
     });
 
@@ -273,6 +358,23 @@ void main() {
       await tester.tap(find.text('3 days'));
       await tester.pump();
       expect(find.text('Tap the chosen day again to clear it.'), findsNothing);
+    });
+
+    testWidgets('the days are chips with a full-size target, and the filter strip scrolls', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(fieldApp(app.services, const IssueFormScreen()));
+      await pumpDrift(tester);
+      for (final String day in <String>['Today', '3 days', '1 week']) {
+        expectTapHeight(tester, find.widgetWithText(N360Chip, day));
+      }
+
+      await tester.pumpWidget(fieldApp(app.services, const IssueListScreen()));
+      await pumpDrift(tester);
+      expect(find.widgetWithText(N360Chip, 'All'), findsOneWidget);
+      expectTapHeight(tester, find.widgetWithText(N360Chip, 'All'));
     });
 
     testWidgets('the person field opens a sheet of people and shows the one chosen', (tester) async {

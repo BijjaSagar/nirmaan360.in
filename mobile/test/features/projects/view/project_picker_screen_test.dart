@@ -49,8 +49,8 @@ void main() {
     await settle(tester);
 
     expect(find.byType(ProjectPickerScreen), findsOneWidget);
-    // Stamps set Latin text in capitals.
-    expect(find.text(en.shellPickerCurrent.toUpperCase()), findsOneWidget);
+    // The current site carries a quiet status pill.
+    expect(find.text(en.shellPickerCurrent), findsOneWidget);
   });
 
   group('for someone who can create projects', () {
@@ -134,7 +134,7 @@ void main() {
     addTearDown(app.dispose);
     await pumpShellApp(tester, app);
 
-    await tester.tap(find.text(en.shellSettings));
+    await tester.tap(find.bySemanticsLabel(en.shellSettings));
     await settle(tester);
 
     expect(find.byType(SettingsScreen), findsOneWidget);

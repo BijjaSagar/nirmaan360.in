@@ -7,6 +7,7 @@ import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
+import '../../issues/view/widgets/group_slice.dart';
 import '../bloc/boq_cubit.dart';
 
 /// The BOQ of the current project, grouped by section. Adding lines is for
@@ -151,89 +152,111 @@ class _BoqScroll extends StatelessWidget {
             ),
           );
         }
-        var firstIndex = 0;
-        return SliverMainAxisGroup(
-          slivers: <Widget>[
-            for (final section in state.sections) ...() {
-              final int start = firstIndex;
-              firstIndex += section.lines.length;
-              return <Widget>[
-                SliverToBoxAdapter(
-                  child: _SectionTitle(
-                    name: section.name ?? l.boqNoSection,
-                    count: section.lines.length,
-                  ),
-                ),
-                _SectionCard(lines: section.lines, firstIndex: start),
-              ];
-            }(),
-          ],
-        );
+        return _lines(l, state);
     }
+  }
+
+  /// Every heading and every line in one lazily built list, so a BOQ of
+  /// thousands of lines builds only the rows on screen.
+  Widget _lines(AppLocalizations l, BoqState state) {
+    final List<_Entry> entries = <_Entry>[
+      for (final section in state.sections) ...<_Entry>[
+        _HeadEntry(section.name ?? l.boqNoSection, section.lines.length),
+        for (final (index, line) in section.lines.indexed)
+          _LineEntry(line, indexInSection: index, last: index == section.lines.length - 1),
+      ],
+    ];
+    return SliverList.builder(
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        return switch (entries[index]) {
+          _HeadEntry(:final name, :final count) => _SectionHead(name: name, count: count),
+          _LineEntry(:final line, :final indexInSection, :final last) => StaggeredRise(
+            key: ValueKey<int>(line.item.id),
+            index: index,
+            maxAnimated: 8,
+            child: GroupSlice(
+              first: false,
+              last: last,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (indexInSection > 0) const RuledDivider(indent: N360Space.card),
+                  _BoqRow(line: line),
+                ],
+              ),
+            ),
+          ),
+        };
+      },
+    );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.name, required this.count});
+sealed class _Entry {
+  const _Entry();
+}
+
+/// A section heading: the first slice of its group.
+class _HeadEntry extends _Entry {
+  const _HeadEntry(this.name, this.count);
+
+  final String name;
+  final int count;
+}
+
+class _LineEntry extends _Entry {
+  const _LineEntry(this.line, {required this.indexInSection, required this.last});
+
+  final BoqLine line;
+  final int indexInSection;
+
+  /// The last line of its section, so the group closes under it.
+  final bool last;
+}
+
+/// The heading of a section: its name and its line count, over a full-width
+/// hairline. It is the top slice of the section's white group.
+class _SectionHead extends StatelessWidget {
+  const _SectionHead({required this.name, required this.count});
 
   final String name;
   final int count;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        N360Space.gutter + N360Space.xs,
-        N360Space.sm,
-        N360Space.gutter + N360Space.xs,
-        N360Space.sm,
-      ),
-      child: Row(
+    return GroupSlice(
+      first: true,
+      last: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Expanded(child: Text(name, style: N360Type.fit(N360Type.heading, name))),
-          Text('$count', style: N360Type.label.copyWith(color: N360Colors.inkLabel)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.card,
+              N360Space.md,
+              N360Space.card,
+              N360Space.sm,
+            ),
+            child: Row(
+              children: <Widget>[
+                Expanded(child: Text(name, style: N360Type.fit(N360Type.heading, name))),
+                Text('$count', style: N360Type.figureSmall.copyWith(color: N360Colors.ink2)),
+              ],
+            ),
+          ),
+          const RuledDivider(),
         ],
       ),
     );
   }
 }
 
-/// One section on a single white card, with its rows built lazily.
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.lines, required this.firstIndex});
-
-  final List<BoqLine> lines;
-
-  /// Position of this section's first row in the whole list, for the entrance.
-  final int firstIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return FieldGroupSliver(
-      padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.xs),
-      sliver: SliverList.builder(
-        itemCount: lines.length,
-        itemBuilder: (context, index) {
-          final BoqLine line = lines[index];
-          return StaggeredRise(
-            key: ValueKey<int>(line.item.id),
-            index: firstIndex + index,
-            maxAnimated: 8,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (index > 0) const RuledDivider(),
-                _BoqRow(line: line),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
+/// One BOQ line. The code, the work, what the BOQ says, and what is left to
+/// measure, with the left-over as a figure on the right edge so the balances of
+/// every line line up under each other.
 class _BoqRow extends StatelessWidget {
   const _BoqRow({required this.line});
 
@@ -245,97 +268,84 @@ class _BoqRow extends StatelessWidget {
     final item = line.item;
     final MeasuredShare share = measuredShareOf(line);
     final bool over = line.previewBalance.isNegative;
-    // More measured than the BOQ allows is said in words, not only in red.
-    final String balance = over
-        ? l.boqOver(line.previewBalance.abs().format(), item.unit)
-        : l.boqBalance(line.previewBalance.format(), item.unit);
-    final Color balanceInk = over ? N360Colors.stampRed : N360Colors.ink;
+    final Color ink = over ? N360Colors.stampRed : N360Colors.ink;
+    final String word = over ? l.boqOverLabel : l.boqBalanceLabel;
+    final String figure = (over ? line.previewBalance.abs() : line.previewBalance).format();
+    final String spoken = over
+        ? l.boqOver(figure, item.unit)
+        : l.boqBalance(figure, item.unit);
+    final String code = l.boqItemCode(item.code);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: N360Space.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          _CodeTile(code: item.code),
-          const SizedBox(width: N360Space.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  item.description,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.fit(N360Type.bodyStrong, item.description),
-                ),
-                const SizedBox(height: N360Space.xxs),
-                Text(
-                  '${item.qty.format()} ${item.unit} × ${item.rate.inr()}',
-                  style: N360Type.caption,
-                ),
-                const SizedBox(height: N360Space.xxs),
-                Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    if (over) ...<Widget>[
-                      Icon(Icons.warning_amber, size: N360IconSize.sm, color: balanceInk),
-                      const SizedBox(width: N360Space.xs),
-                    ],
-                    Flexible(
-                      child: Text(
-                        balance,
-                        style: N360Type.fit(N360Type.label, balance).copyWith(color: balanceInk),
-                      ),
+                    Text(code, style: N360Type.fit(N360Type.caption, code)),
+                    Text(
+                      item.description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.fit(N360Type.bodyStrong, item.description),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: N360Space.sm),
+              Semantics(
+                container: true,
+                label: l.boqMeasuredShare(share.percent),
+                child: ExcludeSemantics(
+                  child: SquarePercent(fraction: share.fraction, label: '${share.percent}%'),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: N360Space.sm),
+          const SizedBox(height: N360Space.xxs),
+          Text(
+            '${item.qty.format()} ${item.unit} × ${item.rate.inr()}',
+            style: N360Type.caption,
+          ),
+          const SizedBox(height: N360Space.xs),
           Semantics(
             container: true,
-            label: l.boqMeasuredShare(share.percent),
+            label: spoken,
             child: ExcludeSemantics(
-              child: SquarePercent(fraction: share.fraction, label: '${share.percent}%'),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: <Widget>[
+                  if (over) ...<Widget>[
+                    Icon(Icons.warning_amber, size: N360IconSize.sm, color: ink),
+                    const SizedBox(width: N360Space.xs),
+                  ],
+                  Expanded(
+                    child: Text(
+                      word,
+                      style: N360Type.fit(N360Type.label, word).copyWith(color: ink),
+                    ),
+                  ),
+                  Text(figure, style: N360Type.figure.copyWith(color: ink)),
+                  const SizedBox(width: N360Space.xs),
+                  // A fixed room for the unit keeps the decimal points aligned.
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: N360Space.xxl),
+                    child: Text(item.unit, style: N360Type.caption.copyWith(color: ink)),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// The item code on a tile that is [N360Size.tile] square for a short code and
-/// grows a little for a longer one, so the code stays at its real size instead
-/// of shrinking under the 12 that nothing on screen goes below.
-class _CodeTile extends StatelessWidget {
-  const _CodeTile({required this.code});
-
-  final String code;
-
-  static const double _maxWidth = N360Size.tap + N360Space.xs;
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: N360Size.tile,
-        maxWidth: _maxWidth,
-        minHeight: N360Size.tile,
-      ),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
-        child: Center(
-          widthFactor: 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.xs + N360Space.xxs),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(code, maxLines: 1, style: N360Type.figureSmall.copyWith(fontWeight: FontWeight.w500)),
-            ),
-          ),
-        ),
       ),
     );
   }

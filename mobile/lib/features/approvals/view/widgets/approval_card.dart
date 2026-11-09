@@ -8,165 +8,83 @@ import '../../bloc/approvals_inbox_cubit.dart';
 import '../../data/approval_repository.dart';
 import 'approval_read.dart';
 
-/// One item waiting for a decision, with its deciding figure large.
-class ApprovalCard extends StatelessWidget {
-  const ApprovalCard({super.key, required this.row, required this.now, required this.onTap, this.share});
+/// One item waiting for a decision: its deciding figure first, then what it
+/// is, then who sent it and when, on one line.
+class ApprovalTile extends StatelessWidget {
+  const ApprovalTile({super.key, required this.row, required this.now, required this.onTap, this.status});
 
   final ApprovalRow row;
   final DateTime now;
   final VoidCallback? onTap;
-  final ApprovalShare? share;
+
+  /// Overrides the row's own pill, for a row that has just been decided.
+  final Widget? status;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final ApprovalFigure? figure = figureOf(row, l);
-    final String project = <String>[?row.projectCode, ?row.projectName].join(' · ');
-    final String who = <String>[
+    final String headline = headlineOf(row);
+    final String amount = figure == null ? '' : '${figure.value} ${figure.unit ?? ''}'.trim();
+    final String meta = <String>[
+      ?row.projectCode,
       ?row.submittedByName,
       if (row.submittedAt != null) agoText(l, row.submittedAt, now),
     ].join(' · ');
-    final String type = docTypeWord(l, row.docType);
-    final bool deviation = isDeviationDoc(row);
-    final Color figureInk = figure?.negative == true ? N360Colors.laterite : N360Colors.ink;
-    final String figureSpoken = figure == null ? '' : '${figure.value} ${figure.unit ?? ''}';
-    final ApprovalShare? portion = share;
+    final Widget? pill = status ?? _ownStatus(l);
 
-    final Widget body = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            IconTile(icon: docTypeIcon(row.docType), semanticLabel: type),
-            const SizedBox(width: N360Space.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(type, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
-                  Text(headlineOf(row), maxLines: 2, overflow: TextOverflow.ellipsis, style: N360Type.heading),
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (figure != null) ...<Widget>[
-          const SizedBox(height: N360Space.sm),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text.rich(
-                    TextSpan(
-                      text: figure.value,
-                      children: <InlineSpan>[
-                        if (figure.unit != null)
-                          TextSpan(
-                            text: ' ${figure.unit}',
-                            style: N360Type.heading.copyWith(color: figureInk, fontWeight: FontWeight.w500),
-                          ),
-                      ],
-                    ),
-                    style: N360Type.figureLarge.copyWith(color: figureInk),
-                  ),
-                ),
-              ),
-              if (portion != null) ...<Widget>[
-                const SizedBox(width: N360Space.sm),
-                Semantics(
-                  label: '${portion.label} ${l.measurementShareOfBoq}',
-                  child: ExcludeSemantics(
-                    child: SquarePercent(fraction: portion.fraction, label: portion.label),
-                  ),
-                ),
+    return LedgerListTile(
+      title: headline,
+      subtitle: meta,
+      semanticsLabel: <String>[
+        docTypeWord(l, row.docType),
+        headline,
+        if (amount.isNotEmpty) amount,
+        if (isDeviationDoc(row)) l.approvalsDeviation,
+        meta,
+      ].join(', '),
+      leading: Icon(docTypeIcon(row.docType), size: N360IconSize.lg, color: N360Colors.ink2),
+      status: amount.isEmpty && pill == null
+          ? null
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (amount.isNotEmpty) Text(amount, maxLines: 1, style: N360Type.figure),
+                if (amount.isNotEmpty && pill != null) const SizedBox(height: N360Space.xxs),
+                ?pill,
               ],
-            ],
-          ),
-        ],
-        if (deviation) ...<Widget>[const SizedBox(height: N360Space.sm), _DeviationFlag(label: l.approvalsDeviation)],
-        if (project.isNotEmpty) ...<Widget>[
-          const SizedBox(height: N360Space.xs),
-          Text(project, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
-        ],
-        const SizedBox(height: 2),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(who, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
             ),
-            if (!row.canAct)
-              Flexible(
-                child: Text(
-                  l.approvalsWaitingOn(roleWord(l, row.currentRole, serverLabel: row.currentRoleLabel)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.caption.copyWith(fontWeight: FontWeight.w700),
-                ),
-              )
-            else ...<Widget>[
-              Text(l.approvalsOpen, style: N360Type.label.copyWith(color: N360Colors.laterite, height: 1.3)),
-              const Icon(Icons.north_east, size: N360IconSize.sm, color: N360Colors.laterite),
-            ],
-          ],
-        ),
-      ],
-    );
-
-    return LedgerCard(
-      padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.md, N360Space.md, N360Space.sm + 2),
       onTap: onTap,
-      semanticsLabel: '$type. ${headlineOf(row)}. $project. $figureSpoken. $who',
-      child: body,
     );
+  }
+
+  Widget? _ownStatus(AppLocalizations l) {
+    if (isDeviationDoc(row)) return StatusPill(kind: StampKind.rejected, label: l.approvalsDeviation);
+    if (!row.canAct) {
+      return StatusPill(
+        kind: StampKind.inReview,
+        label: roleWord(l, row.currentRole, serverLabel: row.currentRoleLabel),
+      );
+    }
+    return null;
   }
 }
 
-/// The urgent fill with dark ink, so a deviation reads from across the site.
-class _DeviationFlag extends StatelessWidget {
-  const _DeviationFlag({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(color: N360Colors.accent, borderRadius: N360Radius.sm),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: 3),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Icon(Icons.warning_amber, size: N360IconSize.sm, color: N360Colors.ink),
-              const SizedBox(width: 4),
-              Text(label, style: N360Type.bodyStrong.copyWith(height: 1.3, fontWeight: FontWeight.w700)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A card that has just been decided. The stamp lands on it, it holds for a
-/// moment, then it slides off and the cards below rise into the gap.
-class LeavingApprovalCard extends StatefulWidget {
-  const LeavingApprovalCard({super.key, required this.leaving, required this.now, required this.onDone});
+/// A row that has just been decided. It shows the decision, holds for a moment,
+/// then slides off and the rows below rise into the gap.
+class LeavingApprovalTile extends StatefulWidget {
+  const LeavingApprovalTile({super.key, required this.leaving, required this.now, required this.onDone});
 
   final LeavingCard leaving;
   final DateTime now;
   final VoidCallback onDone;
 
   @override
-  State<LeavingApprovalCard> createState() => _LeavingApprovalCardState();
+  State<LeavingApprovalTile> createState() => _LeavingApprovalTileState();
 }
 
-class _LeavingApprovalCardState extends State<LeavingApprovalCard> with SingleTickerProviderStateMixin {
+class _LeavingApprovalTileState extends State<LeavingApprovalTile> with SingleTickerProviderStateMixin {
   late final AnimationController _exit = AnimationController(vsync: this);
   bool _started = false;
 
@@ -202,26 +120,18 @@ class _LeavingApprovalCardState extends State<LeavingApprovalCard> with SingleTi
     final bool approved = leaving.action == ApprovalAction.approved;
     final double holdPart = _hold.inMilliseconds / (_hold + _slide).inMilliseconds;
 
-    final Widget card = Stack(
-      alignment: Alignment.center,
-      children: <Widget>[
-        ApprovalCard(row: leaving.row, now: widget.now, onTap: null),
-        RubberStamp(
-          kind: approved ? StampKind.approved : StampKind.returned,
-          label: approved ? l.statusApproved : l.statusReturned,
-          size: StampSize.large,
-          animate: true,
-        ),
-      ],
-    );
-
     return RepaintBoundary(
       child: ClipRect(
         child: AnimatedBuilder(
           animation: _exit,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: N360Space.md),
-            child: card,
+          child: ApprovalTile(
+            row: leaving.row,
+            now: widget.now,
+            onTap: null,
+            status: StatusPill(
+              kind: approved ? StampKind.approved : StampKind.returned,
+              label: approved ? l.statusApproved : l.statusReturned,
+            ),
           ),
           builder: (context, child) {
             final double raw = ((_exit.value - holdPart) / (1 - holdPart)).clamp(0.0, 1.0);

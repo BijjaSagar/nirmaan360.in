@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,22 +8,24 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../bloc/attendance_cubit.dart';
 
 // The card's height is what its pieces take: some are fixed (paddings, gaps,
-// the accent bars, the gauge) and some grow with the text size (the figures and
-// their words), so the two are counted apart and only the second is scaled.
-// Type sizes are read from the tokens, so a change of scale moves the card too.
+// the accent bars, the progress bar) and some grow with the text size (the
+// figures and their words), so the two are counted apart and only the second is
+// scaled. Type sizes and the bar's height are read from the design system, so a
+// change of scale moves the card too.
 
 /// One line of [style], at the default text size.
 double _line(TextStyle style) => style.fontSize! * style.height!;
 
 /// Fixed height of the folded card: its padding, the accent bar and gap, the
-/// gap above the gauge and the gauge itself, and a little air so that a
-/// fraction of a point in a font's metrics never clips a line.
-const double _foldedFixed =
+/// gap above the progress bar and the bar with the room it paints in, and a
+/// little air so that a fraction of a point in a font's metrics never clips a
+/// line.
+double get _foldedFixed =>
     (N360Space.xs + N360Space.sm) +
     (N360Space.sm + N360Space.tile) +
     (N360Space.xs + N360Space.xs) +
     N360Space.sm +
-    N360Space.sm +
+    (const HatchedProgressBar(fraction: 0).height + N360Space.sm) +
     N360Space.xs;
 
 /// A total's figure and its word, the word with Devanagari's taller line.
@@ -36,7 +37,7 @@ double get _foldedText =>
 double get _heroText =>
     _line(N360Type.forDevanagari(N360Type.label)) + _line(N360Type.figureHero);
 
-/// Height of the card once folded: five totals and the gauge stay on screen.
+/// Height of the card once folded: five totals and the bar stay on screen.
 double summaryCollapsedHeight(double textScale) =>
     _foldedFixed + _foldedText * textScale;
 
@@ -51,7 +52,7 @@ double summaryExpandedHeight(double textScale) =>
     N360Space.cardGap;
 
 /// The muster's summary card. [fold] goes from 0 (the big figure showing) to 1
-/// (only the totals and a thin gauge left) as the list scrolls up.
+/// (only the totals and a thin bar left) as the list scrolls up.
 ///
 /// The hero figure counts up once, the first time the card appears. The card
 /// keeps its state while the list scrolls, so folding it away and back never
@@ -146,10 +147,8 @@ class _MusterSummaryCardState extends State<MusterSummaryCard> {
                       ],
                     ),
                     const SizedBox(height: N360Space.sm),
-                    TickGauge(
+                    HatchedProgressBar(
                       fraction: fraction,
-                      ticks: math.max(totals.total, 12).clamp(12, 60),
-                      height: lerpDouble(N360Space.lg, N360Space.sm, fold)!,
                       semanticLabel: l.attendanceGroupProgress(
                         totals.marked,
                         totals.total,

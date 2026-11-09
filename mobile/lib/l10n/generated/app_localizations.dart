@@ -238,12 +238,6 @@ abstract class AppLocalizations {
   /// **'Nothing waiting'**
   String get approvalsEmptyTitle;
 
-  /// No description provided for @approvalsEyebrow.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{Nothing waiting} =1{1 waiting for you} other{{count} waiting for you}}'**
-  String approvalsEyebrow(int count);
-
   /// No description provided for @approvalsFailOfflineBody.
   ///
   /// In en, this message translates to:
@@ -297,6 +291,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please sign in again'**
   String get approvalsFailSessionTitle;
+
+  /// No description provided for @approvalsForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you'**
+  String get approvalsForYou;
 
   /// No description provided for @approvalsGoneBody.
   ///
@@ -375,6 +375,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can read these, but approvals need network.'**
   String get approvalsOfflineDetail;
+
+  /// No description provided for @approvalsOnOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on others'**
+  String get approvalsOnOthers;
 
   /// No description provided for @approvalsOpen.
   ///
@@ -579,12 +585,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total'**
   String get approvalsTotal;
-
-  /// No description provided for @approvalsWaitingOn.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting on {role}'**
-  String approvalsWaitingOn(String role);
 
   /// No description provided for @approvalsWeather.
   ///
@@ -868,6 +868,12 @@ abstract class AppLocalizations {
   /// **'Balance {qty} {unit}'**
   String boqBalance(String qty, String unit);
 
+  /// No description provided for @boqBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get boqBalanceLabel;
+
   /// No description provided for @boqEmptyAsk.
   ///
   /// In en, this message translates to:
@@ -1000,6 +1006,12 @@ abstract class AppLocalizations {
   /// **'Choose the unit.'**
   String get boqFormUnitRequired;
 
+  /// No description provided for @boqItemCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Item {code}'**
+  String boqItemCode(String code);
+
   /// No description provided for @boqLinesAdded.
   ///
   /// In en, this message translates to:
@@ -1089,6 +1101,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Over by {qty} {unit}'**
   String boqOver(String qty, String unit);
+
+  /// No description provided for @boqOverLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Over by'**
+  String get boqOverLabel;
 
   /// No description provided for @boqRefreshFailed.
   ///
@@ -1711,7 +1729,7 @@ abstract class AppLocalizations {
   /// No description provided for @dprRowsCount.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 work item} other{{count} work items}}'**
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
   String dprRowsCount(int count);
 
   /// No description provided for @dprSameAsYesterday.
@@ -1825,7 +1843,7 @@ abstract class AppLocalizations {
   /// No description provided for @dprSyncPhoneOnly.
   ///
   /// In en, this message translates to:
-  /// **'Only on this phone'**
+  /// **'Phone only'**
   String get dprSyncPhoneOnly;
 
   /// No description provided for @dprSyncSending.
@@ -1837,7 +1855,7 @@ abstract class AppLocalizations {
   /// No description provided for @dprSyncWaiting.
   ///
   /// In en, this message translates to:
-  /// **'Waiting to send'**
+  /// **'Not sent yet'**
   String get dprSyncWaiting;
 
   /// No description provided for @dprTakePhoto.
@@ -2673,12 +2691,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This entry was rejected and will not count. Make a new entry if the work needs measuring again.'**
   String get measurementRejectedBody;
-
-  /// No description provided for @measurementRowCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 entry} other{{count} entries}}'**
-  String measurementRowCount(int count);
 
   /// No description provided for @measurementSavedOffline.
   ///

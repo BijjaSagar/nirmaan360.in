@@ -107,8 +107,8 @@ class _DetailView extends StatelessWidget {
                             const SizedBox(height: N360Space.md),
                             TintedNote(
                               icon: Icons.warning_amber,
-                              ink: N360Colors.ink,
-                              fill: N360Colors.accent,
+                              ink: N360Colors.stampRed,
+                              edge: N360Colors.stampRed,
                               title: l.approvalsDeviation,
                               body: l.approvalsDeviationBody,
                             ),
@@ -193,7 +193,7 @@ class _Hero extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              IconTile(icon: docTypeIcon(row.docType), semanticLabel: docTypeWord(l, row.docType)),
+              Icon(docTypeIcon(row.docType), size: N360IconSize.lg, color: N360Colors.ink2),
               const SizedBox(width: N360Space.md),
               Expanded(
                 child: Column(
@@ -257,8 +257,7 @@ class _Hero extends StatelessWidget {
               const Icon(Icons.person_outline, size: N360IconSize.md, color: N360Colors.ink2),
               const SizedBox(width: 6),
               Expanded(child: Text(who, style: N360Type.bodyStrong)),
-              if (row.status == 'IN_REVIEW')
-                RubberStamp(kind: StampKind.inReview, label: l.statusInReview, size: StampSize.small),
+              if (row.status == 'IN_REVIEW') StatusPill(kind: StampKind.inReview, label: l.statusInReview),
             ],
           ),
         ],
@@ -311,52 +310,49 @@ class _ActionBar extends StatelessWidget {
     // buttons keep their look so the page does not change under the stamp.
     final bool enabled = state.actionsEnabled || state.finished;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.sm, 0, N360Space.sm, N360Space.sm),
-      child: LedgerCard(
-        padding: const EdgeInsets.all(N360Space.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (!state.online) ...<Widget>[
-              Row(
-                children: <Widget>[
-                  const Icon(Icons.cloud_off, size: N360IconSize.md, color: N360Colors.ink2),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(l.approvalsNeedsNetwork, style: N360Type.bodyStrong.copyWith(height: 1.3))),
-                ],
-              ),
-              const SizedBox(height: N360Space.sm),
-            ],
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (!state.online) ...<Widget>[
             Row(
               children: <Widget>[
-                Expanded(
-                  child: GloveButton(
-                    key: const ValueKey<String>('approval-send-back'),
-                    label: l.approvalsSendBack,
-                    icon: Icons.reply,
-                    kind: GloveButtonKind.danger,
-                    large: true,
-                    fullWidth: true,
-                    onPressed: enabled ? onSendBack : null,
-                  ),
-                ),
-                const SizedBox(width: N360Space.sm),
-                Expanded(
-                  child: GloveButton(
-                    key: const ValueKey<String>('approval-approve'),
-                    label: l.approvalsApprove,
-                    icon: Icons.task_alt,
-                    large: true,
-                    fullWidth: true,
-                    loading: state.acting,
-                    onPressed: enabled ? onApprove : null,
-                  ),
-                ),
+                const Icon(Icons.cloud_off, size: N360IconSize.md, color: N360Colors.ink2),
+                const SizedBox(width: 6),
+                Expanded(child: Text(l.approvalsNeedsNetwork, style: N360Type.bodyStrong.copyWith(height: 1.3))),
               ],
             ),
+            const SizedBox(height: N360Space.sm),
           ],
-        ),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: GloveButton(
+                  key: const ValueKey<String>('approval-send-back'),
+                  label: l.approvalsSendBack,
+                  icon: Icons.reply,
+                  kind: GloveButtonKind.danger,
+                  large: true,
+                  fullWidth: true,
+                  onPressed: enabled ? onSendBack : null,
+                ),
+              ),
+              const SizedBox(width: N360Space.sm),
+              Expanded(
+                child: GloveButton(
+                  key: const ValueKey<String>('approval-approve'),
+                  label: l.approvalsApprove,
+                  icon: Icons.task_alt,
+                  large: true,
+                  fullWidth: true,
+                  loading: state.acting,
+                  onPressed: enabled ? onApprove : null,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

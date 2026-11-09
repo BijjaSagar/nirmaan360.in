@@ -16,24 +16,38 @@ import 'shell_test_helpers.dart';
 void main() {
   final en = lookupAppLocalizations(const Locale('en'));
 
-  testWidgets('going offline shows the banner without moving the page', (tester) async {
+  testWidgets('going offline is said in the sync tag without moving the page', (tester) async {
     final app = await TestApp.create();
     addTearDown(app.dispose);
     await pumpShellApp(tester, app);
 
     final double before = tester.getTopLeft(find.text('Kalyani Tower B')).dy;
+    expect(find.text(en.shellPillAllSent), findsOneWidget);
+    expect(find.text(en.shellOfflineLabel), findsNothing);
+
+    app.connectivity.setOnline(false);
+    await settle(tester);
+
+    expect(find.text(en.shellOfflineLabel), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Kalyani Tower B')).dy, before);
+
+    app.connectivity.setOnline(true);
+    await settle(tester);
+    expect(find.text(en.shellOfflineLabel), findsNothing);
+    expect(tester.getTopLeft(find.text('Kalyani Tower B')).dy, before);
+  });
+
+  testWidgets('the other tabs keep the offline banner in the date slot', (tester) async {
+    final app = await TestApp.create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app, location: Routes.measurements);
     expect(find.byType(OfflineBanner), findsNothing);
 
     app.connectivity.setOnline(false);
     await settle(tester);
 
-    expect(find.byType(OfflineBanner), findsOneWidget);
-    expect(tester.getTopLeft(find.text('Kalyani Tower B')).dy, before);
-
-    app.connectivity.setOnline(true);
-    await settle(tester);
-    expect(find.byType(OfflineBanner), findsNothing);
-    expect(tester.getTopLeft(find.text('Kalyani Tower B')).dy, before);
+    // The shell's slot shows one; the tab's own page may add its own.
+    expect(find.byType(OfflineBanner), findsWidgets);
   });
 
   testWidgets('a progress rule shows while syncing', (tester) async {
@@ -67,13 +81,15 @@ void main() {
     expect(find.byType(SyncCenterScreen), findsOneWidget);
   });
 
-  testWidgets('settings opens from the header, word and tile both', (tester) async {
+  testWidgets('settings opens from the header tile, which is a full target', (tester) async {
     final app = await TestApp.create();
     addTearDown(app.dispose);
     await pumpShellApp(tester, app);
 
-    expect(tester.getSize(find.byType(IconTile).last).height, greaterThanOrEqualTo(N360Size.tap));
-    await tester.tap(find.text(en.shellSettings));
+    final Finder settings = find.bySemanticsLabel(en.shellSettings);
+    expect(tester.getSize(settings).height, greaterThanOrEqualTo(N360Size.tap));
+    expect(tester.getSize(settings).width, greaterThanOrEqualTo(N360Size.tap));
+    await tester.tap(settings);
     await settle(tester);
 
     expect(find.byType(SettingsScreen), findsOneWidget);

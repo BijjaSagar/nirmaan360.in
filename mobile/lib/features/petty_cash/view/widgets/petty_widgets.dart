@@ -10,7 +10,7 @@ import '../../../attendance/view/widgets/field_kit.dart';
 import '../../bloc/expense_form_cubit.dart' show formatTypedAmount;
 import '../../data/petty_cash_repository.dart' show LocalSyncState;
 
-/// Nothing once sent; a stamp saying where the entry is otherwise.
+/// Nothing once sent; a pill saying where the entry is otherwise.
 class PettySyncStamp extends StatelessWidget {
   const PettySyncStamp({super.key, required this.state});
 
@@ -21,20 +21,17 @@ class PettySyncStamp extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     return switch (state) {
       LocalSyncState.synced => const SizedBox.shrink(),
-      LocalSyncState.queued => RubberStamp(
+      LocalSyncState.queued => StatusPill(
         kind: StampKind.queued,
         label: l.statusQueued,
-        size: StampSize.small,
       ),
-      LocalSyncState.sending => RubberStamp(
+      LocalSyncState.sending => StatusPill(
         kind: StampKind.inReview,
         label: l.pettyCashSyncSending,
-        size: StampSize.small,
       ),
-      LocalSyncState.attention => RubberStamp(
+      LocalSyncState.attention => StatusPill(
         kind: StampKind.rejected,
         label: l.pettyCashSyncAttention,
-        size: StampSize.small,
       ),
     };
   }

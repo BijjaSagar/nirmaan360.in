@@ -8,7 +8,6 @@ import '../../../projects/data/project_repository.dart';
 import '../../../projects/view/boq_missing_prompt.dart';
 import '../../bloc/boq_picker_cubit.dart';
 import '../../bloc/measurement_book.dart';
-import 'book_kit.dart';
 
 /// Opens the BOQ line picker. Returns the chosen line, or null.
 Future<BoqLine?> showBoqPicker(
@@ -113,21 +112,27 @@ class _BoqPicker extends StatelessWidget {
                   if (state.query.trim().isEmpty) return BoqMissingPrompt(services: services);
                   return SingleChildScrollView(child: EmptyLedger(title: l.measurementNoMatchTitle));
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: N360Space.sm),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) => switch (items[index]) {
-                    _Heading(:final text) => _SectionHead(text),
-                    _Line(:final line) => StaggeredRise(
-                      index: index,
-                      maxAnimated: 8,
-                      child: _BoqRow(
-                        line: line,
-                        selected: line.item.id == selectedId,
-                        onTap: () => Navigator.of(context).pop(line),
+                return StaggeredRise(
+                  index: 0,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(N360Space.xxs, 0, N360Space.xxs, N360Space.sm),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) => switch (items[index]) {
+                      _Heading(:final text) => _SectionHead(text),
+                      _Line(:final line) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          if (index > 0 && items[index - 1] is _Line) const RuledDivider(indent: N360Space.card),
+                          _BoqRow(
+                            line: line,
+                            selected: line.item.id == selectedId,
+                            onTap: () => Navigator.of(context).pop(line),
+                          ),
+                        ],
                       ),
-                    ),
-                  },
+                    },
+                  ),
                 );
               },
             ),
@@ -163,12 +168,15 @@ class _SectionHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.xs),
+      padding: const EdgeInsets.fromLTRB(N360Space.card, N360Space.md, N360Space.card, N360Space.xs),
       child: SectionLabel(text),
     );
   }
 }
 
+/// One BOQ line: what it is, and how much of it is left. The sheet is already
+/// white, so rows sit straight on it and the list stays lazy however long the
+/// BOQ is.
 class _BoqRow extends StatelessWidget {
   const _BoqRow({required this.line, required this.selected, required this.onTap});
 
@@ -179,69 +187,35 @@ class _BoqRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final String unit = line.item.unit;
     final String balance = formatQty(line.previewBalance);
-    final Color balanceInk = line.previewBalance.isNegative ? N360Colors.laterite : N360Colors.ink;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter - 4, vertical: 2),
-      child: PressTarget(
-        onTap: onTap,
-        haptic: N360Haptics.select,
-        minHeight: 76,
-        selected: selected,
-        semanticsLabel: '${line.item.code} ${line.item.description}. ${l.measurementBalance} $balance $unit',
-        builder: (context, depth, child) => Transform.scale(
-          scale: pressedScale(depth),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: selected ? N360Colors.goldTint : N360Colors.sheet,
-              borderRadius: N360Radius.tileRadius,
+    final Widget tile = LedgerListTile(
+      title: '${line.item.code} · ${line.item.description}',
+      subtitle: l.measurementBalance,
+      leading: selected ? const Icon(Icons.check, size: N360IconSize.lg, color: N360Colors.laterite) : null,
+      semanticsLabel: '${line.item.code}, ${line.item.description}, ${l.measurementBalance} $balance ${line.item.unit}',
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            balance,
+            style: N360Type.figure.copyWith(
+              color: line.previewBalance.isNegative ? N360Colors.laterite : N360Colors.ink,
             ),
-            child: child,
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, N360Space.sm, 4, N360Space.sm),
-          child: Row(
-            children: <Widget>[
-              CodeTile(code: line.item.code),
-              const SizedBox(width: N360Space.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      line.item.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.bodyStrong.copyWith(height: 1.3),
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: <Widget>[
-                        Text(unit, style: N360Type.caption),
-                        const Spacer(),
-                        Text('${l.measurementBalance} ', style: N360Type.caption),
-                        Text(
-                          balance,
-                          style: N360Type.figureSmall.copyWith(color: balanceInk, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              if (selected) ...const <Widget>[
-                SizedBox(width: N360Space.sm),
-                Icon(Icons.check, size: N360IconSize.lg, color: N360Colors.ink),
-              ],
-            ],
-          ),
-        ),
+          Text(line.item.unit, style: N360Type.caption),
+        ],
       ),
+      onTap: onTap,
+    );
+    if (!selected) return tile;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: N360Colors.primaryTint,
+        borderRadius: N360Radius.tileRadius,
+        border: Border.all(color: N360Colors.primary),
+      ),
+      child: tile,
     );
   }
 }

@@ -59,25 +59,27 @@ class MeasurementRepository {
     return _db.transaction(() async {
       final uuid = newUuid();
       final stamp = _ctx.nextStamp(const []);
-      await _db.into(_db.measurements).insert(
-        MeasurementsCompanion.insert(
-          clientUuid: uuid,
-          projectId: input.projectId,
-          boqItemId: input.boqItemId,
-          measuredOn: input.measuredOn,
-          description: Value(input.description),
-          location: Value(input.location),
-          nos: Value(input.nos),
-          length: Value(input.length),
-          breadth: Value(input.breadth),
-          depth: Value(input.depth),
-          isDeduction: Value(input.isDeduction),
-          qty: input.qty,
-          remarks: Value(input.remarks),
-          createdBy: Value(_ctx.currentUserId),
-          clientUpdatedAt: Value(stamp),
-        ),
-      );
+      await _db
+          .into(_db.measurements)
+          .insert(
+            MeasurementsCompanion.insert(
+              clientUuid: uuid,
+              projectId: input.projectId,
+              boqItemId: input.boqItemId,
+              measuredOn: input.measuredOn,
+              description: Value(input.description),
+              location: Value(input.location),
+              nos: Value(input.nos),
+              length: Value(input.length),
+              breadth: Value(input.breadth),
+              depth: Value(input.depth),
+              isDeduction: Value(input.isDeduction),
+              qty: input.qty,
+              remarks: Value(input.remarks),
+              createdBy: Value(_ctx.currentUserId),
+              clientUpdatedAt: Value(stamp),
+            ),
+          );
       await _enqueueEntry(uuid, input, stamp);
       return uuid;
     });
@@ -90,24 +92,22 @@ class MeasurementRepository {
       final entry = await _require(clientUuid);
       await _assertEditable(entry);
       final stamp = _ctx.nextStamp([entry.clientUpdatedAt, entry.updatedAt]);
-      await (_db.update(_db.measurements)
-            ..where((t) => t.clientUuid.equals(clientUuid)))
-          .write(
-            MeasurementsCompanion(
-              boqItemId: Value(input.boqItemId),
-              measuredOn: Value(input.measuredOn),
-              description: Value(input.description),
-              location: Value(input.location),
-              nos: Value(input.nos),
-              length: Value(input.length),
-              breadth: Value(input.breadth),
-              depth: Value(input.depth),
-              isDeduction: Value(input.isDeduction),
-              qty: Value(input.qty),
-              remarks: Value(input.remarks),
-              clientUpdatedAt: Value(stamp),
-            ),
-          );
+      await (_db.update(_db.measurements)..where((t) => t.clientUuid.equals(clientUuid))).write(
+        MeasurementsCompanion(
+          boqItemId: Value(input.boqItemId),
+          measuredOn: Value(input.measuredOn),
+          description: Value(input.description),
+          location: Value(input.location),
+          nos: Value(input.nos),
+          length: Value(input.length),
+          breadth: Value(input.breadth),
+          depth: Value(input.depth),
+          isDeduction: Value(input.isDeduction),
+          qty: Value(input.qty),
+          remarks: Value(input.remarks),
+          clientUpdatedAt: Value(stamp),
+        ),
+      );
       await _enqueueEntry(clientUuid, input, stamp);
     });
   }
@@ -133,10 +133,7 @@ class MeasurementRepository {
   }
 
   /// By project, optionally one [status], newest first.
-  Stream<List<SyncedRecord<MeasurementRow>>> watchByProject(
-    int projectId, {
-    String? status,
-  }) {
+  Stream<List<SyncedRecord<MeasurementRow>>> watchByProject(int projectId, {String? status}) {
     return _db.watchDerived({_db.measurements, _db.outbox}, () async {
       final rows =
           await (_db.select(_db.measurements)
@@ -147,10 +144,7 @@ class MeasurementRepository {
                   }
                   return condition;
                 })
-                ..orderBy([
-                  (t) => OrderingTerm.desc(t.measuredOn),
-                  (t) => OrderingTerm.desc(t.clientUpdatedAt),
-                ]))
+                ..orderBy([(t) => OrderingTerm.desc(t.measuredOn), (t) => OrderingTerm.desc(t.clientUpdatedAt)]))
               .get();
       final states = await SyncStates.load(_db);
       return [for (final row in rows) states.wrap(row, row.clientUuid)];
@@ -168,12 +162,7 @@ class MeasurementRepository {
 
   void _validate(MeasurementInput input) {
     _ctx.assertNotFuture(input.measuredOn, 'measured_on');
-    final dimensions = {
-      'nos': input.nos,
-      'length': input.length,
-      'breadth': input.breadth,
-      'depth': input.depth,
-    };
+    final dimensions = {'nos': input.nos, 'length': input.length, 'breadth': input.breadth, 'depth': input.depth};
     dimensions.forEach((field, value) {
       if (value != null && value <= Qty.zero) {
         throw ValidationFailure(
@@ -186,11 +175,7 @@ class MeasurementRepository {
     });
   }
 
-  Future<void> _enqueueEntry(
-    String uuid,
-    MeasurementInput input,
-    DateTime stamp,
-  ) {
+  Future<void> _enqueueEntry(String uuid, MeasurementInput input, DateTime stamp) {
     return _ctx.outbox.enqueue(
       type: OutboxType.measurement,
       wireUuid: uuid,
@@ -218,9 +203,7 @@ class MeasurementRepository {
   }
 
   Future<MeasurementRow?> _find(String clientUuid) {
-    return (_db.select(_db.measurements)
-          ..where((t) => t.clientUuid.equals(clientUuid)))
-        .getSingleOrNull();
+    return (_db.select(_db.measurements)..where((t) => t.clientUuid.equals(clientUuid))).getSingleOrNull();
   }
 
   Future<MeasurementRow> _require(String clientUuid) async {
@@ -231,13 +214,12 @@ class MeasurementRepository {
 
   Future<bool> _hasUnsentSubmit(String clientUuid) async {
     final rows =
-        await (_db.select(_db.outbox)
-              ..where(
-                (t) =>
-                    t.recordUuid.equals(clientUuid) &
-                    t.type.equals(OutboxType.measurementSubmit.name) &
-                    t.status.equals(OutboxStatus.done.name).not(),
-              ))
+        await (_db.select(_db.outbox)..where(
+              (t) =>
+                  t.recordUuid.equals(clientUuid) &
+                  t.type.equals(OutboxType.measurementSubmit.name) &
+                  t.status.equals(OutboxStatus.done.name).not(),
+            ))
             .get();
     return rows.isNotEmpty;
   }

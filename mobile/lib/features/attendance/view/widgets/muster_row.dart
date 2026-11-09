@@ -21,8 +21,13 @@ class MusterRow extends StatelessWidget {
       selector: (state) => state.marks[worker.id],
       builder: (context, mark) {
         final bool overtime = mark?.value == HajiriValue.overtime;
+        // A row of a LedgerList: its own padding, and the list draws the
+        // hairline between rows.
         return Padding(
-          padding: const EdgeInsets.only(bottom: N360Space.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: N360Space.card,
+            vertical: N360Space.tile,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -67,8 +72,8 @@ class MusterRow extends StatelessWidget {
   }
 }
 
-/// A trade heading with the group's progress. It rebuilds only when that
-/// group's count changes.
+/// The heading of a trade's [LedgerList]: the trade, and how many of its
+/// workers are marked. It rebuilds only when that group's count changes.
 class MusterGroupHeader extends StatelessWidget {
   const MusterGroupHeader({super.key, required this.group});
 
@@ -81,37 +86,56 @@ class MusterGroupHeader extends StatelessWidget {
     final String label = l.pictogramLabel(pictogram);
     final int total = group.workers.length;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: N360Space.md),
-      child: Row(
-        children: <Widget>[
-          IconTile(icon: pictogram.icon, semanticLabel: label),
-          const SizedBox(width: N360Space.md),
-          Expanded(
+    return Row(
+      children: <Widget>[
+        Icon(pictogram.icon, size: N360IconSize.lg, color: N360Colors.ink2),
+        const SizedBox(width: N360Space.sm),
+        Expanded(
+          child: Semantics(
+            header: true,
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: N360Type.heading,
+              style: N360Type.fit(N360Type.heading, label),
             ),
           ),
-          BlocSelector<AttendanceCubit, AttendanceState, int>(
-            selector: (state) => group.workers
-                .where((w) => state.marks.containsKey(w.id))
-                .length,
-            builder: (context, marked) => Semantics(
+        ),
+        const SizedBox(width: N360Space.sm),
+        BlocSelector<AttendanceCubit, AttendanceState, int>(
+          selector: (state) =>
+              group.workers.where((w) => state.marks.containsKey(w.id)).length,
+          builder: (context, marked) {
+            final bool done = total > 0 && marked == total;
+            return Semantics(
               container: true,
               label: l.attendanceGroupProgress(marked, total),
               child: ExcludeSemantics(
-                child: SquarePercent(
-                  fraction: total == 0 ? 0 : marked / total,
-                  label: '$marked/$total',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    // A finished trade says so, beside its count.
+                    if (done) ...<Widget>[
+                      const Icon(
+                        Icons.check_circle,
+                        size: N360IconSize.sm,
+                        color: N360Colors.moss,
+                      ),
+                      const SizedBox(width: N360Space.xs),
+                    ],
+                    Text(
+                      '$marked/$total',
+                      style: N360Type.figureSmall.copyWith(
+                        color: done ? N360Colors.mossInk : N360Colors.ink2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

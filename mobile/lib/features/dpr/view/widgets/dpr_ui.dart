@@ -42,9 +42,10 @@ class DprTapPad extends StatelessWidget {
 
 /// The header: a labelled way back, a centred title, and status on the right.
 class DprTopBar extends StatelessWidget {
-  const DprTopBar({super.key, this.title, this.trailing});
+  const DprTopBar({super.key, this.title, this.subtitle, this.trailing});
 
   final String? title;
+  final String? subtitle;
   final Widget? trailing;
 
   @override
@@ -60,9 +61,10 @@ class DprTopBar extends StatelessWidget {
             child: Center(
               widthFactor: 1,
               child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: N360Colors.paper2,
-                  borderRadius: N360Radius.md,
+                decoration: BoxDecoration(
+                  color: N360Colors.sheet,
+                  borderRadius: N360Radius.sm,
+                  border: Border.all(color: N360Colors.rule),
                 ),
                 child: SizedBox(
                   height: N360Size.tile,
@@ -73,7 +75,7 @@ class DprTopBar extends StatelessWidget {
                       children: <Widget>[
                         const Icon(Icons.arrow_back, size: N360IconSize.md, color: N360Colors.ink),
                         const SizedBox(width: N360Space.xs),
-                        Text(l.commonBack, style: N360Type.bodyStrong),
+                        Text(l.commonBack, style: N360Type.label.copyWith(color: N360Colors.ink)),
                       ],
                     ),
                   ),
@@ -85,12 +87,25 @@ class DprTopBar extends StatelessWidget {
           Expanded(
             child: title == null
                 ? const SizedBox.shrink()
-                : Text(
-                    title!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: N360Type.heading,
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        title!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: N360Type.heading,
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: N360Type.caption,
+                        ),
+                    ],
                   ),
           ),
           const SizedBox(width: N360Space.sm),
@@ -101,108 +116,121 @@ class DprTopBar extends StatelessWidget {
   }
 }
 
-/// A floating footer holding the screen's one primary action, in the thumb
-/// zone. The body scrolls behind it, so the body must keep [clearance] free.
+/// A plain bottom bar holding the screen's one primary action, in the thumb
+/// zone. The body scrolls above it and never under it.
 class DprActionLayout extends StatelessWidget {
   const DprActionLayout({super.key, required this.body, this.action});
 
   final Widget body;
 
-  /// Usually a large [GloveButton]. Null hides the footer, as while typing.
+  /// Usually a large [GloveButton]. Null hides the bar, as while typing.
   final Widget? action;
 
-  /// The space a scrolling body must leave at its foot.
-  static double clearance(BuildContext context) =>
-      96 + MediaQuery.paddingOf(context).bottom;
+  /// The space a scrolling body should leave at its foot.
+  static double clearance(BuildContext context) => N360Space.lg;
 
   @override
   Widget build(BuildContext context) {
     final double safe = MediaQuery.paddingOf(context).bottom;
-    return Stack(
-      fit: StackFit.expand,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        body,
+        Expanded(child: body),
         if (action != null)
-          Positioned(
-            left: N360Space.gutter - N360Space.xs,
-            right: N360Space.gutter - N360Space.xs,
-            bottom: N360Space.sm + safe,
-            child: LedgerCard(padding: const EdgeInsets.all(N360Space.xs + 2), child: action!),
+          ColoredBox(
+            color: N360Colors.sheet,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const RuledDivider(),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    N360Space.gutter,
+                    N360Space.tile,
+                    N360Space.gutter,
+                    N360Space.tile + safe,
+                  ),
+                  child: action,
+                ),
+              ],
+            ),
           ),
       ],
     );
   }
 }
 
-/// A section's heading on a card: a soft tile with a picture, then the words.
-class DprCardTitle extends StatelessWidget {
-  const DprCardTitle({
+/// A section of a report: a white card with its heading on a hairline, the way
+/// every grouped list in the app is drawn.
+class DprSectionCard extends StatelessWidget {
+  const DprSectionCard({
     super.key,
     required this.icon,
     required this.title,
+    required this.child,
     this.trailing,
-    this.error,
     this.done = false,
+    this.error,
   });
 
   final IconData icon;
   final String title;
+  final Widget child;
   final Widget? trailing;
-
-  /// A plain message about this section. Shown under the heading, in red.
-  final String? error;
 
   /// Whether this section has been filled, shown as a tick so a tired eye can
   /// run down the sheet and see what is left.
   final bool done;
 
+  /// A plain message about this section. Shown under the heading, in red.
+  final String? error;
+
   @override
   Widget build(BuildContext context) {
     final bool bad = error != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Row(
-          children: <Widget>[
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: bad ? N360Colors.stampRed.withValues(alpha: 0.12) : N360Colors.goldTint,
-                borderRadius: N360Radius.sm,
-              ),
-              child: SizedBox.square(
-                dimension: N360Size.tileSmall,
-                child: Icon(
-                  icon,
-                  size: N360IconSize.tile,
-                  color: bad ? N360Colors.stampRed : N360Colors.laterite,
-                ),
-              ),
+    final Color ink = bad ? N360Colors.stampRed : N360Colors.ink;
+    return LedgerCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(N360Space.card, N360Space.md, N360Space.card, N360Space.sm),
+            child: Row(
+              children: <Widget>[
+                Icon(icon, size: N360IconSize.md, color: bad ? N360Colors.stampRed : N360Colors.ink2),
+                const SizedBox(width: N360Space.sm),
+                Expanded(child: Text(title, style: N360Type.heading.copyWith(color: ink))),
+                if (trailing != null) ...<Widget>[
+                  const SizedBox(width: N360Space.sm),
+                  trailing!,
+                ],
+                if (done) ...<Widget>[
+                  const SizedBox(width: N360Space.sm),
+                  const Icon(Icons.check_circle, size: N360IconSize.md, color: N360Colors.mossInk),
+                ],
+              ],
             ),
-            const SizedBox(width: N360Space.tile),
-            Expanded(
-              child: Text(
-                title,
-                style: N360Type.heading.copyWith(
-                  color: bad ? N360Colors.stampRed : N360Colors.ink,
-                ),
-              ),
+          ),
+          const RuledDivider(),
+          Padding(
+            padding: const EdgeInsets.all(N360Space.card),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (bad) ...<Widget>[
+                  DprFieldError(message: error!),
+                  const SizedBox(height: N360Space.md),
+                ],
+                child,
+              ],
             ),
-            if (trailing != null) ...<Widget>[
-              const SizedBox(width: N360Space.sm),
-              trailing!,
-            ],
-            if (done) ...<Widget>[
-              const SizedBox(width: N360Space.sm),
-              const Icon(Icons.check_circle, size: N360IconSize.md, color: N360Colors.mossInk),
-            ],
-          ],
-        ),
-        if (bad) ...<Widget>[
-          const SizedBox(height: N360Space.sm),
-          DprFieldError(message: error!),
+          ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -249,260 +277,23 @@ class DprRemarkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: N360Colors.goldTint,
-          borderRadius: N360Radius.cardRadius,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(N360Space.card),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final l = AppLocalizations.of(context);
+    return LedgerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
             children: <Widget>[
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: N360Gradients.gold,
-                  borderRadius: N360Radius.sm,
-                ),
-                child: SizedBox.square(
-                  dimension: N360Size.tileSmall,
-                  child: Icon(Icons.chat_bubble_outline, size: N360IconSize.md, color: N360Colors.ink),
-                ),
-              ),
-              const SizedBox(width: N360Space.tile),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(title, style: N360Type.heading),
-                    const SizedBox(height: N360Space.xxs),
-                    Text(message, style: N360Type.bodyLarge),
-                  ],
-                ),
-              ),
+              Expanded(child: Text(title, style: N360Type.heading)),
+              const SizedBox(width: N360Space.sm),
+              StatusPill(kind: StampKind.returned, label: l.statusReturned),
             ],
           ),
-        ),
+          const SizedBox(height: N360Space.xs),
+          Text(message, style: N360Type.body),
+        ],
       ),
-    );
-  }
-}
-
-/// A soft tile with a picture and a word, for the big actions on the form.
-class DprActionTile extends StatelessWidget {
-  const DprActionTile({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.tall = false,
-    this.gold = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  /// A larger target with a bigger picture tile, for the camera.
-  final bool tall;
-
-  /// Fills the picture tile with gold, for the action most likely next.
-  final bool gold;
-
-  @override
-  Widget build(BuildContext context) {
-    final double tile = tall ? N360Size.tile : N360Size.tileSmall;
-    return PressTarget(
-      onTap: onTap,
-      semanticsLabel: label,
-      minHeight: tall ? 72 : N360Size.tap,
-      builder: (context, depth, child) => Transform.scale(
-        scale: pressedScale(depth),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: N360Colors.paper2,
-            borderRadius: N360Radius.tileRadius,
-          ),
-          child: child,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(N360Space.tile),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: gold ? null : N360Colors.sheet,
-                gradient: gold ? N360Gradients.gold : null,
-                borderRadius: N360Radius.sm,
-              ),
-              child: SizedBox.square(
-                dimension: tile,
-                child: Icon(
-                  icon,
-                  size: tall ? N360IconSize.xl : N360IconSize.tile,
-                  color: N360Colors.ink,
-                ),
-              ),
-            ),
-            const SizedBox(width: N360Space.tile),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: N360Type.button,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A chip with a small picture and one fact, like the reference's top pills.
-class DprInfoChip extends StatelessWidget {
-  const DprInfoChip({super.key, required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      container: true,
-      label: text,
-      child: ExcludeSemantics(
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: N360Colors.sheet,
-            borderRadius: N360Radius.tileRadius,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(N360Space.xs + 2),
-            child: Row(
-              children: <Widget>[
-                DecoratedBox(
-                  decoration: const BoxDecoration(
-                    color: N360Colors.paper2,
-                    borderRadius: N360Radius.sm,
-                  ),
-                  child: SizedBox.square(
-                    dimension: N360Size.tileSmall,
-                    child: Icon(icon, size: N360IconSize.md, color: N360Colors.ink),
-                  ),
-                ),
-                const SizedBox(width: N360Space.sm),
-                Expanded(
-                  child: Text(
-                    text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: N360Type.label.copyWith(color: N360Colors.ink),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The day of a report as a tile, gold when it is today.
-class DprDateTile extends StatelessWidget {
-  const DprDateTile({super.key, required this.ymd, this.today = false});
-
-  final String ymd;
-  final bool today;
-
-  @override
-  Widget build(BuildContext context) {
-    final d = dprDateTile(context, ymd);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: today ? null : N360Colors.paper2,
-        gradient: today ? N360Gradients.gold : null,
-        borderRadius: N360Radius.md,
-      ),
-      child: SizedBox.square(
-        dimension: N360Size.tap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('${d.day}', style: N360Type.figureLarge.copyWith(height: 1.1)),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                d.month,
-                maxLines: 1,
-                style: N360Type.caption.copyWith(
-                  color: today ? N360Colors.ink : N360Colors.inkLabel,
-                  height: 1.2,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A word and an icon saying where a report is on its way to the office.
-/// Never says "sent" for anything still on the phone.
-class DprSyncTag extends StatelessWidget {
-  const DprSyncTag({super.key, required this.record});
-
-  final SyncedRecord<DprRow> record;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final dpr = record.record;
-    final ({IconData icon, Color ink, String text}) look = switch (record.syncState) {
-      LocalSyncState.attention => (
-        icon: Icons.error_outline,
-        ink: N360Colors.stampRed,
-        text: l.dprSyncAttention,
-      ),
-      LocalSyncState.sending => (icon: Icons.sync, ink: N360Colors.neel, text: l.dprSyncSending),
-      LocalSyncState.queued => (
-        icon: Icons.schedule,
-        ink: N360Colors.haldiInk,
-        text: l.dprSyncWaiting,
-      ),
-      LocalSyncState.synced when dpr.localDraft || dpr.serverId == null => (
-        icon: Icons.smartphone,
-        ink: N360Colors.ink2,
-        text: l.dprSyncPhoneOnly,
-      ),
-      LocalSyncState.synced => (
-        icon: Icons.cloud_done_outlined,
-        ink: N360Colors.mossInk,
-        text: l.statusSynced,
-      ),
-    };
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Icon(look.icon, size: N360IconSize.xs, color: look.ink),
-        const SizedBox(width: N360Space.xs),
-        Flexible(
-          child: Text(
-            look.text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: N360Type.caption.copyWith(color: look.ink, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -538,7 +329,7 @@ class _DprPhotoThumbState extends State<DprPhotoThumb> {
 
   Widget _plate({required bool failed, required AppLocalizations l}) {
     return ColoredBox(
-      color: N360Colors.paper2,
+      color: N360Colors.paper,
       child: Center(
         child: failed
             ? Column(
@@ -558,7 +349,7 @@ class _DprPhotoThumbState extends State<DprPhotoThumb> {
     final l = AppLocalizations.of(context);
     final int decodeWidth = (widget.size * MediaQuery.devicePixelRatioOf(context)).round();
     return ClipRRect(
-      borderRadius: N360Radius.md,
+      borderRadius: N360Radius.sm,
       child: SizedBox.square(
         dimension: widget.size,
         child: FutureBuilder<Uint8List>(
