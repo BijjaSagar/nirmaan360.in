@@ -55,7 +55,8 @@ void main() {
 
     expect(find.text('Rain'), findsOneWidget);
     expect(find.text('33'), findsNWidgets(2), reason: 'section total and ledger total');
-    expect(find.text('15.500 cum'), findsOneWidget);
+    expect(find.text('15.500'), findsOneWidget);
+    expect(find.text('cum'), findsOneWidget);
     expect(find.text('M25 RCC in slab and beams, sixth floor'), findsOneWidget);
     expect(find.text('Cement late.'), findsOneWidget);
     expect(find.text('Slab shuttering done.'), findsOneWidget);

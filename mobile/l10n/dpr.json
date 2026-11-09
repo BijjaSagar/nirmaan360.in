@@ -81,6 +81,22 @@
   "dprYesterdayTag": { "en": "Yesterday", "mr": "काल", "hi": "कल" },
   "dprAddedTag": { "en": "Added", "mr": "जोडले", "hi": "जोड़ा" },
 
+  "dprWorkersOnSite": { "en": "Workers on site", "mr": "साइटवरील कामगार", "hi": "साइट पर कामगार" },
+  "dprYesterdayLabel": { "en": "Yesterday", "mr": "काल", "hi": "कल" },
+  "dprReportsThisMonth": { "en": "Reports this month", "mr": "या महिन्याचे अहवाल", "hi": "इस महीने की रिपोर्ट" },
+  "dprOfDays": {
+    "en": "of {days} days",
+    "mr": "{days} दिवसांपैकी",
+    "hi": "{days} दिनों में से",
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "dprBoqDonePercent": {
+    "en": "{percent} percent of BOQ measured",
+    "mr": "BOQ चे {percent} टक्के मोजले",
+    "hi": "BOQ का {percent} प्रतिशत मापा गया",
+    "placeholders": { "percent": { "type": "int" } }
+  },
+
   "dprTakePhoto": { "en": "Take photo", "mr": "फोटो काढा", "hi": "फ़ोटो लें" },
   "dprPhotoMissing": { "en": "Not available", "mr": "उपलब्ध नाही", "hi": "उपलब्ध नहीं" },
   "dprPhotosFull": {

@@ -13,10 +13,11 @@ import 'shell/sync_status_cubit.dart';
 import 'widgets/boot_paper.dart';
 
 const SystemUiOverlayStyle _chrome = SystemUiOverlayStyle(
-  statusBarColor: Color(0x00000000),
+  statusBarColor: Colors.transparent,
   statusBarIconBrightness: Brightness.dark,
   statusBarBrightness: Brightness.light,
-  systemNavigationBarColor: N360Colors.sheet,
+  // The floating bottom bar leaves the foot of the page showing behind it.
+  systemNavigationBarColor: N360Colors.peach,
   systemNavigationBarIconBrightness: Brightness.dark,
 );
 

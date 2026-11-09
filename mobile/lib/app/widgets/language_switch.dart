@@ -4,7 +4,7 @@ import '../../core/design/design.dart';
 import '../app_gate.dart';
 
 /// Every language in its own script, so nobody needs to read English to find
-/// their own. The ink block slides to the chosen one.
+/// their own. The gold tile slides to the chosen one.
 class LanguageSwitch extends StatelessWidget {
   const LanguageSwitch({super.key, required this.current, required this.onChanged});
 
@@ -28,8 +28,8 @@ class LanguageSwitch extends StatelessWidget {
           return DecoratedBox(
             decoration: BoxDecoration(
               color: N360Colors.sheet,
-              borderRadius: N360Radius.sm,
-              border: Border.all(color: N360Colors.ruleStrong, width: 1.25),
+              borderRadius: N360Radius.tileRadius,
+              border: Border.all(color: N360Colors.cardEdge),
             ),
             child: Stack(
               children: <Widget>[
@@ -46,9 +46,12 @@ class LanguageSwitch extends StatelessWidget {
                       width: cell,
                       height: N360Size.tap,
                       child: const Padding(
-                        padding: EdgeInsets.all(3),
+                        padding: EdgeInsets.all(4),
                         child: DecoratedBox(
-                          decoration: BoxDecoration(color: N360Colors.ink, borderRadius: N360Radius.sm),
+                          decoration: BoxDecoration(
+                            gradient: N360Gradients.gold,
+                            borderRadius: N360Radius.md,
+                          ),
                         ),
                       ),
                     ),
@@ -103,14 +106,7 @@ class _LanguageCell extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    style: N360Type.button.copyWith(
-                      fontSize: 20,
-                      color: selected ? N360Colors.sheet : N360Colors.ink,
-                    ),
-                  ),
+                  child: Text(label, maxLines: 1, style: N360Type.button.copyWith(color: N360Colors.ink)),
                 ),
               ),
             ),

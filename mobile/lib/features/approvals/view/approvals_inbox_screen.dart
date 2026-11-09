@@ -8,7 +8,9 @@ import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../bloc/approvals_inbox_cubit.dart';
 import '../data/approval_repository.dart';
+import '../../measurement/view/widgets/book_kit.dart';
 import 'widgets/approval_card.dart';
+import 'widgets/approval_read.dart';
 
 /// What waits for this person's decision, newest first.
 class ApprovalsInboxScreen extends StatelessWidget {
@@ -74,9 +76,9 @@ class _InboxView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   if (!state.online) OfflineBanner(label: l.approvalsOffline, detail: l.approvalsOfflineDetail),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.xs),
-                    child: SheetHeader(eyebrow: l.approvalsEyebrow(state.actionable), title: l.approvalsTitle),
+                  BookTitleBar(
+                    eyebrow: state.actionable > 0 ? l.approvalsEyebrow(state.actionable) : null,
+                    title: l.approvalsTitle,
                   ),
                   if (state.failure != null && state.online) _FailureLine(failure: state.failure!, l: l),
                   Expanded(child: _list(context, l, state, cubit, slots)),
@@ -112,7 +114,7 @@ class _InboxView extends StatelessWidget {
       onRefresh: cubit.refresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.md),
+        padding: const EdgeInsets.fromLTRB(N360Space.gutter, 6, N360Space.gutter, N360Space.md),
         itemCount: slots.length,
         itemBuilder: (context, index) => switch (slots[index]) {
           _Live(:final row, :final order) => Padding(
@@ -120,7 +122,7 @@ class _InboxView extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: N360Space.md),
             child: StaggeredRise(
               index: order,
-              child: ApprovalCard(row: row, now: now, onTap: () => _open(context, row)),
+              child: ApprovalCard(row: row, now: now, share: shareOf(row, state.boq), onTap: () => _open(context, row)),
             ),
           ),
           _Gone(:final leaving) => LeavingApprovalCard(
@@ -172,22 +174,16 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: N360Colors.paper,
-        border: Border(top: BorderSide(color: N360Colors.ruleStrong)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.sm),
-        child: GloveButton(
-          key: const ValueKey<String>('approvals-refresh'),
-          label: state.refreshing ? l.approvalsRefreshing : l.approvalsRefresh,
-          icon: Icons.refresh,
-          kind: GloveButtonKind.secondary,
-          fullWidth: true,
-          loading: state.refreshing,
-          onPressed: state.online ? onRefresh : null,
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+      child: GloveButton(
+        key: const ValueKey<String>('approvals-refresh'),
+        label: state.refreshing ? l.approvalsRefreshing : l.approvalsRefresh,
+        icon: Icons.refresh,
+        kind: GloveButtonKind.secondary,
+        fullWidth: true,
+        loading: state.refreshing,
+        onPressed: state.online ? onRefresh : null,
       ),
     );
   }

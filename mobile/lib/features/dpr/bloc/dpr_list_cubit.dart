@@ -24,6 +24,20 @@ class DprListState {
   final List<SyncedRecord<DprRow>> rows;
 
   bool get hasToday => rows.any((row) => row.record.reportDate == today);
+
+  /// Days of the current month so far, today included.
+  int get daysThisMonth => today.length < 10 ? 0 : int.parse(today.substring(8, 10));
+
+  /// Days of the current month that have a report on this phone.
+  int get filedThisMonth {
+    if (today.length < 7) return 0;
+    final month = today.substring(0, 7);
+    return rows
+        .map((row) => row.record.reportDate)
+        .where((date) => date.startsWith(month) && date.compareTo(today) <= 0)
+        .toSet()
+        .length;
+  }
 }
 
 /// Watches the current project and its reports, newest first.

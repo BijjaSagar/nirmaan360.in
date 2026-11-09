@@ -159,11 +159,6 @@
     "mr": "1 आठवडा",
     "hi": "1 हफ़्ता"
   },
-  "issuesFormNoDue": {
-    "en": "No date",
-    "mr": "तारीख नाही",
-    "hi": "तारीख़ नहीं"
-  },
   "issuesFormSave": {
     "en": "Save issue",
     "mr": "समस्या जतन करा",
@@ -193,11 +188,6 @@
     "en": "Priority",
     "mr": "प्राधान्य",
     "hi": "प्राथमिकता"
-  },
-  "issuesDetailLocation": {
-    "en": "Location",
-    "mr": "ठिकाण",
-    "hi": "स्थान"
   },
   "issuesDetailDue": {
     "en": "Due date",

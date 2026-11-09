@@ -22,6 +22,13 @@ abstract final class AppFormat {
     return _pattern('d MMM', locale).format(parsed);
   }
 
+  /// `2027-12-31` as "31 Dec 2027" in [locale].
+  static String dayMonthYear(String isoDate, String locale) {
+    final parsed = DateTime.tryParse(isoDate);
+    if (parsed == null) return isoDate;
+    return _pattern('d MMM yyyy', locale).format(parsed);
+  }
+
   /// Rupees without paise when the paise are zero, for narrow strips.
   static String rupees(Money amount) =>
       amount.value.isInteger ? '₹${amount.indian(scale: 0)}' : amount.inr();

@@ -6,9 +6,9 @@ import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../core/money/money.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/expense_form_cubit.dart';
 import '../data/petty_cash_repository.dart';
-import 'widgets/petty_widgets.dart';
 
 /// Amount on the keypad, then what it was for. An expense over the balance
 /// stops at the first step, in plain words.
@@ -55,9 +55,9 @@ class _ExpenseFormView extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    _Top(
+                    FieldTopBar(
                       title: l.pettyCashFormTitle,
-                      eyebrow: l.pettyCashFormEyebrow,
+                      subtitle: l.pettyCashFormEyebrow,
                       onBack: state.step == 0
                           ? () => Navigator.of(context).maybePop()
                           : context.read<ExpenseFormCubit>().backToAmount,
@@ -74,43 +74,6 @@ class _ExpenseFormView extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Top extends StatelessWidget {
-  const _Top({required this.title, required this.eyebrow, required this.onBack});
-
-  final String title;
-  final String eyebrow;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        N360Space.gutter,
-        N360Space.xs,
-        N360Space.gutter,
-        0,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: GloveButton(
-              label: l.commonBack,
-              kind: GloveButtonKind.ghost,
-              icon: Icons.arrow_back,
-              onPressed: onBack,
-            ),
-          ),
-          SheetHeader(eyebrow: eyebrow, title: title),
-        ],
       ),
     );
   }
@@ -137,44 +100,48 @@ class _AmountStep extends StatelessWidget {
             child: _WalletChoice(state: state),
           ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(l.pettyCashAmount, style: N360Type.label),
-                ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: RollingMoney(
-                    value: formatTypedAmount(state.amountText),
-                    style: N360Type.figureHero.copyWith(
-                      fontSize: 52,
-                      color: over ? N360Colors.stampRed : N360Colors.ink,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                N360Space.gutter,
+                N360Space.xs,
+                N360Space.gutter,
+                N360Space.sm,
+              ),
+              child: LedgerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(l.pettyCashAmount, style: N360Type.heading),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: RollingMoney(
+                        value: formatTypedAmount(state.amountText),
+                        style: N360Type.figureHero.copyWith(
+                          color: over ? N360Colors.stampRed : N360Colors.ink,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: N360Space.xs),
+                    if (over)
+                      _OverBalanceNote(balance: limit!)
+                    else if (state.problem == ExpenseProblem.amountRequired)
+                      _Warn(text: l.pettyCashAmountRequired)
+                    else if (state.balanceAfter != null)
+                      Text(
+                        l.pettyCashBalanceAfter(state.balanceAfter!.inr()),
+                        style: N360Type.body.copyWith(color: N360Colors.ink2),
+                      )
+                    else if (limit != null)
+                      Text(
+                        '${l.pettyCashBalance}: ${limit.inr()}',
+                        style: N360Type.body.copyWith(color: N360Colors.ink2),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: N360Space.xs),
-                if (over)
-                  _OverBalanceNote(balance: limit!)
-                else if (state.problem == ExpenseProblem.amountRequired)
-                  _Warn(text: l.pettyCashAmountRequired)
-                else if (state.balanceAfter != null)
-                  Text(
-                    l.pettyCashBalanceAfter(state.balanceAfter!.inr()),
-                    textAlign: TextAlign.right,
-                    style: N360Type.body.copyWith(color: N360Colors.ink2),
-                  )
-                else if (limit != null)
-                  Text(
-                    '${l.pettyCashBalance}: ${limit.inr()}',
-                    textAlign: TextAlign.right,
-                    style: N360Type.body.copyWith(color: N360Colors.ink2),
-                  ),
-              ],
+              ),
             ),
           ),
         ),
@@ -258,7 +225,7 @@ class _WalletChoice extends StatelessWidget {
         itemBuilder: (context, index) {
           final WalletLine line = state.wallets[index];
           return Center(
-            child: PettyChoiceTile(
+            child: FieldChoiceTile(
               label: line.wallet.name,
               detail: line.previewBalance.inr(),
               selected: line.wallet.id == state.walletId,
@@ -294,18 +261,26 @@ class _DetailsStep extends StatelessWidget {
       ),
       children: <Widget>[
         LedgerCard(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           onTap: cubit.backToAmount,
           semanticsLabel: '${l.pettyCashAmount} ${amount?.inr() ?? ''}. ${l.commonBack}',
-          child: SizedBox(
-            height: 50,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
             child: Row(
               children: <Widget>[
-                Text(l.pettyCashAmount, style: N360Type.label),
-                const Spacer(),
-                RollingMoney(
-                  value: amount == null ? '0.00' : amount.indian(),
-                  style: N360Type.figureLarge.copyWith(fontSize: 26),
+                Text(l.pettyCashAmount, style: N360Type.heading),
+                const SizedBox(width: N360Space.sm),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: RollingMoney(
+                        value: amount == null ? '0.00' : amount.indian(),
+                        style: N360Type.figureLarge,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -367,7 +342,8 @@ class _DetailsStep extends StatelessWidget {
         Row(
           children: <Widget>[
             Expanded(
-              child: PettyChoiceTile(
+              child: FieldChoiceTile(
+                width: double.infinity,
                 label: l.pettyCashDayToday,
                 detail: shortDay(state.today),
                 selected: state.entryDate == state.today,
@@ -376,7 +352,8 @@ class _DetailsStep extends StatelessWidget {
             ),
             const SizedBox(width: N360Space.sm),
             Expanded(
-              child: PettyChoiceTile(
+              child: FieldChoiceTile(
+                width: double.infinity,
                 label: l.pettyCashDayYesterday,
                 detail: shortDay(state.yesterday),
                 selected: state.entryDate == state.yesterday,
@@ -403,34 +380,19 @@ class _SaveBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final ExpenseFormCubit cubit = context.read<ExpenseFormCubit>();
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: N360Colors.sheet,
-        border: Border(top: BorderSide(color: N360Colors.ruleStrong)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            N360Space.gutter,
-            N360Space.sm,
-            N360Space.gutter,
-            N360Space.sm,
-          ),
-          child: GloveButton(
-            label: l.pettyCashSave,
-            icon: Icons.check,
-            large: true,
-            fullWidth: true,
-            loading: state.submitting,
-            onPressed: state.submitting ? null : () => _save(context, cubit),
-          ),
-        ),
+    return FieldActionBar(
+      child: GloveButton(
+        label: l.pettyCashSave,
+        icon: Icons.check,
+        large: true,
+        fullWidth: true,
+        loading: state.submitting,
+        onPressed: state.submitting ? null : () => _save(cubit),
       ),
     );
   }
 
-  Future<void> _save(BuildContext context, ExpenseFormCubit cubit) async {
+  Future<void> _save(ExpenseFormCubit cubit) async {
     final bool saved = await cubit.submit();
     if (!saved) N360Haptics.warning();
   }

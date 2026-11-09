@@ -99,37 +99,51 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
                 ),
               ],
             ),
-            Text(
-              '${dprDateLabel(context, state.reportDate)} · ${state.project?.name ?? ''}',
-              style: N360Type.caption,
-            ),
-            const SizedBox(height: N360Space.sm),
-            if (weather != null)
-              LedgerRow(
-                label: l.dprSectionWeather,
-                valueWidget: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(N360Pictograms.weather(weather).icon, size: 22, color: N360Colors.ink),
-                    const SizedBox(width: 6),
-                    Text(
-                      l.pictogramLabel(N360Pictograms.weather(weather)),
-                      style: N360Type.bodyStrong,
-                    ),
-                  ],
+            Row(
+              children: <Widget>[
+                if (weather != null) ...<Widget>[
+                  Icon(N360Pictograms.weather(weather).icon, size: 20, color: N360Colors.ink2),
+                  const SizedBox(width: 4),
+                  Text(
+                    l.pictogramLabel(N360Pictograms.weather(weather)),
+                    style: N360Type.label,
+                  ),
+                  const SizedBox(width: N360Space.sm),
+                ],
+                Expanded(
+                  child: Text(
+                    '${dprDateLabel(context, state.reportDate)} · ${state.project?.name ?? ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: N360Type.caption,
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: N360Space.md),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Expanded(
+                    child: StatTile(
+                      title: l.dprSectionWorkers,
+                      value: '${state.totalWorkers}',
+                      emphasized: true,
+                    ),
+                  ),
+                  const SizedBox(width: N360Space.sm),
+                  Expanded(
+                    child: StatTile(title: l.dprSectionWork, value: '${work.length}'),
+                  ),
+                  const SizedBox(width: N360Space.sm),
+                  Expanded(
+                    child: StatTile(title: l.dprSectionPhotos, value: '${state.photos.length}'),
+                  ),
+                ],
               ),
-            LedgerRow(
-              label: l.dprSectionWorkers,
-              value: '${state.totalWorkers}',
-              valueStyle: N360Type.figure.copyWith(fontSize: 22),
             ),
-            LedgerRow(
-              label: l.dprSectionWork,
-              value: '${work.length}',
-              valueStyle: N360Type.figure.copyWith(fontSize: 22),
-              ruled: work.isEmpty,
-            ),
+            const SizedBox(height: N360Space.md),
             for (final line in work.take(shownRows))
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
@@ -146,22 +160,14 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
                     const SizedBox(width: N360Space.sm),
                     Text(
                       '${dprQty(line.qty)} ${_boq[line.boqItemId]?.item.unit ?? ''}',
-                      style: N360Type.figureSmall,
+                      style: N360Type.bodyStrong,
                     ),
                   ],
                 ),
               ),
             if (work.length > shownRows)
               Text(l.dprMoreRows(work.length - shownRows), style: N360Type.caption),
-            if (work.isNotEmpty) const RuledDivider(),
-            LedgerRow(
-              label: l.dprSectionPhotos,
-              value: '${state.photos.length}',
-              valueStyle: N360Type.figure.copyWith(fontSize: 22),
-              ruled: false,
-            ),
-            const RuledDivider.double(),
-            const SizedBox(height: N360Space.sm),
+            if (work.isNotEmpty) const SizedBox(height: N360Space.md),
             if (offline) ...<Widget>[
               PaperToast(message: l.dprReviewOffline, kind: PaperToastKind.warning),
               const SizedBox(height: N360Space.sm),

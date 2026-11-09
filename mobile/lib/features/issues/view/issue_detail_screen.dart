@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/issue_detail_cubit.dart';
 import '../bloc/issue_helpers.dart';
 import '../data/issue_repository.dart';
@@ -75,9 +76,8 @@ class _IssueDetailView extends StatelessWidget {
                     return const SizedBox.shrink();
                   case IssueDetailLoad.missing:
                     return ListView(
-                      padding: const EdgeInsets.all(N360Space.gutter),
                       children: <Widget>[
-                        _BackLink(l: l),
+                        FieldTopBar(title: l.issuesTitle),
                         EmptyLedger(
                           title: l.issuesDetailMissingTitle,
                           message: l.issuesDetailMissingMessage,
@@ -91,25 +91,6 @@ class _IssueDetailView extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _BackLink extends StatelessWidget {
-  const _BackLink({required this.l});
-
-  final AppLocalizations l;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: GloveButton(
-        label: l.commonBack,
-        kind: GloveButtonKind.ghost,
-        icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).maybePop(),
       ),
     );
   }
@@ -131,48 +112,62 @@ class _Body extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        FieldTopBar(title: l.issuesTitle),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
               N360Space.gutter,
               N360Space.xs,
               N360Space.gutter,
-              N360Space.gutter,
+              N360Space.sm,
             ),
             children: <Widget>[
-              _BackLink(l: l),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(
-                    child: LedgerHero(
-                      tag: 'issue-title-${issue.clientUuid}',
-                      child: Text(issue.title, style: N360Type.title),
+              LedgerCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          child: LedgerHero(
+                            tag: 'issue-title-${issue.clientUuid}',
+                            child: Text(issue.title, style: N360Type.title),
+                          ),
+                        ),
+                        const SizedBox(width: N360Space.sm),
+                        IssueStatusStamp(
+                          status: issue.status,
+                          size: StampSize.medium,
+                          animate: true,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: N360Space.sm),
-                  IssueStatusStamp(
-                    status: issue.status,
-                    size: StampSize.medium,
-                    animate: true,
-                  ),
-                ],
-              ),
-              if (issue.locationNote != null && issue.locationNote!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: N360Space.xs),
-                  child: Row(
-                    children: <Widget>[
-                      const Icon(Icons.place_outlined, size: 20, color: N360Colors.ink2),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(issue.locationNote!, style: N360Type.bodyLarge),
+                    if (issue.locationNote != null && issue.locationNote!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: N360Space.xs),
+                        child: IssueMeta(icon: Icons.place_outlined, text: issue.locationNote!),
+                      ),
+                    if (isOverdue(issue, state.today)) ...<Widget>[
+                      const SizedBox(height: N360Space.sm),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: OverdueChip(
+                          text: l.issuesOverdue(daysBetween(issue.dueDate!, state.today)),
+                        ),
                       ),
                     ],
-                  ),
+                    if (record.syncState != LocalSyncState.synced) ...<Widget>[
+                      const SizedBox(height: N360Space.sm),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IssueSyncStamp(state: record.syncState),
+                      ),
+                    ],
+                  ],
                 ),
-              const SizedBox(height: N360Space.sm),
-              const RuledDivider(color: N360Colors.ink2),
+              ),
               const SizedBox(height: N360Space.md),
               StaggeredRise(
                 index: 0,
@@ -187,7 +182,7 @@ class _Body extends StatelessWidget {
                       ),
                       LedgerRow(
                         label: l.issuesDetailDue,
-                        valueWidget: _DueValue(issue: issue, today: state.today),
+                        valueWidget: _DueValue(issue: issue),
                       ),
                       LedgerRow(
                         label: l.issuesDetailAssignee,
@@ -232,13 +227,6 @@ class _Body extends StatelessWidget {
                   ),
                 ),
               ],
-              if (record.syncState != LocalSyncState.synced) ...<Widget>[
-                const SizedBox(height: N360Space.md),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IssueSyncStamp(state: record.syncState),
-                ),
-              ],
             ],
           ),
         ),
@@ -249,10 +237,9 @@ class _Body extends StatelessWidget {
 }
 
 class _DueValue extends StatelessWidget {
-  const _DueValue({required this.issue, required this.today});
+  const _DueValue({required this.issue});
 
   final IssueRow issue;
-  final String today;
 
   @override
   Widget build(BuildContext context) {
@@ -260,12 +247,6 @@ class _DueValue extends StatelessWidget {
     final String? due = issue.dueDate;
     if (due == null) {
       return Text(l.issuesNoDueDate, style: N360Type.body);
-    }
-    if (isOverdue(issue, today)) {
-      return Text(
-        l.issuesOverdue(daysBetween(due, today)),
-        style: N360Type.bodyStrong.copyWith(color: N360Colors.stampRed),
-      );
     }
     return Text(shortDate(context, due), style: N360Type.bodyStrong);
   }
@@ -300,39 +281,24 @@ class _StatusActions extends StatelessWidget {
       ],
     };
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: N360Colors.sheet,
-        border: Border(top: BorderSide(color: N360Colors.ruleStrong)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            N360Space.gutter,
-            N360Space.sm,
-            N360Space.gutter,
-            N360Space.sm,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              for (final (index, action) in actions.indexed) ...<Widget>[
-                if (index > 0) const SizedBox(height: N360Space.sm),
-                GloveButton(
-                  label: action.label,
-                  icon: action.icon,
-                  kind: action.primary ? GloveButtonKind.primary : GloveButtonKind.secondary,
-                  large: action.primary,
-                  fullWidth: true,
-                  loading: savingStatus == action.target,
-                  onPressed: savingStatus == null ? () => cubit.changeStatus(action.target) : null,
-                ),
-              ],
-            ],
-          ),
-        ),
+    return FieldActionBar(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (final (index, action) in actions.indexed) ...<Widget>[
+            if (index > 0) const SizedBox(height: N360Space.sm),
+            GloveButton(
+              label: action.label,
+              icon: action.icon,
+              kind: action.primary ? GloveButtonKind.primary : GloveButtonKind.secondary,
+              large: action.primary,
+              fullWidth: true,
+              loading: savingStatus == action.target,
+              onPressed: savingStatus == null ? () => cubit.changeStatus(action.target) : null,
+            ),
+          ],
+        ],
       ),
     );
   }

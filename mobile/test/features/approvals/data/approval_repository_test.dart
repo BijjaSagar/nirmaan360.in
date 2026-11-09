@@ -95,10 +95,7 @@ void main() {
       clock: app.clock,
     );
 
-    await expectLater(
-      services.approvals.approve(7),
-      throwsA(isA<OfflineFailure>()),
-    );
+    await expectLater(services.approvals.approve(7), throwsA(isA<OfflineFailure>()));
     await services.approvals.approve(7);
 
     expect(retrying.uuids, hasLength(2));
@@ -138,12 +135,7 @@ class _LoseFirstActResponse implements NirmaanApi {
     String? remark,
   }) async {
     uuids.add(clientUuid);
-    final result = await _inner.actOnApproval(
-      approvalId,
-      action: action,
-      clientUuid: clientUuid,
-      remark: remark,
-    );
+    final result = await _inner.actOnApproval(approvalId, action: action, clientUuid: clientUuid, remark: remark);
     if (uuids.length == 1) throw const OfflineFailure('Response lost');
     return result;
   }

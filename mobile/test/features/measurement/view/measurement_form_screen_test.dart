@@ -52,6 +52,35 @@ void main() {
     expect(_formula('2 × 10 × 5 × 0.5 = 50.000 cum'), findsOneWidget);
   });
 
+  testWidgets('the gauge shows BOQ used, live, and goes urgent past tolerance', (tester) async {
+    final TestApp app = await bookApp(qty: '100.000');
+    addTearDown(app.dispose);
+    await pumpBook(tester, app, start: Routes.measurementForm);
+    await _pickLine(tester);
+    await _typeEntry(tester);
+
+    HatchedProgressBar bar() => tester.widget(find.byType(HatchedProgressBar));
+    expect(bar().fraction, closeTo(0.5, 0.0001));
+    expect(tester.widget<SquarePercent>(find.byType(SquarePercent)).label, '50%');
+
+    await tester.tap(find.text('Deduct'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(bar().fraction, 0);
+    expect(tester.widget<SquarePercent>(find.byType(SquarePercent)).label, '0%');
+    await tester.tap(find.text('Add'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byKey(const ValueKey<String>('tile-nos')));
+    await tester.pump();
+    await typeKeys(tester, '5');
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(HatchedProgressBar), findsNothing);
+    expect(find.textContaining('PM approval'), findsOneWidget);
+    expect(tester.widget<SquarePercent>(find.byType(SquarePercent)).label, '625%');
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   testWidgets('blank dimensions are skipped, a zero is not', (tester) async {
     final TestApp app = await bookApp();
     addTearDown(app.dispose);
@@ -165,7 +194,7 @@ void main() {
     await typeKeys(tester, '.001');
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.textContaining('PM approval'), findsOneWidget);
-    expect(find.byType(RubberStamp), findsOneWidget);
+    expect(find.textContaining('Deviation'), findsOneWidget);
 
     await tester.tap(find.byKey(_save));
     await pumpDrift(tester, 8);
@@ -244,7 +273,7 @@ void main() {
     await tester.pump();
     await pumpDrift(tester, 8);
 
-    expect(find.text('RECENT'), findsOneWidget);
+    expect(find.text('Recent'), findsOneWidget);
     expect(find.text('Plaster coat'), findsOneWidget);
     expect(find.text('Brick masonry'), findsOneWidget);
 

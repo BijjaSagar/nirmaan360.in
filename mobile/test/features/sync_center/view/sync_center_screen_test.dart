@@ -135,7 +135,7 @@ void main() {
     await app.sync();
     await pumpShellApp(tester, app, location: Routes.outbox);
 
-    expect(find.text(en.shellOutboxLogTitle.toUpperCase()), findsOneWidget);
+    expect(find.text(en.shellOutboxLogTitle), findsOneWidget);
     expect(find.text(en.syncStaleLog), findsOneWidget);
   });
 

@@ -129,7 +129,7 @@ void main() {
     expect(find.textContaining('KT-B · Kalyani Tower B'), findsNWidgets(2));
     expect(find.textContaining('Sachin More'), findsOneWidget);
     expect(find.textContaining('3 hours ago'), findsWidgets);
-    expect(find.text('2 WAITING FOR YOU'), findsOneWidget);
+    expect(find.text('2 waiting for you'), findsOneWidget);
   });
 
   testWidgets('a deviation is flagged on the card', (tester) async {
@@ -140,8 +140,7 @@ void main() {
     await pumpBook(tester, app, start: Routes.approvals);
     await settle(tester);
 
-    final Finder stamp = find.byWidgetPredicate((w) => w is RubberStamp && w.label == 'Deviation');
-    expect(stamp, findsOneWidget);
+    expect(find.text('Deviation'), findsOneWidget);
   });
 
   testWidgets('a nothing-waiting inbox says so', (tester) async {

@@ -80,37 +80,37 @@ class MusterGroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final Pictogram pictogram = N360Pictograms.trade(group.trade);
+    final String label = l.pictogramLabel(pictogram);
+    final int total = group.workers.length;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, N360Space.sm, 0, N360Space.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.only(bottom: N360Space.md),
+      child: Row(
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(pictogram.icon, size: 24, color: N360Colors.ink),
-              const SizedBox(width: N360Space.sm),
-              Expanded(
-                child: Text(
-                  l.pictogramLabel(pictogram),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.heading.copyWith(fontSize: 20),
-                ),
-              ),
-              BlocSelector<AttendanceCubit, AttendanceState, int>(
-                selector: (state) =>
-                    group.workerIds.where(state.marks.containsKey).length,
-                builder: (context, marked) => Text(
-                  l.attendanceGroupProgress(marked, group.workerIds.length),
-                  style: N360Type.figureSmall.copyWith(color: N360Colors.inkLabel),
-                ),
-              ),
-            ],
+          IconTile(icon: pictogram.icon, semanticLabel: label),
+          const SizedBox(width: N360Space.md),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: N360Type.heading,
+            ),
           ),
-          const SizedBox(height: N360Space.xs),
-          const RuledDivider(color: N360Colors.ruleStrong),
-          const SizedBox(height: N360Space.xs),
+          BlocSelector<AttendanceCubit, AttendanceState, int>(
+            selector: (state) =>
+                group.workers.where((w) => state.marks.containsKey(w.id)).length,
+            builder: (context, marked) => Semantics(
+              container: true,
+              label: l.attendanceGroupProgress(marked, total),
+              child: ExcludeSemantics(
+                child: SquarePercent(
+                  fraction: total == 0 ? 0 : marked / total,
+                  label: '$marked/$total',
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -154,6 +154,7 @@ class _OvertimeHours extends StatelessWidget {
           children: <Widget>[
             _HoursKey(
               icon: Icons.remove,
+              label: l.attendanceOtLess,
               onTap: canLess ? () => change(hours - overtimeStep) : null,
             ),
             Padding(
@@ -167,6 +168,7 @@ class _OvertimeHours extends StatelessWidget {
             ),
             _HoursKey(
               icon: Icons.add,
+              label: l.attendanceOtMore,
               onTap: canMore ? () => change(hours + overtimeStep) : null,
             ),
           ],
@@ -177,27 +179,16 @@ class _OvertimeHours extends StatelessWidget {
 }
 
 class _HoursKey extends StatelessWidget {
-  const _HoursKey({required this.icon, required this.onTap});
+  const _HoursKey({required this.icon, required this.label, required this.onTap});
 
   final IconData icon;
+  final String label;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: N360Size.tap,
-      child: LedgerCard(
-        padding: EdgeInsets.zero,
-        onTap: onTap,
-        child: SizedBox.square(
-          dimension: 53,
-          child: Icon(
-            icon,
-            size: 26,
-            color: onTap == null ? N360Colors.ink3 : N360Colors.ink,
-          ),
-        ),
-      ),
-    );
+    final Widget key = IconTile(icon: icon, semanticLabel: label, onTap: onTap);
+    // A stepper at its limit looks spent rather than pressable.
+    return onTap == null ? Opacity(opacity: 0.4, child: key) : key;
   }
 }

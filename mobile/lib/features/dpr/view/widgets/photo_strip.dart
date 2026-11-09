@@ -5,33 +5,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/dpr_repository.dart';
 import 'dpr_ui.dart';
 
-/// The big camera tile: a thumb lands on it without looking.
-class DprCameraButton extends StatelessWidget {
-  const DprCameraButton({super.key, required this.onTap, required this.busy});
-
-  final VoidCallback onTap;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return LedgerCard(
-      onTap: busy ? null : onTap,
-      semanticsLabel: l.dprTakePhoto,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Icon(Icons.photo_camera, size: 40, color: N360Colors.ink),
-          const SizedBox(width: N360Space.md),
-          Text(l.dprTakePhoto, style: N360Type.title.copyWith(height: 1.2)),
-        ],
-      ),
-    );
-  }
-}
-
-/// Taken photos, side by side. Horizontal so ten photos cost one row of sheet.
+/// Taken photos, side by side. Horizontal so ten photos cost one row of card.
 class DprPhotoStrip extends StatelessWidget {
   const DprPhotoStrip({
     super.key,

@@ -2,10 +2,11 @@
 // a field the app did not expect must never crash an approver's screen.
 import 'package:flutter/material.dart';
 
+import '../../../../core/db/app_database.dart';
 import '../../../../core/money/money.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../measurement/bloc/measurement_book.dart';
-import '../../data/approval_repository.dart';
+import '../../bloc/boq_index.dart';
 
 Map<String, dynamic> readMap(Object? value) => value is Map ? value.cast<String, dynamic>() : const <String, dynamic>{};
 
@@ -47,6 +48,28 @@ ApprovalFigure? figureOf(ApprovalRow row, AppLocalizations l) {
       return total == null ? null : ApprovalFigure(total, unit: l.approvalsWorkers);
   }
   return null;
+}
+
+/// A measurement's size against its BOQ line, for a progress mark.
+class ApprovalShare {
+  const ApprovalShare(this.fraction, this.label);
+
+  final double fraction;
+  final String label;
+}
+
+/// Null for anything but a measurement, and when the line is not on this phone.
+ApprovalShare? shareOf(ApprovalRow row, BoqIndex boq) {
+  if (row.docType != 'measurement') return null;
+  final int? projectId = row.projectId;
+  final String? code = readText(readMap(row.document['boq_item'])['code']);
+  final Qty? qty = readQty(row.document['qty']);
+  if (projectId == null || code == null || qty == null) return null;
+  final BoqItemRow? line = boq[(projectId, code)];
+  if (line == null) return null;
+  final double? fraction = shareFraction(qty, line.qty);
+  final String? label = shareLabel(qty, line.qty);
+  return fraction == null || label == null ? null : ApprovalShare(fraction, label);
 }
 
 bool isDeviationDoc(ApprovalRow row) => row.docType == 'measurement' && row.document['deviation'] == true;

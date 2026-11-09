@@ -164,6 +164,7 @@
   "attendanceLeft": "Left",
   "attendanceLoadFailedMessage": "Your marks are safe on this phone. Try again.",
   "attendanceLoadFailedTitle": "Could not open the muster",
+  "attendanceMarkedSoFar": "Marked so far",
   "attendanceNoProjectMessage": "Choose a project first, then mark the muster here.",
   "attendanceNoProjectTitle": "No project chosen",
   "attendanceNoWorkersMessage": "Add your workers here, or ask the office to add them.",
@@ -190,7 +191,6 @@
   "attendanceSheetTitle": "New worker",
   "attendanceSheetTrade": "Trade",
   "attendanceSheetTradeRequired": "Choose the trade.",
-  "attendanceSheetWage": "Daily wage",
   "attendanceSheetWageFor": "Daily wage for {name}",
   "@attendanceSheetWageFor": {
     "placeholders": {
@@ -254,6 +254,14 @@
   "dprApproverRemark": "Approver's remark",
   "dprAttentionBody": "This report could not be sent. Open Outbox to fix it.",
   "dprBalance": "Balance",
+  "dprBoqDonePercent": "{percent} percent of BOQ measured",
+  "@dprBoqDonePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "dprBoqEmpty": "No BOQ items found.",
   "dprBoqNotSynced": "BOQ not on this phone yet. Connect to the network once.",
   "dprCameraFailed": "Could not open the camera. Allow camera in phone settings.",
@@ -292,6 +300,14 @@
   "dprNotes": "Notes",
   "dprNotesHint": "Anything else from today",
   "dprNothingRecorded": "Nothing recorded",
+  "dprOfDays": "of {days} days",
+  "@dprOfDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "dprOpenToday": "Open today's report",
   "dprOptional": "Optional",
   "dprOverBalance": "More than the BOQ balance. Check the figure.",
@@ -309,6 +325,7 @@
   "dprQtyShort": "Qty",
   "dprQuantity": "Quantity",
   "dprRemove": "Remove",
+  "dprReportsThisMonth": "Reports this month",
   "dprReturnedNoRemark": "Please correct and send again.",
   "dprReturnedTitle": "Sent back for correction",
   "dprReviewOffline": "No network now. The report stays on this phone and goes by itself when network returns.",
@@ -358,6 +375,7 @@
       }
     }
   },
+  "dprWorkersOnSite": "Workers on site",
   "dprWorkersWord": "{count, plural, =1{worker} other{workers}}",
   "@dprWorkersWord": {
     "placeholders": {
@@ -367,6 +385,7 @@
     }
   },
   "dprWriteToday": "Write today's report",
+  "dprYesterdayLabel": "Yesterday",
   "dprYesterdayTag": "Yesterday",
   "issuesActionClose": "Close issue",
   "issuesActionReopen": "Reopen",
@@ -377,7 +396,6 @@
   "issuesDetailAssignee": "Assigned to",
   "issuesDetailDescription": "Details",
   "issuesDetailDue": "Due date",
-  "issuesDetailLocation": "Location",
   "issuesDetailMissingMessage": "It may have been removed. Go back to the list.",
   "issuesDetailMissingTitle": "This issue is not on this phone",
   "issuesDetailPriority": "Priority",
@@ -406,7 +424,6 @@
   "issuesFormEyebrow": "New issue",
   "issuesFormLocation": "Where on site?",
   "issuesFormLocationHint": "Grid C, third floor",
-  "issuesFormNoDue": "No date",
   "issuesFormPriority": "How urgent is it?",
   "issuesFormSave": "Save issue",
   "issuesFormTitle": "Raise an issue",
@@ -444,7 +461,16 @@
   "measurementBalance": "Balance",
   "measurementBalanceAfter": "Balance after this",
   "measurementBookTitle": "Measurement book",
+  "measurementBoqProgress": "BOQ used",
   "measurementBoqQty": "BOQ",
+  "measurementBoqUsed": "{percent} of BOQ used",
+  "@measurementBoqUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
   "measurementBreadth": "Breadth",
   "measurementBreadthShort": "× B",
   "measurementChange": "Change",
@@ -530,6 +556,7 @@
   },
   "measurementSendForApproval": "Send for approval",
   "measurementSendsWhenOnline": "Not sent yet. It will go for approval when network returns.",
+  "measurementShareOfBoq": "Share of BOQ",
   "measurementStampSent": "Sent",
   "measurementSubmitWaitingTitle": "Waiting to go for approval",
   "measurementSyncAttention": "Needs a look",
@@ -561,6 +588,7 @@
   "pettyCashBillRetake": "Take again",
   "pettyCashCategory": "What was it for?",
   "pettyCashCategoryRequired": "Choose what it was for.",
+  "pettyCashConfirmed": "Confirmed",
   "pettyCashDate": "Date",
   "pettyCashDayToday": "Today",
   "pettyCashDayYesterday": "Yesterday",
@@ -568,10 +596,9 @@
   "pettyCashEntriesEmptyMessage": "Expenses you add will show here.",
   "pettyCashEntriesEmptyTitle": "No entries yet",
   "pettyCashEyebrow": "Cash book",
+  "pettyCashFinalAfterSync": "The final balance comes after sync.",
   "pettyCashFormEyebrow": "New expense",
   "pettyCashFormTitle": "Add an expense",
-  "pettyCashLoadFailedTitle": "Could not open petty cash",
-  "pettyCashNext": "Next",
   "pettyCashNoProjectMessage": "Choose a project first, then record expenses here.",
   "pettyCashNoProjectTitle": "No project chosen",
   "pettyCashNoWalletMessage": "Ask your project manager or the accounts office to open one for you.",
@@ -588,14 +615,6 @@
   },
   "pettyCashPhotoBill": "Photo of bill",
   "pettyCashProvisional": "Provisional",
-  "pettyCashProvisionalNote": "{amount} on this phone is not sent yet. The final balance comes after sync.",
-  "@pettyCashProvisionalNote": {
-    "placeholders": {
-      "amount": {
-        "type": "String"
-      }
-    }
-  },
   "pettyCashSave": "Save expense",
   "pettyCashSaveFailed": "Could not save the expense. Try again.",
   "pettyCashSavedOffline": "Saved on phone. It will send when network returns.",
@@ -604,7 +623,11 @@
   "pettyCashSyncSending": "Sending",
   "pettyCashTitle": "Petty cash",
   "pettyCashTopup": "Top-up",
+  "pettyCashUnsent": "Not sent yet",
   "pettyCashWallet": "Wallet",
+  "shellCaptionMarked": "marked",
+  "shellCaptionOpen": "open",
+  "shellCaptionToday": "today",
   "shellDiscardBody": "It has not reached the server. It will be removed from this phone.",
   "shellDiscardConfirm": "Yes, throw away",
   "shellDiscardKeep": "Keep it",
@@ -637,6 +660,22 @@
   "shellPillAttention": "needs a look",
   "shellPillSending": "sending",
   "shellPillWaiting": "waiting",
+  "shellProgressBasis": "By value of approved work",
+  "shellProgressDaysLate": "Days late",
+  "shellProgressDaysLeft": "Days left",
+  "shellProgressEmptyBody": "Progress will show here once the BOQ is added.",
+  "shellProgressEmptyTitle": "No BOQ yet",
+  "shellProgressEnd": "End",
+  "shellProgressNoEnd": "Not set",
+  "shellProgressSemantics": "{percent} percent complete",
+  "@shellProgressSemantics": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "shellProgressTitle": "Construction progress",
   "shellReportAttention": "Needs a look",
   "shellReportNotStarted": "Not started",
   "shellReportSaved": "Saved",
@@ -723,6 +762,7 @@
   "shellTileApprovals": "Approvals",
   "shellTileAttendance": "Attendance",
   "shellTileDaily": "Daily report",
+  "shellTileExpenses": "Expenses",
   "shellTileIssues": "Issues",
   "shellTileMeasure": "Measure",
   "shellTilePetty": "Petty cash",

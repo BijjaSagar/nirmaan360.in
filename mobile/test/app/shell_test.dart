@@ -67,11 +67,12 @@ void main() {
     expect(find.byType(SyncCenterScreen), findsOneWidget);
   });
 
-  testWidgets('settings opens from the rail, with a real 56dp target', (tester) async {
+  testWidgets('settings opens from the header, word and tile both', (tester) async {
     final app = await TestApp.create();
     addTearDown(app.dispose);
     await pumpShellApp(tester, app);
 
+    expect(tester.getSize(find.byType(IconTile).last).height, greaterThanOrEqualTo(N360Size.tap));
     await tester.tap(find.text(en.shellSettings));
     await settle(tester);
 

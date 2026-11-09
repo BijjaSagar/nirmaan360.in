@@ -36,17 +36,14 @@ FakeApi demoApi({Uint8List? photoBytes}) {
   api.addBoqItem(id: 1, projectId: 1, code: '2.1', qty: '620.000');
   api.boqItems.single.addAll(<String, dynamic>{
     'description': 'M25 RCC in slab and beams, sixth floor',
-    'balance_qty': '555.000',
   });
   api.addBoqItem(id: 2, projectId: 1, code: '3.4', qty: '48.000', unit: 'MT');
   api.boqItems.last.addAll(<String, dynamic>{
     'description': 'Fe-500 reinforcement steel, cut and bent',
-    'balance_qty': '31.250',
   });
   api.addBoqItem(id: 3, projectId: 1, code: '5.2', qty: '940.000', unit: 'sqm');
   api.boqItems.last.addAll(<String, dynamic>{
     'description': 'Brick masonry 230 mm in cement mortar 1:6',
-    'balance_qty': '612.500',
   });
   api.addWallet(id: 1, projectId: 1, balance: '12500.00', userId: 4);
   return api;

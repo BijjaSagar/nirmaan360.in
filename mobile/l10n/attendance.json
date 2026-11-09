@@ -172,11 +172,6 @@
     "mr": "कामाचा प्रकार निवडा.",
     "hi": "काम का प्रकार चुनें।"
   },
-  "attendanceSheetWage": {
-    "en": "Daily wage",
-    "mr": "दैनिक मजुरी",
-    "hi": "दैनिक मज़दूरी"
-  },
   "attendanceSheetWageFor": {
     "en": "Daily wage for {name}",
     "mr": "{name} यांची दैनिक मजुरी",
@@ -221,5 +216,10 @@
         "type": "String"
       }
     }
+  },
+  "attendanceMarkedSoFar": {
+    "en": "Marked so far",
+    "mr": "आतापर्यंत नोंदवले",
+    "hi": "अब तक दर्ज"
   }
 }

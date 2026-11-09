@@ -87,33 +87,24 @@ class _DetailView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(2, N360Space.xs, N360Space.gutter, 0),
-                    child: Row(
-                      children: <Widget>[
-                        LedgerBackKey(onTap: () => _leave(context)),
-                        const SizedBox(width: N360Space.xs),
-                        Expanded(child: Text(l.measurementDetailTitle, style: N360Type.title)),
-                        if (synced.isUnsent) SyncMark(state: synced.syncState),
-                      ],
-                    ),
-                  ),
+                  BookTitleBar(title: l.measurementDetailTitle, onBack: () => _leave(context)),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(
-                        N360Space.gutter,
-                        N360Space.sm,
-                        N360Space.gutter,
-                        N360Space.lg,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 6, N360Space.gutter, N360Space.lg),
                       children: <Widget>[
                         LedgerHero(
                           tag: 'measurement-${entry.clientUuid}',
-                          child: _SheetHead(entry: entry, line: state.line),
+                          child: _HeroCard(row: synced, line: state.line),
                         ),
                         ..._notes(context, l, state, synced),
                         const SizedBox(height: N360Space.md),
-                        _Ledger(entry: entry, line: state.line),
+                        _DimensionCard(entry: entry),
+                        if (state.line != null) ...<Widget>[
+                          const SizedBox(height: N360Space.md),
+                          _BoqCard(line: state.line!),
+                        ],
+                        const SizedBox(height: N360Space.md),
+                        _FactsCard(entry: entry, line: state.line),
                         const SizedBox(height: N360Space.sm),
                         Text(l.measurementPreviewNote, style: N360Type.caption),
                       ],
@@ -141,40 +132,50 @@ class _DetailView extends StatelessWidget {
   ) {
     final MeasurementRow entry = synced.record;
     final String? remark = entry.returnRemark;
+    const Widget gap = SizedBox(height: N360Space.md);
     return <Widget>[
       if (remark != null && remark.isNotEmpty) ...<Widget>[
-        const SizedBox(height: N360Space.md),
-        _Note(icon: Icons.reply, ink: N360Colors.haldiInk, title: l.measurementApproverSaid, body: remark),
+        gap,
+        TintedNote(
+          icon: Icons.reply,
+          ink: N360Colors.haldiInk,
+          fill: N360Colors.goldTint,
+          title: l.measurementApproverSaid,
+          body: remark,
+        ),
       ],
       if (entry.deviation) ...<Widget>[
-        const SizedBox(height: N360Space.md),
-        _Note(
+        gap,
+        TintedNote(
           icon: Icons.warning_amber,
-          ink: N360Colors.stampRed,
+          ink: N360Colors.ink,
+          fill: N360Colors.accent,
           title: l.measurementDeviation,
           body: l.measurementDeviationDetail,
         ),
       ],
       if (entry.status == DocStatus.approved) ...<Widget>[
-        const SizedBox(height: N360Space.md),
-        _Note(
+        gap,
+        TintedNote(
           icon: Icons.lock_outline,
           ink: N360Colors.mossInk,
+          fill: N360Colors.paper2,
           title: l.measurementApprovedLockedTitle,
           body: l.measurementApprovedLockedBody,
         ),
       ],
       if (state.submitWaiting) ...<Widget>[
-        const SizedBox(height: N360Space.md),
-        _Note(
+        gap,
+        TintedNote(
           icon: Icons.schedule,
           ink: N360Colors.ink2,
+          fill: N360Colors.paper2,
           title: l.measurementSubmitWaitingTitle,
           body: state.online ? l.measurementSavedOnPhone : l.measurementSendsWhenOnline,
         ),
       ],
       if (synced.syncState == LocalSyncState.attention) ...<Widget>[
-        const SizedBox(height: N360Space.md),
+        gap,
         ErrorSlip(title: l.measurementAttentionTitle, message: synced.attentionReason ?? l.measurementAttentionBody),
       ],
     ];
@@ -208,45 +209,20 @@ class _DetailView extends StatelessWidget {
   }
 }
 
-class _SheetHead extends StatelessWidget {
-  const _SheetHead({required this.entry, required this.line});
+/// The entry at a glance: what it is, how much, and its status.
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({required this.row, required this.line});
 
-  final MeasurementRow entry;
+  final SyncedRecord<MeasurementRow> row;
   final BoqLine? line;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final String? code = line?.item.code;
-    final String unit = line?.item.unit ?? '';
-    final String eyebrow = code == null ? l.measurementItem : '${l.measurementItem} $code · $unit';
-    return LedgerCard(
-      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.md, N360Space.md, N360Space.md),
-      child: SheetHeader(
-        eyebrow: eyebrow,
-        title: entryTitle(entry, line?.item),
-        ruled: false,
-        trailing: RubberStamp(
-          kind: stampKindFor(entry.status),
-          label: statusWord(l, entry.status),
-          size: StampSize.medium,
-        ),
-      ),
-    );
-  }
-}
-
-class _Ledger extends StatelessWidget {
-  const _Ledger({required this.entry, required this.line});
-
-  final MeasurementRow entry;
-  final BoqLine? line;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    final String unit = line?.item.unit ?? '';
-    final today = context.read<AppServices>().context.today;
+    final MeasurementRow entry = row.record;
+    final BoqLine? boq = line;
+    final String unit = boq?.item.unit ?? '';
+    final String eyebrow = boq == null ? l.measurementItem : '${l.measurementItem} ${boq.item.code} · $unit';
     final Color qtyInk = entry.qty.isNegative ? N360Colors.laterite : N360Colors.ink;
     final String? formula = bookFormula(
       nos: entry.nos,
@@ -257,93 +233,255 @@ class _Ledger extends StatelessWidget {
       result: entry.qty,
       unit: unit,
     );
-    String dim(Qty? value) => value == null ? '—' : bookFigure(value);
-    final BoqLine? boq = line;
+    final String? percent = boq == null ? null : shareLabel(entry.qty, boq.item.qty);
+    final double? fraction = boq == null ? null : shareFraction(entry.qty, boq.item.qty);
 
     return LedgerCard(
-      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.sm, N360Space.lg, N360Space.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          BookRow.words(label: l.measurementDateLabel, value: dayLabel(context, entry.measuredOn, today)),
-          if (boq != null) BookRow(label: l.measurementItem, value: boq.item.code, hint: boq.item.description),
-          if (entry.location?.isNotEmpty ?? false)
-            BookRow.words(label: l.measurementLocationLabel, value: entry.location!),
-          if (entry.description?.isNotEmpty ?? false)
-            BookRow.words(label: l.measurementDescriptionLabel, value: entry.description!),
-          BookRow(label: l.measurementNos, value: dim(entry.nos)),
-          BookRow(label: l.measurementLength, value: dim(entry.length)),
-          BookRow(label: l.measurementBreadth, value: dim(entry.breadth)),
-          BookRow(label: l.measurementDepth, value: dim(entry.depth)),
-          if (formula != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
-              child: FittedBox(
-                alignment: Alignment.centerLeft,
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  formula,
-                  style: N360Type.figureSmall.copyWith(
-                    color: entry.isDeduction ? N360Colors.laterite : N360Colors.ink2,
+          Row(
+            children: <Widget>[
+              IconTile(icon: Icons.architecture, semanticLabel: eyebrow),
+              const SizedBox(width: N360Space.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(eyebrow, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+                    Text(
+                      entryTitle(entry, boq?.item),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.heading.copyWith(height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: N360Space.xs),
+              RubberStamp(kind: stampKindFor(entry.status), label: statusWord(l, entry.status), size: StampSize.small),
+            ],
+          ),
+          const SizedBox(height: N360Space.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text.rich(
+                    key: const ValueKey<String>('detail-figure'),
+                    TextSpan(
+                      text: formatQty(entry.qty),
+                      children: <InlineSpan>[
+                        if (unit.isNotEmpty)
+                          TextSpan(
+                            text: ' $unit',
+                            style: N360Type.heading.copyWith(color: qtyInk, fontWeight: FontWeight.w500),
+                          ),
+                      ],
+                    ),
+                    style: N360Type.figureHero.copyWith(color: qtyInk, fontSize: 40),
                   ),
                 ),
               ),
-            ),
-          BookRow(
-            label: l.measurementQuantity,
-            total: true,
-            value: '${formatQty(entry.qty)}${unit.isEmpty ? '' : ' $unit'}',
-            valueStyle: N360Type.figure.copyWith(fontSize: 22, color: qtyInk),
+              if (percent != null && fraction != null) ...<Widget>[
+                const SizedBox(width: N360Space.sm),
+                Semantics(
+                  label: '$percent ${l.measurementShareOfBoq}',
+                  child: ExcludeSemantics(
+                    child: SquarePercent(fraction: fraction, label: percent, size: 60),
+                  ),
+                ),
+              ],
+            ],
           ),
-          if (boq != null) ...<Widget>[
-            BookRow(label: l.measurementBoqQty, value: '${formatQty(boq.item.qty)} $unit'),
-            BookRow(label: l.measurementBalance, value: '${formatQty(boq.previewBalance)} $unit', ruled: false),
+          if (formula != null) ...<Widget>[
+            const SizedBox(height: 2),
+            FittedBox(
+              alignment: Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              child: Text(
+                formula,
+                style: N360Type.figureSmall.copyWith(color: entry.isDeduction ? N360Colors.laterite : N360Colors.ink2),
+              ),
+            ),
           ],
+          if (row.isUnsent) ...<Widget>[const SizedBox(height: N360Space.xs), SyncMark(state: row.syncState)],
         ],
       ),
     );
   }
 }
 
-class _Note extends StatelessWidget {
-  const _Note({required this.icon, required this.ink, required this.title, required this.body});
+/// Nos, L, B and D side by side, the way they were taken on site.
+class _DimensionCard extends StatelessWidget {
+  const _DimensionCard({required this.entry});
 
-  final IconData icon;
-  final Color ink;
-  final String title;
-  final String body;
+  final MeasurementRow entry;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: N360Colors.sheet,
-        borderRadius: N360Radius.sm,
-        border: Border.all(color: ink, width: 1.25),
+    final AppLocalizations l = AppLocalizations.of(context);
+    String dim(Qty? value) => value == null ? '—' : bookFigure(value);
+    Widget tile(String label, String value) => Expanded(
+      child: _MiniTile(label: label, value: value),
+    );
+    return LedgerCard(
+      padding: const EdgeInsets.all(N360Space.sm + 2),
+      child: Row(
+        children: <Widget>[
+          tile(l.measurementNos, dim(entry.nos)),
+          const SizedBox(width: 6),
+          tile(l.measurementLength, dim(entry.length)),
+          const SizedBox(width: 6),
+          tile(l.measurementBreadth, dim(entry.breadth)),
+          const SizedBox(width: 6),
+          tile(l.measurementDepth, dim(entry.depth)),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(N360Space.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Icon(icon, size: 24, color: ink),
+    );
+  }
+}
+
+class _MiniTile extends StatelessWidget {
+  const _MiniTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: '$label $value',
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: N360Space.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: N360Type.caption.copyWith(fontSize: 13),
+                ),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(value, maxLines: 1, style: N360Type.figure),
+                ),
+              ],
             ),
-            const SizedBox(width: N360Space.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(title, style: N360Type.bodyStrong.copyWith(color: ink)),
-                  Text(body, style: N360Type.body),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// How far the BOQ line has got, with this phone's unsent rows included.
+class _BoqCard extends StatelessWidget {
+  const _BoqCard({required this.line});
+
+  final BoqLine line;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String unit = line.item.unit;
+    final Qty used = line.item.qty - line.previewBalance;
+    final double fraction = used.isNegative ? 0 : (shareFraction(used, line.item.qty) ?? 0);
+    final String percent = used.isNegative ? '0%' : (shareLabel(used, line.item.qty) ?? '');
+    return LedgerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(l.measurementBoqProgress, style: N360Type.heading),
+          HatchedProgressBar(
+            fraction: fraction,
+            markerLabel: percent,
+            height: 28,
+            semanticLabel: l.measurementBoqUsed(percent),
+          ),
+          const SizedBox(height: N360Space.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _Figure(label: l.measurementBoqQty, value: '${formatQty(line.item.qty)} $unit'),
+              ),
+              Expanded(
+                child: _Figure(
+                  label: l.measurementBalance,
+                  value: '${formatQty(line.previewBalance)} $unit',
+                  end: true,
+                  ink: line.previewBalance.isNegative ? N360Colors.laterite : N360Colors.ink,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Figure extends StatelessWidget {
+  const _Figure({required this.label, required this.value, this.end = false, this.ink = N360Colors.ink});
+
+  final String label;
+  final String value;
+  final bool end;
+  final Color ink;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(label, style: N360Type.caption),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(value, maxLines: 1, style: N360Type.figure.copyWith(color: ink, fontSize: 17)),
+        ),
+      ],
+    );
+  }
+}
+
+class _FactsCard extends StatelessWidget {
+  const _FactsCard({required this.entry, required this.line});
+
+  final MeasurementRow entry;
+  final BoqLine? line;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String today = context.read<AppServices>().context.today;
+    final BoqLine? boq = line;
+    final bool hasLocation = entry.location?.isNotEmpty ?? false;
+    final bool hasDescription = entry.description?.isNotEmpty ?? false;
+    return LedgerCard(
+      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.xs, N360Space.lg, N360Space.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          BookRow.words(label: l.measurementDateLabel, value: dayLabel(context, entry.measuredOn, today)),
+          if (boq != null) BookRow(label: l.measurementItem, value: boq.item.code, hint: boq.item.description),
+          if (hasLocation) BookRow.words(label: l.measurementLocationLabel, value: entry.location!),
+          if (hasDescription)
+            BookRow.words(label: l.measurementDescriptionLabel, value: entry.description!, ruled: false),
+        ],
       ),
     );
   }
@@ -361,13 +499,10 @@ class _Actions extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     if (!state.canChange) return const SizedBox.shrink();
     final bool returned = state.entry?.record.status == DocStatus.returned;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: N360Colors.paper,
-        border: Border(top: BorderSide(color: N360Colors.ruleStrong)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.md),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.sm, 0, N360Space.sm, N360Space.sm),
+      child: LedgerCard(
+        padding: const EdgeInsets.all(N360Space.sm),
         child: Row(
           children: <Widget>[
             Expanded(

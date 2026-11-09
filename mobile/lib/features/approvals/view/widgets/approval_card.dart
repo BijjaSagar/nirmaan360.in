@@ -10,11 +10,12 @@ import 'approval_read.dart';
 
 /// One item waiting for a decision, with its deciding figure large.
 class ApprovalCard extends StatelessWidget {
-  const ApprovalCard({super.key, required this.row, required this.now, required this.onTap});
+  const ApprovalCard({super.key, required this.row, required this.now, required this.onTap, this.share});
 
   final ApprovalRow row;
   final DateTime now;
   final VoidCallback? onTap;
+  final ApprovalShare? share;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +30,7 @@ class ApprovalCard extends StatelessWidget {
     final bool deviation = isDeviationDoc(row);
     final Color figureInk = figure?.negative == true ? N360Colors.laterite : N360Colors.ink;
     final String figureSpoken = figure == null ? '' : '${figure.value} ${figure.unit ?? ''}';
+    final ApprovalShare? portion = share;
 
     final Widget body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -36,56 +38,66 @@ class ApprovalCard extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Icon(docTypeIcon(row.docType), size: 20, color: N360Colors.ink2),
-            const SizedBox(width: 6),
+            IconTile(icon: docTypeIcon(row.docType), semanticLabel: type),
+            const SizedBox(width: N360Space.md),
             Expanded(
-              child: Text(
-                N360Type.eyebrowText(type),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: N360Type.eyebrowFor(type),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(type, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+                  Text(
+                    row.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: N360Type.heading.copyWith(fontSize: 16, height: 1.3),
+                  ),
+                ],
               ),
             ),
-            if (deviation) RubberStamp(kind: StampKind.rejected, label: l.approvalsDeviation, size: StampSize.small),
           ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          row.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: N360Type.heading.copyWith(fontSize: 20, height: 1.28),
-        ),
-        if (project.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 2),
-          Text(project, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.body.copyWith(height: 1.3)),
-        ],
         if (figure != null) ...<Widget>[
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text.rich(
-                TextSpan(
-                  text: figure.value,
-                  children: <InlineSpan>[
-                    if (figure.unit != null)
-                      TextSpan(
-                        text: ' ${figure.unit}',
-                        style: N360Type.figure.copyWith(color: figureInk, fontWeight: FontWeight.w400),
-                      ),
-                  ],
+          const SizedBox(height: N360Space.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text.rich(
+                    TextSpan(
+                      text: figure.value,
+                      children: <InlineSpan>[
+                        if (figure.unit != null)
+                          TextSpan(
+                            text: ' ${figure.unit}',
+                            style: N360Type.heading.copyWith(color: figureInk, fontWeight: FontWeight.w500),
+                          ),
+                      ],
+                    ),
+                    style: N360Type.figureHero.copyWith(color: figureInk, fontSize: 32),
+                  ),
                 ),
-                style: N360Type.figureLarge.copyWith(color: figureInk),
               ),
-            ),
+              if (portion != null) ...<Widget>[
+                const SizedBox(width: N360Space.sm),
+                Semantics(
+                  label: '${portion.label} ${l.measurementShareOfBoq}',
+                  child: ExcludeSemantics(
+                    child: SquarePercent(fraction: portion.fraction, label: portion.label, size: 56),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
-        const SizedBox(height: 4),
-        const RuledDivider(),
-        const SizedBox(height: 4),
+        if (deviation) ...<Widget>[const SizedBox(height: N360Space.sm), _DeviationFlag(label: l.approvalsDeviation)],
+        if (project.isNotEmpty) ...<Widget>[
+          const SizedBox(height: N360Space.xs),
+          Text(project, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+        ],
+        const SizedBox(height: 2),
         Row(
           children: <Widget>[
             Expanded(
@@ -101,8 +113,8 @@ class ApprovalCard extends StatelessWidget {
                 ),
               )
             else ...<Widget>[
-              Text(l.approvalsOpen, style: N360Type.label.copyWith(color: N360Colors.stampRed, height: 1.3)),
-              const Icon(Icons.chevron_right, size: 20, color: N360Colors.stampRed),
+              Text(l.approvalsOpen, style: N360Type.label.copyWith(color: N360Colors.laterite, height: 1.3)),
+              const Icon(Icons.north_east, size: 18, color: N360Colors.laterite),
             ],
           ],
         ),
@@ -110,10 +122,38 @@ class ApprovalCard extends StatelessWidget {
     );
 
     return LedgerCard(
-      padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.md, N360Space.md, N360Space.sm),
+      padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.md, N360Space.md, N360Space.sm + 2),
       onTap: onTap,
       semanticsLabel: '$type. ${row.title}. $project. $figureSpoken. $who',
       child: body,
+    );
+  }
+}
+
+/// The urgent fill with dark ink, so a deviation reads from across the site.
+class _DeviationFlag extends StatelessWidget {
+  const _DeviationFlag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: N360Colors.accent, borderRadius: N360Radius.sm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: 3),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(Icons.warning_amber, size: 18, color: N360Colors.ink),
+              const SizedBox(width: 4),
+              Text(label, style: N360Type.bodyStrong.copyWith(height: 1.3, fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

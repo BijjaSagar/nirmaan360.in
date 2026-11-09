@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/design/design.dart';
-import '../../../../core/design/internal/press_target.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../measurement/view/widgets/book_kit.dart';
 
 /// Asks why the document is going back. Returns the remark, or null when the
 /// user changes their mind. A remark is required: the sender must know what to fix.
@@ -95,7 +95,7 @@ class _SendBackSheetState extends State<_SendBackSheet> {
             Text(l.approvalsSendBackHelp, style: N360Type.body),
             const SizedBox(height: N360Space.md),
             for (final String reason in reasons) ...<Widget>[
-              _ReasonChip(label: reason, selected: _chosen == reason, onTap: () => _choose(reason)),
+              ChoiceTile(centered: false, label: reason, selected: _chosen == reason, onTap: () => _choose(reason)),
               const SizedBox(height: N360Space.sm),
             ],
             const SizedBox(height: N360Space.xs),
@@ -117,54 +117,6 @@ class _SendBackSheetState extends State<_SendBackSheet> {
               onPressed: ready ? _send : null,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ReasonChip extends StatelessWidget {
-  const _ReasonChip({required this.label, required this.selected, required this.onTap});
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color ink = selected ? N360Colors.sheet : N360Colors.ink;
-    return PressTarget(
-      onTap: onTap,
-      haptic: N360Haptics.select,
-      semanticsLabel: label,
-      selected: selected,
-      builder: (context, depth, child) => CustomPaint(
-        painter: SheetEdgePainter(
-          sink: depth * (N360Size.edge - 1),
-          fill: selected ? N360Colors.ink : N360Colors.sheet,
-          edge: selected ? N360Colors.inkEdge : N360Colors.paperEdge,
-          border: selected ? N360Colors.ink : N360Colors.ruleStrong,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: N360Size.edge),
-          child: Transform.translate(offset: Offset(0, depth * (N360Size.edge - 1)), child: child),
-        ),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: N360Size.tap - N360Size.edge),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm),
-            child: Row(
-              children: <Widget>[
-                if (selected) ...<Widget>[Icon(Icons.check, size: 20, color: ink), const SizedBox(width: N360Space.sm)],
-                Expanded(
-                  child: Text(label, style: N360Type.bodyStrong.copyWith(color: ink, height: 1.3)),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

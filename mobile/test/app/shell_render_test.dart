@@ -70,6 +70,7 @@ void main() {
       addTearDown(app.dispose);
       await seedToday(app);
       await app.sync();
+      await seedProgress(app);
       await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
       await shoot(tester, '${locale}_home');
     });
@@ -79,6 +80,7 @@ void main() {
       addTearDown(app.dispose);
       await seedReturned(app);
       await seedToday(app);
+      await seedProgress(app);
       await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
       await shoot(tester, '${locale}_home_returned');
     });
@@ -87,9 +89,32 @@ void main() {
       final app = await TestApp.create();
       addTearDown(app.dispose);
       await seedToday(app);
+      await seedProgress(app);
       app.connectivity.setOnline(false);
       await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
       await shoot(tester, '${locale}_home_offline');
+    });
+
+    testWidgets('home with no BOQ ($locale)', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      app.api
+        ..addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B')
+        ..addWorker2(id: 1, name: 'Ramesh Pawar');
+      await app.sync();
+      await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_home_noboq');
+    });
+
+    testWidgets('sign in with the keyboard open ($locale)', (tester) async {
+      final app = await TestApp.create(seed: false, signedIn: false);
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, locale: locale, location: Routes.signIn, pixelRatio: 2.5);
+      await tester.showKeyboard(find.byType(TextField).first);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280 * 2.5);
+      addTearDown(tester.view.resetViewInsets);
+      await settle(tester);
+      await shoot(tester, '${locale}_signin_keyboard');
     });
 
     testWidgets('outbox with slips and attention ($locale)', (tester) async {

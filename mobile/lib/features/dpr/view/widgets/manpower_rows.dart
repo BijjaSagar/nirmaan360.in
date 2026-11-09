@@ -5,8 +5,8 @@ import '../../../../l10n/generated/app_localizations.dart';
 
 /// One trade: its picture and name on the left, a glove stepper on the right.
 ///
-/// Laid out side by side rather than stacked, so a full muster takes a third
-/// less scrolling. Rows with a count read in full ink; the rest stay quiet.
+/// Side by side rather than stacked, so a full muster takes a third less
+/// scrolling. Rows with a count read in full ink; the rest stay quiet.
 class DprTradeRow extends StatelessWidget {
   const DprTradeRow({
     super.key,
@@ -19,7 +19,7 @@ class DprTradeRow extends StatelessWidget {
   final int count;
   final ValueChanged<int> onChanged;
 
-  static const double _labelWidth = 88;
+  static const double _labelWidth = 84;
 
   @override
   Widget build(BuildContext context) {
@@ -29,61 +29,78 @@ class DprTradeRow extends StatelessWidget {
     final Color ink = count > 0 ? N360Colors.ink : N360Colors.inkLabel;
 
     return MergeSemantics(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(
-          children: <Widget>[
-            SizedBox(
-              width: _labelWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(picture.icon, size: 26, color: ink),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      style: N360Type.label.copyWith(color: ink, height: 1.3),
-                    ),
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: _labelWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(picture.icon, size: 26, color: ink),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: N360Type.label.copyWith(color: ink, height: 1.3),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: N360Space.xs),
-            Expanded(
-              child: GloveStepper(
-                value: count,
-                max: 999,
-                onChanged: onChanged,
-                decreaseLabel: l.designStepperDecrease,
-                increaseLabel: l.designStepperIncrease,
-              ),
+          ),
+          const SizedBox(width: N360Space.xs),
+          Expanded(
+            child: GloveStepper(
+              value: count,
+              max: 999,
+              onChanged: onChanged,
+              decreaseLabel: l.designStepperDecrease,
+              increaseLabel: l.designStepperIncrease,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// The workers section's headline figure.
+/// The big, confident total at the top of the workers card.
 class DprWorkerTotal extends StatelessWidget {
-  const DprWorkerTotal({super.key, required this.total});
+  const DprWorkerTotal({super.key, required this.total, this.yesterday});
 
   final int total;
+
+  /// Yesterday's headcount, to compare against once today has counts.
+  final int? yesterday;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return RollingNumber(
-      value: '$total',
-      style: N360Type.figureLarge.copyWith(
-        color: total > 0 ? N360Colors.ink : N360Colors.inkLabel,
-      ),
-      suffix: ' ${l.dprWorkersWord(total)}',
-      suffixStyle: N360Type.label.copyWith(color: N360Colors.ink2),
-      semanticsLabel: l.dprWorkersCount(total),
+    final int? before = total > 0 ? yesterday : null;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        Expanded(
+          child: RollingNumber(
+            value: '$total',
+            style: N360Type.figureHero.copyWith(
+              color: total > 0 ? N360Colors.ink : N360Colors.inkLabel,
+            ),
+            suffix: ' ${l.dprWorkersWord(total)}',
+            suffixStyle: N360Type.bodyStrong.copyWith(color: N360Colors.ink2, letterSpacing: 0),
+            semanticsLabel: l.dprWorkersCount(total),
+          ),
+        ),
+        if (before != null)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(l.dprYesterdayLabel, style: N360Type.caption),
+              Text('$before', style: N360Type.heading),
+            ],
+          ),
+      ],
     );
   }
 }

@@ -60,6 +60,43 @@ void main() {
     );
   });
 
+  testWidgets('opening the keyboard reflows nothing', (tester) async {
+    final app = await create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app, location: Routes.signIn);
+    final Finder email = find.byType(TextField).first;
+    final Offset before = tester.getTopLeft(email);
+
+    // The keyboard comes up with nothing focused: no field may move at all.
+    tester.view.viewInsets = FakeViewPadding(bottom: 280 * tester.view.devicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+    await settle(tester);
+
+    expect(tester.getTopLeft(email), before);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the focused field stays visible above the keyboard', (tester) async {
+    final app = await create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app, location: Routes.signIn);
+    final Finder email = find.byType(TextField).first;
+    final double before = tester.getTopLeft(email).dy;
+
+    await tester.showKeyboard(email);
+    tester.view.viewInsets = FakeViewPadding(bottom: 280 * tester.view.devicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+    await settle(tester);
+
+    final double screen = tester.view.physicalSize.height / tester.view.devicePixelRatio;
+    final double bottom = tester.getBottomLeft(email).dy;
+    expect(bottom, lessThanOrEqualTo(screen - 280));
+    // It moved only by the scroll needed to clear the keyboard, not by a reflow.
+    final double overlap = before + (bottom - tester.getTopLeft(email).dy) - (screen - 280);
+    expect(before - tester.getTopLeft(email).dy, lessThanOrEqualTo(overlap + 24));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('missing fields say which one', (tester) async {
     final app = await create();
     addTearDown(app.dispose);

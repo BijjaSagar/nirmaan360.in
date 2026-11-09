@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +7,7 @@ import '../../../../app/routes.dart';
 import '../../../../core/design/design.dart';
 import '../../../../core/money/money.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../projects/data/project_repository.dart' show BoqLine;
 import '../../data/dpr_repository.dart';
 import '../dpr_detail_screen.dart';
 import '../dpr_form_screen.dart';
@@ -13,13 +15,35 @@ import '../dpr_form_screen.dart';
 /// The hero tag shared by a list row and the detail masthead.
 Object dprHeroTag(String clientUuid) => 'dpr-sheet-$clientUuid';
 
-/// "Mon, 9 Nov": names in the user's language, digits kept western to match
-/// the mono figures everywhere else in the app.
-String dprDateLabel(BuildContext context, String ymd) {
+({int day, String month, String weekday, String weekdayShort}) _dateParts(
+  BuildContext context,
+  String ymd,
+) {
   final parts = ymd.split('-').map(int.parse).toList();
   final date = DateTime(parts[0], parts[1], parts[2]);
   final locale = Localizations.localeOf(context).toString();
-  return '${_name('EEE', locale, date)}, ${date.day} ${_name('MMM', locale, date)}';
+  return (
+    day: date.day,
+    month: _name('MMM', locale, date),
+    weekday: _name('EEEE', locale, date),
+    weekdayShort: _name('EEE', locale, date),
+  );
+}
+
+/// "Mon, 9 Nov": names in the user's language, digits kept western to match
+/// the figures everywhere else in the app.
+String dprDateLabel(BuildContext context, String ymd) {
+  final d = _dateParts(context, ymd);
+  return '${d.weekdayShort}, ${d.day} ${d.month}';
+}
+
+/// "Monday".
+String dprWeekday(BuildContext context, String ymd) => _dateParts(context, ymd).weekday;
+
+/// The big day number and short month for a date tile.
+({int day, String month}) dprDateTile(BuildContext context, String ymd) {
+  final d = _dateParts(context, ymd);
+  return (day: d.day, month: d.month);
 }
 
 String _name(String pattern, String locale, DateTime date) {
@@ -30,7 +54,7 @@ String _name(String pattern, String locale, DateTime date) {
   }
 }
 
-/// A ledger figure: three decimals, Indian grouping.
+/// A quantity for the screen: three decimals, Indian grouping.
 String dprQty(Qty qty) => qty.indian();
 
 /// What the keypad should show for a saved quantity, without trailing zeros.
@@ -38,6 +62,22 @@ String dprKeypadText(Qty qty) => qty.value.toString();
 
 int dprWorkerTotal(DprRow dpr) =>
     dpr.manpower.fold<int>(0, (sum, line) => sum + line.count);
+
+/// How much of a BOQ line has been measured.
+///
+/// [percent] comes from exact decimals; [fraction] is only for drawing, which
+/// is the one place a double is allowed near a quantity.
+({double fraction, int percent}) dprBoqDone(BoqLine line) {
+  final Qty total = line.item.qty;
+  if (total.isZero) return (fraction: 0, percent: 0);
+  final Decimal done = (total - line.previewBalance).value;
+  final int percent = ((done * Decimal.fromInt(100)) / total.value)
+      .round()
+      .toInt()
+      .clamp(0, 100);
+  final double fraction = (done / total.value).toDouble().clamp(0.0, 1.0);
+  return (fraction: fraction, percent: percent);
+}
 
 /// The stamp for a report, from its server status and where it is now.
 ({StampKind kind, String label}) dprStampFor(

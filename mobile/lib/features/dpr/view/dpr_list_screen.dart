@@ -10,7 +10,7 @@ import '../data/dpr_repository.dart';
 import 'widgets/dpr_format.dart';
 import 'widgets/dpr_ui.dart';
 
-/// The reports book for the current project, newest first.
+/// The reports for the current project, newest first.
 class DprListScreen extends StatelessWidget {
   const DprListScreen({super.key});
 
@@ -49,21 +49,21 @@ class _DprListBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  const DprTopBar(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.sm),
-                    child: SheetHeader(
-                      eyebrow: state.project?.name,
-                      title: l.dprListTitle,
+                  DprTopBar(title: l.dprListTitle),
+                  Expanded(
+                    child: DprActionLayout(
+                      body: _content(context, state, l),
+                      action: state.project == null
+                          ? null
+                          : GloveButton(
+                              label: state.hasToday ? l.dprOpenToday : l.dprWriteToday,
+                              icon: state.hasToday ? Icons.edit_note : Icons.add,
+                              large: true,
+                              fullWidth: true,
+                              onPressed: () => dprOpenForm(context, date: state.today),
+                            ),
                     ),
                   ),
-                  Expanded(child: _content(context, state, l)),
-                  if (state.project != null)
-                    DprBottomAction(
-                      label: state.hasToday ? l.dprOpenToday : l.dprWriteToday,
-                      icon: state.hasToday ? Icons.edit_note : Icons.add,
-                      onPressed: () => dprOpenForm(context, date: state.today),
-                    ),
                 ],
               ),
             ),
@@ -79,15 +79,29 @@ class _DprListBody extends StatelessWidget {
       return Center(child: EmptyLedger(title: l.dprNoProject));
     }
     if (state.rows.isEmpty) {
-      return Center(
-        child: EmptyLedger(title: l.dprEmptyTitle, message: l.dprEmptyMessage),
+      return Padding(
+        padding: EdgeInsets.only(bottom: DprActionLayout.clearance(context)),
+        child: Center(
+          child: EmptyLedger(title: l.dprEmptyTitle, message: l.dprEmptyMessage),
+        ),
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
-      itemCount: state.rows.length,
+      padding: EdgeInsets.fromLTRB(
+        N360Space.gutter,
+        N360Space.xs,
+        N360Space.gutter,
+        DprActionLayout.clearance(context),
+      ),
+      itemCount: state.rows.length + 1,
       itemBuilder: (context, index) {
-        final SyncedRecord<DprRow> record = state.rows[index];
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: N360Space.md),
+            child: _MonthCard(state: state),
+          );
+        }
+        final SyncedRecord<DprRow> record = state.rows[index - 1];
         return Padding(
           key: ValueKey<String>(record.record.clientUuid),
           padding: const EdgeInsets.only(bottom: N360Space.sm),
@@ -103,7 +117,68 @@ class _DprListBody extends StatelessWidget {
       },
     );
   }
+}
 
+/// How many days of this month have a report: the one number that shows whether
+/// the book is being kept.
+class _MonthCard extends StatelessWidget {
+  const _MonthCard({required this.state});
+
+  final DprListState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final int days = state.daysThisMonth;
+    final int filed = state.filedThisMonth;
+    return LedgerCard(
+        padding: const EdgeInsets.all(N360Space.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (state.project != null) SectionLabel(state.project!.name),
+                      Text(l.dprReportsThisMonth, style: N360Type.heading),
+                    ],
+                  ),
+                ),
+                IconTile(icon: Icons.calendar_month, semanticLabel: l.dprReportsThisMonth),
+              ],
+            ),
+            const SizedBox(height: N360Space.xs),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: <Widget>[
+                Text('$filed', style: N360Type.figureHero),
+                const SizedBox(width: N360Space.sm),
+                Flexible(
+                  child: Text(
+                    l.dprOfDays(days),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: N360Type.bodyStrong.copyWith(color: N360Colors.ink2),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: N360Space.sm),
+            HatchedProgressBar(
+              fraction: days == 0 ? 0 : (filed / days),
+              height: 36,
+              semanticLabel: '$filed ${l.dprOfDays(days)}',
+            ),
+          ],
+        ),
+    );
+  }
 }
 
 class _ReportRow extends StatelessWidget {
@@ -123,7 +198,7 @@ class _ReportRow extends StatelessWidget {
       onTap: onTap,
       semanticsLabel:
           '$date, ${l.dprWorkersCount(dprWorkerTotal(dpr))}, ${l.dprRowsCount(dpr.workItems.length)}, ${stamp.label}',
-      padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: 10),
+      padding: const EdgeInsets.all(N360Space.md),
       child: LedgerHero(
         tag: dprHeroTag(dpr.clientUuid),
         child: DprReportFace(record: record, today: today),
@@ -132,7 +207,7 @@ class _ReportRow extends StatelessWidget {
   }
 }
 
-/// A report at a glance: date, totals, where it is, and its stamp. The list
+/// A report at a glance: the day, totals, where it is, and its stamp. The list
 /// row and the detail masthead share it, so the hero has one shape to fly.
 class DprReportFace extends StatelessWidget {
   const DprReportFace({
@@ -144,6 +219,8 @@ class DprReportFace extends StatelessWidget {
 
   final SyncedRecord<DprRow> record;
   final bool today;
+
+  /// The detail masthead: no totals, because tiles below it carry them.
   final bool large;
 
   @override
@@ -152,52 +229,72 @@ class DprReportFace extends StatelessWidget {
     final DprRow dpr = record.record;
     final stamp = dprStampFor(l, record);
     final int workers = dprWorkerTotal(dpr);
+
+    final Widget day = Row(
+      children: <Widget>[
+        Flexible(
+          child: Text(
+            dprWeekday(context, dpr.reportDate),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: N360Type.heading,
+          ),
+        ),
+        if (today) ...<Widget>[
+          const SizedBox(width: N360Space.sm),
+          Text(
+            l.commonToday,
+            style: N360Type.caption.copyWith(
+              color: N360Colors.laterite,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ],
+    );
+    final Widget mark = RubberStamp(
+      kind: stamp.kind,
+      label: stamp.label,
+      size: large ? StampSize.medium : StampSize.small,
+    );
+
     return Row(
       children: <Widget>[
+        DprDateTile(ymd: dpr.reportDate, today: today),
+        const SizedBox(width: N360Space.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Flexible(
-                    child: Text(
-                      dprDateLabel(context, dpr.reportDate),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: large ? N360Type.title : N360Type.heading,
-                    ),
-                  ),
-                  if (today) ...<Widget>[
+              // The stamp shares the short first line, so the totals get the
+              // full width and never truncate.
+              if (large)
+                day
+              else
+                Row(
+                  children: <Widget>[
+                    Expanded(child: day),
                     const SizedBox(width: N360Space.sm),
-                    Text(
-                      l.commonToday,
-                      style: N360Type.caption.copyWith(
-                        color: N360Colors.stampRed,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    mark,
                   ],
-                ],
-              ),
-              Text(
-                '${l.dprWorkersCount(workers)} · ${l.dprRowsCount(dpr.workItems.length)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: N360Type.body,
-              ),
+                ),
+              if (!large)
+                Text(
+                  '${l.dprWorkersCount(workers)} · ${l.dprRowsCount(dpr.workItems.length)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: N360Type.body,
+                ),
               const SizedBox(height: 2),
               DprSyncTag(record: record),
             ],
           ),
         ),
-        const SizedBox(width: N360Space.sm),
-        RubberStamp(
-          kind: stamp.kind,
-          label: stamp.label,
-          size: large ? StampSize.medium : StampSize.small,
-        ),
+        if (large) ...<Widget>[
+          const SizedBox(width: N360Space.sm),
+          mark,
+        ],
       ],
     );
   }

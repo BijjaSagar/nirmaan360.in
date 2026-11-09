@@ -21,10 +21,9 @@ void main() {
     await pumpShellApp(tester, app);
 
     expect(find.byType(ProjectPickerScreen), findsOneWidget);
-    expect(find.text('KT-B'), findsOneWidget);
     expect(find.text('Kalyani Tower B'), findsOneWidget);
-    expect(find.text('MH-07'), findsOneWidget);
-    expect(find.text('Pune'), findsNWidgets(2));
+    expect(find.text('KT-B · Pune'), findsOneWidget);
+    expect(find.text('MH-07 · Pune'), findsOneWidget);
 
     await tester.tap(find.text('Mahalaxmi Heights'));
     await settle(tester);

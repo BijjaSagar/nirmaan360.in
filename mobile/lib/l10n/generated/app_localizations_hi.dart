@@ -345,6 +345,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get attendanceLoadFailedTitle => 'हाज़िरी नहीं खुली';
 
   @override
+  String get attendanceMarkedSoFar => 'अब तक दर्ज';
+
+  @override
   String get attendanceNoProjectMessage =>
       'पहले प्रोजेक्ट चुनें, फिर यहाँ हाज़िरी लगाएँ।';
 
@@ -408,9 +411,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get attendanceSheetTradeRequired => 'काम का प्रकार चुनें।';
-
-  @override
-  String get attendanceSheetWage => 'दैनिक मज़दूरी';
 
   @override
   String attendanceSheetWageFor(String name) {
@@ -584,6 +584,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprBalance => 'शेष';
 
   @override
+  String dprBoqDonePercent(int percent) {
+    return 'BOQ का $percent प्रतिशत मापा गया';
+  }
+
+  @override
   String get dprBoqEmpty => 'BOQ आइटम नहीं मिले।';
 
   @override
@@ -664,6 +669,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprNothingRecorded => 'कुछ दर्ज नहीं';
 
   @override
+  String dprOfDays(int days) {
+    return '$days दिनों में से';
+  }
+
+  @override
   String get dprOpenToday => 'आज की रिपोर्ट खोलें';
 
   @override
@@ -694,6 +704,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dprRemove => 'हटाएँ';
+
+  @override
+  String get dprReportsThisMonth => 'इस महीने की रिपोर्ट';
 
   @override
   String get dprReturnedNoRemark => 'कृपया सुधारकर फिर से भेजें।';
@@ -793,12 +806,18 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get dprWorkersOnSite => 'साइट पर कामगार';
+
+  @override
   String dprWorkersWord(int count) {
     return 'कामगार';
   }
 
   @override
   String get dprWriteToday => 'आज की रिपोर्ट लिखें';
+
+  @override
+  String get dprYesterdayLabel => 'कल';
 
   @override
   String get dprYesterdayTag => 'कल';
@@ -829,9 +848,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get issuesDetailDue => 'अंतिम तारीख़';
-
-  @override
-  String get issuesDetailLocation => 'स्थान';
 
   @override
   String get issuesDetailMissingMessage =>
@@ -899,9 +915,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get issuesFormLocationHint => 'ग्रिड C, तीसरी मंज़िल';
-
-  @override
-  String get issuesFormNoDue => 'तारीख़ नहीं';
 
   @override
   String get issuesFormPriority => 'कितना ज़रूरी है?';
@@ -1000,7 +1013,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get measurementBookTitle => 'मापन पुस्तिका';
 
   @override
+  String get measurementBoqProgress => 'उपयोग हुआ BOQ';
+
+  @override
   String get measurementBoqQty => 'BOQ';
+
+  @override
+  String measurementBoqUsed(String percent) {
+    return 'BOQ का $percent उपयोग हुआ';
+  }
 
   @override
   String get measurementBreadth => 'चौड़ाई';
@@ -1211,6 +1232,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'अभी नहीं गया। नेटवर्क आते ही मंज़ूरी के लिए जाएगा।';
 
   @override
+  String get measurementShareOfBoq => 'BOQ में हिस्सा';
+
+  @override
   String get measurementStampSent => 'भेजा गया';
 
   @override
@@ -1273,6 +1297,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashCategoryRequired => 'किसके लिए, चुनें।';
 
   @override
+  String get pettyCashConfirmed => 'पक्का शेष';
+
+  @override
   String get pettyCashDate => 'तारीख़';
 
   @override
@@ -1295,16 +1322,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashEyebrow => 'नकद बही';
 
   @override
+  String get pettyCashFinalAfterSync => 'सिंक होने पर अंतिम शेष पता चलेगा।';
+
+  @override
   String get pettyCashFormEyebrow => 'नया ख़र्च';
 
   @override
   String get pettyCashFormTitle => 'ख़र्च जोड़ें';
-
-  @override
-  String get pettyCashLoadFailedTitle => 'फुटकर नकद नहीं खुला';
-
-  @override
-  String get pettyCashNext => 'आगे';
 
   @override
   String get pettyCashNoProjectMessage =>
@@ -1338,11 +1362,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashProvisional => 'अनंतिम';
 
   @override
-  String pettyCashProvisionalNote(String amount) {
-    return '$amount अभी भेजे नहीं गए। सिंक होने पर अंतिम शेष पता चलेगा।';
-  }
-
-  @override
   String get pettyCashSave => 'ख़र्च सेव करें';
 
   @override
@@ -1368,7 +1387,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashTopup => 'राशि जोड़ें';
 
   @override
+  String get pettyCashUnsent => 'अभी भेजे नहीं';
+
+  @override
   String get pettyCashWallet => 'वॉलेट';
+
+  @override
+  String get shellCaptionMarked => 'दर्ज';
+
+  @override
+  String get shellCaptionOpen => 'खुली';
+
+  @override
+  String get shellCaptionToday => 'आज';
 
   @override
   String get shellDiscardBody =>
@@ -1449,6 +1480,35 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shellPillWaiting => 'बाकी';
+
+  @override
+  String get shellProgressBasis => 'मंज़ूर काम के मूल्य से';
+
+  @override
+  String get shellProgressDaysLate => 'देरी, दिन';
+
+  @override
+  String get shellProgressDaysLeft => 'बचे दिन';
+
+  @override
+  String get shellProgressEmptyBody => 'BOQ जुड़ने पर प्रगति यहाँ दिखेगी।';
+
+  @override
+  String get shellProgressEmptyTitle => 'अभी BOQ नहीं';
+
+  @override
+  String get shellProgressEnd => 'समाप्ति';
+
+  @override
+  String get shellProgressNoEnd => 'तय नहीं';
+
+  @override
+  String shellProgressSemantics(String percent) {
+    return '$percent प्रतिशत पूरा';
+  }
+
+  @override
+  String get shellProgressTitle => 'निर्माण की प्रगति';
 
   @override
   String get shellReportAttention => 'देखें';
@@ -1617,6 +1677,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shellTileDaily => 'दैनिक रिपोर्ट';
+
+  @override
+  String get shellTileExpenses => 'खर्च';
 
   @override
   String get shellTileIssues => 'समस्याएँ';

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/api/api_failure.dart';
 import '../../../core/app_services.dart';
 import '../data/approval_repository.dart';
+import 'boq_index.dart';
 
 enum ApprovalFailure { offline, raceLost, session, rejected, server }
 
@@ -22,6 +23,7 @@ class ApprovalDetailState extends Equatable {
     this.refreshing = false,
     this.failure,
     this.failureDetail,
+    this.boq = const {},
   });
 
   final bool online;
@@ -41,6 +43,9 @@ class ApprovalDetailState extends Equatable {
   /// The server's own message, for a refusal the app has no words for.
   final String? failureDetail;
 
+  /// The BOQ lines on this phone, for showing a measurement's share of BOQ.
+  final BoqIndex boq;
+
   bool get canAct => item != null && item!.canAct && !gone && !finished;
 
   /// Buttons work only with a network: approvals are never queued.
@@ -56,6 +61,7 @@ class ApprovalDetailState extends Equatable {
     bool? refreshing,
     Object? failure = _keep,
     Object? failureDetail = _keep,
+    BoqIndex? boq,
   }) {
     return ApprovalDetailState(
       online: online ?? this.online,
@@ -67,13 +73,14 @@ class ApprovalDetailState extends Equatable {
       refreshing: refreshing ?? this.refreshing,
       failure: identical(failure, _keep) ? this.failure : failure as ApprovalFailure?,
       failureDetail: identical(failureDetail, _keep) ? this.failureDetail : failureDetail as String?,
+      boq: boq ?? this.boq,
     );
   }
 
   static const Object _keep = Object();
 
   @override
-  List<Object?> get props => [online, loading, item, gone, acting, finished, refreshing, failure, failureDetail];
+  List<Object?> get props => [online, loading, item, gone, acting, finished, refreshing, failure, failureDetail, boq];
 }
 
 class ApprovalDetailCubit extends Cubit<ApprovalDetailState> {
@@ -85,6 +92,7 @@ class ApprovalDetailCubit extends Cubit<ApprovalDetailState> {
   final int _approvalId;
   StreamSubscription<List<ApprovalRow>>? _inbox;
   StreamSubscription<bool>? _connectivity;
+  StreamSubscription<BoqIndex>? _boq;
 
   ApprovalRepository get _repo => _services.approvals;
 
@@ -96,6 +104,9 @@ class ApprovalDetailCubit extends Cubit<ApprovalDetailState> {
       emit(state.copyWith(online: online, failure: online ? state.failure : null));
     });
     _inbox = _repo.watchInbox().listen(_onInbox);
+    _boq = watchBoqIndex(_services.db).listen((boq) {
+      if (!isClosed) emit(state.copyWith(boq: boq));
+    });
   }
 
   void _onInbox(List<ApprovalRow> rows) {
@@ -172,6 +183,7 @@ class ApprovalDetailCubit extends Cubit<ApprovalDetailState> {
   Future<void> close() async {
     await _inbox?.cancel();
     await _connectivity?.cancel();
+    await _boq?.cancel();
     return super.close();
   }
 }

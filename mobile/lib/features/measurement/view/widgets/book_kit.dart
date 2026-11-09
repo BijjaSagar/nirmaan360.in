@@ -3,12 +3,14 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/db/status.dart';
 import '../../../../core/design/design.dart';
-import '../../../../core/design/internal/press_target.dart';
 import '../../../../core/sync/record_sync.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
-/// The way back: an arrow with its word under it, because an icon alone means
-/// little to someone who reads little.
+/// How far a pressed tile gives under the thumb.
+double pressScale(double depth) => 1 - 0.035 * depth;
+
+/// The way back: an arrow with its word under it, on a soft tile, because an
+/// icon alone means little to someone who reads little.
 class LedgerBackKey extends StatelessWidget {
   const LedgerBackKey({super.key, required this.onTap});
 
@@ -20,25 +22,223 @@ class LedgerBackKey extends StatelessWidget {
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.tap,
-      minWidth: 56,
-      minHeight: 56,
       semanticsLabel: label,
-      child: SizedBox(
-        width: 56,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
+      builder: (context, depth, child) => Transform.scale(scale: pressScale(depth), child: child),
+      child: SizedBox.square(
+        dimension: N360Size.tap,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Icon(Icons.arrow_back, size: 22, color: N360Colors.ink),
+              Text(
+                label,
+                maxLines: 1,
+                style: N360Type.caption.copyWith(color: N360Colors.ink2, height: 1.15, fontSize: 12.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The top of a page: the way back, a centred title, and room for one more
+/// thing. The title stays centred whether or not there is a way back.
+class BookTitleBar extends StatelessWidget {
+  const BookTitleBar({super.key, required this.title, this.eyebrow, this.onBack, this.trailing});
+
+  final String title;
+  final String? eyebrow;
+  final VoidCallback? onBack;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final VoidCallback? back = onBack;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.sm),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: N360Size.tap),
+        child: Row(
           children: <Widget>[
-            const Icon(Icons.arrow_back, size: 26, color: N360Colors.ink),
-            Text(
-              label,
-              maxLines: 1,
-              style: N360Type.caption.copyWith(color: N360Colors.ink2, height: 1.2, fontSize: 13),
+            SizedBox(
+              width: N360Size.tap,
+              child: back == null ? null : LedgerBackKey(onTap: back),
+            ),
+            const SizedBox(width: N360Space.xs),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (eyebrow != null)
+                    Text(eyebrow!, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: N360Type.title.copyWith(fontSize: 19, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: N360Space.xs),
+            SizedBox(width: trailing == null ? N360Size.tap : null, child: trailing),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum ChoiceLook { gold, deduction }
+
+/// A rounded tile that can be chosen. Dark ink on the fill either way: the
+/// primary gold when chosen, deep orange for a deduction so it cannot be missed.
+class ChoiceTile extends StatelessWidget {
+  const ChoiceTile({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+    this.count,
+    this.look = ChoiceLook.gold,
+    this.centered = true,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData? icon;
+  final int? count;
+  final ChoiceLook look;
+  final bool centered;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool deep = selected && look == ChoiceLook.deduction;
+    final BoxDecoration face = !selected
+        ? BoxDecoration(
+            color: N360Colors.sheet,
+            borderRadius: N360Radius.tileRadius,
+            border: Border.all(color: N360Colors.rule, width: 1.25),
+          )
+        : (deep
+              ? const BoxDecoration(color: N360Colors.orange, borderRadius: N360Radius.tileRadius)
+              : const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.tileRadius));
+
+    return PressTarget(
+      onTap: onTap,
+      haptic: N360Haptics.select,
+      semanticsLabel: count == null ? label : '$label $count',
+      selected: selected,
+      builder: (context, depth, child) => Transform.scale(
+        scale: pressScale(depth),
+        child: DecoratedBox(decoration: face, child: child),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: N360Size.tap),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.xs),
+          child: Row(
+            mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
+            mainAxisAlignment: centered ? MainAxisAlignment.center : MainAxisAlignment.start,
+            children: <Widget>[
+              if (icon != null) ...<Widget>[Icon(icon, size: 22, color: N360Colors.ink), const SizedBox(width: 6)],
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: centered ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: N360Type.button.copyWith(height: 1.3),
+                ),
+              ),
+              if (count != null) ...<Widget>[
+                const SizedBox(width: 6),
+                Text('$count', style: N360Type.figureSmall.copyWith(fontWeight: FontWeight.w500)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A square tile holding a BOQ code, the way a list row is anchored here.
+class CodeTile extends StatelessWidget {
+  const CodeTile({super.key, required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 52,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(code, maxLines: 1, style: N360Type.figure.copyWith(fontSize: 16)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A tinted note inside or between cards. Icon and words together, always.
+class TintedNote extends StatelessWidget {
+  const TintedNote({
+    super.key,
+    required this.icon,
+    required this.ink,
+    required this.fill,
+    required this.body,
+    this.title,
+  });
+
+  final IconData icon;
+  final Color ink;
+  final Color fill;
+  final String? title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(color: fill, borderRadius: N360Radius.md),
+      child: Padding(
+        padding: const EdgeInsets.all(N360Space.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(icon, size: 22, color: ink),
+            ),
+            const SizedBox(width: N360Space.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (title != null) Text(title!, style: N360Type.bodyStrong.copyWith(color: ink, height: 1.3)),
+                  Text(body, style: N360Type.body.copyWith(height: 1.35)),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      builder: (context, depth, child) => Transform.translate(offset: Offset(0, depth * 2), child: child),
     );
   }
 }

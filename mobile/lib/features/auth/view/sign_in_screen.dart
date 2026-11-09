@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../app/app_gate.dart';
+import '../../../app/widgets/brand_mark.dart';
 import '../../../app/widgets/language_switch.dart';
-import '../../../app/widgets/ledger_sheet.dart';
-import '../../../app/widgets/site_plan.dart';
-import '../../../app/widgets/stamp_mark.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -42,6 +40,10 @@ class _SignInViewState extends State<_SignInView> {
   final FocusNode _passwordFocus = FocusNode();
   bool _showPassword = false;
   int _shakeTick = 0;
+
+  /// Height of everything except the graphic: language switch, brand row and
+  /// the form card, at normal text size.
+  static const double _fixedHeight = 500;
 
   @override
   void dispose() {
@@ -81,6 +83,13 @@ class _SignInViewState extends State<_SignInView> {
         Localizations.localeOf(context).languageCode;
     final bool expired = context.select((AppGate gate) => gate.state.isExpired);
 
+    // The graphic's room comes from the whole screen, which the keyboard does
+    // not change, so opening the keyboard reflows nothing and the fields stay
+    // where they are until the focused one needs scrolling into view.
+    final MediaQueryData media = MediaQuery.of(context);
+    final double usable = media.size.height - media.padding.top - media.viewPadding.bottom;
+    final double room = usable - _fixedHeight - (expired ? 130 : 0);
+
     return BlocConsumer<SignInCubit, SignInState>(
       listenWhen: (previous, next) => previous.problem != next.problem && next.problem != null,
       listener: (context, state) {
@@ -91,88 +100,90 @@ class _SignInViewState extends State<_SignInView> {
         final problem = _problemText(state, t);
         return Scaffold(
           body: SafeArea(
-            child: CustomScrollView(
+            child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
-              slivers: <Widget>[
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+              padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  LanguageSwitch(current: locale, onChanged: _setLanguage),
+                  const SizedBox(height: N360Space.lg),
+                  Row(
                     children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, 0),
-                        child: LanguageSwitch(current: locale, onChanged: _setLanguage),
-                      ),
-                      const Expanded(child: _Letterhead()),
-                      StaggeredRise(
-                        index: 1,
-                        distance: 36,
-                        child: LedgerSheet(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: <Widget>[
-                              Text(t.shellSignInWelcome, style: N360Type.display),
-                              if (expired) ...<Widget>[
-                                const SizedBox(height: N360Space.sm),
-                                PaperToast(
-                                  message: t.shellSignInExpired,
-                                  kind: PaperToastKind.warning,
-                                  icon: Icons.shield_outlined,
-                                ),
-                              ],
-                              const SizedBox(height: N360Space.sm),
-                              GloveTextField(
-                                label: t.shellSignInEmail,
-                                controller: _email,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
-                                textCapitalization: TextCapitalization.none,
-                                enabled: !state.submitting,
-                                errorText: state.emailMissing ? t.shellSignInEmailRequired : null,
-                                onSubmitted: (_) => _passwordFocus.requestFocus(),
-                              ),
-                              const SizedBox(height: N360Space.sm),
-                              GloveTextField(
-                                label: t.shellSignInPassword,
-                                controller: _password,
-                                focusNode: _passwordFocus,
-                                obscureText: !_showPassword,
-                                textInputAction: TextInputAction.done,
-                                textCapitalization: TextCapitalization.none,
-                                enabled: !state.submitting,
-                                errorText: state.passwordMissing ? t.shellSignInPasswordRequired : null,
-                                onSubmitted: (_) => _submit(),
-                                suffix: _ShowPassword(
-                                  shown: _showPassword,
-                                  showLabel: t.shellSignInShow,
-                                  hideLabel: t.shellSignInHide,
-                                  onToggle: () => setState(() => _showPassword = !_showPassword),
-                                ),
-                              ),
-                              if (problem != null) ...<Widget>[
-                                const SizedBox(height: N360Space.md),
-                                _Shake(
-                                  tick: _shakeTick,
-                                  child: ErrorSlip(title: problem.title, message: problem.body),
-                                ),
-                              ],
-                              const SizedBox(height: N360Space.lg),
-                              GloveButton(
-                                label: state.submitting ? t.shellSignInBusy : t.shellSignInButton,
-                                onPressed: _submit,
-                                loading: state.submitting,
-                                large: true,
-                                fullWidth: true,
-                                icon: Icons.arrow_forward,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      const ExcludeSemantics(child: BrandMark(size: 52)),
+                      const SizedBox(width: N360Space.md),
+                      Expanded(child: Text(t.appName, style: N360Type.display)),
                     ],
                   ),
-                ),
-              ],
+                  _Graphic(room: room),
+                  StaggeredRise(
+                    index: 1,
+                    distance: 28,
+                    child: LedgerCard(
+                      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.lg, N360Space.lg, N360Space.lg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Text(t.shellSignInWelcome, style: N360Type.display),
+                          if (expired) ...<Widget>[
+                            const SizedBox(height: N360Space.sm),
+                            PaperToast(
+                              message: t.shellSignInExpired,
+                              kind: PaperToastKind.warning,
+                              icon: Icons.shield_outlined,
+                            ),
+                          ],
+                          const SizedBox(height: N360Space.sm),
+                          GloveTextField(
+                            label: t.shellSignInEmail,
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            textCapitalization: TextCapitalization.none,
+                            enabled: !state.submitting,
+                            errorText: state.emailMissing ? t.shellSignInEmailRequired : null,
+                            onSubmitted: (_) => _passwordFocus.requestFocus(),
+                          ),
+                          const SizedBox(height: N360Space.sm),
+                          GloveTextField(
+                            label: t.shellSignInPassword,
+                            controller: _password,
+                            focusNode: _passwordFocus,
+                            obscureText: !_showPassword,
+                            textInputAction: TextInputAction.done,
+                            textCapitalization: TextCapitalization.none,
+                            enabled: !state.submitting,
+                            errorText: state.passwordMissing ? t.shellSignInPasswordRequired : null,
+                            onSubmitted: (_) => _submit(),
+                            suffix: _ShowPassword(
+                              shown: _showPassword,
+                              showLabel: t.shellSignInShow,
+                              hideLabel: t.shellSignInHide,
+                              onToggle: () => setState(() => _showPassword = !_showPassword),
+                            ),
+                          ),
+                          if (problem != null) ...<Widget>[
+                            const SizedBox(height: N360Space.md),
+                            _Shake(
+                              tick: _shakeTick,
+                              child: ErrorSlip(title: problem.title, message: problem.body),
+                            ),
+                          ],
+                          const SizedBox(height: N360Space.lg),
+                          GloveButton(
+                            label: state.submitting ? t.shellSignInBusy : t.shellSignInButton,
+                            onPressed: _submit,
+                            loading: state.submitting,
+                            large: true,
+                            fullWidth: true,
+                            icon: Icons.arrow_forward,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -181,68 +192,30 @@ class _SignInViewState extends State<_SignInView> {
   }
 }
 
-/// The top of the page: a faint site drawing with the stamp pressed onto it.
-class _Letterhead extends StatelessWidget {
-  const _Letterhead();
+/// The building, quietly, in whatever room the screen has left. Only drawn when
+/// there is real room for it, and always fixed in size once laid out.
+class _Graphic extends StatelessWidget {
+  const _Graphic({required this.room});
+
+  final double room;
+
+  static const double _minHeight = 130;
+  static const double _maxHeight = 250;
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 150),
-      child: const Stack(
-        fit: StackFit.passthrough,
-        children: <Widget>[
-          Positioned.fill(child: SitePlan()),
-          Center(child: _StampArrival(child: StampMark(size: 132))),
-        ],
-      ),
-    );
-  }
-}
-
-/// Presses the stamp onto the paper once, when the screen opens. The stamp is
-/// fully painted from the first frame; only its size and angle move.
-class _StampArrival extends StatefulWidget {
-  const _StampArrival({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_StampArrival> createState() => _StampArrivalState();
-}
-
-class _StampArrivalState extends State<_StampArrival> with SingleTickerProviderStateMixin {
-  AnimationController? _press;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_press == null && !context.motion.reduced) {
-      _press = AnimationController(vsync: this, duration: context.motion.stamp)..forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _press?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final press = _press;
-    if (press == null) return widget.child;
-    return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: press,
-        child: widget.child,
-        builder: (context, child) {
-          final double v = N360Curves.stamp.transform(press.value);
-          return Transform.rotate(
-            angle: (1 - v) * -6 * math.pi / 180,
-            child: Transform.scale(scale: 1 + (1 - v) * 0.5, child: child),
-          );
-        },
+    if (room < _minHeight) return const SizedBox(height: N360Space.lg);
+    final double height = math.min(room, _maxHeight);
+    return SizedBox(
+      height: room,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
+        child: Center(
+          child: SizedBox(
+            height: height - N360Space.lg,
+            child: const ExcludeSemantics(child: BuildingProgressArt(fraction: 0.62)),
+          ),
+        ),
       ),
     );
   }

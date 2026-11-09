@@ -36,68 +36,6 @@ class PettySyncStamp extends StatelessWidget {
   }
 }
 
-/// A selectable chip on the same pressable sheet as the rest of the app, filled
-/// with ink when chosen.
-class PettyChoiceTile extends StatelessWidget {
-  const PettyChoiceTile({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.detail,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  /// A smaller line under the label, such as a wallet's balance.
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color ink = selected ? N360Colors.sheet : N360Colors.ink;
-    return LedgerCard(
-      padding: EdgeInsets.zero,
-      onTap: onTap,
-      semanticsLabel: detail == null ? label : '$label, $detail',
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: selected ? N360Colors.ink : null,
-          borderRadius: N360Radius.sm,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: N360Size.tap - N360Size.edge),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  label,
-                  maxLines: 1,
-                  style: N360Type.bodyStrong.copyWith(color: ink, height: 1.25),
-                ),
-                if (detail != null)
-                  Text(
-                    detail!,
-                    maxLines: 1,
-                    style: N360Type.figureSmall.copyWith(
-                      fontSize: 13,
-                      height: 1.2,
-                      color: selected ? N360Colors.sheet : N360Colors.inkLabel,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// A small bill preview: the picture when it can be shown, otherwise a labelled
 /// placeholder. Decoding is capped with `cacheWidth` so a list of receipts stays
 /// cheap on a low-end phone.
@@ -123,10 +61,10 @@ class BillThumbnail extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          const Icon(Icons.receipt_long, size: 22, color: N360Colors.ink2),
+          const Icon(Icons.receipt_long, size: 20, color: N360Colors.ink2),
           Text(
             l.pettyCashBillLabel,
-            style: N360Type.caption.copyWith(fontSize: 11, height: 1.1),
+            style: N360Type.caption.copyWith(fontSize: 11, height: 1.1, color: N360Colors.ink2),
           ),
         ],
       ),

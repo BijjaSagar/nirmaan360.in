@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../app/app_format.dart';
+import '../../../app/shell/offline_slot.dart';
 import '../../../app/shell/sync_status_cubit.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
@@ -41,6 +42,9 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
   String _attentionKey = '';
   int _stackGeneration = 0;
   bool _stampAllSent = false;
+
+  /// The most that has been waiting, so the gauge can fill as slips leave.
+  int _peak = 0;
   late final Timer _clock;
 
   @override
@@ -59,6 +63,7 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
   }
 
   void _track(SyncCenterState state, bool reduced) {
+    if (state.waiting.length > _peak) _peak = state.waiting.length;
     final Set<String> ids = <String>{for (final item in state.waiting.take(_trayWindow)) '${item.id}'};
     final String attentionKey = state.attention.map((i) => i.id).join(',');
     if (attentionKey != _attentionKey) {
@@ -109,17 +114,6 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
     };
   }
 
-  /// Header at the top, the stamp in the middle of the free paper, and any
-  /// log at the foot.
-  List<Widget> _allSentChildren(List<Widget> items) {
-    final List<Widget> rest = items.sublist(3);
-    return <Widget>[
-      items.first,
-      Center(child: items[2]),
-      if (rest.isEmpty) const SizedBox(height: N360Space.xxl) else Column(children: rest),
-    ];
-  }
-
   Future<void> _syncNow(AppLocalizations t) async {
     final SyncRunResult result = await context.read<SyncCenterCubit>().syncNow();
     if (!mounted) return;
@@ -161,22 +155,27 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
         _track(state, reduced);
         final bool trayShown = state.waiting.isNotEmpty || _inTray.isNotEmpty;
         final bool allSent = !trayShown && state.attention.isEmpty;
+        if (!trayShown) _peak = 0;
 
-        final List<Widget> items = <Widget>[
-          _OutboxHeader(waiting: state.waiting.length),
-          const SizedBox(height: N360Space.md),
-          if (trayShown)
-            SlipStack(
-              key: ValueKey<int>(_stackGeneration),
-              count: state.waiting.length,
-              slips: _slips(state, t, locale),
-              trayLabel: t.shellOutboxTrayLabel,
-              onSlipGone: _onSlipGone,
-            )
-          else if (allSent)
-            _AllSent(animate: _stampAllSent),
+        final Widget tray = trayShown
+            ? _TrayCard(
+                waiting: state.waiting.length,
+                peak: _peak,
+                stack: SlipStack(
+                  key: ValueKey<int>(_stackGeneration),
+                  count: state.waiting.length,
+                  slips: _slips(state, t, locale),
+                  trayLabel: t.shellOutboxTrayLabel,
+                  onSlipGone: _onSlipGone,
+                ),
+              )
+            : allSent
+                ? _AllSent(animate: _stampAllSent)
+                : const SizedBox.shrink();
+
+        final List<Widget> extras = <Widget>[
           if (state.attention.isNotEmpty) ...<Widget>[
-            const SizedBox(height: N360Space.xl),
+            const SizedBox(height: N360Space.md),
             Text(t.shellOutboxAttention(state.attention.length), style: N360Type.heading.copyWith(color: N360Colors.stampRed)),
             const SizedBox(height: N360Space.xs),
             for (final item in state.attention)
@@ -190,7 +189,7 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
               ),
           ],
           if (state.stale.isNotEmpty) ...<Widget>[
-            const SizedBox(height: N360Space.xl),
+            const SizedBox(height: N360Space.lg),
             _StaleLog(items: state.stale),
           ],
         ];
@@ -204,11 +203,16 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
+                      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisAlignment: allSent ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
-                        children: allSent ? _allSentChildren(items) : items,
+                        children: <Widget>[
+                          const OfflineSlot(online: _OutboxTitle()),
+                          if (allSent) Center(child: tray) else tray,
+                          if (extras.isNotEmpty) Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: extras)
+                          else if (allSent) const SizedBox(height: N360Space.xxl),
+                        ],
                       ),
                     ),
                   ),
@@ -223,10 +227,24 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
   }
 }
 
-class _OutboxHeader extends StatelessWidget {
-  const _OutboxHeader({required this.waiting});
+class _OutboxTitle extends StatelessWidget {
+  const _OutboxTitle();
 
-  final int waiting;
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(t.shellOutboxTitle, style: N360Type.title),
+    );
+  }
+}
+
+/// When things last went out, and anything stopping them now.
+class _LastSynced extends StatelessWidget {
+  const _LastSynced({this.centered = false});
+
+  final bool centered;
 
   String? _issueText(SyncStatus status, AppLocalizations t) => switch (status.lastIssue) {
         SyncIssue.rateLimited => t.syncRateLimited,
@@ -243,39 +261,68 @@ class _OutboxHeader extends StatelessWidget {
     final DateTime? last = status.lastSyncedAt;
     final String lastLine = last == null ? t.shellOutboxNeverSynced : t.syncLastSynced(AppFormat.ago(t, last, now));
     final String? issue = _issueText(status, t);
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: centered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        SectionLabel(t.shellOutboxTitle),
-        if (waiting > 0)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              RollingNumber(value: '$waiting', style: N360Type.figureHero),
-              const SizedBox(width: N360Space.md),
-              Flexible(child: Text(t.shellOutboxWaitingLabel, style: N360Type.title)),
-            ],
-          ),
         Row(
+          mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
           children: <Widget>[
-            const Icon(Icons.history, size: 18, color: N360Colors.inkLabel),
+            const Icon(Icons.history, size: 18, color: N360Colors.ink2),
             const SizedBox(width: N360Space.xs),
             Flexible(child: Text(lastLine, style: N360Type.body.copyWith(color: N360Colors.ink2))),
           ],
         ),
-        if (issue != null)
-          Padding(
-            padding: const EdgeInsets.only(top: N360Space.xs),
-            child: Text(issue, style: N360Type.bodyStrong.copyWith(color: N360Colors.haldiInk)),
-          ),
+        if (issue != null) Text(issue, style: N360Type.bodyStrong.copyWith(color: N360Colors.haldiInk)),
       ],
     );
   }
 }
 
-/// The day's closing stamp, pressed straight onto the empty page.
+/// The live count and a gauge that fills as slips leave the tray.
+class _TrayCard extends StatelessWidget {
+  const _TrayCard({required this.waiting, required this.peak, required this.stack});
+
+  final int waiting;
+  final int peak;
+  final Widget stack;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final double sent = peak == 0 ? 0 : (peak - waiting) / peak;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        LedgerCard(
+          padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.sm, N360Space.lg, N360Space.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  RollingNumber(value: '$waiting', style: N360Type.figureHero),
+                  const SizedBox(width: N360Space.md),
+                  Expanded(child: Text(t.shellOutboxWaitingLabel, style: N360Type.heading)),
+                ],
+              ),
+              const _LastSynced(),
+              const SizedBox(height: N360Space.sm),
+              TickGauge(fraction: sent, ticks: 36, height: 26, semanticLabel: t.syncProgress(peak - waiting, peak)),
+            ],
+          ),
+        ),
+        const SizedBox(height: N360Space.sm),
+        stack,
+      ],
+    );
+  }
+}
+
+/// The closing stamp on a clean white card.
 class _AllSent extends StatelessWidget {
   const _AllSent({required this.animate});
 
@@ -284,23 +331,31 @@ class _AllSent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        RubberStamp(
-          kind: StampKind.synced,
-          label: t.shellOutboxAllSentStamp,
-          size: StampSize.hero,
-          animate: animate,
-          onLanded: N360Haptics.success,
-        ),
-        const SizedBox(height: N360Space.lg),
-        Text(
-          t.shellOutboxAllSentBody,
-          textAlign: TextAlign.center,
-          style: N360Type.bodyLarge.copyWith(color: N360Colors.ink2),
-        ),
-      ],
+    return LedgerCard(
+      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.xl, N360Space.lg, N360Space.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: RubberStamp(
+              kind: StampKind.synced,
+              label: t.shellOutboxAllSentStamp,
+              size: StampSize.hero,
+              animate: animate,
+              onLanded: N360Haptics.success,
+            ),
+          ),
+          const SizedBox(height: N360Space.md),
+          Text(
+            t.shellOutboxAllSentBody,
+            textAlign: TextAlign.center,
+            style: N360Type.bodyLarge.copyWith(color: N360Colors.ink2),
+          ),
+          const SizedBox(height: N360Space.xs),
+          const _LastSynced(centered: true),
+        ],
+      ),
     );
   }
 }
@@ -323,89 +378,64 @@ class _AttentionSlip extends StatelessWidget {
     final String title = t.syncTypeLabel(item.type);
     final String? subtitle = item.title.isEmpty ? null : item.title;
 
-    return CustomPaint(
-      painter: const _AttentionPainter(),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.md + 6, N360Space.md, N360Space.md, N360Space.md + 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return LedgerCard(
+      flat: true,
+      padding: const EdgeInsets.all(N360Space.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              IconTile(icon: syncTypeIcon(item.type), semanticLabel: title),
+              const SizedBox(width: N360Space.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(title, style: N360Type.bodyStrong),
+                    if (subtitle != null) Text(subtitle, style: N360Type.caption),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: N360Space.sm),
+          Text(t.syncReasonFor(item), style: N360Type.body),
+          for (final detail in details)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(detail, style: N360Type.caption),
+            ),
+          const SizedBox(height: N360Space.sm),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Icon(syncTypeIcon(item.type), size: 26, color: N360Colors.ink2),
+                Expanded(
+                  child: GloveButton(
+                    label: t.syncRetry,
+                    onPressed: onRetry,
+                    kind: GloveButtonKind.secondary,
+                    fullWidth: true,
+                  ),
+                ),
                 const SizedBox(width: N360Space.sm),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(title, style: N360Type.bodyStrong),
-                      if (subtitle != null) Text(subtitle, style: N360Type.caption),
-                    ],
+                  child: GloveButton(
+                    label: t.syncDiscard,
+                    onPressed: onDiscard,
+                    kind: GloveButtonKind.danger,
+                    fullWidth: true,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: N360Space.xs),
-            Text(t.syncReasonFor(item), style: N360Type.body),
-            for (final detail in details)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(detail, style: N360Type.caption),
-              ),
-            const SizedBox(height: N360Space.sm),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Expanded(
-                    child: GloveButton(
-                      label: t.syncRetry,
-                      onPressed: onRetry,
-                      kind: GloveButtonKind.secondary,
-                      fullWidth: true,
-                    ),
-                  ),
-                  const SizedBox(width: N360Space.sm),
-                  Expanded(
-                    child: GloveButton(
-                      label: t.syncDiscard,
-                      onPressed: onDiscard,
-                      kind: GloveButtonKind.danger,
-                      fullWidth: true,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
-
-class _AttentionPainter extends CustomPainter {
-  const _AttentionPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const edge = 2.0;
-    final Rect face = Rect.fromLTWH(0, 0, size.width, size.height - edge);
-    canvas.drawRect(Rect.fromLTWH(0, edge, size.width, size.height - edge), Paint()..color = N360Colors.paperEdge);
-    canvas.drawRect(face, Paint()..color = N360Colors.sheet);
-    canvas.drawRect(
-      face.deflate(0.5),
-      Paint()
-        ..color = N360Colors.rule
-        ..style = PaintingStyle.stroke,
-    );
-    canvas.drawRect(Rect.fromLTWH(0, 0, 5, size.height - edge), Paint()..color = N360Colors.stampRed);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// Writes the server did not apply because its copy was newer.

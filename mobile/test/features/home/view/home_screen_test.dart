@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/core/design/design.dart';
+import 'package:nirmaan360/core/money/money.dart';
 import 'package:nirmaan360/core/session/current_user.dart';
 import 'package:nirmaan360/features/dpr/view/dpr_form_screen.dart';
+import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
 import 'package:nirmaan360/features/measurement/view/measurement_form_screen.dart';
 import 'package:nirmaan360/features/sync_center/view/sync_center_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
@@ -15,6 +17,8 @@ void main() {
 
   Finder rolling(String value) => find.byWidgetPredicate((w) => w is RollingNumber && w.value == value);
 
+  Finder tile(String title) => find.byWidgetPredicate((w) => w is StatTile && w.title == title);
+
   testWidgets("shows the project and today's figures", (tester) async {
     final app = await TestApp.create();
     addTearDown(app.dispose);
@@ -23,9 +27,10 @@ void main() {
 
     expect(find.text('Kalyani Tower B'), findsOneWidget);
     expect(find.text(en.shellReportNotStarted), findsOneWidget);
-    expect(rolling('1/2'), findsOneWidget);
-    expect(rolling('1'), findsOneWidget);
-    expect(rolling('1,240'), findsOneWidget);
+    expect(find.text('1/2'), findsOneWidget);
+    expect(tester.widget<StatTile>(tile(en.shellTileMeasure)).value, '1');
+    expect(find.text('₹1,240'), findsOneWidget);
+    expect(tester.widget<StatTile>(tile(en.shellTileDaily)).emphasized, isTrue);
     expect(tester.takeException(), isNull);
   });
 
@@ -40,10 +45,10 @@ void main() {
     await app.sync();
     await pumpShellApp(tester, app);
 
-    expect(find.text(en.shellTileDaily), findsOneWidget);
-    expect(find.text(en.shellTilePetty), findsOneWidget);
-    expect(find.text(en.shellTileIssues), findsNothing);
-    expect(find.widgetWithText(ActionTile, en.shellTileApprovals), findsOneWidget);
+    expect(tile(en.shellTileDaily), findsOneWidget);
+    expect(tile(en.shellTileExpenses), findsOneWidget);
+    expect(tile(en.shellTileIssues), findsNothing);
+    expect(tile(en.shellTileApprovals), findsOneWidget);
   });
 
   testWidgets('pending sync is visible and opens the outbox', (tester) async {
@@ -53,8 +58,10 @@ void main() {
     await pumpShellApp(tester, app);
 
     expect(find.text(en.shellPillWaiting), findsOneWidget);
+    // The count is also on the Outbox bar item.
+    expect(find.descendant(of: find.byType(N360BottomBar), matching: find.text('3')), findsOneWidget);
 
-    await tester.tap(find.byType(SyncPill));
+    await tester.tap(find.text(en.shellPillWaiting));
     await settle(tester);
     expect(find.byType(SyncCenterScreen), findsOneWidget);
   });
@@ -65,16 +72,14 @@ void main() {
     await seedReturned(app);
     await pumpShellApp(tester, app);
 
-    // Section labels set Latin text in capitals.
-    expect(find.text(en.shellReturnedTitle.toUpperCase()), findsOneWidget);
     expect(find.byType(RubberStamp), findsNWidgets(2));
     expect(find.text('Add the steel consumption figure before resubmitting.'), findsOneWidget);
     expect(find.text('Depth does not match the site register.'), findsOneWidget);
 
-    // Returned work outranks Today.
-    final returned = tester.getTopLeft(find.text(en.shellReturnedTitle.toUpperCase())).dy;
-    final today = tester.getTopLeft(find.text(en.commonToday.toUpperCase())).dy;
-    expect(returned, lessThan(today));
+    // Returned work outranks everything else on the page.
+    final returned = tester.getTopLeft(find.text('Depth does not match the site register.')).dy;
+    final progress = tester.getTopLeft(find.text(en.shellProgressTitle)).dy;
+    expect(returned, lessThan(progress));
 
     await tester.tap(find.text('Add the steel consumption figure before resubmitting.'));
     await settle(tester);
@@ -108,6 +113,75 @@ void main() {
     expect(find.byType(RubberStamp), findsOneWidget);
   });
 
+  group('progress card', () {
+    testWidgets('shows the percent, the dates and a bar with today marked', (tester) async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      await seedProgress(app);
+      await pumpShellApp(tester, app);
+
+      expect(rolling('70.50'), findsOneWidget);
+      final bar = tester.widget<HatchedProgressBar>(find.byType(HatchedProgressBar));
+      expect(bar.markerLabel, en.commonToday);
+      expect(bar.fraction, closeTo(0.705, 0.0001));
+      expect(tester.widget<BuildingProgressArt>(find.byType(BuildingProgressArt)).fraction, closeTo(0.705, 0.0001));
+      expect(find.text(en.shellProgressEnd), findsOneWidget);
+      expect(find.text('31 Dec 2027'), findsOneWidget);
+      expect(find.text(en.shellProgressDaysLeft), findsOneWidget);
+      expect(find.text('417'), findsOneWidget);
+    });
+
+    testWidgets('is exact over several lines with different rates', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      app.api
+        ..addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B')
+        ..addBoqItem(id: 1, projectId: 1, code: '1.1', qty: '100.000', rate: '10.10')
+        ..addBoqItem(id: 2, projectId: 1, code: '1.2', qty: '1.000', rate: '999.99');
+      await app.sync();
+      final uuid = await app.services.measurements.create(
+        MeasurementInput(projectId: 1, boqItemId: 1, measuredOn: '2026-11-07', nos: Qty.fromInt(1), length: Qty.parse('33.333')),
+      );
+      await app.services.measurements.sendForApproval(uuid);
+      await app.sync();
+      app.api.setServerStatus(app.api.measurementByUuid(uuid), 'APPROVED');
+      await app.sync();
+
+      await pumpShellApp(tester, app);
+
+      // 33.333 × 10.10 ÷ (100 × 10.10 + 1 × 999.99) = 16.749…%
+      expect(rolling('16.75'), findsOneWidget);
+    });
+
+    testWidgets('with no BOQ it says so calmly instead of showing a zero', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      app.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      await app.sync();
+
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.shellProgressEmptyTitle), findsOneWidget);
+      expect(rolling('0.00'), findsNothing);
+      expect(find.byType(HatchedProgressBar), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a BOQ of zero value is treated as no BOQ', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      app.api
+        ..addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B')
+        ..addBoqItem(id: 1, projectId: 1, code: '1.1', qty: '100.000', rate: '0.00');
+      await app.sync();
+
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.shellProgressEmptyTitle), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   testWidgets('it fits at larger text without overflow', (tester) async {
     final app = await TestApp.create();
     addTearDown(app.dispose);
@@ -122,7 +196,7 @@ void main() {
     await pumpShellApp(tester, app, textScale: 1.3);
 
     expect(tester.takeException(), isNull);
-    final BuildContext tileText = tester.element(find.text(en.shellTileAttendance).last);
+    final BuildContext tileText = tester.element(find.text(en.shellTileAttendance));
     expect(MediaQuery.textScalerOf(tileText).scale(1), 1.3);
   });
 }

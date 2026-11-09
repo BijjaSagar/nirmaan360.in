@@ -8,22 +8,21 @@ import '../../core/sync/sync_status.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../app_format.dart';
 import '../app_gate.dart';
-import '../routes.dart';
+import 'offline_slot.dart';
 import 'sync_status_cubit.dart';
 
-/// Height of the strip at the top of the shell: today's date when online, the
-/// hazard tape when offline. Always the same height, so going offline moves
-/// nothing on the screen.
-const double _railHeight = 48;
-const double _settingsWidth = 64;
-
 class _ShellTab {
-  const _ShellTab(this.branch, this.icon, this.label);
+  const _ShellTab(this.branch, this.icon, this.label, {this.badge});
 
   final int branch;
   final IconData icon;
   final String label;
+  final String? badge;
 }
+
+/// Tabs whose pages keep their own place for the offline banner. The others
+/// get a slot at the top from the shell.
+const Set<int> _tabsWithOwnSlot = <int>{0, 3};
 
 /// The four-tab shell around Home, Measure, Approvals and Outbox.
 class HomeShell extends StatefulWidget {
@@ -66,11 +65,12 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
     final t = AppLocalizations.of(context);
     final shell = widget.navigationShell;
     final bool canApprove = context.select((AppGate gate) => gate.state.canApprove);
+    final int unsent = context.select((SyncStatusCubit s) => s.state.pendingCount + s.state.attentionCount);
     final List<_ShellTab> tabs = <_ShellTab>[
       _ShellTab(0, Icons.home_outlined, t.shellTabHome),
       _ShellTab(1, Icons.architecture, t.shellTabMeasure),
-      if (canApprove) _ShellTab(2, Icons.approval, t.shellTabApprovals),
-      _ShellTab(3, Icons.inbox_outlined, t.shellTabOutbox),
+      if (canApprove) _ShellTab(2, Icons.approval_outlined, t.shellTabApprovals),
+      _ShellTab(3, Icons.inbox_outlined, t.shellTabOutbox, badge: unsent > 0 ? '$unsent' : null),
     ];
     final int current = tabs.indexWhere((tab) => tab.branch == shell.currentIndex);
     final double safeTop = MediaQuery.paddingOf(context).top;
@@ -86,7 +86,7 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
             Column(
               children: <Widget>[
                 SizedBox(height: safeTop),
-                const SizedBox(height: _railHeight, child: _Rail()),
+                if (!_tabsWithOwnSlot.contains(shell.currentIndex)) const _DateSlot(),
                 Expanded(
                   child: MediaQuery.removePadding(
                     context: context,
@@ -106,14 +106,13 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
               ],
             ),
             Positioned(top: safeTop, left: 0, right: 0, child: const _SyncRule()),
-            Positioned(top: safeTop, right: 0, child: const _SettingsTarget()),
           ],
         ),
         bottomNavigationBar: N360BottomBar(
           currentIndex: current < 0 ? 0 : current,
           onTap: (index) => _openTab(shell, tabs[index].branch),
           items: <N360BarItem>[
-            for (final tab in tabs) N360BarItem(icon: tab.icon, label: tab.label),
+            for (final tab in tabs) N360BarItem(icon: tab.icon, label: tab.label, badge: tab.badge),
           ],
         ),
       ),
@@ -121,8 +120,7 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
   }
 }
 
-/// Draws across the top of the shell while a sync runs, over the rail so the
-/// layout never moves.
+/// Draws across the top of the shell while a sync runs, so nothing moves.
 class _SyncRule extends StatelessWidget {
   const _SyncRule();
 
@@ -142,140 +140,18 @@ class _SyncRule extends StatelessWidget {
   }
 }
 
-class _Rail extends StatelessWidget {
-  const _Rail();
+/// Today's date, in the slot the offline banner takes over.
+class _DateSlot extends StatelessWidget {
+  const _DateSlot();
 
   @override
   Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
     final String locale = Localizations.localeOf(context).languageCode;
     final String date = AppFormat.weekdayDate(context.read<AppServices>().context.today, locale);
-
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: N360Colors.rule)),
-      ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-                  child: Align(alignment: Alignment.centerLeft, child: SectionLabel(date)),
-                ),
-                BlocBuilder<SyncStatusCubit, SyncStatus>(
-                  buildWhen: (a, b) => a.online != b.online,
-                  builder: (context, status) => _OfflineSlide(offline: !status.online),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: _settingsWidth,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: N360Colors.sheet,
-                border: Border(left: BorderSide(color: N360Colors.rule)),
-              ),
-              child: ExcludeSemantics(
-                child: MediaQuery.withClampedTextScaling(
-                  maxScaleFactor: 1.1,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Icon(Icons.settings_outlined, size: 20, color: N360Colors.ink2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          t.shellSettings,
-                          maxLines: 1,
-                          style: N360Type.caption.copyWith(fontSize: 12.5, height: 1.25, color: N360Colors.ink2),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Slides the hazard tape down over the date line, inside the rail, so the page
-/// below is never pushed about.
-class _OfflineSlide extends StatelessWidget {
-  const _OfflineSlide({required this.offline});
-
-  final bool offline;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: offline ? 1 : 0),
-      duration: context.motion.toast,
-      curve: N360Curves.rise,
-      child: LayoutBuilder(
-        builder: (context, constraints) => OfflineBanner(
-          label: t.shellOfflineLabel,
-          detail: _detailFits(context, constraints.maxWidth, t) ? t.shellOfflineDetail : null,
-        ),
-      ),
-      builder: (context, value, child) {
-        if (value <= 0) return const SizedBox.shrink();
-        return ClipRect(
-          child: Transform.translate(offset: Offset(0, (value - 1) * _railHeight), child: child),
-        );
-      },
-    );
-  }
-
-  /// Whether the label and detail fit on one line, since the rail cannot grow.
-  bool _detailFits(BuildContext context, double width, AppLocalizations t) {
-    // Hazard strip, gaps and the cloud icon take this much of the row.
-    const double chrome = 22 + N360Space.md + 22 + N360Space.sm + N360Space.sm;
-    final painter = TextPainter(
-      textDirection: TextDirection.ltr,
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-      text: TextSpan(
-        text: t.shellOfflineLabel,
-        style: N360Type.bodyStrong,
-        children: <InlineSpan>[TextSpan(text: '  ${t.shellOfflineDetail}', style: N360Type.body)],
-      ),
-    )..layout();
-    final bool fits = painter.width <= width - chrome;
-    painter.dispose();
-    return fits;
-  }
-}
-
-/// The tappable area for Settings: the rail cell plus the gap below it, which
-/// makes the target 56dp tall without making the rail taller.
-class _SettingsTarget extends StatelessWidget {
-  const _SettingsTarget();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    void open() => context.push(Routes.settings);
-    return Semantics(
-      container: true,
-      button: true,
-      label: t.shellSettings,
-      onTap: open,
-      child: ExcludeSemantics(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (_) => N360Haptics.tap(),
-          onTap: open,
-          child: const SizedBox(width: _settingsWidth, height: N360Size.tap),
-        ),
+    return OfflineSlot(
+      online: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+        child: Align(alignment: Alignment.centerLeft, child: SectionLabel(date)),
       ),
     );
   }

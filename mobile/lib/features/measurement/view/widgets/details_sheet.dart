@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/design/design.dart';
-import '../../../../core/design/internal/press_target.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import 'book_kit.dart';
 
@@ -95,7 +94,7 @@ class _DetailsSheetState extends State<_DetailsSheet> {
             Row(
               children: <Widget>[
                 Expanded(
-                  child: _DateChoice(
+                  child: ChoiceTile(
                     label: l.commonToday,
                     selected: _date == widget.today,
                     onTap: () => setState(() => _date = widget.today),
@@ -103,7 +102,7 @@ class _DetailsSheetState extends State<_DetailsSheet> {
                 ),
                 const SizedBox(width: N360Space.sm),
                 Expanded(
-                  child: _DateChoice(
+                  child: ChoiceTile(
                     label: l.measurementYesterday,
                     selected: _date == yesterday,
                     onTap: () => setState(() => _date = yesterday),
@@ -111,7 +110,7 @@ class _DetailsSheetState extends State<_DetailsSheet> {
                 ),
                 const SizedBox(width: N360Space.sm),
                 Expanded(
-                  child: _DateChoice(
+                  child: ChoiceTile(
                     label: other ? dayLabel(context, _date, widget.today) : l.measurementOtherDate,
                     selected: other,
                     onTap: _pickOtherDate,
@@ -140,47 +139,6 @@ class _DetailsSheetState extends State<_DetailsSheet> {
             const SizedBox(height: N360Space.lg),
             GloveButton(label: l.commonDone, large: true, fullWidth: true, icon: Icons.check, onPressed: _done),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DateChoice extends StatelessWidget {
-  const _DateChoice({required this.label, required this.selected, required this.onTap});
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color ink = selected ? N360Colors.sheet : N360Colors.ink;
-    return PressTarget(
-      onTap: onTap,
-      haptic: N360Haptics.select,
-      semanticsLabel: label,
-      selected: selected,
-      builder: (context, depth, child) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: selected ? N360Colors.ink : N360Colors.sheet,
-          borderRadius: N360Radius.sm,
-          border: Border.all(color: selected ? N360Colors.ink : N360Colors.ruleStrong, width: 1.25),
-        ),
-        child: Transform.translate(offset: Offset(0, depth * 1.5), child: child),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: N360Size.tap),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: N360Type.bodyStrong.copyWith(color: ink),
-            ),
-          ),
         ),
       ),
     );

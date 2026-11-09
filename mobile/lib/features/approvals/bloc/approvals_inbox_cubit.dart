@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/api/api_failure.dart';
 import '../../../core/app_services.dart';
 import '../data/approval_repository.dart';
+import 'boq_index.dart';
 
 enum InboxFailure { offline, session, server }
 
@@ -39,6 +40,7 @@ class ApprovalsInboxState extends Equatable {
     this.refreshing = false,
     this.failure,
     this.leaving,
+    this.boq = const {},
   });
 
   final bool online;
@@ -50,6 +52,9 @@ class ApprovalsInboxState extends Equatable {
   final InboxFailure? failure;
   final LeavingCard? leaving;
 
+  /// The BOQ lines on this phone, for showing a measurement's share of BOQ.
+  final BoqIndex boq;
+
   int get actionable => items.where((row) => row.canAct).length;
 
   ApprovalsInboxState copyWith({
@@ -59,6 +64,7 @@ class ApprovalsInboxState extends Equatable {
     bool? refreshing,
     Object? failure = _keep,
     Object? leaving = _keep,
+    BoqIndex? boq,
   }) {
     return ApprovalsInboxState(
       online: online ?? this.online,
@@ -67,13 +73,14 @@ class ApprovalsInboxState extends Equatable {
       refreshing: refreshing ?? this.refreshing,
       failure: identical(failure, _keep) ? this.failure : failure as InboxFailure?,
       leaving: identical(leaving, _keep) ? this.leaving : leaving as LeavingCard?,
+      boq: boq ?? this.boq,
     );
   }
 
   static const Object _keep = Object();
 
   @override
-  List<Object?> get props => [online, loading, items, refreshing, failure, leaving];
+  List<Object?> get props => [online, loading, items, refreshing, failure, leaving, boq];
 }
 
 class ApprovalsInboxCubit extends Cubit<ApprovalsInboxState> {
@@ -84,6 +91,7 @@ class ApprovalsInboxCubit extends Cubit<ApprovalsInboxState> {
   final AppServices _services;
   StreamSubscription<List<ApprovalRow>>? _inbox;
   StreamSubscription<bool>? _connectivity;
+  StreamSubscription<BoqIndex>? _boq;
 
   /// The last place each card was seen, so a removed one can be shown leaving.
   final Map<int, (ApprovalRow, int)> _lastSeen = {};
@@ -97,6 +105,9 @@ class ApprovalsInboxCubit extends Cubit<ApprovalsInboxState> {
       if (online) refresh();
     });
     _inbox = _services.approvals.watchInbox().listen(_onInbox);
+    _boq = watchBoqIndex(_services.db).listen((boq) {
+      if (!isClosed) emit(state.copyWith(boq: boq));
+    });
     if (state.online) refresh();
   }
 
@@ -144,6 +155,7 @@ class ApprovalsInboxCubit extends Cubit<ApprovalsInboxState> {
   Future<void> close() async {
     await _inbox?.cancel();
     await _connectivity?.cancel();
+    await _boq?.cancel();
     return super.close();
   }
 }

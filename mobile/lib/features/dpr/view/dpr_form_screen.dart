@@ -18,7 +18,7 @@ import 'widgets/photo_strip.dart';
 import 'widgets/review_sheet.dart';
 import 'widgets/work_rows.dart';
 
-/// The daily report: one continuous sheet, saved on every change.
+/// The daily report: grouped cards, saved on every change.
 ///
 /// With [date] and no [clientUuid] it opens the report for that date, or
 /// starts one. A report that can no longer be changed opens read-only.
@@ -77,9 +77,9 @@ class _DprFormBodyState extends State<_DprFormBody> {
 
   // Actions -------------------------------------------------------------------
 
-  /// A toast that clears the pinned Send bar.
+  /// A toast that clears the floating Send footer.
   void _toast(String message, PaperToastKind kind) {
-    showPaperToast(context, message, kind: kind, bottomOffset: 100);
+    showPaperToast(context, message, kind: kind, bottomOffset: 104);
   }
 
   Future<void> _copyYesterday() async {
@@ -214,17 +214,16 @@ class _DprFormBodyState extends State<_DprFormBody> {
           DprFormPhase.loading => const Scaffold(body: LedgerPaper()),
           DprFormPhase.noProject => const _NoProject(),
           DprFormPhase.locked => DprDetailScreen(clientUuid: state.clientUuid!),
-          DprFormPhase.editing => _sheet(context, state),
+          DprFormPhase.editing => _screen(context, state),
         };
       },
     );
   }
 
-  Widget _sheet(BuildContext context, DprFormState state) {
+  Widget _screen(BuildContext context, DprFormState state) {
     final l = AppLocalizations.of(context);
     final cubit = context.read<DprFormCubit>();
     final bool typing = MediaQuery.viewInsetsOf(context).bottom > 0;
-    final List<Widget> items = _items(context, state, cubit, l);
 
     return Scaffold(
       body: LedgerPaper(
@@ -237,20 +236,27 @@ class _DprFormBodyState extends State<_DprFormBody> {
                 trailing: _SaveIndicator(status: state.save, tick: state.saveTick),
               ),
               Expanded(
-                child: ListView.builder(
-                  controller: _scroll,
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
-                  padding: const EdgeInsets.only(bottom: N360Space.md),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) => items[index],
+                child: DprActionLayout(
+                  body: ListView(
+                    controller: _scroll,
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                    padding: EdgeInsets.only(
+                      top: N360Space.xs,
+                      bottom: typing ? N360Space.lg : DprActionLayout.clearance(context),
+                    ),
+                    children: _cards(context, state, cubit, l),
+                  ),
+                  action: typing
+                      ? null
+                      : GloveButton(
+                          label: state.isReturned ? l.dprSendAgain : l.dprSendReport,
+                          icon: Icons.send,
+                          large: true,
+                          fullWidth: true,
+                          onPressed: () => unawaited(_onSendPressed()),
+                        ),
                 ),
               ),
-              if (!typing)
-                DprBottomAction(
-                  label: state.isReturned ? l.dprSendAgain : l.dprSendReport,
-                  icon: Icons.send,
-                  onPressed: () => unawaited(_onSendPressed()),
-                ),
             ],
           ),
         ),
@@ -258,275 +264,265 @@ class _DprFormBodyState extends State<_DprFormBody> {
     );
   }
 
-  List<Widget> _items(
+  /// A few fixed sections, each a card. Only the data lists inside them are lazy.
+  List<Widget> _cards(
     BuildContext context,
     DprFormState state,
     DprFormCubit cubit,
     AppLocalizations l,
   ) {
     final services = context.read<AppServices>();
-    final items = <Widget>[];
+    final cards = <Widget>[];
     var rise = 0;
 
-    void slice(Widget child, {double top = 0, double bottom = 0, Key? key}) {
-      items.add(
-        DprSheetSlice(
-          key: key,
-          top: top,
-          bottom: bottom,
-          first: items.isEmpty,
+    void add(Widget child) {
+      cards.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
           child: StaggeredRise(index: rise++, child: child),
         ),
       );
     }
 
-    // Masthead.
-    slice(
-      SheetHeader(
-        eyebrow: state.project?.name,
-        title: dprDateLabel(context, state.reportDate),
-        trailing: state.isReturned
-            ? RubberStamp(kind: StampKind.returned, label: l.statusReturned)
-            : RubberStamp(kind: StampKind.draft, label: l.statusDraft),
+    // Which project, which day.
+    add(
+      Row(
+        children: <Widget>[
+          Expanded(
+            flex: 5,
+            child: DprInfoChip(icon: Icons.apartment, text: state.project?.name ?? ''),
+          ),
+          const SizedBox(width: N360Space.sm),
+          Expanded(
+            flex: 4,
+            child: DprInfoChip(
+              icon: Icons.calendar_month,
+              text: dprDateLabel(context, state.reportDate),
+            ),
+          ),
+        ],
       ),
-      top: N360Space.md,
     );
 
     if (state.isReturned) {
-      slice(
-        DprRemarkSlip(
+      add(
+        DprRemarkCard(
           title: l.dprApproverRemark,
           message: state.returnRemark ?? l.dprReturnedNoRemark,
         ),
-        top: N360Space.md,
       );
     }
 
-    // 1. Weather.
-    slice(
-      DprSectionHead(
-        number: 1,
-        title: l.dprSectionWeather,
-        error: state.problems.contains(DprFormProblem.weather) ? l.dprNeedWeather : null,
-      ),
-      top: N360Space.lg,
-    );
-    slice(
-      PictoChoice<String>(
-        columns: 5,
-        semanticsLabel: l.dprSectionWeather,
-        value: state.weather,
-        onChanged: cubit.setWeather,
-        options: <PictoOption<String>>[
-          for (final value in state.weatherOptions)
-            PictoOption<String>(
-              value: value,
-              icon: N360Pictograms.weather(value).icon,
-              label: l.pictogramLabel(N360Pictograms.weather(value)),
+    // Weather.
+    add(
+      LedgerCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            DprCardTitle(
+              icon: Icons.wb_sunny_outlined,
+              title: l.dprSectionWeather,
+              error: state.problems.contains(DprFormProblem.weather) ? l.dprNeedWeather : null,
             ),
-        ],
+            const SizedBox(height: N360Space.md),
+            PictoChoice<String>(
+              columns: 5,
+              semanticsLabel: l.dprSectionWeather,
+              value: state.weather,
+              onChanged: cubit.setWeather,
+              options: <PictoOption<String>>[
+                for (final value in state.weatherOptions)
+                  PictoOption<String>(
+                    value: value,
+                    icon: N360Pictograms.weather(value).icon,
+                    label: l.pictogramLabel(N360Pictograms.weather(value)),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
-      top: N360Space.sm,
     );
 
-    // 2. Workers.
-    slice(
-      DprSectionHead(
-        number: 2,
-        title: l.dprSectionWorkers,
-        trailing: DprWorkerTotal(total: state.totalWorkers),
-        error: state.problems.contains(DprFormProblem.workers) ? l.dprNeedWorkers : null,
-      ),
-      top: N360Space.xl,
-    );
-    if (state.canCopyYesterday) {
-      slice(
-        GloveButton(
-          label: l.dprSameAsYesterday(state.yesterdayTotal!),
-          icon: Icons.history,
-          kind: GloveButtonKind.secondary,
-          large: true,
-          fullWidth: true,
-          onPressed: () => unawaited(_copyYesterday()),
-        ),
-        top: N360Space.sm,
-      );
-    }
+    // Workers, with the figure that matters most, big.
     final List<String> visible = state.visibleTrades;
-    for (var i = 0; i < visible.length; i++) {
-      final String trade = visible[i];
-      items.add(
-        DprSheetSlice(
-          key: ValueKey<String>('trade-$trade'),
-          top: i == 0 ? N360Space.xs : 0,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              StaggeredRise(
-                index: rise++,
-                child: DprTradeRow(
-                  trade: trade,
-                  count: state.count(trade),
-                  onChanged: (value) => cubit.setCount(trade, value),
-                ),
+    add(
+      LedgerCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            DprCardTitle(
+              icon: Icons.groups,
+              title: l.dprWorkersOnSite,
+              error: state.problems.contains(DprFormProblem.workers) ? l.dprNeedWorkers : null,
+            ),
+            const SizedBox(height: N360Space.sm),
+            DprWorkerTotal(total: state.totalWorkers, yesterday: state.yesterdayTotal),
+            if (state.canCopyYesterday) ...<Widget>[
+              const SizedBox(height: N360Space.md),
+              DprActionTile(
+                icon: Icons.history,
+                label: l.dprSameAsYesterday(state.yesterdayTotal!),
+                gold: true,
+                onTap: () => unawaited(_copyYesterday()),
               ),
-              if (i != visible.length - 1 || state.hiddenTradeCount > 0) const RuledDivider(),
             ],
-          ),
+            const SizedBox(height: N360Space.md),
+            for (var i = 0; i < visible.length; i++) ...<Widget>[
+              if (i > 0) const SizedBox(height: N360Space.sm),
+              DprTradeRow(
+                key: ValueKey<String>('trade-${visible[i]}'),
+                trade: visible[i],
+                count: state.count(visible[i]),
+                onChanged: (value) => cubit.setCount(visible[i], value),
+              ),
+            ],
+            if (state.hiddenTradeCount > 0) ...<Widget>[
+              const SizedBox(height: N360Space.md),
+              GloveButton(
+                label: l.dprMoreTrades(state.hiddenTradeCount),
+                icon: Icons.expand_more,
+                kind: GloveButtonKind.ghost,
+                fullWidth: true,
+                onPressed: cubit.showAllTrades,
+              ),
+            ],
+          ],
         ),
-      );
-    }
-    if (state.hiddenTradeCount > 0) {
-      slice(
-        GloveButton(
-          label: l.dprMoreTrades(state.hiddenTradeCount),
-          icon: Icons.expand_more,
-          kind: GloveButtonKind.ghost,
-          fullWidth: true,
-          onPressed: cubit.showAllTrades,
-        ),
-      );
-    }
-
-    // 3. Work done.
-    slice(
-      DprSectionHead(
-        number: 3,
-        title: l.dprSectionWork,
-        trailing: state.work.isEmpty
-            ? null
-            : Text(l.dprRowsCount(state.work.length), style: N360Type.label),
       ),
-      top: N360Space.xl,
     );
-    for (var i = 0; i < state.work.length; i++) {
-      final WorkLine line = state.work[i];
-      items.add(
-        DprSheetSlice(
-          key: ValueKey<String>('work-${line.boqItemId ?? 'free-$i'}'),
-          child: DprLandOnce(
-            id: 'work-${line.boqItemId ?? 'free-$i'}',
-            landed: _landed,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                DprWorkRow(
-                  line: line,
+
+    // Work done.
+    add(
+      LedgerCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            DprCardTitle(
+              icon: Icons.assignment_turned_in_outlined,
+              title: l.dprSectionWork,
+              trailing: state.work.isEmpty
+                  ? null
+                  : Text(l.dprRowsCount(state.work.length), style: N360Type.label),
+            ),
+            for (var i = 0; i < state.work.length; i++) ...<Widget>[
+              SizedBox(height: i == 0 ? N360Space.md : N360Space.lg),
+              DprLandOnce(
+                key: ValueKey<String>('work-${state.work[i].boqItemId ?? 'free-$i'}'),
+                id: 'work-${state.work[i].boqItemId ?? 'free-$i'}',
+                landed: _landed,
+                child: DprWorkRow(
+                  line: state.work[i],
                   services: services,
                   onChange: () => unawaited(_openWork(state, index: i)),
                   onRemove: () => cubit.removeWork(i),
                 ),
-                const RuledDivider(),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-    slice(
-      GloveButton(
-        label: l.dprAddWork,
-        icon: Icons.add,
-        kind: GloveButtonKind.secondary,
-        large: true,
-        fullWidth: true,
-        onPressed: () => unawaited(_openWork(state)),
-      ),
-      top: N360Space.sm,
-    );
-
-    // 4. Photos.
-    slice(
-      DprSectionHead(
-        number: 4,
-        title: l.dprSectionPhotos,
-        trailing: state.photos.isEmpty
-            ? null
-            : Text(l.dprPhotosCount(state.photos.length), style: N360Type.label),
-      ),
-      top: N360Space.xl,
-    );
-    slice(
-      DprCameraButton(
-        busy: state.capturing || state.photos.length >= dprMaxPhotos,
-        onTap: () => unawaited(_takePhoto()),
-      ),
-      top: N360Space.sm,
-    );
-    if (state.photos.isNotEmpty) {
-      slice(
-        DprPhotoStrip(
-          photos: state.photos,
-          repository: services.dpr,
-          landed: _landed,
-          onRemove: (photo) => unawaited(_removePhoto(photo)),
-        ),
-        top: N360Space.sm,
-      );
-    }
-
-    // 5. Hindrances and notes.
-    slice(
-      DprSectionHead(number: 5, title: l.dprSectionNotes),
-      top: N360Space.xl,
-    );
-    if (state.notesOpen) {
-      slice(
-        GloveTextField(
-          label: l.dprHindrances,
-          hint: l.dprHindrancesHint,
-          controller: _hindrances,
-          focusNode: _hindrancesFocus,
-          minLines: 3,
-          maxLines: 6,
-          keyboardType: TextInputType.multiline,
-          textInputAction: TextInputAction.newline,
-          onChanged: cubit.setHindrances,
-        ),
-        top: N360Space.sm,
-      );
-      slice(
-        GloveTextField(
-          label: l.dprNotes,
-          hint: l.dprNotesHint,
-          controller: _notes,
-          minLines: 3,
-          maxLines: 6,
-          keyboardType: TextInputType.multiline,
-          textInputAction: TextInputAction.newline,
-          onChanged: cubit.setNotes,
-        ),
-        top: N360Space.md,
-      );
-    } else {
-      slice(
-        LedgerCard(
-          onTap: _openNotes,
-          semanticsLabel: l.dprAddNotes,
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: 15),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.edit_note, size: 28, color: N360Colors.ink),
-              const SizedBox(width: N360Space.sm),
-              Expanded(child: Text(l.dprAddNotes, style: N360Type.bodyStrong)),
-              Text(l.dprOptional, style: N360Type.caption),
+              ),
             ],
-          ),
+            const SizedBox(height: N360Space.md),
+            DprActionTile(
+              icon: Icons.add,
+              label: l.dprAddWork,
+              onTap: () => unawaited(_openWork(state)),
+            ),
+          ],
         ),
-        top: N360Space.sm,
-      );
-    }
-
-    // The foot of the sheet.
-    items.add(
-      const DprSheetSlice(
-        last: true,
-        child: SizedBox(height: N360Space.lg),
       ),
     );
-    return items;
+
+    // Photos.
+    add(
+      LedgerCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            DprCardTitle(
+              icon: Icons.photo_library_outlined,
+              title: l.dprSectionPhotos,
+              trailing: state.photos.isEmpty
+                  ? null
+                  : Text(l.dprPhotosCount(state.photos.length), style: N360Type.label),
+            ),
+            const SizedBox(height: N360Space.md),
+            DprActionTile(
+              icon: Icons.photo_camera,
+              label: l.dprTakePhoto,
+              tall: true,
+              onTap: (state.capturing || state.photos.length >= dprMaxPhotos)
+                  ? null
+                  : () => unawaited(_takePhoto()),
+            ),
+            if (state.photos.isNotEmpty) ...<Widget>[
+              const SizedBox(height: N360Space.md),
+              DprPhotoStrip(
+                photos: state.photos,
+                repository: services.dpr,
+                landed: _landed,
+                onRemove: (photo) => unawaited(_removePhoto(photo)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+
+    // Hindrances and notes.
+    add(
+      LedgerCard(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            DprCardTitle(
+              icon: Icons.edit_note,
+              title: l.dprSectionNotes,
+              trailing: state.notesOpen ? null : Text(l.dprOptional, style: N360Type.caption),
+            ),
+            const SizedBox(height: N360Space.md),
+            if (state.notesOpen) ...<Widget>[
+              GloveTextField(
+                label: l.dprHindrances,
+                hint: l.dprHindrancesHint,
+                controller: _hindrances,
+                focusNode: _hindrancesFocus,
+                minLines: 3,
+                maxLines: 6,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                onChanged: cubit.setHindrances,
+              ),
+              const SizedBox(height: N360Space.md),
+              GloveTextField(
+                label: l.dprNotes,
+                hint: l.dprNotesHint,
+                controller: _notes,
+                minLines: 3,
+                maxLines: 6,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                onChanged: cubit.setNotes,
+              ),
+            ] else
+              DprActionTile(
+                icon: Icons.add,
+                label: l.dprAddNotes,
+                onTap: _openNotes,
+              ),
+          ],
+        ),
+      ),
+    );
+
+    return cards;
   }
 }
 
@@ -553,7 +549,7 @@ class _NoProject extends StatelessWidget {
   }
 }
 
-/// Quiet proof the work is safe. The word stays put so it never flickers; only
+/// Quiet proof the work is safe. The words stay put so they never flicker; only
 /// the mark changes, and it lands with a tiny press each time a save completes.
 class _SaveIndicator extends StatelessWidget {
   const _SaveIndicator({required this.status, required this.tick});
@@ -564,7 +560,7 @@ class _SaveIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    if (status == DprSaveStatus.clean) return const SizedBox.shrink();
+    if (status == DprSaveStatus.clean) return const SizedBox(width: N360Size.tap);
     final bool failed = status == DprSaveStatus.failed;
     final bool pending = status == DprSaveStatus.dirty;
     final Color ink = failed ? N360Colors.stampRed : N360Colors.mossInk;
@@ -575,30 +571,39 @@ class _SaveIndicator extends StatelessWidget {
       liveRegion: failed,
       label: failed ? l.dprNotSaved : (pending ? l.dprSaving : l.dprSavedOnPhone),
       child: ExcludeSemantics(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            TweenAnimationBuilder<double>(
-              key: ValueKey<int>(tick),
-              tween: Tween<double>(begin: pending ? 1 : 0.55, end: 1),
-              duration: context.motion.tick,
-              curve: N360Curves.stamp,
-              builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
-              child: Icon(
-                failed
-                    ? Icons.error_outline
-                    : (pending ? Icons.radio_button_unchecked : Icons.check_circle),
-                size: 20,
-                color: pending ? N360Colors.ink3 : ink,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 92),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TweenAnimationBuilder<double>(
+                key: ValueKey<int>(tick),
+                tween: Tween<double>(begin: pending ? 1 : 0.55, end: 1),
+                duration: context.motion.tick,
+                curve: N360Curves.stamp,
+                builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+                child: Icon(
+                  failed
+                      ? Icons.error_outline
+                      : (pending ? Icons.radio_button_unchecked : Icons.check_circle),
+                  size: 20,
+                  color: pending ? N360Colors.ink3 : ink,
+                ),
               ),
-            ),
-            const SizedBox(width: 5),
-            Text(
-              text,
-              maxLines: 1,
-              style: N360Type.caption.copyWith(color: ink, fontWeight: FontWeight.w600),
-            ),
-          ],
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  text,
+                  maxLines: 2,
+                  style: N360Type.caption.copyWith(
+                    color: ink,
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

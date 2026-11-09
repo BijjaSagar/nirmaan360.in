@@ -252,7 +252,7 @@ class ApprovalChain extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          SectionLabel(l.approvalsChainTitle),
+          Text(l.approvalsChainTitle, style: N360Type.heading),
           const SizedBox(height: N360Space.sm),
           ...rows,
         ],
@@ -313,7 +313,7 @@ class _ChainRow extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: N360Type.bodyStrong.copyWith(color: current ? N360Colors.stampRed : N360Colors.ink),
+                    style: N360Type.bodyStrong.copyWith(color: current ? N360Colors.laterite : N360Colors.ink),
                   ),
                   if (line.isNotEmpty) Text(line, style: N360Type.caption),
                   if (remark != null)
@@ -364,16 +364,16 @@ class _RailPainter extends CustomPainter {
             ..strokeJoin = StrokeJoin.round,
         );
       case _StationState.current:
-        canvas.drawCircle(Offset(x, y), 9, Paint()..color = N360Colors.sheet);
+        canvas.drawCircle(Offset(x, y), 9, Paint()..color = N360Colors.goldTint);
         canvas.drawCircle(
           Offset(x, y),
           9,
           Paint()
-            ..color = N360Colors.laterite
+            ..color = N360Colors.orange
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.5,
         );
-        canvas.drawCircle(Offset(x, y), 3.5, Paint()..color = N360Colors.laterite);
+        canvas.drawCircle(Offset(x, y), 3.5, Paint()..color = N360Colors.orange);
       case _StationState.upcoming:
         canvas.drawCircle(Offset(x, y), 8, Paint()..color = N360Colors.sheet);
         canvas.drawCircle(

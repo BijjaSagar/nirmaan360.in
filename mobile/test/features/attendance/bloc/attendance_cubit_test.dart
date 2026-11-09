@@ -46,6 +46,19 @@ void main() {
     expect(payload['worker_id'], 1);
   });
 
+  test('a tap leaves the roster untouched, so the list does not rebuild', () async {
+    final cubit = await _readyCubit(app);
+    addTearDown(cubit.close);
+    final before = cubit.state.groups;
+
+    await cubit.mark(1, HajiriValue.present);
+    // Let the database report the write back as well.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(cubit.state.marks[1]?.value, HajiriValue.present);
+    expect(identical(cubit.state.groups, before), isTrue);
+  });
+
   test('repeated taps coalesce into one item with the last value', () async {
     final cubit = await _readyCubit(app);
     addTearDown(cubit.close);

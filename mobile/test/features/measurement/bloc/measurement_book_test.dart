@@ -96,6 +96,29 @@ void main() {
     });
   });
 
+  group('share of BOQ', () {
+    test('rounds to a whole percent', () {
+      expect(shareLabel(q('50'), q('100')), '50%');
+      expect(shareLabel(q('33.5'), q('100')), '34%');
+      expect(shareLabel(q('625'), q('100')), '625%');
+    });
+
+    test('never rounds a real entry down to nothing', () {
+      expect(shareLabel(q('0.001'), q('100000')), '<1%');
+      expect(shareLabel(Qty.zero, q('100')), '0%');
+    });
+
+    test('a deduction reads negative but its mark is a size', () {
+      expect(shareLabel(q('-12'), q('100')), '−12%');
+      expect(shareFraction(q('-12'), q('100')), closeTo(0.12, 0.0001));
+    });
+
+    test('a BOQ of nothing has no share', () {
+      expect(shareLabel(q('5'), Qty.zero), isNull);
+      expect(shareFraction(q('5'), Qty.zero), isNull);
+    });
+  });
+
   test('figures read with a true minus and Indian grouping', () {
     expect(formatQty(q('-1234567.5')), '−12,34,567.500');
     expect(formatQty(q('50')), '50.000');

@@ -76,8 +76,7 @@ class SettingsScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.lg),
                 children: <Widget>[
-                  const Align(alignment: Alignment.centerLeft, child: BackHeader()),
-                  SheetHeader(title: t.shellSettings),
+                  PageHeader(title: t.shellSettings),
                   const SizedBox(height: N360Space.md),
                   if (user != null) _WhoCard(user: user, eyebrow: t.shellSettingsSignedIn),
                   const SizedBox(height: N360Space.lg),
@@ -133,8 +132,8 @@ class _WhoCard extends StatelessWidget {
             width: 64,
             height: 64,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: N360Colors.neel, borderRadius: N360Radius.sm),
-            child: Text(initial, style: N360Type.display.copyWith(color: N360Colors.sheet, height: 1.1)),
+            decoration: const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.tileRadius),
+            child: Text(initial, style: N360Type.display.copyWith(height: 1.1)),
           ),
           const SizedBox(width: N360Space.md),
           Expanded(
@@ -324,10 +323,11 @@ class _HoldToConfirmState extends State<_HoldToConfirm> with SingleTickerProvide
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: N360Colors.sheet,
-          borderRadius: N360Radius.sm,
+          borderRadius: N360Radius.tileRadius,
           border: Border.all(color: N360Colors.stampRed, width: 1.5),
         ),
-        child: ClipRect(
+        child: ClipRRect(
+          borderRadius: N360Radius.tileRadius,
           child: Stack(
             alignment: Alignment.center,
             children: <Widget>[
@@ -339,7 +339,7 @@ class _HoldToConfirmState extends State<_HoldToConfirm> with SingleTickerProvide
                       alignment: Alignment.centerLeft,
                       widthFactor: _fill.value,
                       heightFactor: 1,
-                      child: const ColoredBox(color: Color(0x33A63B1A)),
+                      child: ColoredBox(color: N360Colors.stampRed.withValues(alpha: 0.2)),
                     ),
                   ),
                 ),

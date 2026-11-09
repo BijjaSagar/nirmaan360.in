@@ -10,6 +10,7 @@ import '../../../projects/data/project_repository.dart' show BoqLine;
 import '../../data/dpr_repository.dart';
 import 'dpr_format.dart';
 import 'dpr_ui.dart';
+import 'work_rows.dart' show DprBoqPercent;
 
 /// Opens the work picker. Returns the row to put on the sheet, null if closed.
 ///
@@ -243,8 +244,7 @@ class _PickStep extends StatelessWidget {
             textInputAction: TextInputAction.search,
           ),
         ),
-        const SizedBox(height: N360Space.sm),
-        const RuledDivider(),
+        const SizedBox(height: N360Space.md),
         Expanded(
           child: StreamBuilder<List<BoqLine>>(
             stream: lines,
@@ -302,61 +302,58 @@ class _BoqRow extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final item = line.item;
     final Qty? already = added;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        DprTapPad(
-          onTap: onTap,
-          semanticsLabel: '${item.code} ${item.description}',
-          minHeight: 76,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: N360Space.sm),
+      child: DprTapPad(
+        onTap: onTap,
+        semanticsLabel: '${item.code} ${item.description}',
+        minHeight: 84,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: N360Colors.sheet,
+            borderRadius: N360Radius.tileRadius,
+            border: Border.fromBorderSide(BorderSide(color: N360Colors.rule)),
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
+            padding: const EdgeInsets.all(N360Space.md),
             child: Row(
               children: <Widget>[
+                DprBoqPercent(line: line),
+                const SizedBox(width: N360Space.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Text(
-                            item.code,
-                            style: N360Type.figure.copyWith(fontSize: 16, color: N360Colors.stampRed),
-                          ),
-                          const SizedBox(width: N360Space.sm),
-                          Text(item.unit, style: N360Type.caption),
-                          if (already != null) ...<Widget>[
-                            const SizedBox(width: N360Space.sm),
-                            _Tag(text: '${l.dprAddedTag} ${dprQty(already)}', ink: N360Colors.mossInk),
-                          ] else if (yesterday) ...<Widget>[
-                            const SizedBox(width: N360Space.sm),
-                            _Tag(text: l.dprYesterdayTag, ink: N360Colors.neel),
-                          ],
-                        ],
-                      ),
                       Text(
                         item.description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: N360Type.body,
+                        style: N360Type.bodyStrong,
                       ),
                       Text(
-                        '${l.dprBalance} ${dprQty(line.previewBalance)} ${item.unit}',
+                        '${item.code} · ${l.dprBalance} ${dprQty(line.previewBalance)} ${item.unit}',
                         style: N360Type.caption,
                       ),
+                      if (already != null || yesterday) ...<Widget>[
+                        const SizedBox(height: 4),
+                        _Tag(
+                          text: already != null
+                              ? '${l.dprAddedTag} ${dprQty(already)}'
+                              : l.dprYesterdayTag,
+                          ink: already != null ? N360Colors.mossInk : N360Colors.laterite,
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                const SizedBox(width: N360Space.sm),
+                const SizedBox(width: N360Space.xs),
                 const Icon(Icons.chevron_right, size: 26, color: N360Colors.ink2),
               ],
             ),
           ),
         ),
-        const RuledDivider(),
-      ],
+      ),
     );
   }
 }
@@ -369,21 +366,18 @@ class _Tag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Flexible(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: N360Colors.paper,
-          borderRadius: N360Radius.sm,
-          border: Border.all(color: ink.withValues(alpha: 0.7)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: N360Type.caption.copyWith(color: ink, fontWeight: FontWeight.w600, height: 1.3),
-          ),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: N360Colors.goldTint,
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: N360Type.caption.copyWith(color: ink, fontWeight: FontWeight.w600, height: 1.3),
         ),
       ),
     );
@@ -451,14 +445,32 @@ class _KeypadStep extends StatelessWidget {
                   boq.item.description,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: N360Type.heading,
+                  style: N360Type.title,
                 ),
-                Text(
-                  '${l.dprBalance} ${dprQty(boq.previewBalance)} ${boq.item.unit}',
-                  style: N360Type.body.copyWith(color: N360Colors.ink2),
+                const SizedBox(height: N360Space.md),
+                HatchedProgressBar(
+                  fraction: dprBoqDone(boq).fraction,
+                  height: 34,
+                  semanticLabel: l.dprBoqDonePercent(dprBoqDone(boq).percent),
+                ),
+                const SizedBox(height: N360Space.xs),
+                Row(
+                  children: <Widget>[
+                    Text('${dprBoqDone(boq).percent}%', style: N360Type.bodyStrong),
+                    const SizedBox(width: N360Space.sm),
+                    Expanded(
+                      child: Text(
+                        '${l.dprBalance} ${dprQty(boq.previewBalance)} ${boq.item.unit}',
+                        textAlign: TextAlign.end,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: N360Type.body.copyWith(color: N360Colors.ink2),
+                      ),
+                    ),
+                  ],
                 ),
               ] else if (fallbackText != null)
-                Text(fallbackText!, maxLines: 3, overflow: TextOverflow.ellipsis, style: N360Type.heading),
+                Text(fallbackText!, maxLines: 3, overflow: TextOverflow.ellipsis, style: N360Type.title),
               const Spacer(),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -475,14 +487,12 @@ class _KeypadStep extends StatelessWidget {
                           color: typed.isEmpty ? N360Colors.inkLabel : N360Colors.ink,
                         ),
                         suffix: unit.isEmpty ? '' : ' $unit',
-                        suffixStyle: N360Type.figure.copyWith(color: N360Colors.ink2),
+                        suffixStyle: N360Type.bodyStrong.copyWith(color: N360Colors.ink2, letterSpacing: 0),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: N360Space.xs),
-              const RuledDivider.double(),
               SizedBox(
                 height: 30,
                 child: over

@@ -25,6 +25,19 @@ const String _dir = String.fromEnvironment('N360_DPR_DIR');
 const Locale _en = Locale('en');
 const Locale _mr = Locale('mr');
 
+/// Part of each BOQ line is already measured, so progress marks show a real figure.
+Future<void> _measureSome(TestApp app) async {
+  for (final (int id, String balance) in const <(int, String)>[
+    (1, '402.500'),
+    (2, '31.250'),
+    (3, '612.500'),
+  ]) {
+    await (app.db.update(app.db.boqItems)..where((t) => t.id.equals(id))).write(
+      BoqItemsCompanion(balanceQty: Value(Qty.parse(balance))),
+    );
+  }
+}
+
 Future<void> _insertYesterday(TestApp app) async {
   await app.db.into(app.db.dprs).insert(
     DprsCompanion.insert(
@@ -101,6 +114,7 @@ void main() {
       final photo = await tester.runAsync(fakeSitePhoto);
       final app = await TestApp.create(seed: false, api: demoApi(photoBytes: photo));
       await app.sync();
+      await _measureSome(app);
       addTearDown(app.dispose);
 
       final Widget screen = await scene(app);

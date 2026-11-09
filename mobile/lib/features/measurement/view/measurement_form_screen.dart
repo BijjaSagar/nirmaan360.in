@@ -163,7 +163,7 @@ class _FormView extends StatelessWidget {
                 bottom: false,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final bool compact = constraints.maxHeight < 640;
+                    final bool compact = constraints.maxHeight - media.padding.bottom < 735;
                     return _layout(context, l, state, cubit, compact: compact, media: media);
                   },
                 ),
@@ -267,8 +267,7 @@ class _FormView extends StatelessWidget {
             children: <Widget>[
               if (!state.online) _offline(l),
               header,
-              const _Rule(),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               ...notes,
               dims,
               const SizedBox(height: 4),
@@ -292,14 +291,13 @@ class _FormView extends StatelessWidget {
                     children: <Widget>[
                       if (!state.online) _offline(l),
                       header,
-                      const _Rule(),
                       const SizedBox(height: N360Space.sm),
                       dims,
                       const SizedBox(height: N360Space.sm),
                       toggleRow,
                       const SizedBox(height: N360Space.sm),
                       ...notes,
-                      if (notes.isEmpty && box.maxHeight > 310)
+                      if (notes.isEmpty && box.maxHeight > 276)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
                           child: Text(l.measurementPreviewNote, style: N360Type.caption),
@@ -371,26 +369,6 @@ class _FormView extends StatelessWidget {
   }
 }
 
-class _Rule extends StatelessWidget {
-  const _Rule();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: N360Space.gutter),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          SizedBox(height: 1.5, child: ColoredBox(color: N360Colors.ink)),
-          SizedBox(height: 2),
-          RuledDivider(),
-        ],
-      ),
-    );
-  }
-}
-
 class _ReturnedNote extends StatelessWidget {
   const _ReturnedNote({required this.remark});
 
@@ -404,11 +382,7 @@ class _ReturnedNote extends StatelessWidget {
       label: '${l.measurementApproverSaid}: $remark',
       child: ExcludeSemantics(
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: N360Colors.sheet,
-            borderRadius: N360Radius.sm,
-            border: Border.all(color: N360Colors.haldiInk, width: 1.5),
-          ),
+          decoration: const BoxDecoration(color: N360Colors.goldTint, borderRadius: N360Radius.md),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: 6),
             child: Row(

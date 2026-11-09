@@ -688,6 +688,12 @@ abstract class AppLocalizations {
   /// **'Could not open the muster'**
   String get attendanceLoadFailedTitle;
 
+  /// No description provided for @attendanceMarkedSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked so far'**
+  String get attendanceMarkedSoFar;
+
   /// No description provided for @attendanceNoProjectMessage.
   ///
   /// In en, this message translates to:
@@ -801,12 +807,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose the trade.'**
   String get attendanceSheetTradeRequired;
-
-  /// No description provided for @attendanceSheetWage.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily wage'**
-  String get attendanceSheetWage;
 
   /// No description provided for @attendanceSheetWageFor.
   ///
@@ -1144,6 +1144,12 @@ abstract class AppLocalizations {
   /// **'Balance'**
   String get dprBalance;
 
+  /// No description provided for @dprBoqDonePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} percent of BOQ measured'**
+  String dprBoqDonePercent(int percent);
+
   /// No description provided for @dprBoqEmpty.
   ///
   /// In en, this message translates to:
@@ -1288,6 +1294,12 @@ abstract class AppLocalizations {
   /// **'Nothing recorded'**
   String get dprNothingRecorded;
 
+  /// No description provided for @dprOfDays.
+  ///
+  /// In en, this message translates to:
+  /// **'of {days} days'**
+  String dprOfDays(int days);
+
   /// No description provided for @dprOpenToday.
   ///
   /// In en, this message translates to:
@@ -1347,6 +1359,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove'**
   String get dprRemove;
+
+  /// No description provided for @dprReportsThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports this month'**
+  String get dprReportsThisMonth;
 
   /// No description provided for @dprReturnedNoRemark.
   ///
@@ -1516,6 +1534,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 worker} other{{count} workers}}'**
   String dprWorkersCount(int count);
 
+  /// No description provided for @dprWorkersOnSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Workers on site'**
+  String get dprWorkersOnSite;
+
   /// No description provided for @dprWorkersWord.
   ///
   /// In en, this message translates to:
@@ -1527,6 +1551,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Write today\'s report'**
   String get dprWriteToday;
+
+  /// No description provided for @dprYesterdayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get dprYesterdayLabel;
 
   /// No description provided for @dprYesterdayTag.
   ///
@@ -1587,12 +1617,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Due date'**
   String get issuesDetailDue;
-
-  /// No description provided for @issuesDetailLocation.
-  ///
-  /// In en, this message translates to:
-  /// **'Location'**
-  String get issuesDetailLocation;
 
   /// No description provided for @issuesDetailMissingMessage.
   ///
@@ -1719,12 +1743,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Grid C, third floor'**
   String get issuesFormLocationHint;
-
-  /// No description provided for @issuesFormNoDue.
-  ///
-  /// In en, this message translates to:
-  /// **'No date'**
-  String get issuesFormNoDue;
 
   /// No description provided for @issuesFormPriority.
   ///
@@ -1906,11 +1924,23 @@ abstract class AppLocalizations {
   /// **'Measurement book'**
   String get measurementBookTitle;
 
+  /// No description provided for @measurementBoqProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ used'**
+  String get measurementBoqProgress;
+
   /// No description provided for @measurementBoqQty.
   ///
   /// In en, this message translates to:
   /// **'BOQ'**
   String get measurementBoqQty;
+
+  /// No description provided for @measurementBoqUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} of BOQ used'**
+  String measurementBoqUsed(String percent);
 
   /// No description provided for @measurementBreadth.
   ///
@@ -2296,6 +2326,12 @@ abstract class AppLocalizations {
   /// **'Not sent yet. It will go for approval when network returns.'**
   String get measurementSendsWhenOnline;
 
+  /// No description provided for @measurementShareOfBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'Share of BOQ'**
+  String get measurementShareOfBoq;
+
   /// No description provided for @measurementStampSent.
   ///
   /// In en, this message translates to:
@@ -2398,6 +2434,12 @@ abstract class AppLocalizations {
   /// **'Choose what it was for.'**
   String get pettyCashCategoryRequired;
 
+  /// No description provided for @pettyCashConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get pettyCashConfirmed;
+
   /// No description provided for @pettyCashDate.
   ///
   /// In en, this message translates to:
@@ -2440,6 +2482,12 @@ abstract class AppLocalizations {
   /// **'Cash book'**
   String get pettyCashEyebrow;
 
+  /// No description provided for @pettyCashFinalAfterSync.
+  ///
+  /// In en, this message translates to:
+  /// **'The final balance comes after sync.'**
+  String get pettyCashFinalAfterSync;
+
   /// No description provided for @pettyCashFormEyebrow.
   ///
   /// In en, this message translates to:
@@ -2451,18 +2499,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add an expense'**
   String get pettyCashFormTitle;
-
-  /// No description provided for @pettyCashLoadFailedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not open petty cash'**
-  String get pettyCashLoadFailedTitle;
-
-  /// No description provided for @pettyCashNext.
-  ///
-  /// In en, this message translates to:
-  /// **'Next'**
-  String get pettyCashNext;
 
   /// No description provided for @pettyCashNoProjectMessage.
   ///
@@ -2518,12 +2554,6 @@ abstract class AppLocalizations {
   /// **'Provisional'**
   String get pettyCashProvisional;
 
-  /// No description provided for @pettyCashProvisionalNote.
-  ///
-  /// In en, this message translates to:
-  /// **'{amount} on this phone is not sent yet. The final balance comes after sync.'**
-  String pettyCashProvisionalNote(String amount);
-
   /// No description provided for @pettyCashSave.
   ///
   /// In en, this message translates to:
@@ -2572,11 +2602,35 @@ abstract class AppLocalizations {
   /// **'Top-up'**
   String get pettyCashTopup;
 
+  /// No description provided for @pettyCashUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent yet'**
+  String get pettyCashUnsent;
+
   /// No description provided for @pettyCashWallet.
   ///
   /// In en, this message translates to:
   /// **'Wallet'**
   String get pettyCashWallet;
+
+  /// No description provided for @shellCaptionMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'marked'**
+  String get shellCaptionMarked;
+
+  /// No description provided for @shellCaptionOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'open'**
+  String get shellCaptionOpen;
+
+  /// No description provided for @shellCaptionToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today'**
+  String get shellCaptionToday;
 
   /// No description provided for @shellDiscardBody.
   ///
@@ -2727,6 +2781,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'waiting'**
   String get shellPillWaiting;
+
+  /// No description provided for @shellProgressBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'By value of approved work'**
+  String get shellProgressBasis;
+
+  /// No description provided for @shellProgressDaysLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Days late'**
+  String get shellProgressDaysLate;
+
+  /// No description provided for @shellProgressDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Days left'**
+  String get shellProgressDaysLeft;
+
+  /// No description provided for @shellProgressEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress will show here once the BOQ is added.'**
+  String get shellProgressEmptyBody;
+
+  /// No description provided for @shellProgressEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No BOQ yet'**
+  String get shellProgressEmptyTitle;
+
+  /// No description provided for @shellProgressEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get shellProgressEnd;
+
+  /// No description provided for @shellProgressNoEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get shellProgressNoEnd;
+
+  /// No description provided for @shellProgressSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} percent complete'**
+  String shellProgressSemantics(String percent);
+
+  /// No description provided for @shellProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Construction progress'**
+  String get shellProgressTitle;
 
   /// No description provided for @shellReportAttention.
   ///
@@ -3039,6 +3147,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Daily report'**
   String get shellTileDaily;
+
+  /// No description provided for @shellTileExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses'**
+  String get shellTileExpenses;
 
   /// No description provided for @shellTileIssues.
   ///

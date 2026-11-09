@@ -42,22 +42,8 @@ String _statusOf(HajiriValue value) => switch (value) {
   HajiriValue.absent => AttendanceStatus.absent,
 };
 
-/// One entry of the flat muster list: a trade header or a worker.
-sealed class MusterItem extends Equatable {
-  const MusterItem();
-}
-
-final class MusterGroup extends MusterItem {
-  const MusterGroup({required this.trade, required this.workerIds});
-
-  final String trade;
-  final List<int> workerIds;
-
-  @override
-  List<Object?> get props => [trade, workerIds];
-}
-
-final class MusterWorker extends MusterItem {
+/// One worker on the muster.
+final class MusterWorker extends Equatable {
   const MusterWorker({
     required this.id,
     required this.name,
@@ -70,6 +56,17 @@ final class MusterWorker extends MusterItem {
 
   @override
   List<Object?> get props => [id, name, trade];
+}
+
+/// The workers of one trade, shown as one card.
+final class MusterGroup extends Equatable {
+  const MusterGroup({required this.trade, required this.workers});
+
+  final String trade;
+  final List<MusterWorker> workers;
+
+  @override
+  List<Object?> get props => [trade, workers];
 }
 
 /// The figures in the sticky header.
@@ -119,7 +116,7 @@ class AttendanceState {
     required this.date,
     required this.recentDates,
     this.project,
-    this.items = const [],
+    this.groups = const [],
     this.marks = const {},
     this.notice,
     this.noticeId = 0,
@@ -135,7 +132,7 @@ class AttendanceState {
 
   /// Keeps its identity until the roster itself changes, so the list can skip
   /// rebuilding when only marks move.
-  final List<MusterItem> items;
+  final List<MusterGroup> groups;
 
   /// Marks on the screen, by worker id. Includes taps not yet confirmed.
   final Map<int, DayMark> marks;
@@ -144,7 +141,7 @@ class AttendanceState {
 
   bool get isToday => date == today;
 
-  int get workerCount => items.whereType<MusterWorker>().length;
+  int get workerCount => groups.fold(0, (sum, group) => sum + group.workers.length);
 
   MusterTotals get totals {
     var present = 0, half = 0, overtime = 0, absent = 0;
@@ -175,7 +172,7 @@ class AttendanceState {
     String? date,
     ProjectRow? project,
     bool clearProject = false,
-    List<MusterItem>? items,
+    List<MusterGroup>? groups,
     Map<int, DayMark>? marks,
     AttendanceNotice? notice,
     int? noticeId,
@@ -186,7 +183,7 @@ class AttendanceState {
       date: date ?? this.date,
       recentDates: recentDates,
       project: clearProject ? null : (project ?? this.project),
-      items: items ?? this.items,
+      groups: groups ?? this.groups,
       marks: marks ?? this.marks,
       notice: notice,
       noticeId: noticeId ?? this.noticeId,
@@ -273,7 +270,7 @@ class AttendanceCubit extends Cubit<AttendanceState> {
       return;
     }
     _clearLocal();
-    emit(state.copyWith(project: project, items: const [], marks: const {}));
+    emit(state.copyWith(project: project, groups: const [], marks: const {}));
     _subscribeDay(project.id);
   }
 
@@ -312,17 +309,17 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     // A tap is settled once the database reports the same value back.
     _optimistic.removeWhere((id, mark) => confirmed[id] == mark);
 
-    final items = _groupItems(lines);
+    final groups = _groupLines(lines);
     emit(
       state.copyWith(
         load: AttendanceLoad.ready,
-        items: _sameItems(state.items, items) ? state.items : items,
+        groups: _sameGroups(state.groups, groups) ? state.groups : groups,
         marks: _merged(),
       ),
     );
   }
 
-  bool _sameItems(List<MusterItem> a, List<MusterItem> b) {
+  bool _sameGroups(List<MusterGroup> a, List<MusterGroup> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;
@@ -332,7 +329,7 @@ class AttendanceCubit extends Cubit<AttendanceState> {
 
   /// Groups workers by trade, in the design system's trade order, with any
   /// trade the app has not heard of after the known ones.
-  List<MusterItem> _groupItems(List<AttendanceLine> lines) {
+  List<MusterGroup> _groupLines(List<AttendanceLine> lines) {
     final byTrade = <String, List<AttendanceLine>>{};
     for (final line in lines) {
       byTrade.putIfAbsent(line.worker.trade, () => []).add(line);
@@ -351,19 +348,19 @@ class AttendanceCubit extends Cubit<AttendanceState> {
         return byRank != 0 ? byRank : a.compareTo(b);
       });
 
-    return <MusterItem>[
-      for (final trade in trades) ...[
+    return <MusterGroup>[
+      for (final trade in trades)
         MusterGroup(
           trade: trade,
-          workerIds: <int>[for (final l in byTrade[trade]!) l.worker.id],
+          workers: <MusterWorker>[
+            for (final line in byTrade[trade]!)
+              MusterWorker(
+                id: line.worker.id,
+                name: line.worker.name,
+                trade: line.worker.trade,
+              ),
+          ],
         ),
-        for (final line in byTrade[trade]!)
-          MusterWorker(
-            id: line.worker.id,
-            name: line.worker.name,
-            trade: line.worker.trade,
-          ),
-      ],
     ];
   }
 
@@ -455,8 +452,9 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     final date = state.date;
 
     final targets = <int>[
-      for (final item in state.items)
-        if (item is MusterWorker && _markOnScreen(item.id) == null) item.id,
+      for (final group in state.groups)
+        for (final worker in group.workers)
+          if (_markOnScreen(worker.id) == null) worker.id,
     ];
     if (targets.isEmpty) return;
 

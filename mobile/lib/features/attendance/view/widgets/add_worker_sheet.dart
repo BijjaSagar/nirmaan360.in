@@ -16,7 +16,7 @@ Future<void> showAddWorkerSheet(BuildContext context) {
     useSafeArea: true,
     backgroundColor: N360Colors.paper,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.medium)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
     ),
     builder: (sheetContext) => BlocProvider<AddWorkerCubit>(
       create: (_) => AddWorkerCubit(services),

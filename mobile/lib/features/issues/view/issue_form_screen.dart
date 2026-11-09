@@ -5,6 +5,7 @@ import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show UserRow;
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/issue_form_cubit.dart';
 import 'widgets/issue_widgets.dart';
 
@@ -89,97 +90,92 @@ class _IssueFormViewState extends State<_IssueFormView> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
+                  FieldTopBar(title: l.issuesFormTitle, subtitle: l.issuesFormEyebrow),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(
                         N360Space.gutter,
                         N360Space.xs,
                         N360Space.gutter,
-                        N360Space.gutter,
+                        N360Space.sm,
                       ),
                       children: <Widget>[
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: GloveButton(
-                            label: l.commonBack,
-                            kind: GloveButtonKind.ghost,
-                            icon: Icons.arrow_back,
-                            onPressed: () => Navigator.of(context).maybePop(),
-                          ),
-                        ),
-                        SheetHeader(
-                          eyebrow: l.issuesFormEyebrow,
-                          title: l.issuesFormTitle,
-                        ),
-                        const SizedBox(height: N360Space.md),
                         StaggeredRise(
                           index: 0,
-                          child: GloveTextField(
-                            label: l.issuesFormWhat,
-                            controller: _title,
-                            hint: l.issuesFormWhatHint,
-                            textInputAction: TextInputAction.next,
-                            errorText: state.problem == IssueFormProblem.titleRequired
-                                ? l.issuesFormWhatRequired
-                                : null,
-                            onChanged: (_) => cubit.clearTitleProblem(),
-                          ),
-                        ),
-                        const SizedBox(height: N360Space.md),
-                        StaggeredRise(
-                          index: 1,
-                          child: _LabelledBlock(
-                            label: l.issuesFormPriority,
-                            child: PictoChoice<String>(
-                              columns: 4,
-                              value: state.priority,
-                              semanticsLabel: l.issuesFormPriority,
-                              onChanged: cubit.setPriority,
-                              options: <PictoOption<String>>[
-                                for (final p in N360Pictograms.issuePriorities)
-                                  PictoOption<String>(
-                                    value: p.key,
-                                    icon: p.icon,
-                                    label: l.pictogramLabel(p),
+                          child: LedgerCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                GloveTextField(
+                                  label: l.issuesFormWhat,
+                                  controller: _title,
+                                  hint: l.issuesFormWhatHint,
+                                  textInputAction: TextInputAction.next,
+                                  errorText: state.problem == IssueFormProblem.titleRequired
+                                      ? l.issuesFormWhatRequired
+                                      : null,
+                                  onChanged: (_) => cubit.clearTitleProblem(),
+                                ),
+                                const SizedBox(height: N360Space.md),
+                                _LabelledBlock(
+                                  label: l.issuesFormPriority,
+                                  child: PictoChoice<String>(
+                                    columns: 4,
+                                    value: state.priority,
+                                    semanticsLabel: l.issuesFormPriority,
+                                    onChanged: cubit.setPriority,
+                                    options: <PictoOption<String>>[
+                                      for (final p in N360Pictograms.issuePriorities)
+                                        PictoOption<String>(
+                                          value: p.key,
+                                          icon: p.icon,
+                                          label: l.pictogramLabel(p),
+                                        ),
+                                    ],
                                   ),
+                                ),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(height: N360Space.md),
                         StaggeredRise(
-                          index: 2,
-                          child: GloveTextField(
-                            label: l.issuesFormLocation,
-                            controller: _location,
-                            hint: l.issuesFormLocationHint,
-                            prefixIcon: Icons.place_outlined,
-                            textInputAction: TextInputAction.done,
-                          ),
-                        ),
-                        const SizedBox(height: N360Space.md),
-                        StaggeredRise(
-                          index: 3,
-                          child: _LabelledBlock(
-                            label: l.issuesFormAssignee,
-                            child: SelectTile(
-                              icon: Icons.person_outline,
-                              label: _assigneeName(state) ?? l.issuesUnassigned,
-                              selected: false,
-                              semanticsLabel:
-                                  '${l.issuesFormAssignee}: ${_assigneeName(state) ?? l.issuesUnassigned}',
-                              onTap: () => _pickAssignee(state),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: N360Space.md),
-                        StaggeredRise(
-                          index: 4,
-                          child: _LabelledBlock(
-                            label: l.issuesFormDue,
-                            child: _DueChips(
-                              value: state.due,
-                              onChanged: cubit.setDue,
+                          index: 1,
+                          child: LedgerCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                GloveTextField(
+                                  label: l.issuesFormLocation,
+                                  controller: _location,
+                                  hint: l.issuesFormLocationHint,
+                                  prefixIcon: Icons.place_outlined,
+                                  textInputAction: TextInputAction.done,
+                                ),
+                                const SizedBox(height: N360Space.md),
+                                _LabelledBlock(
+                                  label: l.issuesFormAssignee,
+                                  child: FieldChoiceTile(
+                                    width: double.infinity,
+                                    icon: Icons.person_outline,
+                                    label: _assigneeName(state) ?? l.issuesUnassigned,
+                                    selected: false,
+                                    semanticsLabel:
+                                        '${l.issuesFormAssignee}: ${_assigneeName(state) ?? l.issuesUnassigned}',
+                                    onTap: () => _pickAssignee(state),
+                                  ),
+                                ),
+                                const SizedBox(height: N360Space.md),
+                                _LabelledBlock(
+                                  label: l.issuesFormDue,
+                                  child: _DueChips(
+                                    value: state.due,
+                                    onChanged: cubit.setDue,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -192,14 +188,18 @@ class _IssueFormViewState extends State<_IssueFormView> {
                                 : l.issuesSaveFailed,
                           ),
                         ],
-                        const SizedBox(height: N360Space.sm),
                       ],
                     ),
                   ),
-                  _SaveBar(
-                    label: l.issuesFormSave,
-                    busy: state.submitting,
-                    onPressed: _save,
+                  FieldActionBar(
+                    child: GloveButton(
+                      label: l.issuesFormSave,
+                      icon: Icons.check,
+                      large: true,
+                      fullWidth: true,
+                      loading: state.submitting,
+                      onPressed: state.submitting ? null : _save,
+                    ),
                   ),
                 ],
               );
@@ -245,59 +245,21 @@ class _DueChips extends StatelessWidget {
       (DueChoice.threeDays, l.issuesFormDueThree),
       (DueChoice.week, l.issuesFormDueWeek),
     ];
-    return Wrap(
-      spacing: N360Space.sm,
-      runSpacing: N360Space.sm,
+    // Tapping the chosen chip again clears it, so no "no date" chip is needed.
+    return Row(
       children: <Widget>[
-        for (final (choice, label) in options)
-          SelectTile(
-            label: label,
-            selected: value == choice,
-            onTap: () => onChanged(value == choice ? DueChoice.none : choice),
+        for (final (index, (choice, label)) in options.indexed) ...<Widget>[
+          if (index > 0) const SizedBox(width: N360Space.sm),
+          Expanded(
+            child: FieldChoiceTile(
+              width: double.infinity,
+              label: label,
+              selected: value == choice,
+              onTap: () => onChanged(value == choice ? DueChoice.none : choice),
+            ),
           ),
-        SelectTile(
-          label: l.issuesFormNoDue,
-          selected: value == DueChoice.none,
-          onTap: () => onChanged(DueChoice.none),
-        ),
+        ],
       ],
-    );
-  }
-}
-
-class _SaveBar extends StatelessWidget {
-  const _SaveBar({required this.label, required this.busy, required this.onPressed});
-
-  final String label;
-  final bool busy;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: N360Colors.sheet,
-        border: Border(top: BorderSide(color: N360Colors.ruleStrong)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            N360Space.gutter,
-            N360Space.sm,
-            N360Space.gutter,
-            N360Space.sm,
-          ),
-          child: GloveButton(
-            label: label,
-            icon: Icons.check,
-            large: true,
-            fullWidth: true,
-            loading: busy,
-            onPressed: busy ? null : onPressed,
-          ),
-        ),
-      ),
     );
   }
 }

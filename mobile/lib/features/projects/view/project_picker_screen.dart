@@ -6,20 +6,15 @@ import '../../../app/app_gate.dart';
 import '../../../app/routes.dart';
 import '../../../app/shell/sync_status_cubit.dart';
 import '../../../app/widgets/back_header.dart';
-import '../../../app/widgets/ledger_sheet.dart';
 import '../../../app/widgets/press_row.dart';
-import '../../../app/widgets/site_plan.dart';
-import '../../../app/widgets/stamp_mark.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 /// Pick the site you are on. Only ever shown with two or more projects, or
-/// while the first pull is still bringing them in.
-///
-/// The rows sit at the bottom of the screen, in thumb reach, on the same sheet
-/// as the sign-in form.
+/// while the first pull is still bringing them in. The rows sit in the lower
+/// half of the screen, in thumb reach.
 class ProjectPickerScreen extends StatelessWidget {
   const ProjectPickerScreen({super.key});
 
@@ -37,82 +32,74 @@ class ProjectPickerScreen extends StatelessWidget {
     final bool syncing = context.select((SyncStatusCubit s) => s.state.isSyncing);
     final bool canGoBack = GoRouter.of(context).canPop();
 
-    final Widget body = projects.isEmpty
-        ? _EmptyProjects(syncing: syncing)
-        : ListView.separated(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: projects.length,
-            separatorBuilder: (context, index) => const RuledDivider(),
-            itemBuilder: (context, index) {
-              final project = projects[index];
-              return StaggeredRise(
-                index: index,
-                child: _ProjectRow(
-                  project: project,
-                  isCurrent: project.id == selected,
-                  currentLabel: t.shellPickerCurrent,
-                  onTap: () => _choose(context, project),
-                ),
-              );
-            },
-          );
-
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                if (syncing) ProgressRule(semanticsLabel: t.shellPickerLoading),
-                Expanded(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      const SitePlan(),
-                      const Center(child: StampMark(size: 88)),
-                      if (canGoBack)
-                        const Positioned(top: N360Space.xs, left: N360Space.gutter, child: BackHeader()),
-                    ],
-                  ),
-                ),
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.76),
-                  child: LedgerSheet(
-                    marginX: _codeColumn,
-                    padding: const EdgeInsets.fromLTRB(0, 22, 0, N360Space.md),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(_codeColumn + N360Space.md, 0, N360Space.gutter, N360Space.sm),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              SectionLabel(t.shellPickerEyebrow),
-                              Text(t.shellPickerTitle, style: N360Type.title),
-                            ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            if (syncing) ProgressRule(semanticsLabel: t.shellPickerLoading),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, 0),
+              child: PageHeader(title: t.shellPickerTitle, showBack: canGoBack),
+            ),
+            Expanded(
+              child: projects.isEmpty
+                  ? _EmptyProjects(syncing: syncing)
+                  : LayoutBuilder(
+                      builder: (context, constraints) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          // The art takes the spare room, which keeps the rows low.
+                          const Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
+                              child: Center(
+                                child: ExcludeSemantics(
+                                  child: BuildingProgressArt(fraction: 0.62, animateEntry: false),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 1.5, child: ColoredBox(color: N360Colors.ink)),
-                        Flexible(child: body),
-                      ],
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxHeight: constraints.maxHeight * 0.68),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+                              child: LedgerCard(
+                                padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
+                                child: ListView.separated(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  itemCount: projects.length,
+                                  separatorBuilder: (context, index) => const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: N360Space.lg),
+                                    child: RuledDivider(),
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    final project = projects[index];
+                                    return StaggeredRise(
+                                      index: index,
+                                      child: _ProjectRow(
+                                        project: project,
+                                        isCurrent: project.id == selected,
+                                        currentLabel: t.shellPickerCurrent,
+                                        onTap: () => _choose(context, project),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
-/// Width of the column left of the red margin, where the project code sits.
-const double _codeColumn = 84;
 
 class _ProjectRow extends StatelessWidget {
   const _ProjectRow({
@@ -130,64 +117,38 @@ class _ProjectRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String? location = project.location?.trim().isEmpty ?? true ? null : project.location;
+    final String detail = <String>[project.code, ?location].join(' · ');
     return Semantics(
       container: true,
       button: true,
-      label: <String>[project.code, project.name, ?location, if (isCurrent) currentLabel].join(', '),
+      label: <String>[project.name, detail, if (isCurrent) currentLabel].join(', '),
       onTap: onTap,
       child: ExcludeSemantics(
         child: PressRow(
           onTap: onTap,
           minHeight: 76,
-          child: Row(
-            children: <Widget>[
-              SizedBox(
-                width: _codeColumn,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.xs, N360Space.sm),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        project.code,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: N360Type.figureSmall.copyWith(color: N360Colors.laterite, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: N360Space.md + 3),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm),
+            child: Row(
+              children: <Widget>[
+                IconTile(icon: Icons.apartment_outlined, semanticLabel: project.name, highlight: isCurrent),
+                const SizedBox(width: N360Space.md),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(project.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: N360Type.heading),
-                      if (location != null)
-                        Row(
-                          children: <Widget>[
-                            const Icon(Icons.place_outlined, size: 18, color: N360Colors.inkLabel),
-                            const SizedBox(width: 2),
-                            Flexible(child: Text(location, style: N360Type.body.copyWith(color: N360Colors.ink2))),
-                          ],
-                        ),
+                      Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
                     ],
                   ),
                 ),
-              ),
-              if (isCurrent)
-                Padding(
-                  padding: const EdgeInsets.only(right: N360Space.xs),
-                  child: RubberStamp(kind: StampKind.synced, label: currentLabel, size: StampSize.small),
-                ),
-              const Padding(
-                padding: EdgeInsets.only(right: N360Space.sm),
-                child: Icon(Icons.chevron_right, size: 28, color: N360Colors.ink2),
-              ),
-            ],
+                if (isCurrent) ...<Widget>[
+                  const SizedBox(width: N360Space.xs),
+                  RubberStamp(kind: StampKind.synced, label: currentLabel, size: StampSize.small),
+                ] else
+                  const Icon(Icons.chevron_right, size: 28, color: N360Colors.ink2),
+              ],
+            ),
           ),
         ),
       ),

@@ -3,11 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/app_services.dart';
 import '../../../../core/design/design.dart';
-import '../../../../core/design/internal/press_target.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../projects/data/project_repository.dart';
 import '../../bloc/boq_picker_cubit.dart';
 import '../../bloc/measurement_book.dart';
+import 'book_kit.dart';
 
 /// Opens the BOQ line picker. Returns the chosen line, or null.
 Future<BoqLine?> showBoqPicker(
@@ -83,7 +83,7 @@ class _BoqPicker extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.xs, N360Space.xs),
+            padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.md, N360Space.xs),
             child: Row(
               children: <Widget>[
                 Expanded(child: Text(l.measurementChooseLine, style: N360Type.title)),
@@ -95,7 +95,6 @@ class _BoqPicker extends StatelessWidget {
               ],
             ),
           ),
-          const RuledDivider.double(),
           Expanded(
             child: BlocBuilder<BoqPickerCubit, BoqPickerState>(
               builder: (context, state) {
@@ -127,7 +126,6 @@ class _BoqPicker extends StatelessWidget {
               },
             ),
           ),
-          const RuledDivider(),
           Padding(
             padding: EdgeInsets.fromLTRB(
               N360Space.gutter,
@@ -179,53 +177,63 @@ class _BoqRow extends StatelessWidget {
     final String balance = formatQty(line.previewBalance);
     final Color balanceInk = line.previewBalance.isNegative ? N360Colors.laterite : N360Colors.ink;
 
-    return PressTarget(
-      onTap: onTap,
-      haptic: N360Haptics.select,
-      minHeight: 76,
-      selected: selected,
-      semanticsLabel: '${line.item.code} ${line.item.description}. ${l.measurementBalance} $balance $unit',
-      builder: (context, depth, child) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: selected ? N360Colors.paper2 : N360Colors.sheet,
-          border: const Border(bottom: BorderSide(color: N360Colors.rule)),
-        ),
-        child: Transform.translate(offset: Offset(0, depth * 1.5), child: child),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm + 2, N360Space.gutter, N360Space.sm + 2),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(width: 58, child: Text(line.item.code, style: N360Type.figure.copyWith(fontSize: 17))),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(line.item.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: N360Type.bodyStrong),
-                  const SizedBox(height: 2),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: <Widget>[
-                      Text(unit, style: N360Type.caption),
-                      const Spacer(),
-                      Text('${l.measurementBalance} ', style: N360Type.caption),
-                      Text(
-                        balance,
-                        style: N360Type.figureSmall.copyWith(color: balanceInk, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter - 4, vertical: 2),
+      child: PressTarget(
+        onTap: onTap,
+        haptic: N360Haptics.select,
+        minHeight: 76,
+        selected: selected,
+        semanticsLabel: '${line.item.code} ${line.item.description}. ${l.measurementBalance} $balance $unit',
+        builder: (context, depth, child) => Transform.scale(
+          scale: pressScale(depth),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: selected ? N360Colors.goldTint : N360Colors.sheet,
+              borderRadius: N360Radius.tileRadius,
             ),
-            if (selected) ...const <Widget>[
-              SizedBox(width: N360Space.sm),
-              Icon(Icons.check, size: 24, color: N360Colors.ink),
+            child: child,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, N360Space.sm, 4, N360Space.sm),
+          child: Row(
+            children: <Widget>[
+              CodeTile(code: line.item.code),
+              const SizedBox(width: N360Space.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      line.item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.bodyStrong.copyWith(height: 1.3),
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: <Widget>[
+                        Text(unit, style: N360Type.caption),
+                        const Spacer(),
+                        Text('${l.measurementBalance} ', style: N360Type.caption),
+                        Text(
+                          balance,
+                          style: N360Type.figureSmall.copyWith(color: balanceInk, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (selected) ...const <Widget>[
+                SizedBox(width: N360Space.sm),
+                Icon(Icons.check, size: 24, color: N360Colors.ink),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

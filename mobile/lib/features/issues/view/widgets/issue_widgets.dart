@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/db/app_database.dart' show UserRow;
 import '../../../../core/design/design.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../attendance/view/widgets/field_kit.dart';
 import '../../bloc/issue_helpers.dart';
 import '../../data/issue_repository.dart';
 
@@ -13,11 +14,11 @@ String shortDate(BuildContext context, String isoDate) {
   return DateFormat('d MMM', locale).format(DateTime.parse(isoDate));
 }
 
-({Color ink, Color? fill}) _priorityLook(String priority) => switch (priority) {
-  'critical' => (ink: N360Colors.sheet, fill: N360Colors.stampRed),
-  'high' => (ink: N360Colors.laterite, fill: null),
-  'medium' => (ink: N360Colors.neel, fill: null),
-  _ => (ink: N360Colors.ink2, fill: null),
+({Color tile, Color icon, Color word}) _priorityLook(String priority) => switch (priority) {
+  'critical' => (tile: N360Colors.accent, icon: N360Colors.ink, word: N360Colors.stampRed),
+  'high' => (tile: N360Colors.goldTint, icon: N360Colors.ink, word: N360Colors.laterite),
+  'medium' => (tile: N360Colors.paper2, icon: N360Colors.neel, word: N360Colors.neel),
+  _ => (tile: N360Colors.paper2, icon: N360Colors.ink2, word: N360Colors.ink2),
 };
 
 /// Priority as a picture and a word, so it never depends on colour alone.
@@ -35,32 +36,25 @@ class PriorityMarker extends StatelessWidget {
     final Pictogram picture = N360Pictograms.priority(priority);
     final look = _priorityLook(priority);
     final String label = l.pictogramLabel(picture);
-    final bool critical = priority == 'critical';
 
-    final Widget icon = Icon(
-      picture.icon,
-      size: compact ? 20 : 24,
-      color: look.fill == null ? look.ink : N360Colors.sheet,
+    Widget tile(double size, double iconSize) => DecoratedBox(
+      decoration: BoxDecoration(
+        color: look.tile,
+        borderRadius: compact ? N360Radius.sm : N360Radius.md,
+      ),
+      child: SizedBox.square(
+        dimension: size,
+        child: Icon(picture.icon, size: iconSize, color: look.icon),
+      ),
     );
 
     if (compact) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (look.fill == null)
-            icon
-          else
-            DecoratedBox(
-              decoration: BoxDecoration(color: look.fill, borderRadius: N360Radius.sm),
-              child: Padding(padding: const EdgeInsets.all(2), child: icon),
-            ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: N360Type.bodyStrong.copyWith(
-              color: critical ? N360Colors.stampRed : look.ink,
-            ),
-          ),
+          tile(32, 20),
+          const SizedBox(width: 8),
+          Text(label, style: N360Type.bodyStrong.copyWith(color: look.word)),
         ],
       );
     }
@@ -73,25 +67,17 @@ class PriorityMarker extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: look.fill,
-                  borderRadius: N360Radius.sm,
-                  border: look.fill == null
-                      ? Border.all(color: look.ink.withValues(alpha: 0.8), width: 1.5)
-                      : null,
-                ),
-                child: SizedBox.square(dimension: 36, child: Center(child: icon)),
-              ),
-              const SizedBox(height: 3),
+              tile(52, 28),
+              const SizedBox(height: 4),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   label,
                   maxLines: 1,
                   style: N360Type.caption.copyWith(
-                    fontSize: 12.5,
-                    color: critical ? N360Colors.stampRed : look.ink,
+                    fontSize: 13,
+                    height: 1.2,
+                    color: look.word,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -104,7 +90,7 @@ class PriorityMarker extends StatelessWidget {
   }
 }
 
-/// The status as a rubber stamp, in words.
+/// The status as a stamp, in words.
 class IssueStatusStamp extends StatelessWidget {
   const IssueStatusStamp({
     super.key,
@@ -162,6 +148,39 @@ class IssueSyncStamp extends StatelessWidget {
   }
 }
 
+/// Overdue as a filled chip that reads from arm's length, in the palette's
+/// urgent colour with dark ink on it.
+class OverdueChip extends StatelessWidget {
+  const OverdueChip({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(color: N360Colors.accent, borderRadius: N360Radius.sm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(Icons.warning_amber, size: 17, color: N360Colors.ink),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: N360Type.bodyStrong.copyWith(fontSize: 15, height: 1.25, color: N360Colors.ink),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Due date, with overdue spelled out in words and an icon.
 class DueLine extends StatelessWidget {
   const DueLine({super.key, required this.issue, required this.today});
@@ -174,30 +193,33 @@ class DueLine extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final String? due = issue.dueDate;
     if (due == null) {
-      return _MetaLine(icon: Icons.event_busy, text: l.issuesNoDueDate);
+      return IssueMeta(icon: Icons.event_busy, text: l.issuesNoDueDate);
     }
     if (isOverdue(issue, today)) {
-      return _MetaLine(
-        icon: Icons.warning_amber,
-        text: l.issuesOverdue(daysBetween(due, today)),
-        color: N360Colors.stampRed,
-        strong: true,
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: OverdueChip(text: l.issuesOverdue(daysBetween(due, today))),
+        ),
       );
     }
     if (due == today && isOpenStatus(issue.status)) {
-      return _MetaLine(
+      return IssueMeta(
         icon: Icons.schedule,
         text: l.issuesDueToday,
-        color: N360Colors.haldiInk,
+        color: N360Colors.laterite,
         strong: true,
       );
     }
-    return _MetaLine(icon: Icons.event, text: l.issuesDueOn(shortDate(context, due)));
+    return IssueMeta(icon: Icons.event, text: l.issuesDueOn(shortDate(context, due)));
   }
 }
 
-class _MetaLine extends StatelessWidget {
-  const _MetaLine({
+/// One line of supporting information under an issue title.
+class IssueMeta extends StatelessWidget {
+  const IssueMeta({
+    super.key,
     required this.icon,
     required this.text,
     this.color = N360Colors.ink2,
@@ -232,85 +254,6 @@ class _MetaLine extends StatelessWidget {
   }
 }
 
-/// One line of supporting information under an issue title.
-class IssueMeta extends StatelessWidget {
-  const IssueMeta({super.key, required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => _MetaLine(icon: icon, text: text);
-}
-
-/// A selectable chip: the same pressable sheet as everything else, filled with
-/// ink when chosen. At least 56dp high for a gloved thumb.
-class SelectTile extends StatelessWidget {
-  const SelectTile({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.icon,
-    this.trailing,
-    this.semanticsLabel,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final IconData? icon;
-
-  /// A count or short note after the label.
-  final String? trailing;
-  final String? semanticsLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color ink = selected ? N360Colors.sheet : N360Colors.ink;
-    return LedgerCard(
-      padding: EdgeInsets.zero,
-      onTap: onTap,
-      semanticsLabel: semanticsLabel ?? (trailing == null ? label : '$label, $trailing'),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: selected ? N360Colors.ink : null,
-          borderRadius: N360Radius.sm,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: N360Size.tap - N360Size.edge),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                if (icon != null) ...<Widget>[
-                  Icon(icon, size: 20, color: ink),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  label,
-                  maxLines: 1,
-                  style: N360Type.bodyStrong.copyWith(color: ink),
-                ),
-                if (trailing != null) ...<Widget>[
-                  const SizedBox(width: 6),
-                  Text(
-                    trailing!,
-                    style: N360Type.figureSmall.copyWith(
-                      color: selected ? N360Colors.sheet : N360Colors.inkLabel,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// The result of the assignee sheet. A null [userId] means "not assigned".
 class AssigneeChoice {
   const AssigneeChoice(this.userId);
@@ -331,10 +274,9 @@ Future<AssigneeChoice?> showAssigneeSheet(
     isScrollControlled: true,
     backgroundColor: N360Colors.paper,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.medium)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
     ),
     builder: (sheetContext) {
-      final int itemCount = users.length + 1;
       return SizedBox(
         height: MediaQuery.sizeOf(sheetContext).height * 0.6,
         child: Column(
@@ -343,7 +285,7 @@ Future<AssigneeChoice?> showAssigneeSheet(
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 N360Space.gutter,
-                N360Space.md,
+                N360Space.lg,
                 N360Space.gutter,
                 N360Space.sm,
               ),
@@ -357,17 +299,16 @@ Future<AssigneeChoice?> showAssigneeSheet(
                   N360Space.gutter,
                   N360Space.lg,
                 ),
-                itemCount: itemCount,
+                itemCount: users.length + 1,
                 itemBuilder: (context, index) {
                   final UserRow? user = index == 0 ? null : users[index - 1];
-                  final bool selected = user == null ? current == null : user.id == current;
-                  final String label = user?.name ?? l.issuesUnassigned;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: N360Space.sm),
-                    child: SelectTile(
+                    child: FieldChoiceTile(
+                      width: double.infinity,
                       icon: user == null ? Icons.person_off_outlined : Icons.person,
-                      label: label,
-                      selected: selected,
+                      label: user?.name ?? l.issuesUnassigned,
+                      selected: user == null ? current == null : user.id == current,
                       onTap: () => Navigator.of(sheetContext).pop(AssigneeChoice(user?.id)),
                     ),
                   );

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -40,11 +41,28 @@ class ReturnedItem extends Equatable {
   List<Object?> get props => <Object?>[kind, uuid, date, remark, code, qty, unit];
 }
 
+/// Work done so far, by value. Null on [HomeState] when the project has no BOQ
+/// with a value, so a screen never shows a meaningless zero.
+class HomeProgress extends Equatable {
+  const HomeProgress({required this.percent, required this.fraction});
+
+  /// Two decimal places, such as `70.50`.
+  final String percent;
+
+  /// For drawing only: figures shown to people come from [percent].
+  final double fraction;
+
+  @override
+  List<Object?> get props => <Object?>[percent, fraction];
+}
+
 class HomeState extends Equatable {
   const HomeState({
     this.summary,
     this.returned = const <ReturnedItem>[],
     this.approvalsCount = 0,
+    this.openIssues = 0,
+    this.progress,
   });
 
   /// Null until the first read of the day's figures.
@@ -52,8 +70,28 @@ class HomeState extends Equatable {
   final List<ReturnedItem> returned;
   final int approvalsCount;
 
+  /// Open or in progress.
+  final int openIssues;
+  final HomeProgress? progress;
+
+  HomeState copyWith({
+    HomeSummary? summary,
+    List<ReturnedItem>? returned,
+    int? approvalsCount,
+    int? openIssues,
+    HomeProgress? Function()? progress,
+  }) {
+    return HomeState(
+      summary: summary ?? this.summary,
+      returned: returned ?? this.returned,
+      approvalsCount: approvalsCount ?? this.approvalsCount,
+      openIssues: openIssues ?? this.openIssues,
+      progress: progress == null ? this.progress : progress(),
+    );
+  }
+
   @override
-  List<Object?> get props => <Object?>[summary, returned, approvalsCount];
+  List<Object?> get props => <Object?>[summary, returned, approvalsCount, openIssues, progress];
 }
 
 /// Today's picture for one project, live from the local database.
@@ -75,6 +113,13 @@ class HomeCubit extends Cubit<HomeState> {
       _services.projects.watchBoqItems(projectId).listen((lines) {
         _boq = <int, BoqLine>{for (final line in lines) line.item.id: line};
         _publishReturned();
+        _publishProgress();
+      }),
+      _services.issues.watchByProject(projectId).listen((rows) {
+        final int open = rows
+            .where((r) => r.record.status == 'open' || r.record.status == 'in_progress')
+            .length;
+        if (!isClosed) emit(state.copyWith(openIssues: open));
       }),
       _services.syncCenter.watchOutbox().listen((items) {
         _queued = items;
@@ -94,15 +139,11 @@ class HomeCubit extends Cubit<HomeState> {
   List<OutboxItem> _queued = const <OutboxItem>[];
 
   void _onSummary(HomeSummary summary) {
-    if (!isClosed) {
-      emit(HomeState(summary: summary, returned: state.returned, approvalsCount: state.approvalsCount));
-    }
+    if (!isClosed) emit(state.copyWith(summary: summary));
   }
 
   void _onApprovals(int count) {
-    if (!isClosed) {
-      emit(HomeState(summary: state.summary, returned: state.returned, approvalsCount: count));
-    }
+    if (!isClosed) emit(state.copyWith(approvalsCount: count));
   }
 
   void _publishReturned() {
@@ -142,7 +183,28 @@ class HomeCubit extends Cubit<HomeState> {
           ),
     ]..sort((a, b) => b.date.compareTo(a.date));
 
-    emit(HomeState(summary: state.summary, returned: returned, approvalsCount: state.approvalsCount));
+    emit(state.copyWith(returned: returned));
+  }
+
+  /// Approved value over total value, in exact decimals. The fraction is made
+  /// last and only for drawing.
+  void _publishProgress() {
+    if (isClosed) return;
+    var approved = Decimal.zero;
+    var total = Decimal.zero;
+    for (final line in _boq.values) {
+      approved += line.item.approvedQty.value * line.item.rate.value;
+      total += line.item.qty.value * line.item.rate.value;
+    }
+    if (total <= Decimal.zero) {
+      emit(state.copyWith(progress: () => null));
+      return;
+    }
+    var ratio = (approved / total).toDecimal(scaleOnInfinitePrecision: 6);
+    if (ratio > Decimal.one) ratio = Decimal.one;
+    if (ratio < Decimal.zero) ratio = Decimal.zero;
+    final String percent = (ratio * Decimal.fromInt(100)).toStringAsFixed(2);
+    emit(state.copyWith(progress: () => HomeProgress(percent: percent, fraction: ratio.toDouble())));
   }
 
   @override

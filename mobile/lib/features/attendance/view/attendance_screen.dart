@@ -8,8 +8,9 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../bloc/attendance_cubit.dart';
 import 'widgets/add_worker_sheet.dart';
 import 'widgets/day_strip.dart';
+import 'widgets/field_kit.dart';
 import 'widgets/muster_row.dart';
-import 'widgets/totals_strip.dart';
+import 'widgets/muster_summary_card.dart';
 
 /// The muster roll: one tap per worker, written at once, no save button.
 class AttendanceScreen extends StatelessWidget {
@@ -87,39 +88,45 @@ class _MusterScroll extends StatelessWidget {
         const SliverToBoxAdapter(child: _Header()),
         SliverPersistentHeader(
           pinned: true,
-          delegate: _TotalsDelegate(extent: kTotalsStripHeight * scale),
+          delegate: _SummaryDelegate(
+            collapsed: kSummaryCollapsedHeight * scale,
+            expanded: (kSummaryCollapsedHeight + kSummaryHeroHeight + 10) * scale,
+          ),
         ),
         const SliverPadding(
           padding: EdgeInsets.only(top: N360Space.xs),
           sliver: _MusterList(),
         ),
-        const SliverPadding(padding: EdgeInsets.only(bottom: N360Space.xl)),
       ],
     );
   }
 }
 
-class _TotalsDelegate extends SliverPersistentHeaderDelegate {
-  const _TotalsDelegate({required this.extent});
+class _SummaryDelegate extends SliverPersistentHeaderDelegate {
+  const _SummaryDelegate({required this.collapsed, required this.expanded});
 
-  final double extent;
-
-  @override
-  double get minExtent => extent;
+  final double collapsed;
+  final double expanded;
 
   @override
-  double get maxExtent => extent;
+  double get minExtent => collapsed;
+
+  @override
+  double get maxExtent => expanded;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
-      child: const TotalsStrip(),
+      child: MusterSummaryCard(
+        fold: (shrinkOffset / (expanded - collapsed)).clamp(0.0, 1.0),
+      ),
     );
   }
 
   @override
-  bool shouldRebuild(_TotalsDelegate oldDelegate) => oldDelegate.extent != extent;
+  bool shouldRebuild(_SummaryDelegate oldDelegate) =>
+      oldDelegate.collapsed != collapsed || oldDelegate.expanded != expanded;
 }
 
 class _Header extends StatelessWidget {
@@ -132,53 +139,21 @@ class _Header extends StatelessWidget {
       buildWhen: (a, b) => a.date != b.date || a.project?.id != b.project?.id,
       builder: (context, state) {
         final String locale = Localizations.localeOf(context).toString();
-        final DateTime day = DateTime.parse(state.date);
-        final String date = DateFormat('d MMM', locale).format(day);
-        final String title = state.isToday
-            ? l.attendanceTodayTitle
-            : l.attendanceDateTitle(date);
+        final String date = DateFormat('d MMM', locale).format(DateTime.parse(state.date));
         final String? projectCode = state.project?.code;
 
-        return Padding(
-          padding: const EdgeInsets.only(top: N360Space.xs),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  N360Space.gutter,
-                  0,
-                  N360Space.gutter,
-                  0,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    if (Navigator.of(context).canPop())
-                      GloveButton(
-                        label: l.commonBack,
-                        kind: GloveButtonKind.ghost,
-                        icon: Icons.arrow_back,
-                        onPressed: () => Navigator.of(context).maybePop(),
-                      ),
-                    Expanded(
-                      child: SectionLabel(
-                        projectCode == null
-                            ? '${l.attendanceEyebrow} · $date'
-                            : '${l.attendanceEyebrow} · $projectCode',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-                child: SheetHeader(title: title),
-              ),
-              const SizedBox(height: N360Space.sm),
-              const DayStrip(),
-              const SizedBox(height: N360Space.xs),
-            ],
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            FieldTopBar(
+              title: state.isToday ? l.attendanceTodayTitle : l.attendanceDateTitle(date),
+              subtitle: projectCode == null
+                  ? l.attendanceEyebrow
+                  : '${l.attendanceEyebrow} · $projectCode',
+            ),
+            const DayStrip(),
+            const SizedBox(height: N360Space.xs),
+          ],
         );
       },
     );
@@ -192,7 +167,7 @@ class _MusterList extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     return BlocBuilder<AttendanceCubit, AttendanceState>(
-      buildWhen: (a, b) => a.load != b.load || !identical(a.items, b.items),
+      buildWhen: (a, b) => a.load != b.load || !identical(a.groups, b.groups),
       builder: (context, state) {
         switch (state.load) {
           case AttendanceLoad.loading:
@@ -217,7 +192,7 @@ class _MusterList extends StatelessWidget {
               ),
             );
           case AttendanceLoad.ready:
-            if (state.items.isEmpty) {
+            if (state.groups.isEmpty) {
               return SliverToBoxAdapter(
                 child: EmptyLedger(
                   title: l.attendanceNoWorkersTitle,
@@ -225,31 +200,54 @@ class _MusterList extends StatelessWidget {
                 ),
               );
             }
-            return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-              sliver: SliverList.builder(
-                itemCount: state.items.length,
-                itemBuilder: (context, index) {
-                  final MusterItem item = state.items[index];
-                  return StaggeredRise(
-                    index: index,
-                    maxAnimated: 8,
-                    child: switch (item) {
-                      MusterGroup() => MusterGroupHeader(
-                        key: ValueKey<String>('group-${item.trade}'),
-                        group: item,
-                      ),
-                      MusterWorker() => MusterRow(
-                        key: ValueKey<int>(item.id),
-                        worker: item,
-                      ),
-                    },
-                  );
-                },
-              ),
+            var firstIndex = 0;
+            return SliverMainAxisGroup(
+              slivers: <Widget>[
+                for (final group in state.groups)
+                  () {
+                    final int start = firstIndex;
+                    firstIndex += group.workers.length + 1;
+                    return _TradeCard(group: group, firstIndex: start);
+                  }(),
+              ],
             );
         }
       },
+    );
+  }
+}
+
+/// One trade's workers on a single white card. Rows are built lazily and carry
+/// no surface or shadow of their own.
+class _TradeCard extends StatelessWidget {
+  const _TradeCard({required this.group, required this.firstIndex});
+
+  final MusterGroup group;
+
+  /// Position of this card's first row in the whole muster, for the entrance.
+  final int firstIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return FieldGroupSliver(
+      sliver: SliverList.builder(
+        itemCount: group.workers.length + 1,
+        itemBuilder: (context, index) {
+          return StaggeredRise(
+            index: firstIndex + index,
+            maxAnimated: 8,
+            child: index == 0
+                ? MusterGroupHeader(
+                    key: ValueKey<String>('group-${group.trade}'),
+                    group: group,
+                  )
+                : MusterRow(
+                    key: ValueKey<int>(group.workers[index - 1].id),
+                    worker: group.workers[index - 1],
+                  ),
+          );
+        },
+      ),
     );
   }
 }
@@ -270,65 +268,48 @@ class _BottomActions extends StatelessWidget {
         final AttendanceCubit cubit = context.read<AttendanceCubit>();
         final bool animate = !context.motion.reduced;
 
-        return DecoratedBox(
-          decoration: const BoxDecoration(
-            color: N360Colors.sheet,
-            border: Border(top: BorderSide(color: N360Colors.ruleStrong)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                N360Space.gutter,
-                N360Space.sm,
-                N360Space.gutter,
-                N360Space.sm,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
+        return FieldActionBar(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (showAllPresent && !done)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 4, N360Space.xs + 2),
+                  child: Text(
+                    l.attendanceAllPresentHelper,
+                    style: N360Type.caption.copyWith(color: N360Colors.ink2),
+                  ),
+                ),
+              Row(
                 children: <Widget>[
-                  if (showAllPresent && !done)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: N360Space.xs),
-                      child: Text(
-                        l.attendanceAllPresentHelper,
-                        style: N360Type.caption.copyWith(color: N360Colors.ink2),
+                  if (showAllPresent)
+                    Expanded(
+                      child: GloveButton(
+                        label: done ? l.attendanceAllMarked : l.attendanceAllPresent(left),
+                        icon: done ? Icons.check_circle_outline : Icons.done_all,
+                        large: true,
+                        fullWidth: true,
+                        onPressed: done ? null : () => cubit.markAllPresent(animate: animate),
                       ),
                     ),
-                  Row(
-                    children: <Widget>[
-                      if (showAllPresent)
-                        Expanded(
-                          child: GloveButton(
-                            label: done ? l.attendanceAllMarked : l.attendanceAllPresent(left),
-                            icon: done ? Icons.check_circle_outline : Icons.done_all,
-                            large: true,
-                            fullWidth: true,
-                            onPressed: done
-                                ? null
-                                : () => cubit.markAllPresent(animate: animate),
-                          ),
-                        ),
-                      if (showAllPresent) ...<Widget>[
-                        const SizedBox(width: N360Space.sm),
-                        _AddWorkerTile(onTap: () => showAddWorkerSheet(context)),
-                      ] else
-                        Expanded(
-                          child: GloveButton(
-                            label: l.attendanceAddWorker,
-                            kind: GloveButtonKind.secondary,
-                            icon: Icons.person_add_alt_1,
-                            large: true,
-                            fullWidth: true,
-                            onPressed: () => showAddWorkerSheet(context),
-                          ),
-                        ),
-                    ],
-                  ),
+                  if (showAllPresent) ...<Widget>[
+                    const SizedBox(width: N360Space.sm),
+                    _AddWorkerTile(onTap: () => showAddWorkerSheet(context)),
+                  ] else
+                    Expanded(
+                      child: GloveButton(
+                        label: l.attendanceAddWorker,
+                        kind: GloveButtonKind.secondary,
+                        icon: Icons.person_add_alt_1,
+                        large: true,
+                        fullWidth: true,
+                        onPressed: () => showAddWorkerSheet(context),
+                      ),
+                    ),
                 ],
               ),
-            ),
+            ],
           ),
         );
       },
@@ -346,19 +327,19 @@ class _AddWorkerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    return SizedBox(
-      width: 92,
-      height: N360Size.tapLarge,
-      child: LedgerCard(
-        padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
-        onTap: onTap,
-        semanticsLabel: l.attendanceAddWorker,
-        child: SizedBox(
-          height: N360Size.tapLarge - N360Size.edge,
+    return PressTarget(
+      onTap: onTap,
+      minHeight: N360Size.tapLarge,
+      semanticsLabel: l.attendanceAddWorker,
+      child: SizedBox(
+        width: 92,
+        height: N360Size.tapLarge,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              const Icon(Icons.person_add_alt_1, size: 26, color: N360Colors.ink),
+              const Icon(Icons.person_add_alt_1, size: 24, color: N360Colors.ink),
               const SizedBox(height: 2),
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -370,6 +351,16 @@ class _AddWorkerTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+      builder: (context, depth, child) => Transform.scale(
+        scale: 1 - 0.035 * depth,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: N360Colors.paper2,
+            borderRadius: N360Radius.tileRadius,
+          ),
+          child: child,
         ),
       ),
     );

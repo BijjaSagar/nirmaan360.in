@@ -85,38 +85,21 @@ class _DetailView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     if (!state.online) OfflineBanner(label: l.approvalsOffline, detail: l.approvalsOfflineDetail),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(2, N360Space.xs, N360Space.gutter, 0),
-                      child: Row(
-                        children: <Widget>[
-                          LedgerBackKey(onTap: () => _leave(context)),
-                          const SizedBox(width: N360Space.xs),
-                          Expanded(
-                            child: Text(
-                              docTypeWord(l, row.docType),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: N360Type.title,
-                            ),
-                          ),
-                          if (row.status == 'IN_REVIEW')
-                            RubberStamp(kind: StampKind.inReview, label: l.statusInReview, size: StampSize.small),
-                        ],
-                      ),
-                    ),
+                    BookTitleBar(title: docTypeWord(l, row.docType), onBack: () => _leave(context)),
                     Expanded(
                       child: ListView(
-                        padding: const EdgeInsets.fromLTRB(
-                          N360Space.gutter,
-                          N360Space.sm,
-                          N360Space.gutter,
-                          N360Space.lg,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(N360Space.gutter, 6, N360Space.gutter, N360Space.lg),
                         children: <Widget>[
-                          _Hero(row: row, now: now),
+                          _Hero(row: row, now: now, share: shareOf(row, state.boq)),
                           if (isDeviationDoc(row)) ...<Widget>[
                             const SizedBox(height: N360Space.md),
-                            _DeviationNote(l: l),
+                            TintedNote(
+                              icon: Icons.warning_amber,
+                              ink: N360Colors.ink,
+                              fill: N360Colors.accent,
+                              title: l.approvalsDeviation,
+                              body: l.approvalsDeviationBody,
+                            ),
                           ],
                           const SizedBox(height: N360Space.md),
                           ApprovalDocument(row: row, today: services.context.today),
@@ -171,10 +154,11 @@ class _DetailView extends StatelessWidget {
 }
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.row, required this.now});
+  const _Hero({required this.row, required this.now, this.share});
 
   final ApprovalRow row;
   final DateTime now;
+  final ApprovalShare? share;
 
   @override
   Widget build(BuildContext context) {
@@ -186,74 +170,77 @@ class _Hero extends StatelessWidget {
       if (row.submittedAt != null) agoText(l, row.submittedAt, now),
     ].join(' · ');
     final Color figureInk = figure?.negative == true ? N360Colors.laterite : N360Colors.ink;
+    final ApprovalShare? portion = share;
 
     return LedgerCard(
-      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.md, N360Space.lg, N360Space.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (project.isNotEmpty) SectionLabel(project),
-          Text(row.title, style: N360Type.title.copyWith(fontSize: 22, height: 1.26)),
-          if (figure != null) ...<Widget>[
-            const SizedBox(height: N360Space.sm),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text.rich(
-                key: const ValueKey<String>('approval-figure'),
-                TextSpan(
-                  text: figure.value,
-                  children: <InlineSpan>[
-                    if (figure.unit != null)
-                      TextSpan(
-                        text: ' ${figure.unit}',
-                        style: N360Type.figure.copyWith(color: figureInk, fontSize: 20, fontWeight: FontWeight.w400),
-                      ),
+          Row(
+            children: <Widget>[
+              IconTile(icon: docTypeIcon(row.docType), semanticLabel: docTypeWord(l, row.docType)),
+              const SizedBox(width: N360Space.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (project.isNotEmpty)
+                      Text(project, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+                    Text(row.title, style: N360Type.heading.copyWith(height: 1.3)),
                   ],
                 ),
-                style: N360Type.figureHero.copyWith(color: figureInk),
               ),
+            ],
+          ),
+          if (figure != null) ...<Widget>[
+            const SizedBox(height: N360Space.sm),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text.rich(
+                      key: const ValueKey<String>('approval-figure'),
+                      TextSpan(
+                        text: figure.value,
+                        children: <InlineSpan>[
+                          if (figure.unit != null)
+                            TextSpan(
+                              text: ' ${figure.unit}',
+                              style: N360Type.heading.copyWith(color: figureInk, fontWeight: FontWeight.w500),
+                            ),
+                        ],
+                      ),
+                      style: N360Type.figureHero.copyWith(color: figureInk, fontSize: 40),
+                    ),
+                  ),
+                ),
+                if (portion != null) ...<Widget>[
+                  const SizedBox(width: N360Space.sm),
+                  Semantics(
+                    label: '${portion.label} ${l.measurementShareOfBoq}',
+                    child: ExcludeSemantics(
+                      child: SquarePercent(fraction: portion.fraction, label: portion.label, size: 60),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
-          const SizedBox(height: N360Space.sm),
-          const RuledDivider.double(),
           const SizedBox(height: N360Space.sm),
           Row(
             children: <Widget>[
               const Icon(Icons.person_outline, size: 20, color: N360Colors.ink2),
               const SizedBox(width: 6),
               Expanded(child: Text(who, style: N360Type.bodyStrong.copyWith(height: 1.3))),
+              if (row.status == 'IN_REVIEW')
+                RubberStamp(kind: StampKind.inReview, label: l.statusInReview, size: StampSize.small),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _DeviationNote extends StatelessWidget {
-  const _DeviationNote({required this.l});
-
-  final AppLocalizations l;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: N360Colors.sheet,
-        borderRadius: N360Radius.sm,
-        border: Border.all(color: N360Colors.laterite, width: 1.5),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(N360Space.md),
-        child: Row(
-          children: <Widget>[
-            RubberStamp(kind: StampKind.rejected, label: l.approvalsDeviation, size: StampSize.medium),
-            const SizedBox(width: N360Space.sm),
-            Expanded(child: Text(l.approvalsDeviationBody, style: N360Type.body)),
-          ],
-        ),
       ),
     );
   }
@@ -302,13 +289,10 @@ class _ActionBar extends StatelessWidget {
     // Once the server has accepted, the stamp's overlay holds the taps. The
     // buttons keep their look so the page does not change under the stamp.
     final bool enabled = state.actionsEnabled || state.finished;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: N360Colors.paper,
-        border: Border(top: BorderSide(color: N360Colors.ruleStrong)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.md),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.sm, 0, N360Space.sm, N360Space.sm),
+      child: LedgerCard(
+        padding: const EdgeInsets.all(N360Space.sm),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,

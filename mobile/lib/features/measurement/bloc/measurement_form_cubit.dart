@@ -133,6 +133,14 @@ class MeasurementFormState extends Equatable {
     return boq.previewBalance + (countedQty ?? Qty.zero) - qty;
   }
 
+  /// How much of the BOQ is spoken for once this entry counts.
+  Qty? get usedAfter {
+    final BoqLine? boq = line;
+    final Qty? balance = balanceAfter;
+    if (boq == null || balance == null) return null;
+    return boq.item.qty - balance;
+  }
+
   bool get deviation {
     final BoqLine? boq = line;
     if (boq == null) return false;

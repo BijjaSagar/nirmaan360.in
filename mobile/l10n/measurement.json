@@ -428,5 +428,25 @@
     "en": "No entries have this status.",
     "mr": "या स्थितीच्या नोंदी नाहीत.",
     "hi": "इस स्थिति की कोई एंट्री नहीं।"
+  },
+  "measurementBoqUsed": {
+    "en": "{percent} of BOQ used",
+    "mr": "BOQ चा {percent} वापरला",
+    "hi": "BOQ का {percent} उपयोग हुआ",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "measurementShareOfBoq": {
+    "en": "Share of BOQ",
+    "mr": "BOQ मधील वाटा",
+    "hi": "BOQ में हिस्सा"
+  },
+  "measurementBoqProgress": {
+    "en": "BOQ used",
+    "mr": "वापरलेला BOQ",
+    "hi": "उपयोग हुआ BOQ"
   }
 }

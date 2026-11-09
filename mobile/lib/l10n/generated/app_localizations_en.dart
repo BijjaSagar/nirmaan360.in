@@ -357,6 +357,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceLoadFailedTitle => 'Could not open the muster';
 
   @override
+  String get attendanceMarkedSoFar => 'Marked so far';
+
+  @override
   String get attendanceNoProjectMessage =>
       'Choose a project first, then mark the muster here.';
 
@@ -419,9 +422,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get attendanceSheetTradeRequired => 'Choose the trade.';
-
-  @override
-  String get attendanceSheetWage => 'Daily wage';
 
   @override
   String attendanceSheetWageFor(String name) {
@@ -595,6 +595,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprBalance => 'Balance';
 
   @override
+  String dprBoqDonePercent(int percent) {
+    return '$percent percent of BOQ measured';
+  }
+
+  @override
   String get dprBoqEmpty => 'No BOQ items found.';
 
   @override
@@ -675,6 +680,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprNothingRecorded => 'Nothing recorded';
 
   @override
+  String dprOfDays(int days) {
+    return 'of $days days';
+  }
+
+  @override
   String get dprOpenToday => 'Open today\'s report';
 
   @override
@@ -711,6 +721,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dprRemove => 'Remove';
+
+  @override
+  String get dprReportsThisMonth => 'Reports this month';
 
   @override
   String get dprReturnedNoRemark => 'Please correct and send again.';
@@ -817,6 +830,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dprWorkersOnSite => 'Workers on site';
+
+  @override
   String dprWorkersWord(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -829,6 +845,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dprWriteToday => 'Write today\'s report';
+
+  @override
+  String get dprYesterdayLabel => 'Yesterday';
 
   @override
   String get dprYesterdayTag => 'Yesterday';
@@ -859,9 +878,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get issuesDetailDue => 'Due date';
-
-  @override
-  String get issuesDetailLocation => 'Location';
 
   @override
   String get issuesDetailMissingMessage =>
@@ -929,9 +945,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get issuesFormLocationHint => 'Grid C, third floor';
-
-  @override
-  String get issuesFormNoDue => 'No date';
 
   @override
   String get issuesFormPriority => 'How urgent is it?';
@@ -1036,7 +1049,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementBookTitle => 'Measurement book';
 
   @override
+  String get measurementBoqProgress => 'BOQ used';
+
+  @override
   String get measurementBoqQty => 'BOQ';
+
+  @override
+  String measurementBoqUsed(String percent) {
+    return '$percent of BOQ used';
+  }
 
   @override
   String get measurementBreadth => 'Breadth';
@@ -1252,6 +1273,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not sent yet. It will go for approval when network returns.';
 
   @override
+  String get measurementShareOfBoq => 'Share of BOQ';
+
+  @override
   String get measurementStampSent => 'Sent';
 
   @override
@@ -1313,6 +1337,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashCategoryRequired => 'Choose what it was for.';
 
   @override
+  String get pettyCashConfirmed => 'Confirmed';
+
+  @override
   String get pettyCashDate => 'Date';
 
   @override
@@ -1334,16 +1361,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashEyebrow => 'Cash book';
 
   @override
+  String get pettyCashFinalAfterSync => 'The final balance comes after sync.';
+
+  @override
   String get pettyCashFormEyebrow => 'New expense';
 
   @override
   String get pettyCashFormTitle => 'Add an expense';
-
-  @override
-  String get pettyCashLoadFailedTitle => 'Could not open petty cash';
-
-  @override
-  String get pettyCashNext => 'Next';
 
   @override
   String get pettyCashNoProjectMessage =>
@@ -1377,11 +1401,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashProvisional => 'Provisional';
 
   @override
-  String pettyCashProvisionalNote(String amount) {
-    return '$amount on this phone is not sent yet. The final balance comes after sync.';
-  }
-
-  @override
   String get pettyCashSave => 'Save expense';
 
   @override
@@ -1407,7 +1426,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashTopup => 'Top-up';
 
   @override
+  String get pettyCashUnsent => 'Not sent yet';
+
+  @override
   String get pettyCashWallet => 'Wallet';
+
+  @override
+  String get shellCaptionMarked => 'marked';
+
+  @override
+  String get shellCaptionOpen => 'open';
+
+  @override
+  String get shellCaptionToday => 'today';
 
   @override
   String get shellDiscardBody =>
@@ -1494,6 +1525,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellPillWaiting => 'waiting';
+
+  @override
+  String get shellProgressBasis => 'By value of approved work';
+
+  @override
+  String get shellProgressDaysLate => 'Days late';
+
+  @override
+  String get shellProgressDaysLeft => 'Days left';
+
+  @override
+  String get shellProgressEmptyBody =>
+      'Progress will show here once the BOQ is added.';
+
+  @override
+  String get shellProgressEmptyTitle => 'No BOQ yet';
+
+  @override
+  String get shellProgressEnd => 'End';
+
+  @override
+  String get shellProgressNoEnd => 'Not set';
+
+  @override
+  String shellProgressSemantics(String percent) {
+    return '$percent percent complete';
+  }
+
+  @override
+  String get shellProgressTitle => 'Construction progress';
 
   @override
   String get shellReportAttention => 'Needs a look';
@@ -1668,6 +1729,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellTileDaily => 'Daily report';
+
+  @override
+  String get shellTileExpenses => 'Expenses';
 
   @override
   String get shellTileIssues => 'Issues';

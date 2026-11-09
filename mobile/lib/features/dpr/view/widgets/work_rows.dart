@@ -8,10 +8,8 @@ import '../../data/dpr_repository.dart';
 import 'dpr_format.dart';
 import 'dpr_ui.dart';
 
-/// A work-done row: what, how much, and a way to take it off the sheet.
-///
-/// The figure is a tile, so it reads as something that can be changed, and it
-/// opens the keypad at the current value.
+/// A work-done row: how far that BOQ line has got, what it is, and how much
+/// was done today. The figure is a tile, so it reads as something to change.
 class DprWorkRow extends StatefulWidget {
   const DprWorkRow({
     super.key,
@@ -62,60 +60,60 @@ class _DprWorkRowState extends State<DprWorkRow> {
         final BoqLine? boq = snapshot.data;
         final String unit = boq?.item.unit ?? '';
         final String description = boq?.item.description ?? widget.line.description ?? '';
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (boq != null)
-                      Text(
-                        boq.item.code,
-                        style: N360Type.figureSmall.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: N360Colors.ink2,
-                        ),
-                      ),
-                    Text(
-                      description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.body,
-                    ),
-                    if (boq != null)
-                      Text(
-                        '${l.dprBalance} ${dprQty(boq.previewBalance)} $unit',
-                        style: N360Type.caption,
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: N360Space.sm),
-              SizedBox(
-                width: 104,
-                child: DimensionTile(
-                  label: l.dprQtyShort,
-                  unit: unit.isEmpty ? null : unit,
-                  value: dprQty(widget.line.qty),
-                  onTap: widget.onChange,
-                ),
-              ),
-              const SizedBox(width: N360Space.xs),
-              DprTapPad(
-                onTap: widget.onRemove,
-                semanticsLabel: l.dprRemove,
-                minWidth: 60,
-                minHeight: 72,
-                child: SizedBox(
-                  width: 60,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (boq != null) ...<Widget>[
+                  DprBoqPercent(line: boq),
+                  const SizedBox(width: N360Space.md),
+                ],
+                Expanded(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const Icon(Icons.close, size: 26, color: N360Colors.stampRed),
+                      Text(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: N360Type.bodyStrong,
+                      ),
+                      if (boq != null)
+                        Text(
+                          '${boq.item.code} · ${l.dprBalance} ${dprQty(boq.previewBalance)} $unit',
+                          maxLines: 2,
+                          style: N360Type.caption,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: N360Space.sm),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: DimensionTile(
+                    label: l.dprQtyShort,
+                    unit: unit.isEmpty ? null : unit,
+                    value: dprQty(widget.line.qty),
+                    onTap: widget.onChange,
+                  ),
+                ),
+                const SizedBox(width: N360Space.sm),
+                DprTapPad(
+                  onTap: widget.onRemove,
+                  semanticsLabel: l.dprRemove,
+                  minWidth: 72,
+                  minHeight: 72,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const Icon(Icons.close, size: 24, color: N360Colors.stampRed),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
@@ -130,11 +128,37 @@ class _DprWorkRowState extends State<DprWorkRow> {
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         );
       },
+    );
+  }
+}
+
+/// The rounded-square progress mark for a BOQ line, measured against its
+/// full quantity. Says so out loud, because a bare number means nothing.
+class DprBoqPercent extends StatelessWidget {
+  const DprBoqPercent({super.key, required this.line, this.size = 56});
+
+  final BoqLine line;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final done = dprBoqDone(line);
+    return Semantics(
+      container: true,
+      label: l.dprBoqDonePercent(done.percent),
+      child: ExcludeSemantics(
+        child: SquarePercent(
+          fraction: done.fraction,
+          label: '${done.percent}%',
+          size: size,
+        ),
+      ),
     );
   }
 }

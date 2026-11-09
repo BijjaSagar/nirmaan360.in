@@ -67,3 +67,19 @@ String tolerancePercentLabel(String tolerancePct) {
   final Decimal? percent = Decimal.tryParse(tolerancePct);
   return percent?.toString() ?? tolerancePct;
 }
+
+/// How much of [whole] the [part] is, for drawing a progress mark. A layout
+/// value only: it is never shown as a figure or used in a sum. Null when the
+/// whole is zero.
+double? shareFraction(Qty part, Qty whole) {
+  if (whole <= Qty.zero) return null;
+  return (part.value.abs() / whole.value).toDouble();
+}
+
+/// The same share in words: `50%`, `<1%`, `−12%`. Null when the whole is zero.
+String? shareLabel(Qty part, Qty whole) {
+  if (whole <= Qty.zero) return null;
+  final BigInt percent = ((part.value.abs() * Decimal.fromInt(100)) / whole.value).round();
+  if (percent == BigInt.zero) return part.isZero ? '0%' : '<1%';
+  return '${part.isNegative ? figureMinus : ''}$percent%';
+}

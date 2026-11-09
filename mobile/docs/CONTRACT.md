@@ -221,18 +221,22 @@ Approvals are online only, by design: the app shows a clear message when offline
 
 ## 4. Design language
 
-Measurement-book paper: ledger sheets, a faint drafting grid, ruled lines, rubber-stamp statuses, square-ish corners (3 to 4 px). Fonts: Khand for headings, Mukta for body, DM Mono for figures. Devanagari needs generous line height (at least 1.35 for body).
+Warm and soft: a light warm page, large white rounded cards, big confident figures, orange progress with diagonal hatching, a floating bottom bar, and rubber-stamp statuses for documents. Fonts: Poppins for headings and big figures, Mukta for body, DM Mono only where columns of figures must align. Devanagari needs generous line height (at least 1.35 for body).
 
-| Token | Hex | Token | Hex |
-| --- | --- | --- | --- |
-| paper | `#f5f1e8` | laterite | `#b4451f` |
-| paper2 | `#ebe5d7` | lateriteDark | `#8f3416` |
-| sheet | `#fbf9f3` | haldi | `#e2a31a` |
-| ink | `#16201f` | neel | `#1b4a66` |
-| ink2 | `#3c4a47` | neelDeep | `#0f2c3d` |
-| ink3 | `#6b7773` (decoration only outdoors) | moss | `#3b6a4c` |
-| rule | `#d9d2c1` | | |
+| Role | Hex | Token |
+| --- | --- | --- |
+| Background | `#EFECEB` | `paper` |
+| Light surface | `#E3D6CF` | `peach`, `paper2` |
+| Warm beige | `#DCB8A4` | `beige` |
+| Card tint | `#E1C9BB` | `goldTint` |
+| Primary orange, progress and highlights | `#E1985E` | `haldi`, `amber` |
+| Deep orange, active | `#BC5E2F` | `orange` |
+| Delayed and urgent, as a fill | `#E63E06` | `accent` |
+| Text | `#070706` | `ink` |
+| Charcoal, secondary text | `#575250` | `ink2`, `inkLabel` |
+| Muted grey, decoration and disabled only | `#9FA2A7`, `#AAAAAA` | `ink3`, `muted` |
+| Cards | `#FFFFFF` | `sheet` |
 
-Outdoor contrast: body text at least 7:1 on paper, labels at least 4.5:1. Primary actions sit in the lower half of the screen for one-handed use.
+Outdoor contrast: body text at least 7:1, labels at least 4.5:1. Text on orange is dark ink. The deep oranges are below 4.5:1 on light surfaces, so small orange text and icons use `laterite` (`#8F4622`), a darker cut of `#BC5E2F`. Primary actions sit in the lower half of the screen for one-handed use, and every icon that stands for an action has a text label.
 
 Motion must mean something and stay cheap on a low-end Android phone: no blurs, no backdrop filters, no animated opacity on large subtrees, `RepaintBoundary` around anything that animates often, transforms over layout.

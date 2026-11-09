@@ -48,12 +48,23 @@ void main() {
     await report('2026-11-08', workers: 12);
     await show(tester);
 
-    final Offset newer = tester.getTopLeft(find.textContaining('8 Nov'));
-    final Offset older = tester.getTopLeft(find.textContaining('7 Nov'));
+    final Offset newer = tester.getTopLeft(find.text('Sunday'));
+    final Offset older = tester.getTopLeft(find.text('Saturday'));
     expect(newer.dy, lessThan(older.dy));
 
     expect(find.textContaining('12 workers'), findsOneWidget);
     expect(find.byType(RubberStamp), findsNWidgets(2));
+  });
+
+  testWidgets('the month card counts days with a report', (tester) async {
+    await report(today);
+    await report('2026-11-08');
+    await report('2026-10-31');
+    await show(tester);
+
+    expect(find.text('Reports this month'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget, reason: 'October is not this month');
+    expect(find.text('of 9 days'), findsOneWidget);
   });
 
   testWidgets('sync state is visible on each row', (tester) async {
@@ -84,7 +95,7 @@ void main() {
     await report('2026-11-07');
     await show(tester);
 
-    await tester.tap(find.textContaining('8 Nov'));
+    await tester.tap(find.text('Sunday'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await pumpDrift(tester, 10);
@@ -95,7 +106,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await pumpDrift(tester, 5);
 
-    await tester.tap(find.textContaining('7 Nov'));
+    await tester.tap(find.text('Saturday'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await pumpDrift(tester, 10);
@@ -117,7 +128,7 @@ void main() {
     await pumpDrift(tester, 10);
     await tester.pump(const Duration(milliseconds: 700));
 
-    await tester.tap(find.textContaining('8 Nov'));
+    await tester.tap(find.text('Sunday'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 60));
 

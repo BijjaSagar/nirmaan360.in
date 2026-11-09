@@ -50,6 +50,24 @@ Future<void> settle(WidgetTester tester, {Duration extra = const Duration(millis
   await pumpDrift(tester, 5);
 }
 
+/// Approved work worth 70.5% of the seeded 620 cum BOQ line, so the progress
+/// card has a real figure.
+Future<void> seedProgress(TestApp app) async {
+  final uuid = await app.services.measurements.create(
+    MeasurementInput(
+      projectId: 1,
+      boqItemId: 1,
+      measuredOn: '2026-11-07',
+      nos: Qty.fromInt(1),
+      length: Qty.parse('437.1'),
+    ),
+  );
+  await app.services.measurements.sendForApproval(uuid);
+  await app.sync();
+  app.api.setServerStatus(app.api.measurementByUuid(uuid), 'APPROVED');
+  await app.sync();
+}
+
 /// A second project, so the picker is not skipped.
 void addSecondProject(TestApp app) {
   app.api.addProject(id: 2, code: 'MH-07', name: 'Mahalaxmi Heights');
