@@ -10,6 +10,10 @@ import 'package:nirmaan360/features/issues/view/issue_detail_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_form_screen.dart';
 import 'package:nirmaan360/features/petty_cash/view/expense_form_screen.dart';
 import 'package:nirmaan360/features/petty_cash/view/petty_cash_screen.dart';
+import 'package:nirmaan360/features/petty_cash/view/top_up_screen.dart';
+import 'package:nirmaan360/features/petty_cash/view/wallet_form_screen.dart';
+import 'package:nirmaan360/features/projects/view/boq_form_screen.dart';
+import 'package:nirmaan360/features/projects/view/boq_screen.dart';
 
 import '../../../core/design/test_helpers.dart' show capturePng, loadRealFonts;
 import 'field_test_support.dart';
@@ -28,7 +32,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final app = await TestApp.create();
+    final app = await TestApp.create(api: FakeApi()..grant('boq.manage'));
     addTearDown(app.dispose);
     final today = app.services.context.today;
     await app.services.attendance.mark(
@@ -59,6 +63,10 @@ void main() {
       'issue_detail': IssueDetailScreen(clientUuid: uuid),
       'wallet': const PettyCashScreen(),
       'expense': const ExpenseFormScreen(),
+      'boq': const BoqScreen(),
+      'boq_form': const BoqFormScreen(),
+      'wallet_form': const WalletFormScreen(),
+      'top_up': const TopUpScreen(),
     };
 
     for (final entry in screens.entries) {

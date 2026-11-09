@@ -9,6 +9,7 @@ import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/failures.dart';
 import '../../../core/sync/ids.dart';
+import '../../../core/sync/pull_applier.dart';
 import '../../../core/sync/record_sync.dart';
 
 export '../../../core/db/app_database.dart' show PettyCashEntryRow, WalletRow;
@@ -16,18 +17,28 @@ export '../../../core/sync/record_sync.dart' show SyncedRecord, LocalSyncState;
 
 /// A wallet with the server's balance and the local preview.
 class WalletLine {
-  const WalletLine({required this.wallet, required this.unsentExpenses});
+  const WalletLine({
+    required this.wallet,
+    required this.unsentExpenses,
+    required this.unsentTopUps,
+  });
 
   final WalletRow wallet;
 
   /// Expenses on this phone the server balance does not include yet.
   final Money unsentExpenses;
 
+  /// Top-ups on this phone the server balance does not include yet.
+  final Money unsentTopUps;
+
   Money get serverBalance => wallet.balance;
 
-  /// Server balance minus unsent local expenses.
-  Money get previewBalance => wallet.balance - unsentExpenses;
+  /// Server balance plus unsent top-ups, minus unsent expenses.
+  Money get previewBalance => wallet.balance + unsentTopUps - unsentExpenses;
 }
+
+const _typeExpense = 'expense';
+const _typeTopUp = 'topup';
 
 class PettyCashRepository {
   PettyCashRepository(this._ctx);
@@ -52,17 +63,24 @@ class PettyCashRepository {
               ))
               .get();
 
-      final unsent = <int, Money>{};
+      final expenses = <int, Money>{};
+      final topUps = <int, Money>{};
       for (final entry in entries) {
-        if (entry.type != 'expense') continue;
-        unsent[entry.walletId] =
-            (unsent[entry.walletId] ?? Money.zero) + entry.amount;
+        final totals = switch (entry.type) {
+          _typeExpense => expenses,
+          _typeTopUp => topUps,
+          _ => null,
+        };
+        if (totals == null) continue;
+        totals[entry.walletId] =
+            (totals[entry.walletId] ?? Money.zero) + entry.amount;
       }
       return [
         for (final wallet in wallets)
           WalletLine(
             wallet: wallet,
-            unsentExpenses: unsent[wallet.id] ?? Money.zero,
+            unsentExpenses: expenses[wallet.id] ?? Money.zero,
+            unsentTopUps: topUps[wallet.id] ?? Money.zero,
           ),
       ];
     });
@@ -78,15 +96,7 @@ class PettyCashRepository {
     String? description,
     String? billSourcePath,
   }) async {
-    _ctx.assertNotFuture(entryDate, 'entry_date');
-    if (amount <= Money.zero) {
-      throw const ValidationFailure(
-        'The amount must be more than zero.',
-        errors: {
-          'amount': ['The amount must be more than zero.'],
-        },
-      );
-    }
+    _assertEntry(amount, entryDate);
     if (category == null || category.trim().isEmpty) {
       throw const ValidationFailure(
         'Choose a category.',
@@ -95,10 +105,7 @@ class PettyCashRepository {
         },
       );
     }
-    final wallet =
-        await (_db.select(_db.wallets)..where((t) => t.id.equals(walletId)))
-            .getSingleOrNull();
-    if (wallet == null) throw RecordLocked('Wallet $walletId was not found.');
+    final wallet = await _requireWallet(walletId);
 
     final uuid = newUuid();
     final billUuid = newUuid();
@@ -115,37 +122,15 @@ class PettyCashRepository {
 
     await _db.transaction(() async {
       final now = _ctx.clock.now();
-      await _db.into(_db.pettyCashEntries).insert(
-        PettyCashEntriesCompanion.insert(
-          clientUuid: uuid,
-          walletId: walletId,
-          projectId: Value(wallet.projectId),
-          amount: amount,
-          category: Value(category),
-          description: Value(description),
-          entryDate: entryDate,
-          createdBy: Value(_ctx.currentUserId),
-          hasBill: Value(billPath != null),
-          billRelativePath: Value(billPath),
-        ),
-      );
-      await _ctx.outbox.enqueue(
-        type: OutboxType.pettyCash,
-        wireUuid: uuid,
-        recordUuid: uuid,
-        groupUuid: uuid,
-        projectId: wallet.projectId,
-        data: {
-          'wallet_id': walletId,
-          'type': 'expense',
-          'amount': amount.toWire(),
-          'category': category,
-          'description': description,
-          'entry_date': entryDate,
-        },
-        clientUpdatedAt: _ctx.nextStamp(const []),
-        createdAt: now,
-        title: amount.inr(),
+      await _writeEntry(
+        uuid: uuid,
+        wallet: wallet,
+        type: _typeExpense,
+        amount: amount,
+        entryDate: entryDate,
+        category: category,
+        description: description,
+        billPath: billPath,
         subtitle: category,
       );
       if (billPath != null) {
@@ -167,6 +152,58 @@ class PettyCashRepository {
     return uuid;
   }
 
+  /// Records money added to a wallet and queues it, so it works offline.
+  /// Returns the entry's uuid.
+  Future<String> addTopUp({
+    required int walletId,
+    required Money amount,
+    required String entryDate,
+    String? description,
+  }) async {
+    _assertEntry(amount, entryDate);
+    final wallet = await _requireWallet(walletId);
+
+    final uuid = newUuid();
+    await _db.transaction(
+      () => _writeEntry(
+        uuid: uuid,
+        wallet: wallet,
+        type: _typeTopUp,
+        amount: amount,
+        entryDate: entryDate,
+        description: description,
+        subtitle: description,
+      ),
+    );
+    return uuid;
+  }
+
+  /// Creates a wallet on the server and stores it locally. Online only.
+  ///
+  /// Throws `OfflineFailure` when offline. Safe to retry after a lost reply.
+  Future<WalletRow> createWallet({
+    required int projectId,
+    required String name,
+    int? userId,
+  }) {
+    return _ctx.createOnline(
+      identity: ['wallet', projectId, name],
+      send: (clientUuid) => _ctx.api.createWallet(
+        projectId: projectId,
+        clientUuid: clientUuid,
+        name: name,
+        userId: userId,
+      ),
+      store: (json) async {
+        final row = PullApplier.walletCompanion(json);
+        await _db.into(_db.wallets).insertOnConflictUpdate(row);
+        return (_db.select(_db.wallets)
+              ..where((t) => t.id.equals(row.id.value)))
+            .getSingle();
+      },
+    );
+  }
+
   /// Entries for a wallet, newest first.
   Stream<List<SyncedRecord<PettyCashEntryRow>>> watchEntries(int walletId) {
     return _db.watchDerived({_db.pettyCashEntries, _db.outbox}, () async {
@@ -181,6 +218,74 @@ class PettyCashRepository {
       final states = await SyncStates.load(_db);
       return [for (final row in rows) states.wrap(row, row.clientUuid)];
     });
+  }
+
+  void _assertEntry(Money amount, String entryDate) {
+    _ctx.assertNotFuture(entryDate, 'entry_date');
+    if (amount <= Money.zero) {
+      throw const ValidationFailure(
+        'The amount must be more than zero.',
+        errors: {
+          'amount': ['The amount must be more than zero.'],
+        },
+      );
+    }
+  }
+
+  Future<WalletRow> _requireWallet(int walletId) async {
+    final wallet =
+        await (_db.select(_db.wallets)..where((t) => t.id.equals(walletId)))
+            .getSingleOrNull();
+    if (wallet == null) throw RecordLocked('Wallet $walletId was not found.');
+    return wallet;
+  }
+
+  /// The local row and its outbox row. Call inside a transaction.
+  Future<void> _writeEntry({
+    required String uuid,
+    required WalletRow wallet,
+    required String type,
+    required Money amount,
+    required String entryDate,
+    required String? subtitle,
+    String? category,
+    String? description,
+    String? billPath,
+  }) async {
+    await _db.into(_db.pettyCashEntries).insert(
+      PettyCashEntriesCompanion.insert(
+        clientUuid: uuid,
+        walletId: wallet.id,
+        projectId: Value(wallet.projectId),
+        type: Value(type),
+        amount: amount,
+        category: Value(category),
+        description: Value(description),
+        entryDate: entryDate,
+        createdBy: Value(_ctx.currentUserId),
+        hasBill: Value(billPath != null),
+        billRelativePath: Value(billPath),
+      ),
+    );
+    await _ctx.outbox.enqueue(
+      type: OutboxType.pettyCash,
+      wireUuid: uuid,
+      recordUuid: uuid,
+      groupUuid: uuid,
+      projectId: wallet.projectId,
+      data: {
+        'wallet_id': wallet.id,
+        'type': type,
+        'amount': amount.toWire(),
+        'category': category,
+        'description': description,
+        'entry_date': entryDate,
+      },
+      clientUpdatedAt: _ctx.nextStamp(const []),
+      createdAt: _ctx.clock.now(),
+      title: amount.inr(),
+      subtitle: subtitle,
+    );
   }
 
   /// Bytes of a bill: the local copy, or the server's.

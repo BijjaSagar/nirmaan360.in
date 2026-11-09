@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
@@ -9,6 +8,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/expense_form_cubit.dart';
 import '../data/petty_cash_repository.dart';
+import 'widgets/petty_widgets.dart';
 
 /// Amount on the keypad, then what it was for. An expense over the balance
 /// stops at the first step, in plain words.
@@ -108,39 +108,25 @@ class _AmountStep extends StatelessWidget {
                 N360Space.gutter,
                 N360Space.sm,
               ),
-              child: LedgerCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(l.pettyCashAmount, style: N360Type.heading),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: RollingMoney(
-                        value: formatTypedAmount(state.amountText),
-                        style: N360Type.figureHero.copyWith(
-                          color: over ? N360Colors.stampRed : N360Colors.ink,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: N360Space.xs),
-                    if (over)
-                      _OverBalanceNote(balance: limit!)
-                    else if (state.problem == ExpenseProblem.amountRequired)
-                      _Warn(text: l.pettyCashAmountRequired)
-                    else if (state.balanceAfter != null)
-                      Text(
+              child: PettyAmountCard(
+                label: l.pettyCashAmount,
+                typed: state.amountText,
+                color: over ? N360Colors.stampRed : N360Colors.ink,
+                footer: over
+                    ? _OverBalanceNote(balance: limit!)
+                    : state.problem == ExpenseProblem.amountRequired
+                    ? _Warn(text: l.pettyCashAmountRequired)
+                    : state.balanceAfter != null
+                    ? Text(
                         l.pettyCashBalanceAfter(state.balanceAfter!.inr()),
                         style: N360Type.body.copyWith(color: N360Colors.ink2),
                       )
-                    else if (limit != null)
-                      Text(
+                    : limit != null
+                    ? Text(
                         '${l.pettyCashBalance}: ${limit.inr()}',
                         style: N360Type.body.copyWith(color: N360Colors.ink2),
-                      ),
-                  ],
-                ),
+                      )
+                    : null,
               ),
             ),
           ),
@@ -247,9 +233,6 @@ class _DetailsStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final ExpenseFormCubit cubit = context.read<ExpenseFormCubit>();
-    final String locale = Localizations.localeOf(context).toString();
-    String shortDay(String iso) =>
-        DateFormat('d MMM', locale).format(DateTime.parse(iso));
     final Money? amount = state.amount;
 
     return ListView(
@@ -339,28 +322,11 @@ class _DetailsStep extends StatelessWidget {
         const SizedBox(height: N360Space.md),
         Text(l.pettyCashDate, style: N360Type.label),
         const SizedBox(height: N360Space.xs),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: FieldChoiceTile(
-                width: double.infinity,
-                label: l.pettyCashDayToday,
-                detail: shortDay(state.today),
-                selected: state.entryDate == state.today,
-                onTap: () => cubit.setDate(state.today),
-              ),
-            ),
-            const SizedBox(width: N360Space.sm),
-            Expanded(
-              child: FieldChoiceTile(
-                width: double.infinity,
-                label: l.pettyCashDayYesterday,
-                detail: shortDay(state.yesterday),
-                selected: state.entryDate == state.yesterday,
-                onTap: () => cubit.setDate(state.yesterday),
-              ),
-            ),
-          ],
+        PettyDateChoice(
+          today: state.today,
+          yesterday: state.yesterday,
+          value: state.entryDate ?? state.today,
+          onChanged: cubit.setDate,
         ),
         if (state.problem == ExpenseProblem.saveFailed) ...<Widget>[
           const SizedBox(height: N360Space.md),

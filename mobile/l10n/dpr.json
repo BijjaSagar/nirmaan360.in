@@ -1,104 +1,244 @@
 {
-  "dprFormTitle": { "en": "Daily report", "mr": "दैनिक अहवाल", "hi": "दैनिक रिपोर्ट" },
-  "dprListTitle": { "en": "Daily reports", "mr": "दैनिक अहवाल", "hi": "दैनिक रिपोर्ट" },
-
-  "dprSavedOnPhone": { "en": "Saved on phone", "mr": "फोनवर जतन झाले", "hi": "फ़ोन पर सेव हुआ" },
-  "dprSaving": { "en": "Saving on phone", "mr": "फोनवर जतन होत आहे", "hi": "फ़ोन पर सेव हो रहा है" },
-  "dprNotSaved": { "en": "Not saved", "mr": "जतन झाले नाही", "hi": "सेव नहीं हुआ" },
-
-  "dprSectionWeather": { "en": "Weather", "mr": "हवामान", "hi": "मौसम" },
-  "dprSectionWorkers": { "en": "Workers", "mr": "कामगार", "hi": "कामगार" },
-  "dprSectionWork": { "en": "Work done", "mr": "झालेले काम", "hi": "किया गया काम" },
-  "dprSectionPhotos": { "en": "Photos", "mr": "फोटो", "hi": "फ़ोटो" },
-  "dprSectionNotes": { "en": "Hindrances and notes", "mr": "अडथळे आणि टीप", "hi": "रुकावटें और नोट" },
-
+  "dprFormTitle": {
+    "en": "Daily report",
+    "mr": "दैनिक अहवाल",
+    "hi": "दैनिक रिपोर्ट"
+  },
+  "dprListTitle": {
+    "en": "Daily reports",
+    "mr": "दैनिक अहवाल",
+    "hi": "दैनिक रिपोर्ट"
+  },
+  "dprSavedOnPhone": {
+    "en": "Saved on phone",
+    "mr": "फोनवर जतन झाले",
+    "hi": "फ़ोन पर सेव हुआ"
+  },
+  "dprSaving": {
+    "en": "Saving on phone",
+    "mr": "फोनवर जतन होत आहे",
+    "hi": "फ़ोन पर सेव हो रहा है"
+  },
+  "dprNotSaved": {
+    "en": "Not saved",
+    "mr": "जतन झाले नाही",
+    "hi": "सेव नहीं हुआ"
+  },
+  "dprSectionWeather": {
+    "en": "Weather",
+    "mr": "हवामान",
+    "hi": "मौसम"
+  },
+  "dprSectionWorkers": {
+    "en": "Workers",
+    "mr": "कामगार",
+    "hi": "कामगार"
+  },
+  "dprSectionWork": {
+    "en": "Work done",
+    "mr": "झालेले काम",
+    "hi": "किया गया काम"
+  },
+  "dprSectionPhotos": {
+    "en": "Photos",
+    "mr": "फोटो",
+    "hi": "फ़ोटो"
+  },
+  "dprSectionNotes": {
+    "en": "Hindrances and notes",
+    "mr": "अडथळे आणि टीप",
+    "hi": "रुकावटें और नोट"
+  },
   "dprWorkersCount": {
     "en": "{count, plural, =1{1 worker} other{{count} workers}}",
     "mr": "{count} कामगार",
     "hi": "{count} कामगार",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "dprWorkersWord": {
     "en": "{count, plural, =1{worker} other{workers}}",
     "mr": "कामगार",
     "hi": "कामगार",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "dprRowsCount": {
     "en": "{count, plural, =1{1 work item} other{{count} work items}}",
     "mr": "{count, plural, =1{1 काम} other{{count} कामे}}",
     "hi": "{count, plural, =1{1 काम} other{{count} काम}}",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "dprPhotosCount": {
     "en": "{count, plural, =1{1 photo} other{{count} photos}}",
     "mr": "{count} फोटो",
     "hi": "{count} फ़ोटो",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "dprMoreRows": {
     "en": "and {count} more",
     "mr": "आणखी {count}",
     "hi": "{count} और",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
-  "dprTotalWorkers": { "en": "Total workers", "mr": "एकूण कामगार", "hi": "कुल कामगार" },
+  "dprTotalWorkers": {
+    "en": "Total workers",
+    "mr": "एकूण कामगार",
+    "hi": "कुल कामगार"
+  },
   "dprSameAsYesterday": {
     "en": "Same as yesterday ({count})",
     "mr": "कालच्यासारखेच ({count})",
     "hi": "कल जैसा ही ({count})",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-  "dprFilledFromYesterday": { "en": "Filled from yesterday", "mr": "कालच्या नोंदीवरून भरले", "hi": "कल की जानकारी से भरा" },
+  "dprFilledFromYesterday": {
+    "en": "Filled from yesterday",
+    "mr": "कालच्या नोंदीवरून भरले",
+    "hi": "कल की जानकारी से भरा"
+  },
   "dprMoreTrades": {
     "en": "More trades ({count})",
     "mr": "आणखी कामाचे प्रकार ({count})",
     "hi": "काम के और प्रकार ({count})",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
-  "dprAddWork": { "en": "Add work", "mr": "काम जोडा", "hi": "काम जोड़ें" },
-  "dprBalance": { "en": "Balance", "mr": "शिल्लक", "hi": "शेष" },
-  "dprQuantity": { "en": "Quantity", "mr": "प्रमाण", "hi": "मात्रा" },
-  "dprQtyShort": { "en": "Qty", "mr": "प्रमाण", "hi": "मात्रा" },
-  "dprRemove": { "en": "Remove", "mr": "काढा", "hi": "हटाएँ" },
-  "dprSearchBoq": { "en": "Search BOQ", "mr": "BOQ शोधा", "hi": "BOQ खोजें" },
-  "dprSearchHint": { "en": "Code or description", "mr": "कोड किंवा वर्णन", "hi": "कोड या विवरण" },
-  "dprBoqEmpty": { "en": "No BOQ items found.", "mr": "BOQ आयटम सापडले नाहीत.", "hi": "BOQ आइटम नहीं मिले।" },
-  "dprBoqNotSynced": {
-    "en": "BOQ not on this phone yet. Connect to the network once.",
-    "mr": "BOQ अजून या फोनवर आलेला नाही. एकदा नेटवर्कला जोडा.",
-    "hi": "BOQ अभी इस फ़ोन पर नहीं आया। एक बार नेटवर्क से जुड़ें।"
+  "dprAddWork": {
+    "en": "Add work",
+    "mr": "काम जोडा",
+    "hi": "काम जोड़ें"
   },
-  "dprAdd": { "en": "Add", "mr": "जोडा", "hi": "जोड़ें" },
-  "dprChooseAnother": { "en": "Other item", "mr": "दुसरा आयटम", "hi": "दूसरा आइटम" },
+  "dprBalance": {
+    "en": "Balance",
+    "mr": "शिल्लक",
+    "hi": "शेष"
+  },
+  "dprQuantity": {
+    "en": "Quantity",
+    "mr": "प्रमाण",
+    "hi": "मात्रा"
+  },
+  "dprQtyShort": {
+    "en": "Qty",
+    "mr": "प्रमाण",
+    "hi": "मात्रा"
+  },
+  "dprRemove": {
+    "en": "Remove",
+    "mr": "काढा",
+    "hi": "हटाएँ"
+  },
+  "dprSearchBoq": {
+    "en": "Search BOQ",
+    "mr": "BOQ शोधा",
+    "hi": "BOQ खोजें"
+  },
+  "dprSearchHint": {
+    "en": "Code or description",
+    "mr": "कोड किंवा वर्णन",
+    "hi": "कोड या विवरण"
+  },
+  "dprBoqEmpty": {
+    "en": "No BOQ items found.",
+    "mr": "BOQ आयटम सापडले नाहीत.",
+    "hi": "BOQ आइटम नहीं मिले।"
+  },
+  "dprAdd": {
+    "en": "Add",
+    "mr": "जोडा",
+    "hi": "जोड़ें"
+  },
+  "dprChooseAnother": {
+    "en": "Other item",
+    "mr": "दुसरा आयटम",
+    "hi": "दूसरा आइटम"
+  },
   "dprOverBalance": {
     "en": "More than the BOQ balance. Check the figure.",
     "mr": "BOQ शिलकीपेक्षा जास्त आहे. आकडा तपासा.",
     "hi": "BOQ शेष से ज़्यादा है। आँकड़ा जाँचें।"
   },
-  "dprYesterdayTag": { "en": "Yesterday", "mr": "काल", "hi": "कल" },
-  "dprAddedTag": { "en": "Added", "mr": "जोडले", "hi": "जोड़ा" },
-
-  "dprWorkersOnSite": { "en": "Workers on site", "mr": "साइटवरील कामगार", "hi": "साइट पर कामगार" },
-  "dprYesterdayLabel": { "en": "Yesterday", "mr": "काल", "hi": "कल" },
-  "dprReportsThisMonth": { "en": "Reports this month", "mr": "या महिन्याचे अहवाल", "hi": "इस महीने की रिपोर्ट" },
+  "dprYesterdayTag": {
+    "en": "Yesterday",
+    "mr": "काल",
+    "hi": "कल"
+  },
+  "dprAddedTag": {
+    "en": "Added",
+    "mr": "जोडले",
+    "hi": "जोड़ा"
+  },
+  "dprWorkersOnSite": {
+    "en": "Workers on site",
+    "mr": "साइटवरील कामगार",
+    "hi": "साइट पर कामगार"
+  },
+  "dprYesterdayLabel": {
+    "en": "Yesterday",
+    "mr": "काल",
+    "hi": "कल"
+  },
+  "dprReportsThisMonth": {
+    "en": "Reports this month",
+    "mr": "या महिन्याचे अहवाल",
+    "hi": "इस महीने की रिपोर्ट"
+  },
   "dprOfDays": {
     "en": "of {days} days",
     "mr": "{days} दिवसांपैकी",
     "hi": "{days} दिनों में से",
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "dprBoqDonePercent": {
     "en": "{percent} percent of BOQ measured",
     "mr": "BOQ चे {percent} टक्के मोजले",
     "hi": "BOQ का {percent} प्रतिशत मापा गया",
-    "placeholders": { "percent": { "type": "int" } }
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
   },
-
-  "dprTakePhoto": { "en": "Take photo", "mr": "फोटो काढा", "hi": "फ़ोटो लें" },
-  "dprPhotoMissing": { "en": "Not available", "mr": "उपलब्ध नाही", "hi": "उपलब्ध नहीं" },
+  "dprTakePhoto": {
+    "en": "Take photo",
+    "mr": "फोटो काढा",
+    "hi": "फ़ोटो लें"
+  },
+  "dprPhotoMissing": {
+    "en": "Not available",
+    "mr": "उपलब्ध नाही",
+    "hi": "उपलब्ध नहीं"
+  },
   "dprPhotosFull": {
     "en": "A report can hold 10 photos.",
     "mr": "एका अहवालात 10 फोटोपर्यंत ठेवता येतात.",
@@ -114,19 +254,61 @@
     "mr": "हा फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.",
     "hi": "यह फ़ोटो नहीं जुड़ी। फिर से कोशिश करें।"
   },
-
-  "dprAddNotes": { "en": "Add hindrances or notes", "mr": "अडथळे किंवा टीप लिहा", "hi": "रुकावटें या नोट लिखें" },
-  "dprOptional": { "en": "Optional", "mr": "ऐच्छिक", "hi": "वैकल्पिक" },
-  "dprHindrances": { "en": "Hindrances", "mr": "अडथळे", "hi": "रुकावटें" },
-  "dprHindrancesHint": { "en": "Material late, rain, power cut", "mr": "साहित्य उशिरा, पाऊस, वीज गेली", "hi": "सामान देर से, बारिश, बिजली गई" },
-  "dprNotes": { "en": "Notes", "mr": "टीप", "hi": "नोट" },
-  "dprNotesHint": { "en": "Anything else from today", "mr": "आजचे आणखी काही", "hi": "आज का और कुछ" },
-
-  "dprSendReport": { "en": "Send report", "mr": "अहवाल पाठवा", "hi": "रिपोर्ट भेजें" },
-  "dprSendAgain": { "en": "Send again", "mr": "पुन्हा पाठवा", "hi": "फिर से भेजें" },
-  "dprSend": { "en": "Send", "mr": "पाठवा", "hi": "भेजें" },
-  "dprEdit": { "en": "Edit", "mr": "बदला", "hi": "बदलें" },
-  "dprReviewTitle": { "en": "Check and send", "mr": "तपासा आणि पाठवा", "hi": "जाँचें और भेजें" },
+  "dprAddNotes": {
+    "en": "Add hindrances or notes",
+    "mr": "अडथळे किंवा टीप लिहा",
+    "hi": "रुकावटें या नोट लिखें"
+  },
+  "dprOptional": {
+    "en": "Optional",
+    "mr": "ऐच्छिक",
+    "hi": "वैकल्पिक"
+  },
+  "dprHindrances": {
+    "en": "Hindrances",
+    "mr": "अडथळे",
+    "hi": "रुकावटें"
+  },
+  "dprHindrancesHint": {
+    "en": "Material late, rain, power cut",
+    "mr": "साहित्य उशिरा, पाऊस, वीज गेली",
+    "hi": "सामान देर से, बारिश, बिजली गई"
+  },
+  "dprNotes": {
+    "en": "Notes",
+    "mr": "टीप",
+    "hi": "नोट"
+  },
+  "dprNotesHint": {
+    "en": "Anything else from today",
+    "mr": "आजचे आणखी काही",
+    "hi": "आज का और कुछ"
+  },
+  "dprSendReport": {
+    "en": "Send report",
+    "mr": "अहवाल पाठवा",
+    "hi": "रिपोर्ट भेजें"
+  },
+  "dprSendAgain": {
+    "en": "Send again",
+    "mr": "पुन्हा पाठवा",
+    "hi": "फिर से भेजें"
+  },
+  "dprSend": {
+    "en": "Send",
+    "mr": "पाठवा",
+    "hi": "भेजें"
+  },
+  "dprEdit": {
+    "en": "Edit",
+    "mr": "बदला",
+    "hi": "बदलें"
+  },
+  "dprReviewTitle": {
+    "en": "Check and send",
+    "mr": "तपासा आणि पाठवा",
+    "hi": "जाँचें और भेजें"
+  },
   "dprReviewOffline": {
     "en": "No network now. The report stays on this phone and goes by itself when network returns.",
     "mr": "आत्ता नेटवर्क नाही. अहवाल या फोनवर राहील आणि नेटवर्क आल्यावर आपोआप जाईल.",
@@ -142,8 +324,11 @@
     "mr": "फोनवर जतन झाले, आता पाठवत आहे",
     "hi": "फ़ोन पर सेव हुआ, अभी भेज रहे हैं"
   },
-
-  "dprNeedWeather": { "en": "Choose today's weather.", "mr": "आजचे हवामान निवडा.", "hi": "आज का मौसम चुनें।" },
+  "dprNeedWeather": {
+    "en": "Choose today's weather.",
+    "mr": "आजचे हवामान निवडा.",
+    "hi": "आज का मौसम चुनें।"
+  },
   "dprNeedWorkers": {
     "en": "Enter the workers who came. If the site was closed, write why under Hindrances.",
     "mr": "आलेल्या कामगारांची संख्या भरा. साइट बंद असेल तर अडथळ्यांमध्ये कारण लिहा.",
@@ -164,30 +349,79 @@
     "mr": "अहवाल जतन करता आला नाही. पुन्हा प्रयत्न करा.",
     "hi": "रिपोर्ट सेव नहीं हो सकी। फिर से कोशिश करें।"
   },
-
-  "dprReturnedTitle": { "en": "Sent back for correction", "mr": "दुरुस्तीसाठी परत पाठवले", "hi": "सुधार के लिए वापस भेजा" },
-  "dprApproverRemark": { "en": "Approver's remark", "mr": "मंजुरी देणाऱ्याचा शेरा", "hi": "मंज़ूरी देने वाले की टिप्पणी" },
-  "dprReturnedNoRemark": { "en": "Please correct and send again.", "mr": "कृपया दुरुस्त करून पुन्हा पाठवा.", "hi": "कृपया सुधारकर फिर से भेजें।" },
-  "dprCorrectAndSend": { "en": "Correct and send again", "mr": "दुरुस्त करून पुन्हा पाठवा", "hi": "सुधारकर फिर से भेजें" },
-
-  "dprWriteToday": { "en": "Write today's report", "mr": "आजचा अहवाल लिहा", "hi": "आज की रिपोर्ट लिखें" },
-  "dprOpenToday": { "en": "Open today's report", "mr": "आजचा अहवाल उघडा", "hi": "आज की रिपोर्ट खोलें" },
-  "dprEmptyTitle": { "en": "No reports yet", "mr": "अजून अहवाल नाहीत", "hi": "अभी कोई रिपोर्ट नहीं" },
+  "dprReturnedTitle": {
+    "en": "Sent back for correction",
+    "mr": "दुरुस्तीसाठी परत पाठवले",
+    "hi": "सुधार के लिए वापस भेजा"
+  },
+  "dprApproverRemark": {
+    "en": "Approver's remark",
+    "mr": "मंजुरी देणाऱ्याचा शेरा",
+    "hi": "मंज़ूरी देने वाले की टिप्पणी"
+  },
+  "dprReturnedNoRemark": {
+    "en": "Please correct and send again.",
+    "mr": "कृपया दुरुस्त करून पुन्हा पाठवा.",
+    "hi": "कृपया सुधारकर फिर से भेजें।"
+  },
+  "dprCorrectAndSend": {
+    "en": "Correct and send again",
+    "mr": "दुरुस्त करून पुन्हा पाठवा",
+    "hi": "सुधारकर फिर से भेजें"
+  },
+  "dprWriteToday": {
+    "en": "Write today's report",
+    "mr": "आजचा अहवाल लिहा",
+    "hi": "आज की रिपोर्ट लिखें"
+  },
+  "dprOpenToday": {
+    "en": "Open today's report",
+    "mr": "आजचा अहवाल उघडा",
+    "hi": "आज की रिपोर्ट खोलें"
+  },
+  "dprEmptyTitle": {
+    "en": "No reports yet",
+    "mr": "अजून अहवाल नाहीत",
+    "hi": "अभी कोई रिपोर्ट नहीं"
+  },
   "dprEmptyMessage": {
     "en": "Your first report starts this book.",
     "mr": "तुमचा पहिला अहवाल या वहीची सुरुवात करेल.",
     "hi": "आपकी पहली रिपोर्ट से यह बही शुरू होगी।"
   },
-  "dprNoProject": { "en": "Pick a project first", "mr": "आधी प्रकल्प निवडा", "hi": "पहले प्रोजेक्ट चुनें" },
-
-  "dprSyncPhoneOnly": { "en": "Only on this phone", "mr": "फक्त या फोनवर", "hi": "केवल इस फ़ोन पर" },
-  "dprSyncWaiting": { "en": "Waiting to send", "mr": "पाठवायचे बाकी", "hi": "भेजना बाकी" },
-  "dprSyncSending": { "en": "Sending", "mr": "पाठवत आहे", "hi": "भेज रहे हैं" },
-  "dprSyncAttention": { "en": "Needs attention", "mr": "लक्ष द्या", "hi": "ध्यान दें" },
+  "dprNoProject": {
+    "en": "Pick a project first",
+    "mr": "आधी प्रकल्प निवडा",
+    "hi": "पहले प्रोजेक्ट चुनें"
+  },
+  "dprSyncPhoneOnly": {
+    "en": "Only on this phone",
+    "mr": "फक्त या फोनवर",
+    "hi": "केवल इस फ़ोन पर"
+  },
+  "dprSyncWaiting": {
+    "en": "Waiting to send",
+    "mr": "पाठवायचे बाकी",
+    "hi": "भेजना बाकी"
+  },
+  "dprSyncSending": {
+    "en": "Sending",
+    "mr": "पाठवत आहे",
+    "hi": "भेज रहे हैं"
+  },
+  "dprSyncAttention": {
+    "en": "Needs attention",
+    "mr": "लक्ष द्या",
+    "hi": "ध्यान दें"
+  },
   "dprAttentionBody": {
     "en": "This report could not be sent. Open Outbox to fix it.",
     "mr": "हा अहवाल पाठवता आला नाही. दुरुस्तीसाठी आउटबॉक्स उघडा.",
     "hi": "यह रिपोर्ट नहीं भेजी जा सकी। ठीक करने के लिए आउटबॉक्स खोलें।"
   },
-  "dprNothingRecorded": { "en": "Nothing recorded", "mr": "काहीही नोंदवलेले नाही", "hi": "कुछ दर्ज नहीं" }
+  "dprNothingRecorded": {
+    "en": "Nothing recorded",
+    "mr": "काहीही नोंदवलेले नाही",
+    "hi": "कुछ दर्ज नहीं"
+  }
 }

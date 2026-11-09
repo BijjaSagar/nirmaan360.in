@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
+import '../../../core/sync/pull_applier.dart';
 
 /// A BOQ line with the server's balance and the local preview.
 class BoqLine {
@@ -19,6 +20,21 @@ class BoqLine {
 
   /// Server balance minus unsent local entries.
   Qty get previewBalance => item.balanceQty - unsentQty;
+}
+
+/// How far a project's setup has got.
+class ProjectSetup {
+  const ProjectSetup({
+    required this.boqCount,
+    required this.workerCount,
+    required this.walletCount,
+  });
+
+  final int boqCount;
+
+  /// Active workers. Workers belong to the organisation, not to one project.
+  final int workerCount;
+  final int walletCount;
 }
 
 /// Lookup lists from the last pull, so forms work offline.
@@ -71,6 +87,96 @@ class ProjectRepository {
     return (_db.select(_db.projects)
           ..orderBy([(t) => OrderingTerm.asc(t.name)]))
         .watch();
+  }
+
+  /// Creates a project on the server and stores it locally. Online only.
+  /// The caller selects it afterwards with [selectProject].
+  ///
+  /// Throws `OfflineFailure` when offline and `ValidationFailure` with the
+  /// server's `errors`, including `plan` at the plan's project limit.
+  Future<ProjectRow> createProject({
+    required String name,
+    String? location,
+    String? startDate,
+    String? endDate,
+    Money? contractValue,
+  }) {
+    return _ctx.createOnline(
+      identity: ['project', name],
+      send: (clientUuid) => _ctx.api.createProject(
+        clientUuid: clientUuid,
+        name: name,
+        location: location,
+        startDate: startDate,
+        endDate: endDate,
+        contractValue: contractValue?.toWire(),
+      ),
+      store: (json) async {
+        final row = PullApplier.projectCompanion(json);
+        await _db.into(_db.projects).insertOnConflictUpdate(row);
+        return (_db.select(_db.projects)
+              ..where((t) => t.id.equals(row.id.value)))
+            .getSingle();
+      },
+    );
+  }
+
+  /// Adds a BOQ line on the server and stores it locally. Online only.
+  /// A blank [code] becomes the next number in the project.
+  Future<BoqItemRow> addBoqItem({
+    required int projectId,
+    required String description,
+    required String unit,
+    required Qty qty,
+    required Money rate,
+    String? code,
+    String? section,
+  }) {
+    return _ctx.createOnline(
+      identity: ['boq', projectId, description, unit, code, section],
+      send: (clientUuid) => _ctx.api.addBoqItem(
+        projectId: projectId,
+        clientUuid: clientUuid,
+        description: description,
+        unit: unit,
+        qty: qty.toWire(),
+        rate: rate.toWire(),
+        code: code,
+        section: section,
+      ),
+      store: (json) async {
+        var row = PullApplier.boqItemCompanion(json);
+        // Nothing is measured on a new line, so its balance is its quantity.
+        if (json['balance_qty'] == null) {
+          row = row.copyWith(balanceQty: row.qty);
+        }
+        await _db.into(_db.boqItems).insertOnConflictUpdate(row);
+        return (_db.select(_db.boqItems)
+              ..where((t) => t.id.equals(row.id.value)))
+            .getSingle();
+      },
+    );
+  }
+
+  /// Live counts of what has been set up for a project.
+  Stream<ProjectSetup> watchSetup(int projectId) {
+    return _db
+        .customSelect(
+          'SELECT '
+          '(SELECT COUNT(*) FROM boq_items WHERE project_id = ?1) AS boq, '
+          '(SELECT COUNT(*) FROM workers WHERE is_active = 1) AS workers, '
+          '(SELECT COUNT(*) FROM wallets WHERE project_id = ?1) AS wallets',
+          variables: [Variable.withInt(projectId)],
+          readsFrom: {_db.boqItems, _db.workers, _db.wallets},
+        )
+        .watchSingle()
+        .map(
+          (row) => ProjectSetup(
+            boqCount: row.read<int>('boq'),
+            workerCount: row.read<int>('workers'),
+            walletCount: row.read<int>('wallets'),
+          ),
+        );
   }
 
   Future<void> selectProject(int projectId) =>

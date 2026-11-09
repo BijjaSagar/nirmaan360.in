@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max;
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
@@ -31,6 +32,7 @@ class FakeApi implements NirmaanApi {
   final List<String> _scriptedStatuses = [];
   int _lostPushResponses = 0;
   int _lostUploadResponses = 0;
+  int _lostSetupResponses = 0;
   Completer<void>? _pushGate;
 
   /// The next `push` throws [failure] without touching server state.
@@ -57,6 +59,16 @@ class FakeApi implements NirmaanApi {
 
   /// The next upload is stored on the server, then the response is lost.
   void loseNextUploadResponse() => _lostUploadResponses++;
+
+  /// The next setup create is stored on the server, then the reply is lost.
+  void loseNextSetupResponse() => _lostSetupResponses++;
+
+  /// Projects beyond this count are refused as a plan limit: a 422 with
+  /// `errors.plan`. Null means no limit.
+  int? planProjectLimit;
+
+  /// Gives the signed-in user a permission, e.g. `project.manage`.
+  void grant(String permission) => (user['can'] as Map)[permission] = true;
 
   /// When set, returned instead of the real `pull` body.
   Map<String, dynamic>? pullBodyOverride;
@@ -101,6 +113,8 @@ class FakeApi implements NirmaanApi {
       'measurement.approve': false,
       'ra_bill.view': false,
       'ra_bill.approve': false,
+      'project.manage': false,
+      'boq.manage': false,
     },
   };
 
@@ -193,13 +207,13 @@ class FakeApi implements NirmaanApi {
     });
   }
 
-  void addBoqItem({
+  void _seedBoqItem({
     required int id,
     required int projectId,
     required String code,
-    String qty = '100.000',
-    String rate = '500.00',
-    String unit = 'cum',
+    required String qty,
+    required String rate,
+    required String unit,
   }) {
     boqItems.add({
       'id': id,
@@ -760,6 +774,16 @@ class FakeApi implements NirmaanApi {
         'entry_date': ['The date must be today or earlier.'],
       });
     }
+    if (data['type'] != 'expense' && data['type'] != 'topup') {
+      return _error(item, {
+        'type': ['The selected type is invalid.'],
+      });
+    }
+    if (data['type'] == 'expense' && data['category'] == null) {
+      return _error(item, {
+        'category': ['The category field is required.'],
+      });
+    }
     final created = <String, dynamic>{
       'id': _nextId++,
       'client_uuid': item.clientUuid,
@@ -774,12 +798,11 @@ class FakeApi implements NirmaanApi {
       'updated_at': _stampNow(),
     };
     pettyEntries.add(created);
-    if (data['type'] == 'expense') {
-      final balance =
-          Decimal.parse(wallet['balance'] as String) -
-          Decimal.parse(data['amount'] as String);
-      wallet['balance'] = balance.toStringAsFixed(2);
-    }
+    final amount = Decimal.parse(data['amount'] as String);
+    final balance = Decimal.parse(wallet['balance'] as String);
+    wallet['balance'] =
+        (data['type'] == 'expense' ? balance - amount : balance + amount)
+            .toStringAsFixed(2);
     return _result(item, 'created', created);
   }
 
@@ -992,6 +1015,213 @@ class FakeApi implements NirmaanApi {
     _approvalActs[clientUuid] = item;
     approvalInbox.removeWhere((a) => a['id'] == approvalId);
     return item;
+  }
+
+  // Setup from the app ------------------------------------------------------
+
+  /// HTTP status of each setup create, in order: 201 new, 200 repeated.
+  final List<int> setupStatuses = [];
+  final Map<String, Row> _setupByUuid = {};
+
+  static const planLimitMessage =
+      'Your plan project limit has been reached. Upgrade to add more.';
+
+  void _requireSetupPermission(String permission) {
+    if ((user['can'] as Map)[permission] != true) {
+      throw const ServerFailure('This action is forbidden.', statusCode: 403);
+    }
+  }
+
+  void _requireProject(int projectId) {
+    if (!projects.any((p) => p['id'] == projectId)) {
+      throw const ServerFailure('Not found.', statusCode: 404);
+    }
+  }
+
+  void _requireField(String field, String? value) {
+    if (value == null || value.trim().isEmpty) {
+      throw ValidationFailure(
+        'The $field field is required.',
+        errors: {
+          field: ['The $field field is required.'],
+        },
+      );
+    }
+  }
+
+  /// A repeated `client_uuid` gets the original row and creates nothing.
+  Row _createOnce(
+    String clientUuid,
+    Row Function() create,
+    Row Function(Row row) present,
+  ) {
+    final existing = _setupByUuid[clientUuid];
+    final row = existing ?? create();
+    _setupByUuid[clientUuid] = row;
+    setupStatuses.add(existing == null ? 201 : 200);
+
+    if (_lostSetupResponses > 0) {
+      _lostSetupResponses--;
+      throw const OfflineFailure('Response lost');
+    }
+    return present(row);
+  }
+
+  /// Up to 4 uppercase initials, with a number if needed to stay unique.
+  String _generateProjectCode(String name) {
+    final initials = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .take(4)
+        .map((word) => word[0].toUpperCase())
+        .join();
+    final taken = projects.map((p) => p['code']).toSet();
+    var code = initials;
+    for (var n = 2; taken.contains(code); n++) {
+      code = '$initials$n';
+    }
+    return code;
+  }
+
+  @override
+  Future<Map<String, dynamic>> createProject({
+    required String clientUuid,
+    required String name,
+    String? location,
+    String? startDate,
+    String? endDate,
+    String? contractValue,
+    String? code,
+  }) async {
+    _guard();
+    _requireSetupPermission('project.manage');
+    return _createOnce(
+      clientUuid,
+      () {
+        _requireField('name', name);
+        final limit = planProjectLimit;
+        if (limit != null && projects.length >= limit) {
+          throw const ValidationFailure(
+            planLimitMessage,
+            errors: {
+              'plan': [planLimitMessage],
+            },
+          );
+        }
+        final row = <String, dynamic>{
+          'id': _nextId++,
+          'client_uuid': clientUuid,
+          'code': code == null || code.trim().isEmpty
+              ? _generateProjectCode(name)
+              : code,
+          'name': name,
+          'location': location,
+          'status': 'active',
+          'start_date': startDate,
+          'end_date': endDate,
+          'contract_value': contractValue,
+          'measurement_tolerance_pct': '5.00',
+          'updated_at': _stampNow(),
+        };
+        projects.add(row);
+        return row;
+      },
+      (row) => Map<String, dynamic>.of(row),
+    );
+  }
+
+  /// Two jobs under one name. `NirmaanApi` needs this name, and existing
+  /// tests already seed BOQ lines with it. With [id] it seeds a line directly;
+  /// without, it is `POST /projects/{project}/boq-items`.
+  @override
+  Future<Map<String, dynamic>> addBoqItem({
+    required int projectId,
+    int? id,
+    String? clientUuid,
+    String? description,
+    String? unit,
+    String? qty,
+    String? rate,
+    String? code,
+    String? section,
+  }) async {
+    if (id != null) {
+      _seedBoqItem(
+        id: id,
+        projectId: projectId,
+        code: code!,
+        qty: qty ?? '100.000',
+        rate: rate ?? '500.00',
+        unit: unit ?? 'cum',
+      );
+      return const {};
+    }
+
+    _guard();
+    _requireSetupPermission('boq.manage');
+    _requireProject(projectId);
+    return _createOnce(
+      clientUuid!,
+      () {
+        _requireField('description', description);
+        _requireField('unit', unit);
+        final inProject = boqItems.where((b) => b['project_id'] == projectId);
+        final numbers = inProject
+            .map((b) => int.tryParse(b['code'] as String))
+            .nonNulls;
+        final next = [inProject.length, ...numbers].reduce(max) + 1;
+        final sort = inProject
+            .map((b) => b['sort'] as int)
+            .fold<int>(0, max);
+        final row = <String, dynamic>{
+          'id': _nextId++,
+          'client_uuid': clientUuid,
+          'project_id': projectId,
+          'section': section,
+          'code': code == null || code.trim().isEmpty ? '$next' : code,
+          'description': description,
+          'unit': unit,
+          'qty': qty,
+          'rate': rate,
+          'sort': sort + 1,
+          'updated_at': _stampNow(),
+        };
+        boqItems.add(row);
+        return row;
+      },
+      _withLedger,
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> createWallet({
+    required int projectId,
+    required String clientUuid,
+    required String name,
+    int? userId,
+  }) async {
+    _guard();
+    _requireSetupPermission('petty_cash.manage');
+    _requireProject(projectId);
+    return _createOnce(
+      clientUuid,
+      () {
+        _requireField('name', name);
+        final row = <String, dynamic>{
+          'id': _nextId++,
+          'client_uuid': clientUuid,
+          'project_id': projectId,
+          'name': name,
+          'user_id': userId,
+          'balance': '0.00',
+          'updated_at': _stampNow(),
+        };
+        wallets.add(row);
+        return row;
+      },
+      (row) => Map<String, dynamic>.of(row),
+    );
   }
 
   /// How many times the server applied an approval action, distinct by uuid.

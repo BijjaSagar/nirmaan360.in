@@ -82,7 +82,7 @@ class PullApplier {
     await _db.batch((batch) {
       batch.insertAllOnConflictUpdate(
         _db.projects,
-        projects.map(_projectCompanion).toList(),
+        projects.map(projectCompanion).toList(),
       );
       batch.insertAllOnConflictUpdate(
         _db.sites,
@@ -90,7 +90,7 @@ class PullApplier {
       );
       batch.insertAllOnConflictUpdate(
         _db.boqItems,
-        boqItems.map(_boqCompanion).toList(),
+        boqItems.map(boqItemCompanion).toList(),
       );
       batch.insertAllOnConflictUpdate(
         _db.workers,
@@ -117,11 +117,12 @@ class PullApplier {
     // `wallets` is always the full list.
     await _db.delete(_db.wallets).go();
     await _db.batch((batch) {
-      batch.insertAll(_db.wallets, wallets.map(_walletCompanion).toList());
+      batch.insertAll(_db.wallets, wallets.map(walletCompanion).toList());
     });
   }
 
-  ProjectsCompanion _projectCompanion(Json j) => ProjectsCompanion(
+  /// One row in the `projects` pull shape, also returned by `POST /projects`.
+  static ProjectsCompanion projectCompanion(Json j) => ProjectsCompanion(
     id: Value(_int(j['id'])),
     code: Value(j['code'] as String),
     name: Value(j['name'] as String),
@@ -143,7 +144,7 @@ class PullApplier {
     updatedAt: Value(parseServerTime(j['updated_at'])),
   );
 
-  BoqItemsCompanion _boqCompanion(Json j) => BoqItemsCompanion(
+  static BoqItemsCompanion boqItemCompanion(Json j) => BoqItemsCompanion(
     id: Value(_int(j['id'])),
     projectId: Value(_int(j['project_id'])),
     section: Value(j['section'] as String?),
@@ -175,7 +176,7 @@ class PullApplier {
     role: Value(j['role'] as String?),
   );
 
-  WalletsCompanion _walletCompanion(Json j) => WalletsCompanion(
+  static WalletsCompanion walletCompanion(Json j) => WalletsCompanion(
     id: Value(_int(j['id'])),
     projectId: Value(_int(j['project_id'])),
     name: Value(j['name'] as String),

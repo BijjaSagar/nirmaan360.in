@@ -339,6 +339,153 @@ void main() {
       );
     });
 
+    group('setup', () {
+      Map<String, dynamic> created(Map<String, dynamic> row) => {'data': row};
+
+      test('createProject posts the contract fields and unwraps data', () async {
+        answer((_) => json(created({'id': 9, 'code': 'RP'}), status: 201));
+
+        final row = await api.createProject(
+          clientUuid: 'c1',
+          name: 'Riverside',
+          location: 'Nashik',
+          startDate: '2026-11-01',
+          endDate: '2027-11-01',
+          contractValue: '12500000.50',
+        );
+
+        final request = adapter.requests.single;
+        expect(request.method, 'POST');
+        expect(request.uri.path, '/api/v1/projects');
+        expect(request.data, {
+          'client_uuid': 'c1',
+          'name': 'Riverside',
+          'location': 'Nashik',
+          'start_date': '2026-11-01',
+          'end_date': '2027-11-01',
+          'contract_value': '12500000.50',
+        });
+        expect(row['id'], 9);
+      });
+
+      test('blank optional project fields are left out', () async {
+        answer((_) => json(created({'id': 9}), status: 201));
+
+        await api.createProject(clientUuid: 'c1', name: 'Riverside');
+
+        expect(adapter.requests.single.data, {
+          'client_uuid': 'c1',
+          'name': 'Riverside',
+        });
+      });
+
+      test('a repeated create answers 200 and parses the same', () async {
+        answer((_) => json(created({'id': 9})));
+
+        final row = await api.createProject(clientUuid: 'c1', name: 'R');
+
+        expect(row['id'], 9);
+      });
+
+      test('addBoqItem posts to the project with decimals as strings', () async {
+        answer((_) => json(created({'id': 3}), status: 201));
+
+        await api.addBoqItem(
+          projectId: 7,
+          clientUuid: 'c2',
+          description: 'Concrete',
+          unit: 'cum',
+          qty: '12.500',
+          rate: '7450.00',
+          section: 'Footings',
+        );
+
+        final request = adapter.requests.single;
+        expect(request.uri.path, '/api/v1/projects/7/boq-items');
+        expect(request.data, {
+          'client_uuid': 'c2',
+          'description': 'Concrete',
+          'unit': 'cum',
+          'qty': '12.500',
+          'rate': '7450.00',
+          'section': 'Footings',
+        });
+      });
+
+      test('createWallet posts to the project', () async {
+        answer((_) => json(created({'id': 4}), status: 201));
+
+        await api.createWallet(
+          projectId: 7,
+          clientUuid: 'c3',
+          name: 'Site cash',
+          userId: 4,
+        );
+
+        final request = adapter.requests.single;
+        expect(request.uri.path, '/api/v1/projects/7/wallets');
+        expect(request.data, {
+          'client_uuid': 'c3',
+          'name': 'Site cash',
+          'user_id': 4,
+        });
+      });
+
+      test('the plan limit keeps errors.plan', () async {
+        answer(
+          (_) => json({
+            'message': 'Your plan project limit has been reached.',
+            'errors': {
+              'plan': ['Your plan project limit has been reached.'],
+            },
+          }, status: 422),
+        );
+
+        await expectLater(
+          api.createProject(clientUuid: 'c1', name: 'R'),
+          throwsA(
+            isA<ValidationFailure>().having(
+              (e) => e.errors['plan'],
+              'errors.plan',
+              ['Your plan project limit has been reached.'],
+            ),
+          ),
+        );
+      });
+
+      test('a timeout is OfflineFailure', () async {
+        answer(
+          (o) => DioException(
+            requestOptions: o,
+            type: DioExceptionType.receiveTimeout,
+          ),
+        );
+
+        await expectLater(
+          api.createWallet(projectId: 1, clientUuid: 'c', name: 'W'),
+          throwsA(isA<OfflineFailure>()),
+        );
+      });
+
+      test('403 is a ServerFailure', () async {
+        answer((_) => json({'message': 'Forbidden'}, status: 403));
+
+        await expectLater(
+          api.addBoqItem(
+            projectId: 1,
+            clientUuid: 'c',
+            description: 'D',
+            unit: 'cum',
+            qty: '1.000',
+            rate: '1.00',
+          ),
+          throwsA(
+            isA<ServerFailure>().having((e) => e.statusCode, 'status', 403),
+          ),
+        );
+      });
+    });
+
     test('addWorker unwraps data', () async {
       answer((_) => json({'data': {'id': 5, 'name': 'A'}}, status: 201));
 

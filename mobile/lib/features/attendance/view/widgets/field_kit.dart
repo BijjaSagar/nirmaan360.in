@@ -289,3 +289,88 @@ class FieldChoiceTile extends StatelessWidget {
     );
   }
 }
+
+/// A secondary action beside a screen's main button: an icon with its word
+/// under it, so the main button keeps a whole line.
+class FieldSideTile extends StatelessWidget {
+  const FieldSideTile({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return PressTarget(
+      onTap: onTap,
+      minHeight: N360Size.tapLarge,
+      semanticsLabel: label,
+      child: SizedBox(
+        width: 92,
+        height: N360Size.tapLarge,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(icon, size: 24, color: N360Colors.ink),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: N360Type.label.copyWith(height: 1.2, color: N360Colors.ink),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      builder: (context, depth, child) => Transform.scale(
+        scale: 1 - 0.035 * depth,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: N360Colors.paper2,
+            borderRadius: N360Radius.tileRadius,
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// A short problem under a field, with an icon so it is not colour alone.
+class FieldInlineError extends StatelessWidget {
+  const FieldInlineError(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const Padding(
+          padding: EdgeInsets.only(top: 2, right: 6),
+          child: Icon(Icons.error_outline, size: 18, color: N360Colors.stampRed),
+        ),
+        Expanded(
+          child: Text(
+            message,
+            style: N360Type.caption.copyWith(
+              color: N360Colors.stampRed,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

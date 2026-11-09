@@ -6,6 +6,7 @@ import 'package:nirmaan360/core/session/current_user.dart';
 import 'package:nirmaan360/features/dpr/view/dpr_form_screen.dart';
 import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
 import 'package:nirmaan360/features/measurement/view/measurement_form_screen.dart';
+import 'package:nirmaan360/features/projects/view/boq_screen.dart';
 import 'package:nirmaan360/features/sync_center/view/sync_center_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
@@ -178,6 +179,103 @@ void main() {
       await pumpShellApp(tester, app);
 
       expect(find.text(en.shellProgressEmptyTitle), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('set up your site', () {
+    Future<TestApp> owner() async {
+      final app = await TestApp.create(seed: false, api: FakeApi()..grant('boq.manage'));
+      app.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      return app;
+    }
+
+    Finder square(String label) => find.byWidgetPredicate((w) => w is SquarePercent && w.label == label);
+
+    testWidgets('a new site shows three steps at 0 of 3, and the first opens', (tester) async {
+      final app = await owner();
+      addTearDown(app.dispose);
+      await app.sync();
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.shellSetupTitle), findsOneWidget);
+      expect(square('0/3'), findsOneWidget);
+      expect(find.text(en.shellSetupBoq), findsOneWidget);
+      expect(find.text(en.shellSetupWorkers), findsOneWidget);
+      expect(find.text(en.shellSetupWallet), findsOneWidget);
+      expect(find.text(en.shellSetupNext(en.shellSetupBoq)), findsOneWidget);
+      // The setup card already says the BOQ is missing.
+      expect(find.text(en.shellProgressEmptyTitle), findsNothing);
+
+      await tester.tap(find.text(en.shellSetupBoq));
+      await settle(tester);
+      expect(find.byType(BoqScreen), findsOneWidget);
+    });
+
+    testWidgets('done steps count, and the next one is named', (tester) async {
+      final app = await owner();
+      addTearDown(app.dispose);
+      app.api
+        ..addBoqItem(id: 1, projectId: 1, code: '1.1')
+        ..addWorker2(id: 1, name: 'Ramesh Pawar');
+      await app.sync();
+      await pumpShellApp(tester, app);
+
+      expect(square('2/3'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
+      expect(find.text(en.shellSetupNext(en.shellSetupWallet)), findsOneWidget);
+    });
+
+    testWidgets('it goes away when everything is done', (tester) async {
+      final app = await owner();
+      addTearDown(app.dispose);
+      app.api
+        ..addBoqItem(id: 1, projectId: 1, code: '1.1')
+        ..addWorker2(id: 1, name: 'Ramesh Pawar')
+        ..addWallet(id: 1, projectId: 1, balance: '0.00');
+      await app.sync();
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.shellSetupTitle), findsNothing);
+      expect(find.byType(HatchedProgressBar), findsOneWidget);
+    });
+
+    testWidgets('only steps the user may complete are shown', (tester) async {
+      // worker.manage and petty_cash.manage are granted by default, boq.manage is not.
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      app.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      await app.sync();
+      await pumpShellApp(tester, app);
+
+      expect(square('0/2'), findsOneWidget);
+      expect(find.text(en.shellSetupBoq), findsNothing);
+      expect(find.text(en.shellProgressEmptyTitle), findsOneWidget);
+    });
+
+    testWidgets('someone who can manage nothing incomplete sees no card', (tester) async {
+      final app = await TestApp.create(seed: false, signedIn: false);
+      addTearDown(app.dispose);
+      (app.api.user['can'] as Map)
+        ..['worker.manage'] = false
+        ..['petty_cash.manage'] = false;
+      await app.services.session.startSession('t', CurrentUser.fromJson(app.api.user));
+      app.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      await app.sync();
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.shellSetupTitle), findsNothing);
+    });
+
+    testWidgets('steps are tall enough for a gloved thumb', (tester) async {
+      final app = await owner();
+      addTearDown(app.dispose);
+      await app.sync();
+      await pumpShellApp(tester, app);
+
+      final Finder step = find.byWidgetPredicate((w) => w is PressTarget && w.minHeight == 76);
+      expect(step, findsNWidgets(3));
+      expect(tester.getSize(step.first).height, greaterThanOrEqualTo(N360Size.tap));
       expect(tester.takeException(), isNull);
     });
   });

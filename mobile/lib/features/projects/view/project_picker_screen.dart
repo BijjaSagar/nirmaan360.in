@@ -31,6 +31,8 @@ class ProjectPickerScreen extends StatelessWidget {
     final int? selected = gate.selectedProjectId;
     final bool syncing = context.select((SyncStatusCubit s) => s.state.isSyncing);
     final bool canGoBack = GoRouter.of(context).canPop();
+    final bool canCreate = gate.canManageProjects;
+    final bool welcome = projects.isEmpty && canCreate && !syncing;
 
     return Scaffold(
       body: SafeArea(
@@ -40,11 +42,11 @@ class ProjectPickerScreen extends StatelessWidget {
             if (syncing) ProgressRule(semanticsLabel: t.shellPickerLoading),
             Padding(
               padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, 0),
-              child: PageHeader(title: t.shellPickerTitle, showBack: canGoBack),
+              child: PageHeader(title: welcome ? t.shellSignInWelcome : t.shellPickerTitle, showBack: canGoBack),
             ),
             Expanded(
               child: projects.isEmpty
-                  ? _EmptyProjects(syncing: syncing)
+                  ? (welcome ? const _FirstProject() : _EmptyProjects(syncing: syncing))
                   : LayoutBuilder(
                       builder: (context, constraints) => Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -90,6 +92,17 @@ class ProjectPickerScreen extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (canCreate)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+                              child: GloveButton(
+                                label: t.shellProjectFormTitle,
+                                icon: Icons.add,
+                                kind: GloveButtonKind.secondary,
+                                fullWidth: true,
+                                onPressed: () => context.push(Routes.projectForm),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -152,6 +165,52 @@ class _ProjectRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// What a new owner sees: an invitation, with the action in the thumb zone.
+class _FirstProject extends StatelessWidget {
+  const _FirstProject();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
+            child: Center(child: ExcludeSemantics(child: BuildingProgressArt(fraction: 0.36))),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+          child: StaggeredRise(
+            index: 0,
+            child: LedgerCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(t.shellPickerFirstTitle, style: N360Type.title),
+                  const SizedBox(height: N360Space.xxs),
+                  Text(t.shellPickerFirstBody, style: N360Type.body.copyWith(color: N360Colors.ink2)),
+                  const SizedBox(height: N360Space.md),
+                  GloveButton(
+                    label: t.shellPickerFirstButton,
+                    icon: Icons.add_home_work_outlined,
+                    large: true,
+                    fullWidth: true,
+                    onPressed: () => context.push(Routes.projectForm),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -75,6 +75,8 @@ class GateState extends Equatable {
   bool get canApprove =>
       can('measurement.approve') || can('dpr.approve') || can('ra_bill.approve');
 
+  bool get canManageProjects => can('project.manage');
+
   /// The stored choice, then the server's, then the phone's language.
   String? get localeCode {
     final code = storedLocale ?? user?.locale;
@@ -196,6 +198,21 @@ class AppGate extends Cubit<GateState> {
     }
   }
 
+  /// Selects a project that was only just created, before the local project
+  /// list has caught up, so navigating Home straight after cannot bounce.
+  Future<void> adoptProject(ProjectRow project) async {
+    await _services.projects.selectProject(project.id);
+    if (isClosed) return;
+    final List<ProjectRow> known = state.projects ?? const <ProjectRow>[];
+    emit(
+      state.copyWith(
+        projects: known.any((p) => p.id == project.id) ? known : <ProjectRow>[...known, project],
+        selectedProjectId: project.id,
+        selectionKnown: true,
+      ),
+    );
+  }
+
   void beginSignIn() => emit(state.copyWith(signingIn: true));
 
   void endSignIn() {
@@ -221,20 +238,40 @@ class AppGate extends Cubit<GateState> {
       a.onlyOneProject != b.onlyOneProject ||
       a.signingIn != b.signingIn ||
       a.canApprove != b.canApprove ||
+      a.canManageProjects != b.canManageProjects ||
       a.ready != b.ready;
 
-  /// The location for [path], or null to stay.
-  String? redirect(String path) {
+  /// Exact paths that need a permission. Anything else is open once signed in.
+  static const Map<String, String> _pathPermissions = <String, String>{
+    Routes.projectForm: 'project.manage',
+    Routes.boq: 'boq.view',
+    Routes.boqForm: 'boq.manage',
+    Routes.walletForm: 'petty_cash.manage',
+    Routes.topUp: 'petty_cash.manage',
+  };
+
+  /// The location for [uri], or null to stay.
+  String? redirect(Uri uri) {
     final s = state;
+    final String path = uri.path;
     final atSignIn = path == Routes.signIn;
     if (!s.isSignedIn) return atSignIn ? null : Routes.signIn;
     if (atSignIn) {
       if (s.signingIn) return null;
       return s.hasProject ? Routes.home : Routes.projects;
     }
-    if (!s.hasProject) return path == Routes.projects ? null : Routes.projects;
-    if (path == Routes.projects && s.onlyOneProject) return Routes.home;
+    if (!s.hasProject) {
+      if (path == Routes.projects) return null;
+      if (path == Routes.projectForm && s.canManageProjects) return null;
+      return Routes.projects;
+    }
+    if (path == Routes.projects && s.onlyOneProject) {
+      final bool onPurpose = uri.queryParameters['switch'] == '1';
+      if (!(onPurpose && s.canManageProjects)) return Routes.home;
+    }
     if (!s.canApprove && path.startsWith(Routes.approvals)) return Routes.home;
+    final String? needed = _pathPermissions[path];
+    if (needed != null && !s.can(needed)) return Routes.home;
     return null;
   }
 

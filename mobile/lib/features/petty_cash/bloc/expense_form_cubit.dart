@@ -10,7 +10,7 @@ import '../../../core/money/money.dart';
 import '../../../core/sync/clock.dart' show dateString;
 import '../../../core/sync/failures.dart';
 import '../data/petty_cash_repository.dart';
-import 'petty_cash_cubit.dart' show pettyCashWalletMetaKey;
+import 'petty_cash_cubit.dart' show pickWalletId;
 
 enum ExpenseProblem { amountRequired, overBalance, categoryRequired, saveFailed, billFailed }
 
@@ -163,24 +163,9 @@ class ExpenseFormCubit extends Cubit<ExpenseFormState> {
       emit(state.copyWith(wallets: const []));
       return;
     }
-    final int walletId = await _pickWallet(wallets);
+    final int walletId = await pickWalletId(_services, wallets, current: state.walletId);
     if (isClosed) return;
     emit(state.copyWith(wallets: wallets, walletId: walletId));
-  }
-
-  Future<int> _pickWallet(List<WalletLine> wallets) async {
-    bool exists(int? id) => id != null && wallets.any((w) => w.wallet.id == id);
-
-    if (exists(state.walletId)) return state.walletId!;
-    final remembered = int.tryParse(
-      await _services.db.readMeta(pettyCashWalletMetaKey) ?? '',
-    );
-    if (exists(remembered)) return remembered!;
-    final int? me = _services.session.user?.id;
-    for (final line in wallets) {
-      if (line.wallet.userId == me) return line.wallet.id;
-    }
-    return wallets.first.wallet.id;
   }
 
   void setAmount(String text) =>

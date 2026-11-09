@@ -305,6 +305,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsWorkers => 'कामगार';
 
   @override
+  String get attendanceAddFirstWorker => 'पहिला कामगार जोडा';
+
+  @override
   String get attendanceAddWorker => 'कामगार जोडा';
 
   @override
@@ -367,8 +370,11 @@ class AppLocalizationsMr extends AppLocalizations {
   String get attendanceNoProjectTitle => 'प्रकल्प निवडलेला नाही';
 
   @override
+  String get attendanceNoWorkersAsk => 'ऑफिसला कामगार जोडायला सांगा.';
+
+  @override
   String get attendanceNoWorkersMessage =>
-      'तुमचे कामगार इथे जोडा किंवा ऑफिसला जोडायला सांगा.';
+      'हजेरी सुरू करण्यासाठी पहिला कामगार जोडा.';
 
   @override
   String get attendanceNoWorkersTitle => 'हजेरीत एकही कामगार नाही';
@@ -436,6 +442,135 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get attendanceTodayTitle => 'आजची हजेरी';
+
+  @override
+  String get boqAddItem => 'आयटम जोडा';
+
+  @override
+  String boqBalance(String qty, String unit) {
+    return 'शिल्लक $qty $unit';
+  }
+
+  @override
+  String get boqEmptyAsk =>
+      'BOQ म्हणजे या प्रकल्पातील कामांची यादी. ऑफिसला ती जोडायला सांगा.';
+
+  @override
+  String get boqEmptyExplain =>
+      'BOQ म्हणजे या प्रकल्पातील कामांची यादी, परिमाण आणि दरासह.';
+
+  @override
+  String get boqEmptyTitle => 'BOQ ओळी अजून नाहीत';
+
+  @override
+  String get boqFormAdded => 'ओळ जोडली. पुढची जोडा.';
+
+  @override
+  String get boqFormAmount => 'रक्कम';
+
+  @override
+  String get boqFormCode => 'कोड (ऐच्छिक)';
+
+  @override
+  String get boqFormCodeHelper => 'रिकामे ठेवले तर पुढचा क्रमांक मिळेल.';
+
+  @override
+  String get boqFormDescription => 'कामाचे वर्णन';
+
+  @override
+  String get boqFormDescriptionHint => 'स्लॅबमध्ये M25 काँक्रीट';
+
+  @override
+  String get boqFormDescriptionRequired => 'कामाचे वर्णन लिहा.';
+
+  @override
+  String get boqFormFailed => 'ओळ जतन करता आली नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get boqFormFinish => 'जतन करून संपवा';
+
+  @override
+  String get boqFormQty => 'परिमाण';
+
+  @override
+  String get boqFormQtyRequired => 'परिमाण टाका.';
+
+  @override
+  String get boqFormRate => 'दर';
+
+  @override
+  String get boqFormRateRequired => 'दर टाका.';
+
+  @override
+  String get boqFormSaveAnother => 'जतन करून आणखी जोडा';
+
+  @override
+  String get boqFormSection => 'विभाग (ऐच्छिक)';
+
+  @override
+  String get boqFormSectionHint => 'सुपरस्ट्रक्चर';
+
+  @override
+  String get boqFormTitle => 'BOQ आयटम जोडा';
+
+  @override
+  String get boqFormUnit => 'एकक';
+
+  @override
+  String get boqFormUnitRequired => 'एकक निवडा.';
+
+  @override
+  String boqLinesAdded(int count) {
+    return '$count ओळी जोडल्या';
+  }
+
+  @override
+  String boqMeasuredShare(int percent) {
+    return '$percent% मोजले';
+  }
+
+  @override
+  String get boqMissingAsk =>
+      'ऑफिसला जोडायला सांगा. आधीच जोडल्या असतील तर एकदा नेटवर्कला जोडा.';
+
+  @override
+  String get boqMissingManage => 'ओळी जोडा, मग इथे निवडा.';
+
+  @override
+  String get boqMissingTitle => 'या प्रकल्पात अजून BOQ ओळी नाहीत';
+
+  @override
+  String get boqNoMatchMessage => 'दुसरा कोड किंवा शब्द वापरून पाहा.';
+
+  @override
+  String get boqNoMatchTitle => 'काही सापडले नाही';
+
+  @override
+  String get boqNoProjectMessage => 'BOQ पाहण्यासाठी आधी प्रकल्प निवडा.';
+
+  @override
+  String get boqNoProjectTitle => 'प्रकल्प निवडलेला नाही';
+
+  @override
+  String get boqNoSection => 'इतर ओळी';
+
+  @override
+  String get boqOfflineDetail => 'BOQ ओळी फक्त ऑनलाइन जतन होतात.';
+
+  @override
+  String get boqOfflineTitle => 'नेटवर्क नाही.';
+
+  @override
+  String get boqOpenAction => 'BOQ उघडा';
+
+  @override
+  String get boqSearchHint => 'कोड किंवा काम';
+
+  @override
+  String get boqSearchLabel => 'ओळी शोधा';
+
+  @override
+  String get boqTitle => 'BOQ';
 
   @override
   String get commonBack => 'मागे';
@@ -601,10 +736,6 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get dprBoqEmpty => 'BOQ आयटम सापडले नाहीत.';
-
-  @override
-  String get dprBoqNotSynced =>
-      'BOQ अजून या फोनवर आलेला नाही. एकदा नेटवर्कला जोडा.';
 
   @override
   String get dprCameraFailed =>
@@ -1149,13 +1280,6 @@ class AppLocalizationsMr extends AppLocalizations {
   String get measurementNext => 'पुढे';
 
   @override
-  String get measurementNoBoqBody =>
-      'एकदा नेटवर्कला जोडा, म्हणजे BOQ या फोनवर येईल.';
-
-  @override
-  String get measurementNoBoqTitle => 'BOQ ओळी अजून नाहीत';
-
-  @override
   String get measurementNoMatchTitle => 'काहीही जुळत नाही';
 
   @override
@@ -1277,6 +1401,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get pettyCashAddExpense => 'खर्च जोडा';
 
   @override
+  String get pettyCashAddMoney => 'पैसे जमा करा';
+
+  @override
   String get pettyCashAmount => 'रक्कम';
 
   @override
@@ -1311,6 +1438,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get pettyCashConfirmed => 'पक्की शिल्लक';
+
+  @override
+  String get pettyCashCreateWallet => 'पाकीट तयार करा';
 
   @override
   String get pettyCashDate => 'तारीख';
@@ -1350,6 +1480,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get pettyCashNoProjectTitle => 'प्रकल्प निवडलेला नाही';
 
   @override
+  String get pettyCashNoWalletManageMessage =>
+      'साइटचे खर्च इथे नोंदवण्यासाठी पाकीट तयार करा.';
+
+  @override
+  String get pettyCashNoWalletManageTitle => 'या प्रकल्पावर अजून पाकीट नाही';
+
+  @override
   String get pettyCashNoWalletMessage =>
       'तुमच्यासाठी पाकीट उघडायला प्रकल्प व्यवस्थापक किंवा अकाउंट्स ऑफिसला सांगा.';
 
@@ -1361,6 +1498,15 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get pettyCashNoteHint => 'मिक्सरसाठी डिझेल';
+
+  @override
+  String get pettyCashOpeningAmount => 'सुरुवातीची रक्कम';
+
+  @override
+  String get pettyCashOpeningHelper => 'अजून पैसे नसतील तर रिकामे ठेवा.';
+
+  @override
+  String get pettyCashOpeningNote => 'सुरुवातीची शिल्लक';
 
   @override
   String pettyCashOverBalance(String balance) {
@@ -1397,6 +1543,19 @@ class AppLocalizationsMr extends AppLocalizations {
   String get pettyCashTitle => 'किरकोळ रोख';
 
   @override
+  String get pettyCashTopUpEyebrow => 'पाकिटात रक्कम';
+
+  @override
+  String get pettyCashTopUpFailed =>
+      'रक्कम जतन करता आली नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get pettyCashTopUpNoteHint => 'ऑफिसकडून रोख';
+
+  @override
+  String get pettyCashTopUpSave => 'मिळालेली रक्कम जतन करा';
+
+  @override
   String get pettyCashTopup => 'रक्कम जमा';
 
   @override
@@ -1404,6 +1563,53 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get pettyCashWallet => 'पाकीट';
+
+  @override
+  String get pettyCashWalletCreateKey => 'तयार करा';
+
+  @override
+  String get pettyCashWalletCreated => 'पाकीट तयार झाले';
+
+  @override
+  String pettyCashWalletCreatedMoney(String amount) {
+    return 'पाकीट तयार झाले. $amount फोनवर जतन झाले, आता पाठवत आहे.';
+  }
+
+  @override
+  String pettyCashWalletCreatedOffline(String amount) {
+    return 'पाकीट तयार झाले. $amount फोनवर जतन झाले, नेटवर्क आल्यावर पाठवले जातील.';
+  }
+
+  @override
+  String pettyCashWalletDefaultName(String code) {
+    return '$code साइट रोख';
+  }
+
+  @override
+  String get pettyCashWalletFailed =>
+      'पाकीट तयार करता आले नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get pettyCashWalletFormEyebrow => 'नवीन पाकीट';
+
+  @override
+  String get pettyCashWalletHolder => 'रोख कोणाकडे असेल?';
+
+  @override
+  String get pettyCashWalletMoneyFailed =>
+      'पाकीट तयार झाले, पण रक्कम जतन झाली नाही. पुन्हा जमा करा.';
+
+  @override
+  String get pettyCashWalletName => 'पाकिटाचे नाव';
+
+  @override
+  String get pettyCashWalletNameRequired => 'पाकिटाला नाव द्या.';
+
+  @override
+  String get pettyCashWalletOffline => 'नेटवर्क नाही.';
+
+  @override
+  String get pettyCashWalletOfflineDetail => 'पाकीट फक्त ऑनलाइन तयार होते.';
 
   @override
   String get shellCaptionMarked => 'नोंदवले';
@@ -1480,6 +1686,16 @@ class AppLocalizationsMr extends AppLocalizations {
   String get shellPickerEyebrow => 'तुमचे प्रकल्प';
 
   @override
+  String get shellPickerFirstBody =>
+      'तुमचा प्रकल्प जोडा आणि त्याचे काम या फोनवरून चालवा.';
+
+  @override
+  String get shellPickerFirstButton => 'तुमचा पहिला प्रकल्प तयार करा';
+
+  @override
+  String get shellPickerFirstTitle => 'चला, तुमची पहिली साइट तयार करूया';
+
+  @override
   String get shellPickerLoading => 'तुमचे प्रकल्प आणत आहे…';
 
   @override
@@ -1527,6 +1743,50 @@ class AppLocalizationsMr extends AppLocalizations {
   String get shellProgressTitle => 'बांधकामाची प्रगती';
 
   @override
+  String get shellProjectChoose => 'निवडा';
+
+  @override
+  String get shellProjectCreate => 'प्रकल्प तयार करा';
+
+  @override
+  String get shellProjectCreating => 'तयार होत आहे…';
+
+  @override
+  String get shellProjectEnd => 'पूर्ण होण्याची तारीख';
+
+  @override
+  String get shellProjectEndBeforeStart =>
+      'पूर्ण होण्याची तारीख सुरू होण्याच्या तारखेनंतरची हवी';
+
+  @override
+  String get shellProjectFormTitle => 'नवीन प्रकल्प';
+
+  @override
+  String get shellProjectLocation => 'ठिकाण';
+
+  @override
+  String get shellProjectName => 'प्रकल्पाचे नाव';
+
+  @override
+  String get shellProjectNameRequired => 'प्रकल्पाचे नाव लिहा';
+
+  @override
+  String get shellProjectOffline =>
+      'नेटवर्क असतानाच प्रकल्प तयार करता येतो. सिग्नल आल्यावर पुन्हा प्रयत्न करा.';
+
+  @override
+  String get shellProjectPlanTitle => 'प्रकल्पांची मर्यादा पूर्ण झाली';
+
+  @override
+  String get shellProjectStart => 'सुरू होण्याची तारीख';
+
+  @override
+  String get shellProjectValue => 'कराराची रक्कम (ऐच्छिक)';
+
+  @override
+  String get shellProjectValueEmpty => 'भरण्यासाठी दाबा';
+
+  @override
   String get shellReportAttention => 'तपासा';
 
   @override
@@ -1568,6 +1828,28 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get shellSettingsVersion => 'ॲप आवृत्ती';
+
+  @override
+  String get shellSetupBoq => 'BOQ बाबी';
+
+  @override
+  String shellSetupNext(String step) {
+    return 'पुढे: $step';
+  }
+
+  @override
+  String shellSetupStepSemantics(String step, int count) {
+    return '$step: $count';
+  }
+
+  @override
+  String get shellSetupTitle => 'तुमची साइट तयार करा';
+
+  @override
+  String get shellSetupWallet => 'रोख पाकीट';
+
+  @override
+  String get shellSetupWorkers => 'कामगार';
 
   @override
   String get shellSignInBusy => 'साइन इन होत आहे…';

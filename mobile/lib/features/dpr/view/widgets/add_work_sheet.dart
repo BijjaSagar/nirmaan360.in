@@ -7,6 +7,7 @@ import '../../../../core/design/design.dart';
 import '../../../../core/money/money.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../projects/data/project_repository.dart' show BoqLine;
+import '../../../projects/view/boq_missing_prompt.dart';
 import '../../data/dpr_repository.dart';
 import 'dpr_format.dart';
 import 'dpr_ui.dart';
@@ -155,6 +156,7 @@ class _DprAddWorkSheetState extends State<DprAddWorkSheet> {
         : _PickStep(
             key: stepKey,
             search: _search,
+            services: widget.services,
             query: _query,
             lines: _lines,
             onSearch: _onSearch,
@@ -199,6 +201,7 @@ class _PickStep extends StatelessWidget {
   const _PickStep({
     super.key,
     required this.search,
+    required this.services,
     required this.query,
     required this.lines,
     required this.onSearch,
@@ -208,6 +211,7 @@ class _PickStep extends StatelessWidget {
   });
 
   final TextEditingController search;
+  final AppServices services;
   final String query;
   final Stream<List<BoqLine>> lines;
   final ValueChanged<String> onSearch;
@@ -251,14 +255,13 @@ class _PickStep extends StatelessWidget {
             builder: (context, snapshot) {
               final found = snapshot.data;
               if (found == null) return const SizedBox.shrink();
+              if (found.isEmpty && query.isEmpty) {
+                return BoqMissingPrompt(services: services);
+              }
               if (found.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.all(N360Space.xl),
-                  child: Text(
-                    query.isEmpty ? l.dprBoqNotSynced : l.dprBoqEmpty,
-                    textAlign: TextAlign.center,
-                    style: N360Type.bodyLarge,
-                  ),
+                  child: Text(l.dprBoqEmpty, textAlign: TextAlign.center, style: N360Type.bodyLarge),
                 );
               }
               final rows = _ordered(found);

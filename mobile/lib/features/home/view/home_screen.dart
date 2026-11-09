@@ -15,6 +15,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
 import '../../../core/session/current_user.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../projects/data/project_repository.dart';
 import '../../sync_center/data/sync_repository.dart';
 import '../bloc/home_cubit.dart';
 import '../data/home_repository.dart';
@@ -209,7 +210,8 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final bool canSwitch = context.select((AppGate gate) => !gate.state.onlyOneProject);
+    // An owner with one project still needs the picker, to add a second.
+    final bool canSwitch = context.select((AppGate gate) => !gate.state.onlyOneProject || gate.state.canManageProjects);
     final String? location = project.location?.trim().isEmpty ?? true ? null : project.location;
     final String detail = <String>[project.code, ?location].join(' · ');
 
@@ -222,20 +224,21 @@ class _HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              Text(
+                project.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: N360Type.heading.copyWith(height: 1.3),
+              ),
+              // The chevron sits on the smaller line, so the name keeps its width.
               Row(
                 children: <Widget>[
                   Flexible(
-                    child: Text(
-                      project.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.heading.copyWith(height: 1.3),
-                    ),
+                    child: Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption.copyWith(height: 1.3)),
                   ),
-                  if (canSwitch) const Icon(Icons.expand_more, size: 22, color: N360Colors.ink2),
+                  if (canSwitch) const Icon(Icons.expand_more, size: 20, color: N360Colors.ink2),
                 ],
               ),
-              Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption.copyWith(height: 1.3)),
             ],
           ),
         ),
@@ -252,9 +255,9 @@ class _HomeHeader extends StatelessWidget {
                     container: true,
                     button: true,
                     label: '${project.name}. ${t.shellSwitchProject}',
-                    onTap: () => context.push(Routes.projects),
+                    onTap: () => context.push(Routes.projectsSwitch),
                     child: ExcludeSemantics(
-                      child: PressRow(onTap: () => context.push(Routes.projects), child: name),
+                      child: PressRow(onTap: () => context.push(Routes.projectsSwitch), child: name),
                     ),
                   )
                 : name,
@@ -328,7 +331,23 @@ class _HomeList extends StatelessWidget {
       );
     }
 
-    children.add(StaggeredRise(index: rise++, child: _ProgressCard(project: project, progress: state.progress)));
+    final List<_SetupStep> steps = _SetupStep.visibleFor(context, state.setup);
+    final bool setupPending = steps.any((step) => !step.done);
+    if (setupPending) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: N360Space.sm),
+          child: StaggeredRise(index: rise++, child: _SetupCard(steps: steps)),
+        ),
+      );
+    }
+
+    // With the BOQ still to add, the setup card already says so, and says what
+    // to do about it. The empty progress card would only repeat it.
+    final bool boqStepOpen = steps.any((step) => step.isBoq && !step.done);
+    if (state.progress != null || !boqStepOpen) {
+      children.add(StaggeredRise(index: rise++, child: _ProgressCard(project: project, progress: state.progress)));
+    }
 
     if (trailing != null) {
       children.add(Padding(padding: const EdgeInsets.only(top: N360Space.md), child: trailing));
@@ -337,6 +356,165 @@ class _HomeList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
       children: children,
+    );
+  }
+}
+
+/// One thing a new site still needs.
+class _SetupStep {
+  const _SetupStep({
+    required this.icon,
+    required this.word,
+    required this.count,
+    required this.route,
+    this.isBoq = false,
+  });
+
+  final IconData icon;
+  final String word;
+  final int count;
+  final String route;
+  final bool isBoq;
+
+  bool get done => count > 0;
+
+  /// The steps this user is allowed to complete.
+  static List<_SetupStep> visibleFor(BuildContext context, ProjectSetup? setup) {
+    if (setup == null) return const <_SetupStep>[];
+    final t = AppLocalizations.of(context);
+    final CurrentUser? user = context.select((AppGate gate) => gate.state.user);
+    bool can(String permission) => user?.can(permission) ?? false;
+    return <_SetupStep>[
+      if (can('boq.manage'))
+        _SetupStep(
+          icon: Icons.format_list_numbered,
+          word: t.shellSetupBoq,
+          count: setup.boqCount,
+          route: Routes.boq,
+          isBoq: true,
+        ),
+      if (can('worker.manage'))
+        _SetupStep(icon: Icons.groups, word: t.shellSetupWorkers, count: setup.workerCount, route: Routes.attendance),
+      if (can('petty_cash.manage'))
+        _SetupStep(
+          icon: Icons.account_balance_wallet,
+          word: t.shellSetupWallet,
+          count: setup.walletCount,
+          route: Routes.pettyCash,
+        ),
+    ];
+  }
+}
+
+/// What a new site still needs, in the order to do it. The next step is gold,
+/// so a brand-new owner can see where to tap without reading the rest.
+class _SetupCard extends StatelessWidget {
+  const _SetupCard({required this.steps});
+
+  final List<_SetupStep> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final int done = steps.where((step) => step.done).length;
+    final int next = steps.indexWhere((step) => !step.done);
+    return LedgerCard(
+      padding: const EdgeInsets.all(N360Space.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(t.shellSetupTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.heading.copyWith(height: 1.3)),
+                    Text(
+                      t.shellSetupNext(steps[next].word),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.caption.copyWith(color: N360Colors.laterite, fontWeight: FontWeight.w700, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: N360Space.sm),
+              SquarePercent(fraction: done / steps.length, label: '$done/${steps.length}', size: 52),
+            ],
+          ),
+          const SizedBox(height: N360Space.sm),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                for (final (i, step) in steps.indexed) ...<Widget>[
+                  if (i > 0) const SizedBox(width: N360Space.sm - 2),
+                  Expanded(child: _StepTile(step: step, isNext: i == next)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepTile extends StatelessWidget {
+  const _StepTile({required this.step, required this.isNext});
+
+  final _SetupStep step;
+  final bool isNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    void open() => context.push(step.route);
+    final BoxDecoration surface = isNext
+        ? const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.md)
+        : const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md);
+
+    return Semantics(
+      container: true,
+      button: true,
+      label: '${t.shellSetupStepSemantics(step.word, step.count)}${step.done ? ', ${t.commonDone}' : ''}',
+      onTap: open,
+      child: ExcludeSemantics(
+        child: PressRow(
+          onTap: open,
+          minHeight: 76,
+          child: DecoratedBox(
+            decoration: surface,
+            child: Padding(
+              padding: const EdgeInsets.all(N360Space.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Icon(step.icon, size: 22, color: N360Colors.ink),
+                      const SizedBox(width: N360Space.xs),
+                      Text('${step.count}', style: N360Type.bodyStrong.copyWith(height: 1.2)),
+                      const Spacer(),
+                      if (step.done) const Icon(Icons.check_circle, size: 20, color: N360Colors.mossInk),
+                    ],
+                  ),
+                  const SizedBox(height: N360Space.xxs),
+                  Text(
+                    step.word,
+                    maxLines: 2,
+                    style: N360Type.caption.copyWith(color: N360Colors.ink, fontWeight: FontWeight.w600, height: 1.25),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

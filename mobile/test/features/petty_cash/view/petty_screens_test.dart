@@ -33,7 +33,9 @@ void main() {
 
   testWidgets('no wallet explains who to ask', (tester) async {
     setPhone(tester);
-    final app = await TestApp.create(seed: false);
+    final api = FakeApi();
+    (api.user['can'] as Map)['petty_cash.manage'] = false;
+    final app = await TestApp.create(seed: false, api: api);
     addTearDown(app.dispose);
     app.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
     await app.sync();

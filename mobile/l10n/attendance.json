@@ -123,9 +123,9 @@
     "hi": "हाज़िरी में कोई कामगार नहीं"
   },
   "attendanceNoWorkersMessage": {
-    "en": "Add your workers here, or ask the office to add them.",
-    "mr": "तुमचे कामगार इथे जोडा किंवा ऑफिसला जोडायला सांगा.",
-    "hi": "अपने कामगार यहाँ जोड़ें या ऑफ़िस से जुड़वाएँ।"
+    "en": "Add your first worker to start the muster.",
+    "mr": "हजेरी सुरू करण्यासाठी पहिला कामगार जोडा.",
+    "hi": "हाज़िरी शुरू करने के लिए पहला कामगार जोड़ें।"
   },
   "attendanceLoadFailedTitle": {
     "en": "Could not open the muster",
@@ -221,5 +221,15 @@
     "en": "Marked so far",
     "mr": "आतापर्यंत नोंदवले",
     "hi": "अब तक दर्ज"
+  },
+  "attendanceAddFirstWorker": {
+    "en": "Add first worker",
+    "mr": "पहिला कामगार जोडा",
+    "hi": "पहला कामगार जोड़ें"
+  },
+  "attendanceNoWorkersAsk": {
+    "en": "Ask the office to add the workers.",
+    "mr": "ऑफिसला कामगार जोडायला सांगा.",
+    "hi": "ऑफ़िस से कामगार जुड़वाएँ।"
   }
 }

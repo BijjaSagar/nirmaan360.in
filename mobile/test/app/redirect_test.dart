@@ -5,6 +5,11 @@ import 'package:nirmaan360/core/session/current_user.dart';
 import 'package:nirmaan360/core/session/session_controller.dart';
 import 'package:nirmaan360/features/auth/view/sign_in_screen.dart';
 import 'package:nirmaan360/features/home/view/home_screen.dart';
+import 'package:nirmaan360/features/petty_cash/view/top_up_screen.dart';
+import 'package:nirmaan360/features/petty_cash/view/wallet_form_screen.dart';
+import 'package:nirmaan360/features/projects/view/boq_form_screen.dart';
+import 'package:nirmaan360/features/projects/view/boq_screen.dart';
+import 'package:nirmaan360/features/projects/view/project_form_screen.dart';
 import 'package:nirmaan360/features/projects/view/project_picker_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
@@ -122,6 +127,71 @@ void main() {
     await pumpShellApp(tester, app);
 
     expect(find.text(en.shellTabApprovals), findsWidgets);
+  });
+
+  group('setup routes', () {
+    Future<TestApp> withPermissions(Map<String, bool> permissions) async {
+      final app = await TestApp.create(seed: false, signedIn: false);
+      (app.api.user['can'] as Map).addAll(permissions);
+      await app.services.session.startSession('t', CurrentUser.fromJson(app.api.user));
+      app.api.seedDemo();
+      await app.sync();
+      return app;
+    }
+
+    testWidgets('an owner with no project can open the project form', (tester) async {
+      final app = await TestApp.create(seed: false, api: FakeApi()..grant('project.manage'));
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.projectForm);
+      expect(find.byType(ProjectFormScreen), findsOneWidget);
+    });
+
+    testWidgets('without permission the project form is not reachable', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.projectForm);
+      expect(find.byType(ProjectFormScreen), findsNothing);
+      expect(find.byType(ProjectPickerScreen), findsOneWidget);
+    });
+
+    testWidgets('the BOQ form needs boq.manage', (tester) async {
+      final app = await withPermissions(<String, bool>{'boq.manage': false});
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.boqForm);
+      expect(find.byType(BoqFormScreen), findsNothing);
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('the BOQ list needs boq.view', (tester) async {
+      final app = await withPermissions(<String, bool>{'boq.view': false});
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.boq);
+      expect(find.byType(BoqScreen), findsNothing);
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('wallet and top-up need petty_cash.manage', (tester) async {
+      final app = await withPermissions(<String, bool>{'petty_cash.manage': false});
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.walletForm);
+      expect(find.byType(WalletFormScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await pumpShellApp(tester, app, location: Routes.topUp);
+      expect(find.byType(TopUpScreen), findsNothing);
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('the setup routes open with the right permissions', (tester) async {
+      final app = await withPermissions(<String, bool>{'boq.manage': true});
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.boqForm);
+      expect(find.byType(BoqFormScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await pumpShellApp(tester, app, location: Routes.walletForm);
+      expect(find.byType(WalletFormScreen), findsOneWidget);
+    });
   });
 
   testWidgets('the app uses the stored language, else the server language', (tester) async {

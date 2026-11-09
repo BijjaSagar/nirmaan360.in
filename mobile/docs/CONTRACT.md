@@ -183,6 +183,24 @@ Rules for `measurement` and `dpr` (find by `server_id`, else by `client_uuid`):
 
 Add nullable `client_uuid` with `unique(organization_id, client_uuid)` to `attendance`, `workers`, `dpr_photos` and `approval_steps`. Add `client_updated_at` (timestamp, nullable) to `dprs`, `issues`, `attendance`, `measurement_entries`. Add `taken_at` (timestamp, nullable) to `dpr_photos`. `Attendance` becomes `Auditable`.
 
+### Setup from the app (online only)
+
+An owner can set up a site without the website. These are masters, so they need network and are not queued.
+
+Add `project.manage` and `boq.manage` to the `can` list. Add nullable `client_uuid` with `unique(organization_id, client_uuid)` to `projects`, `boq_items` and `petty_cash_wallets`.
+
+| Method and path | Permission | Body | Returns |
+| --- | --- | --- | --- |
+| `POST /projects` | `project.manage` | `name` (required), `location`, `start_date`, `end_date`, `contract_value`, `code`, `client_uuid` | `{data}` in the `projects` pull shape |
+| `POST /projects/{project}/boq-items` | `boq.manage` | `description`, `unit`, `qty`, `rate` (all required), `code`, `section`, `client_uuid` | `{data}` in the `boq_items` pull shape |
+| `POST /projects/{project}/wallets` | `petty_cash.manage` | `name` (required), `user_id`, `client_uuid` | `{data}` in the `wallets` pull shape |
+
+- All three return 201 the first time and 200 for a repeated `client_uuid`, with no second row. Other organisations' records are 404.
+- A blank project `code` is generated: up to 4 uppercase initials of the name, with a number added if needed to stay unique in the organisation. Other project fields use the schema defaults.
+- A blank BOQ `code` becomes the next number in that project. `section` is a name, found or created in that project. `sort` follows the web rule.
+- The plan project limit is a 422 with `errors.plan`, using the web's message.
+- A wallet top-up is an ordinary `petty_cash` push item with `type: topup`, so it works offline.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

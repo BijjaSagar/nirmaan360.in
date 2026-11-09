@@ -119,6 +119,7 @@
   "approvalsWeather": "Weather",
   "approvalsWorkDone": "Work done",
   "approvalsWorkers": "workers",
+  "attendanceAddFirstWorker": "Add first worker",
   "attendanceAddWorker": "Add worker",
   "attendanceAllMarked": "Everyone is marked",
   "attendanceAllPresent": "All present ({count})",
@@ -167,7 +168,8 @@
   "attendanceMarkedSoFar": "Marked so far",
   "attendanceNoProjectMessage": "Choose a project first, then mark the muster here.",
   "attendanceNoProjectTitle": "No project chosen",
-  "attendanceNoWorkersMessage": "Add your workers here, or ask the office to add them.",
+  "attendanceNoWorkersAsk": "Ask the office to add the workers.",
+  "attendanceNoWorkersMessage": "Add your first worker to start the muster.",
   "attendanceNoWorkersTitle": "No workers on the muster",
   "attendanceOtHours": "Overtime hours",
   "attendanceOtLess": "Half hour less",
@@ -202,6 +204,70 @@
   "attendanceSheetWageHelper": "Leave blank if you do not know it.",
   "attendanceTitle": "Attendance",
   "attendanceTodayTitle": "Today's attendance",
+  "boqAddItem": "Add item",
+  "boqBalance": "Balance {qty} {unit}",
+  "@boqBalance": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "boqEmptyAsk": "A BOQ is the list of work on this project. Ask the office to add it.",
+  "boqEmptyExplain": "A BOQ is the list of work on this project, with quantity and rate.",
+  "boqEmptyTitle": "No BOQ lines yet",
+  "boqFormAdded": "Line added. Add the next one.",
+  "boqFormAmount": "Amount",
+  "boqFormCode": "Code (optional)",
+  "boqFormCodeHelper": "Leave blank to get the next number.",
+  "boqFormDescription": "Work description",
+  "boqFormDescriptionHint": "M25 concrete in slab",
+  "boqFormDescriptionRequired": "Write the work description.",
+  "boqFormFailed": "The line could not be saved. Try again.",
+  "boqFormFinish": "Save and finish",
+  "boqFormQty": "Quantity",
+  "boqFormQtyRequired": "Enter the quantity.",
+  "boqFormRate": "Rate",
+  "boqFormRateRequired": "Enter the rate.",
+  "boqFormSaveAnother": "Save and add another",
+  "boqFormSection": "Section (optional)",
+  "boqFormSectionHint": "Superstructure",
+  "boqFormTitle": "Add BOQ item",
+  "boqFormUnit": "Unit",
+  "boqFormUnitRequired": "Choose the unit.",
+  "boqLinesAdded": "{count} {count, plural, =1{line} other{lines}} added",
+  "@boqLinesAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "boqMeasuredShare": "{percent}% measured",
+  "@boqMeasuredShare": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "boqMissingAsk": "Ask the office to add them. If they are added already, connect to the network once.",
+  "boqMissingManage": "Add the lines, then pick them here.",
+  "boqMissingTitle": "This project has no BOQ lines yet",
+  "boqNoMatchMessage": "Try another code or word.",
+  "boqNoMatchTitle": "Nothing found",
+  "boqNoProjectMessage": "Choose a project first to see its BOQ.",
+  "boqNoProjectTitle": "No project chosen",
+  "boqNoSection": "Other lines",
+  "boqOfflineDetail": "BOQ lines can be saved only online.",
+  "boqOfflineTitle": "No network.",
+  "boqOpenAction": "Open BOQ",
+  "boqSearchHint": "Code or work",
+  "boqSearchLabel": "Search lines",
+  "boqTitle": "BOQ",
   "commonBack": "Back",
   "commonCancel": "Cancel",
   "commonDone": "Done",
@@ -263,7 +329,6 @@
     }
   },
   "dprBoqEmpty": "No BOQ items found.",
-  "dprBoqNotSynced": "BOQ not on this phone yet. Connect to the network once.",
   "dprCameraFailed": "Could not open the camera. Allow camera in phone settings.",
   "dprChooseAnother": "Other item",
   "dprCorrectAndSend": "Correct and send again",
@@ -515,8 +580,6 @@
   "measurementLockedTitle": "This entry cannot be changed",
   "measurementNet": "net",
   "measurementNext": "Next",
-  "measurementNoBoqBody": "Connect to the network once so the BOQ comes to this phone.",
-  "measurementNoBoqTitle": "No BOQ lines yet",
   "measurementNoMatchTitle": "Nothing matches",
   "measurementNos": "Nos",
   "measurementOffline": "No network.",
@@ -571,6 +634,7 @@
   },
   "measurementYesterday": "Yesterday",
   "pettyCashAddExpense": "Add expense",
+  "pettyCashAddMoney": "Add money",
   "pettyCashAmount": "Amount",
   "pettyCashAmountRequired": "Enter an amount above zero.",
   "pettyCashBalance": "Balance",
@@ -589,6 +653,7 @@
   "pettyCashCategory": "What was it for?",
   "pettyCashCategoryRequired": "Choose what it was for.",
   "pettyCashConfirmed": "Confirmed",
+  "pettyCashCreateWallet": "Create wallet",
   "pettyCashDate": "Date",
   "pettyCashDayToday": "Today",
   "pettyCashDayYesterday": "Yesterday",
@@ -601,10 +666,15 @@
   "pettyCashFormTitle": "Add an expense",
   "pettyCashNoProjectMessage": "Choose a project first, then record expenses here.",
   "pettyCashNoProjectTitle": "No project chosen",
+  "pettyCashNoWalletManageMessage": "Create one to record site expenses here.",
+  "pettyCashNoWalletManageTitle": "No wallet on this project yet",
   "pettyCashNoWalletMessage": "Ask your project manager or the accounts office to open one for you.",
   "pettyCashNoWalletTitle": "You have no wallet on this project",
   "pettyCashNote": "Note (optional)",
   "pettyCashNoteHint": "Diesel for the mixer",
+  "pettyCashOpeningAmount": "Opening amount",
+  "pettyCashOpeningHelper": "Leave blank if there is no money yet.",
+  "pettyCashOpeningNote": "Opening balance",
   "pettyCashOverBalance": "More than the wallet balance of {balance}. Ask the office for a top-up.",
   "@pettyCashOverBalance": {
     "placeholders": {
@@ -622,9 +692,47 @@
   "pettyCashSyncAttention": "Needs attention",
   "pettyCashSyncSending": "Sending",
   "pettyCashTitle": "Petty cash",
+  "pettyCashTopUpEyebrow": "Money into the wallet",
+  "pettyCashTopUpFailed": "Could not save the money. Try again.",
+  "pettyCashTopUpNoteHint": "Cash from office",
+  "pettyCashTopUpSave": "Save money received",
   "pettyCashTopup": "Top-up",
   "pettyCashUnsent": "Not sent yet",
   "pettyCashWallet": "Wallet",
+  "pettyCashWalletCreateKey": "Create",
+  "pettyCashWalletCreated": "Wallet created",
+  "pettyCashWalletCreatedMoney": "Wallet created. {amount} saved on phone, sending now.",
+  "@pettyCashWalletCreatedMoney": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletCreatedOffline": "Wallet created. {amount} saved on phone, sends when network returns.",
+  "@pettyCashWalletCreatedOffline": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletDefaultName": "{code} site cash",
+  "@pettyCashWalletDefaultName": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletFailed": "The wallet could not be created. Try again.",
+  "pettyCashWalletFormEyebrow": "New wallet",
+  "pettyCashWalletHolder": "Who holds the cash?",
+  "pettyCashWalletMoneyFailed": "Wallet created, but the money was not saved. Add it again.",
+  "pettyCashWalletName": "Wallet name",
+  "pettyCashWalletNameRequired": "Write a name for the wallet.",
+  "pettyCashWalletOffline": "No network.",
+  "pettyCashWalletOfflineDetail": "A wallet can be created only online.",
   "shellCaptionMarked": "marked",
   "shellCaptionOpen": "open",
   "shellCaptionToday": "today",
@@ -655,6 +763,9 @@
   "shellPickerEmptyBody": "Ask your office to add you to a project, then try again.",
   "shellPickerEmptyTitle": "No projects yet",
   "shellPickerEyebrow": "Your projects",
+  "shellPickerFirstBody": "Add your project and run its work from this phone.",
+  "shellPickerFirstButton": "Create your first project",
+  "shellPickerFirstTitle": "Let's set up your first site",
   "shellPickerLoading": "Getting your projects…",
   "shellPickerTitle": "Which site today?",
   "shellPillAllSent": "All sent",
@@ -677,6 +788,20 @@
     }
   },
   "shellProgressTitle": "Construction progress",
+  "shellProjectChoose": "Choose",
+  "shellProjectCreate": "Create project",
+  "shellProjectCreating": "Creating…",
+  "shellProjectEnd": "End date",
+  "shellProjectEndBeforeStart": "End date must be after the start date",
+  "shellProjectFormTitle": "New project",
+  "shellProjectLocation": "Location",
+  "shellProjectName": "Project name",
+  "shellProjectNameRequired": "Enter a name for the project",
+  "shellProjectOffline": "A project can only be created with network. Try again when you have signal.",
+  "shellProjectPlanTitle": "Project limit reached",
+  "shellProjectStart": "Start date",
+  "shellProjectValue": "Contract value (optional)",
+  "shellProjectValueEmpty": "Tap to enter",
   "shellReportAttention": "Needs a look",
   "shellReportNotStarted": "Not started",
   "shellReportSaved": "Saved",
@@ -710,6 +835,29 @@
   "shellSettingsLanguage": "Language",
   "shellSettingsSignedIn": "Signed in as",
   "shellSettingsVersion": "App version",
+  "shellSetupBoq": "BOQ items",
+  "shellSetupNext": "Next: {step}",
+  "@shellSetupNext": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
+  "shellSetupStepSemantics": "{step}: {count}",
+  "@shellSetupStepSemantics": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSetupTitle": "Set up your site",
+  "shellSetupWallet": "Petty cash wallet",
+  "shellSetupWorkers": "Workers",
   "shellSignInBusy": "Signing in…",
   "shellSignInButton": "Sign in",
   "shellSignInEmail": "Email",

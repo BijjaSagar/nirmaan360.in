@@ -196,7 +196,9 @@ class _MusterList extends StatelessWidget {
               return SliverToBoxAdapter(
                 child: EmptyLedger(
                   title: l.attendanceNoWorkersTitle,
-                  message: l.attendanceNoWorkersMessage,
+                  message: context.read<AppServices>().auth.can('worker.manage')
+                      ? l.attendanceNoWorkersMessage
+                      : l.attendanceNoWorkersAsk,
                 ),
               );
             }
@@ -267,6 +269,9 @@ class _BottomActions extends StatelessWidget {
         final bool done = left == 0;
         final AttendanceCubit cubit = context.read<AttendanceCubit>();
         final bool animate = !context.motion.reduced;
+        final bool canAddWorker = context.read<AppServices>().auth.can('worker.manage');
+
+        if (ready && total == 0 && !canAddWorker) return const SizedBox.shrink();
 
         return FieldActionBar(
           child: Column(
@@ -293,15 +298,20 @@ class _BottomActions extends StatelessWidget {
                         onPressed: done ? null : () => cubit.markAllPresent(animate: animate),
                       ),
                     ),
-                  if (showAllPresent) ...<Widget>[
+                  if (showAllPresent && canAddWorker) ...<Widget>[
                     const SizedBox(width: N360Space.sm),
-                    _AddWorkerTile(onTap: () => showAddWorkerSheet(context)),
-                  ] else
+                    FieldSideTile(
+                      icon: Icons.person_add_alt_1,
+                      label: l.attendanceAddWorker,
+                      onTap: () => showAddWorkerSheet(context),
+                    ),
+                  ],
+                  if (!showAllPresent && canAddWorker)
                     Expanded(
                       child: GloveButton(
-                        label: l.attendanceAddWorker,
-                        kind: GloveButtonKind.secondary,
+                        label: ready && total == 0 ? l.attendanceAddFirstWorker : l.attendanceAddWorker,
                         icon: Icons.person_add_alt_1,
+                        kind: ready && total == 0 ? GloveButtonKind.primary : GloveButtonKind.secondary,
                         large: true,
                         fullWidth: true,
                         onPressed: () => showAddWorkerSheet(context),
@@ -313,56 +323,6 @@ class _BottomActions extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-/// Add worker as a small tile with its word under the icon, so "All present"
-/// keeps a whole line and the bar stays one row high.
-class _AddWorkerTile extends StatelessWidget {
-  const _AddWorkerTile({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    return PressTarget(
-      onTap: onTap,
-      minHeight: N360Size.tapLarge,
-      semanticsLabel: l.attendanceAddWorker,
-      child: SizedBox(
-        width: 92,
-        height: N360Size.tapLarge,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Icon(Icons.person_add_alt_1, size: 24, color: N360Colors.ink),
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  l.attendanceAddWorker,
-                  maxLines: 1,
-                  style: N360Type.label.copyWith(height: 1.2, color: N360Colors.ink),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      builder: (context, depth, child) => Transform.scale(
-        scale: 1 - 0.035 * depth,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: N360Colors.paper2,
-            borderRadius: N360Radius.tileRadius,
-          ),
-          child: child,
-        ),
-      ),
     );
   }
 }

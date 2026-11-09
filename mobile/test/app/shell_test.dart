@@ -104,6 +104,9 @@ void main() {
       Routes.pettyCash,
       Routes.expenseForm,
       Routes.settings,
+      Routes.boq,
+      Routes.walletForm,
+      Routes.topUp,
     ];
     // Reads CurrentUser so that a permission-guarded route resolves.
     expect(CurrentUser.fromJson(app.api.user).name, isNotEmpty);

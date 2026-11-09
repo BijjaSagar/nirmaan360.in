@@ -63,6 +63,7 @@ class HomeState extends Equatable {
     this.approvalsCount = 0,
     this.openIssues = 0,
     this.progress,
+    this.setup,
   });
 
   /// Null until the first read of the day's figures.
@@ -74,12 +75,16 @@ class HomeState extends Equatable {
   final int openIssues;
   final HomeProgress? progress;
 
+  /// What the project still needs set up. Null until first read.
+  final ProjectSetup? setup;
+
   HomeState copyWith({
     HomeSummary? summary,
     List<ReturnedItem>? returned,
     int? approvalsCount,
     int? openIssues,
     HomeProgress? Function()? progress,
+    ProjectSetup? setup,
   }) {
     return HomeState(
       summary: summary ?? this.summary,
@@ -87,11 +92,21 @@ class HomeState extends Equatable {
       approvalsCount: approvalsCount ?? this.approvalsCount,
       openIssues: openIssues ?? this.openIssues,
       progress: progress == null ? this.progress : progress(),
+      setup: setup ?? this.setup,
     );
   }
 
   @override
-  List<Object?> get props => <Object?>[summary, returned, approvalsCount, openIssues, progress];
+  List<Object?> get props => <Object?>[
+        summary,
+        returned,
+        approvalsCount,
+        openIssues,
+        progress,
+        setup?.boqCount,
+        setup?.workerCount,
+        setup?.walletCount,
+      ];
 }
 
 /// Today's picture for one project, live from the local database.
@@ -126,6 +141,9 @@ class HomeCubit extends Cubit<HomeState> {
         _publishReturned();
       }),
       _services.approvals.watchCount().listen(_onApprovals),
+      _services.projects.watchSetup(projectId).listen((setup) {
+        if (!isClosed) emit(state.copyWith(setup: setup));
+      }),
     ]);
   }
 

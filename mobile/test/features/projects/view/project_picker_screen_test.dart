@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nirmaan360/app/routes.dart';
 import 'package:nirmaan360/core/design/design.dart';
 import 'package:nirmaan360/features/home/view/home_screen.dart';
+import 'package:nirmaan360/features/projects/view/project_form_screen.dart';
 import 'package:nirmaan360/features/projects/view/project_picker_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
@@ -48,6 +50,72 @@ void main() {
     expect(find.byType(ProjectPickerScreen), findsOneWidget);
     // Stamps set Latin text in capitals.
     expect(find.text(en.shellPickerCurrent.toUpperCase()), findsOneWidget);
+  });
+
+  group('for someone who can create projects', () {
+    testWidgets('an empty account is an invitation, never "ask your office"', (tester) async {
+      final app = await TestApp.create(seed: false, api: FakeApi()..grant('project.manage'));
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.shellPickerFirstButton), findsOneWidget);
+      expect(find.text(en.shellPickerEmptyBody), findsNothing);
+      expect(find.text(en.shellPickerEmptyTitle), findsNothing);
+
+      await tester.tap(find.text(en.shellPickerFirstButton));
+      await settle(tester);
+      expect(find.byType(ProjectFormScreen), findsOneWidget);
+    });
+
+    testWidgets('a list offers a new project', (tester) async {
+      final app = await TestApp.create(seed: false, api: FakeApi()..grant('project.manage'));
+      addTearDown(app.dispose);
+      app.api
+        ..seedDemo()
+        ..addProject(id: 2, code: 'MH-07', name: 'Mahalaxmi Heights');
+      await app.sync();
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.shellProjectFormTitle), findsOneWidget);
+      await tester.tap(find.text(en.shellProjectFormTitle));
+      await settle(tester);
+      expect(find.byType(ProjectFormScreen), findsOneWidget);
+    });
+
+    testWidgets('an owner with one project reaches the picker from home', (tester) async {
+      final app = await TestApp.create(seed: false, api: FakeApi()..grant('project.manage'));
+      addTearDown(app.dispose);
+      app.api.seedDemo();
+      await app.sync();
+      await pumpShellApp(tester, app);
+      expect(find.byType(HomeScreen), findsOneWidget);
+
+      await tester.tap(find.text('Kalyani Tower B'));
+      await settle(tester);
+
+      expect(find.byType(ProjectPickerScreen), findsOneWidget);
+      expect(find.text(en.shellProjectFormTitle), findsOneWidget);
+    });
+
+    testWidgets('one project on a first run still skips the picker', (tester) async {
+      final app = await TestApp.create(seed: false, api: FakeApi()..grant('project.manage'));
+      addTearDown(app.dispose);
+      app.api.seedDemo();
+      await app.sync();
+      await pumpShellApp(tester, app, location: Routes.projects);
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+  });
+
+  testWidgets('without permission one project keeps the name plain', (tester) async {
+    final app = await TestApp.create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app);
+
+    await tester.tap(find.text('Kalyani Tower B'));
+    await settle(tester);
+
+    expect(find.byType(ProjectPickerScreen), findsNothing);
   });
 
   testWidgets('with no projects it says so and offers a retry', (tester) async {

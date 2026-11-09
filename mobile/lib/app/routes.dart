@@ -2,6 +2,17 @@
 abstract final class Routes {
   static const signIn = '/sign-in';
   static const projects = '/projects';
+
+  /// The picker, opened on purpose from Home. An owner with a single project
+  /// can then still see it, to add a second one; otherwise one project skips it.
+  static const projectsSwitch = '/projects?switch=1';
+
+  /// Create a project. Needs `project.manage` and network.
+  static const projectForm = '/projects/new';
+
+  /// BOQ lines of the current project, and adding one.
+  static const boq = '/boq';
+  static const boqForm = '/boq/form';
   static const home = '/home';
   static const outbox = '/outbox';
   static const settings = '/settings';
@@ -29,4 +40,6 @@ abstract final class Routes {
 
   static const pettyCash = '/petty-cash';
   static const expenseForm = '/petty-cash/form';
+  static const walletForm = '/petty-cash/wallet';
+  static const topUp = '/petty-cash/top-up';
 }

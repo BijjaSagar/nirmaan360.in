@@ -1,0 +1,220 @@
+{
+  "boqTitle": {
+    "en": "BOQ",
+    "mr": "BOQ",
+    "hi": "BOQ"
+  },
+  "boqAddItem": {
+    "en": "Add item",
+    "mr": "आयटम जोडा",
+    "hi": "आइटम जोड़ें"
+  },
+  "boqSearchLabel": {
+    "en": "Search lines",
+    "mr": "ओळी शोधा",
+    "hi": "लाइनें खोजें"
+  },
+  "boqSearchHint": {
+    "en": "Code or work",
+    "mr": "कोड किंवा काम",
+    "hi": "कोड या काम"
+  },
+  "boqNoProjectTitle": {
+    "en": "No project chosen",
+    "mr": "प्रकल्प निवडलेला नाही",
+    "hi": "कोई प्रोजेक्ट नहीं चुना"
+  },
+  "boqNoProjectMessage": {
+    "en": "Choose a project first to see its BOQ.",
+    "mr": "BOQ पाहण्यासाठी आधी प्रकल्प निवडा.",
+    "hi": "BOQ देखने के लिए पहले प्रोजेक्ट चुनें।"
+  },
+  "boqEmptyTitle": {
+    "en": "No BOQ lines yet",
+    "mr": "BOQ ओळी अजून नाहीत",
+    "hi": "BOQ लाइनें अभी नहीं हैं"
+  },
+  "boqEmptyExplain": {
+    "en": "A BOQ is the list of work on this project, with quantity and rate.",
+    "mr": "BOQ म्हणजे या प्रकल्पातील कामांची यादी, परिमाण आणि दरासह.",
+    "hi": "BOQ यानी इस प्रोजेक्ट के कामों की सूची, मात्रा और दर के साथ।"
+  },
+  "boqEmptyAsk": {
+    "en": "A BOQ is the list of work on this project. Ask the office to add it.",
+    "mr": "BOQ म्हणजे या प्रकल्पातील कामांची यादी. ऑफिसला ती जोडायला सांगा.",
+    "hi": "BOQ यानी इस प्रोजेक्ट के कामों की सूची। ऑफ़िस से जुड़वाएँ।"
+  },
+  "boqNoMatchTitle": {
+    "en": "Nothing found",
+    "mr": "काही सापडले नाही",
+    "hi": "कुछ नहीं मिला"
+  },
+  "boqNoMatchMessage": {
+    "en": "Try another code or word.",
+    "mr": "दुसरा कोड किंवा शब्द वापरून पाहा.",
+    "hi": "कोई और कोड या शब्द आज़माएँ।"
+  },
+  "boqNoSection": {
+    "en": "Other lines",
+    "mr": "इतर ओळी",
+    "hi": "अन्य लाइनें"
+  },
+  "boqBalance": {
+    "en": "Balance {qty} {unit}",
+    "mr": "शिल्लक {qty} {unit}",
+    "hi": "शेष {qty} {unit}",
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "boqMeasuredShare": {
+    "en": "{percent}% measured",
+    "mr": "{percent}% मोजले",
+    "hi": "{percent}% मापा",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "boqFormTitle": {
+    "en": "Add BOQ item",
+    "mr": "BOQ आयटम जोडा",
+    "hi": "BOQ आइटम जोड़ें"
+  },
+  "boqFormDescription": {
+    "en": "Work description",
+    "mr": "कामाचे वर्णन",
+    "hi": "काम का विवरण"
+  },
+  "boqFormDescriptionHint": {
+    "en": "M25 concrete in slab",
+    "mr": "स्लॅबमध्ये M25 काँक्रीट",
+    "hi": "स्लैब में M25 कंक्रीट"
+  },
+  "boqFormDescriptionRequired": {
+    "en": "Write the work description.",
+    "mr": "कामाचे वर्णन लिहा.",
+    "hi": "काम का विवरण लिखें।"
+  },
+  "boqFormUnit": {
+    "en": "Unit",
+    "mr": "एकक",
+    "hi": "इकाई"
+  },
+  "boqFormUnitRequired": {
+    "en": "Choose the unit.",
+    "mr": "एकक निवडा.",
+    "hi": "इकाई चुनें।"
+  },
+  "boqFormSection": {
+    "en": "Section (optional)",
+    "mr": "विभाग (ऐच्छिक)",
+    "hi": "सेक्शन (वैकल्पिक)"
+  },
+  "boqFormSectionHint": {
+    "en": "Superstructure",
+    "mr": "सुपरस्ट्रक्चर",
+    "hi": "सुपरस्ट्रक्चर"
+  },
+  "boqFormCode": {
+    "en": "Code (optional)",
+    "mr": "कोड (ऐच्छिक)",
+    "hi": "कोड (वैकल्पिक)"
+  },
+  "boqFormCodeHelper": {
+    "en": "Leave blank to get the next number.",
+    "mr": "रिकामे ठेवले तर पुढचा क्रमांक मिळेल.",
+    "hi": "खाली छोड़ें तो अगला नंबर मिलेगा।"
+  },
+  "boqFormQty": {
+    "en": "Quantity",
+    "mr": "परिमाण",
+    "hi": "मात्रा"
+  },
+  "boqFormRate": {
+    "en": "Rate",
+    "mr": "दर",
+    "hi": "दर"
+  },
+  "boqFormAmount": {
+    "en": "Amount",
+    "mr": "रक्कम",
+    "hi": "रकम"
+  },
+  "boqFormQtyRequired": {
+    "en": "Enter the quantity.",
+    "mr": "परिमाण टाका.",
+    "hi": "मात्रा डालें।"
+  },
+  "boqFormRateRequired": {
+    "en": "Enter the rate.",
+    "mr": "दर टाका.",
+    "hi": "दर डालें।"
+  },
+  "boqFormSaveAnother": {
+    "en": "Save and add another",
+    "mr": "जतन करून आणखी जोडा",
+    "hi": "सेव करके और जोड़ें"
+  },
+  "boqFormFinish": {
+    "en": "Save and finish",
+    "mr": "जतन करून संपवा",
+    "hi": "सेव करके पूरा करें"
+  },
+  "boqLinesAdded": {
+    "en": "{count} {count, plural, =1{line} other{lines}} added",
+    "mr": "{count} ओळी जोडल्या",
+    "hi": "{count} लाइनें जोड़ीं",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "boqFormAdded": {
+    "en": "Line added. Add the next one.",
+    "mr": "ओळ जोडली. पुढची जोडा.",
+    "hi": "लाइन जुड़ गई। अगली जोड़ें।"
+  },
+  "boqOfflineTitle": {
+    "en": "No network.",
+    "mr": "नेटवर्क नाही.",
+    "hi": "नेटवर्क नहीं है।"
+  },
+  "boqOfflineDetail": {
+    "en": "BOQ lines can be saved only online.",
+    "mr": "BOQ ओळी फक्त ऑनलाइन जतन होतात.",
+    "hi": "BOQ लाइनें सिर्फ़ ऑनलाइन सेव होती हैं।"
+  },
+  "boqFormFailed": {
+    "en": "The line could not be saved. Try again.",
+    "mr": "ओळ जतन करता आली नाही. पुन्हा प्रयत्न करा.",
+    "hi": "लाइन सेव नहीं हुई। फिर से कोशिश करें।"
+  },
+  "boqMissingTitle": {
+    "en": "This project has no BOQ lines yet",
+    "mr": "या प्रकल्पात अजून BOQ ओळी नाहीत",
+    "hi": "इस प्रोजेक्ट में अभी BOQ लाइनें नहीं हैं"
+  },
+  "boqMissingManage": {
+    "en": "Add the lines, then pick them here.",
+    "mr": "ओळी जोडा, मग इथे निवडा.",
+    "hi": "लाइनें जोड़ें, फिर यहाँ चुनें।"
+  },
+  "boqMissingAsk": {
+    "en": "Ask the office to add them. If they are added already, connect to the network once.",
+    "mr": "ऑफिसला जोडायला सांगा. आधीच जोडल्या असतील तर एकदा नेटवर्कला जोडा.",
+    "hi": "ऑफ़िस से जुड़वाएँ। पहले से जुड़ी हों तो एक बार नेटवर्क से जुड़ें।"
+  },
+  "boqOpenAction": {
+    "en": "Open BOQ",
+    "mr": "BOQ उघडा",
+    "hi": "BOQ खोलें"
+  }
+}

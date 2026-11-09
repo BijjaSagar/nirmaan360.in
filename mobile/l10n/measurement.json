@@ -279,16 +279,6 @@
     "mr": "उदा. 2.1 किंवा स्लॅब",
     "hi": "जैसे 2.1 या स्लैब"
   },
-  "measurementNoBoqTitle": {
-    "en": "No BOQ lines yet",
-    "mr": "BOQ ओळी अजून नाहीत",
-    "hi": "BOQ लाइनें अभी नहीं हैं"
-  },
-  "measurementNoBoqBody": {
-    "en": "Connect to the network once so the BOQ comes to this phone.",
-    "mr": "एकदा नेटवर्कला जोडा, म्हणजे BOQ या फोनवर येईल.",
-    "hi": "एक बार नेटवर्क से जुड़ें, ताकि BOQ इस फ़ोन पर आ जाए।"
-  },
   "measurementNoMatchTitle": {
     "en": "Nothing matches",
     "mr": "काहीही जुळत नाही",

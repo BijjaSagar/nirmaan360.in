@@ -20,6 +20,14 @@ const String _dir = String.fromEnvironment('N360_SHELL_DIR');
 
 const List<String> _locales = <String>['en', 'mr'];
 
+/// Signed in as someone who can set up a site, with nothing on the server yet.
+Future<TestApp> _owner() => TestApp.create(
+      seed: false,
+      api: FakeApi()
+        ..grant('project.manage')
+        ..grant('boq.manage'),
+    );
+
 void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
@@ -93,6 +101,60 @@ void main() {
       app.connectivity.setOnline(false);
       await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
       await shoot(tester, '${locale}_home_offline');
+    });
+
+    testWidgets('new owner with no project ($locale)', (tester) async {
+      final app = await _owner();
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_owner_first');
+    });
+
+    testWidgets('project form ($locale)', (tester) async {
+      final app = await _owner();
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5, location: Routes.projectForm);
+      await shoot(tester, '${locale}_project_form');
+    });
+
+    testWidgets('project form, offline ($locale)', (tester) async {
+      final app = await _owner();
+      addTearDown(app.dispose);
+      app.connectivity.setOnline(false);
+      await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5, location: Routes.projectForm);
+      await shoot(tester, '${locale}_project_form_offline');
+    });
+
+    testWidgets('owner home, nothing set up ($locale)', (tester) async {
+      final app = await _owner();
+      addTearDown(app.dispose);
+      app.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      await app.sync();
+      await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_owner_home_setup0');
+    });
+
+    testWidgets('owner home, one step done ($locale)', (tester) async {
+      final app = await _owner();
+      addTearDown(app.dispose);
+      app.api
+        ..addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B')
+        ..addWorker2(id: 1, name: 'Ramesh Pawar');
+      await app.sync();
+      await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_owner_home_setup1');
+    });
+
+    testWidgets('owner picker with new project ($locale)', (tester) async {
+      final app = await _owner();
+      addTearDown(app.dispose);
+      app.api
+        ..addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B')
+        ..addProject(id: 2, code: 'MH-07', name: 'Mahalaxmi Heights');
+      await app.sync();
+      await app.services.projects.selectProject(1);
+      await pumpShellApp(tester, app, locale: locale, pixelRatio: 2.5, location: Routes.projects);
+      await shoot(tester, '${locale}_owner_picker');
     });
 
     testWidgets('home with no BOQ ($locale)', (tester) async {

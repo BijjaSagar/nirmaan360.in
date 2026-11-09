@@ -37,18 +37,43 @@ class _PettyCashView extends StatelessWidget {
           child: BlocBuilder<PettyCashCubit, PettyCashState>(
             builder: (context, state) {
               final AppLocalizations l = AppLocalizations.of(context);
+              final bool canManage = context.read<AppServices>().auth.can('petty_cash.manage');
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Expanded(child: _Scroll(state: state)),
+                  Expanded(child: _Scroll(state: state, canManage: canManage)),
                   if (state.load == PettyCashLoad.ready)
                     FieldActionBar(
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: GloveButton(
+                              label: l.pettyCashAddExpense,
+                              icon: Icons.add,
+                              large: true,
+                              fullWidth: true,
+                              onPressed: () => context.push(Routes.expenseForm),
+                            ),
+                          ),
+                          if (canManage) ...<Widget>[
+                            const SizedBox(width: N360Space.sm),
+                            FieldSideTile(
+                              icon: Icons.savings_outlined,
+                              label: l.pettyCashAddMoney,
+                              onTap: () => context.push(Routes.topUp),
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                  else if (state.load == PettyCashLoad.noWallet && canManage)
+                    FieldActionBar(
                       child: GloveButton(
-                        label: l.pettyCashAddExpense,
-                        icon: Icons.add,
+                        label: l.pettyCashCreateWallet,
+                        icon: Icons.account_balance_wallet_outlined,
                         large: true,
                         fullWidth: true,
-                        onPressed: () => context.push(Routes.expenseForm),
+                        onPressed: () => context.push(Routes.walletForm),
                       ),
                     ),
                 ],
@@ -62,9 +87,10 @@ class _PettyCashView extends StatelessWidget {
 }
 
 class _Scroll extends StatelessWidget {
-  const _Scroll({required this.state});
+  const _Scroll({required this.state, required this.canManage});
 
   final PettyCashState state;
+  final bool canManage;
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +113,8 @@ class _Scroll extends StatelessWidget {
           ),
           PettyCashLoad.noWallet => SliverToBoxAdapter(
             child: EmptyLedger(
-              title: l.pettyCashNoWalletTitle,
-              message: l.pettyCashNoWalletMessage,
+              title: canManage ? l.pettyCashNoWalletManageTitle : l.pettyCashNoWalletTitle,
+              message: canManage ? l.pettyCashNoWalletManageMessage : l.pettyCashNoWalletMessage,
             ),
           ),
           PettyCashLoad.ready => _Wallet(state: state),

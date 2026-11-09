@@ -9,6 +9,27 @@ import '../data/petty_cash_repository.dart';
 
 const String pettyCashWalletMetaKey = 'petty_cash.selected_wallet';
 
+/// Which wallet a screen should open on: the [current] one if it still exists,
+/// else the remembered one, else the wallet held by this user, else the first.
+Future<int> pickWalletId(
+  AppServices services,
+  List<WalletLine> wallets, {
+  int? current,
+}) async {
+  bool exists(int? id) => id != null && wallets.any((w) => w.wallet.id == id);
+
+  if (exists(current)) return current!;
+  final int? remembered = int.tryParse(
+    await services.db.readMeta(pettyCashWalletMetaKey) ?? '',
+  );
+  if (exists(remembered)) return remembered!;
+  final int? me = services.session.user?.id;
+  for (final WalletLine line in wallets) {
+    if (line.wallet.userId == me) return line.wallet.id;
+  }
+  return wallets.first.wallet.id;
+}
+
 enum PettyCashLoad { loading, ready, noProject, noWallet }
 
 class PettyCashState {
@@ -87,7 +108,7 @@ class PettyCashCubit extends Cubit<PettyCashState> {
       emit(state.copyWith(wallets: const [], load: PettyCashLoad.noWallet));
       return;
     }
-    final int walletId = await _pickWallet(wallets);
+    final int walletId = await pickWalletId(_services, wallets, current: state.selectedWalletId);
     if (isClosed) return;
     emit(
       state.copyWith(
@@ -97,23 +118,6 @@ class PettyCashCubit extends Cubit<PettyCashState> {
       ),
     );
     _watchEntries(walletId);
-  }
-
-  /// Keeps the current wallet if it still exists, else the remembered one,
-  /// else the wallet held by this user, else the first.
-  Future<int> _pickWallet(List<WalletLine> wallets) async {
-    bool exists(int? id) => id != null && wallets.any((w) => w.wallet.id == id);
-
-    if (exists(state.selectedWalletId)) return state.selectedWalletId!;
-    final remembered = int.tryParse(
-      await _services.db.readMeta(pettyCashWalletMetaKey) ?? '',
-    );
-    if (exists(remembered)) return remembered!;
-    final int? me = _services.session.user?.id;
-    for (final wallet in wallets) {
-      if (wallet.wallet.userId == me) return wallet.wallet.id;
-    }
-    return wallets.first.wallet.id;
   }
 
   void _watchEntries(int walletId) {

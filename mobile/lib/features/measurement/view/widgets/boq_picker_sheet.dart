@@ -5,6 +5,7 @@ import '../../../../core/app_services.dart';
 import '../../../../core/design/design.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../projects/data/project_repository.dart';
+import '../../../projects/view/boq_missing_prompt.dart';
 import '../../bloc/boq_picker_cubit.dart';
 import '../../bloc/measurement_book.dart';
 import 'book_kit.dart';
@@ -24,7 +25,7 @@ Future<BoqLine?> showBoqPicker(
     sheetAnimationStyle: context.motion.reduced ? AnimationStyle.noAnimation : null,
     builder: (sheetContext) => BlocProvider<BoqPickerCubit>(
       create: (_) => BoqPickerCubit(services: services, projectId: projectId)..start(),
-      child: _BoqPicker(selectedId: selectedId),
+      child: _BoqPicker(services: services, selectedId: selectedId),
     ),
   );
 }
@@ -46,8 +47,9 @@ class _Line extends _Item {
 }
 
 class _BoqPicker extends StatelessWidget {
-  const _BoqPicker({this.selectedId});
+  const _BoqPicker({required this.services, this.selectedId});
 
+  final AppServices services;
   final int? selectedId;
 
   List<_Item> _items(BoqPickerState state, AppLocalizations l) {
@@ -100,12 +102,8 @@ class _BoqPicker extends StatelessWidget {
               builder: (context, state) {
                 final List<_Item> items = _items(state, l);
                 if (!state.loading && items.isEmpty) {
-                  return SingleChildScrollView(
-                    child: EmptyLedger(
-                      title: state.query.trim().isEmpty ? l.measurementNoBoqTitle : l.measurementNoMatchTitle,
-                      message: state.query.trim().isEmpty ? l.measurementNoBoqBody : null,
-                    ),
-                  );
+                  if (state.query.trim().isEmpty) return BoqMissingPrompt(services: services);
+                  return SingleChildScrollView(child: EmptyLedger(title: l.measurementNoMatchTitle));
                 }
                 return ListView.builder(
                   padding: const EdgeInsets.only(bottom: N360Space.sm),

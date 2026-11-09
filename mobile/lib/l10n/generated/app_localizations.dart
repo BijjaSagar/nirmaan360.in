@@ -604,6 +604,12 @@ abstract class AppLocalizations {
   /// **'workers'**
   String get approvalsWorkers;
 
+  /// No description provided for @attendanceAddFirstWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'Add first worker'**
+  String get attendanceAddFirstWorker;
+
   /// No description provided for @attendanceAddWorker.
   ///
   /// In en, this message translates to:
@@ -706,10 +712,16 @@ abstract class AppLocalizations {
   /// **'No project chosen'**
   String get attendanceNoProjectTitle;
 
+  /// No description provided for @attendanceNoWorkersAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the office to add the workers.'**
+  String get attendanceNoWorkersAsk;
+
   /// No description provided for @attendanceNoWorkersMessage.
   ///
   /// In en, this message translates to:
-  /// **'Add your workers here, or ask the office to add them.'**
+  /// **'Add your first worker to start the muster.'**
   String get attendanceNoWorkersMessage;
 
   /// No description provided for @attendanceNoWorkersTitle.
@@ -831,6 +843,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today\'s attendance'**
   String get attendanceTodayTitle;
+
+  /// No description provided for @boqAddItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Add item'**
+  String get boqAddItem;
+
+  /// No description provided for @boqBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance {qty} {unit}'**
+  String boqBalance(String qty, String unit);
+
+  /// No description provided for @boqEmptyAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'A BOQ is the list of work on this project. Ask the office to add it.'**
+  String get boqEmptyAsk;
+
+  /// No description provided for @boqEmptyExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'A BOQ is the list of work on this project, with quantity and rate.'**
+  String get boqEmptyExplain;
+
+  /// No description provided for @boqEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No BOQ lines yet'**
+  String get boqEmptyTitle;
+
+  /// No description provided for @boqFormAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Line added. Add the next one.'**
+  String get boqFormAdded;
+
+  /// No description provided for @boqFormAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get boqFormAmount;
+
+  /// No description provided for @boqFormCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code (optional)'**
+  String get boqFormCode;
+
+  /// No description provided for @boqFormCodeHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to get the next number.'**
+  String get boqFormCodeHelper;
+
+  /// No description provided for @boqFormDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Work description'**
+  String get boqFormDescription;
+
+  /// No description provided for @boqFormDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'M25 concrete in slab'**
+  String get boqFormDescriptionHint;
+
+  /// No description provided for @boqFormDescriptionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the work description.'**
+  String get boqFormDescriptionRequired;
+
+  /// No description provided for @boqFormFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The line could not be saved. Try again.'**
+  String get boqFormFailed;
+
+  /// No description provided for @boqFormFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and finish'**
+  String get boqFormFinish;
+
+  /// No description provided for @boqFormQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get boqFormQty;
+
+  /// No description provided for @boqFormQtyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the quantity.'**
+  String get boqFormQtyRequired;
+
+  /// No description provided for @boqFormRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get boqFormRate;
+
+  /// No description provided for @boqFormRateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the rate.'**
+  String get boqFormRateRequired;
+
+  /// No description provided for @boqFormSaveAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and add another'**
+  String get boqFormSaveAnother;
+
+  /// No description provided for @boqFormSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Section (optional)'**
+  String get boqFormSection;
+
+  /// No description provided for @boqFormSectionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Superstructure'**
+  String get boqFormSectionHint;
+
+  /// No description provided for @boqFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add BOQ item'**
+  String get boqFormTitle;
+
+  /// No description provided for @boqFormUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get boqFormUnit;
+
+  /// No description provided for @boqFormUnitRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the unit.'**
+  String get boqFormUnitRequired;
+
+  /// No description provided for @boqLinesAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {count, plural, =1{line} other{lines}} added'**
+  String boqLinesAdded(int count);
+
+  /// No description provided for @boqMeasuredShare.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% measured'**
+  String boqMeasuredShare(int percent);
+
+  /// No description provided for @boqMissingAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the office to add them. If they are added already, connect to the network once.'**
+  String get boqMissingAsk;
+
+  /// No description provided for @boqMissingManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the lines, then pick them here.'**
+  String get boqMissingManage;
+
+  /// No description provided for @boqMissingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This project has no BOQ lines yet'**
+  String get boqMissingTitle;
+
+  /// No description provided for @boqNoMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another code or word.'**
+  String get boqNoMatchMessage;
+
+  /// No description provided for @boqNoMatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing found'**
+  String get boqNoMatchTitle;
+
+  /// No description provided for @boqNoProjectMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a project first to see its BOQ.'**
+  String get boqNoProjectMessage;
+
+  /// No description provided for @boqNoProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No project chosen'**
+  String get boqNoProjectTitle;
+
+  /// No description provided for @boqNoSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Other lines'**
+  String get boqNoSection;
+
+  /// No description provided for @boqOfflineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ lines can be saved only online.'**
+  String get boqOfflineDetail;
+
+  /// No description provided for @boqOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No network.'**
+  String get boqOfflineTitle;
+
+  /// No description provided for @boqOpenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open BOQ'**
+  String get boqOpenAction;
+
+  /// No description provided for @boqSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Code or work'**
+  String get boqSearchHint;
+
+  /// No description provided for @boqSearchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search lines'**
+  String get boqSearchLabel;
+
+  /// No description provided for @boqTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ'**
+  String get boqTitle;
 
   /// No description provided for @commonBack.
   ///
@@ -1155,12 +1407,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No BOQ items found.'**
   String get dprBoqEmpty;
-
-  /// No description provided for @dprBoqNotSynced.
-  ///
-  /// In en, this message translates to:
-  /// **'BOQ not on this phone yet. Connect to the network once.'**
-  String get dprBoqNotSynced;
 
   /// No description provided for @dprCameraFailed.
   ///
@@ -2164,18 +2410,6 @@ abstract class AppLocalizations {
   /// **'Next'**
   String get measurementNext;
 
-  /// No description provided for @measurementNoBoqBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect to the network once so the BOQ comes to this phone.'**
-  String get measurementNoBoqBody;
-
-  /// No description provided for @measurementNoBoqTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No BOQ lines yet'**
-  String get measurementNoBoqTitle;
-
   /// No description provided for @measurementNoMatchTitle.
   ///
   /// In en, this message translates to:
@@ -2374,6 +2608,12 @@ abstract class AppLocalizations {
   /// **'Add expense'**
   String get pettyCashAddExpense;
 
+  /// No description provided for @pettyCashAddMoney.
+  ///
+  /// In en, this message translates to:
+  /// **'Add money'**
+  String get pettyCashAddMoney;
+
   /// No description provided for @pettyCashAmount.
   ///
   /// In en, this message translates to:
@@ -2439,6 +2679,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirmed'**
   String get pettyCashConfirmed;
+
+  /// No description provided for @pettyCashCreateWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Create wallet'**
+  String get pettyCashCreateWallet;
 
   /// No description provided for @pettyCashDate.
   ///
@@ -2512,6 +2758,18 @@ abstract class AppLocalizations {
   /// **'No project chosen'**
   String get pettyCashNoProjectTitle;
 
+  /// No description provided for @pettyCashNoWalletManageMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Create one to record site expenses here.'**
+  String get pettyCashNoWalletManageMessage;
+
+  /// No description provided for @pettyCashNoWalletManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet on this project yet'**
+  String get pettyCashNoWalletManageTitle;
+
   /// No description provided for @pettyCashNoWalletMessage.
   ///
   /// In en, this message translates to:
@@ -2535,6 +2793,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Diesel for the mixer'**
   String get pettyCashNoteHint;
+
+  /// No description provided for @pettyCashOpeningAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening amount'**
+  String get pettyCashOpeningAmount;
+
+  /// No description provided for @pettyCashOpeningHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank if there is no money yet.'**
+  String get pettyCashOpeningHelper;
+
+  /// No description provided for @pettyCashOpeningNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening balance'**
+  String get pettyCashOpeningNote;
 
   /// No description provided for @pettyCashOverBalance.
   ///
@@ -2596,6 +2872,30 @@ abstract class AppLocalizations {
   /// **'Petty cash'**
   String get pettyCashTitle;
 
+  /// No description provided for @pettyCashTopUpEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Money into the wallet'**
+  String get pettyCashTopUpEyebrow;
+
+  /// No description provided for @pettyCashTopUpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the money. Try again.'**
+  String get pettyCashTopUpFailed;
+
+  /// No description provided for @pettyCashTopUpNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash from office'**
+  String get pettyCashTopUpNoteHint;
+
+  /// No description provided for @pettyCashTopUpSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save money received'**
+  String get pettyCashTopUpSave;
+
   /// No description provided for @pettyCashTopup.
   ///
   /// In en, this message translates to:
@@ -2613,6 +2913,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallet'**
   String get pettyCashWallet;
+
+  /// No description provided for @pettyCashWalletCreateKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get pettyCashWalletCreateKey;
+
+  /// No description provided for @pettyCashWalletCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet created'**
+  String get pettyCashWalletCreated;
+
+  /// No description provided for @pettyCashWalletCreatedMoney.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet created. {amount} saved on phone, sending now.'**
+  String pettyCashWalletCreatedMoney(String amount);
+
+  /// No description provided for @pettyCashWalletCreatedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet created. {amount} saved on phone, sends when network returns.'**
+  String pettyCashWalletCreatedOffline(String amount);
+
+  /// No description provided for @pettyCashWalletDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'{code} site cash'**
+  String pettyCashWalletDefaultName(String code);
+
+  /// No description provided for @pettyCashWalletFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The wallet could not be created. Try again.'**
+  String get pettyCashWalletFailed;
+
+  /// No description provided for @pettyCashWalletFormEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallet'**
+  String get pettyCashWalletFormEyebrow;
+
+  /// No description provided for @pettyCashWalletHolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Who holds the cash?'**
+  String get pettyCashWalletHolder;
+
+  /// No description provided for @pettyCashWalletMoneyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet created, but the money was not saved. Add it again.'**
+  String get pettyCashWalletMoneyFailed;
+
+  /// No description provided for @pettyCashWalletName.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet name'**
+  String get pettyCashWalletName;
+
+  /// No description provided for @pettyCashWalletNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a name for the wallet.'**
+  String get pettyCashWalletNameRequired;
+
+  /// No description provided for @pettyCashWalletOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No network.'**
+  String get pettyCashWalletOffline;
+
+  /// No description provided for @pettyCashWalletOfflineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'A wallet can be created only online.'**
+  String get pettyCashWalletOfflineDetail;
 
   /// No description provided for @shellCaptionMarked.
   ///
@@ -2752,6 +3130,24 @@ abstract class AppLocalizations {
   /// **'Your projects'**
   String get shellPickerEyebrow;
 
+  /// No description provided for @shellPickerFirstBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your project and run its work from this phone.'**
+  String get shellPickerFirstBody;
+
+  /// No description provided for @shellPickerFirstButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first project'**
+  String get shellPickerFirstButton;
+
+  /// No description provided for @shellPickerFirstTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s set up your first site'**
+  String get shellPickerFirstTitle;
+
   /// No description provided for @shellPickerLoading.
   ///
   /// In en, this message translates to:
@@ -2842,6 +3238,90 @@ abstract class AppLocalizations {
   /// **'Construction progress'**
   String get shellProgressTitle;
 
+  /// No description provided for @shellProjectChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get shellProjectChoose;
+
+  /// No description provided for @shellProjectCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create project'**
+  String get shellProjectCreate;
+
+  /// No description provided for @shellProjectCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating…'**
+  String get shellProjectCreating;
+
+  /// No description provided for @shellProjectEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get shellProjectEnd;
+
+  /// No description provided for @shellProjectEndBeforeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'End date must be after the start date'**
+  String get shellProjectEndBeforeStart;
+
+  /// No description provided for @shellProjectFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New project'**
+  String get shellProjectFormTitle;
+
+  /// No description provided for @shellProjectLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get shellProjectLocation;
+
+  /// No description provided for @shellProjectName.
+  ///
+  /// In en, this message translates to:
+  /// **'Project name'**
+  String get shellProjectName;
+
+  /// No description provided for @shellProjectNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for the project'**
+  String get shellProjectNameRequired;
+
+  /// No description provided for @shellProjectOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'A project can only be created with network. Try again when you have signal.'**
+  String get shellProjectOffline;
+
+  /// No description provided for @shellProjectPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Project limit reached'**
+  String get shellProjectPlanTitle;
+
+  /// No description provided for @shellProjectStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get shellProjectStart;
+
+  /// No description provided for @shellProjectValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract value (optional)'**
+  String get shellProjectValue;
+
+  /// No description provided for @shellProjectValueEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to enter'**
+  String get shellProjectValueEmpty;
+
   /// No description provided for @shellReportAttention.
   ///
   /// In en, this message translates to:
@@ -2919,6 +3399,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'App version'**
   String get shellSettingsVersion;
+
+  /// No description provided for @shellSetupBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ items'**
+  String get shellSetupBoq;
+
+  /// No description provided for @shellSetupNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {step}'**
+  String shellSetupNext(String step);
+
+  /// No description provided for @shellSetupStepSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{step}: {count}'**
+  String shellSetupStepSemantics(String step, int count);
+
+  /// No description provided for @shellSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your site'**
+  String get shellSetupTitle;
+
+  /// No description provided for @shellSetupWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Petty cash wallet'**
+  String get shellSetupWallet;
+
+  /// No description provided for @shellSetupWorkers.
+  ///
+  /// In en, this message translates to:
+  /// **'Workers'**
+  String get shellSetupWorkers;
 
   /// No description provided for @shellSignInBusy.
   ///

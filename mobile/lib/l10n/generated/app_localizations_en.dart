@@ -305,6 +305,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsWorkers => 'workers';
 
   @override
+  String get attendanceAddFirstWorker => 'Add first worker';
+
+  @override
   String get attendanceAddWorker => 'Add worker';
 
   @override
@@ -367,8 +370,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceNoProjectTitle => 'No project chosen';
 
   @override
+  String get attendanceNoWorkersAsk => 'Ask the office to add the workers.';
+
+  @override
   String get attendanceNoWorkersMessage =>
-      'Add your workers here, or ask the office to add them.';
+      'Add your first worker to start the muster.';
 
   @override
   String get attendanceNoWorkersTitle => 'No workers on the muster';
@@ -436,6 +442,141 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get attendanceTodayTitle => 'Today\'s attendance';
+
+  @override
+  String get boqAddItem => 'Add item';
+
+  @override
+  String boqBalance(String qty, String unit) {
+    return 'Balance $qty $unit';
+  }
+
+  @override
+  String get boqEmptyAsk =>
+      'A BOQ is the list of work on this project. Ask the office to add it.';
+
+  @override
+  String get boqEmptyExplain =>
+      'A BOQ is the list of work on this project, with quantity and rate.';
+
+  @override
+  String get boqEmptyTitle => 'No BOQ lines yet';
+
+  @override
+  String get boqFormAdded => 'Line added. Add the next one.';
+
+  @override
+  String get boqFormAmount => 'Amount';
+
+  @override
+  String get boqFormCode => 'Code (optional)';
+
+  @override
+  String get boqFormCodeHelper => 'Leave blank to get the next number.';
+
+  @override
+  String get boqFormDescription => 'Work description';
+
+  @override
+  String get boqFormDescriptionHint => 'M25 concrete in slab';
+
+  @override
+  String get boqFormDescriptionRequired => 'Write the work description.';
+
+  @override
+  String get boqFormFailed => 'The line could not be saved. Try again.';
+
+  @override
+  String get boqFormFinish => 'Save and finish';
+
+  @override
+  String get boqFormQty => 'Quantity';
+
+  @override
+  String get boqFormQtyRequired => 'Enter the quantity.';
+
+  @override
+  String get boqFormRate => 'Rate';
+
+  @override
+  String get boqFormRateRequired => 'Enter the rate.';
+
+  @override
+  String get boqFormSaveAnother => 'Save and add another';
+
+  @override
+  String get boqFormSection => 'Section (optional)';
+
+  @override
+  String get boqFormSectionHint => 'Superstructure';
+
+  @override
+  String get boqFormTitle => 'Add BOQ item';
+
+  @override
+  String get boqFormUnit => 'Unit';
+
+  @override
+  String get boqFormUnitRequired => 'Choose the unit.';
+
+  @override
+  String boqLinesAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'lines',
+      one: 'line',
+    );
+    return '$count $_temp0 added';
+  }
+
+  @override
+  String boqMeasuredShare(int percent) {
+    return '$percent% measured';
+  }
+
+  @override
+  String get boqMissingAsk =>
+      'Ask the office to add them. If they are added already, connect to the network once.';
+
+  @override
+  String get boqMissingManage => 'Add the lines, then pick them here.';
+
+  @override
+  String get boqMissingTitle => 'This project has no BOQ lines yet';
+
+  @override
+  String get boqNoMatchMessage => 'Try another code or word.';
+
+  @override
+  String get boqNoMatchTitle => 'Nothing found';
+
+  @override
+  String get boqNoProjectMessage => 'Choose a project first to see its BOQ.';
+
+  @override
+  String get boqNoProjectTitle => 'No project chosen';
+
+  @override
+  String get boqNoSection => 'Other lines';
+
+  @override
+  String get boqOfflineDetail => 'BOQ lines can be saved only online.';
+
+  @override
+  String get boqOfflineTitle => 'No network.';
+
+  @override
+  String get boqOpenAction => 'Open BOQ';
+
+  @override
+  String get boqSearchHint => 'Code or work';
+
+  @override
+  String get boqSearchLabel => 'Search lines';
+
+  @override
+  String get boqTitle => 'BOQ';
 
   @override
   String get commonBack => 'Back';
@@ -601,10 +742,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dprBoqEmpty => 'No BOQ items found.';
-
-  @override
-  String get dprBoqNotSynced =>
-      'BOQ not on this phone yet. Connect to the network once.';
 
   @override
   String get dprCameraFailed =>
@@ -1175,13 +1312,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementNext => 'Next';
 
   @override
-  String get measurementNoBoqBody =>
-      'Connect to the network once so the BOQ comes to this phone.';
-
-  @override
-  String get measurementNoBoqTitle => 'No BOQ lines yet';
-
-  @override
   String get measurementNoMatchTitle => 'Nothing matches';
 
   @override
@@ -1305,6 +1435,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashAddExpense => 'Add expense';
 
   @override
+  String get pettyCashAddMoney => 'Add money';
+
+  @override
   String get pettyCashAmount => 'Amount';
 
   @override
@@ -1338,6 +1471,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pettyCashConfirmed => 'Confirmed';
+
+  @override
+  String get pettyCashCreateWallet => 'Create wallet';
 
   @override
   String get pettyCashDate => 'Date';
@@ -1377,6 +1513,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashNoProjectTitle => 'No project chosen';
 
   @override
+  String get pettyCashNoWalletManageMessage =>
+      'Create one to record site expenses here.';
+
+  @override
+  String get pettyCashNoWalletManageTitle => 'No wallet on this project yet';
+
+  @override
   String get pettyCashNoWalletMessage =>
       'Ask your project manager or the accounts office to open one for you.';
 
@@ -1388,6 +1531,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pettyCashNoteHint => 'Diesel for the mixer';
+
+  @override
+  String get pettyCashOpeningAmount => 'Opening amount';
+
+  @override
+  String get pettyCashOpeningHelper => 'Leave blank if there is no money yet.';
+
+  @override
+  String get pettyCashOpeningNote => 'Opening balance';
 
   @override
   String pettyCashOverBalance(String balance) {
@@ -1423,6 +1575,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashTitle => 'Petty cash';
 
   @override
+  String get pettyCashTopUpEyebrow => 'Money into the wallet';
+
+  @override
+  String get pettyCashTopUpFailed => 'Could not save the money. Try again.';
+
+  @override
+  String get pettyCashTopUpNoteHint => 'Cash from office';
+
+  @override
+  String get pettyCashTopUpSave => 'Save money received';
+
+  @override
   String get pettyCashTopup => 'Top-up';
 
   @override
@@ -1430,6 +1594,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pettyCashWallet => 'Wallet';
+
+  @override
+  String get pettyCashWalletCreateKey => 'Create';
+
+  @override
+  String get pettyCashWalletCreated => 'Wallet created';
+
+  @override
+  String pettyCashWalletCreatedMoney(String amount) {
+    return 'Wallet created. $amount saved on phone, sending now.';
+  }
+
+  @override
+  String pettyCashWalletCreatedOffline(String amount) {
+    return 'Wallet created. $amount saved on phone, sends when network returns.';
+  }
+
+  @override
+  String pettyCashWalletDefaultName(String code) {
+    return '$code site cash';
+  }
+
+  @override
+  String get pettyCashWalletFailed =>
+      'The wallet could not be created. Try again.';
+
+  @override
+  String get pettyCashWalletFormEyebrow => 'New wallet';
+
+  @override
+  String get pettyCashWalletHolder => 'Who holds the cash?';
+
+  @override
+  String get pettyCashWalletMoneyFailed =>
+      'Wallet created, but the money was not saved. Add it again.';
+
+  @override
+  String get pettyCashWalletName => 'Wallet name';
+
+  @override
+  String get pettyCashWalletNameRequired => 'Write a name for the wallet.';
+
+  @override
+  String get pettyCashWalletOffline => 'No network.';
+
+  @override
+  String get pettyCashWalletOfflineDetail =>
+      'A wallet can be created only online.';
 
   @override
   String get shellCaptionMarked => 'marked';
@@ -1512,6 +1724,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellPickerEyebrow => 'Your projects';
 
   @override
+  String get shellPickerFirstBody =>
+      'Add your project and run its work from this phone.';
+
+  @override
+  String get shellPickerFirstButton => 'Create your first project';
+
+  @override
+  String get shellPickerFirstTitle => 'Let\'s set up your first site';
+
+  @override
   String get shellPickerLoading => 'Getting your projects…';
 
   @override
@@ -1560,6 +1782,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellProgressTitle => 'Construction progress';
 
   @override
+  String get shellProjectChoose => 'Choose';
+
+  @override
+  String get shellProjectCreate => 'Create project';
+
+  @override
+  String get shellProjectCreating => 'Creating…';
+
+  @override
+  String get shellProjectEnd => 'End date';
+
+  @override
+  String get shellProjectEndBeforeStart =>
+      'End date must be after the start date';
+
+  @override
+  String get shellProjectFormTitle => 'New project';
+
+  @override
+  String get shellProjectLocation => 'Location';
+
+  @override
+  String get shellProjectName => 'Project name';
+
+  @override
+  String get shellProjectNameRequired => 'Enter a name for the project';
+
+  @override
+  String get shellProjectOffline =>
+      'A project can only be created with network. Try again when you have signal.';
+
+  @override
+  String get shellProjectPlanTitle => 'Project limit reached';
+
+  @override
+  String get shellProjectStart => 'Start date';
+
+  @override
+  String get shellProjectValue => 'Contract value (optional)';
+
+  @override
+  String get shellProjectValueEmpty => 'Tap to enter';
+
+  @override
   String get shellReportAttention => 'Needs a look';
 
   @override
@@ -1601,6 +1867,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellSettingsVersion => 'App version';
+
+  @override
+  String get shellSetupBoq => 'BOQ items';
+
+  @override
+  String shellSetupNext(String step) {
+    return 'Next: $step';
+  }
+
+  @override
+  String shellSetupStepSemantics(String step, int count) {
+    return '$step: $count';
+  }
+
+  @override
+  String get shellSetupTitle => 'Set up your site';
+
+  @override
+  String get shellSetupWallet => 'Petty cash wallet';
+
+  @override
+  String get shellSetupWorkers => 'Workers';
 
   @override
   String get shellSignInBusy => 'Signing in…';

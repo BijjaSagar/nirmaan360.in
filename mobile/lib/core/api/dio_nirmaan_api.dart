@@ -205,6 +205,71 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
+  Future<Map<String, dynamic>> createProject({
+    required String clientUuid,
+    required String name,
+    String? location,
+    String? startDate,
+    String? endDate,
+    String? contractValue,
+    String? code,
+  }) {
+    return _createRow('/projects', {
+      'client_uuid': clientUuid,
+      'name': name,
+      'location': ?location,
+      'start_date': ?startDate,
+      'end_date': ?endDate,
+      'contract_value': ?contractValue,
+      'code': ?code,
+    });
+  }
+
+  @override
+  Future<Map<String, dynamic>> addBoqItem({
+    required int projectId,
+    required String clientUuid,
+    required String description,
+    required String unit,
+    required String qty,
+    required String rate,
+    String? code,
+    String? section,
+  }) {
+    return _createRow('/projects/$projectId/boq-items', {
+      'client_uuid': clientUuid,
+      'description': description,
+      'unit': unit,
+      'qty': qty,
+      'rate': rate,
+      'code': ?code,
+      'section': ?section,
+    });
+  }
+
+  @override
+  Future<Map<String, dynamic>> createWallet({
+    required int projectId,
+    required String clientUuid,
+    required String name,
+    int? userId,
+  }) {
+    return _createRow('/projects/$projectId/wallets', {
+      'client_uuid': clientUuid,
+      'name': name,
+      'user_id': ?userId,
+    });
+  }
+
+  Future<Map<String, dynamic>> _createRow(
+    String path,
+    Map<String, dynamic> data,
+  ) async {
+    final body = await _call(() => _dio.post(path, data: data));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
   Future<Uint8List> dprPhotoBytes(int photoId) =>
       _bytes('/dpr-photos/$photoId');
 

@@ -213,5 +213,140 @@
     "en": "The final balance comes after sync.",
     "mr": "सिंक झाल्यावर अंतिम शिल्लक कळेल.",
     "hi": "सिंक होने पर अंतिम शेष पता चलेगा।"
+  },
+  "pettyCashCreateWallet": {
+    "en": "Create wallet",
+    "mr": "पाकीट तयार करा",
+    "hi": "वॉलेट बनाएँ"
+  },
+  "pettyCashNoWalletManageTitle": {
+    "en": "No wallet on this project yet",
+    "mr": "या प्रकल्पावर अजून पाकीट नाही",
+    "hi": "इस प्रोजेक्ट पर अभी वॉलेट नहीं है"
+  },
+  "pettyCashNoWalletManageMessage": {
+    "en": "Create one to record site expenses here.",
+    "mr": "साइटचे खर्च इथे नोंदवण्यासाठी पाकीट तयार करा.",
+    "hi": "साइट के ख़र्च यहाँ दर्ज करने के लिए वॉलेट बनाएँ।"
+  },
+  "pettyCashAddMoney": {
+    "en": "Add money",
+    "mr": "पैसे जमा करा",
+    "hi": "पैसे जोड़ें"
+  },
+  "pettyCashWalletFormEyebrow": {
+    "en": "New wallet",
+    "mr": "नवीन पाकीट",
+    "hi": "नया वॉलेट"
+  },
+  "pettyCashWalletName": {
+    "en": "Wallet name",
+    "mr": "पाकिटाचे नाव",
+    "hi": "वॉलेट का नाम"
+  },
+  "pettyCashWalletNameRequired": {
+    "en": "Write a name for the wallet.",
+    "mr": "पाकिटाला नाव द्या.",
+    "hi": "वॉलेट का नाम लिखें।"
+  },
+  "pettyCashWalletDefaultName": {
+    "en": "{code} site cash",
+    "mr": "{code} साइट रोख",
+    "hi": "{code} साइट नकद",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletHolder": {
+    "en": "Who holds the cash?",
+    "mr": "रोख कोणाकडे असेल?",
+    "hi": "नकद किसके पास रहेगा?"
+  },
+  "pettyCashOpeningAmount": {
+    "en": "Opening amount",
+    "mr": "सुरुवातीची रक्कम",
+    "hi": "शुरुआती रकम"
+  },
+  "pettyCashOpeningHelper": {
+    "en": "Leave blank if there is no money yet.",
+    "mr": "अजून पैसे नसतील तर रिकामे ठेवा.",
+    "hi": "अभी पैसे न हों तो खाली छोड़ें।"
+  },
+  "pettyCashOpeningNote": {
+    "en": "Opening balance",
+    "mr": "सुरुवातीची शिल्लक",
+    "hi": "शुरुआती शेष"
+  },
+  "pettyCashWalletCreateKey": {
+    "en": "Create",
+    "mr": "तयार करा",
+    "hi": "बनाएँ"
+  },
+  "pettyCashWalletOffline": {
+    "en": "No network.",
+    "mr": "नेटवर्क नाही.",
+    "hi": "नेटवर्क नहीं है।"
+  },
+  "pettyCashWalletOfflineDetail": {
+    "en": "A wallet can be created only online.",
+    "mr": "पाकीट फक्त ऑनलाइन तयार होते.",
+    "hi": "वॉलेट सिर्फ़ ऑनलाइन बनता है।"
+  },
+  "pettyCashWalletCreated": {
+    "en": "Wallet created",
+    "mr": "पाकीट तयार झाले",
+    "hi": "वॉलेट बन गया"
+  },
+  "pettyCashWalletCreatedMoney": {
+    "en": "Wallet created. {amount} saved on phone, sending now.",
+    "mr": "पाकीट तयार झाले. {amount} फोनवर जतन झाले, आता पाठवत आहे.",
+    "hi": "वॉलेट बन गया। {amount} फ़ोन पर सेव हुए, अभी भेज रहे हैं।",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletCreatedOffline": {
+    "en": "Wallet created. {amount} saved on phone, sends when network returns.",
+    "mr": "पाकीट तयार झाले. {amount} फोनवर जतन झाले, नेटवर्क आल्यावर पाठवले जातील.",
+    "hi": "वॉलेट बन गया। {amount} फ़ोन पर सेव हुए, नेटवर्क आने पर भेजे जाएँगे।",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletMoneyFailed": {
+    "en": "Wallet created, but the money was not saved. Add it again.",
+    "mr": "पाकीट तयार झाले, पण रक्कम जतन झाली नाही. पुन्हा जमा करा.",
+    "hi": "वॉलेट बन गया, पर रकम सेव नहीं हुई। फिर से जोड़ें।"
+  },
+  "pettyCashWalletFailed": {
+    "en": "The wallet could not be created. Try again.",
+    "mr": "पाकीट तयार करता आले नाही. पुन्हा प्रयत्न करा.",
+    "hi": "वॉलेट नहीं बना। फिर से कोशिश करें।"
+  },
+  "pettyCashTopUpEyebrow": {
+    "en": "Money into the wallet",
+    "mr": "पाकिटात रक्कम",
+    "hi": "वॉलेट में रकम"
+  },
+  "pettyCashTopUpNoteHint": {
+    "en": "Cash from office",
+    "mr": "ऑफिसकडून रोख",
+    "hi": "ऑफ़िस से नकद"
+  },
+  "pettyCashTopUpSave": {
+    "en": "Save money received",
+    "mr": "मिळालेली रक्कम जतन करा",
+    "hi": "मिली रकम सेव करें"
+  },
+  "pettyCashTopUpFailed": {
+    "en": "Could not save the money. Try again.",
+    "mr": "रक्कम जतन करता आली नाही. पुन्हा प्रयत्न करा.",
+    "hi": "रकम सेव नहीं हुई। फिर से कोशिश करें।"
   }
 }

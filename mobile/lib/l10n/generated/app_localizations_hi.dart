@@ -293,6 +293,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get approvalsWorkers => 'मज़दूर';
 
   @override
+  String get attendanceAddFirstWorker => 'पहला कामगार जोड़ें';
+
+  @override
   String get attendanceAddWorker => 'कामगार जोड़ें';
 
   @override
@@ -355,8 +358,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get attendanceNoProjectTitle => 'कोई प्रोजेक्ट नहीं चुना';
 
   @override
+  String get attendanceNoWorkersAsk => 'ऑफ़िस से कामगार जुड़वाएँ।';
+
+  @override
   String get attendanceNoWorkersMessage =>
-      'अपने कामगार यहाँ जोड़ें या ऑफ़िस से जुड़वाएँ।';
+      'हाज़िरी शुरू करने के लिए पहला कामगार जोड़ें।';
 
   @override
   String get attendanceNoWorkersTitle => 'हाज़िरी में कोई कामगार नहीं';
@@ -425,6 +431,135 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get attendanceTodayTitle => 'आज की हाज़िरी';
+
+  @override
+  String get boqAddItem => 'आइटम जोड़ें';
+
+  @override
+  String boqBalance(String qty, String unit) {
+    return 'शेष $qty $unit';
+  }
+
+  @override
+  String get boqEmptyAsk =>
+      'BOQ यानी इस प्रोजेक्ट के कामों की सूची। ऑफ़िस से जुड़वाएँ।';
+
+  @override
+  String get boqEmptyExplain =>
+      'BOQ यानी इस प्रोजेक्ट के कामों की सूची, मात्रा और दर के साथ।';
+
+  @override
+  String get boqEmptyTitle => 'BOQ लाइनें अभी नहीं हैं';
+
+  @override
+  String get boqFormAdded => 'लाइन जुड़ गई। अगली जोड़ें।';
+
+  @override
+  String get boqFormAmount => 'रकम';
+
+  @override
+  String get boqFormCode => 'कोड (वैकल्पिक)';
+
+  @override
+  String get boqFormCodeHelper => 'खाली छोड़ें तो अगला नंबर मिलेगा।';
+
+  @override
+  String get boqFormDescription => 'काम का विवरण';
+
+  @override
+  String get boqFormDescriptionHint => 'स्लैब में M25 कंक्रीट';
+
+  @override
+  String get boqFormDescriptionRequired => 'काम का विवरण लिखें।';
+
+  @override
+  String get boqFormFailed => 'लाइन सेव नहीं हुई। फिर से कोशिश करें।';
+
+  @override
+  String get boqFormFinish => 'सेव करके पूरा करें';
+
+  @override
+  String get boqFormQty => 'मात्रा';
+
+  @override
+  String get boqFormQtyRequired => 'मात्रा डालें।';
+
+  @override
+  String get boqFormRate => 'दर';
+
+  @override
+  String get boqFormRateRequired => 'दर डालें।';
+
+  @override
+  String get boqFormSaveAnother => 'सेव करके और जोड़ें';
+
+  @override
+  String get boqFormSection => 'सेक्शन (वैकल्पिक)';
+
+  @override
+  String get boqFormSectionHint => 'सुपरस्ट्रक्चर';
+
+  @override
+  String get boqFormTitle => 'BOQ आइटम जोड़ें';
+
+  @override
+  String get boqFormUnit => 'इकाई';
+
+  @override
+  String get boqFormUnitRequired => 'इकाई चुनें।';
+
+  @override
+  String boqLinesAdded(int count) {
+    return '$count लाइनें जोड़ीं';
+  }
+
+  @override
+  String boqMeasuredShare(int percent) {
+    return '$percent% मापा';
+  }
+
+  @override
+  String get boqMissingAsk =>
+      'ऑफ़िस से जुड़वाएँ। पहले से जुड़ी हों तो एक बार नेटवर्क से जुड़ें।';
+
+  @override
+  String get boqMissingManage => 'लाइनें जोड़ें, फिर यहाँ चुनें।';
+
+  @override
+  String get boqMissingTitle => 'इस प्रोजेक्ट में अभी BOQ लाइनें नहीं हैं';
+
+  @override
+  String get boqNoMatchMessage => 'कोई और कोड या शब्द आज़माएँ।';
+
+  @override
+  String get boqNoMatchTitle => 'कुछ नहीं मिला';
+
+  @override
+  String get boqNoProjectMessage => 'BOQ देखने के लिए पहले प्रोजेक्ट चुनें।';
+
+  @override
+  String get boqNoProjectTitle => 'कोई प्रोजेक्ट नहीं चुना';
+
+  @override
+  String get boqNoSection => 'अन्य लाइनें';
+
+  @override
+  String get boqOfflineDetail => 'BOQ लाइनें सिर्फ़ ऑनलाइन सेव होती हैं।';
+
+  @override
+  String get boqOfflineTitle => 'नेटवर्क नहीं है।';
+
+  @override
+  String get boqOpenAction => 'BOQ खोलें';
+
+  @override
+  String get boqSearchHint => 'कोड या काम';
+
+  @override
+  String get boqSearchLabel => 'लाइनें खोजें';
+
+  @override
+  String get boqTitle => 'BOQ';
 
   @override
   String get commonBack => 'वापस';
@@ -590,10 +725,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dprBoqEmpty => 'BOQ आइटम नहीं मिले।';
-
-  @override
-  String get dprBoqNotSynced =>
-      'BOQ अभी इस फ़ोन पर नहीं आया। एक बार नेटवर्क से जुड़ें।';
 
   @override
   String get dprCameraFailed =>
@@ -1139,13 +1270,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get measurementNext => 'आगे';
 
   @override
-  String get measurementNoBoqBody =>
-      'एक बार नेटवर्क से जुड़ें, ताकि BOQ इस फ़ोन पर आ जाए।';
-
-  @override
-  String get measurementNoBoqTitle => 'BOQ लाइनें अभी नहीं हैं';
-
-  @override
   String get measurementNoMatchTitle => 'कुछ नहीं मिला';
 
   @override
@@ -1265,6 +1389,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashAddExpense => 'ख़र्च जोड़ें';
 
   @override
+  String get pettyCashAddMoney => 'पैसे जोड़ें';
+
+  @override
   String get pettyCashAmount => 'रकम';
 
   @override
@@ -1298,6 +1425,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pettyCashConfirmed => 'पक्का शेष';
+
+  @override
+  String get pettyCashCreateWallet => 'वॉलेट बनाएँ';
 
   @override
   String get pettyCashDate => 'तारीख़';
@@ -1338,6 +1468,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashNoProjectTitle => 'कोई प्रोजेक्ट नहीं चुना';
 
   @override
+  String get pettyCashNoWalletManageMessage =>
+      'साइट के ख़र्च यहाँ दर्ज करने के लिए वॉलेट बनाएँ।';
+
+  @override
+  String get pettyCashNoWalletManageTitle =>
+      'इस प्रोजेक्ट पर अभी वॉलेट नहीं है';
+
+  @override
   String get pettyCashNoWalletMessage =>
       'अपने लिए वॉलेट खुलवाने के लिए प्रोजेक्ट मैनेजर या अकाउंट्स ऑफ़िस से कहें।';
 
@@ -1349,6 +1487,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pettyCashNoteHint => 'मिक्सर के लिए डीज़ल';
+
+  @override
+  String get pettyCashOpeningAmount => 'शुरुआती रकम';
+
+  @override
+  String get pettyCashOpeningHelper => 'अभी पैसे न हों तो खाली छोड़ें।';
+
+  @override
+  String get pettyCashOpeningNote => 'शुरुआती शेष';
 
   @override
   String pettyCashOverBalance(String balance) {
@@ -1384,6 +1531,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashTitle => 'फुटकर नकद';
 
   @override
+  String get pettyCashTopUpEyebrow => 'वॉलेट में रकम';
+
+  @override
+  String get pettyCashTopUpFailed => 'रकम सेव नहीं हुई। फिर से कोशिश करें।';
+
+  @override
+  String get pettyCashTopUpNoteHint => 'ऑफ़िस से नकद';
+
+  @override
+  String get pettyCashTopUpSave => 'मिली रकम सेव करें';
+
+  @override
   String get pettyCashTopup => 'राशि जोड़ें';
 
   @override
@@ -1391,6 +1550,52 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pettyCashWallet => 'वॉलेट';
+
+  @override
+  String get pettyCashWalletCreateKey => 'बनाएँ';
+
+  @override
+  String get pettyCashWalletCreated => 'वॉलेट बन गया';
+
+  @override
+  String pettyCashWalletCreatedMoney(String amount) {
+    return 'वॉलेट बन गया। $amount फ़ोन पर सेव हुए, अभी भेज रहे हैं।';
+  }
+
+  @override
+  String pettyCashWalletCreatedOffline(String amount) {
+    return 'वॉलेट बन गया। $amount फ़ोन पर सेव हुए, नेटवर्क आने पर भेजे जाएँगे।';
+  }
+
+  @override
+  String pettyCashWalletDefaultName(String code) {
+    return '$code साइट नकद';
+  }
+
+  @override
+  String get pettyCashWalletFailed => 'वॉलेट नहीं बना। फिर से कोशिश करें।';
+
+  @override
+  String get pettyCashWalletFormEyebrow => 'नया वॉलेट';
+
+  @override
+  String get pettyCashWalletHolder => 'नकद किसके पास रहेगा?';
+
+  @override
+  String get pettyCashWalletMoneyFailed =>
+      'वॉलेट बन गया, पर रकम सेव नहीं हुई। फिर से जोड़ें।';
+
+  @override
+  String get pettyCashWalletName => 'वॉलेट का नाम';
+
+  @override
+  String get pettyCashWalletNameRequired => 'वॉलेट का नाम लिखें।';
+
+  @override
+  String get pettyCashWalletOffline => 'नेटवर्क नहीं है।';
+
+  @override
+  String get pettyCashWalletOfflineDetail => 'वॉलेट सिर्फ़ ऑनलाइन बनता है।';
 
   @override
   String get shellCaptionMarked => 'दर्ज';
@@ -1467,6 +1672,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shellPickerEyebrow => 'आपकी परियोजनाएँ';
 
   @override
+  String get shellPickerFirstBody =>
+      'अपनी परियोजना जोड़ें और उसका काम इसी फ़ोन से चलाएँ।';
+
+  @override
+  String get shellPickerFirstButton => 'अपनी पहली परियोजना बनाएँ';
+
+  @override
+  String get shellPickerFirstTitle => 'चलिए, अपनी पहली साइट बनाते हैं';
+
+  @override
   String get shellPickerLoading => 'आपकी परियोजनाएँ ला रहे हैं…';
 
   @override
@@ -1514,6 +1729,50 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shellProgressTitle => 'निर्माण की प्रगति';
 
   @override
+  String get shellProjectChoose => 'चुनें';
+
+  @override
+  String get shellProjectCreate => 'परियोजना बनाएँ';
+
+  @override
+  String get shellProjectCreating => 'बन रही है…';
+
+  @override
+  String get shellProjectEnd => 'पूरा होने की तारीख';
+
+  @override
+  String get shellProjectEndBeforeStart =>
+      'पूरा होने की तारीख शुरू की तारीख के बाद की हो';
+
+  @override
+  String get shellProjectFormTitle => 'नई परियोजना';
+
+  @override
+  String get shellProjectLocation => 'स्थान';
+
+  @override
+  String get shellProjectName => 'परियोजना का नाम';
+
+  @override
+  String get shellProjectNameRequired => 'परियोजना का नाम लिखें';
+
+  @override
+  String get shellProjectOffline =>
+      'परियोजना सिर्फ़ नेटवर्क होने पर बनती है। सिग्नल आने पर फिर कोशिश करें।';
+
+  @override
+  String get shellProjectPlanTitle => 'परियोजना की सीमा पूरी हो गई';
+
+  @override
+  String get shellProjectStart => 'शुरू की तारीख';
+
+  @override
+  String get shellProjectValue => 'अनुबंध राशि (वैकल्पिक)';
+
+  @override
+  String get shellProjectValueEmpty => 'भरने के लिए दबाएँ';
+
+  @override
   String get shellReportAttention => 'देखें';
 
   @override
@@ -1555,6 +1814,28 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shellSettingsVersion => 'ऐप वर्ज़न';
+
+  @override
+  String get shellSetupBoq => 'BOQ आइटम';
+
+  @override
+  String shellSetupNext(String step) {
+    return 'अगला: $step';
+  }
+
+  @override
+  String shellSetupStepSemantics(String step, int count) {
+    return '$step: $count';
+  }
+
+  @override
+  String get shellSetupTitle => 'अपनी साइट तैयार करें';
+
+  @override
+  String get shellSetupWallet => 'नकद बटुआ';
+
+  @override
+  String get shellSetupWorkers => 'कामगार';
 
   @override
   String get shellSignInBusy => 'साइन इन हो रहा है…';

@@ -18,6 +18,11 @@ import '../features/measurement/view/measurement_form_screen.dart';
 import '../features/measurement/view/measurement_list_screen.dart';
 import '../features/petty_cash/view/expense_form_screen.dart';
 import '../features/petty_cash/view/petty_cash_screen.dart';
+import '../features/petty_cash/view/top_up_screen.dart';
+import '../features/petty_cash/view/wallet_form_screen.dart';
+import '../features/projects/view/boq_form_screen.dart';
+import '../features/projects/view/boq_screen.dart';
+import '../features/projects/view/project_form_screen.dart';
 import '../features/projects/view/project_picker_screen.dart';
 import '../features/settings/view/settings_screen.dart';
 import '../features/sync_center/view/sync_center_screen.dart';
@@ -45,10 +50,19 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
     navigatorKey: root,
     initialLocation: initialLocation,
     refreshListenable: gate.refreshListenable,
-    redirect: (context, state) => gate.redirect(state.uri.path),
+    redirect: (context, state) => gate.redirect(state.uri),
     routes: <RouteBase>[
       _route(Routes.signIn, (_) => const SignInScreen()),
-      _route(Routes.projects, (_) => const ProjectPickerScreen()),
+      _route(
+        Routes.projects,
+        (_) => const ProjectPickerScreen(),
+        routes: <RouteBase>[_route('new', (_) => const ProjectFormScreen())],
+      ),
+      _route(
+        Routes.boq,
+        (_) => const BoqScreen(),
+        routes: <RouteBase>[_route('form', (_) => const BoqFormScreen())],
+      ),
       _route(Routes.settings, (_) => const SettingsScreen()),
       StatefulShellRoute.indexedStack(
         pageBuilder: (context, state, shell) => _page(state, HomeShell(navigationShell: shell)),
@@ -118,7 +132,11 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
       _route(
         Routes.pettyCash,
         (_) => const PettyCashScreen(),
-        routes: <RouteBase>[_route('form', (_) => const ExpenseFormScreen())],
+        routes: <RouteBase>[
+          _route('form', (_) => const ExpenseFormScreen()),
+          _route('wallet', (_) => const WalletFormScreen()),
+          _route('top-up', (_) => const TopUpScreen()),
+        ],
       ),
     ],
   );
