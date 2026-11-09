@@ -1,0 +1,235 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* The design is light only: keep the pagination views from switching to dark mode. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'Mukta', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Khand', 'Mukta', ui-sans-serif, sans-serif;
+    --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --color-paper: #f5f1e8;
+    --color-paper-2: #ebe5d7;
+    --color-sheet: #fbf9f3;
+    --color-ink: #16201f;
+    --color-ink-2: #3c4a47;
+    --color-ink-3: #6b7773;
+    --color-rule: #d9d2c1;
+    --color-laterite: #b4451f;
+    --color-laterite-dark: #8f3416;
+    --color-haldi: #e2a31a;
+    --color-neel: #1b4a66;
+    --color-neel-deep: #0f2c3d;
+    --color-moss: #3b6a4c;
+
+    --animate-rise: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    --animate-stamp: stamp 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+    --animate-rule: rule 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+    /* Movement only: page text must stay readable even if an animation stalls. */
+    @keyframes rise {
+        from { transform: translateY(18px); }
+        to { transform: translateY(0); }
+    }
+
+    @keyframes stamp {
+        from { opacity: 0; transform: scale(2.2) rotate(-14deg); }
+        to { opacity: 1; transform: scale(1) rotate(-7deg); }
+    }
+
+    @keyframes rule {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+    }
+}
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        background: var(--color-paper);
+        color: var(--color-ink);
+    }
+
+    h1, h2, h3 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        line-height: 1.05;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-neel);
+        outline-offset: 2px;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* Lets wide tables scroll inside their card instead of stretching the page. */
+    .grid > * {
+        min-width: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-delay: 0ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+@layer components {
+    .num {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-1.5 rounded-[3px] border px-3.5 py-1.5 text-sm font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply border-laterite bg-laterite text-white hover:border-laterite-dark hover:bg-laterite-dark;
+    }
+
+    .btn-ink {
+        @apply border-ink bg-ink text-paper hover:bg-ink-2;
+    }
+
+    .btn-ghost {
+        @apply border-rule bg-sheet text-ink hover:border-ink-3;
+    }
+
+    .btn-danger {
+        @apply border-laterite bg-sheet text-laterite hover:bg-laterite hover:text-white;
+    }
+
+    .label {
+        @apply mb-1 block text-[13px] font-semibold text-ink-2;
+    }
+
+    .input {
+        @apply w-full rounded-[3px] border border-rule bg-sheet px-2.5 py-1.5 text-sm text-ink placeholder:text-ink-3/70 focus:border-neel focus:outline-none;
+    }
+
+    .hint {
+        @apply mt-1 text-xs text-ink-3;
+    }
+
+    .error {
+        @apply mt-1 text-xs font-medium text-laterite;
+    }
+
+    .card {
+        @apply rounded-[4px] border border-rule bg-sheet;
+    }
+
+    .card-head {
+        @apply flex items-center justify-between gap-3 border-b border-rule px-4 py-2.5;
+    }
+
+    .card-title {
+        @apply font-display text-lg font-semibold;
+    }
+
+    .ledger {
+        @apply w-full border-collapse text-sm;
+    }
+
+    .ledger th {
+        @apply border-b border-ink/70 bg-paper-2/60 px-3 py-2 text-left font-mono text-[11px] font-medium tracking-wider text-ink-2 uppercase;
+    }
+
+    .ledger td {
+        @apply border-b border-rule px-3 py-2 align-top;
+    }
+
+    .ledger tbody tr:hover td {
+        @apply bg-paper/70;
+    }
+
+    .ledger .r {
+        @apply text-right;
+    }
+
+    .ledger td.r {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .link {
+        @apply font-semibold text-neel underline-offset-2 hover:underline;
+    }
+
+    .result-list > div > div {
+        @apply flex justify-between gap-4 border-b border-rule px-5 py-3;
+    }
+
+    .result-list dt {
+        font-family: var(--font-sans);
+    }
+
+    .stamp {
+        @apply inline-block rounded-[2px] border px-1.5 py-px font-mono text-[10.5px] font-medium tracking-wider whitespace-nowrap uppercase;
+    }
+
+    .nav-link {
+        @apply flex items-center gap-2.5 rounded-[3px] px-2.5 py-1.5 text-[14px] text-paper/75 transition-colors hover:bg-white/8 hover:text-paper;
+    }
+
+    .nav-link.active {
+        @apply bg-white/12 font-semibold text-paper;
+    }
+
+    .nav-no {
+        @apply font-mono text-[10px] text-paper/40;
+    }
+
+    .graph-paper {
+        background-image:
+            linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
+            linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px),
+            linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+            linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+        background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+    }
+
+    .ruled-paper {
+        background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 35px, var(--color-rule) 35px, var(--color-rule) 36px);
+    }
+
+    .dim-line {
+        position: relative;
+        height: 1px;
+        background: currentColor;
+    }
+
+    .dim-line::before,
+    .dim-line::after {
+        content: '';
+        position: absolute;
+        top: -6px;
+        width: 1px;
+        height: 13px;
+        background: currentColor;
+        transform: rotate(38deg);
+    }
+
+    .dim-line::before { left: 0; }
+    .dim-line::after { right: 0; }
+}

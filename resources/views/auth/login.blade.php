@@ -1,0 +1,20 @@
+@extends('layouts.auth')
+@section('title', __('Sign in'))
+@section('content')
+    <h1 class="text-4xl">{{ __('Sign in') }}</h1>
+    <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-4">
+        @csrf
+        <x-field :label="__('Email')" name="email">
+            <input id="email" name="email" type="email" value="{{ old('email') }}" class="input" required autofocus autocomplete="username">
+        </x-field>
+        <x-field :label="__('Password')" name="password">
+            <input id="password" name="password" type="password" class="input" required autocomplete="current-password">
+        </x-field>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="remember" value="1"> {{ __('Keep me signed in') }}</label>
+        <button class="btn btn-primary w-full">{{ __('Sign in') }}</button>
+    </form>
+    @if ($otpEnabled)
+        <a href="{{ route('otp.show') }}" class="link mt-4 block text-center text-sm">{{ __('Sign in with mobile OTP') }}</a>
+    @endif
+    <p class="mt-6 text-center text-sm text-ink-3">{{ __('New here?') }} <a href="{{ route('register') }}" class="link">{{ __('Start a 30-day trial') }}</a></p>
+@endsection

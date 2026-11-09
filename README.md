@@ -1,0 +1,54 @@
+# Nirmaan360
+
+Construction software for Indian contractors. BOQ, daily reports, measurement book and RA bills on one record.
+
+This repository covers the foundation and most of the first release, "Site to Bill".
+
+## What is built
+
+- Companies with separate data, plans, roles and `module.action` permissions
+- Email and password sign-in, with mobile OTP ready for an SMS provider
+- Projects, sites and BOQ with CSV import and export, plus a per-line ledger
+- Daily progress reports with photos, issues, labour attendance and petty cash
+- Measurement book: Nos × L × B × D, deductions, deviation flags, reversal-only corrections
+- Configurable multi-level approvals with an audit trail
+- Work orders and client and subcontractor RA bills, with PDF download
+- Client sign-off through a signed link
+- REST API with offline sync for measurements (`/api/v1`)
+- Public home page and free calculators, in English with partial Marathi and Hindi
+
+## Not built yet
+
+Procurement and stock, Tally sync, GST reports and e-invoicing, WhatsApp, the Flutter field app, AI takeoff and agents, Gantt planning, assets and QHS. Payments are limited to marking a bill paid. OTP sign-in needs a real SMS driver in `app/Services/SmsGateway.php`, and stays hidden in production until then.
+
+## Run locally
+
+Needs PHP 8.4+, Composer and Node.
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+npm run build
+php artisan serve
+```
+
+The seed adds a sample company. Demo users are listed in `database/seeders/DemoSeeder.php`.
+
+```bash
+php artisan test
+```
+
+## Deploy on Laravel Cloud
+
+1. Connect this repository and the `main` branch to a Laravel Cloud application.
+2. Use PHP 8.4 or newer.
+3. Attach a PostgreSQL database and a cache.
+4. Attach an object storage bucket and make it the default disk. Without one, uploaded photos and bills are lost on each deploy.
+5. Build commands: `composer install --no-dev --optimize-autoloader`, then `npm ci && npm run build`.
+6. Deploy command: `php artisan migrate --force`.
+7. Set `APP_NAME=Nirmaan360`, `APP_ENV=production`, `APP_DEBUG=false` and `APP_URL=https://nirmaan360.in`.
+8. Add `nirmaan360.in` as a custom domain and create the DNS records Laravel Cloud shows.
