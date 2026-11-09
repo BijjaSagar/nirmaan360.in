@@ -9,6 +9,81 @@ class AppLocalizationsMr extends AppLocalizations {
   AppLocalizationsMr([String locale = 'mr']) : super(locale);
 
   @override
+  String get alertsDashboardEmpty => 'या प्रकल्पासाठी अजून आकडे नाहीत.';
+
+  @override
+  String alertsHomeCriticalCount(int count) {
+    return '$count गंभीर';
+  }
+
+  @override
+  String get alertsHomeDashboardOnly => 'या साइटचा डॅशबोर्ड';
+
+  @override
+  String alertsHomeOpen(int count) {
+    return '$count उघड्या';
+  }
+
+  @override
+  String get alertsHomeOverview => 'या साइटचा डॅशबोर्ड आणि सूचना';
+
+  @override
+  String get alertsHomeTitle => 'साइटच्या सूचना';
+
+  @override
+  String get alertsListRefusedMessage =>
+      'सूचना तुमच्या भूमिकेसाठी उपलब्ध नाहीत. गरज असल्यास ऑफिसला विचारा.';
+
+  @override
+  String get alertsLoading => 'साइटचा आढावा लोड होत आहे';
+
+  @override
+  String get alertsNoDataMessage =>
+      'या प्रकल्पाचा आढावा लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर ऑफलाइनही उघडेल.';
+
+  @override
+  String get alertsNoneMessage =>
+      'साइटवर काही पाहण्यासारखे असेल तर ते इथे दिसेल.';
+
+  @override
+  String get alertsNoneTitle => 'लक्ष देण्यासारखे काही नाही';
+
+  @override
+  String get alertsRefusedMessage =>
+      'साइटचा आढावा तुमच्या भूमिकेसाठी उपलब्ध नाही. गरज असल्यास ऑफिसला विचारा.';
+
+  @override
+  String get alertsRefusedTitle => 'तुमच्या भूमिकेत हे नाही';
+
+  @override
+  String get alertsSeverityCritical => 'गंभीर';
+
+  @override
+  String get alertsSeverityInfo => 'माहितीसाठी';
+
+  @override
+  String get alertsSeverityWarning => 'इशारा';
+
+  @override
+  String alertsShowingSome(int shown, int total) {
+    return '$total पैकी सर्वात तातडीच्या $shown दाखवल्या आहेत. बाकीच्या वेबसाइटवर आहेत.';
+  }
+
+  @override
+  String alertsSince(String date) {
+    return '$date पासून';
+  }
+
+  @override
+  String get alertsTabAlerts => 'सूचना';
+
+  @override
+  String get alertsTabDashboard => 'डॅशबोर्ड';
+
+  @override
+  String get alertsTitle => 'साइटचा आढावा';
+
+  @override
   String get appName => 'निर्माण360';
 
   @override

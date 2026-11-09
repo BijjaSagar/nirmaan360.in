@@ -100,6 +100,132 @@ abstract class AppLocalizations {
     Locale('mr'),
   ];
 
+  /// No description provided for @alertsDashboardEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No figures for this project yet.'**
+  String get alertsDashboardEmpty;
+
+  /// No description provided for @alertsHomeCriticalCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} critical'**
+  String alertsHomeCriticalCount(int count);
+
+  /// No description provided for @alertsHomeDashboardOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard for this site'**
+  String get alertsHomeDashboardOnly;
+
+  /// No description provided for @alertsHomeOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} open'**
+  String alertsHomeOpen(int count);
+
+  /// No description provided for @alertsHomeOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard and alerts for this site'**
+  String get alertsHomeOverview;
+
+  /// No description provided for @alertsHomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Site alerts'**
+  String get alertsHomeTitle;
+
+  /// No description provided for @alertsListRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts are not open to your role. Ask your office if you need them.'**
+  String get alertsListRefusedMessage;
+
+  /// No description provided for @alertsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading site overview'**
+  String get alertsLoading;
+
+  /// No description provided for @alertsNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load this project\'s overview. After that it opens offline.'**
+  String get alertsNoDataMessage;
+
+  /// No description provided for @alertsNoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'When something on this site needs a look, it will show here.'**
+  String get alertsNoneMessage;
+
+  /// No description provided for @alertsNoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs attention'**
+  String get alertsNoneTitle;
+
+  /// No description provided for @alertsRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The site overview is not open to your role. Ask your office if you need it.'**
+  String get alertsRefusedMessage;
+
+  /// No description provided for @alertsRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not part of your role'**
+  String get alertsRefusedTitle;
+
+  /// No description provided for @alertsSeverityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get alertsSeverityCritical;
+
+  /// No description provided for @alertsSeverityInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'For information'**
+  String get alertsSeverityInfo;
+
+  /// No description provided for @alertsSeverityWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get alertsSeverityWarning;
+
+  /// No description provided for @alertsShowingSome.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the {shown} most urgent of {total}. The rest are on the website.'**
+  String alertsShowingSome(int shown, int total);
+
+  /// No description provided for @alertsSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Since {date}'**
+  String alertsSince(String date);
+
+  /// No description provided for @alertsTabAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get alertsTabAlerts;
+
+  /// No description provided for @alertsTabDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get alertsTabDashboard;
+
+  /// No description provided for @alertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Site overview'**
+  String get alertsTitle;
+
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:

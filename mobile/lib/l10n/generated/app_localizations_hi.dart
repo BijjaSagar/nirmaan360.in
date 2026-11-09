@@ -9,6 +9,80 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get alertsDashboardEmpty => 'इस प्रोजेक्ट के लिए अभी कोई आंकड़े नहीं।';
+
+  @override
+  String alertsHomeCriticalCount(int count) {
+    return '$count गंभीर';
+  }
+
+  @override
+  String get alertsHomeDashboardOnly => 'इस साइट का डैशबोर्ड';
+
+  @override
+  String alertsHomeOpen(int count) {
+    return '$count खुले';
+  }
+
+  @override
+  String get alertsHomeOverview => 'इस साइट का डैशबोर्ड और अलर्ट';
+
+  @override
+  String get alertsHomeTitle => 'साइट के अलर्ट';
+
+  @override
+  String get alertsListRefusedMessage =>
+      'अलर्ट आपकी भूमिका के लिए उपलब्ध नहीं हैं। ज़रूरत हो तो ऑफ़िस से पूछें।';
+
+  @override
+  String get alertsLoading => 'साइट का हाल लोड हो रहा है';
+
+  @override
+  String get alertsNoDataMessage =>
+      'इस प्रोजेक्ट का हाल लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद ऑफ़लाइन भी खुलेगा।';
+
+  @override
+  String get alertsNoneMessage => 'साइट पर कुछ देखने लायक होगा तो यहाँ दिखेगा।';
+
+  @override
+  String get alertsNoneTitle => 'ध्यान देने लायक कुछ नहीं';
+
+  @override
+  String get alertsRefusedMessage =>
+      'साइट का हाल आपकी भूमिका के लिए उपलब्ध नहीं है। ज़रूरत हो तो ऑफ़िस से पूछें।';
+
+  @override
+  String get alertsRefusedTitle => 'यह आपकी भूमिका में नहीं है';
+
+  @override
+  String get alertsSeverityCritical => 'गंभीर';
+
+  @override
+  String get alertsSeverityInfo => 'जानकारी के लिए';
+
+  @override
+  String get alertsSeverityWarning => 'चेतावनी';
+
+  @override
+  String alertsShowingSome(int shown, int total) {
+    return '$total में से सबसे ज़रूरी $shown दिखाए हैं। बाकी वेबसाइट पर हैं।';
+  }
+
+  @override
+  String alertsSince(String date) {
+    return '$date से';
+  }
+
+  @override
+  String get alertsTabAlerts => 'अलर्ट';
+
+  @override
+  String get alertsTabDashboard => 'डैशबोर्ड';
+
+  @override
+  String get alertsTitle => 'साइट का हाल';
+
+  @override
   String get appName => 'निर्माण360';
 
   @override

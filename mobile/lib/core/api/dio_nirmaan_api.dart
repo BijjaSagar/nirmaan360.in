@@ -383,6 +383,13 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Uint8List> fieldPhotoBytes(String path) => _bytes(path);
 
   @override
+  Future<Map<String, dynamic>> siteDashboard(int projectId) => _getData('/projects/$projectId/site-dashboard');
+
+  @override
+  Future<Map<String, dynamic>> siteAlerts(int projectId) =>
+      _call(() => _dio.get('/projects/$projectId/alerts', queryParameters: <String, String>{'status': 'open'}));
+
+  @override
   Future<Map<String, dynamic>> materialCheck(int projectId) =>
       _getData('/projects/$projectId/material-control/check');
 

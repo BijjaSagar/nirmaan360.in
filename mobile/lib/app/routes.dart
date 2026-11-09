@@ -51,6 +51,9 @@ abstract final class Routes {
   static String progressBeforeFinishing(int floorId) => '/progress/floor/$floorId/before-finishing';
   static String progressStage(int floorId, String trade) => '/progress/stage/$floorId/$trade';
 
+  /// The site dashboard and open alerts. Optional query: `tab=alerts`.
+  static const siteDashboard = '/site';
+
   static const material = '/material';
 
   /// Optional query: `material`.

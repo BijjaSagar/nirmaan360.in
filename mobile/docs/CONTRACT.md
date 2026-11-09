@@ -260,6 +260,17 @@ Needs the `measurement` plan feature. `measurement.view` reads and `measurement.
 - A photo always shares its entry's group, so a `measurement_submit` queued after it cannot overtake it. The cost is that a photo needing attention holds the submission until a person retries or discards it.
 - A 409 that arrives anyway (approved or sent for review from the web while the photo waited) goes to the Sync Center as `approved` or `in_review`, with the photo left in place. Lists, pictures and cleanup are the same as for issue photos.
 
+### Site dashboard and alerts
+
+Needs the `site_control` plan feature and `progress.view`. Read only. `alerts.view` and `alerts.manage` are not in the `can` list.
+
+- The app reads `GET /projects/{project}/site-dashboard` and `GET /projects/{project}/alerts?status=open`, and keeps the last answer per project under `site.overview.<projectId>`, on the same schedule as site progress. The key goes with the project. `GET /alerts` is not used, because the app works one project at a time.
+- The server writes the cards and the alert wording, in the reader's language. A money figure a person may not see is simply not on the card. A money card kept from before someone lost `money.view` is dropped when it is read.
+- `alerts.view` does not reach the app, so a 403 or 404 on either read is kept as "refused": the screen shows a calm message and Home leaves the row out. A role with no alerts still gets its dashboard.
+- The phone reads the first page of open alerts, the 30 worst, and shows the true total.
+- Severity is a word on each alert. Home has one row above the tiles rather than a ninth tile.
+- "Scan now" is left out, because `alerts.manage` does not reach the app.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

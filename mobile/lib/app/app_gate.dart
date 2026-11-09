@@ -250,6 +250,7 @@ class AppGate extends Cubit<GateState> {
     Routes.topUp: 'petty_cash.manage',
     Routes.progress: 'progress.view',
     Routes.progressForm: 'progress.create',
+    Routes.siteDashboard: 'progress.view',
     Routes.material: 'material_control.view',
     Routes.materialReceive: 'material_control.challan',
     Routes.materialUse: 'material_control.consume',

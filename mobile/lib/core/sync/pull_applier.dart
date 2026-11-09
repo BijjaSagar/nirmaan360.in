@@ -550,6 +550,7 @@ class PullApplier {
       await _db.deleteMeta(MetaKey.progressOverview(id));
       await _db.deleteMeta(MetaKey.progressLastPick(id));
       await _db.deleteMeta(MetaKey.materialOverview(id));
+      await _db.deleteMeta(MetaKey.siteOverview(id));
       await _db.deleteMeta(MetaKey.recordPhotos(id));
       await _db.deleteMeta(MetaKey.floorEntries(id));
     }

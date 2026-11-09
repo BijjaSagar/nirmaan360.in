@@ -1,5 +1,57 @@
 {
   "@@locale": "en",
+  "alertsDashboardEmpty": "No figures for this project yet.",
+  "alertsHomeCriticalCount": "{count} critical",
+  "@alertsHomeCriticalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsHomeDashboardOnly": "Dashboard for this site",
+  "alertsHomeOpen": "{count} open",
+  "@alertsHomeOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsHomeOverview": "Dashboard and alerts for this site",
+  "alertsHomeTitle": "Site alerts",
+  "alertsListRefusedMessage": "Alerts are not open to your role. Ask your office if you need them.",
+  "alertsLoading": "Loading site overview",
+  "alertsNoDataMessage": "Connect to the internet once to load this project's overview. After that it opens offline.",
+  "alertsNoneMessage": "When something on this site needs a look, it will show here.",
+  "alertsNoneTitle": "Nothing needs attention",
+  "alertsRefusedMessage": "The site overview is not open to your role. Ask your office if you need it.",
+  "alertsRefusedTitle": "Not part of your role",
+  "alertsSeverityCritical": "Critical",
+  "alertsSeverityInfo": "For information",
+  "alertsSeverityWarning": "Warning",
+  "alertsShowingSome": "Showing the {shown} most urgent of {total}. The rest are on the website.",
+  "@alertsShowingSome": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsSince": "Since {date}",
+  "@alertsSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsTabAlerts": "Alerts",
+  "alertsTabDashboard": "Dashboard",
+  "alertsTitle": "Site overview",
   "appName": "Nirmaan360",
   "approvalsActionApproved": "Approved",
   "approvalsActionRejected": "Rejected",

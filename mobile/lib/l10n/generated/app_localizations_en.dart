@@ -9,6 +9,81 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get alertsDashboardEmpty => 'No figures for this project yet.';
+
+  @override
+  String alertsHomeCriticalCount(int count) {
+    return '$count critical';
+  }
+
+  @override
+  String get alertsHomeDashboardOnly => 'Dashboard for this site';
+
+  @override
+  String alertsHomeOpen(int count) {
+    return '$count open';
+  }
+
+  @override
+  String get alertsHomeOverview => 'Dashboard and alerts for this site';
+
+  @override
+  String get alertsHomeTitle => 'Site alerts';
+
+  @override
+  String get alertsListRefusedMessage =>
+      'Alerts are not open to your role. Ask your office if you need them.';
+
+  @override
+  String get alertsLoading => 'Loading site overview';
+
+  @override
+  String get alertsNoDataMessage =>
+      'Connect to the internet once to load this project\'s overview. After that it opens offline.';
+
+  @override
+  String get alertsNoneMessage =>
+      'When something on this site needs a look, it will show here.';
+
+  @override
+  String get alertsNoneTitle => 'Nothing needs attention';
+
+  @override
+  String get alertsRefusedMessage =>
+      'The site overview is not open to your role. Ask your office if you need it.';
+
+  @override
+  String get alertsRefusedTitle => 'Not part of your role';
+
+  @override
+  String get alertsSeverityCritical => 'Critical';
+
+  @override
+  String get alertsSeverityInfo => 'For information';
+
+  @override
+  String get alertsSeverityWarning => 'Warning';
+
+  @override
+  String alertsShowingSome(int shown, int total) {
+    return 'Showing the $shown most urgent of $total. The rest are on the website.';
+  }
+
+  @override
+  String alertsSince(String date) {
+    return 'Since $date';
+  }
+
+  @override
+  String get alertsTabAlerts => 'Alerts';
+
+  @override
+  String get alertsTabDashboard => 'Dashboard';
+
+  @override
+  String get alertsTitle => 'Site overview';
+
+  @override
   String get appName => 'Nirmaan360';
 
   @override

@@ -1370,6 +1370,115 @@ class FakeApi implements NirmaanApi {
     return bytes;
   }
 
+  // Site dashboard and alerts ----------------------------------------------
+
+  Row siteDashboardBody = {
+    'project': {'id': 1, 'code': 'KT-B', 'name': 'Kalyani Tower B', 'status': 'active'},
+    'today': '2026-11-09',
+    'cards': [
+      {
+        'key': 'work',
+        'title': 'Work done',
+        'value': '35%',
+        'note': '2 of 5 BOQ lines complete, 3 started',
+        'tone': 'ok',
+        'meters': [
+          {'label': 'Work done', 'percent': '35.00', 'tone': 'ok'},
+        ],
+        'rows': <Row>[],
+        'url': 'http://example.test/projects/1/boq',
+        'money': false,
+      },
+      {
+        'key': 'pending',
+        'title': 'Pending items',
+        'value': '9',
+        'note': '0 pending work remarks, 9 open issues',
+        'tone': 'warn',
+        'meters': <Row>[],
+        'rows': [
+          {'label': 'Open issues', 'value': '9', 'tone': 'warn'},
+        ],
+        'url': null,
+        'money': false,
+      },
+      {
+        'key': 'alerts',
+        'title': 'Open alerts',
+        'value': '2',
+        'note': '1 critical',
+        'tone': 'bad',
+        'meters': <Row>[],
+        'rows': <Row>[],
+        'url': null,
+        'money': false,
+      },
+    ],
+  };
+  List<Row> siteAlertRows = [
+    {
+      'id': 7,
+      'project_id': 1,
+      'project_name': null,
+      'type': 'schedule.behind',
+      'reference': null,
+      'severity': 'critical',
+      'status': 'open',
+      'title': 'Behind schedule',
+      'message': '50% of the time is used but 35% of the work is done, 15% behind.',
+      'data': {'lag_pct': '15.00'},
+      'url': 'http://example.test/projects/1/alerts',
+      'first_seen_at': '2026-11-02T09:00:00+05:30',
+      'last_seen_at': '2026-11-09T09:00:00+05:30',
+      'resolved_at': null,
+    },
+    {
+      'id': 8,
+      'project_id': 1,
+      'project_name': null,
+      'type': 'schedule.deadline',
+      'reference': null,
+      'severity': 'info',
+      'status': 'open',
+      'title': 'Deadline ahead',
+      'message': 'The finish date is 30 days away.',
+      'data': <String, dynamic>{},
+      'url': null,
+      'first_seen_at': '2026-11-08T09:00:00+05:30',
+      'last_seen_at': '2026-11-09T09:00:00+05:30',
+      'resolved_at': null,
+    },
+  ];
+  int? siteAlertsTotal;
+  ApiFailure? siteDashboardFailure;
+  ApiFailure? siteAlertsFailure;
+  int siteDashboardReads = 0;
+  int siteAlertsReads = 0;
+
+  @override
+  Future<Map<String, dynamic>> siteDashboard(int projectId) async {
+    _guard();
+    siteDashboardReads++;
+    final failure = siteDashboardFailure;
+    if (failure != null) throw failure;
+    return siteDashboardBody;
+  }
+
+  @override
+  Future<Map<String, dynamic>> siteAlerts(int projectId) async {
+    _guard();
+    siteAlertsReads++;
+    final failure = siteAlertsFailure;
+    if (failure != null) throw failure;
+    return {
+      'data': siteAlertRows,
+      'current_page': 1,
+      'last_page': 1,
+      'per_page': 30,
+      'total': siteAlertsTotal ?? siteAlertRows.length,
+    };
+  }
+
   // Material control -------------------------------------------------------
 
   Row materialCheckBody = {

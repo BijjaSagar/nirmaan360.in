@@ -20,6 +20,8 @@ import '../features/petty_cash/view/expense_form_screen.dart';
 import '../features/petty_cash/view/petty_cash_screen.dart';
 import '../features/petty_cash/view/top_up_screen.dart';
 import '../features/petty_cash/view/wallet_form_screen.dart';
+import '../features/site_alerts/bloc/site_alerts_cubit.dart';
+import '../features/site_alerts/view/site_dashboard_screen.dart';
 import '../features/site_progress/view/floor_progress_screen.dart';
 import '../features/site_progress/view/progress_form_screen.dart';
 import '../features/site_progress/view/progress_screen.dart';
@@ -128,6 +130,10 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         ],
       ),
       _route(Routes.attendance, (_) => const AttendanceScreen()),
+      _route(
+        Routes.siteDashboard,
+        (s) => SiteDashboardScreen(tab: s.uri.queryParameters['tab'] == 'alerts' ? SiteTab.alerts : SiteTab.dashboard),
+      ),
       _route(
         Routes.material,
         (_) => const MaterialScreen(),

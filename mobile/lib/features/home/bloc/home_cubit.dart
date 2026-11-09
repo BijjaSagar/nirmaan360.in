@@ -8,6 +8,7 @@ import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/sync/record_sync.dart';
 import '../../projects/data/project_repository.dart';
+import '../../site_alerts/data/site_alerts_models.dart';
 import '../../sync_center/data/sync_repository.dart';
 import '../data/home_repository.dart';
 
@@ -68,6 +69,7 @@ class HomeState extends Equatable {
     this.openIssues = 0,
     this.siteWorkPercent,
     this.materialFlags,
+    this.site,
     this.progress,
     this.setup,
   });
@@ -85,6 +87,9 @@ class HomeState extends Equatable {
 
   /// Material questions still to answer, from the last check on this phone.
   final int? materialFlags;
+
+  /// The last site dashboard and alerts on this phone.
+  final SiteOverview? site;
   final HomeProgress? progress;
 
   /// What the project still needs set up. Null until first read.
@@ -97,6 +102,7 @@ class HomeState extends Equatable {
     int? openIssues,
     String? siteWorkPercent,
     int? materialFlags,
+    SiteOverview? site,
     HomeProgress? Function()? progress,
     ProjectSetup? setup,
   }) {
@@ -107,6 +113,7 @@ class HomeState extends Equatable {
       openIssues: openIssues ?? this.openIssues,
       siteWorkPercent: siteWorkPercent ?? this.siteWorkPercent,
       materialFlags: materialFlags ?? this.materialFlags,
+      site: site ?? this.site,
       progress: progress == null ? this.progress : progress(),
       setup: setup ?? this.setup,
     );
@@ -120,6 +127,7 @@ class HomeState extends Equatable {
         openIssues,
         siteWorkPercent,
         materialFlags,
+        site,
         progress,
         setup?.boqCount,
         setup?.workerCount,
@@ -160,6 +168,9 @@ class HomeCubit extends Cubit<HomeState> {
       }),
       _services.material.watchCached(projectId).listen((overview) {
         if (overview != null && !isClosed) emit(state.copyWith(materialFlags: overview.openFlags));
+      }),
+      _services.siteAlerts.watchCached(projectId).listen((site) {
+        if (site != null && !isClosed) emit(state.copyWith(site: site));
       }),
       _services.syncCenter.watchOutbox().listen((items) {
         _queued = items;

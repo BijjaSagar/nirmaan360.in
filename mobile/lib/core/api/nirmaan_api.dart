@@ -198,6 +198,16 @@ abstract interface class NirmaanApi {
   /// A project's photo. [imageUrl] is the address the server gave for it.
   Future<Uint8List> projectImageBytes(String imageUrl);
 
+  // Site dashboard and alerts. Read only.
+
+  /// `GET /projects/{project}/site-dashboard`: the cards the server worked out
+  /// for this person, already limited to what they may see.
+  Future<Map<String, dynamic>> siteDashboard(int projectId);
+
+  /// The first page of `GET /projects/{project}/alerts?status=open`, worst
+  /// first, in Laravel's page shape.
+  Future<Map<String, dynamic>> siteAlerts(int projectId);
+
   // Site progress. Reads fill a cache on the phone. Writes are replayed from
   // the outbox with their `client_uuid`, so a retry cannot record work twice.
 

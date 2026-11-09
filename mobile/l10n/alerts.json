@@ -1,0 +1,23 @@
+{
+  "alertsTitle": { "en": "Site overview", "mr": "साइटचा आढावा", "hi": "साइट का हाल" },
+  "alertsLoading": { "en": "Loading site overview", "mr": "साइटचा आढावा लोड होत आहे", "hi": "साइट का हाल लोड हो रहा है" },
+  "alertsTabDashboard": { "en": "Dashboard", "mr": "डॅशबोर्ड", "hi": "डैशबोर्ड" },
+  "alertsTabAlerts": { "en": "Alerts", "mr": "सूचना", "hi": "अलर्ट" },
+  "alertsNoDataMessage": { "en": "Connect to the internet once to load this project's overview. After that it opens offline.", "mr": "या प्रकल्पाचा आढावा लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर ऑफलाइनही उघडेल.", "hi": "इस प्रोजेक्ट का हाल लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद ऑफ़लाइन भी खुलेगा।" },
+  "alertsRefusedTitle": { "en": "Not part of your role", "mr": "तुमच्या भूमिकेत हे नाही", "hi": "यह आपकी भूमिका में नहीं है" },
+  "alertsRefusedMessage": { "en": "The site overview is not open to your role. Ask your office if you need it.", "mr": "साइटचा आढावा तुमच्या भूमिकेसाठी उपलब्ध नाही. गरज असल्यास ऑफिसला विचारा.", "hi": "साइट का हाल आपकी भूमिका के लिए उपलब्ध नहीं है। ज़रूरत हो तो ऑफ़िस से पूछें।" },
+  "alertsListRefusedMessage": { "en": "Alerts are not open to your role. Ask your office if you need them.", "mr": "सूचना तुमच्या भूमिकेसाठी उपलब्ध नाहीत. गरज असल्यास ऑफिसला विचारा.", "hi": "अलर्ट आपकी भूमिका के लिए उपलब्ध नहीं हैं। ज़रूरत हो तो ऑफ़िस से पूछें।" },
+  "alertsDashboardEmpty": { "en": "No figures for this project yet.", "mr": "या प्रकल्पासाठी अजून आकडे नाहीत.", "hi": "इस प्रोजेक्ट के लिए अभी कोई आंकड़े नहीं।" },
+  "alertsNoneTitle": { "en": "Nothing needs attention", "mr": "लक्ष देण्यासारखे काही नाही", "hi": "ध्यान देने लायक कुछ नहीं" },
+  "alertsNoneMessage": { "en": "When something on this site needs a look, it will show here.", "mr": "साइटवर काही पाहण्यासारखे असेल तर ते इथे दिसेल.", "hi": "साइट पर कुछ देखने लायक होगा तो यहाँ दिखेगा।" },
+  "alertsSeverityCritical": { "en": "Critical", "mr": "गंभीर", "hi": "गंभीर" },
+  "alertsSeverityWarning": { "en": "Warning", "mr": "इशारा", "hi": "चेतावनी" },
+  "alertsSeverityInfo": { "en": "For information", "mr": "माहितीसाठी", "hi": "जानकारी के लिए" },
+  "alertsSince": { "en": "Since {date}", "mr": "{date} पासून", "hi": "{date} से", "placeholders": { "date": { "type": "String" } } },
+  "alertsShowingSome": { "en": "Showing the {shown} most urgent of {total}. The rest are on the website.", "mr": "{total} पैकी सर्वात तातडीच्या {shown} दाखवल्या आहेत. बाकीच्या वेबसाइटवर आहेत.", "hi": "{total} में से सबसे ज़रूरी {shown} दिखाए हैं। बाकी वेबसाइट पर हैं।", "placeholders": { "shown": { "type": "int" }, "total": { "type": "int" } } },
+  "alertsHomeTitle": { "en": "Site alerts", "mr": "साइटच्या सूचना", "hi": "साइट के अलर्ट" },
+  "alertsHomeOverview": { "en": "Dashboard and alerts for this site", "mr": "या साइटचा डॅशबोर्ड आणि सूचना", "hi": "इस साइट का डैशबोर्ड और अलर्ट" },
+  "alertsHomeDashboardOnly": { "en": "Dashboard for this site", "mr": "या साइटचा डॅशबोर्ड", "hi": "इस साइट का डैशबोर्ड" },
+  "alertsHomeOpen": { "en": "{count} open", "mr": "{count} उघड्या", "hi": "{count} खुले", "placeholders": { "count": { "type": "int" } } },
+  "alertsHomeCriticalCount": { "en": "{count} critical", "mr": "{count} गंभीर", "hi": "{count} गंभीर", "placeholders": { "count": { "type": "int" } } }
+}

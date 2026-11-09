@@ -14,6 +14,7 @@ import '../features/petty_cash/data/petty_cash_repository.dart';
 import '../features/material_control/data/material_repository.dart';
 import '../features/projects/data/project_image_repository.dart';
 import '../features/projects/data/project_repository.dart';
+import '../features/site_alerts/data/site_alerts_repository.dart';
 import '../features/site_progress/data/progress_repository.dart';
 import '../features/sync_center/data/sync_repository.dart';
 import 'api/dio_nirmaan_api.dart';
@@ -36,6 +37,7 @@ class AppServices {
   AppServices._({
     required this.progress,
     required this.material,
+    required this.siteAlerts,
     required this.projectImages,
     required this.db,
     required this.api,
@@ -139,10 +141,15 @@ class AppServices {
     );
     final progress = ProgressRepository(context);
     final material = MaterialRepository(context);
+    final siteAlerts = SiteAlertsRepository(context);
     final projectImages = ProjectImageRepository(context);
     engine.afterPull = (sentSomething) async {
       // Separately, so a failure in one does not leave the other stale.
-      for (final refresh in <Future<void> Function({bool force})>[progress.refreshCurrent, material.refreshCurrent]) {
+      for (final refresh in <Future<void> Function({bool force})>[
+        progress.refreshCurrent,
+        material.refreshCurrent,
+        siteAlerts.refreshCurrent,
+      ]) {
         try {
           await refresh(force: sentSomething);
         } on ApiFailure catch (e) {
@@ -154,6 +161,7 @@ class AppServices {
     return AppServices._(
       progress: progress,
       material: material,
+      siteAlerts: siteAlerts,
       projectImages: projectImages,
       db: db,
       api: api,
@@ -192,6 +200,7 @@ class AppServices {
   final SyncRepository syncCenter;
   final ProgressRepository progress;
   final MaterialRepository material;
+  final SiteAlertsRepository siteAlerts;
   final ProjectImageRepository projectImages;
 
   /// Restores the session and starts the triggers. Offline-safe.
