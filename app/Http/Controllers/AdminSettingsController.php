@@ -76,7 +76,7 @@ class AdminSettingsController extends Controller
             'plans.*.max_users' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'plans.*.max_projects' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'plans.*.features' => ['array'],
-            'plans.*.features.*' => [Rule::in([...array_keys(self::FEATURES), ...array_column(config('modules', []), 'feature')])],
+            'plans.*.features.*' => [Rule::in([...array_keys(self::FEATURES), ...array_filter(array_column(config('modules', []), 'feature'))])],
         ]);
 
         $saved = [];

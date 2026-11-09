@@ -1,0 +1,1 @@
+<div class="mb-4 rounded-[3px] border border-haldi bg-haldi/10 px-3 py-2 text-sm font-medium" role="note">{{ __('Data for your CA to check. This is not a filing, and nothing is sent to any government portal.') }}</div>
