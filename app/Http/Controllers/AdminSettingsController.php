@@ -30,11 +30,16 @@ class AdminSettingsController extends Controller
         'api' => 'API access',
     ];
 
+    /** Home page sections, in page order. Every site_on() key in public/home.blade.php must be here. */
     public const SECTIONS = [
         'strip' => 'Highlights strip under the hero',
-        'stages' => 'Eight stages',
-        'measurement' => 'Measurement book',
-        'billing' => 'RA billing',
+        'leaks' => 'Where the money goes',
+        'payment' => 'Payment against work',
+        'material' => 'Material against BOQ',
+        'progress' => 'Progress by floor and time',
+        'trades' => 'Plumbing and electrical stages',
+        'tender' => 'BOQ, quotes and budget',
+        'billing' => 'Measurement book and RA bills',
         'field_app' => 'Mobile app',
         'roles' => 'By role',
         'ai' => 'AI agents',

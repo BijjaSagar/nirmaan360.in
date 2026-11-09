@@ -318,6 +318,11 @@
         @apply inline-flex items-center gap-1.5 rounded-full bg-sand px-2.5 py-0.5 text-[12.5px] font-medium text-[#6f5316];
     }
 
+    /* Something is ahead, over or missing: payment past work, a bag nobody can account for. */
+    .tag-alert {
+        @apply inline-flex items-center gap-1 rounded-full bg-laterite/10 px-2.5 py-0.5 text-[12.5px] font-medium whitespace-nowrap text-laterite;
+    }
+
     .mock {
         @apply overflow-hidden rounded-xl border border-rule bg-white text-ink shadow-[0_1px_2px_rgb(20_20_19/0.04),0_20px_44px_-26px_rgb(20_20_19/0.25)];
     }

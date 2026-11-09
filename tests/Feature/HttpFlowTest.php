@@ -33,7 +33,7 @@ class HttpFlowTest extends TestCase
 
     public function test_public_pages_load(): void
     {
-        $this->get('/')->assertOk()->assertSee('Tender to final bill.');
+        $this->get('/')->assertOk()->assertSee('Material, contractor payment and time.');
         $this->get('/calculators')->assertOk()->assertSee('Site calculators');
         $this->get('/login')->assertOk();
         $this->get('/register')->assertOk();
@@ -43,7 +43,7 @@ class HttpFlowTest extends TestCase
     public function test_home_page_can_switch_language(): void
     {
         $this->get('/locale/hi')->assertRedirect();
-        $this->get('/')->assertOk()->assertSee('टेंडर से अंतिम बिल तक।');
+        $this->get('/')->assertOk()->assertSee('मटेरियल, ठेकेदार का पेमेंट और समय।');
     }
 
     public function test_registration_creates_a_company_on_trial_with_approval_rules(): void
