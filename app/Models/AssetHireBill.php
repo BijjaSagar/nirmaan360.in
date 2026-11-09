@@ -18,6 +18,8 @@ class AssetHireBill extends Model
 {
     use Auditable, BelongsToOrganization, Immutable;
 
+    public const PROJECT_VIA = 'asset';
+
     protected $guarded = [];
 
     protected function casts(): array

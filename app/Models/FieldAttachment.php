@@ -12,6 +12,8 @@ class FieldAttachment extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA_MORPH = 'attachable';
+
     protected $guarded = [];
 
     public function isImage(): bool

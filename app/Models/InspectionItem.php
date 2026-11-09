@@ -11,6 +11,8 @@ class InspectionItem extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA = 'inspection';
+
     protected $guarded = [];
 
     public function inspection(): BelongsTo

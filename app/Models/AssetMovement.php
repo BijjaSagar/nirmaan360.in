@@ -12,6 +12,8 @@ class AssetMovement extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA_ANY = ['fromProject', 'toProject'];
+
     protected $guarded = [];
 
     protected function casts(): array

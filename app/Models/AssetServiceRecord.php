@@ -12,6 +12,8 @@ class AssetServiceRecord extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA = 'asset';
+
     protected $guarded = [];
 
     protected function casts(): array

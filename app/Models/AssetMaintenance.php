@@ -13,6 +13,8 @@ class AssetMaintenance extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA = 'asset';
+
     protected $table = 'asset_maintenance';
 
     protected $guarded = [];

@@ -12,6 +12,8 @@ class QualityTestResult extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA = 'test';
+
     protected $guarded = [];
 
     protected function casts(): array
