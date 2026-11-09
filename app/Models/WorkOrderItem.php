@@ -10,6 +10,8 @@ class WorkOrderItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'workOrder';
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -20,5 +22,10 @@ class WorkOrderItem extends Model
     public function boqItem(): BelongsTo
     {
         return $this->belongsTo(BoqItem::class)->withTrashed();
+    }
+
+    public function workOrder(): BelongsTo
+    {
+        return $this->belongsTo(WorkOrder::class);
     }
 }

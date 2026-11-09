@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -19,6 +22,12 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    /** These built-in roles see every project, whatever else is set on the person. */
+    public const SEES_ALL_PROJECTS = ['owner', 'admin'];
+
+    /** These reach across the whole company, so someone limited to chosen projects never holds them. */
+    public const COMPANY_WIDE_PERMISSIONS = ['user.*', 'settings.*', 'billing.*', 'audit.*'];
+
     protected function casts(): array
     {
         return [
@@ -26,6 +35,8 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'is_active' => 'boolean',
             'is_platform_admin' => 'boolean',
+            'limited_to_projects' => 'boolean',
+            'access_changed_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -35,9 +46,24 @@ class User extends Authenticatable
         return $this->belongsTo(Organization::class);
     }
 
+    /** Read without the tenant scope, then checked against this person's company in grantedPermissions(). */
+    public function customRole(): BelongsTo
+    {
+        return $this->belongsTo(CustomRole::class)->withoutGlobalScopes();
+    }
+
+    public function assignedProjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'user_project_access')->withTimestamps();
+    }
+
     public function hasPermission(string $permission): bool
     {
-        foreach (config("buildos.roles.{$this->role}.permissions", []) as $granted) {
+        if ($this->isProjectLimited() && Str::is(self::COMPANY_WIDE_PERMISSIONS, $permission)) {
+            return false;
+        }
+
+        foreach ($this->grantedPermissions() as $granted) {
             if ($granted === '*' || Str::is($granted, $permission)) {
                 return true;
             }
@@ -46,9 +72,52 @@ class User extends Authenticatable
         return false;
     }
 
+    /**
+     * The permission list behind this person's role.
+     * A custom role that has gone, or that belongs to another company, grants nothing:
+     * it never falls back to the built-in role kept in the role column.
+     *
+     * @return list<string>
+     */
+    public function grantedPermissions(): array
+    {
+        if ($this->custom_role_id === null) {
+            return config("buildos.roles.{$this->role}.permissions", []);
+        }
+
+        $customRole = $this->customRole;
+
+        return $customRole && $customRole->organization_id === $this->organization_id ? $customRole->permissions : [];
+    }
+
+    /** The value used for this person's role on forms and invitations. */
+    public function roleKey(): string
+    {
+        return $this->custom_role_id !== null ? CustomRole::keyFor($this->custom_role_id) : $this->role;
+    }
+
     public function roleLabel(): string
     {
+        if ($this->custom_role_id !== null) {
+            return $this->customRole->name ?? __('Removed role');
+        }
+
         return config("buildos.roles.{$this->role}.label", $this->role);
+    }
+
+    public function isProjectLimited(): bool
+    {
+        return $this->limited_to_projects
+            && ($this->custom_role_id !== null || ! in_array($this->role, self::SEES_ALL_PROJECTS, true));
+    }
+
+    /** A subquery, so a scope adds no round trip and can never be out of date. */
+    public function assignedProjectIds(): QueryBuilder
+    {
+        return DB::table('user_project_access')
+            ->select('project_id')
+            ->where('user_id', $this->id)
+            ->where('organization_id', $this->organization_id);
     }
 
     /** Staff who run the platform. Separate from company roles, which all grant '*' to owners. */
@@ -59,6 +128,6 @@ class User extends Authenticatable
 
     public function isApprovalOverride(): bool
     {
-        return in_array($this->role, config('buildos.approver_override_roles'), true);
+        return $this->custom_role_id === null && in_array($this->role, config('buildos.approver_override_roles'), true);
     }
 }

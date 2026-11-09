@@ -11,6 +11,8 @@ class PettyCashEntry extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA = 'wallet';
+
     protected $guarded = [];
 
     protected function casts(): array

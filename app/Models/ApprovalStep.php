@@ -10,6 +10,8 @@ class ApprovalStep extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'approval';
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -20,6 +22,11 @@ class ApprovalStep extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function approval(): BelongsTo
+    {
+        return $this->belongsTo(Approval::class);
     }
 
     public function actorName(): string

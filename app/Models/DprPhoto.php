@@ -10,6 +10,8 @@ class DprPhoto extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'dpr';
+
     protected $guarded = [];
 
     // A new photo must reach devices on the next pull, which watches dprs.updated_at.

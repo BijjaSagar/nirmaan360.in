@@ -12,6 +12,8 @@ class Approval extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA_MORPH = 'approvable';
+
     protected $guarded = [];
 
     protected function casts(): array

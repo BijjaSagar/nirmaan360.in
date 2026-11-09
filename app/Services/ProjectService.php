@@ -87,6 +87,11 @@ class ProjectService
                 'created_by' => $user->id,
             ]);
 
+            // Someone limited to chosen projects keeps access to the one they just made.
+            if ($user->isProjectLimited()) {
+                $user->assignedProjects()->attach($project->id, ['organization_id' => $organization->id]);
+            }
+
             // Those defaults are not on the model until it is read back.
             return $project->refresh();
         });
