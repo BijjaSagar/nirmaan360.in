@@ -120,7 +120,7 @@ class CompanyDataTest extends NotifyTestCase
     public function test_a_table_from_any_module_is_included_automatically(): void
     {
         DB::statement('CREATE TABLE future_module_things (id INTEGER PRIMARY KEY, organization_id INTEGER, label TEXT)');
-        DB::table('future_module_things')->insert(['organization_id' => $this->organization->id, 'label' => 'From another module']);
+        DB::table('future_module_things')->insert(['id' => 1, 'organization_id' => $this->organization->id, 'label' => 'From another module']);
 
         [, $files] = $this->exportZip();
 
@@ -364,7 +364,7 @@ class CompanyDataTest extends NotifyTestCase
     public function test_tables_with_no_foreign_key_are_swept_too(): void
     {
         DB::statement('CREATE TABLE future_module_things (id INTEGER PRIMARY KEY, organization_id INTEGER, label TEXT)');
-        DB::table('future_module_things')->insert(['organization_id' => $this->organization->id, 'label' => 'x']);
+        DB::table('future_module_things')->insert(['id' => 1, 'organization_id' => $this->organization->id, 'label' => 'x']);
 
         $this->schedule();
         $this->travel(CompanyDeletionService::GRACE_DAYS + 1)->days();
