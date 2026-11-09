@@ -10,14 +10,14 @@
             <x-empty :title="__('No work orders yet')" :note="__('Give a subcontractor BOQ items and rates, then bill their approved measurements.')" />
         @else
             <table class="ledger">
-                <thead><tr><th>{{ __('Number') }}</th><th>{{ __('Title') }}</th><th>{{ __('Subcontractor') }}</th><th class="r">{{ __('Value') }}</th><th>{{ __('Status') }}</th></tr></thead>
+                <thead><tr><th>{{ __('Number') }}</th><th>{{ __('Title') }}</th><th>{{ __('Subcontractor') }}</th>@can('money.view')<th class="r">{{ __('Value') }}</th>@endcan<th>{{ __('Status') }}</th></tr></thead>
                 <tbody>
                 @foreach ($workOrders as $workOrder)
                     <tr>
                         <td><a href="{{ route('work-orders.show', $workOrder) }}" class="link num text-xs">{{ $workOrder->number }}</a></td>
                         <td>{{ $workOrder->title }}</td>
                         <td>{{ $workOrder->party->name }}</td>
-                        <td class="r">{{ inr($workOrder->totalValue()) }}</td>
+                        @can('money.view')<td class="r">{{ inr($workOrder->totalValue()) }}</td>@endcan
                         <td><x-stamp :status="$workOrder->status" /></td>
                     </tr>
                 @endforeach

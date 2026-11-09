@@ -8,7 +8,7 @@
 
     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <x-stat :label="__('Progress')" :value="$progress->percent === null ? '—' : $progress->percent.'%'" :note="$progress->expected === null ? __('Link a BOQ item to track this') : __('Plan says :percent% by today', ['percent' => $progress->expected])" />
-        <x-stat :label="__('Planned value')" :value="inr($progress->value)" :note="inr($progress->earned).' '.__('earned')" />
+        @can('money.view')<x-stat :label="__('Planned value')" :value="inr($progress->value)" :note="inr($progress->earned).' '.__('earned')" />@endcan
         <x-stat :label="__('Actual start')" :value="$progress->actualStart ? \Illuminate\Support\Carbon::parse($progress->actualStart)->format('d M Y') : '—'" :note="__('Planned').' '.$activity->planned_start->format('d M Y')" />
         <x-stat :label="__('Actual finish')" :value="$progress->actualFinish ? \Illuminate\Support\Carbon::parse($progress->actualFinish)->format('d M Y') : '—'" :note="__('Planned').' '.$activity->planned_end->format('d M Y')" :accent="$progress->isDelayed()" />
     </div>

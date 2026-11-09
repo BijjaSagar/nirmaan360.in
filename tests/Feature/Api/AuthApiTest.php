@@ -24,7 +24,9 @@ class AuthApiTest extends ApiTestCase
             'project.view', 'project.manage', 'boq.view', 'boq.manage', 'dpr.view', 'dpr.create', 'dpr.approve', 'issue.view', 'issue.manage',
             'attendance.view', 'attendance.manage', 'worker.view', 'worker.manage', 'petty_cash.view', 'petty_cash.manage',
             'measurement.view', 'measurement.create', 'measurement.approve', 'ra_bill.view', 'ra_bill.approve',
+            'money.view', 'money.overview',
         ], array_keys($can));
+        $this->assertFalse($can['money.view']);
         $this->assertTrue($can['dpr.create']);
         $this->assertFalse($can['dpr.approve']);
     }

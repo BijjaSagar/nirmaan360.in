@@ -23,9 +23,10 @@ class MeasurementSheetService
     /** Most entries on one sheet. A longer period should be split. */
     public const MAX_ENTRIES = 600;
 
-    public function pdf(Project $project, CarbonImmutable $from, CarbonImmutable $to): string
+    /** Without $withMoney the sheet carries quantities only: no rates, amounts or total value. */
+    public function pdf(Project $project, CarbonImmutable $from, CarbonImmutable $to, bool $withMoney = true): string
     {
-        return PdfRenderer::render('modules.reports.pdf.measurement-sheet', $this->build($project, $from, $to), 'landscape');
+        return PdfRenderer::render('modules.reports.pdf.measurement-sheet', $this->build($project, $from, $to, $withMoney), 'landscape');
     }
 
     public function filename(Project $project, CarbonImmutable $from, CarbonImmutable $to): string
@@ -34,9 +35,9 @@ class MeasurementSheetService
     }
 
     /**
-     * @return array{organization: Organization, project: Project, client: ?string, from: CarbonImmutable, to: CarbonImmutable, items: list<array<string,mixed>>, total_amount: string, entry_count: int}
+     * @return array{organization: Organization, project: Project, client: ?string, from: CarbonImmutable, to: CarbonImmutable, items: list<array<string,mixed>>, total_amount: ?string, entry_count: int, with_money: bool}
      */
-    public function build(Project $project, CarbonImmutable $from, CarbonImmutable $to): array
+    public function build(Project $project, CarbonImmutable $from, CarbonImmutable $to, bool $withMoney = true): array
     {
         $organizationId = $project->organization_id;
 
@@ -92,12 +93,12 @@ class MeasurementSheetService
                 'description' => $item->description,
                 'unit' => $item->unit,
                 'boq_qty' => Dec::qty($item->qty),
-                'rate' => Dec::money($item->rate),
+                'rate' => $withMoney ? Dec::money($item->rate) : null,
                 'rows' => $rows,
                 'period_qty' => Dec::qty($period),
                 'previous_qty' => Dec::qty($previous),
                 'cumulative_qty' => Dec::qty($previous->plus($period)),
-                'amount' => Dec::money($amount),
+                'amount' => $withMoney ? Dec::money($amount) : null,
             ];
         }
 
@@ -110,8 +111,9 @@ class MeasurementSheetService
             'from' => $from,
             'to' => $to,
             'items' => $items,
-            'total_amount' => Dec::money($totalAmount),
+            'total_amount' => $withMoney ? Dec::money($totalAmount) : null,
             'entry_count' => $entries->count(),
+            'with_money' => $withMoney,
         ];
     }
 }

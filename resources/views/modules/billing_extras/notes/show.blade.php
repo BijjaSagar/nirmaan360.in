@@ -21,16 +21,22 @@
                 <div class="flex justify-between gap-3 border-b border-rule px-4 py-2"><dt>{{ __('Note date') }}</dt><dd class="num">{{ $note->note_date->format('d M Y') }}</dd></div>
                 <div class="flex justify-between gap-3 border-b border-rule px-4 py-2"><dt>{{ __('Raised by') }}</dt><dd>{{ $note->creator?->name ?? '—' }}</dd></div>
                 <div class="border-b border-rule px-4 py-2"><dt>{{ __('Reason') }}</dt><dd class="mt-1 text-ink-2">{{ $note->reason }}</dd></div>
-                <div class="flex justify-between gap-3 border-b border-rule px-4 py-2"><dt>{{ __('Amount before GST') }}</dt><dd class="num">{{ inr($note->taxable_amount) }}</dd></div>
-                <div class="flex justify-between gap-3 border-b border-rule px-4 py-2"><dt>{{ __('GST') }} <span class="num text-xs text-ink-3">{{ (float) $note->gst_pct }}%</span></dt><dd class="num">{{ inr($note->gst_amount) }}</dd></div>
-                <div class="flex items-baseline justify-between gap-3 bg-paper-2/60 px-4 py-3"><dt class="font-display text-lg font-semibold">{{ __('Note total') }}</dt><dd class="num text-lg font-medium whitespace-nowrap">{{ inr($note->total_amount) }}</dd></div>
+                @can('money.view')
+                    <div class="flex justify-between gap-3 border-b border-rule px-4 py-2"><dt>{{ __('Amount before GST') }}</dt><dd class="num">{{ inr($note->taxable_amount) }}</dd></div>
+                    <div class="flex justify-between gap-3 border-b border-rule px-4 py-2"><dt>{{ __('GST') }} <span class="num text-xs text-ink-3">{{ (float) $note->gst_pct }}%</span></dt><dd class="num">{{ inr($note->gst_amount) }}</dd></div>
+                    <div class="flex items-baseline justify-between gap-3 bg-paper-2/60 px-4 py-3"><dt class="font-display text-lg font-semibold">{{ __('Note total') }}</dt><dd class="num text-lg font-medium whitespace-nowrap">{{ inr($note->total_amount) }}</dd></div>
+                @endcan
             </dl>
             <p class="border-t border-rule px-4 py-3 text-sm {{ $note->lowersPosition() ? 'text-laterite' : '' }}">
-                @if ($note->bill->type === 'client')
-                    {{ $note->lowersPosition() ? __('Lowers what the client owes us by :amount once approved.', ['amount' => inr($note->total_amount)]) : __('Raises what the client owes us by :amount once approved.', ['amount' => inr($note->total_amount)]) }}
+                @can('money.view')
+                    @if ($note->bill->type === 'client')
+                        {{ $note->lowersPosition() ? __('Lowers what the client owes us by :amount once approved.', ['amount' => inr($note->total_amount)]) : __('Raises what the client owes us by :amount once approved.', ['amount' => inr($note->total_amount)]) }}
+                    @else
+                        {{ $note->lowersPosition() ? __('Lowers what we owe the subcontractor by :amount once approved.', ['amount' => inr($note->total_amount)]) : __('Raises what we owe the subcontractor by :amount once approved.', ['amount' => inr($note->total_amount)]) }}
+                    @endif
                 @else
-                    {{ $note->lowersPosition() ? __('Lowers what we owe the subcontractor by :amount once approved.', ['amount' => inr($note->total_amount)]) : __('Raises what we owe the subcontractor by :amount once approved.', ['amount' => inr($note->total_amount)]) }}
-                @endif
+                    {{ $note->lowersPosition() ? __('Lowers the bill once approved.') : __('Raises the bill once approved.') }}
+                @endcan
             </p>
         </section>
 

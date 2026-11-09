@@ -2,7 +2,8 @@
     $tabs = [
         ['route' => 'planning.index', 'label' => __('Overview')],
         ['route' => 'planning.schedule', 'label' => __('Schedule')],
-        ['route' => 'planning.budget', 'label' => __('Budget')],
+        // The budget is the company's total spend, which needs money.overview.
+        ...(auth()->user()->can('money.overview') ? [['route' => 'planning.budget', 'label' => __('Budget')]] : []),
     ];
 @endphp
 <nav class="mb-5 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-rule" aria-label="{{ __('Planning') }}">

@@ -3,7 +3,7 @@
 @section('content')
     @php $setup = auth()->user()->organization->allowsFeature('site_control'); @endphp
     <div x-data="{ add: false, edit: null }">
-        <x-page-header :title="__('BOQ & ledger')" :subtitle="$project->name.' · '.__('Total').' '.inr($total)">
+        <x-page-header :title="__('BOQ & ledger')" :subtitle="$project->name.($total !== null ? ' · '.__('Total').' '.inr($total) : '')">
             <a href="{{ route('boq.export', $project) }}" class="btn btn-ghost">{{ __('Export CSV') }}</a>
             @include('modules.reports._boq-buttons', ['project' => $project])
             @includeWhen($setup, 'modules.project_setup.boq._header-links', ['project' => $project])
@@ -28,7 +28,9 @@
                             <datalist id="units">@foreach (config('buildos.units') as $unit)<option value="{{ $unit }}">@endforeach</datalist>
                         </x-field>
                         <x-field :label="__('Quantity')" name="qty"><input id="qty" name="qty" type="number" step="0.001" min="0" value="{{ old('qty') }}" class="input num" required></x-field>
-                        <x-field :label="__('Rate (₹)')" name="rate"><input id="rate" name="rate" type="number" step="0.01" min="0" value="{{ old('rate') }}" class="input num" required></x-field>
+                        @can('money.view')
+                            <x-field :label="__('Rate (₹)')" name="rate"><input id="rate" name="rate" type="number" step="0.01" min="0" value="{{ old('rate') }}" class="input num" required></x-field>
+                        @endcan
                         <div class="flex items-end"><button class="btn btn-primary w-full">{{ __('Add item') }}</button></div>
                     </div>
                 </form>
@@ -58,7 +60,7 @@
                 <table class="ledger min-w-[980px]">
                     <thead>
                     <tr>
-                        <th>{{ __('Code') }}</th><th class="w-[30%]">{{ __('Description') }}</th><th>{{ __('Unit') }}</th><th class="r">{{ __('Rate') }}</th>
+                        <th>{{ __('Code') }}</th><th class="w-[30%]">{{ __('Description') }}</th><th>{{ __('Unit') }}</th>@can('money.view')<th class="r">{{ __('Rate') }}</th>@endcan
                         <th class="r">{{ __('BOQ') }}</th><th class="r">{{ __('Executed') }}</th><th class="r">{{ __('Measured') }}</th><th class="r">{{ __('Approved') }}</th><th class="r">{{ __('Billed') }}</th><th class="r">{{ __('Balance') }}</th>
                         @if ($setup || auth()->user()->can('boq.manage'))<th></th>@endif
                     </tr>
@@ -72,7 +74,7 @@
                                 <tr><td colspan="11" class="bg-paper-2/40 font-display text-base font-semibold">{{ $section }}</td></tr>
                             @endif
                         @endif
-                        @php $editPayload = ['url' => route('boq.update', $item), 'removeUrl' => route('boq.destroy', $item), 'code' => $item->code, 'description' => $item->description, 'unit' => $item->unit, 'qty' => $item->qty, 'rate' => $item->rate, 'category' => $item->category ?? '', 'details' => $item->details ?? '', 'reason' => '']; @endphp
+                        @php $editPayload = ['url' => route('boq.update', $item), 'removeUrl' => route('boq.destroy', $item), 'code' => $item->code, 'description' => $item->description, 'unit' => $item->unit, 'qty' => $item->qty, 'rate' => \App\Support\Money::orNull($item->rate), 'category' => $item->category ?? '', 'details' => $item->details ?? '', 'reason' => '']; @endphp
                         <tr>
                             <td class="num text-xs">{{ $item->code }}</td>
                             <td>
@@ -85,7 +87,7 @@
                                 </div>
                             </td>
                             <td>{{ $item->unit }}</td>
-                            <td class="r">{{ \App\Support\Dec::indian($item->rate) }}</td>
+                            @can('money.view')<td class="r">{{ \App\Support\Dec::indian($item->rate) }}</td>@endcan
                             <td class="r">{{ fmt_qty($item->qty) }}</td>
                             <td class="r">{{ fmt_qty($item->executed_qty ?? 0) }}</td>
                             <td class="r">{{ fmt_qty($item->measured_qty ?? 0) }}</td>
@@ -121,7 +123,9 @@
                                 <div class="sm:col-span-3"><label class="label">{{ __('Description') }}</label><textarea name="description" x-model="edit.description" rows="3" class="input" required></textarea></div>
                                 <div><label class="label">{{ __('Unit') }}</label><input name="unit" x-model="edit.unit" class="input" required></div>
                                 <div><label class="label">{{ __('Quantity') }}</label><input name="qty" type="number" step="0.001" min="0" x-model="edit.qty" class="input num" required></div>
-                                <div><label class="label">{{ __('Rate (₹)') }}</label><input name="rate" type="number" step="0.01" min="0" x-model="edit.rate" class="input num" required></div>
+                                @can('money.view')
+                                    <div><label class="label">{{ __('Rate (₹)') }}</label><input name="rate" type="number" step="0.01" min="0" x-model="edit.rate" class="input num" required></div>
+                                @endcan
                                 @include('modules.project_setup.boq._edit-fields')
                             </div>
                             <div class="flex justify-end gap-2 border-t border-rule px-4 py-3">

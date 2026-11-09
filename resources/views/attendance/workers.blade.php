@@ -18,7 +18,9 @@
                     <option value="contractor">{{ __('Contractor') }}</option>
                 </select>
             </x-field>
-            <x-field :label="__('Daily wage (₹)')" name="daily_wage"><input id="daily_wage" name="daily_wage" type="number" step="0.01" min="0" value="{{ old('daily_wage') }}" class="input num" required></x-field>
+            @can('money.view')
+                <x-field :label="__('Daily wage (₹)')" name="daily_wage"><input id="daily_wage" name="daily_wage" type="number" step="0.01" min="0" value="{{ old('daily_wage') }}" class="input num" required></x-field>
+            @endcan
             <x-field :label="__('Labour contractor')" name="contractor_id" class="sm:col-span-3">
                 <select id="contractor_id" name="contractor_id" class="input">
                     <option value="">—</option>
@@ -34,7 +36,7 @@
             <x-empty :title="__('No workers yet')" />
         @else
             <table class="ledger">
-                <thead><tr><th>{{ __('Name') }}</th><th>{{ __('Trade') }}</th><th>{{ __('Type') }}</th><th>{{ __('Mobile') }}</th><th class="r">{{ __('Daily wage') }}</th><th>{{ __('Status') }}</th></tr></thead>
+                <thead><tr><th>{{ __('Name') }}</th><th>{{ __('Trade') }}</th><th>{{ __('Type') }}</th><th>{{ __('Mobile') }}</th>@can('money.view')<th class="r">{{ __('Daily wage') }}</th>@endcan<th>{{ __('Status') }}</th></tr></thead>
                 <tbody>
                 @foreach ($workers as $worker)
                     <tr>
@@ -42,7 +44,7 @@
                         <td>{{ __($worker->trade) }}</td>
                         <td>{{ $worker->type === 'contractor' ? ($worker->contractor?->name ?? __('Contractor')) : __('Own') }}</td>
                         <td class="num text-xs">{{ $worker->phone ?? '—' }}</td>
-                        <td class="r">{{ inr($worker->daily_wage) }}</td>
+                        @can('money.view')<td class="r">{{ inr($worker->daily_wage) }}</td>@endcan
                         <td><x-stamp :status="$worker->is_active ? 'active' : 'inactive'" /></td>
                     </tr>
                 @endforeach

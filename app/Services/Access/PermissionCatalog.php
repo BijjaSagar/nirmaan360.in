@@ -25,6 +25,7 @@ final class PermissionCatalog
         'dpr' => 'Daily reports',
         'issue' => 'Issues',
         'measurement' => 'Measurement book',
+        'money' => 'Money figures',
         'party' => 'Contacts',
         'petty_cash' => 'Petty cash',
         'project' => 'Projects',

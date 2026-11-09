@@ -3,7 +3,7 @@
 @section('content')
     <x-page-header :title="$order->number" :subtitle="$order->vendor->name">
         <x-stamp :status="$order->status" />
-        <a href="{{ route('procurement.purchase-orders.pdf', $order) }}" class="btn btn-ghost">{{ __('Download PDF') }}</a>
+        @can('money.view')<a href="{{ route('procurement.purchase-orders.pdf', $order) }}" class="btn btn-ghost">{{ __('Download PDF') }}</a>@endcan
         @can('procurement.purchase')
             @if ($order->status === 'DRAFT')
                 <form method="POST" action="{{ route('procurement.purchase-orders.issue', $order) }}">@csrf<button class="btn btn-primary">{{ __('Issue PO') }}</button></form>
@@ -25,25 +25,27 @@
                 <div class="card-head"><h2 class="card-title">{{ __('Lines') }}</h2></div>
                 <div class="overflow-x-auto">
                     <table class="ledger min-w-[720px]">
-                        <thead><tr><th>{{ __('Material') }}</th><th class="r">{{ __('Ordered') }}</th><th class="r">{{ __('Rate') }}</th><th class="r">{{ __('GST %') }}</th><th class="r">{{ __('Amount') }}</th><th class="r">{{ __('Received') }}</th><th class="r">{{ __('Due') }}</th></tr></thead>
+                        <thead><tr><th>{{ __('Material') }}</th><th class="r">{{ __('Ordered') }}</th>@can('money.view')<th class="r">{{ __('Rate') }}</th>@endcan<th class="r">{{ __('GST %') }}</th>@can('money.view')<th class="r">{{ __('Amount') }}</th>@endcan<th class="r">{{ __('Received') }}</th><th class="r">{{ __('Due') }}</th></tr></thead>
                         <tbody>
                         @foreach ($order->items as $line)
                             <tr>
                                 <td>{{ $line->material->name }}</td>
                                 <td class="r">{{ fmt_qty($line->qty) }} {{ $line->unit->code }}</td>
-                                <td class="r">{{ inr($line->rate) }}</td>
+                                @can('money.view')<td class="r">{{ inr($line->rate) }}</td>@endcan
                                 <td class="r">{{ $line->gst_pct }}</td>
-                                <td class="r">{{ inr($line->amount) }}</td>
+                                @can('money.view')<td class="r">{{ inr($line->amount) }}</td>@endcan
                                 <td class="r">{{ fmt_qty($received[$line->id]) }} {{ $line->material->baseUnit->code }}</td>
                                 <td class="r">{{ fmt_qty($due[$line->id]) }} {{ $line->material->baseUnit->code }}</td>
                             </tr>
                         @endforeach
                         </tbody>
+                        @can('money.view')
                         <tfoot>
                             <tr><td colspan="4" class="text-right text-ink-3">{{ __('Subtotal') }}</td><td class="r">{{ inr($order->subtotal) }}</td><td colspan="2"></td></tr>
                             <tr><td colspan="4" class="text-right text-ink-3">{{ __('GST') }}</td><td class="r">{{ inr($order->gst_amount) }}</td><td colspan="2"></td></tr>
                             <tr><td colspan="4" class="text-right font-semibold">{{ __('Total') }}</td><td class="r font-medium">{{ inr($order->total) }}</td><td colspan="2"></td></tr>
                         </tfoot>
+                        @endcan
                     </table>
                 </div>
             </section>

@@ -35,7 +35,8 @@ class PettyCashSummary extends Tool
     {
         $project = $context->project($input['project_id']);
 
-        $wallets = PettyCashWallet::where('project_id', $project->id)->orderBy('name')->get();
+        // Someone who may not see money gets the wallet they hold, never the company's cash position.
+        $wallets = PettyCashWallet::visibleTo($context->user)->where('project_id', $project->id)->orderBy('name')->get();
 
         return new ToolResult(
             ['wallets' => $wallets->map(fn (PettyCashWallet $wallet) => ['id' => $wallet->id, 'name' => $wallet->name, 'balance' => $wallet->balance()])->all()],

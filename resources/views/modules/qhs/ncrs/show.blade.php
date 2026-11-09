@@ -37,7 +37,9 @@
                             @foreach (config('modules.qhs.root_causes') as $value => $label)<option value="{{ $value }}" @selected(old('root_cause_category', $ncr->root_cause_category) === $value)>{{ __($label) }}</option>@endforeach
                         </select>
                     </x-field>
-                    <x-field :label="__('Rework cost (₹)')" name="rework_cost"><input id="rework_cost" name="rework_cost" type="number" step="0.01" min="0" value="{{ old('rework_cost', $ncr->rework_cost) }}" class="input num"></x-field>
+                    @can('money.view')
+                        <x-field :label="__('Rework cost (₹)')" name="rework_cost"><input id="rework_cost" name="rework_cost" type="number" step="0.01" min="0" value="{{ old('rework_cost', $ncr->rework_cost) }}" class="input num"></x-field>
+                    @endcan
                     <x-field :label="__('Root cause')" name="root_cause" class="sm:col-span-2" :hint="__('Why did it happen? Needed before the NCR can be resolved.')"><textarea id="root_cause" name="root_cause" rows="3" class="input">{{ old('root_cause', $ncr->root_cause) }}</textarea></x-field>
                     <x-field :label="__('Corrective action')" name="corrective_action" :hint="__('What was done to put it right.')"><textarea id="corrective_action" name="corrective_action" rows="3" class="input">{{ old('corrective_action', $ncr->corrective_action) }}</textarea></x-field>
                     <x-field :label="__('Preventive action')" name="preventive_action" :hint="__('What stops it happening again.')"><textarea id="preventive_action" name="preventive_action" rows="3" class="input">{{ old('preventive_action', $ncr->preventive_action) }}</textarea></x-field>
