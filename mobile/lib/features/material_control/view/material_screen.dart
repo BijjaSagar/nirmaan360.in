@@ -287,6 +287,9 @@ class _List extends StatelessWidget {
 
 Widget _figure(String text) => Text(text, style: N360Type.figureSmall);
 
+String? _day(BuildContext context, String? date) =>
+    date == null ? null : dayLabel(context, date, context.read<AppServices>().context.today);
+
 Widget? _notSent(AppLocalizations l, bool notSent) =>
     notSent ? StatusPill(kind: StampKind.queued, label: l.progressNotSent) : null;
 
@@ -302,7 +305,7 @@ class _StockTile extends StatelessWidget {
     return LedgerListTile(
       key: ValueKey<String>('material-row-${row.materialId}'),
       title: row.name,
-      subtitle: '${l.materialInStock} ${row.stock.indian()} ${row.unit}'.trim(),
+      subtitle: '${l.materialInStock} ${formatQty(row.stock)} ${row.unit}'.trim(),
       status: row.openFlags > 0 ? StatusPill(kind: StampKind.returned, label: l.materialToAnswer(row.openFlags)) : null,
       onTap: () => showLedgerSheet<void>(
         context,
@@ -325,7 +328,7 @@ class _RowSheet extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final bool canCount = gateContext.read<AppGate>().state.can('material_control.count');
     final List<MaterialFlag> open = row.flags.where((flag) => flag.open).toList();
-    String figure(Qty value) => '${bookFigure(value)} ${row.unit}'.trim();
+    String figure(Qty value) => '${formatQty(value)} ${row.unit}'.trim();
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
       child: SingleChildScrollView(
@@ -343,7 +346,8 @@ class _RowSheet extends StatelessWidget {
             BookRow(label: l.materialOnSite, total: true, value: figure(row.stock)),
             if (!row.unaccounted.isZero) BookRow(label: l.materialUnaccounted, value: figure(row.unaccounted)),
             if (!row.shortDelivered.isZero) BookRow(label: l.materialShort, value: figure(row.shortDelivered)),
-            if (row.lastCounted != null) BookRow.words(label: l.materialLastCounted, value: row.lastCounted!, ruled: false),
+            if (row.lastCounted != null)
+              BookRow.words(label: l.materialLastCounted, value: _day(gateContext, row.lastCounted)!, ruled: false),
             for (final MaterialFlag flag in open) ...<Widget>[
               const SizedBox(height: N360Space.sm),
               Text(flag.message, style: N360Type.fit(N360Type.body, flag.message).copyWith(color: N360Colors.laterite)),
@@ -381,12 +385,12 @@ class _DeliveryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final String subtitle = <String>[?row.supplier, ?row.challanNo, ?row.date].join(' · ');
+    final String subtitle = <String>[?row.supplier, ?row.challanNo, ?_day(context, row.date)].join(' · ');
     return LedgerListTile(
       title: overview.materialName(row.materialId),
       subtitle: subtitle.isEmpty ? null : subtitle,
       status: _notSent(l, row.notSent),
-      trailing: _figure('${row.qty.indian()} ${overview.unitLabel(row.materialId, row.unitId)}'.trim()),
+      trailing: _figure('${formatQty(row.qty)} ${overview.unitLabel(row.materialId, row.unitId)}'.trim()),
     );
   }
 }
@@ -400,12 +404,12 @@ class _UseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final String subtitle = <String>[?row.activity, ?row.date].join(' · ');
+    final String subtitle = <String>[?row.activity, ?_day(context, row.date)].join(' · ');
     return LedgerListTile(
       title: overview.materialName(row.materialId),
       subtitle: subtitle.isEmpty ? null : subtitle,
       status: _notSent(l, row.notSent),
-      trailing: _figure('${row.qty.indian()} ${overview.unitLabel(row.materialId, row.unitId)}'.trim()),
+      trailing: _figure('${formatQty(row.qty)} ${overview.unitLabel(row.materialId, row.unitId)}'.trim()),
     );
   }
 }
@@ -422,14 +426,14 @@ class _CountTile extends StatelessWidget {
     final String unit = overview.unitLabel(row.materialId, row.unitId);
     final bool differs = row.variance != null && !row.variance!.isZero;
     final String subtitle = <String>[
-      ?row.date,
-      if (differs) l.materialDifference('${row.variance!.indian()} ${overview.baseUnit(row.materialId)}'.trim()),
+      ?_day(context, row.date),
+      if (differs) l.materialDifference('${formatQty(row.variance!)} ${overview.baseUnit(row.materialId)}'.trim()),
     ].join(' · ');
     return LedgerListTile(
       title: overview.materialName(row.materialId),
       subtitle: subtitle.isEmpty ? null : subtitle,
       status: _notSent(l, row.notSent),
-      trailing: _figure('${row.counted.indian()} $unit'.trim()),
+      trailing: _figure('${formatQty(row.counted)} $unit'.trim()),
     );
   }
 }

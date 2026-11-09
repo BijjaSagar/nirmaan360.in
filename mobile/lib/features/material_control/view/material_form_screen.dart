@@ -7,6 +7,7 @@ import '../../../core/design/design.dart';
 import '../../../core/money/money.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
+import '../../measurement/bloc/measurement_book.dart';
 import '../../site_progress/view/widgets/progress_widgets.dart';
 import '../bloc/material_form_cubit.dart';
 import '../data/material_repository.dart';
@@ -120,7 +121,7 @@ class _FormViewState extends State<_FormView> {
             title: info.name,
             subtitle: overview.row(info.id) == null
                 ? overview.baseUnit(info.id)
-                : '${l.materialInStock} ${overview.row(info.id)!.stock.indian()} ${overview.baseUnit(info.id)}'.trim(),
+                : '${l.materialInStock} ${formatQty(overview.row(info.id)!.stock)} ${overview.baseUnit(info.id)}'.trim(),
           ),
       ],
     );
@@ -486,7 +487,7 @@ class _QtyField extends StatelessWidget {
               errorText: state.problem == MaterialFormProblem.qtyRequired ? l.materialQtyRequired : null,
               helper: !using || materialId == null
                   ? null
-                  : '${l.materialInStock} ${stock.indian()} ${state.overview!.baseUnit(materialId)}'.trim(),
+                  : '${l.materialInStock} ${formatQty(stock)} ${state.overview!.baseUnit(materialId)}'.trim(),
               onChanged: (_) => onChanged(),
             ),
             if (over)

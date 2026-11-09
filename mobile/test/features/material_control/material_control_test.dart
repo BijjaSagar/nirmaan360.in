@@ -304,7 +304,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Counts'));
       await settle(tester);
-      expect(find.textContaining('Difference -5.000 bag'), findsOneWidget);
+      expect(find.textContaining('Difference −5.000 bag'), findsOneWidget);
     });
 
     testWidgets('a material opens with its figures and its question', (tester) async {

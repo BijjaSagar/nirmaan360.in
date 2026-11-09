@@ -7,6 +7,7 @@ import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
 import '../../../core/sync/clock.dart';
+import '../../measurement/bloc/measurement_book.dart';
 import '../data/material_repository.dart';
 
 enum MaterialFormKind { receive, use, count }
@@ -251,7 +252,7 @@ class MaterialFormCubit extends Cubit<MaterialFormState> {
 
     emit(state.copyWith(submitting: true, problem: () => null));
     final String title = state.overview!.materialName(materialId);
-    final String subtitle = '${qty.indian()} ${state.unitLabel}'.trim();
+    final String subtitle = '${formatQty(qty)} ${state.unitLabel}'.trim();
     final repository = _services.material;
     try {
       switch (state.kind) {
