@@ -60,6 +60,7 @@ class Approval extends Model
             'ra_bill' => route('ra-bills.show', $this->approvable_id),
             'dpr' => route('dprs.show', $this->approvable_id),
             'bill_note' => route('bill-notes.show', $this->approvable_id),
+            'indent' => route('procurement.indents.show', $this->approvable_id),
             default => route('approvals.index'),
         };
     }
