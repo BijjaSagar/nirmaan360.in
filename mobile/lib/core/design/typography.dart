@@ -113,7 +113,7 @@ abstract final class N360Type {
     fontSize: 15,
     height: 1.4,
     fontWeight: FontWeight.w600,
-    color: N360Colors.ink2,
+    color: N360Colors.ink,
     leadingDistribution: TextLeadingDistribution.even,
     decoration: TextDecoration.none,
   );

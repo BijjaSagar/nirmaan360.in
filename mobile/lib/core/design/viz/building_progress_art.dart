@@ -68,12 +68,12 @@ abstract final class _Art {
   static const Color wallRight = Color(0xFFCFC2AE);
   static const Color wallShadeLeft = Color(0xFFD3C7B5);
   static const Color wallShadeRight = Color(0xFFB7A995);
-  static const Color windowLeft = Color(0xFF55493D);
-  static const Color windowRight = Color(0xFF443A30);
-  static const Color windowGlow = Color(0xFFFFCB6B);
-  static const Color goldLeft = Color(0xFFFFBC45);
-  static const Color goldRight = Color(0xFFE79420);
-  static const Color goldTop = Color(0xFFFFDA8C);
+  static const Color windowLeft = Color(0xFF575250);
+  static const Color windowRight = Color(0xFF45413F);
+  static const Color windowGlow = Color(0xFFEDBB91);
+  static const Color goldLeft = Color(0xFFE1985E);
+  static const Color goldRight = Color(0xFFBC5E2F);
+  static const Color goldTop = Color(0xFFEFC4A2);
 
   static const Color frameTop = Color(0xFFF1EBE1);
   static const Color frameLeft = Color(0xFFE2D8C9);
@@ -85,10 +85,10 @@ abstract final class _Art {
   static const Color groundRight = Color(0xFFC3B6A3);
   static const Color groundLine = Color(0xFFE2D8C8);
 
-  static const Color craneMain = Color(0xFFF7AE2B);
-  static const Color craneDark = Color(0xFFC77F12);
-  static const Color craneCounter = Color(0xFF5B5046);
-  static const Color cable = Color(0xFF6E6254);
+  static const Color craneMain = Color(0xFFE1985E);
+  static const Color craneDark = Color(0xFFBC5E2F);
+  static const Color craneCounter = Color(0xFF575250);
+  static const Color cable = Color(0xFF575250);
 
   static const Color pipeBody = Color(0xFFE98A1E);
   static const Color pipeLight = Color(0xFFF7AE4B);

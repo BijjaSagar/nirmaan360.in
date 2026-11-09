@@ -18,13 +18,14 @@ void main() {
     test('body text reaches 7:1 on every page surface, the peach foot included', () {
       for (final bg in backgrounds) {
         expect(_contrast(N360Colors.ink, bg), greaterThanOrEqualTo(7), reason: 'ink on $bg');
-        expect(_contrast(N360Colors.ink2, bg), greaterThanOrEqualTo(7), reason: 'ink2 on $bg');
       }
+      expect(N360Type.body.color, N360Colors.ink);
     });
 
     test('labels reach 4.5:1 on every page surface', () {
       for (final bg in backgrounds) {
         for (final ink in <Color>[
+          N360Colors.ink2,
           N360Colors.inkLabel,
           N360Colors.stampRed,
           N360Colors.haldiInk,

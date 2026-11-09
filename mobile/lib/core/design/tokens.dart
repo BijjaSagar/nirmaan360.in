@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// The warm palette: light warm greys, white cards, amber-to-orange accents.
+/// The warm palette chosen by the product owner, with white cards.
 ///
 /// The names come from the first version of the app and stay so screens keep
 /// compiling; read them by role, not by the old paper metaphor. Text roles hold
@@ -9,31 +9,32 @@ import 'package:flutter/widgets.dart';
 /// orange fails in direct sun.
 abstract final class N360Colors {
   /// Page base, the top of the warm gradient.
-  static const Color paper = Color(0xFFF3F1EE);
+  static const Color paper = Color(0xFFEFECEB);
 
   /// Soft tile fill on white cards.
-  static const Color paper2 = Color(0xFFF0EBE4);
+  static const Color paper2 = Color(0xFFE3D6CF);
 
   /// Card white.
   static const Color sheet = Color(0xFFFFFFFF);
 
-  static const Color ink = Color(0xFF1B1815);
+  static const Color ink = Color(0xFF070706);
 
-  /// Body text on any surface: 7:1 or better, peach included.
-  static const Color ink2 = Color(0xFF45403A);
+  /// Charcoal for secondary text and labels. Long body text uses [ink].
+  static const Color ink2 = Color(0xFF575250);
 
   /// Decoration only. Fails 4.5:1 on paper, so never use it for text.
-  static const Color ink3 = Color(0xFF8E887F);
+  static const Color ink3 = Color(0xFF9FA2A7);
 
   /// Hairlines on cards.
-  static const Color rule = Color(0xFFEDE7DF);
+  static const Color rule = Color(0xFFE3D6CF);
 
-  /// Deep orange for text, icons and focus rings. Passes on white, paper and peach.
-  static const Color laterite = Color(0xFF9F3F08);
-  static const Color lateriteDark = Color(0xFF7E3206);
+  /// A darker cut of [orange] for small text, icons and focus rings. The palette's
+  /// own deep oranges stay below 4.5:1 on light surfaces, so they are fills only.
+  static const Color laterite = Color(0xFF8F4622);
+  static const Color lateriteDark = Color(0xFF7A3A1B);
 
   /// Gold accent. Carries dark ink, never white text.
-  static const Color haldi = Color(0xFFF5A623);
+  static const Color haldi = Color(0xFFE1985E);
 
   /// Slate for "in review". Used sparingly so the palette stays warm.
   static const Color neel = Color(0xFF2E4756);
@@ -42,19 +43,28 @@ abstract final class N360Colors {
 
   // The gold family.
 
-  static const Color amber = Color(0xFFFFC24D);
-  static const Color orange = Color(0xFFF59412);
+  static const Color amber = Color(0xFFE1985E);
+  static const Color orange = Color(0xFFBC5E2F);
 
-  /// The foot of the page.
-  static const Color peach = Color(0xFFF6D3B6);
+  /// Warm beige for hatching and tinted panels.
+  static const Color beige = Color(0xFFDCB8A4);
 
-  /// Pale gold wash for tinted surfaces such as active tiles.
-  static const Color goldTint = Color(0xFFFFF4DF);
+  /// Delayed and urgent states, as a fill. Carries dark ink.
+  static const Color accent = Color(0xFFE63E06);
+
+  /// The second muted grey, for disabled marks only.
+  static const Color muted = Color(0xFFAAAAAA);
+
+  /// Light surface, and the foot of the page.
+  static const Color peach = Color(0xFFE3D6CF);
+
+  /// Card tint: the wash on tinted surfaces such as active tiles.
+  static const Color goldTint = Color(0xFFE1C9BB);
 
   // Derived text colours.
 
   /// Secondary text that replaces [ink3] outdoors: 4.5:1 even on peach.
-  static const Color inkLabel = Color(0xFF615B52);
+  static const Color inkLabel = Color(0xFF575250);
 
   /// Ink for amber statuses: [haldi] itself cannot carry text on a light surface.
   static const Color haldiInk = Color(0xFF6B4700);
@@ -67,21 +77,21 @@ abstract final class N360Colors {
 
   // Surface details. Solid so they cost no blending.
 
-  static const Color gridMinor = Color(0xFFF0EBE4);
-  static const Color gridMajor = Color(0xFFE8E1D7);
-  static const Color marginRed = Color(0xFFE8B78D);
+  static const Color gridMinor = Color(0xFFE3D6CF);
+  static const Color gridMajor = Color(0xFFDCB8A4);
+  static const Color marginRed = Color(0xFFE1985E);
 
   /// The soft lip under a pressable tile.
-  static const Color paperEdge = Color(0xFFEDE6DB);
+  static const Color paperEdge = Color(0xFFE3D6CF);
 
   /// A stronger hairline for fields, about 3:1 on white.
-  static const Color ruleStrong = Color(0xFFA29A8E);
+  static const Color ruleStrong = Color(0xFF8F8B88);
 
-  static const Color lateriteEdge = Color(0xFF7E3206);
-  static const Color inkEdge = Color(0xFF0B0A09);
+  static const Color lateriteEdge = Color(0xFF7A3A1B);
+  static const Color inkEdge = Color(0xFF070706);
 
   /// The thin light line around a white card.
-  static const Color cardEdge = Color(0xFFF6F2EC);
+  static const Color cardEdge = Color(0xFFF5F1EF);
 
   /// The warm tone of the one soft shadow a card has.
   static const Color shadow = Color(0xFFB9875B);
@@ -100,18 +110,13 @@ abstract final class N360Gradients {
   static const LinearGradient page = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <Color>[
-      N360Colors.paper,
-      Color(0xFFF2EEE9),
-      Color(0xFFF5E2D1),
-      N360Colors.peach,
-    ],
-    stops: <double>[0, 0.58, 0.86, 1],
+    colors: <Color>[N360Colors.paper, N360Colors.paper, N360Colors.peach],
+    stops: <double>[0, 0.55, 1],
   );
 
   /// The left-to-right wash of a filled progress bar.
   static const LinearGradient goldFade = LinearGradient(
-    colors: <Color>[Color(0xFFFFE6B3), N360Colors.amber, N360Colors.orange],
+    colors: <Color>[N360Colors.goldTint, N360Colors.amber, N360Colors.orange],
     stops: <double>[0, 0.62, 1],
   );
 }

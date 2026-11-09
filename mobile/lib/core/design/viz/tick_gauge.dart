@@ -58,7 +58,7 @@ class _TickPainter extends CustomPainter {
     for (var i = 0; i < ticks; i++) {
       final bool on = i < lit;
       paint.color = on
-          ? Color.lerp(N360Colors.amber, const Color(0xFFEE7A12), i / (ticks - 1))!
+          ? Color.lerp(N360Colors.amber, N360Colors.accent, i / (ticks - 1))!
           : N360Colors.rule;
       final double x = i * slot + (slot - width) / 2;
       canvas.drawRRect(
