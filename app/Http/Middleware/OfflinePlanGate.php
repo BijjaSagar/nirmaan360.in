@@ -42,6 +42,12 @@ class OfflinePlanGate
             abort(403, $this->policy->refusal($organization)['message']);
         }
 
+        // A contractor login has no page on the offline plan: ContractorPortalGate keeps it out of the devices
+        // page, so sending it there would only bounce it back to the portal, and so on without end.
+        if ($request->user()->isContractor()) {
+            abort(403, $this->policy->refusal($organization)['message']);
+        }
+
         return redirect()->route('offline.devices.index');
     }
 

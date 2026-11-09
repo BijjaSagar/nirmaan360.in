@@ -44,6 +44,13 @@ class PriceSheet
 
     private const MAX_UNPACKED_BYTES = 20 * 1024 * 1024;
 
+    /** What the board's columns hold: name varchar(160), unit varchar(20), rate decimal(15,2). The web form has the same limits. */
+    private const MAX_NAME = 160;
+
+    private const MAX_UNIT = 20;
+
+    private const MAX_RATE = '9999999999999';
+
     public function __construct(private PriceRecorder $recorder) {}
 
     /**
@@ -131,6 +138,8 @@ class PriceSheet
 
             if ($name === '') {
                 $errors[] = __('Row :row: the material is missing.', ['row' => $number]);
+            } elseif (mb_strlen($name) > self::MAX_NAME) {
+                $errors[] = __('Row :row: the material name is longer than :max characters.', ['row' => $number, 'max' => self::MAX_NAME]);
             } elseif ($material === null && ! $addMissing) {
                 $errors[] = __('Row :row: ":name" is not on the board. Add it first, or tick "add new materials from the sheet".', ['row' => $number, 'name' => $name]);
             }
@@ -141,12 +150,16 @@ class PriceSheet
                 $errors[] = __('Row :row: :name is priced per :unit on the board, not per :given.', ['row' => $number, 'name' => $material->label(), 'unit' => $material->unit, 'given' => $unit]);
             } elseif ($material === null && $unit === '') {
                 $errors[] = __('Row :row: give a unit for ":name", for example bag or kg.', ['row' => $number, 'name' => $name]);
+            } elseif ($material === null && mb_strlen($unit) > self::MAX_UNIT) {
+                $errors[] = __('Row :row: the unit is longer than :max characters.', ['row' => $number, 'max' => self::MAX_UNIT]);
             }
 
             $rate = $this->rate($cells[$columns['rate']] ?? null);
 
             if ($rate === null) {
                 $errors[] = __('Row :row: the rate must be a number of rupees, zero or more.', ['row' => $number]);
+            } elseif (Dec::of($rate)->isGreaterThan(self::MAX_RATE)) {
+                $errors[] = __('Row :row: the rate is larger than :max.', ['row' => $number, 'max' => inr(self::MAX_RATE)]);
             }
 
             $date = $this->date($cells[$columns['date']] ?? null);

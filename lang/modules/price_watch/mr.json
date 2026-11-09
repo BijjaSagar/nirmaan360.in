@@ -167,5 +167,9 @@
     "from Excel": "Excel मधून",
     "from the shared list": "सामायिक यादीतून",
     "per": "प्रति",
-    "typed in": "टाइप केले"
+    "typed in": "टाइप केले",
+    "Row :row: the material name is longer than :max characters.": "ओळ :row: साहित्याचे नाव :max अक्षरांपेक्षा लांब आहे.",
+    "Row :row: the unit is longer than :max characters.": "ओळ :row: एकक :max अक्षरांपेक्षा लांब आहे.",
+    "Row :row: the rate is larger than :max.": "ओळ :row: दर :max पेक्षा जास्त आहे.",
+    "Give this material a key in English letters, such as cement or aac_blocks: its name cannot be turned into one.": "या साहित्याला इंग्रजी अक्षरांत एक key द्या, जसे cement किंवा aac_blocks: त्याच्या नावावरून key बनू शकत नाही."
 }

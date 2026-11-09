@@ -30,6 +30,26 @@ class SharedListAdminTest extends PriceWatchTestCase
         $this->assertSame(1, PriceWatchSharedPrice::count());
     }
 
+    /** The key column is varchar(40): a key made from a long name is cut to fit, and a name that gives no key asks for one instead of every such row sharing an empty key. */
+    public function test_a_key_made_from_the_name_fits_its_column(): void
+    {
+        $this->actingAs($this->platformAdmin());
+        $name = 'Ready mix concrete M25 delivered to site in transit mixer with pump';
+
+        $this->post(route('price-watch.admin.prices.save'), ['name' => $name, 'unit' => 'cum', 'rate' => '5200', 'priced_on' => '2026-11-05'])->assertSessionHasNoErrors();
+
+        $row = PriceWatchSharedPrice::where('name', $name)->sole();
+        $this->assertSame('ready_mix_concrete_m25_delivered_to_site', $row->key);
+
+        // Saving the same name again moves that row's price on rather than making a second key from it.
+        $this->post(route('price-watch.admin.prices.save'), ['name' => $name, 'unit' => 'cum', 'rate' => '5300', 'priced_on' => '2026-11-06'])->assertSessionHasNoErrors();
+        $this->assertSame(1, PriceWatchSharedPrice::count());
+        $this->assertSame('5300.00', $row->fresh()->rate);
+
+        $this->post(route('price-watch.admin.prices.save'), ['name' => '###', 'unit' => 'kg', 'rate' => '1', 'priced_on' => '2026-11-05'])->assertSessionHasErrors('key');
+        $this->assertSame(1, PriceWatchSharedPrice::count());
+    }
+
     public function test_the_admin_keeps_the_list_and_every_change_is_audited(): void
     {
         $admin = $this->platformAdmin();
