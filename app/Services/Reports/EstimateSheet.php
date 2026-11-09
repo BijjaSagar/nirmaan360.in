@@ -63,11 +63,12 @@ final class EstimateSheet
     /**
      * @param  array<int, array<int, mixed>>  $grid  Excel row number => column => saved value.
      * @param  array<string, int>  $columns  Field => column, as found on the heading row.
-     * @return array{0: array<int, array<int, ?string>>, 1: array<string, int>, 2: list<array{row:int,message:string}>}
+     * @return array{0: array<int, array<int, ?string>>, 1: array<string, int>, 2: list<array{row:int,message:string}>, 3: array{file_total: ?string, grand_total: ?string, lines_total: string}} The rows, their columns, the notes, and the totals: the file's "Total" row, its grand total, and what the lines before the add-ons come to.
      */
     public function standardise(array $grid, array $columns, int $headerRow): array
     {
         $fileTotal = null;
+        $grandTotal = null;
 
         foreach ($grid as $number => $cells) {
             if ($number <= $headerRow) {
@@ -82,6 +83,10 @@ final class EstimateSheet
             }
 
             if (preg_match('/^(grand\s+total|total\s+estimate|say\b)/i', $text)) {
+                if (! preg_match('/^say\b/i', $text)) {
+                    $grandTotal = $row['amount'];
+                }
+
                 break;
             }
 
@@ -113,7 +118,11 @@ final class EstimateSheet
         $this->compareWithFile($fileTotal);
         ksort($this->lines);
 
-        return [$this->output(), self::OUTPUT, $this->notes];
+        return [$this->output(), self::OUTPUT, $this->notes, [
+            'file_total' => $fileTotal,
+            'grand_total' => $grandTotal,
+            'lines_total' => (string) $this->linesTotal(),
+        ]];
     }
 
     /** @return array{code:string,description:string,unit:string,qty:?string,rate:?string,amount:?string,remark:string} */
@@ -240,6 +249,16 @@ final class EstimateSheet
             return;
         }
 
+        $sum = $this->linesTotal();
+
+        if ($this->differs($sum, Dec::of($fileTotal))) {
+            $this->note(0, __('The lines add up to :lines but the total written in the file is :file. The lines were imported as they are, so please check that total.', ['lines' => inr($sum), 'file' => inr($fileTotal)]));
+        }
+    }
+
+    /** What the lines before the add-ons come to: the figure a "Total" row in the file states. */
+    private function linesTotal(): BigDecimal
+    {
         $sum = BigDecimal::zero();
 
         foreach ($this->lines as $line) {
@@ -248,9 +267,7 @@ final class EstimateSheet
             }
         }
 
-        if ($this->differs($sum, Dec::of($fileTotal))) {
-            $this->note(0, __('The lines add up to :lines but the total written in the file is :file. The lines were imported as they are, so please check that total.', ['lines' => inr($sum), 'file' => inr($fileTotal)]));
-        }
+        return $sum;
     }
 
     private function line(string $section, string $code, string $description, string $unit, ?string $qty, ?string $rate, string $category, string $remark): array
