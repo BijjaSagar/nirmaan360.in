@@ -11,14 +11,22 @@ import 'package:nirmaan360/core/app_services.dart';
 import 'package:nirmaan360/core/db/app_database.dart';
 import 'package:nirmaan360/core/design/design.dart';
 import 'package:nirmaan360/core/money/money.dart';
+import 'package:nirmaan360/features/home/bloc/home_cubit.dart';
 import 'package:nirmaan360/features/site_progress/data/progress_repository.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
 import '../../support/test_app.dart';
 
-Future<TestApp> progressApp({bool canCreate = true}) async {
+Future<TestApp> progressApp({bool canCreate = true, bool seesMoney = true, bool shared = false}) async {
   final FakeApi server = FakeApi()..grant('progress.view');
   if (canCreate) server.grant('progress.create');
+  (server.user['can'] as Map)['money.view'] = seesMoney;
+  if (shared) {
+    server.progressItemRows.first['work_orders'] = <Map<String, dynamic>>[
+      {'id': 31, 'label': 'Patil Constructions'},
+      {'id': 32, 'label': 'Shree Ganesh Civil and Structural Contractors Private Limited, Pune Division'},
+    ];
+  }
   ((server.user['organization'] as Map)['features'] as List).add('site_control');
   final TestApp app = await TestApp.create(api: server);
   await app.services.projects.selectProject(1);
@@ -154,6 +162,20 @@ void main() {
       // Done and not applicable are not listed; the floor's own drainage is.
       expect(check.unfinished.single.stage.key, 'drainage');
       expect(check.unfinished.single.floorId, 11);
+    });
+
+    test('the card weighted by rates is only for those who may see money', () async {
+      final HomeCubit seen = HomeCubit(services: app.services, projectId: 1);
+      addTearDown(seen.close);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(seen.state.progress, isNotNull);
+
+      final TestApp site = await progressApp(seesMoney: false);
+      addTearDown(site.dispose);
+      final HomeCubit hidden = HomeCubit(services: site.services, projectId: 1);
+      addTearDown(hidden.close);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(hidden.state.progress, isNull);
     });
 
     test('a sync keeps the progress of the selected project on the phone', () async {
@@ -322,6 +344,71 @@ void main() {
       expect(posted['boq_item_id'], 1);
       expect(posted['qty_done'], '12.500');
       expect(posted['is_pending'], false);
+    });
+
+    testWidgets('a line two contractors share asks whose work it is', (tester) async {
+      final TestApp app = await progressApp(shared: true);
+      addTearDown(app.dispose);
+      await pumpProgress(tester, app, start: Routes.progressForm);
+
+      await tester.tap(find.byKey(const ValueKey<String>('progress-form-item')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('progress-item-choice-1')));
+      await settle(tester);
+      expect(find.text('Whose work is this?'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, '12.5');
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('progress-form-save')));
+      await settle(tester);
+      expect(find.text('Choose the contractor'), findsOneWidget);
+      expect(app.api.progressPosts, isEmpty);
+
+      await tester.tap(find.byKey(const ValueKey<String>('progress-form-contractor-31')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('progress-form-save')));
+      await settle(tester);
+      await app.sync();
+
+      expect(app.api.progressPosts.values.single['work_order_id'], 31);
+    });
+
+    testWidgets('a pending note on a shared line is nobody\'s yet', (tester) async {
+      final TestApp app = await progressApp(shared: true);
+      addTearDown(app.dispose);
+      await pumpProgress(tester, app, start: Routes.progressForm);
+
+      await tester.tap(find.byKey(const ValueKey<String>('progress-form-item')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('progress-item-choice-1')));
+      await settle(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('progress-form-pending')));
+      await settle(tester);
+      expect(find.text('Whose work is this?'), findsNothing);
+
+      await tester.enterText(find.byType(TextField).first, 'Tiles not delivered');
+      await tester.tap(find.byKey(const ValueKey<String>('progress-form-save')));
+      await settle(tester);
+      await app.sync();
+
+      expect(app.api.progressPosts.values.single['work_order_id'], isNull);
+    });
+
+    testWidgets('someone who may not see money sees quantities on the BOQ', (tester) async {
+      final TestApp app = await progressApp(seesMoney: false);
+      addTearDown(app.dispose);
+      await pumpProgress(tester, app, start: Routes.boq);
+
+      expect(find.textContaining('×'), findsNothing);
+      expect(find.textContaining('₹'), findsNothing);
+    });
+
+    testWidgets('someone who may see money still sees the rate', (tester) async {
+      final TestApp app = await progressApp();
+      addTearDown(app.dispose);
+      await pumpProgress(tester, app, start: Routes.boq);
+
+      expect(find.textContaining('× ₹'), findsWidgets);
     });
 
     testWidgets('a pending-only entry needs words, not a number', (tester) async {

@@ -10,8 +10,14 @@ export '../../../core/db/app_database.dart' show ApprovalRow;
 
 extension ApprovalReview on ApprovalRow {
   /// Whether this phone can show the whole document. Anything else is decided
-  /// on the website, because nobody should sign off on a title alone.
-  bool get reviewableHere => const <String>{'measurement', 'dpr', 'ra_bill', 'bill_note'}.contains(docType);
+  /// on the website, because nobody should sign off on a title alone. A bill
+  /// sent without its figures, to someone who may not see money, is the same.
+  bool get reviewableHere => switch (docType) {
+    'measurement' || 'dpr' => true,
+    'ra_bill' => document['net_payable'] != null,
+    'bill_note' => document['total_amount'] != null,
+    _ => false,
+  };
 }
 
 /// Approvals are online only, by design. The inbox is a cache of the last

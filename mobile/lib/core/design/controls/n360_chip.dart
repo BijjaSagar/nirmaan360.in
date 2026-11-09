@@ -40,7 +40,7 @@ class N360Chip extends StatelessWidget {
           Icon(icon, size: N360IconSize.sm, color: ink),
           const SizedBox(width: 6),
         ],
-        Text(label, style: text, maxLines: 1),
+        Flexible(child: Text(label, style: text, maxLines: 1, overflow: TextOverflow.ellipsis)),
         if (count != null) ...<Widget>[
           const SizedBox(width: 6),
           Text(count!, style: N360Type.figureSmall.copyWith(color: ink)),

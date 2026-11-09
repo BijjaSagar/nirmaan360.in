@@ -111,6 +111,17 @@ class FloorChoice {
   String get label => parentName == null ? floor.name : '$parentName › ${floor.name}';
 }
 
+/// A contractor working on a BOQ line that more than one contractor shares.
+class ProgressWorkOrder {
+  const ProgressWorkOrder({required this.id, required this.label});
+
+  factory ProgressWorkOrder.fromJson(Map<String, dynamic> json) =>
+      ProgressWorkOrder(id: _int(json['id']), label: _text(json['label']) ?? '');
+
+  final int id;
+  final String label;
+}
+
 class ProgressItem {
   const ProgressItem({
     required this.id,
@@ -122,6 +133,7 @@ class ProgressItem {
     required this.done,
     required this.balance,
     this.percent,
+    this.workOrders = const <ProgressWorkOrder>[],
   });
 
   factory ProgressItem.fromJson(Map<String, dynamic> json) => ProgressItem(
@@ -134,6 +146,7 @@ class ProgressItem {
     done: _qty(json['done_qty']),
     balance: _qty(json['balance_qty']),
     percent: _text(json['percent']),
+    workOrders: _rows(json['work_orders']).map(ProgressWorkOrder.fromJson).toList(),
   );
 
   final int id;
@@ -146,6 +159,10 @@ class ProgressItem {
   final Qty balance;
   final String? percent;
 
+  /// Empty unless several contractors share this line. When it is not empty
+  /// the server refuses a quantity that does not say whose work it is.
+  final List<ProgressWorkOrder> workOrders;
+
   ProgressItem plusUnsent(Qty added) => ProgressItem(
     id: id,
     section: section,
@@ -156,6 +173,7 @@ class ProgressItem {
     done: done + added,
     balance: balance - added,
     percent: percent,
+    workOrders: workOrders,
   );
 }
 

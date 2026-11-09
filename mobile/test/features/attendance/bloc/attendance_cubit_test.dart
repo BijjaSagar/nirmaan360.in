@@ -163,6 +163,25 @@ void main() {
     expect(cubit.state.done, isFalse);
   });
 
+  test('someone who may not see money adds a worker without a wage step', () async {
+    final api = FakeApi();
+    (api.user['can'] as Map)['money.view'] = false;
+    final site = await TestApp.create(api: api);
+    addTearDown(site.dispose);
+    final cubit = AddWorkerCubit(site.services);
+    addTearDown(cubit.close);
+
+    cubit.setName('New Helper');
+    cubit.setTrade('Helper');
+    cubit.setWage('650');
+    cubit.next();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(cubit.state.step, 0);
+    expect(cubit.state.done, isTrue);
+    expect(api.workers.where((w) => w['name'] == 'New Helper').single['daily_wage'], '0.00');
+  });
+
   test('add worker online creates the worker and sends the wage', () async {
     final cubit = AddWorkerCubit(app.services);
     addTearDown(cubit.close);

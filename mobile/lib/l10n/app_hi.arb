@@ -567,6 +567,8 @@
   "progressFormSave": "काम सेव करें",
   "progressFormTitle": "काम जोड़ें",
   "progressFormToday": "आज",
+  "progressFormWhose": "यह काम किसका है?",
+  "progressFormWhoseRequired": "ठेकेदार चुनें",
   "progressFormYesterday": "कल",
   "progressLoading": "प्रगति लोड हो रही है",
   "progressNoDataMessage": "इस प्रोजेक्ट की प्रगति लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद ऑफ़लाइन भी चलेगा।",

@@ -410,6 +410,21 @@ void main() {
     expect(find.byKey(_sendBack), findsNothing);
   });
 
+  testWidgets('a bill sent without its figures offers no buttons', (tester) async {
+    final ActingApi api = ActingApi();
+    api.approvalInbox.add(<String, dynamic>{
+      ...bill(9),
+      'document': <String, dynamic>{...bill(9)['document'] as Map<String, dynamic>, 'net_payable': null},
+    });
+    final TestApp app = await bookApp(api: api);
+    addTearDown(app.dispose);
+    await pumpBook(tester, app, start: Routes.approvalDetail(9));
+    await settle(tester);
+
+    expect(find.textContaining('review and approve it on the website'), findsOneWidget);
+    expect(find.byKey(_approve), findsNothing);
+  });
+
   testWidgets('a bill shows net payable, grouped the Indian way, and its chain', (tester) async {
     final ActingApi api = ActingApi();
     final TestApp app = await approvalsApp(api);

@@ -163,6 +163,29 @@ class _ProgressFormViewState extends State<_ProgressFormView> {
                                 ],
                               ),
                               const SizedBox(height: N360Space.lg),
+                              if (state.asksContractor && item != null) ...<Widget>[
+                                _Block(
+                                  label: l.progressFormWhose,
+                                  error: state.problem == ProgressFormProblem.contractorRequired
+                                      ? l.progressFormWhoseRequired
+                                      : null,
+                                  child: Wrap(
+                                    spacing: N360Space.sm,
+                                    children: <Widget>[
+                                      for (final ProgressWorkOrder order in item.workOrders)
+                                        IntrinsicWidth(
+                                          child: N360Chip(
+                                            key: ValueKey<String>('progress-form-contractor-${order.id}'),
+                                            label: order.label,
+                                            selected: state.workOrderId == order.id,
+                                            onTap: () => cubit.setWorkOrder(order.id),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: N360Space.lg),
+                              ],
                               if (!pendingOnly) ...<Widget>[
                                 _QtyField(controller: _qty, item: item, problem: state.problem, onChanged: cubit.clearProblem),
                                 const SizedBox(height: N360Space.lg),

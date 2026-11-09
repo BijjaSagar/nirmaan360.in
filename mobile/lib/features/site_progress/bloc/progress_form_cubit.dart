@@ -10,7 +10,7 @@ import '../data/progress_repository.dart';
 
 enum ProgressKind { work, pendingOnly }
 
-enum ProgressFormProblem { itemRequired, qtyRequired, remarkRequired, saveFailed }
+enum ProgressFormProblem { itemRequired, contractorRequired, qtyRequired, remarkRequired, saveFailed }
 
 class ProgressFormState extends Equatable {
   const ProgressFormState({
@@ -22,6 +22,7 @@ class ProgressFormState extends Equatable {
     this.overview,
     this.floorId,
     this.itemId,
+    this.workOrderId,
     this.kind = ProgressKind.work,
     this.photos = const <String>[],
     this.submitting = false,
@@ -36,6 +37,9 @@ class ProgressFormState extends Equatable {
   final ProgressOverview? overview;
   final int? floorId;
   final int? itemId;
+
+  /// Whose work this is, on a line several contractors share.
+  final int? workOrderId;
   final ProgressKind kind;
   final List<String> photos;
   final bool submitting;
@@ -45,6 +49,9 @@ class ProgressFormState extends Equatable {
 
   FloorChoice? get floor => floorId == null ? null : overview?.floorChoice(floorId!);
 
+  /// A note about pending work records no quantity, so it is nobody's yet.
+  bool get asksContractor => kind == ProgressKind.work && (item?.workOrders.isNotEmpty ?? false);
+
   ProgressFormState copyWith({
     String? workDate,
     bool? ready,
@@ -52,6 +59,7 @@ class ProgressFormState extends Equatable {
     ProgressOverview? overview,
     int? Function()? floorId,
     int? itemId,
+    int? Function()? workOrderId,
     ProgressKind? kind,
     List<String>? photos,
     bool? submitting,
@@ -66,6 +74,7 @@ class ProgressFormState extends Equatable {
       overview: overview ?? this.overview,
       floorId: floorId == null ? this.floorId : floorId(),
       itemId: itemId ?? this.itemId,
+      workOrderId: workOrderId == null ? this.workOrderId : workOrderId(),
       kind: kind ?? this.kind,
       photos: photos ?? this.photos,
       submitting: submitting ?? this.submitting,
@@ -81,6 +90,7 @@ class ProgressFormState extends Equatable {
     overview,
     floorId,
     itemId,
+    workOrderId,
     kind,
     photos,
     submitting,
@@ -129,7 +139,11 @@ class ProgressFormCubit extends Cubit<ProgressFormState> {
 
   void setFloor(int? floorId) => emit(state.copyWith(floorId: () => floorId));
 
-  void setItem(int itemId) => emit(state.copyWith(itemId: itemId, problem: () => null));
+  /// Contractors differ from line to line, so a new line starts unchosen.
+  void setItem(int itemId) =>
+      emit(state.copyWith(itemId: itemId, workOrderId: () => null, problem: () => null));
+
+  void setWorkOrder(int id) => emit(state.copyWith(workOrderId: () => id, problem: () => null));
 
   void setKind(ProgressKind kind) => emit(state.copyWith(kind: kind, problem: () => null));
 
@@ -154,6 +168,11 @@ class ProgressFormCubit extends Cubit<ProgressFormState> {
       emit(state.copyWith(problem: () => ProgressFormProblem.itemRequired));
       return false;
     }
+    final bool asksContractor = state.asksContractor;
+    if (asksContractor && !item.workOrders.any((order) => order.id == state.workOrderId)) {
+      emit(state.copyWith(problem: () => ProgressFormProblem.contractorRequired));
+      return false;
+    }
     if (!pendingOnly && (qty == null || qty.isZero || qty.isNegative)) {
       emit(state.copyWith(problem: () => ProgressFormProblem.qtyRequired));
       return false;
@@ -169,6 +188,7 @@ class ProgressFormCubit extends Cubit<ProgressFormState> {
         projectId: projectId,
         boqItemId: item.id,
         floorId: state.floorId,
+        workOrderId: asksContractor ? state.workOrderId : null,
         workDate: state.workDate,
         qty: qty,
         remark: note.isEmpty ? null : note,

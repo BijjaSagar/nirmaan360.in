@@ -30,6 +30,8 @@
   "progressFormItemNone": { "en": "No item matches", "mr": "जुळणारा आयटम नाही", "hi": "कोई आइटम नहीं मिला" },
   "progressFormKindWork": { "en": "Work done", "mr": "काम झाले", "hi": "काम हुआ" },
   "progressFormKindPending": { "en": "Only pending", "mr": "फक्त बाकी", "hi": "सिर्फ़ बाकी" },
+  "progressFormWhose": { "en": "Whose work is this?", "mr": "हे काम कोणाचे आहे?", "hi": "यह काम किसका है?" },
+  "progressFormWhoseRequired": { "en": "Choose the contractor", "mr": "कंत्राटदार निवडा", "hi": "ठेकेदार चुनें" },
   "progressFormQty": { "en": "Quantity done", "mr": "झालेले प्रमाण", "hi": "हुई मात्रा" },
   "progressFormQtyRequired": { "en": "Enter the quantity done", "mr": "झालेले प्रमाण लिहा", "hi": "हुई मात्रा लिखें" },
   "progressFormBalance": { "en": "Balance {qty}", "mr": "शिल्लक {qty}", "hi": "बाकी {qty}", "placeholders": { "qty": { "type": "String" } } },

@@ -849,6 +849,8 @@
   "progressFormSave": "Save work",
   "progressFormTitle": "Add work",
   "progressFormToday": "Today",
+  "progressFormWhose": "Whose work is this?",
+  "progressFormWhoseRequired": "Choose the contractor",
   "progressFormYesterday": "Yesterday",
   "progressLoading": "Loading progress",
   "progressNoDataMessage": "Connect to the internet once to load this project's progress. After that it works offline.",

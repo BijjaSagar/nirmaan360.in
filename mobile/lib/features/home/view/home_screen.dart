@@ -54,7 +54,8 @@ class _HomeView extends StatelessWidget {
           // With the BOQ still to add, the setup card already says so, and says
           // what to do about it. The empty progress card would only repeat it.
           final bool boqStepOpen = steps.any((step) => step.isBoq && !step.done);
-          final bool showProgress = state.progress != null || !boqStepOpen;
+          final bool seesMoney = context.select((AppGate gate) => gate.state.can('money.view'));
+          final bool showProgress = state.progress != null || (!boqStepOpen && seesMoney);
           // The page has one filled surface at most. A returned document or a
           // site still being set up already says what to do next, so the
           // daily report tile stays white until those are dealt with.

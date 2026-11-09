@@ -325,7 +325,10 @@ class _BoqRow extends StatelessWidget {
           ),
           const SizedBox(height: N360Space.xxs),
           Text(
-            '${item.qty.format()} ${item.unit} × ${item.rate.inr()}',
+            // Site staff are sent quantities only, so a rate would read as zero.
+            context.read<AppServices>().auth.can('money.view')
+                ? '${item.qty.format()} ${item.unit} × ${item.rate.inr()}'
+                : '${item.qty.format()} ${item.unit}',
             style: N360Type.caption,
           ),
           const SizedBox(height: N360Space.xs),

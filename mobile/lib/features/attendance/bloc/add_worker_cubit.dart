@@ -75,6 +75,8 @@ class AddWorkerCubit extends Cubit<AddWorkerState> {
   final AppServices _services;
   StreamSubscription<bool>? _connectivitySub;
 
+  bool get seesWage => _services.auth.can('money.view');
+
   void setName(String name) =>
       emit(state.copyWith(name: name, clearProblem: true));
 
@@ -96,6 +98,12 @@ class AddWorkerCubit extends Cubit<AddWorkerState> {
       emit(state.copyWith(problem: AddWorkerProblem.tradeRequired));
       return;
     }
+    // The server drops a wage from someone who may not see money, so asking
+    // for one would only waste their time.
+    if (!seesWage) {
+      unawaited(save());
+      return;
+    }
     emit(state.copyWith(step: 1, clearProblem: true));
   }
 
@@ -114,7 +122,7 @@ class AddWorkerCubit extends Cubit<AddWorkerState> {
       await _services.attendance.addWorker(
         name: name,
         trade: trade,
-        dailyWage: Money.tryParse(state.wageText),
+        dailyWage: seesWage ? Money.tryParse(state.wageText) : null,
       );
       emit(state.copyWith(submitting: false, done: true, addedName: name));
     } on OfflineFailure {

@@ -1876,6 +1876,12 @@ class AppLocalizationsMr extends AppLocalizations {
   String get progressFormToday => 'आज';
 
   @override
+  String get progressFormWhose => 'हे काम कोणाचे आहे?';
+
+  @override
+  String get progressFormWhoseRequired => 'कंत्राटदार निवडा';
+
+  @override
   String get progressFormYesterday => 'काल';
 
   @override

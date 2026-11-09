@@ -152,6 +152,7 @@ class ProgressRepository {
     required int projectId,
     required int boqItemId,
     int? floorId,
+    int? workOrderId,
     required String workDate,
     Qty? qty,
     String? remark,
@@ -186,6 +187,7 @@ class ProgressRepository {
         data: <String, dynamic>{
           'boq_item_id': boqItemId,
           'project_floor_id': floorId,
+          'work_order_id': workOrderId,
           'work_date': workDate,
           'qty_done': qty?.toWire(),
           'remark': remark,

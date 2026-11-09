@@ -3502,6 +3502,18 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get progressFormToday;
 
+  /// No description provided for @progressFormWhose.
+  ///
+  /// In en, this message translates to:
+  /// **'Whose work is this?'**
+  String get progressFormWhose;
+
+  /// No description provided for @progressFormWhoseRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the contractor'**
+  String get progressFormWhoseRequired;
+
   /// No description provided for @progressFormYesterday.
   ///
   /// In en, this message translates to:

@@ -18,6 +18,7 @@ class ApprovalDocument extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!row.reviewableHere) return const _WebOnlyDoc();
     return switch (row.docType) {
       'measurement' => _MeasurementDoc(doc: row.document, today: today),
       'dpr' => _DprDoc(doc: row.document, today: today),

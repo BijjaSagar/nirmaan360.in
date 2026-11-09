@@ -223,6 +223,11 @@ class HomeCubit extends Cubit<HomeState> {
   /// last and only for drawing.
   void _publishProgress() {
     if (isClosed) return;
+    // This one is weighted by rates, which site staff are not sent.
+    if (!_services.auth.can('money.view')) {
+      emit(state.copyWith(progress: () => null));
+      return;
+    }
     var approved = Decimal.zero;
     var total = Decimal.zero;
     for (final line in _boq.values) {

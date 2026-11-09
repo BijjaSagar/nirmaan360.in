@@ -115,6 +115,7 @@ class FakeApi implements NirmaanApi {
       'ra_bill.approve': false,
       'project.manage': false,
       'boq.manage': false,
+      'money.view': true,
     },
   };
 

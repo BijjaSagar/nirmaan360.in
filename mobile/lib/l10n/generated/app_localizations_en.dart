@@ -1908,6 +1908,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressFormToday => 'Today';
 
   @override
+  String get progressFormWhose => 'Whose work is this?';
+
+  @override
+  String get progressFormWhoseRequired => 'Choose the contractor';
+
+  @override
   String get progressFormYesterday => 'Yesterday';
 
   @override
