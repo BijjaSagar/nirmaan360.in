@@ -20,6 +20,9 @@ import '../features/petty_cash/view/expense_form_screen.dart';
 import '../features/petty_cash/view/petty_cash_screen.dart';
 import '../features/petty_cash/view/top_up_screen.dart';
 import '../features/petty_cash/view/wallet_form_screen.dart';
+import '../features/contractor_control/view/contract_detail_screen.dart';
+import '../features/contractor_control/view/contractor_screen.dart';
+import '../features/contractor_control/view/payment_form_screen.dart';
 import '../features/site_alerts/bloc/site_alerts_cubit.dart';
 import '../features/site_alerts/view/site_dashboard_screen.dart';
 import '../features/site_progress/view/floor_progress_screen.dart';
@@ -130,6 +133,14 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         ],
       ),
       _route(Routes.attendance, (_) => const AttendanceScreen()),
+      _route(
+        Routes.contractors,
+        (_) => const ContractorScreen(),
+        routes: <RouteBase>[
+          _route('request', (s) => PaymentFormScreen(workOrderId: int.tryParse(s.uri.queryParameters['work_order'] ?? ''))),
+          _route(':id', (s) => ContractDetailScreen(workOrderId: int.parse(s.pathParameters['id']!))),
+        ],
+      ),
       _route(
         Routes.siteDashboard,
         (s) => SiteDashboardScreen(tab: s.uri.queryParameters['tab'] == 'alerts' ? SiteTab.alerts : SiteTab.dashboard),

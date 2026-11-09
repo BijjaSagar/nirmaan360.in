@@ -731,6 +731,263 @@ class AppLocalizationsMr extends AppLocalizations {
   String get commonToday => 'आज';
 
   @override
+  String get contractorAdvance => 'आगाऊ';
+
+  @override
+  String get contractorAgainst => 'कशासाठी';
+
+  @override
+  String get contractorAgainstLine => 'BOQ बाब';
+
+  @override
+  String get contractorAgainstPart => 'भाग';
+
+  @override
+  String get contractorAgainstWhole => 'संपूर्ण ठेका';
+
+  @override
+  String get contractorAmount => 'रक्कम (₹)';
+
+  @override
+  String get contractorAmountError =>
+      'शून्यापेक्षा जास्त रक्कम लिहा, दशांशानंतर जास्तीत जास्त दोन अंक.';
+
+  @override
+  String get contractorAmountLabel => 'रक्कम';
+
+  @override
+  String get contractorApprovalNote =>
+      'हे मंजुरीसाठी जाईल. मंजूर होईपर्यंत काहीही अदा धरले जात नाही.';
+
+  @override
+  String get contractorBalance => 'देय शिल्लक';
+
+  @override
+  String get contractorBillFailed => 'बिल लोड झाले नाही. इंटरनेट तपासा.';
+
+  @override
+  String get contractorBillNotPicture =>
+      'हे बिल चित्र नाही. ते वेबसाइटवर उघडा.';
+
+  @override
+  String get contractorBillPhoto => 'बिलाचा फोटो जोडा';
+
+  @override
+  String get contractorClosed => 'बंद';
+
+  @override
+  String get contractorContract => 'ठेका';
+
+  @override
+  String get contractorContractChoose => 'ठेका निवडा';
+
+  @override
+  String get contractorContractClosed => 'हा ठेका बंद आहे.';
+
+  @override
+  String get contractorContractSearch => 'ठेका शोधा';
+
+  @override
+  String get contractorEmptyMessage => 'या प्रकल्पाच्या वर्क ऑर्डर इथे दिसतील.';
+
+  @override
+  String get contractorEmptyTitle => 'अजून ठेके नाहीत';
+
+  @override
+  String get contractorEnteredBy => 'नोंद करणारे';
+
+  @override
+  String contractorHomeAhead(int count) {
+    return '$count कामापेक्षा जास्त अदा';
+  }
+
+  @override
+  String contractorHomeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ठेके',
+      one: '1 ठेका',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get contractorHomeInStep => 'सर्व कामाच्या बरोबरीत';
+
+  @override
+  String contractorHomeOver(int count) {
+    return '$count मर्यादेपेक्षा जास्त';
+  }
+
+  @override
+  String get contractorHomeOverview => 'प्रत्येक ठेक्यातील झालेले काम';
+
+  @override
+  String get contractorImpactAfter => 'मंजूर झाल्यास';
+
+  @override
+  String get contractorImpactLine => 'ही बाब';
+
+  @override
+  String get contractorImpactNow => 'सध्या';
+
+  @override
+  String get contractorInStep => 'कामाच्या बरोबरीत';
+
+  @override
+  String get contractorKind => 'हे देयक';
+
+  @override
+  String get contractorKindAdvance => 'आगाऊ';
+
+  @override
+  String get contractorKindWork => 'झालेल्या कामासाठी';
+
+  @override
+  String get contractorLatestOnly =>
+      'नवीन 50 दाखवल्या आहेत. बाकीच्या वेबसाइटवर आहेत.';
+
+  @override
+  String get contractorLineChoose => 'BOQ बाब निवडा';
+
+  @override
+  String get contractorLines => 'कामाच्या बाबी';
+
+  @override
+  String get contractorLinesLoadOnline =>
+      'हा ठेका एकदा ऑनलाइन उघडल्यावर BOQ बाबी आणि भाग लोड होतील.';
+
+  @override
+  String get contractorLoading => 'ठेके लोड होत आहेत';
+
+  @override
+  String get contractorMode => 'देयकाची पद्धत';
+
+  @override
+  String get contractorModeBank => 'बँक';
+
+  @override
+  String get contractorModeCash => 'रोख';
+
+  @override
+  String get contractorModeRequired => 'कसे अदा केले ते निवडा.';
+
+  @override
+  String get contractorModeUpi => 'UPI';
+
+  @override
+  String get contractorNoDataMessage =>
+      'या प्रकल्पाचे ठेके लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर ऑफलाइनही उघडतील.';
+
+  @override
+  String get contractorNoPaymentsMessage =>
+      'तुम्ही केलेल्या विनंत्या त्यांच्या स्थितीसह इथे दिसतील.';
+
+  @override
+  String get contractorNoPaymentsTitle => 'अजून देयक विनंत्या नाहीत';
+
+  @override
+  String get contractorNotes => 'टीप';
+
+  @override
+  String get contractorOptional => 'ऐच्छिक';
+
+  @override
+  String get contractorOtherDate => 'दुसरा दिनांक';
+
+  @override
+  String get contractorOverLimit => 'मर्यादेपेक्षा जास्त';
+
+  @override
+  String get contractorPaid => 'अदा केले';
+
+  @override
+  String get contractorPaidAhead => 'कामापेक्षा जास्त अदा';
+
+  @override
+  String get contractorPaidOn => 'अदा दिनांक';
+
+  @override
+  String get contractorPaidTo => 'कोणाला अदा केले';
+
+  @override
+  String get contractorPaidToHint => 'ठेकेदार असल्यास रिकामे ठेवा';
+
+  @override
+  String get contractorPartChoose => 'भाग निवडा';
+
+  @override
+  String get contractorPartDone => 'पूर्ण';
+
+  @override
+  String get contractorPartNotDone => 'अपूर्ण';
+
+  @override
+  String get contractorPartNotPaid => 'अदा नाही';
+
+  @override
+  String get contractorPartOver => 'भागापेक्षा जास्त अदा';
+
+  @override
+  String get contractorPartPaid => 'अदा';
+
+  @override
+  String get contractorPartPartPaid => 'अंशतः अदा';
+
+  @override
+  String get contractorParts => 'भाग';
+
+  @override
+  String get contractorReference => 'संदर्भ';
+
+  @override
+  String get contractorRefusedMessage =>
+      'ठेके तुमच्या भूमिकेसाठी उपलब्ध नाहीत. गरज असल्यास ऑफिसला विचारा.';
+
+  @override
+  String get contractorRefusedTitle => 'तुमच्या भूमिकेत हे नाही';
+
+  @override
+  String get contractorRequest => 'देयक विनंती';
+
+  @override
+  String get contractorReversal => 'उलट नोंद';
+
+  @override
+  String get contractorSearchNone => 'काही सापडले नाही';
+
+  @override
+  String get contractorSend => 'विनंती पाठवा';
+
+  @override
+  String get contractorShortBy => 'कमी पडणारी रक्कम';
+
+  @override
+  String get contractorTabContracts => 'ठेके';
+
+  @override
+  String get contractorTabPayments => 'देयके';
+
+  @override
+  String get contractorTitle => 'ठेकेदार';
+
+  @override
+  String get contractorValue => 'ठेक्याची किंमत';
+
+  @override
+  String get contractorViewBill => 'बिल पाहा';
+
+  @override
+  String get contractorWorkDone => 'झालेले काम';
+
+  @override
+  String get contractorWorkLeft => 'बाकी काम';
+
+  @override
+  String get contractorWorkLeftValue => 'बाकी कामाची किंमत';
+
+  @override
   String get designAttendanceAbsent => 'गैरहजर';
 
   @override
@@ -2944,6 +3201,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeAttendance => 'हजेरी';
+
+  @override
+  String get syncTypeContractorPayment => 'ठेकेदार देयक विनंती';
 
   @override
   String get syncTypeDpr => 'दैनिक अहवाल';

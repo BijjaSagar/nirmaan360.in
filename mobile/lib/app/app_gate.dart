@@ -251,6 +251,8 @@ class AppGate extends Cubit<GateState> {
     Routes.progress: 'progress.view',
     Routes.progressForm: 'progress.create',
     Routes.siteDashboard: 'progress.view',
+    Routes.contractors: 'contractor.view',
+    Routes.contractorRequest: 'contractor.request',
     Routes.material: 'material_control.view',
     Routes.materialReceive: 'material_control.challan',
     Routes.materialUse: 'material_control.consume',

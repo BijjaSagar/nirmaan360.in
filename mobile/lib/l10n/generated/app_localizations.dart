@@ -1384,6 +1384,480 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get commonToday;
 
+  /// No description provided for @contractorAdvance.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance'**
+  String get contractorAdvance;
+
+  /// No description provided for @contractorAgainst.
+  ///
+  /// In en, this message translates to:
+  /// **'Against'**
+  String get contractorAgainst;
+
+  /// No description provided for @contractorAgainstLine.
+  ///
+  /// In en, this message translates to:
+  /// **'A BOQ line'**
+  String get contractorAgainstLine;
+
+  /// No description provided for @contractorAgainstPart.
+  ///
+  /// In en, this message translates to:
+  /// **'A part'**
+  String get contractorAgainstPart;
+
+  /// No description provided for @contractorAgainstWhole.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole contract'**
+  String get contractorAgainstWhole;
+
+  /// No description provided for @contractorAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (₹)'**
+  String get contractorAmount;
+
+  /// No description provided for @contractorAmountError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount above zero, with at most two decimal places.'**
+  String get contractorAmountError;
+
+  /// No description provided for @contractorAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get contractorAmountLabel;
+
+  /// No description provided for @contractorApprovalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This goes for approval. Nothing counts as paid until it is approved.'**
+  String get contractorApprovalNote;
+
+  /// No description provided for @contractorBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance to pay'**
+  String get contractorBalance;
+
+  /// No description provided for @contractorBillFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the bill. Check your internet.'**
+  String get contractorBillFailed;
+
+  /// No description provided for @contractorBillNotPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'This bill is not a picture. Open it on the website.'**
+  String get contractorBillNotPicture;
+
+  /// No description provided for @contractorBillPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add bill photo'**
+  String get contractorBillPhoto;
+
+  /// No description provided for @contractorClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get contractorClosed;
+
+  /// No description provided for @contractorContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract'**
+  String get contractorContract;
+
+  /// No description provided for @contractorContractChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a contract'**
+  String get contractorContractChoose;
+
+  /// No description provided for @contractorContractClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This contract is closed.'**
+  String get contractorContractClosed;
+
+  /// No description provided for @contractorContractSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contracts'**
+  String get contractorContractSearch;
+
+  /// No description provided for @contractorEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Work orders for this project will show here.'**
+  String get contractorEmptyMessage;
+
+  /// No description provided for @contractorEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No contracts yet'**
+  String get contractorEmptyTitle;
+
+  /// No description provided for @contractorEnteredBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered by'**
+  String get contractorEnteredBy;
+
+  /// No description provided for @contractorHomeAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} paid ahead of work'**
+  String contractorHomeAhead(int count);
+
+  /// No description provided for @contractorHomeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 contract} other{{count} contracts}}'**
+  String contractorHomeCount(int count);
+
+  /// No description provided for @contractorHomeInStep.
+  ///
+  /// In en, this message translates to:
+  /// **'All in step with work'**
+  String get contractorHomeInStep;
+
+  /// No description provided for @contractorHomeOver.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} over the limit'**
+  String contractorHomeOver(int count);
+
+  /// No description provided for @contractorHomeOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done against each contract'**
+  String get contractorHomeOverview;
+
+  /// No description provided for @contractorImpactAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'If approved'**
+  String get contractorImpactAfter;
+
+  /// No description provided for @contractorImpactLine.
+  ///
+  /// In en, this message translates to:
+  /// **'This line'**
+  String get contractorImpactLine;
+
+  /// No description provided for @contractorImpactNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get contractorImpactNow;
+
+  /// No description provided for @contractorInStep.
+  ///
+  /// In en, this message translates to:
+  /// **'In step with work'**
+  String get contractorInStep;
+
+  /// No description provided for @contractorKind.
+  ///
+  /// In en, this message translates to:
+  /// **'This payment is'**
+  String get contractorKind;
+
+  /// No description provided for @contractorKindAdvance.
+  ///
+  /// In en, this message translates to:
+  /// **'An advance'**
+  String get contractorKindAdvance;
+
+  /// No description provided for @contractorKindWork.
+  ///
+  /// In en, this message translates to:
+  /// **'For work done'**
+  String get contractorKindWork;
+
+  /// No description provided for @contractorLatestOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the latest 50. The rest are on the website.'**
+  String get contractorLatestOnly;
+
+  /// No description provided for @contractorLineChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a BOQ line'**
+  String get contractorLineChoose;
+
+  /// No description provided for @contractorLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Work lines'**
+  String get contractorLines;
+
+  /// No description provided for @contractorLinesLoadOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ lines and parts load once this contract has been opened online.'**
+  String get contractorLinesLoadOnline;
+
+  /// No description provided for @contractorLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading contracts'**
+  String get contractorLoading;
+
+  /// No description provided for @contractorMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by'**
+  String get contractorMode;
+
+  /// No description provided for @contractorModeBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get contractorModeBank;
+
+  /// No description provided for @contractorModeCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash'**
+  String get contractorModeCash;
+
+  /// No description provided for @contractorModeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how it was paid.'**
+  String get contractorModeRequired;
+
+  /// No description provided for @contractorModeUpi.
+  ///
+  /// In en, this message translates to:
+  /// **'UPI'**
+  String get contractorModeUpi;
+
+  /// No description provided for @contractorNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load this project\'s contracts. After that they open offline.'**
+  String get contractorNoDataMessage;
+
+  /// No description provided for @contractorNoPaymentsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you raise will show here with their status.'**
+  String get contractorNoPaymentsMessage;
+
+  /// No description provided for @contractorNoPaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No payment requests yet'**
+  String get contractorNoPaymentsTitle;
+
+  /// No description provided for @contractorNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get contractorNotes;
+
+  /// No description provided for @contractorOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get contractorOptional;
+
+  /// No description provided for @contractorOtherDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Other date'**
+  String get contractorOtherDate;
+
+  /// No description provided for @contractorOverLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the limit'**
+  String get contractorOverLimit;
+
+  /// No description provided for @contractorPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get contractorPaid;
+
+  /// No description provided for @contractorPaidAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid ahead of work'**
+  String get contractorPaidAhead;
+
+  /// No description provided for @contractorPaidOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid on'**
+  String get contractorPaidOn;
+
+  /// No description provided for @contractorPaidTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid to'**
+  String get contractorPaidTo;
+
+  /// No description provided for @contractorPaidToHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank for the contractor'**
+  String get contractorPaidToHint;
+
+  /// No description provided for @contractorPartChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a part'**
+  String get contractorPartChoose;
+
+  /// No description provided for @contractorPartDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get contractorPartDone;
+
+  /// No description provided for @contractorPartNotDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Not done'**
+  String get contractorPartNotDone;
+
+  /// No description provided for @contractorPartNotPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Not paid'**
+  String get contractorPartNotPaid;
+
+  /// No description provided for @contractorPartOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid more than the part'**
+  String get contractorPartOver;
+
+  /// No description provided for @contractorPartPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get contractorPartPaid;
+
+  /// No description provided for @contractorPartPartPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Part paid'**
+  String get contractorPartPartPaid;
+
+  /// No description provided for @contractorParts.
+  ///
+  /// In en, this message translates to:
+  /// **'Parts'**
+  String get contractorParts;
+
+  /// No description provided for @contractorReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get contractorReference;
+
+  /// No description provided for @contractorRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Contracts are not open to your role. Ask your office if you need them.'**
+  String get contractorRefusedMessage;
+
+  /// No description provided for @contractorRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not part of your role'**
+  String get contractorRefusedTitle;
+
+  /// No description provided for @contractorRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request payment'**
+  String get contractorRequest;
+
+  /// No description provided for @contractorReversal.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversal'**
+  String get contractorReversal;
+
+  /// No description provided for @contractorSearchNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches'**
+  String get contractorSearchNone;
+
+  /// No description provided for @contractorSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get contractorSend;
+
+  /// No description provided for @contractorShortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Short by'**
+  String get contractorShortBy;
+
+  /// No description provided for @contractorTabContracts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contracts'**
+  String get contractorTabContracts;
+
+  /// No description provided for @contractorTabPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get contractorTabPayments;
+
+  /// No description provided for @contractorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractors'**
+  String get contractorTitle;
+
+  /// No description provided for @contractorValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract value'**
+  String get contractorValue;
+
+  /// No description provided for @contractorViewBill.
+  ///
+  /// In en, this message translates to:
+  /// **'View bill'**
+  String get contractorViewBill;
+
+  /// No description provided for @contractorWorkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done'**
+  String get contractorWorkDone;
+
+  /// No description provided for @contractorWorkLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Work left'**
+  String get contractorWorkLeft;
+
+  /// No description provided for @contractorWorkLeftValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value of work left'**
+  String get contractorWorkLeftValue;
+
   /// No description provided for @designAttendanceAbsent.
   ///
   /// In en, this message translates to:
@@ -5445,6 +5919,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attendance'**
   String get syncTypeAttendance;
+
+  /// No description provided for @syncTypeContractorPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractor payment request'**
+  String get syncTypeContractorPayment;
 
   /// No description provided for @syncTypeDpr.
   ///

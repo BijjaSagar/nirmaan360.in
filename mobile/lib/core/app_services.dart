@@ -4,6 +4,7 @@ import 'api/api_failure.dart';
 import 'dart:async';
 
 import '../features/approvals/data/approval_repository.dart';
+import '../features/contractor_control/data/contractor_repository.dart';
 import '../features/attendance/data/attendance_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/dpr/data/dpr_repository.dart';
@@ -38,6 +39,7 @@ class AppServices {
     required this.progress,
     required this.material,
     required this.siteAlerts,
+    required this.contractors,
     required this.projectImages,
     required this.db,
     required this.api,
@@ -142,6 +144,7 @@ class AppServices {
     final progress = ProgressRepository(context);
     final material = MaterialRepository(context);
     final siteAlerts = SiteAlertsRepository(context);
+    final contractors = ContractorRepository(context);
     final projectImages = ProjectImageRepository(context);
     engine.afterPull = (sentSomething) async {
       // Separately, so a failure in one does not leave the other stale.
@@ -149,6 +152,7 @@ class AppServices {
         progress.refreshCurrent,
         material.refreshCurrent,
         siteAlerts.refreshCurrent,
+        contractors.refreshCurrent,
       ]) {
         try {
           await refresh(force: sentSomething);
@@ -162,6 +166,7 @@ class AppServices {
       progress: progress,
       material: material,
       siteAlerts: siteAlerts,
+      contractors: contractors,
       projectImages: projectImages,
       db: db,
       api: api,
@@ -201,6 +206,7 @@ class AppServices {
   final ProgressRepository progress;
   final MaterialRepository material;
   final SiteAlertsRepository siteAlerts;
+  final ContractorRepository contractors;
   final ProjectImageRepository projectImages;
 
   /// Restores the session and starts the triggers. Offline-safe.

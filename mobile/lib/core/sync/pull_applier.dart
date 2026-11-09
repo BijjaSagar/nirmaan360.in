@@ -551,6 +551,7 @@ class PullApplier {
       await _db.deleteMeta(MetaKey.progressLastPick(id));
       await _db.deleteMeta(MetaKey.materialOverview(id));
       await _db.deleteMeta(MetaKey.siteOverview(id));
+      await _db.deleteMeta(MetaKey.contractorOverview(id));
       await _db.deleteMeta(MetaKey.recordPhotos(id));
       await _db.deleteMeta(MetaKey.floorEntries(id));
     }
@@ -759,7 +760,9 @@ ApprovalsInboxCompanion approvalCompanion(Json j) {
     currentRole: Value(j['current_role'] as String?),
     currentRoleLabel: Value(j['current_role_label'] as String?),
     canAct: Value(j['can_act'] as bool? ?? false),
-    document: Value((j['document'] as Map?)?.cast<String, dynamic>() ?? const {}),
+    // The server sends an empty list, not null, for a kind of document it does
+    // not describe, such as a contractor payment.
+    document: Value(j['document'] is Map ? (j['document'] as Map).cast<String, dynamic>() : const {}),
     steps: Value((j['steps'] as List?) ?? const []),
   );
 }

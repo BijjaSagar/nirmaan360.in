@@ -271,6 +271,19 @@ Needs the `site_control` plan feature and `progress.view`. Read only. `alerts.vi
 - Severity is a word on each alert. Home has one row above the tiles rather than a ninth tile.
 - "Scan now" is left out, because `alerts.manage` does not reach the app.
 
+### Contractor control
+
+Needs the `site_control` plan feature. `contractor.view` reads, `contractor.request` raises a request, `money.view` sees figures. `ContractorControlPresenter` decides what leaves the server: without `money.view` a contract has `work_pct` and `balance_work_pct` and nothing about money, and the payment list holds only the requests this person raised, with no amounts.
+
+- The app reads `GET /projects/{project}/contractor-control`, `/contractor-payments` (the latest 50) and `GET /work-orders/{id}/contractor-control` for up to 30 open contracts, a few at a time, and keeps them per project under `contractor.overview.<projectId>`. A contract is read again when it is opened. The key goes with the project.
+- Figures are one nullable object on each row, so a screen shows them all or none, and a withheld figure can never read as `₹0`. A copy kept from before someone lost `money.view` is stripped when it is read.
+- A payment request is an outbox row of type `contractor_payment`, posted on its own to `POST /work-orders/{id}/contractor-payments` with a `client_uuid`, multipart with `bill` when there is a photo. It is safe offline: `raise()` checks no live balance and a bill is optional, a manager sees the figures when deciding, and a repeat returns the first row. The form holds one `client_uuid` for its life.
+- `is_advance` is sent as 1 or 0, because the server's boolean rule does not take `true` and `false` from multipart.
+- The reply is added to the kept list in the transaction that finishes the outbox row, so a sent request never vanishes before the next read, when someone might raise it again.
+- A 422, such as a closed contract, goes to the Sync Center, and the payment row shows the server's own words. 403 and 404 go there too. The form checks the amount above 0 and at most two decimal places, and refuses a date in the future.
+- Requests still waiting are laid over the list. The figure someone without `money.view` typed is never shown back, in the list, the Sync Center or the outbox title.
+- The bill opens from `GET /contractor-payments/{id}/bill` for `money.view`. A PDF cannot be drawn on the phone, so it says to open it on the website. Approving stays on the approvals screen or the website.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

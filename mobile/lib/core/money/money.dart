@@ -164,6 +164,10 @@ final class Money extends ScaledDecimal<Money> {
     return parsed == null ? null : Money.of(parsed);
   }
 
+  /// True when [input] has more decimal places than money holds, so parsing it
+  /// would round what someone typed.
+  static bool hasExtraDecimals(String? input) => (_parseUserText(input)?.scale ?? 0) > 2;
+
   /// Quantity times rate, rounded to money precision like `BoqItem::amount`.
   factory Money.fromQtyRate(Qty qty, Money rate) =>
       Money.of(qty.value * rate.value);

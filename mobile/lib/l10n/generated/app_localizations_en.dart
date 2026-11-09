@@ -735,6 +735,265 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonToday => 'Today';
 
   @override
+  String get contractorAdvance => 'Advance';
+
+  @override
+  String get contractorAgainst => 'Against';
+
+  @override
+  String get contractorAgainstLine => 'A BOQ line';
+
+  @override
+  String get contractorAgainstPart => 'A part';
+
+  @override
+  String get contractorAgainstWhole => 'Whole contract';
+
+  @override
+  String get contractorAmount => 'Amount (₹)';
+
+  @override
+  String get contractorAmountError =>
+      'Enter an amount above zero, with at most two decimal places.';
+
+  @override
+  String get contractorAmountLabel => 'Amount';
+
+  @override
+  String get contractorApprovalNote =>
+      'This goes for approval. Nothing counts as paid until it is approved.';
+
+  @override
+  String get contractorBalance => 'Balance to pay';
+
+  @override
+  String get contractorBillFailed =>
+      'Could not load the bill. Check your internet.';
+
+  @override
+  String get contractorBillNotPicture =>
+      'This bill is not a picture. Open it on the website.';
+
+  @override
+  String get contractorBillPhoto => 'Add bill photo';
+
+  @override
+  String get contractorClosed => 'Closed';
+
+  @override
+  String get contractorContract => 'Contract';
+
+  @override
+  String get contractorContractChoose => 'Choose a contract';
+
+  @override
+  String get contractorContractClosed => 'This contract is closed.';
+
+  @override
+  String get contractorContractSearch => 'Search contracts';
+
+  @override
+  String get contractorEmptyMessage =>
+      'Work orders for this project will show here.';
+
+  @override
+  String get contractorEmptyTitle => 'No contracts yet';
+
+  @override
+  String get contractorEnteredBy => 'Entered by';
+
+  @override
+  String contractorHomeAhead(int count) {
+    return '$count paid ahead of work';
+  }
+
+  @override
+  String contractorHomeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count contracts',
+      one: '1 contract',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get contractorHomeInStep => 'All in step with work';
+
+  @override
+  String contractorHomeOver(int count) {
+    return '$count over the limit';
+  }
+
+  @override
+  String get contractorHomeOverview => 'Work done against each contract';
+
+  @override
+  String get contractorImpactAfter => 'If approved';
+
+  @override
+  String get contractorImpactLine => 'This line';
+
+  @override
+  String get contractorImpactNow => 'Now';
+
+  @override
+  String get contractorInStep => 'In step with work';
+
+  @override
+  String get contractorKind => 'This payment is';
+
+  @override
+  String get contractorKindAdvance => 'An advance';
+
+  @override
+  String get contractorKindWork => 'For work done';
+
+  @override
+  String get contractorLatestOnly =>
+      'Showing the latest 50. The rest are on the website.';
+
+  @override
+  String get contractorLineChoose => 'Choose a BOQ line';
+
+  @override
+  String get contractorLines => 'Work lines';
+
+  @override
+  String get contractorLinesLoadOnline =>
+      'BOQ lines and parts load once this contract has been opened online.';
+
+  @override
+  String get contractorLoading => 'Loading contracts';
+
+  @override
+  String get contractorMode => 'Paid by';
+
+  @override
+  String get contractorModeBank => 'Bank';
+
+  @override
+  String get contractorModeCash => 'Cash';
+
+  @override
+  String get contractorModeRequired => 'Choose how it was paid.';
+
+  @override
+  String get contractorModeUpi => 'UPI';
+
+  @override
+  String get contractorNoDataMessage =>
+      'Connect to the internet once to load this project\'s contracts. After that they open offline.';
+
+  @override
+  String get contractorNoPaymentsMessage =>
+      'Requests you raise will show here with their status.';
+
+  @override
+  String get contractorNoPaymentsTitle => 'No payment requests yet';
+
+  @override
+  String get contractorNotes => 'Notes';
+
+  @override
+  String get contractorOptional => 'Optional';
+
+  @override
+  String get contractorOtherDate => 'Other date';
+
+  @override
+  String get contractorOverLimit => 'Over the limit';
+
+  @override
+  String get contractorPaid => 'Paid';
+
+  @override
+  String get contractorPaidAhead => 'Paid ahead of work';
+
+  @override
+  String get contractorPaidOn => 'Paid on';
+
+  @override
+  String get contractorPaidTo => 'Paid to';
+
+  @override
+  String get contractorPaidToHint => 'Leave blank for the contractor';
+
+  @override
+  String get contractorPartChoose => 'Choose a part';
+
+  @override
+  String get contractorPartDone => 'Done';
+
+  @override
+  String get contractorPartNotDone => 'Not done';
+
+  @override
+  String get contractorPartNotPaid => 'Not paid';
+
+  @override
+  String get contractorPartOver => 'Paid more than the part';
+
+  @override
+  String get contractorPartPaid => 'Paid';
+
+  @override
+  String get contractorPartPartPaid => 'Part paid';
+
+  @override
+  String get contractorParts => 'Parts';
+
+  @override
+  String get contractorReference => 'Reference';
+
+  @override
+  String get contractorRefusedMessage =>
+      'Contracts are not open to your role. Ask your office if you need them.';
+
+  @override
+  String get contractorRefusedTitle => 'Not part of your role';
+
+  @override
+  String get contractorRequest => 'Request payment';
+
+  @override
+  String get contractorReversal => 'Reversal';
+
+  @override
+  String get contractorSearchNone => 'Nothing matches';
+
+  @override
+  String get contractorSend => 'Send request';
+
+  @override
+  String get contractorShortBy => 'Short by';
+
+  @override
+  String get contractorTabContracts => 'Contracts';
+
+  @override
+  String get contractorTabPayments => 'Payments';
+
+  @override
+  String get contractorTitle => 'Contractors';
+
+  @override
+  String get contractorValue => 'Contract value';
+
+  @override
+  String get contractorViewBill => 'View bill';
+
+  @override
+  String get contractorWorkDone => 'Work done';
+
+  @override
+  String get contractorWorkLeft => 'Work left';
+
+  @override
+  String get contractorWorkLeftValue => 'Value of work left';
+
+  @override
   String get designAttendanceAbsent => 'Absent';
 
   @override
@@ -2988,6 +3247,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeAttendance => 'Attendance';
+
+  @override
+  String get syncTypeContractorPayment => 'Contractor payment request';
 
   @override
   String get syncTypeDpr => 'Daily report';

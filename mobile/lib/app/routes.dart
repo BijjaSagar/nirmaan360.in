@@ -54,6 +54,12 @@ abstract final class Routes {
   /// The site dashboard and open alerts. Optional query: `tab=alerts`.
   static const siteDashboard = '/site';
 
+  static const contractors = '/contractors';
+
+  /// Optional query: `work_order`.
+  static const contractorRequest = '/contractors/request';
+  static String contractorDetail(int workOrderId) => '/contractors/$workOrderId';
+
   static const material = '/material';
 
   /// Optional query: `material`.

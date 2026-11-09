@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../contractor_control/data/contractor_models.dart';
 import '../../projects/view/widgets/project_photo.dart';
 import '../../site_alerts/data/site_alerts_models.dart';
 import '../../site_alerts/view/site_dashboard_screen.dart' show AlertSeverityWords, alertStampKind;
@@ -65,7 +66,15 @@ class _HomeView extends StatelessWidget {
           final bool quiet = state.returned.isNotEmpty || setupPending;
           final List<_TileSpec> tiles = _tilesFor(context, state, allowEmphasis: !quiet);
           final CurrentUser? user = context.select((AppGate gate) => gate.state.user);
-          final bool showSite = (user?.can('progress.view') ?? false) && (user?.features.contains('site_control') ?? false);
+          final bool siteControl = user?.features.contains('site_control') ?? false;
+          // Two lines above the figures rather than a ninth and tenth tile:
+          // a sentence fits here, and the grid is already full.
+          final List<Widget> siteRows = <Widget>[
+            if (siteControl && (user?.can('progress.view') ?? false) && !(state.site?.refused ?? false))
+              _SiteAlertsRow(site: state.site),
+            if (siteControl && (user?.can('contractor.view') ?? false) && !(state.contractors?.refused ?? false))
+              _ContractorsRow(overview: state.contractors),
+          ];
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,8 +98,8 @@ class _HomeView extends StatelessWidget {
                           _SetupCard(steps: steps),
                           const SizedBox(height: N360Space.cardGap),
                         ],
-                        if (showSite && !(state.site?.refused ?? false)) ...<Widget>[
-                          LedgerList(children: <Widget>[_SiteAlertsRow(site: state.site)]),
+                        if (siteRows.isNotEmpty) ...<Widget>[
+                          LedgerList(children: siteRows),
                           const SizedBox(height: N360Space.cardGap),
                         ],
                         if (showProgress) ...<Widget>[
@@ -420,9 +429,7 @@ class _ReturnedRow extends StatelessWidget {
   }
 }
 
-/// One line above the figures: how many alerts are open and how bad the worst
-/// is, one tap from the dashboard. A row rather than a ninth tile, because
-/// a sentence fits here and the grid is already full.
+/// How many alerts are open and how bad the worst is, one tap from the dashboard.
 class _SiteAlertsRow extends StatelessWidget {
   const _SiteAlertsRow({required this.site});
 
@@ -451,6 +458,38 @@ class _SiteAlertsRow extends StatelessWidget {
       subtitle: subtitle,
       status: open > 0 && worst != null ? StatusPill(kind: alertStampKind(worst), label: t.alertSeverityWord(worst)) : null,
       onTap: () => context.push(open > 0 ? '${Routes.siteDashboard}?tab=alerts' : Routes.siteDashboard),
+    );
+  }
+}
+
+/// How the contracts stand. Someone without `money.view` is sent no payment
+/// figures, so for them this only counts contracts.
+class _ContractorsRow extends StatelessWidget {
+  const _ContractorsRow({required this.overview});
+
+  /// Null until this phone has read the board once.
+  final ContractorOverview? overview;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final ContractorOverview? data = overview;
+    final String subtitle = switch (data) {
+      null => t.contractorHomeOverview,
+      ContractorOverview(contracts: <WorkContract>[]) => t.contractorEmptyTitle,
+      ContractorOverview(seesMoney: false) => t.contractorHomeCount(data.contracts.length),
+      _ when data.overLimitCount > 0 || data.aheadCount > 0 => <String>[
+        if (data.aheadCount > 0) t.contractorHomeAhead(data.aheadCount),
+        if (data.overLimitCount > 0) t.contractorHomeOver(data.overLimitCount),
+      ].join(' · '),
+      _ => t.contractorHomeInStep,
+    };
+    return LedgerListTile(
+      key: const ValueKey<String>('home-contractors'),
+      leading: const Icon(Icons.handshake_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+      title: t.contractorTitle,
+      subtitle: subtitle,
+      onTap: () => context.push(Routes.contractors),
     );
   }
 }

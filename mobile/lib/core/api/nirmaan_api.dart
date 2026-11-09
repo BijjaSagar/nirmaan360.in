@@ -198,6 +198,29 @@ abstract interface class NirmaanApi {
   /// A project's photo. [imageUrl] is the address the server gave for it.
   Future<Uint8List> projectImageBytes(String imageUrl);
 
+  // Contractor control. Reads fill a cache on the phone. The presenter on the
+  // server leaves every money figure out for someone without `money.view`.
+
+  /// `GET /projects/{project}/contractor-control`: one row per contract.
+  Future<List<Map<String, dynamic>>> contractorBoard(int projectId);
+
+  /// `GET /work-orders/{workOrder}/contractor-control`: the row with `lines` and `milestones`.
+  Future<Map<String, dynamic>> contractorContract(int workOrderId);
+
+  /// The first page of `GET /projects/{project}/contractor-payments`, `{data, meta}`.
+  Future<Map<String, dynamic>> contractorPayments(int projectId);
+
+  /// `GET /contractor-payments/{payment}`, with `impact` for `money.view`.
+  Future<Map<String, dynamic>> contractorPayment(int paymentId);
+
+  /// `GET /contractor-payments/{payment}/bill`. Needs `money.view`.
+  Future<Uint8List> contractorPaymentBill(int paymentId);
+
+  /// `POST /work-orders/{workOrder}/contractor-payments`, with the bill as
+  /// multipart `bill` when there is one. Replayed from the outbox with the same
+  /// `client_uuid` in [body].
+  Future<Map<String, dynamic>> postContractorPayment(int workOrderId, Map<String, dynamic> body, {String? filePath});
+
   // Site dashboard and alerts. Read only.
 
   /// `GET /projects/{project}/site-dashboard`: the cards the server worked out

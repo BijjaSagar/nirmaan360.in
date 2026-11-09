@@ -1370,6 +1370,225 @@ class FakeApi implements NirmaanApi {
     return bytes;
   }
 
+  // Contractor control ------------------------------------------------------
+
+  /// What `ContractorControlPresenter` sends only with `money.view`.
+  static const List<String> _contractorMoneyKeys = <String>[
+    'contract_value', 'paid', 'advance', 'paid_pct', 'gap_pct', 'ratio_status', 'over_limit', 'limit_pct', 'label',
+    'balance_work_value', 'balance_money', 'short_by', 'amount', 'balance', 'state', 'mode', 'paid_to', 'reference',
+    'notes', 'is_advance', 'has_bill', 'is_reversal', 'approval_id', 'impact',
+  ];
+
+  bool get _seesContractorMoney => (user['can'] as Map)['money.view'] == true;
+
+  Row _presentContractor(Row row) {
+    if (_seesContractorMoney) return row;
+    return {
+      for (final entry in row.entries)
+        if (!_contractorMoneyKeys.contains(entry.key))
+          entry.key: entry.value is List
+              ? [for (final item in entry.value as List) item is Row ? _presentContractor(item) : item]
+              : entry.value,
+    };
+  }
+
+  List<Row> contractorBoardRows = [
+    {
+      'work_order_id': 1,
+      'number': 'WO-1',
+      'title': 'Slab casting',
+      'contractor': 'Shree Formwork',
+      'contract_status': 'ACTIVE',
+      'work_pct': '70.00',
+      'balance_work_pct': '30.00',
+      'contract_value': '100000.00',
+      'paid': '90000.00',
+      'advance': '0.00',
+      'paid_pct': '90.00',
+      'gap_pct': '20.00',
+      'ratio_status': 'red',
+      'over_limit': true,
+      'limit_pct': '5.00',
+      'label': 'Paid 90%, Work 70%',
+      'balance_work_value': '30000.00',
+      'balance_money': '10000.00',
+      'short_by': '20000.00',
+    },
+    {
+      'work_order_id': 2,
+      'number': 'WO-2',
+      'title': 'Plaster',
+      'contractor': 'Patil Constructions',
+      'contract_status': 'ACTIVE',
+      'work_pct': '16.00',
+      'balance_work_pct': '84.00',
+      'contract_value': '15000.00',
+      'paid': '0.00',
+      'advance': '0.00',
+      'paid_pct': '0.00',
+      'gap_pct': '-16.00',
+      'ratio_status': 'green',
+      'over_limit': false,
+      'limit_pct': '5.00',
+      'label': 'Paid 0%, Work 16%',
+      'balance_work_value': '12600.00',
+      'balance_money': '15000.00',
+      'short_by': '0.00',
+    },
+    {
+      'work_order_id': 3,
+      'number': 'WO-3',
+      'title': 'Old work',
+      'contractor': 'Closed Co',
+      'contract_status': 'CLOSED',
+      'work_pct': '100.00',
+      'balance_work_pct': '0.00',
+      'contract_value': '5000.00',
+      'paid': '5000.00',
+      'advance': '0.00',
+      'paid_pct': '100.00',
+      'gap_pct': '0.00',
+      'ratio_status': 'green',
+      'over_limit': false,
+      'limit_pct': '5.00',
+      'label': 'Paid 100%, Work 100%',
+      'balance_work_value': '0.00',
+      'balance_money': '0.00',
+      'short_by': '0.00',
+    },
+  ];
+  Map<int, List<Row>> contractorLineRows = {
+    1: [
+      {
+        'boq_item_id': 3,
+        'code': '2.1',
+        'description': 'RCC M25 in slabs',
+        'unit': 'cum',
+        'work_pct': '70.00',
+        'balance_work_pct': '30.00',
+        'contract_value': '100000.00',
+        'paid': '90000.00',
+        'advance': null,
+        'paid_pct': '90.00',
+        'gap_pct': '20.00',
+        'ratio_status': 'red',
+        'over_limit': true,
+        'limit_pct': '5.00',
+        'label': 'Paid 90%, Work 70%',
+        'balance_work_value': '30000.00',
+        'balance_money': '10000.00',
+        'short_by': '20000.00',
+      },
+    ],
+  };
+  Map<int, List<Row>> contractorPartRows = {
+    1: [
+      {'id': 11, 'title': 'Plinth', 'done': true, 'done_on': '2026-11-01', 'amount': '25000.00', 'paid': '25000.00', 'balance': '0.00', 'state': 'paid'},
+      {'id': 12, 'title': 'Roof', 'done': false, 'done_on': null, 'amount': '75000.00', 'paid': '0.00', 'balance': '75000.00', 'state': 'not_paid'},
+    ],
+  };
+  List<Row> contractorPaymentRows = [
+    {
+      'id': 21,
+      'number': 'CP-21',
+      'status': 'IN_REVIEW',
+      'work_order_id': 1,
+      'work_order_number': 'WO-1',
+      'contractor': 'Shree Formwork',
+      'boq_item_id': null,
+      'milestone_id': null,
+      'paid_on': '2026-11-05',
+      'entered_by': 'Sachin More',
+      'client_uuid': null,
+      'amount': '30000.00',
+      'mode': 'bank',
+      'paid_to': 'Shree Formwork',
+      'reference': 'NEFT-9',
+      'is_advance': false,
+      'notes': null,
+      'has_bill': true,
+      'is_reversal': false,
+      'approval_id': 3,
+      'impact': null,
+    },
+  ];
+  bool contractorMorePayments = false;
+  ApiFailure? contractorBoardFailure;
+  int contractorContractReads = 0;
+  final Map<String, Row> contractorPaymentPosts = {};
+  final List<String?> contractorPaymentFiles = [];
+  int? contractorPaymentWorkOrder;
+
+  @override
+  Future<List<Map<String, dynamic>>> contractorBoard(int projectId) async {
+    _guard();
+    final failure = contractorBoardFailure;
+    if (failure != null) throw failure;
+    return contractorBoardRows.map(_presentContractor).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> contractorContract(int workOrderId) async {
+    _guard();
+    contractorContractReads++;
+    final row = contractorBoardRows.firstWhere((r) => r['work_order_id'] == workOrderId);
+    return _presentContractor({
+      ...row,
+      'lines': contractorLineRows[workOrderId] ?? <Row>[],
+      'milestones': contractorPartRows[workOrderId] ?? <Row>[],
+    });
+  }
+
+  @override
+  Future<Map<String, dynamic>> contractorPayments(int projectId) async {
+    _guard();
+    final posted = contractorPaymentPosts.values.map(_presentContractor).toList();
+    return {
+      'data': [...posted, ...contractorPaymentRows.map(_presentContractor)],
+      'meta': {'current_page': 1, 'last_page': contractorMorePayments ? 2 : 1},
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> contractorPayment(int paymentId) async {
+    _guard();
+    final row = contractorPaymentRows.firstWhere((r) => r['id'] == paymentId);
+    return _presentContractor({
+      ...row,
+      'impact': {
+        'now': {'label': 'Paid 60%, Work 70%'},
+        'after': {'label': 'Paid 90%, Work 70%'},
+        'item': null,
+      },
+    });
+  }
+
+  @override
+  Future<Uint8List> contractorPaymentBill(int paymentId) async {
+    _guard();
+    return Uint8List.fromList(const [37, 80, 68, 70, 45, 49]);
+  }
+
+  @override
+  Future<Map<String, dynamic>> postContractorPayment(
+    int workOrderId,
+    Map<String, dynamic> body, {
+    String? filePath,
+  }) async {
+    contractorPaymentWorkOrder = workOrderId;
+    final stored = _storeProgress(contractorPaymentPosts, {
+      ...body,
+      'number': 'CP-new',
+      'status': 'IN_REVIEW',
+      'work_order_id': workOrderId,
+      'work_order_number': 'WO-$workOrderId',
+      'contractor': 'Shree Formwork',
+      'entered_by': 'Sachin More',
+    });
+    contractorPaymentFiles.add(filePath);
+    return _presentContractor(stored);
+  }
+
   // Site dashboard and alerts ----------------------------------------------
 
   Row siteDashboardBody = {

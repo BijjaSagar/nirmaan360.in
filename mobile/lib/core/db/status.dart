@@ -44,6 +44,9 @@ abstract final class MetaKey {
   /// The last site dashboard and open alerts this phone read for a project, as JSON.
   static String siteOverview(int projectId) => 'site.overview.$projectId';
 
+  /// The last contract board and payments this phone read for a project, as JSON.
+  static String contractorOverview(int projectId) => 'contractor.overview.$projectId';
+
   /// The recent progress entries the server listed for each floor of a project, as JSON.
   static String floorEntries(int projectId) => 'floor_entries.$projectId';
 

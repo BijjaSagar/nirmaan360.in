@@ -383,6 +383,46 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Uint8List> fieldPhotoBytes(String path) => _bytes(path);
 
   @override
+  Future<List<Map<String, dynamic>>> contractorBoard(int projectId) => _getRows('/projects/$projectId/contractor-control');
+
+  @override
+  Future<Map<String, dynamic>> contractorContract(int workOrderId) => _getData('/work-orders/$workOrderId/contractor-control');
+
+  @override
+  Future<Map<String, dynamic>> contractorPayments(int projectId) =>
+      _call(() => _dio.get('/projects/$projectId/contractor-payments'));
+
+  @override
+  Future<Map<String, dynamic>> contractorPayment(int paymentId) => _getData('/contractor-payments/$paymentId');
+
+  @override
+  Future<Uint8List> contractorPaymentBill(int paymentId) => _bytes('/contractor-payments/$paymentId/bill');
+
+  @override
+  Future<Map<String, dynamic>> postContractorPayment(
+    int workOrderId,
+    Map<String, dynamic> body, {
+    String? filePath,
+  }) async {
+    final path = '/work-orders/$workOrderId/contractor-payments';
+    if (filePath == null) return _postData(path, body);
+    final reply = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        for (final entry in body.entries)
+          if (entry.value != null) entry.key: entry.value,
+        'bill': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (reply['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
   Future<Map<String, dynamic>> siteDashboard(int projectId) => _getData('/projects/$projectId/site-dashboard');
 
   @override

@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/sync/record_sync.dart';
+import '../../contractor_control/data/contractor_models.dart';
 import '../../projects/data/project_repository.dart';
 import '../../site_alerts/data/site_alerts_models.dart';
 import '../../sync_center/data/sync_repository.dart';
@@ -70,6 +71,7 @@ class HomeState extends Equatable {
     this.siteWorkPercent,
     this.materialFlags,
     this.site,
+    this.contractors,
     this.progress,
     this.setup,
   });
@@ -90,6 +92,9 @@ class HomeState extends Equatable {
 
   /// The last site dashboard and alerts on this phone.
   final SiteOverview? site;
+
+  /// The last contract board on this phone.
+  final ContractorOverview? contractors;
   final HomeProgress? progress;
 
   /// What the project still needs set up. Null until first read.
@@ -103,6 +108,7 @@ class HomeState extends Equatable {
     String? siteWorkPercent,
     int? materialFlags,
     SiteOverview? site,
+    ContractorOverview? contractors,
     HomeProgress? Function()? progress,
     ProjectSetup? setup,
   }) {
@@ -114,6 +120,7 @@ class HomeState extends Equatable {
       siteWorkPercent: siteWorkPercent ?? this.siteWorkPercent,
       materialFlags: materialFlags ?? this.materialFlags,
       site: site ?? this.site,
+      contractors: contractors ?? this.contractors,
       progress: progress == null ? this.progress : progress(),
       setup: setup ?? this.setup,
     );
@@ -128,6 +135,7 @@ class HomeState extends Equatable {
         siteWorkPercent,
         materialFlags,
         site,
+        contractors,
         progress,
         setup?.boqCount,
         setup?.workerCount,
@@ -171,6 +179,9 @@ class HomeCubit extends Cubit<HomeState> {
       }),
       _services.siteAlerts.watchCached(projectId).listen((site) {
         if (site != null && !isClosed) emit(state.copyWith(site: site));
+      }),
+      _services.contractors.watchCached(projectId).listen((contractors) {
+        if (contractors != null && !isClosed) emit(state.copyWith(contractors: contractors));
       }),
       _services.syncCenter.watchOutbox().listen((items) {
         _queued = items;
