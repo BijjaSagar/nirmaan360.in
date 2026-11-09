@@ -22,7 +22,7 @@ class BoqExcelTest extends ReportsTestCase
         $this->assertStringContainsString('boq-RT1.xlsx', $response->headers->get('Content-Disposition'));
 
         $rows = $this->readWorkbook($response);
-        $this->assertSame(['section', 'code', 'description', 'unit', 'qty', 'rate', 'amount'], $rows[0]);
+        $this->assertSame(['section', 'code', 'description', 'unit', 'qty', 'rate', 'amount', 'category', 'details'], $rows[0]);
         $this->assertSame(['Substructure', '1.1', 'Excavation', 'cum'], array_slice($rows[1], 0, 4));
         $this->assertEquals(250.5, $rows[1][4]);
         $this->assertEquals(185.25, $rows[1][5]);
