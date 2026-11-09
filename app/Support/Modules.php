@@ -10,6 +10,25 @@ use App\Models\Organization;
  */
 final class Modules
 {
+    /** Menu heading for a project-level item that does not name its own. */
+    private const PROJECT_GROUPS = [
+        'procurement' => 'Procurement',
+        'finance' => 'Finance',
+        'billing_extras' => 'Finance',
+        'crm' => 'Finance',
+        'drawings' => 'Drawings',
+        'qhs' => 'Quality & safety',
+        'notify' => 'Labour',
+        'workforce' => 'Labour',
+        'agents' => 'AI',
+    ];
+
+    /** Headings appear in this order. Anything else follows, alphabetically. */
+    private const GROUP_ORDER = [
+        'Sales', 'Procurement', 'Finance', 'Payroll', 'Workforce', 'Labour', 'Plant & equipment',
+        'Quality & safety', 'Drawings', 'Reports & rates', 'AI', 'Developers', 'Security', 'Account',
+    ];
+
     /** Adds module permissions and plan features to the config. Runs after admin settings are applied. */
     public static function apply(): void
     {
@@ -47,19 +66,25 @@ final class Modules
     {
         $items = [];
 
-        foreach (config('modules', []) as $module) {
+        foreach (config('modules', []) as $key => $module) {
             if (isset($module['feature']) && ! $organization->allowsFeature($module['feature'])) {
                 continue;
             }
 
             foreach ($module['nav'] ?? [] as $item) {
                 if ($item['place'] === $place) {
-                    $items[] = ['can' => null, 'group' => null, 'order' => 100, 'active' => $item['route'], ...$item];
+                    $items[] = ['can' => null, 'group' => self::PROJECT_GROUPS[$key] ?? '', 'order' => 100, 'active' => $item['route'], ...$item];
                 }
             }
         }
 
-        usort($items, fn ($a, $b) => [$a['group'] ?? '', $a['order']] <=> [$b['group'] ?? '', $b['order']]);
+        $rank = fn (array $item) => [
+            $item['group'] === '' ? -1 : (array_search($item['group'], self::GROUP_ORDER, true) === false ? 99 : array_search($item['group'], self::GROUP_ORDER, true)),
+            $item['group'],
+            $item['order'],
+        ];
+
+        usort($items, fn ($a, $b) => $rank($a) <=> $rank($b));
 
         return $items;
     }
