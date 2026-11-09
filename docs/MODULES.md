@@ -58,3 +58,15 @@ Protect every route with `feature:<name>` when the module has a feature, and wit
 ## Definition of done
 
 Every module needs feature tests for permission and tenant isolation, service tests for money or quantity logic, UI text through `__()` with Hindi and Marathi translations, and a phone-width check of its screens. `php artisan test` must pass, `vendor/bin/pint --dirty` must be clean, and `npm run build` must work.
+
+## Plugging into site alerts and the site dashboard
+
+The `site_alerts` module runs other modules' checks and shows their cards without knowing them. Add keys to your own `config/modules/<name>.php`:
+
+| Key | Each class implements | What it does |
+| --- | --- | --- |
+| `alert_sources` | `App\Services\SiteAlerts\Contracts\AlertSource` | `types()` lists the alert types you raise; `findings(Project, today)` returns a `Finding` for every cause present today. The engine opens, refreshes and resolves alerts by type and reference, and tells people through `Notifier`. Runs daily (`site-alerts:scan`) and on demand. |
+| `dashboard_cards` | `App\Services\SiteAlerts\Contracts\DashboardCard` | `cards(Project, viewer, today)` yields `Card` objects, rendered on `/projects/{project}/site-dashboard` and returned by the mobile API as they are. |
+| `spend_sources` | `App\Services\SiteAlerts\Contracts\SpendSource` | `spent(Project)` is money already gone from your records, counted once, added into spend against budget. |
+
+A `Finding` with a rupee figure must set `needs` to `money.view` or `money.overview`; it is then hidden from, and never sent to, anyone without that permission. Its `notify` names the permission of the people told when it opens, or is null when your module has already told them itself. A card shows money only when `$viewer->can('money.overview')`. Work percentages come from `App\Services\SiteControl\WorkProgress`.

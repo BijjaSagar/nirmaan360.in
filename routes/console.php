@@ -15,3 +15,5 @@ Schedule::command('agents:daily-briefs')->dailyAt('08:00')->timezone('Asia/Kolka
 Schedule::command('reports:send-scheduled')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 // CRM module: follow-up reminders and tender deadline warnings go to the in-app bell.
 Schedule::command('crm:send-reminders')->everyTenMinutes()->withoutOverlapping();
+// Site alerts module: run every alert source over the live projects, open, refresh and resolve alerts, and tell the people concerned.
+Schedule::command('site-alerts:scan')->dailyAt('07:30')->timezone('Asia/Kolkata')->withoutOverlapping()->onOneServer();
