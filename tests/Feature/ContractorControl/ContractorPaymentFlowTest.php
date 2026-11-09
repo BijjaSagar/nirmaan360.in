@@ -173,6 +173,22 @@ class ContractorPaymentFlowTest extends TestCase
         $this->raise($order->refresh(), '100');
     }
 
+    public function test_a_returned_request_cannot_be_sent_again_once_the_contract_is_closed(): void
+    {
+        $order = $this->contract();
+        $payment = $this->raise($order, '5000');
+        app(ApprovalService::class)->act($payment->currentApproval, $this->manager, 'return', 'Wrong amount');
+        $order->update(['status' => 'CLOSED']);
+
+        try {
+            app(ContractorPaymentService::class)->resubmit($payment->refresh(), $this->paymentData(['amount' => '4000']), null, $this->supervisor);
+            $this->fail('A returned request was sent again on a closed contract.');
+        } catch (ValidationException) {
+            $this->assertSame('RETURNED', $payment->refresh()->status);
+            $this->assertSame('5000.00', $payment->amount);
+        }
+    }
+
     public function test_amounts_are_checked(): void
     {
         $order = $this->contract();

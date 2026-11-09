@@ -50,8 +50,10 @@ class WorkProgress
 
     /**
      * Value of the work done under a contract as a share of its value. Entries naming the
-     * work order always count. Untagged entries count only where this is the sole active
-     * work order on that BOQ line, because otherwise nobody can say whose work they were.
+     * work order always count. Untagged entries count only while no other active work order
+     * is on that BOQ line, because otherwise nobody can say whose work they were. A closed
+     * contract whose line has since gone to a new one therefore gives the line's untagged
+     * work up to it, so the same work is never counted on both.
      */
     public function workOrderPercent(WorkOrder $workOrder): string
     {
@@ -67,6 +69,21 @@ class WorkProgress
     }
 
     /**
+     * Earned value, contract value and work percent for several contracts at once, in the same
+     * few queries however many there are. The board and the company ledger read this.
+     *
+     * @param  Collection<int, WorkOrder>  $workOrders
+     * @return array<int, array{earned: string, total: string, percent: string}> Work order id => figures
+     */
+    public function workOrderFigures(Collection $workOrders): array
+    {
+        return array_map(
+            fn (array $values) => ['earned' => Dec::money($values[0]), 'total' => Dec::money($values[1]), 'percent' => $this->percent($values[0], $values[1])],
+            $this->valuesFor($workOrders),
+        );
+    }
+
+    /**
      * Work done on each line of a contract as a share of that line's own quantity,
      * attributed the same way as workOrderPercent.
      *
@@ -75,7 +92,7 @@ class WorkProgress
     public function workOrderLinePercents(WorkOrder $workOrder): array
     {
         $items = WorkOrderItem::where('work_order_id', $workOrder->id)->get(['id', 'boq_item_id', 'qty']);
-        $done = $this->doneOnContract($workOrder, $items);
+        $done = $this->doneOnContracts(collect([$workOrder]), collect([$workOrder->id => $items]))[$workOrder->id];
 
         return $items
             ->mapWithKeys(fn ($item) => [$item->id => $this->percent($this->capped($done[$item->boq_item_id], Dec::of($item->qty)), $item->qty)])
@@ -117,52 +134,74 @@ class WorkProgress
     /** @return array{0: BigDecimal, 1: BigDecimal} Value earned so far, and the contract's total value. */
     private function contractValues(WorkOrder $workOrder): array
     {
-        $items = WorkOrderItem::where('work_order_id', $workOrder->id)->get(['boq_item_id', 'qty', 'rate']);
-        $done = $this->doneOnContract($workOrder, $items);
-
-        $total = BigDecimal::zero();
-        $earned = BigDecimal::zero();
-
-        foreach ($items as $item) {
-            $qty = Dec::of($item->qty);
-            $rate = Dec::of($item->rate);
-            $total = $total->plus($qty->multipliedBy($rate));
-            $earned = $earned->plus($this->capped($done[$item->boq_item_id], $qty)->multipliedBy($rate));
-        }
-
-        return [$earned, $total];
+        return $this->valuesFor(collect([$workOrder]))[$workOrder->id];
     }
 
     /**
-     * Entries naming the work order always count. Untagged entries count only where this
-     * is the sole active work order on that BOQ line.
-     *
-     * @param  Collection<int, WorkOrderItem>  $items
-     * @return array<int, BigDecimal> BOQ item id => quantity done under this contract
+     * @param  Collection<int, WorkOrder>  $workOrders
+     * @return array<int, array{0: BigDecimal, 1: BigDecimal}> Work order id => [value earned so far, total value]
      */
-    private function doneOnContract(WorkOrder $workOrder, Collection $items): array
+    private function valuesFor(Collection $workOrders): array
     {
-        $ids = $items->pluck('boq_item_id');
+        $items = WorkOrderItem::whereIn('work_order_id', $workOrders->pluck('id'))
+            ->get(['work_order_id', 'boq_item_id', 'qty', 'rate'])
+            ->groupBy('work_order_id');
+        $done = $this->doneOnContracts($workOrders, $items);
+        $values = [];
 
-        $contractsOnLine = WorkOrderItem::whereIn('boq_item_id', $ids)
+        foreach ($workOrders as $workOrder) {
+            $total = BigDecimal::zero();
+            $earned = BigDecimal::zero();
+
+            foreach ($items->get($workOrder->id, collect()) as $item) {
+                $qty = Dec::of($item->qty);
+                $rate = Dec::of($item->rate);
+                $total = $total->plus($qty->multipliedBy($rate));
+                $earned = $earned->plus($this->capped($done[$workOrder->id][$item->boq_item_id], $qty)->multipliedBy($rate));
+            }
+
+            $values[$workOrder->id] = [$earned, $total];
+        }
+
+        return $values;
+    }
+
+    /**
+     * Entries naming a work order always count for it. Untagged entries count for a work
+     * order only while no other active work order is on that BOQ line.
+     *
+     * @param  Collection<int, WorkOrder>  $workOrders
+     * @param  Collection<int, Collection<int, WorkOrderItem>>  $itemsByOrder  Work order id => its lines
+     * @return array<int, array<int, BigDecimal>> Work order id => BOQ item id => quantity done under that contract
+     */
+    private function doneOnContracts(Collection $workOrders, Collection $itemsByOrder): array
+    {
+        $lineIds = $itemsByOrder->flatten(1)->pluck('boq_item_id')->unique()->values();
+
+        $activeOnLine = WorkOrderItem::whereIn('boq_item_id', $lineIds)
             ->whereHas('workOrder', fn ($query) => $query->where('status', 'ACTIVE'))
             ->get(['boq_item_id', 'work_order_id'])
             ->groupBy('boq_item_id')
-            ->map(fn ($rows) => $rows->pluck('work_order_id')->unique()->count());
+            ->map(fn ($rows) => $rows->pluck('work_order_id')->map(fn ($id) => (int) $id)->unique());
 
-        $entries = ProgressEntry::whereIn('boq_item_id', $ids)
-            ->where(fn ($query) => $query->where('work_order_id', $workOrder->id)->orWhereNull('work_order_id'))
-            ->get(['boq_item_id', 'work_order_id', 'qty_done']);
+        $entries = ProgressEntry::whereIn('boq_item_id', $lineIds)
+            ->where(fn ($query) => $query->whereIn('work_order_id', $workOrders->pluck('id'))->orWhereNull('work_order_id'))
+            ->get(['boq_item_id', 'work_order_id', 'qty_done'])
+            ->groupBy('boq_item_id');
 
         $done = [];
 
-        foreach ($ids as $id) {
-            $sole = ($contractsOnLine[$id] ?? 0) <= 1;
+        foreach ($workOrders as $workOrder) {
+            $done[$workOrder->id] = [];
 
-            $done[$id] = $entries
-                ->where('boq_item_id', $id)
-                ->filter(fn ($entry) => $entry->work_order_id !== null || $sole)
-                ->reduce(fn (BigDecimal $sum, $entry) => $sum->plus(Dec::of($entry->qty_done)), BigDecimal::zero());
+            foreach ($itemsByOrder->get($workOrder->id, collect()) as $item) {
+                $id = $item->boq_item_id;
+                $sole = ($activeOnLine[$id] ?? collect())->reject(fn (int $otherId) => $otherId === (int) $workOrder->id)->isEmpty();
+
+                $done[$workOrder->id][$id] = ($entries[$id] ?? collect())
+                    ->filter(fn ($entry) => $entry->work_order_id === null ? $sole : (int) $entry->work_order_id === (int) $workOrder->id)
+                    ->reduce(fn (BigDecimal $sum, $entry) => $sum->plus(Dec::of($entry->qty_done)), BigDecimal::zero());
+            }
         }
 
         return $done;

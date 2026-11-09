@@ -82,8 +82,9 @@ class WorkPaymentRatio
     {
         $workOrders = (new EloquentCollection($workOrders->all()))->loadMissing('items', 'party', 'project');
         $payments = $this->countedByContract($workOrders->modelKeys());
+        $figures = $this->progress->workOrderFigures($workOrders);
 
-        return $workOrders->toBase()->map(fn (WorkOrder $workOrder) => $this->row($workOrder, $payments->get($workOrder->id, collect())));
+        return $workOrders->toBase()->map(fn (WorkOrder $workOrder) => $this->row($workOrder, $payments->get($workOrder->id, collect()), $figures[$workOrder->id]));
     }
 
     public function forContract(WorkOrder $workOrder): array
@@ -184,17 +185,16 @@ class WorkPaymentRatio
         ];
     }
 
-    private function row(WorkOrder $workOrder, Collection $payments): array
+    /** @param  array{earned: string, total: string, percent: string}  $figures  From WorkProgress, worked out for the whole set at once. */
+    private function row(WorkOrder $workOrder, Collection $payments, array $figures): array
     {
-        $earned = $this->progress->workOrderEarned($workOrder);
-
         return [
             'work_order' => $workOrder,
             'party' => $workOrder->party,
             'project' => $workOrder->project,
             'advance' => $this->total($payments->where('is_advance', true)),
-            'earned' => $earned,
-            ...$this->compare($workOrder->totalValue(), $this->total($payments), $this->progress->workOrderPercent($workOrder), $workOrder->project->payment_gap_alert_pct, $earned),
+            'earned' => $figures['earned'],
+            ...$this->compare($figures['total'], $this->total($payments), $figures['percent'], $workOrder->project->payment_gap_alert_pct, $figures['earned']),
         ];
     }
 

@@ -36,15 +36,17 @@ class MigrationTest extends SiteProgressTestCase
         $this->assertCount(4, $names);
         $this->assertCount(4, array_unique($names));
 
-        $this->expectException(UniqueConstraintViolationException::class);
-
+        // In its own savepoint: on PostgreSQL a failed statement would otherwise abort the test's transaction.
         try {
-            DB::table('project_floors')->insert(['organization_id' => $this->organization->id, 'project_id' => $this->project->id, 'name' => '1st floor', 'sort' => 9]);
-        } finally {
-            $this->migration()->up();
-            $this->assertTrue(Schema::hasTable('mep_stage_cells'));
-            $this->assertTrue(Schema::hasColumn('project_floors', 'parent_id'));
-            $this->assertSame(2, ProjectFloor::where('name', 'like', 'Passage%')->count());
+            DB::transaction(fn () => DB::table('project_floors')->insert(['organization_id' => $this->organization->id, 'project_id' => $this->project->id, 'name' => '1st floor', 'sort' => 9]));
+            $this->fail('The old unique key on project and name was not rebuilt.');
+        } catch (UniqueConstraintViolationException) {
+            // The old key is back.
         }
+
+        $this->migration()->up();
+        $this->assertTrue(Schema::hasTable('mep_stage_cells'));
+        $this->assertTrue(Schema::hasColumn('project_floors', 'parent_id'));
+        $this->assertSame(2, ProjectFloor::where('name', 'like', 'Passage%')->count());
     }
 }

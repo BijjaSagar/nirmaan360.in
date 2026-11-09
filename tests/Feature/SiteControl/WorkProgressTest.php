@@ -113,6 +113,30 @@ class WorkProgressTest extends TestCase
         $this->assertSame('70.00', app(WorkProgress::class)->workOrderPercent($order));
     }
 
+    public function test_a_closed_contract_does_not_also_count_the_work_the_active_one_took_over(): void
+    {
+        $item = $this->makeBoqItem($this->project, '100.000', '500.00');
+        $closed = $this->contract($item, '100', '300.00', 'CLOSED');
+        $active = $this->contract($item, '100', '300.00');
+        $this->done($item, '70');
+
+        $progress = app(WorkProgress::class);
+
+        $this->assertSame('70.00', $progress->workOrderPercent($active));
+        $this->assertSame('0.00', $progress->workOrderPercent($closed));
+        $this->assertSame('0.00', $progress->workOrderEarned($closed));
+        $this->assertSame('0.00', $progress->workOrderLinePercents($closed)[$closed->items()->first()->id]);
+    }
+
+    public function test_a_closed_contract_alone_on_its_line_keeps_its_work(): void
+    {
+        $item = $this->makeBoqItem($this->project, '100.000', '500.00');
+        $closed = $this->contract($item, '100', '300.00', 'CLOSED');
+        $this->done($item, '100');
+
+        $this->assertSame('100.00', app(WorkProgress::class)->workOrderPercent($closed));
+    }
+
     public function test_time_used_and_lag_match_the_engineers_example(): void
     {
         $this->project->update(['start_date' => '2026-01-01', 'planned_days' => 180]);

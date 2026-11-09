@@ -84,10 +84,14 @@ class ContractorPaymentService
         return $payment;
     }
 
-    /** Correct a payment that was sent back, and send it again. */
+    /** Correct a payment that was sent back, and send it again. A closed contract takes no more, as in raise(). */
     public function resubmit(ContractorPayment $payment, array $data, ?UploadedFile $bill, User $by): ContractorPayment
     {
         abort_unless($this->canEdit($payment, $by), 403);
+
+        if ($payment->workOrder->isClosed()) {
+            throw ValidationException::withMessages(['work_order' => __('This contract is closed.')]);
+        }
 
         $path = $bill?->store($this->folder($payment->workOrder));
 
