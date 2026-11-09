@@ -51,7 +51,8 @@ class _BoqFormViewState extends State<_BoqFormView> {
         kind: PaperToastKind.success,
         icon: Icons.task_alt,
       );
-      Navigator.of(context).maybePop();
+      // A plain pop: maybePop would be vetoed by the step-back PopScope below.
+      Navigator.of(context).pop();
       return;
     }
     _description.clear();

@@ -422,6 +422,47 @@ void main() {
       expect(tester.widget<N360Chip>(find.widgetWithText(N360Chip, 'cum')).selected, isTrue);
     });
 
+    testWidgets('Save and finish leaves the form from the figures step', (tester) async {
+      setPhone(tester);
+      final app = await _emptyProject();
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(
+        fieldApp(
+          app.services,
+          Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute<void>(builder: (_) => const BoqFormScreen())),
+                child: const Text('open form'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await pumpDrift(tester);
+      await tester.tap(find.text('open form'));
+      await pumpDrift(tester, 20);
+
+      await tester.enterText(find.byType(TextField).first, 'M25 slab');
+      await tester.tap(find.widgetWithText(N360Chip, 'cum'));
+      await tester.pump();
+      await tester.tap(find.text('Next'));
+      await tester.pump();
+      await _tapKeys(tester, '10');
+      await tester.tap(find.text('Next'));
+      await tester.pump();
+      await _tapKeys(tester, '500');
+
+      await tester.tap(find.widgetWithText(GloveButton, 'Save and finish'));
+      await pumpDrift(tester, 30);
+
+      expect(find.byType(BoqFormScreen), findsNothing);
+      expect(find.text('open form'), findsOneWidget);
+    });
+
     testWidgets('the save buttons are large targets and the figures step has its keypad', (tester) async {
       setPhone(tester);
       final app = await TestApp.create(api: FakeApi()..grant('boq.manage'));

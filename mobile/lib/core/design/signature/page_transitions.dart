@@ -57,7 +57,7 @@ class _N360PageRoute<T> extends PageRoute<T> {
   /// drift back.
   @override
   bool canTransitionTo(TransitionRoute<dynamic> nextRoute) =>
-      nextRoute is! PageRoute<dynamic> || !nextRoute.fullscreenDialog;
+      nextRoute is PageRoute<dynamic> && !nextRoute.fullscreenDialog;
 
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {

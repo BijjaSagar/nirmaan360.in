@@ -900,5 +900,36 @@ void main() {
       expect(find.text('Loose sheet'), findsOneWidget);
     });
   });
+
+  testWidgets('the page beneath a sheet does not move', (tester) async {
+    late BuildContext pageContext;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Navigator(
+          pages: <Page<void>>[
+            N360Page<void>(
+              key: const ValueKey<String>('page'),
+              child: Builder(
+                builder: (context) {
+                  pageContext = context;
+                  return const Scaffold(body: Center(child: Text('underneath')));
+                },
+              ),
+            ),
+          ],
+          onDidRemovePage: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final Offset before = tester.getTopLeft(find.text('underneath'));
+
+    unawaited(showLedgerSheet<void>(pageContext, builder: (_) => const SizedBox(height: 200)));
+    await tester.pump(const Duration(milliseconds: 150));
+
+    expect(tester.getTopLeft(find.text('underneath')), before);
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('underneath')), before);
+  });
 }
 
