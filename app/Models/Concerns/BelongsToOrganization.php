@@ -11,6 +11,7 @@ trait BelongsToOrganization
     public static function bootBelongsToOrganization(): void
     {
         static::addGlobalScope(new OrganizationScope);
+        static::addGlobalScope(new ProjectAccessScope);
 
         static::creating(function ($model) {
             if (empty($model->organization_id) && Auth::check()) {

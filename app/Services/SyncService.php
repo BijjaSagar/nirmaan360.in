@@ -17,6 +17,7 @@ use App\Http\Presenters\WorkerPresenter;
 use App\Models\Attendance;
 use App\Models\AuditLog;
 use App\Models\BoqItem;
+use App\Models\Concerns\ProjectAccessScope;
 use App\Models\Dpr;
 use App\Models\Issue;
 use App\Models\MeasurementEntry;
@@ -112,10 +113,14 @@ class SyncService
         $can = fn (string $permission, ?string $feature = null): bool => $user->hasPermission($permission)
             && ($feature === null || $organization->allowsFeature($feature));
         $when = fn (bool $allowed, Closure $list) => $allowed ? $list()->values()->all() : [];
-        $delta = fn (Builder $query) => $query->when($since, fn ($q) => $q->where('updated_at', '>=', $since));
+
+        // Someone given a new role or projects needs that data in full, not just what changed lately.
+        // Deletions still use $since, because a full pull alone would not report them.
+        $changedSince = $since && $user->access_changed_at?->greaterThanOrEqualTo($since) ? null : $since;
+        $delta = fn (Builder $query) => $query->when($changedSince, fn ($q) => $q->where('updated_at', '>=', $changedSince));
 
         $canSeeMeasurements = $can('measurement.view', 'measurement');
-        $removedDrafts = $this->removedDrafts($since);
+        $removedDrafts = $this->removedDrafts($since, $user);
 
         return [
             'server_time' => $serverTime,
@@ -130,14 +135,14 @@ class SyncService
             'boq_balances' => $when($can('boq.view'), fn () => $this->movedBalances($since, $removedDrafts)),
             'workers' => $when($can('worker.view', 'labour'), fn () => $delta(Worker::query())->get()->map(WorkerPresenter::present(...))),
             'wallets' => $when($can('petty_cash.view', 'petty_cash'), fn () => PettyCashWallet::with('entries')->get()->map(WalletPresenter::present(...))),
-            'dprs' => $when($can('dpr.view', 'site'), fn () => $this->window(Dpr::with(DprPresenter::RELATIONS), $since, fn ($q) => $q->whereNotIn('status', self::FINAL_DOCUMENT_STATUSES))->get()->map(DprPresenter::present(...))),
-            'issues' => $when($can('issue.view', 'site'), fn () => $this->window(Issue::query(), $since, fn ($q) => $q->whereIn('status', self::OPEN_ISSUE_STATUSES))->get()->map(IssuePresenter::present(...))),
-            'attendance' => $when($can('attendance.view', 'labour'), fn () => $this->window(Attendance::query(), $since)->get()->map(AttendancePresenter::present(...))),
-            'petty_cash_entries' => $when($can('petty_cash.view', 'petty_cash'), fn () => $this->window(PettyCashEntry::query(), $since)->get()->map(PettyEntryPresenter::present(...))),
-            'measurements' => $when($canSeeMeasurements, fn () => $this->window(MeasurementEntry::with(MeasurementPresenter::RELATIONS), $since, fn ($q) => $q->whereNotIn('status', self::FINAL_DOCUMENT_STATUSES))->get()->map(MeasurementPresenter::present(...))),
+            'dprs' => $when($can('dpr.view', 'site'), fn () => $this->window(Dpr::with(DprPresenter::RELATIONS), $changedSince, fn ($q) => $q->whereNotIn('status', self::FINAL_DOCUMENT_STATUSES))->get()->map(DprPresenter::present(...))),
+            'issues' => $when($can('issue.view', 'site'), fn () => $this->window(Issue::query(), $changedSince, fn ($q) => $q->whereIn('status', self::OPEN_ISSUE_STATUSES))->get()->map(IssuePresenter::present(...))),
+            'attendance' => $when($can('attendance.view', 'labour'), fn () => $this->window(Attendance::query(), $changedSince)->get()->map(AttendancePresenter::present(...))),
+            'petty_cash_entries' => $when($can('petty_cash.view', 'petty_cash'), fn () => $this->window(PettyCashEntry::query(), $changedSince)->get()->map(PettyEntryPresenter::present(...))),
+            'measurements' => $when($canSeeMeasurements, fn () => $this->window(MeasurementEntry::with(MeasurementPresenter::RELATIONS), $changedSince, fn ($q) => $q->whereNotIn('status', self::FINAL_DOCUMENT_STATUSES))->get()->map(MeasurementPresenter::present(...))),
             'approvals' => ApprovalPresenter::collection($this->approvals->inbox($user)[0], $user),
             'deleted' => [
-                'projects' => $can('project.view') ? $this->trashedIds(Project::class, $since) : [],
+                'projects' => $can('project.view') ? [...$this->trashedIds(Project::class, $since), ...$this->projectsOutOfReach($user)] : [],
                 'boq_items' => $can('boq.view') ? $this->trashedIds(BoqItem::class, $since) : [],
                 'workers' => $can('worker.view', 'labour') ? $this->trashedIds(Worker::class, $since) : [],
                 'issues' => $can('issue.view', 'site') ? $this->trashedIds(Issue::class, $since) : [],
@@ -185,17 +190,38 @@ class SyncService
         return $since ? $model::onlyTrashed()->where('deleted_at', '>=', $since)->pluck('id')->all() : [];
     }
 
-    /** Deleted drafts are hard-deleted, so only the audit log still knows about them. */
-    private function removedDrafts(?Carbon $since): Collection
+    /** Projects taken away from a limited person, so their device drops what it still holds. */
+    private function projectsOutOfReach(User $user): array
+    {
+        if (! $user->isProjectLimited()) {
+            return [];
+        }
+
+        return Project::withoutGlobalScope(ProjectAccessScope::class)->whereNotIn('id', $user->assignedProjectIds())->pluck('id')->all();
+    }
+
+    /**
+     * Deleted drafts are hard-deleted, so only the audit log still knows about them.
+     * Audit rows carry no project column, so a limited person's are filtered from the old values.
+     */
+    private function removedDrafts(?Carbon $since, User $user): Collection
     {
         if (! $since) {
             return collect();
         }
 
-        return AuditLog::where('action', 'deleted')
+        $logs = AuditLog::where('action', 'deleted')
             ->where('auditable_type', (new MeasurementEntry)->getMorphClass())
             ->where('created_at', '>=', $since)
             ->get(['auditable_id', 'old_values']);
+
+        if (! $user->isProjectLimited()) {
+            return $logs;
+        }
+
+        $allowed = $user->assignedProjectIds()->pluck('project_id')->map(fn ($id) => (int) $id)->all();
+
+        return $logs->filter(fn (AuditLog $log) => in_array((int) ($log->old_values['project_id'] ?? 0), $allowed, true))->values();
     }
 
     /** A measurement never touches boq_items.updated_at, so ledger moves are found from the entries. */
