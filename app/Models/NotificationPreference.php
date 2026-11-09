@@ -11,6 +11,8 @@ class NotificationPreference extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $guarded = [];
 
     protected $attributes = ['email' => true, 'push' => true, 'whatsapp' => false];

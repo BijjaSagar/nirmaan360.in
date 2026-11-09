@@ -11,6 +11,8 @@ class DeviceToken extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $guarded = [];
 
     protected $hidden = ['token', 'token_hash'];

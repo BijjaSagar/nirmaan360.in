@@ -112,6 +112,7 @@ class CompanyDeletionService
             $organizationId = $request->organization_id;
             $files = $this->data->storedFiles($organizationId);
 
+            $this->retainTaxRecords($organizationId);
             $this->eraseSignInTraces($organizationId);
 
             // Foreign keys remove most rows. The sweep catches tables other modules made without one.
@@ -142,6 +143,31 @@ class CompanyDeletionService
         Log::info('Company purged', ['request_id' => $requestId]);
 
         return true;
+    }
+
+    /** GST law requires us to keep records of what we sold, so paid subscriptions outlive the company. */
+    private function retainTaxRecords(int $organizationId): void
+    {
+        $company = DB::table('organizations')->where('id', $organizationId)->first(['name', 'gstin']);
+
+        foreach (DB::table('billing_payments')->where('organization_id', $organizationId)->where('status', 'paid')->get() as $payment) {
+            DB::table('retained_billing_records')->insert([
+                'original_payment_id' => $payment->id,
+                'company_name' => $company->name,
+                'gstin' => $company->gstin,
+                'plan' => $payment->plan,
+                'cycle' => $payment->cycle,
+                'base_amount' => $payment->base_amount,
+                'gst_amount' => $payment->gst_amount,
+                'total_amount' => $payment->total_amount,
+                'currency' => $payment->currency,
+                'gateway_order_id' => $payment->gateway_order_id,
+                'gateway_payment_id' => $payment->gateway_payment_id,
+                'paid_at' => $payment->paid_at,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     /** These tables point at a user or a phone number and carry no organization_id. */
