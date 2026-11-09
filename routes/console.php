@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('company-data:housekeeping')->dailyAt('02:30')->withoutOverlapping();
+Schedule::command('planning:delay-alerts')->dailyAt('07:00')->timezone('Asia/Kolkata');
