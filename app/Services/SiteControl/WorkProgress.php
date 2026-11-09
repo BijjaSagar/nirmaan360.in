@@ -11,6 +11,7 @@ use App\Support\Dec;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /** The one place "how much work is done" is worked out. Every percentage is a string with two decimals. */
 class WorkProgress
@@ -54,36 +55,31 @@ class WorkProgress
      */
     public function workOrderPercent(WorkOrder $workOrder): string
     {
-        $items = WorkOrderItem::where('work_order_id', $workOrder->id)->get(['boq_item_id', 'qty', 'rate']);
-        $ids = $items->pluck('boq_item_id');
-
-        $contractsOnLine = WorkOrderItem::whereIn('boq_item_id', $ids)
-            ->whereHas('workOrder', fn ($query) => $query->where('status', 'ACTIVE'))
-            ->get(['boq_item_id', 'work_order_id'])
-            ->groupBy('boq_item_id')
-            ->map(fn ($rows) => $rows->pluck('work_order_id')->unique()->count());
-
-        $entries = ProgressEntry::whereIn('boq_item_id', $ids)
-            ->where(fn ($query) => $query->where('work_order_id', $workOrder->id)->orWhereNull('work_order_id'))
-            ->get(['boq_item_id', 'work_order_id', 'qty_done']);
-
-        $total = BigDecimal::zero();
-        $earned = BigDecimal::zero();
-
-        foreach ($items as $item) {
-            $sole = ($contractsOnLine[$item->boq_item_id] ?? 0) <= 1;
-            $done = $entries
-                ->where('boq_item_id', $item->boq_item_id)
-                ->filter(fn ($entry) => $entry->work_order_id !== null || $sole)
-                ->reduce(fn (BigDecimal $sum, $entry) => $sum->plus(Dec::of($entry->qty_done)), BigDecimal::zero());
-
-            $qty = Dec::of($item->qty);
-            $rate = Dec::of($item->rate);
-            $total = $total->plus($qty->multipliedBy($rate));
-            $earned = $earned->plus($this->capped($done, $qty)->multipliedBy($rate));
-        }
+        [$earned, $total] = $this->contractValues($workOrder);
 
         return $this->percent($earned, $total);
+    }
+
+    /** Rupee value of the work done under a contract, by the same attribution as workOrderPercent. */
+    public function workOrderEarned(WorkOrder $workOrder): string
+    {
+        return Dec::money($this->contractValues($workOrder)[0]);
+    }
+
+    /**
+     * Work done on each line of a contract as a share of that line's own quantity,
+     * attributed the same way as workOrderPercent.
+     *
+     * @return array<int, string> Work order item id => percent
+     */
+    public function workOrderLinePercents(WorkOrder $workOrder): array
+    {
+        $items = WorkOrderItem::where('work_order_id', $workOrder->id)->get(['id', 'boq_item_id', 'qty']);
+        $done = $this->doneOnContract($workOrder, $items);
+
+        return $items
+            ->mapWithKeys(fn ($item) => [$item->id => $this->percent($this->capped($done[$item->boq_item_id], Dec::of($item->qty)), $item->qty)])
+            ->all();
     }
 
     /** Days elapsed ÷ planned days, measured from the project's start date. Null when either is missing. */
@@ -116,6 +112,60 @@ class WorkProgress
         }
 
         return Dec::money(Dec::of($part)->multipliedBy(100)->dividedBy($whole, 6, RoundingMode::HalfUp));
+    }
+
+    /** @return array{0: BigDecimal, 1: BigDecimal} Value earned so far, and the contract's total value. */
+    private function contractValues(WorkOrder $workOrder): array
+    {
+        $items = WorkOrderItem::where('work_order_id', $workOrder->id)->get(['boq_item_id', 'qty', 'rate']);
+        $done = $this->doneOnContract($workOrder, $items);
+
+        $total = BigDecimal::zero();
+        $earned = BigDecimal::zero();
+
+        foreach ($items as $item) {
+            $qty = Dec::of($item->qty);
+            $rate = Dec::of($item->rate);
+            $total = $total->plus($qty->multipliedBy($rate));
+            $earned = $earned->plus($this->capped($done[$item->boq_item_id], $qty)->multipliedBy($rate));
+        }
+
+        return [$earned, $total];
+    }
+
+    /**
+     * Entries naming the work order always count. Untagged entries count only where this
+     * is the sole active work order on that BOQ line.
+     *
+     * @param  Collection<int, WorkOrderItem>  $items
+     * @return array<int, BigDecimal> BOQ item id => quantity done under this contract
+     */
+    private function doneOnContract(WorkOrder $workOrder, Collection $items): array
+    {
+        $ids = $items->pluck('boq_item_id');
+
+        $contractsOnLine = WorkOrderItem::whereIn('boq_item_id', $ids)
+            ->whereHas('workOrder', fn ($query) => $query->where('status', 'ACTIVE'))
+            ->get(['boq_item_id', 'work_order_id'])
+            ->groupBy('boq_item_id')
+            ->map(fn ($rows) => $rows->pluck('work_order_id')->unique()->count());
+
+        $entries = ProgressEntry::whereIn('boq_item_id', $ids)
+            ->where(fn ($query) => $query->where('work_order_id', $workOrder->id)->orWhereNull('work_order_id'))
+            ->get(['boq_item_id', 'work_order_id', 'qty_done']);
+
+        $done = [];
+
+        foreach ($ids as $id) {
+            $sole = ($contractsOnLine[$id] ?? 0) <= 1;
+
+            $done[$id] = $entries
+                ->where('boq_item_id', $id)
+                ->filter(fn ($entry) => $entry->work_order_id !== null || $sole)
+                ->reduce(fn (BigDecimal $sum, $entry) => $sum->plus(Dec::of($entry->qty_done)), BigDecimal::zero());
+        }
+
+        return $done;
     }
 
     /** @return array<int, string> */
