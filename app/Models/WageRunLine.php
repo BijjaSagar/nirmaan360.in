@@ -12,6 +12,8 @@ class WageRunLine extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'run';
+
     protected $guarded = [];
 
     protected static function booted(): void

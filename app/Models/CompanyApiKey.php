@@ -14,6 +14,8 @@ class CompanyApiKey extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $guarded = [];
 
     protected $hidden = ['key_hash'];

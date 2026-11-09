@@ -12,6 +12,8 @@ class AdvanceRecovery extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $guarded = [];
 
     protected static function booted(): void
