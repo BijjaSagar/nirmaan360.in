@@ -6,6 +6,7 @@ use App\Exceptions\PlanLimitReachedException;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\ProjectSetup\StarterBoq;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use Illuminate\Support\Arr;
@@ -19,6 +20,7 @@ class ProjectService
     public function rules(User $user, ?Project $project = null): array
     {
         return [
+            ...$this->setupRules($user),
             'deduction_order' => ['required', Rule::in(array_keys(config('buildos.deduction_orders')))],
             'code' => [
                 'required', 'string', 'max:32', 'alpha_dash',
@@ -38,6 +40,26 @@ class ProjectService
             'advance_recovery_pct' => ['required', 'numeric', 'between:0,100'],
             'measurement_tolerance_pct' => ['required', 'numeric', 'between:0,100'],
             'deduction_basis' => ['required', Rule::in(['gross', 'running'])],
+        ];
+    }
+
+    /**
+     * Size, time and budget of the project. All optional. The budget and its margin are money, so
+     * they are accepted only from someone who may see the budget; for anyone else they are left
+     * out of the rules and the saved values stay as they are.
+     */
+    public function setupRules(User $user): array
+    {
+        return [
+            'plot_size' => ['nullable', 'string', 'max:60'],
+            'built_up_area' => ['nullable', 'string', 'max:60'],
+            'planned_days' => ['nullable', 'integer', 'min:1', 'max:5000'],
+            'deadline_date' => ['nullable', 'date'],
+            'boq_mode' => ['sometimes', Rule::in(StarterBoq::MODES)],
+            ...($user->can('money.overview') ? [
+                'budget_amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999999'],
+                'budget_margin_pct' => ['sometimes', 'required', 'numeric', 'between:0,100'],
+            ] : []),
         ];
     }
 

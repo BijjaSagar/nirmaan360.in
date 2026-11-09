@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Models\Concerns\RecordsBoqRevisions;
 use App\Support\Dec;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BoqItem extends Model
 {
-    use Auditable, BelongsToOrganization, SoftDeletes;
+    use Auditable, BelongsToOrganization, RecordsBoqRevisions, SoftDeletes;
 
     protected $guarded = [];
 

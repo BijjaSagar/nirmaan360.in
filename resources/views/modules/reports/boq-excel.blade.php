@@ -19,7 +19,7 @@
                     @foreach ($import['errors'] as $error)
                         <tr>
                             <td class="num">{{ $error['row'] > 0 ? $error['row'] : '—' }}</td>
-                            <td>{{ $error['field'] ? __(['section' => 'Section', 'code' => 'Item code', 'description' => 'Description', 'unit' => 'Unit', 'qty' => 'Quantity', 'rate' => 'Rate'][$error['field']] ?? $error['field']) : __('File') }}</td>
+                            <td>{{ $error['field'] ? __(['section' => 'Section', 'code' => 'Item code', 'description' => 'Description', 'unit' => 'Unit', 'qty' => 'Quantity', 'rate' => 'Rate', 'category' => 'Category', 'details' => 'Details'][$error['field']] ?? $error['field']) : __('File') }}</td>
                             <td>{{ $error['message'] }}</td>
                         </tr>
                     @endforeach

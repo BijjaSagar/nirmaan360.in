@@ -5,9 +5,13 @@ namespace App\Services;
 use App\Models\BoqItem;
 use App\Models\BoqSection;
 use App\Models\Project;
+use App\Services\ProjectSetup\BoqCategories;
+use App\Services\ProjectSetup\BoqRevisions;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BoqService
 {
@@ -21,7 +25,63 @@ class BoqService
             'unit' => ['required', 'string', 'max:16'],
             'qty' => ['required', 'numeric', 'min:0', 'max:99999999999'],
             'rate' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
+            'category' => ['nullable', Rule::in(BoqCategories::keys())],
+            'details' => ['nullable', 'string', 'max:10000'],
         ];
+    }
+
+    /** Why a line is being changed or removed. The BOQ is never locked, so the reason is kept with the change. */
+    public function reasonRules(): array
+    {
+        return ['reason' => ['required', 'string', 'max:500']];
+    }
+
+    /**
+     * Revise a line. The change is saved in the BOQ history with the reason. Measurements, daily
+     * reports and bills are left exactly as they were.
+     */
+    public function update(BoqItem $item, array $data, string $reason): BoqItem
+    {
+        $data = array_intersect_key($data, array_flip(['code', 'description', 'unit', 'qty', 'rate', 'category', 'details']));
+
+        if (isset($data['qty'])) {
+            $data['qty'] = Dec::qty($data['qty']);
+
+            // Quantities can be revised, but never below what has already been approved.
+            $approved = Dec::of($item->measurements()->where('status', 'APPROVED')->sum('qty'));
+
+            if ($approved->isGreaterThan(Dec::of($data['qty']))) {
+                throw ValidationException::withMessages(['qty' => __('Quantity cannot be lower than the approved quantity (:qty).', ['qty' => fmt_qty($approved)])]);
+            }
+        }
+
+        if (isset($data['rate'])) {
+            $data['rate'] = Dec::money($data['rate']);
+        }
+
+        // Recorded quantities are in this unit. Changing it would change what they mean.
+        if (isset($data['unit']) && $data['unit'] !== $item->unit && $this->hasRecords($item)) {
+            throw ValidationException::withMessages(['unit' => __('The unit cannot change once this item has measurements or bills. Add a new item instead.')]);
+        }
+
+        BoqRevisions::with($reason, 'edit', fn () => $item->update($data));
+
+        return $item;
+    }
+
+    /** Remove a line that nothing has been measured or billed against. The removal is kept in the BOQ history. */
+    public function delete(BoqItem $item, string $reason): void
+    {
+        if ($this->hasRecords($item)) {
+            throw ValidationException::withMessages(['boq' => __('This item has measurements or bills and cannot be removed.')]);
+        }
+
+        BoqRevisions::with($reason, 'remove', fn () => $item->delete());
+    }
+
+    private function hasRecords(BoqItem $item): bool
+    {
+        return $item->measurements()->exists() || $item->billItems()->exists();
     }
 
     /**
