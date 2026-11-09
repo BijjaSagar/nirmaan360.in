@@ -4,6 +4,7 @@
     <div x-data="{ add: false, edit: null }">
         <x-page-header :title="__('BOQ & ledger')" :subtitle="$project->name.' · '.__('Total').' '.inr($total)">
             <a href="{{ route('boq.export', $project) }}" class="btn btn-ghost">{{ __('Export CSV') }}</a>
+            @include('modules.reports._boq-buttons', ['project' => $project])
             @can('boq.manage')
                 <button type="button" class="btn btn-primary" @click="add = !add">{{ __('Add or import') }}</button>
             @endcan
@@ -15,6 +16,7 @@
                     @csrf
                     <div class="card-head"><h2 class="card-title">{{ __('Add BOQ item') }}</h2></div>
                     <div class="grid gap-3 p-4 sm:grid-cols-4">
+                        @include('modules.reports._rate-picker')
                         <x-field :label="__('Section')" name="section" class="sm:col-span-2"><input id="section" name="section" value="{{ old('section') }}" class="input"></x-field>
                         <x-field :label="__('Item code')" name="code" class="sm:col-span-2"><input id="code" name="code" value="{{ old('code') }}" class="input" required></x-field>
                         <x-field :label="__('Description')" name="description" class="sm:col-span-4"><textarea id="description" name="description" rows="2" class="input" required>{{ old('description') }}</textarea></x-field>

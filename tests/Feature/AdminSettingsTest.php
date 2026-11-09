@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\AdminSettingsController;
 use App\Models\PlatformSetting;
 use App\Models\SiteText;
 use App\Models\User;
@@ -40,6 +41,8 @@ class AdminSettingsTest extends TestCase
 
         foreach (config('buildos.plans') as $key => $plan) {
             $plans[$key] = collect($plan)->only(['label', 'tagline', 'monthly', 'yearly', 'max_users', 'max_projects', 'features'])->all();
+            // Modules add their own plan features from config/modules. The form only offers the platform's own list.
+            $plans[$key]['features'] = array_values(array_intersect($plans[$key]['features'], array_keys(AdminSettingsController::FEATURES)));
 
             if (! $plan['buyable']) {
                 unset($plans[$key]['monthly'], $plans[$key]['yearly']);
