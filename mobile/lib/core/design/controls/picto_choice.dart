@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../haptics.dart';
 import '../internal/press_target.dart';
+import '../internal/soft_surface.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
@@ -102,7 +103,7 @@ class _PictoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color ink = selected ? N360Colors.sheet : N360Colors.ink;
+    const Color ink = N360Colors.ink;
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
@@ -123,19 +124,21 @@ class _PictoTile extends StatelessWidget {
         ],
       ),
       builder: (context, depth, child) {
-        final double sink = depth * (N360Size.edge - 1);
-        return CustomPaint(
-          painter: _TilePainter(selected: selected, sink: sink),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: N360Size.edge),
-            child: Transform.translate(
-              offset: Offset(0, sink),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 73),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: N360Space.xs, vertical: 7),
-                  child: Center(child: child),
-                ),
+        return Transform.scale(
+          scale: pressedScale(depth),
+          child: CustomPaint(
+            painter: selected
+                ? const SoftSurfacePainter(
+                    radius: N360Radius.tile,
+                    gradient: N360Gradients.gold,
+                    edge: Color(0x55FFFFFF),
+                  )
+                : const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.rule),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 76),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: N360Space.xs, vertical: 8),
+                child: Center(child: child),
               ),
             ),
           ),
@@ -143,36 +146,6 @@ class _PictoTile extends StatelessWidget {
       },
     );
   }
-}
-
-class _TilePainter extends CustomPainter {
-  const _TilePainter({required this.selected, required this.sink});
-
-  final bool selected;
-  final double sink;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const radius = Radius.circular(N360Radius.small);
-    canvas.drawRRect(
-      RRect.fromLTRBR(0, N360Size.edge, size.width, size.height, radius),
-      Paint()..color = selected ? N360Colors.inkEdge : N360Colors.paperEdge,
-    );
-    final RRect face = RRect.fromLTRBR(0, sink, size.width, size.height - N360Size.edge + sink, radius);
-    canvas.drawRRect(face, Paint()..color = selected ? N360Colors.ink : N360Colors.sheet);
-    if (!selected) {
-      canvas.drawRRect(
-        face.deflate(0.5),
-        Paint()
-          ..color = N360Colors.ruleStrong
-          ..style = PaintingStyle.stroke,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_TilePainter oldDelegate) =>
-      oldDelegate.selected != selected || oldDelegate.sink != sink;
 }
 
 /// Wraps between words but never inside one: if the longest word is wider than

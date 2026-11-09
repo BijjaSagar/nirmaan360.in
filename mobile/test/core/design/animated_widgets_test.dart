@@ -321,6 +321,18 @@ void main() {
       expect(find.text('Second'), findsOneWidget);
     });
 
+    testWidgets('reduced motion gives the route a zero transition', (tester) async {
+      await pumpDesign(tester, const SizedBox.shrink(), disableAnimations: true);
+      final BuildContext reducedContext = tester.element(find.byType(Scaffold));
+      final route = const N360Page<void>(child: SizedBox()).createRoute(reducedContext) as TransitionRoute<void>;
+      expect(route.transitionDuration, Duration.zero);
+
+      await pumpDesign(tester, const SizedBox.shrink());
+      final BuildContext normalContext = tester.element(find.byType(Scaffold));
+      final normal = const N360Page<void>(child: SizedBox()).createRoute(normalContext) as TransitionRoute<void>;
+      expect(normal.transitionDuration, N360Durations.page);
+    });
+
     testWidgets('reduced motion: no slide, the page is simply there', (tester) async {
       await tester.pumpWidget(app(second: false, reduced: true));
       await tester.pumpWidget(app(second: true, reduced: true));
@@ -590,7 +602,7 @@ void main() {
       expect(find.text('Saved'), findsNothing);
     });
 
-    testWidgets('LedgerPaper.root paints grid once, and pages under it do not double it', (tester) async {
+    testWidgets('LedgerPaper.root paints once, and pages under it pass through', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildN360Theme(),

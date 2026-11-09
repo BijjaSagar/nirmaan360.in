@@ -3,17 +3,16 @@ import 'package:flutter/material.dart';
 import '../motion.dart';
 import '../tokens.dart';
 
-/// A thin rule drawn across the top of a sheet while syncing. A ruling pen is
-/// the metaphor: a stroke grows from the left, reaches the edge and starts over.
-/// Pass [value] for determinate progress. With reduced motion the rule is simply
-/// there, so the state still shows.
+/// A thin bar that sweeps across the top of a screen while syncing. Pass [value]
+/// for determinate progress. With reduced motion it is shown as still dashes, so
+/// the state is still there.
 class ProgressRule extends StatefulWidget {
   const ProgressRule({
     super.key,
     this.active = true,
     this.value,
-    this.color = N360Colors.laterite,
-    this.height = 3,
+    this.color = N360Colors.haldi,
+    this.height = 4,
     this.semanticsLabel,
   });
 
@@ -115,8 +114,9 @@ class _RulePainter extends CustomPainter {
       right = N360Curves.rise.transform((t * 1.3).clamp(0.0, 1.0));
     }
     if (right <= left) return;
-    canvas.drawRect(
-      Rect.fromLTRB(left * size.width, 0, right * size.width, size.height),
+    final Rect rect = Rect.fromLTRB(left * size.width, 0, right * size.width, size.height);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(size.height / 2)),
       Paint()..color = color,
     );
   }
@@ -126,7 +126,7 @@ class _RulePainter extends CustomPainter {
       oldDelegate.color != color || oldDelegate.from != from || oldDelegate.to != to;
 }
 
-/// The still form of a working rule: dashes read as unfinished, where a solid
+/// The still form of a working bar: dashes read as unfinished, where a solid
 /// line would read as done.
 class _DashedRulePainter extends CustomPainter {
   const _DashedRulePainter({required this.color});
@@ -138,7 +138,10 @@ class _DashedRulePainter extends CustomPainter {
     canvas.clipRect(Offset.zero & size);
     final Paint paint = Paint()..color = color;
     for (double x = 0; x < size.width; x += 18) {
-      canvas.drawRect(Rect.fromLTWH(x, 0, 10, size.height), paint);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(Rect.fromLTWH(x, 0, 10, size.height), Radius.circular(size.height / 2)),
+        paint,
+      );
     }
   }
 

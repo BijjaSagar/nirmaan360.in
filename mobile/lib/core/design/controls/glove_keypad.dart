@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../haptics.dart';
 import '../internal/press_target.dart';
+import '../internal/soft_surface.dart';
 import '../tokens.dart';
 import '../typography.dart';
-import 'glove_stepper.dart';
 
 /// An on-screen numeric keypad, because a phone's own keyboard cannot be used
 /// with gloves. Keys are 64dp and the next-field key sits under the thumb.
@@ -151,51 +151,18 @@ class _DigitKey extends StatelessWidget {
       haptic: N360Haptics.tap,
       minHeight: N360Size.key,
       semanticsLabel: digit,
-      child: Text(digit, style: N360Type.figureLarge.copyWith(fontSize: 30, height: 1.1)),
+      child: Text(digit, style: N360Type.figureLarge.copyWith(height: 1.1)),
       builder: (context, depth, child) {
-        final double sink = depth * (N360Size.edge - 1);
-        return CustomPaint(
-          painter: StepKeyPainter(
-            face: N360Colors.sheet,
-            edge: N360Colors.paperEdge,
-            sink: sink,
-            outlined: false,
-          ),
-          foregroundPainter: _KeyBorderPainter(sink: sink),
-          child: SizedBox(
-            height: N360Size.key,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: N360Size.edge),
-              child: Transform.translate(
-                offset: Offset(0, sink),
-                child: Center(child: child),
-              ),
-            ),
+        return Transform.scale(
+          scale: pressedScale(depth),
+          child: CustomPaint(
+            painter: const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.cardEdge),
+            child: SizedBox(height: N360Size.key, child: Center(child: child)),
           ),
         );
       },
     );
   }
-}
-
-class _KeyBorderPainter extends CustomPainter {
-  const _KeyBorderPainter({required this.sink});
-
-  final double sink;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Rect face = Rect.fromLTRB(0.5, sink + 0.5, size.width - 0.5, size.height - N360Size.edge + sink - 0.5);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(face, const Radius.circular(N360Radius.small)),
-      Paint()
-        ..color = N360Colors.rule
-        ..style = PaintingStyle.stroke,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_KeyBorderPainter oldDelegate) => oldDelegate.sink != sink;
 }
 
 class _ActionKey extends StatelessWidget {
@@ -210,13 +177,16 @@ class _ActionKey extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool on = onTap != null;
-    final Color face = !on
-        ? N360Colors.paper2
-        : (primary ? N360Colors.laterite : N360Colors.ink2);
-    final Color edge = !on
-        ? N360Colors.rule
-        : (primary ? N360Colors.lateriteEdge : N360Colors.ink);
-    final Color ink = on ? N360Colors.sheet : N360Colors.inkLabel;
+    final SoftSurfacePainter surface = !on
+        ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper2)
+        : primary
+            ? const SoftSurfacePainter(
+                radius: N360Radius.tile,
+                gradient: N360Gradients.gold,
+                edge: Color(0x55FFFFFF),
+              )
+            : const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper2);
+    final Color ink = on ? N360Colors.ink : N360Colors.inkLabel;
 
     return PressTarget(
       onTap: onTap,
@@ -227,7 +197,7 @@ class _ActionKey extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Icon(icon, size: 30, color: ink),
+          Icon(icon, size: 28, color: ink),
           const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -236,15 +206,11 @@ class _ActionKey extends StatelessWidget {
         ],
       ),
       builder: (context, depth, child) {
-        final double sink = depth * (N360Size.edge - 1);
-        return CustomPaint(
-          painter: StepKeyPainter(face: face, edge: edge, sink: sink, outlined: false),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: N360Size.edge),
-            child: Transform.translate(
-              offset: Offset(0, sink),
-              child: SizedBox.expand(child: child),
-            ),
+        return Transform.scale(
+          scale: pressedScale(depth),
+          child: CustomPaint(
+            painter: surface,
+            child: SizedBox.expand(child: child),
           ),
         );
       },

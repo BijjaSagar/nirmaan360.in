@@ -25,11 +25,16 @@ class N360Page<T> extends Page<T> {
   final bool fullscreenDialog;
 
   @override
-  Route<T> createRoute(BuildContext context) => _N360PageRoute<T>(page: this);
+  Route<T> createRoute(BuildContext context) =>
+      _N360PageRoute<T>(page: this, duration: context.motion.page);
 }
 
 class _N360PageRoute<T> extends PageRoute<T> {
-  _N360PageRoute({required N360Page<T> page}) : super(settings: page, fullscreenDialog: page.fullscreenDialog);
+  _N360PageRoute({required N360Page<T> page, required this.duration})
+      : super(settings: page, fullscreenDialog: page.fullscreenDialog);
+
+  /// Zero when the user has asked the system to remove animations.
+  final Duration duration;
 
   N360Page<T> get _page => settings as N360Page<T>;
 
@@ -43,7 +48,7 @@ class _N360PageRoute<T> extends PageRoute<T> {
   bool get maintainState => true;
 
   @override
-  Duration get transitionDuration => N360Durations.page;
+  Duration get transitionDuration => duration;
 
   @override
   Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
@@ -124,7 +129,7 @@ class _SeamPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final bool moving = animation.value < 1 || secondary.value > 0;
     if (!moving) return;
-    canvas.drawRect(Rect.fromLTWH(0, 0, 1, size.height), Paint()..color = N360Colors.ruleStrong);
+    canvas.drawRect(Rect.fromLTWH(0, 0, 1, size.height), Paint()..color = N360Colors.rule);
   }
 
   @override
@@ -171,8 +176,8 @@ class LedgerHero extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: N360Colors.sheet,
-            border: Border.all(color: N360Colors.rule),
-            borderRadius: N360Radius.sm,
+            border: Border.all(color: N360Colors.cardEdge),
+            borderRadius: N360Radius.md,
           ),
           child: ClipRect(
             child: FittedBox(

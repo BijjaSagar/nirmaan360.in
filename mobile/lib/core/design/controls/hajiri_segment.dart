@@ -133,13 +133,13 @@ class _HajiriPainter extends CustomPainter {
   final String? semanticsLabel;
   final ValueChanged<HajiriValue> onChoose;
 
-  static const double _edge = 2;
+  static const double _gap = 6;
 
-  static ({Color fill, Color ink, Color edge}) _look(HajiriValue value) => switch (value) {
-        HajiriValue.present => (fill: N360Colors.moss, ink: N360Colors.sheet, edge: N360Colors.mossInk),
-        HajiriValue.half => (fill: N360Colors.haldi, ink: N360Colors.ink, edge: N360Colors.haldiInk),
-        HajiriValue.overtime => (fill: N360Colors.neel, ink: N360Colors.sheet, edge: N360Colors.neelDeep),
-        HajiriValue.absent => (fill: N360Colors.stampRed, ink: N360Colors.sheet, edge: N360Colors.lateriteEdge),
+  static ({Color fill, Color ink}) _look(HajiriValue value) => switch (value) {
+        HajiriValue.present => (fill: N360Colors.moss, ink: N360Colors.sheet),
+        HajiriValue.half => (fill: N360Colors.haldi, ink: N360Colors.ink),
+        HajiriValue.overtime => (fill: N360Colors.neel, ink: N360Colors.sheet),
+        HajiriValue.absent => (fill: N360Colors.stampRed, ink: N360Colors.sheet),
       };
 
   static final Map<(String, Color, TextScaler), TextPainter> _letters = <(String, Color, TextScaler), TextPainter>{};
@@ -150,9 +150,9 @@ class _HajiriPainter extends CustomPainter {
         text: TextSpan(
           text: text,
           style: TextStyle(
-            fontFamily: N360Type.khand,
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
+            fontFamily: N360Type.poppins,
+            fontSize: 21,
+            fontWeight: FontWeight.w600,
             height: 1.1,
             color: color,
           ),
@@ -165,56 +165,26 @@ class _HajiriPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double h = size.height - _edge;
-    final double cell = size.width / 4;
-    const radius = Radius.circular(N360Radius.small);
-
+    final double cell = (size.width - _gap * 3) / 4;
+    const radius = Radius.circular(N360Radius.medium);
     final Paint paint = Paint();
-
-    canvas.drawRRect(
-      RRect.fromLTRBR(0, _edge, size.width, size.height, radius),
-      paint..color = N360Colors.paperEdge,
-    );
-    final RRect track = RRect.fromLTRBR(0, 0, size.width, h, radius);
-    canvas.drawRRect(track, paint..color = N360Colors.sheet);
 
     for (var i = 0; i < 4; i++) {
       final option = HajiriValue.values[i];
       final bool selected = option == value;
-      final double left = i * cell;
+      final double left = i * (cell + _gap);
+      final RRect tile = RRect.fromRectAndRadius(Rect.fromLTWH(left, 0, cell, size.height), radius);
       if (selected) {
         final look = _look(option);
-        final Rect rect = Rect.fromLTWH(left, 0, cell, h);
-        final RRect shape = RRect.fromRectAndCorners(
-          rect,
-          topLeft: i == 0 ? radius : Radius.zero,
-          bottomLeft: i == 0 ? radius : Radius.zero,
-          topRight: i == 3 ? radius : Radius.zero,
-          bottomRight: i == 3 ? radius : Radius.zero,
-        );
-        canvas.drawRect(Rect.fromLTWH(left, h - 1, cell, _edge + 1), paint..color = look.edge);
-        canvas.drawRRect(shape, paint..color = look.fill);
+        canvas.drawRRect(tile, paint..color = look.fill);
         final TextPainter letter = _letter(option.letter, look.ink, scaler);
-        letter.paint(canvas, Offset(left + (cell - letter.width) / 2, (h - letter.height) / 2));
+        letter.paint(canvas, Offset(left + (cell - letter.width) / 2, (size.height - letter.height) / 2));
       } else {
+        canvas.drawRRect(tile, paint..color = N360Colors.paper2);
         final TextPainter letter = _letter(option.letter, N360Colors.ink2, scaler);
-        letter.paint(canvas, Offset(left + (cell - letter.width) / 2, (h - letter.height) / 2));
+        letter.paint(canvas, Offset(left + (cell - letter.width) / 2, (size.height - letter.height) / 2));
       }
     }
-
-    final Paint rule = Paint()
-      ..color = N360Colors.ruleStrong
-      ..strokeWidth = 1;
-    for (var i = 1; i < 4; i++) {
-      final double x = (i * cell).floorToDouble() + 0.5;
-      canvas.drawLine(Offset(x, 0), Offset(x, h), rule);
-    }
-    canvas.drawRRect(
-      track.deflate(0.5),
-      Paint()
-        ..color = N360Colors.ruleStrong
-        ..style = PaintingStyle.stroke,
-    );
   }
 
   @override
@@ -227,12 +197,12 @@ class _HajiriPainter extends CustomPainter {
 
   @override
   SemanticsBuilderCallback get semanticsBuilder => (Size size) {
-        final double cell = size.width / 4;
+        final double cell = (size.width - _gap * 3) / 4;
         return <CustomPainterSemantics>[
           for (var i = 0; i < 4; i++)
             CustomPainterSemantics(
               key: ValueKey<int>(i),
-              rect: Rect.fromLTWH(i * cell, 0, cell, size.height),
+              rect: Rect.fromLTWH(i * (cell + _gap), 0, cell, size.height),
               properties: SemanticsProperties(
                 button: true,
                 selected: HajiriValue.values[i] == value,

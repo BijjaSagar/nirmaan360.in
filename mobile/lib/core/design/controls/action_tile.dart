@@ -1,14 +1,13 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../haptics.dart';
 import '../internal/press_target.dart';
+import '../internal/soft_surface.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// A home-screen tile: a big picture sitting on a surveyor's station mark, with
-/// its name beneath. A badge counts what is waiting.
+/// A home-screen tile: a large picture in a rounded square with its name
+/// beneath. A small gold badge counts what is waiting.
 class ActionTile extends StatelessWidget {
   const ActionTile({
     super.key,
@@ -22,29 +21,35 @@ class ActionTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  /// Shown as a small stamped count, such as a pending total. Null hides it.
+  /// Shown as a small gold count. Null hides it.
   final String? badge;
 
   @override
   Widget build(BuildContext context) {
     final Widget contents = Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        SizedBox(
-          height: 64,
-          width: 72,
-          child: CustomPaint(
-            painter: const _StationMarkPainter(),
-            child: Center(child: Icon(icon, size: 40, color: N360Colors.ink)),
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox.square(
+              dimension: 56,
+              child: CustomPaint(
+                painter: const SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.goldTint),
+                child: Center(child: Icon(icon, size: 30, color: N360Colors.laterite)),
+              ),
+            ),
+            const Spacer(),
+            if (badge != null) N360Badge(text: badge!),
+          ],
         ),
-        const SizedBox(height: N360Space.xs),
+        const SizedBox(height: N360Space.sm + 2),
         Text(
           label,
-          textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: N360Type.heading.copyWith(height: 1.26, fontSize: 21),
+          style: N360Type.heading,
         ),
       ],
     );
@@ -56,104 +61,39 @@ class ActionTile extends StatelessWidget {
       semanticsLabel: badge == null ? label : '$label, $badge',
       child: contents,
       builder: (context, depth, child) {
-        final double sink = depth * (N360Size.edge - 1);
-        return Stack(
-          fit: StackFit.passthrough,
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            CustomPaint(
-              painter: _ActionPainter(sink: sink),
+        return Transform.scale(
+          scale: pressedScale(depth * 0.7),
+          child: CustomPaint(
+            painter: const SoftSurfacePainter(radius: 22, edge: N360Colors.cardEdge, shadow: true, shadowStrength: 0.8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 124),
               child: Padding(
-                padding: const EdgeInsets.only(bottom: N360Size.edge),
-                child: Transform.translate(
-                  offset: Offset(0, sink),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 121),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(N360Space.sm, N360Space.md, N360Space.sm, N360Space.md),
-                      child: Center(child: child),
-                    ),
-                  ),
-                ),
+                padding: const EdgeInsets.all(14),
+                child: child,
               ),
             ),
-            if (badge != null)
-              Positioned(
-                top: 6 + sink,
-                right: 6,
-                child: _CountBadge(text: badge!),
-              ),
-          ],
+          ),
         );
       },
     );
   }
 }
 
-class _ActionPainter extends CustomPainter {
-  const _ActionPainter({required this.sink});
-
-  final double sink;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const radius = Radius.circular(N360Radius.small);
-    canvas.drawRRect(
-      RRect.fromLTRBR(0, N360Size.edge, size.width, size.height, radius),
-      Paint()..color = N360Colors.paperEdge,
-    );
-    final RRect face = RRect.fromLTRBR(0, sink, size.width, size.height - N360Size.edge + sink, radius);
-    canvas.drawRRect(face, Paint()..color = N360Colors.sheet);
-    canvas.drawRRect(
-      face.deflate(0.5),
-      Paint()
-        ..color = N360Colors.rule
-        ..style = PaintingStyle.stroke,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_ActionPainter oldDelegate) => oldDelegate.sink != sink;
-}
-
-/// A survey station: a ring and crosshair drawn behind the icon.
-class _StationMarkPainter extends CustomPainter {
-  const _StationMarkPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint line = Paint()
-      ..color = N360Colors.paperEdge
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    final Offset c = size.center(Offset.zero);
-    final double r = size.shortestSide / 2 - 1;
-    canvas.drawCircle(c, r, line);
-    canvas.drawLine(Offset(c.dx - r - 8, c.dy), Offset(c.dx + r + 8, c.dy), line);
-    canvas.drawLine(Offset(c.dx, c.dy - r - 2), Offset(c.dx, c.dy + r + 2), line);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _CountBadge extends StatelessWidget {
-  const _CountBadge({required this.text});
+/// A small gold count, used on tiles and in the bottom bar. Dark ink on gold.
+class N360Badge extends StatelessWidget {
+  const N360Badge({super.key, required this.text});
 
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: -7 * math.pi / 180,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(color: N360Colors.laterite, borderRadius: N360Radius.sm),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-          child: Text(
-            text,
-            style: N360Type.figure.copyWith(color: N360Colors.sheet, fontSize: 16),
-          ),
+    return CustomPaint(
+      painter: const SoftSurfacePainter(radius: 8, gradient: N360Gradients.gold),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+        child: Text(
+          text,
+          style: N360Type.button.copyWith(fontSize: 13, height: 1.3, fontWeight: FontWeight.w600),
         ),
       ),
     );

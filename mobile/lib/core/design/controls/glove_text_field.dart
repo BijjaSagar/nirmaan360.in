@@ -51,7 +51,7 @@ class GloveTextField extends StatelessWidget {
   final Iterable<String>? autofillHints;
 
   OutlineInputBorder _border(Color color, double width) => OutlineInputBorder(
-        borderRadius: N360Radius.sm,
+        borderRadius: N360Radius.md,
         borderSide: BorderSide(color: color, width: width),
       );
 
@@ -95,12 +95,12 @@ class GloveTextField extends StatelessWidget {
                 prefixIcon: prefixIcon == null ? null : Icon(prefixIcon, size: 24, color: N360Colors.ink2),
                 suffixIcon: suffix,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-                border: _border(N360Colors.ruleStrong, 1.25),
-                enabledBorder: _border(N360Colors.ruleStrong, 1.25),
-                focusedBorder: _border(N360Colors.ink, 2.25),
+                border: _border(N360Colors.ruleStrong, 1),
+                enabledBorder: _border(N360Colors.ruleStrong, 1),
+                focusedBorder: _border(N360Colors.laterite, 2.25),
                 errorBorder: _border(N360Colors.stampRed, 2),
                 focusedErrorBorder: _border(N360Colors.stampRed, 2.25),
-                disabledBorder: _border(N360Colors.rule, 1.25),
+                disabledBorder: _border(N360Colors.rule, 1),
                 errorText: null,
               ),
             ),

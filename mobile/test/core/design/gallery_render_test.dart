@@ -70,12 +70,17 @@ void main() {
     }
 
     for (final section in GallerySection.values) {
-      final double? tall = section == GallerySection.choices ? 980 : null;
+      final double? tall = switch (section) {
+        GallerySection.choices => 1040,
+        GallerySection.progress || GallerySection.plan || GallerySection.art || GallerySection.buttons => 900,
+        _ => null,
+      };
       await shot('en_${section.name}', DesignGallery(section: section), tall: tall);
       await shot('mr_${section.name}', DesignGallery(section: section, marathi: true), tall: tall);
     }
     await shot('mr_muster_scaled', const DesignGallery(section: GallerySection.muster, marathi: true), textScale: 1.3, tall: 900);
-    await shot('mr_buttons_scaled', const DesignGallery(section: GallerySection.buttons, marathi: true), textScale: 1.3, tall: 900);
+    await shot('mr_buttons_scaled', const DesignGallery(section: GallerySection.buttons, marathi: true), textScale: 1.3, tall: 1000);
+    await shot('mr_progress_scaled', const DesignGallery(section: GallerySection.progress, marathi: true), textScale: 1.3, tall: 1000);
   });
 
   testWidgets('capture motion frames', (tester) async {

@@ -13,22 +13,27 @@ double _contrast(Color a, Color b) {
 
 void main() {
   group('outdoor contrast', () {
-    const backgrounds = <Color>[N360Colors.paper, N360Colors.sheet, N360Colors.paper2];
+    const backgrounds = <Color>[N360Colors.paper, N360Colors.sheet, N360Colors.paper2, N360Colors.peach];
 
-    test('body text reaches 7:1 on paper and sheet', () {
-      for (final bg in <Color>[N360Colors.paper, N360Colors.sheet]) {
-        expect(_contrast(N360Colors.ink, bg), greaterThanOrEqualTo(7));
-        expect(_contrast(N360Colors.ink2, bg), greaterThanOrEqualTo(7));
+    test('body text reaches 7:1 on every page surface, the peach foot included', () {
+      for (final bg in backgrounds) {
+        expect(_contrast(N360Colors.ink, bg), greaterThanOrEqualTo(7), reason: 'ink on $bg');
+        expect(_contrast(N360Colors.ink2, bg), greaterThanOrEqualTo(7), reason: 'ink2 on $bg');
       }
     });
 
-    test('labels reach 4.5:1 on every paper surface', () {
+    test('labels reach 4.5:1 on every page surface', () {
       for (final bg in backgrounds) {
-        expect(_contrast(N360Colors.inkLabel, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.stampRed, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.haldiInk, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.mossInk, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.neel, bg), greaterThanOrEqualTo(4.5));
+        for (final ink in <Color>[
+          N360Colors.inkLabel,
+          N360Colors.stampRed,
+          N360Colors.haldiInk,
+          N360Colors.mossInk,
+          N360Colors.neel,
+          N360Colors.laterite,
+        ]) {
+          expect(_contrast(ink, bg), greaterThanOrEqualTo(4.5), reason: '$ink on $bg');
+        }
       }
     });
 
@@ -36,28 +41,49 @@ void main() {
       expect(_contrast(N360Colors.ink3, N360Colors.paper), lessThan(4.5));
     });
 
-    test('every stamp ink holds 4.5:1 on every paper surface', () {
+    test('every stamp ink holds 4.5:1 on every page surface', () {
       for (final kind in StampKind.values) {
         for (final bg in backgrounds) {
-          expect(
-            _contrast(kind.inkColor, bg),
-            greaterThanOrEqualTo(4.5),
-            reason: '$kind on $bg',
-          );
+          expect(_contrast(kind.inkColor, bg), greaterThanOrEqualTo(4.5), reason: '$kind on $bg');
         }
       }
     });
 
-    test('text on filled controls reaches 4.5:1', () {
-      expect(_contrast(N360Colors.sheet, N360Colors.laterite), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.ink, N360Colors.haldi), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.sheet, N360Colors.moss), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.sheet, N360Colors.neel), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.sheet, N360Colors.stampRed), greaterThanOrEqualTo(4.5));
+    test('text on gold is dark ink, and it passes across the whole gradient', () {
+      for (final gold in <Color>[N360Colors.amber, N360Colors.haldi, N360Colors.orange]) {
+        expect(_contrast(N360Colors.ink, gold), greaterThanOrEqualTo(4.5), reason: '$gold');
+      }
+      expect(N360Gradients.gold.colors, containsAll(<Color>[N360Colors.amber, N360Colors.orange]));
+    });
+
+    test('white on orange fails outdoors, which is why gold carries dark ink', () {
+      expect(_contrast(N360Colors.sheet, N360Colors.orange), lessThan(4.5));
+    });
+
+    test('white text on the filled status colours reaches 4.5:1', () {
+      for (final fill in <Color>[N360Colors.laterite, N360Colors.moss, N360Colors.neel, N360Colors.stampRed]) {
+        expect(_contrast(N360Colors.sheet, fill), greaterThanOrEqualTo(4.5), reason: '$fill');
+      }
     });
   });
 
   group('typography', () {
+    test('headings use Poppins, body uses Mukta, and Khand is gone', () {
+      for (final style in <TextStyle>[
+        N360Type.displayLarge,
+        N360Type.display,
+        N360Type.title,
+        N360Type.heading,
+        N360Type.button,
+        N360Type.figureLarge,
+        N360Type.figureHero,
+      ]) {
+        expect(style.fontFamily, 'Poppins');
+      }
+      expect(N360Type.body.fontFamily, 'Mukta');
+      expect(N360Type.figure.fontFamily, 'DMMono');
+    });
+
     test('Devanagari line heights are generous', () {
       for (final style in <TextStyle>[
         N360Type.bodyLarge,
@@ -74,20 +100,24 @@ void main() {
         N360Type.heading,
         N360Type.button,
       ]) {
-        expect(style.height, greaterThanOrEqualTo(1.25));
+        expect(style.height, greaterThanOrEqualTo(1.3));
       }
     });
 
-    test('figures fall back to Mukta for the rupee sign and are tabular', () {
+    test('column figures fall back to Mukta for the rupee sign and are tabular', () {
       expect(N360Type.figure.fontFamilyFallback, contains('Mukta'));
       expect(N360Type.figure.fontFeatures, contains(const FontFeature.tabularFigures()));
     });
 
-    test('eyebrow sets Devanagari without tracking or uppercasing', () {
-      expect(N360Type.eyebrowFor('Item 2.1').letterSpacing, greaterThan(0));
+    test('section labels are calm: no tracking, no capitals', () {
+      expect(N360Type.eyebrowFor('Item 2.1').letterSpacing ?? 0, 0);
       expect(N360Type.eyebrowFor('मोजमाप').letterSpacing ?? 0, 0);
-      expect(N360Type.eyebrowText('item'), 'ITEM');
-      expect(N360Type.eyebrowText('मोजमाप'), 'मोजमाप');
+      expect(N360Type.eyebrowText('Item 2.1'), 'Item 2.1');
+    });
+
+    test('stamps stay in capitals for Latin and leave Devanagari alone', () {
+      expect(N360Type.stampText('Approved'), 'APPROVED');
+      expect(N360Type.stampText('मंजूर'), 'मंजूर');
     });
   });
 
@@ -176,9 +206,10 @@ void main() {
       expect(theme.splashColor, N360Colors.ink.withValues(alpha: 0.08));
     });
 
-    test('never uses a blue primary', () {
+    test('the primary is gold with dark ink on it', () {
       final ThemeData theme = buildN360Theme();
-      expect(theme.colorScheme.primary, N360Colors.laterite);
+      expect(theme.colorScheme.primary, N360Colors.haldi);
+      expect(theme.colorScheme.onPrimary, N360Colors.ink);
     });
   });
 }

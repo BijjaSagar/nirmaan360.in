@@ -7,6 +7,7 @@ import 'package:flutter/semantics.dart';
 
 import '../haptics.dart';
 import '../motion.dart';
+import '../internal/soft_surface.dart';
 import '../surfaces/ledger_paper.dart';
 import '../tokens.dart';
 import '../typography.dart';
@@ -14,10 +15,10 @@ import '../typography.dart';
 enum StampKind { draft, inReview, approved, returned, rejected, queued, synced }
 
 enum StampSize {
-  small(fontSize: 13.5, stroke: 1.4, gap: 1.2, hPad: 7, vPad: 1.5, tilt: 3),
-  medium(fontSize: 18, stroke: 1.9, gap: 1.6, hPad: 11, vPad: 3, tilt: 6),
-  large(fontSize: 26, stroke: 2.5, gap: 2, hPad: 15, vPad: 5, tilt: 10),
-  hero(fontSize: 44, stroke: 4, gap: 3, hPad: 22, vPad: 7, tilt: 18);
+  small(fontSize: 11, stroke: 1.2, gap: 1, hPad: 7, vPad: 1.5, tilt: 3),
+  medium(fontSize: 14.5, stroke: 1.6, gap: 1.4, hPad: 10, vPad: 2.5, tilt: 6),
+  large(fontSize: 21, stroke: 2.2, gap: 1.8, hPad: 14, vPad: 4.5, tilt: 10),
+  hero(fontSize: 34, stroke: 3.4, gap: 2.6, hPad: 20, vPad: 7, tilt: 18);
 
   const StampSize({
     required this.fontSize,
@@ -153,31 +154,28 @@ class _RubberStampState extends State<RubberStamp> with SingleTickerProviderStat
 }
 
 class _StampFace extends StatelessWidget {
-  const _StampFace({required this.kind, required this.label, required this.size, this.onSlip = false});
+  const _StampFace({required this.kind, required this.label, required this.size});
 
   final StampKind kind;
   final String label;
   final StampSize size;
 
-  /// Painted over ruled lines on the hero slip, so the ink wear matches.
-  final bool onSlip;
-
   @override
   Widget build(BuildContext context) {
     final Color ink = kind.inkColor;
-    final String text = N360Type.eyebrowText(label);
+    final String text = N360Type.stampText(label);
     final bool dashed = kind == StampKind.queued;
     final double inset = size.stroke + size.gap + 1;
 
     final TextStyle style = TextStyle(
-      fontFamily: N360Type.khand,
+      fontFamily: N360Type.poppins,
       fontFamilyFallback: const <String>[N360Type.mukta],
       fontSize: size.fontSize,
       fontWeight: FontWeight.w700,
-      height: 1.34,
+      height: 1.4,
       leadingDistribution: TextLeadingDistribution.even,
       decoration: TextDecoration.none,
-      letterSpacing: N360Type.trackingFor(label, size.fontSize * 0.06),
+      letterSpacing: N360Type.trackingFor(label, size.fontSize * 0.09),
       color: ink,
     );
 
@@ -193,7 +191,7 @@ class _StampFace extends StatelessWidget {
             angle: _restAngle,
             child: CustomPaint(
               painter: _StampBorderPainter(color: ink, stroke: size.stroke, gap: size.gap, dashed: dashed),
-              foregroundPainter: _StampWearPainter(seed: label.hashCode, onSlip: onSlip),
+              foregroundPainter: _StampWearPainter(seed: label.hashCode),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: size.hPad + inset, vertical: size.vPad + inset),
                 child: Text(text, style: style, textScaler: scaler, maxLines: 1, softWrap: false),
@@ -218,9 +216,12 @@ class _StampBorderPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final outer = RRect.fromRectAndRadius(
       (Offset.zero & size).deflate(stroke / 2),
-      const Radius.circular(N360Radius.small),
+      const Radius.circular(8),
     );
     final inner = outer.deflate(stroke / 2 + gap + 0.5);
+    // A faint wash of the ink, so a stamp holds together on a white card.
+    canvas.drawRRect(outer, Paint()..color = color.withValues(alpha: 0.05));
+
     final Paint paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -264,22 +265,21 @@ class _StampBorderPainter extends CustomPainter {
 /// Knocks a few flecks out of the ink so the impression looks pressed, not
 /// printed. The positions come from the label, so a stamp never shimmers.
 class _StampWearPainter extends CustomPainter {
-  const _StampWearPainter({required this.seed, required this.onSlip});
+  const _StampWearPainter({required this.seed});
 
   final int seed;
-  final bool onSlip;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = (onSlip ? N360Colors.sheet : N360Colors.paper).withValues(alpha: 0.82);
+    final paint = Paint()..color = N360Colors.sheet.withValues(alpha: 0.82);
     var s = (seed & 0x7fffffff) | 1;
     int next() => s = (s * 1103515245 + 12345) & 0x7fffffff;
-    final bool small = size.height < 36;
-    final count = small ? 5 + (size.width / 26).floor() : 10 + (size.width / 18).floor();
+    final bool small = size.height < 34;
+    final count = small ? 4 + (size.width / 30).floor() : 8 + (size.width / 22).floor();
     for (var i = 0; i < count; i++) {
       final dx = (next() % 1000) / 1000 * size.width;
       final dy = (next() % 1000) / 1000 * size.height;
-      final radius = 0.3 + (next() % 100) / 100 * (size.height > 60 ? 1.5 : (small ? 0.35 : 0.6));
+      final radius = 0.25 + (next() % 100) / 100 * (size.height > 60 ? 1.2 : (small ? 0.25 : 0.5));
       canvas.drawCircle(Offset(dx, dy), radius, paint);
     }
   }
@@ -414,7 +414,7 @@ class _StampThudMomentState extends State<_StampThudMoment> with SingleTickerPro
   Widget build(BuildContext context) {
     final Size screen = MediaQuery.sizeOf(context);
     final Widget slip = _ThudSlip(
-      child: _StampFace(kind: widget.kind, label: widget.label, size: StampSize.hero, onSlip: true),
+      child: _StampFace(kind: widget.kind, label: widget.label, size: StampSize.hero),
     );
 
     if (_reduced) {
@@ -449,7 +449,6 @@ class _StampThudMomentState extends State<_StampThudMoment> with SingleTickerPro
                             kind: widget.kind,
                             label: widget.label,
                             size: StampSize.hero,
-                            onSlip: true,
                           ),
                         ),
                       ),
@@ -465,7 +464,7 @@ class _StampThudMomentState extends State<_StampThudMoment> with SingleTickerPro
   }
 }
 
-/// The sheet the stamp lands on: ruled, with a red margin, like a torn page.
+/// The white card the stamp lands on.
 class _ThudSlip extends StatelessWidget {
   const _ThudSlip({required this.child});
 
@@ -474,49 +473,15 @@ class _ThudSlip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: const _ThudSlipPainter(),
+      painter: const SoftSurfacePainter(edge: N360Colors.cardEdge),
       child: SizedBox(
         width: 300,
-        height: 216,
+        height: 208,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.lg, N360Space.lg, N360Space.lg + N360Space.sm),
+          padding: const EdgeInsets.all(N360Space.lg),
           child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: child)),
         ),
       ),
     );
   }
-}
-
-class _ThudSlipPainter extends CustomPainter {
-  const _ThudSlipPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const edge = 5.0;
-    final face = Rect.fromLTWH(0, 0, size.width, size.height - edge);
-    canvas.drawRect(Rect.fromLTWH(3, edge, size.width - 3, size.height - edge), Paint()..color = N360Colors.paperEdge);
-    canvas.drawRect(face, Paint()..color = N360Colors.sheet);
-
-    final rule = Paint()
-      ..color = N360Colors.rule
-      ..strokeWidth = 1;
-    for (double y = 35.5; y < face.height; y += 36) {
-      canvas.drawLine(Offset(0, y), Offset(face.width, y), rule);
-    }
-    final margin = Paint()
-      ..color = N360Colors.marginRed
-      ..strokeWidth = 1;
-    canvas.drawLine(const Offset(34.5, 0), Offset(34.5, face.height), margin);
-    canvas.drawLine(const Offset(37.5, 0), Offset(37.5, face.height), margin);
-    canvas.drawRect(
-      face.deflate(0.5),
-      Paint()
-        ..color = N360Colors.ruleStrong
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -2,40 +2,27 @@ import 'package:flutter/widgets.dart';
 
 import 'tokens.dart';
 
-/// Khand for headings, Mukta for body, DM Mono for figures.
+/// Poppins for headings and big figures, Mukta for body, DM Mono only where
+/// columns of figures must line up.
 ///
 /// Line heights are set for Devanagari: matras reach well above the shirorekha
 /// and below the baseline, so nothing here goes under 1.25 and body stays at
 /// 1.4 or more. `TextLeadingDistribution.even` keeps the extra space balanced
-/// so a line sits centred in its slot.
-///
-/// DM Mono has no Devanagari and no rupee sign, so every style falls back to
-/// Mukta.
+/// so a line sits centred in its slot. Every style falls back to Mukta.
 abstract final class N360Type {
-  static const String khand = 'Khand';
+  static const String poppins = 'Poppins';
   static const String mukta = 'Mukta';
   static const String mono = 'DMMono';
 
   static const List<String> _fallback = <String>[mukta];
   static const List<FontFeature> _tabular = <FontFeature>[FontFeature.tabularFigures()];
 
-  // Khand display.
+  // Poppins headings.
 
   static const TextStyle displayLarge = TextStyle(
-    fontFamily: khand,
+    fontFamily: poppins,
     fontFamilyFallback: _fallback,
-    fontSize: 40,
-    height: 1.28,
-    fontWeight: FontWeight.w700,
-    color: N360Colors.ink,
-    leadingDistribution: TextLeadingDistribution.even,
-    decoration: TextDecoration.none,
-  );
-
-  static const TextStyle display = TextStyle(
-    fontFamily: khand,
-    fontFamilyFallback: _fallback,
-    fontSize: 32,
+    fontSize: 36,
     height: 1.3,
     fontWeight: FontWeight.w700,
     color: N360Colors.ink,
@@ -43,11 +30,22 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
-  static const TextStyle title = TextStyle(
-    fontFamily: khand,
+  static const TextStyle display = TextStyle(
+    fontFamily: poppins,
     fontFamilyFallback: _fallback,
-    fontSize: 26,
-    height: 1.32,
+    fontSize: 28,
+    height: 1.34,
+    fontWeight: FontWeight.w600,
+    color: N360Colors.ink,
+    leadingDistribution: TextLeadingDistribution.even,
+    decoration: TextDecoration.none,
+  );
+
+  static const TextStyle title = TextStyle(
+    fontFamily: poppins,
+    fontFamilyFallback: _fallback,
+    fontSize: 21,
+    height: 1.4,
     fontWeight: FontWeight.w600,
     color: N360Colors.ink,
     leadingDistribution: TextLeadingDistribution.even,
@@ -55,10 +53,10 @@ abstract final class N360Type {
   );
 
   static const TextStyle heading = TextStyle(
-    fontFamily: khand,
+    fontFamily: poppins,
     fontFamilyFallback: _fallback,
-    fontSize: 22,
-    height: 1.34,
+    fontSize: 17,
+    height: 1.45,
     fontWeight: FontWeight.w600,
     color: N360Colors.ink,
     leadingDistribution: TextLeadingDistribution.even,
@@ -67,10 +65,10 @@ abstract final class N360Type {
 
   /// Button and control labels.
   static const TextStyle button = TextStyle(
-    fontFamily: khand,
+    fontFamily: poppins,
     fontFamilyFallback: _fallback,
-    fontSize: 22,
-    height: 1.3,
+    fontSize: 16,
+    height: 1.4,
     fontWeight: FontWeight.w600,
     color: N360Colors.ink,
     leadingDistribution: TextLeadingDistribution.even,
@@ -109,7 +107,7 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
-  /// Field and row labels: 15dp semi-bold in the strong secondary ink.
+  /// Field and row labels.
   static const TextStyle label = TextStyle(
     fontFamily: mukta,
     fontSize: 15,
@@ -131,8 +129,9 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
-  // DM Mono figures. Tabular so a column of figures lines up like a ledger.
+  // Figures.
 
+  /// DM Mono, for figures stacked in a column.
   static const TextStyle figureSmall = TextStyle(
     fontFamily: mono,
     fontFamilyFallback: _fallback,
@@ -145,6 +144,7 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
+  /// DM Mono, for figures stacked in a column.
   static const TextStyle figure = TextStyle(
     fontFamily: mono,
     fontFamilyFallback: _fallback,
@@ -157,50 +157,29 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
+  /// Poppins, for a figure that stands on its own.
   static const TextStyle figureLarge = TextStyle(
-    fontFamily: mono,
+    fontFamily: poppins,
     fontFamilyFallback: _fallback,
-    fontSize: 28,
+    fontSize: 26,
     height: 1.3,
-    fontWeight: FontWeight.w500,
-    color: N360Colors.ink,
-    fontFeatures: _tabular,
-    leadingDistribution: TextLeadingDistribution.even,
-    decoration: TextDecoration.none,
-  );
-
-  static const TextStyle figureHero = TextStyle(
-    fontFamily: mono,
-    fontFamilyFallback: _fallback,
-    fontSize: 40,
-    height: 1.25,
-    fontWeight: FontWeight.w500,
-    color: N360Colors.ink,
-    fontFeatures: _tabular,
-    leadingDistribution: TextLeadingDistribution.even,
-    decoration: TextDecoration.none,
-  );
-
-  // The web app's `.eyebrow`.
-
-  static const TextStyle _eyebrowLatin = TextStyle(
-    fontFamily: mono,
-    fontFamilyFallback: _fallback,
-    fontSize: 12.5,
-    height: 1.4,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 1.75,
-    color: N360Colors.inkLabel,
-    leadingDistribution: TextLeadingDistribution.even,
-    decoration: TextDecoration.none,
-  );
-
-  static const TextStyle _eyebrowDevanagari = TextStyle(
-    fontFamily: mukta,
-    fontSize: 15,
-    height: 1.4,
     fontWeight: FontWeight.w600,
-    color: N360Colors.inkLabel,
+    color: N360Colors.ink,
+    fontFeatures: _tabular,
+    leadingDistribution: TextLeadingDistribution.even,
+    decoration: TextDecoration.none,
+  );
+
+  /// The huge confident number at the top of a screen.
+  static const TextStyle figureHero = TextStyle(
+    fontFamily: poppins,
+    fontFamilyFallback: _fallback,
+    fontSize: 44,
+    height: 1.22,
+    fontWeight: FontWeight.w600,
+    letterSpacing: -0.5,
+    color: N360Colors.ink,
+    fontFeatures: _tabular,
     leadingDistribution: TextLeadingDistribution.even,
     decoration: TextDecoration.none,
   );
@@ -210,18 +189,40 @@ abstract final class N360Type {
   /// True when [text] holds any Devanagari.
   static bool isDevanagari(String text) => _devanagari.hasMatch(text);
 
-  /// The eyebrow style for [text].
-  ///
-  /// Tracking breaks the shirorekha that joins Devanagari letters into a word,
-  /// so Marathi and Hindi get Mukta with no tracking instead.
-  static TextStyle eyebrowFor(String text) =>
-      isDevanagari(text) ? _eyebrowDevanagari : _eyebrowLatin;
+  static const TextStyle _sectionLatin = TextStyle(
+    fontFamily: poppins,
+    fontFamilyFallback: _fallback,
+    fontSize: 14,
+    height: 1.45,
+    fontWeight: FontWeight.w500,
+    color: N360Colors.inkLabel,
+    leadingDistribution: TextLeadingDistribution.even,
+    decoration: TextDecoration.none,
+  );
 
-  /// Uppercases Latin text. Devanagari has no case, so it passes through.
-  static String eyebrowText(String text) =>
+  static const TextStyle _sectionDevanagari = TextStyle(
+    fontFamily: mukta,
+    fontSize: 15,
+    height: 1.45,
+    fontWeight: FontWeight.w600,
+    color: N360Colors.inkLabel,
+    leadingDistribution: TextLeadingDistribution.even,
+    decoration: TextDecoration.none,
+  );
+
+  /// The small section label style for [text]. Devanagari sets better in Mukta.
+  static TextStyle eyebrowFor(String text) =>
+      isDevanagari(text) ? _sectionDevanagari : _sectionLatin;
+
+  /// Section labels are no longer upper-cased, so this returns [text] as given.
+  static String eyebrowText(String text) => text;
+
+  /// Stamp lettering: Latin in capitals. Devanagari has no case.
+  static String stampText(String text) =>
       isDevanagari(text) ? text : text.toUpperCase();
 
-  /// Tracking for condensed caps, which is applied only to Latin text.
+  /// Tracking for capitals, which is applied only to Latin text, because
+  /// tracking breaks the headline that joins Devanagari letters into a word.
   static double trackingFor(String text, double latin) =>
       isDevanagari(text) ? 0 : latin;
 }

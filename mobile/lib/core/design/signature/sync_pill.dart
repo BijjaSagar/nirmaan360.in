@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../internal/press_target.dart';
+import '../internal/soft_surface.dart';
 import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
@@ -79,13 +80,9 @@ class SyncPill extends StatelessWidget {
           builder: (context, depth, child) => Center(
             widthFactor: 1,
             child: Transform.translate(
-              offset: Offset(0, depth * 1.5),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: N360Colors.sheet,
-                  borderRadius: N360Radius.sm,
-                  border: Border.all(color: look.ink.withValues(alpha: 0.75), width: 1.25),
-                ),
+              offset: Offset(0, depth * 1),
+              child: CustomPaint(
+                painter: const SoftSurfacePainter(radius: 14, edge: N360Colors.rule),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 40),
                   child: Padding(

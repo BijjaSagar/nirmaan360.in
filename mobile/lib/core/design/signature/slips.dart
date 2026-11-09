@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../haptics.dart';
 import '../internal/press_target.dart';
+import '../internal/soft_surface.dart';
 import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
@@ -126,7 +127,7 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
 
   Color get _band => switch (widget.status) {
         SlipStatus.waiting => N360Colors.ink3,
-        SlipStatus.sending => N360Colors.neel,
+        SlipStatus.sending => N360Colors.orange,
         SlipStatus.sent => N360Colors.moss,
         SlipStatus.attention => N360Colors.stampRed,
       };
@@ -137,7 +138,13 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         if (widget.icon != null) ...<Widget>[
-          Icon(widget.icon, size: 26, color: N360Colors.ink2),
+          SizedBox.square(
+            dimension: 44,
+            child: CustomPaint(
+              painter: const SoftSurfacePainter(radius: 14),
+              child: Center(child: Icon(widget.icon, size: 24, color: N360Colors.ink2)),
+            ),
+          ),
           const SizedBox(width: N360Space.md),
         ],
         Expanded(
@@ -172,16 +179,19 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
       onTap: widget.onTap,
       semanticsLabel: tappable ? spoken : null,
       haptic: tappable ? N360Haptics.tap : null,
-      builder: (context, depth, child) => CustomPaint(
-        painter: _SlipPainter(band: _band, sink: depth),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            N360Space.md + 6,
-            N360Space.sm + 4,
-            N360Space.md,
-            N360Space.sm + 6,
+      builder: (context, depth, child) => Transform.scale(
+        scale: pressedScale(depth * 0.6),
+        child: CustomPaint(
+          painter: _SlipPainter(band: _band),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.md,
+              N360Space.sm + 1,
+              N360Space.md,
+              N360Space.sm + 1,
+            ),
+            child: child,
           ),
-          child: child,
         ),
       ),
       child: ConstrainedBox(constraints: const BoxConstraints(minHeight: 48), child: body),
@@ -191,40 +201,30 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
   }
 }
 
-/// Sheet with a perforated top edge, the status band and a thin paper edge.
+/// A soft rounded slip with a short status band on its left edge.
 class _SlipPainter extends CustomPainter {
-  const _SlipPainter({required this.band, this.sink = 0});
+  const _SlipPainter({required this.band});
 
   final Color band;
-  final double sink;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const edge = 2.0;
-    final Rect face = Rect.fromLTWH(0, sink, size.width, size.height - edge);
-    canvas.drawRect(
-      Rect.fromLTWH(0, edge, size.width, size.height - edge),
-      Paint()..color = N360Colors.paperEdge,
+    final RRect face = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(N360Radius.medium),
     );
-    canvas.drawRect(face, Paint()..color = N360Colors.sheet);
-    canvas.drawRect(
-      face.deflate(0.5),
-      Paint()
-        ..color = N360Colors.rule
-        ..style = PaintingStyle.stroke,
+    canvas.drawRRect(face, Paint()..color = N360Colors.paper);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 14, 3.5, size.height - 28),
+        const Radius.circular(2),
+      ),
+      Paint()..color = band,
     );
-    canvas.drawRect(Rect.fromLTWH(0, sink, 4, size.height - edge), Paint()..color = band);
-
-    final Paint perf = Paint()
-      ..color = N360Colors.paperEdge
-      ..strokeWidth = 1;
-    for (double x = 8; x < size.width - 4; x += 8) {
-      canvas.drawLine(Offset(x, sink + 3.5), Offset(x + 4, sink + 3.5), perf);
-    }
   }
 
   @override
-  bool shouldRepaint(_SlipPainter oldDelegate) => oldDelegate.band != band || oldDelegate.sink != sink;
+  bool shouldRepaint(_SlipPainter oldDelegate) => oldDelegate.band != band;
 }
 
 class _StatusMark extends StatelessWidget {
@@ -252,7 +252,7 @@ class _StatusMark extends StatelessWidget {
           children: <Widget>[
             const _SlipSpinner(),
             const SizedBox(width: 4),
-            Text(label, style: text.copyWith(color: N360Colors.neel)),
+            Text(label, style: text.copyWith(color: N360Colors.laterite)),
           ],
         ),
       SlipStatus.attention => Row(
@@ -309,24 +309,22 @@ class _TickPainter extends CustomPainter {
     canvas.save();
     canvas.translate(c.dx, c.dy);
     canvas.rotate(-7 * math.pi / 180);
-    final Paint ring = Paint()
-      ..color = N360Colors.moss
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2;
-    canvas.drawCircle(Offset.zero, r - 1.2, ring);
-    canvas.drawCircle(Offset.zero, r - 4.6, ring..strokeWidth = 1);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromCircle(center: Offset.zero, radius: r - 1), const Radius.circular(11)),
+      Paint()..color = N360Colors.moss,
+    );
     final Path check = Path()
-      ..moveTo(-r * 0.42, r * 0.02)
-      ..lineTo(-r * 0.1, r * 0.34)
-      ..lineTo(r * 0.46, -r * 0.34);
+      ..moveTo(-r * 0.46, r * 0.04)
+      ..lineTo(-r * 0.12, r * 0.38)
+      ..lineTo(r * 0.5, -r * 0.34);
     canvas.drawPath(
       check,
       Paint()
-        ..color = N360Colors.mossInk
+        ..color = N360Colors.sheet
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = 3,
+        ..strokeWidth = 3.4,
     );
     canvas.restore();
   }
@@ -367,7 +365,7 @@ class _SlipSpinnerState extends State<_SlipSpinner> with SingleTickerProviderSta
     return RepaintBoundary(
       child: RotationTransition(
         turns: _spin,
-        child: const Icon(Icons.sync, size: 18, color: N360Colors.neel),
+        child: const Icon(Icons.sync, size: 18, color: N360Colors.laterite),
       ),
     );
   }
@@ -521,9 +519,9 @@ class _SlipStackState extends State<SlipStack> with SingleTickerProviderStateMix
       container: true,
       label: widget.trayLabel == null ? '${widget.count}' : '${widget.count} ${widget.trayLabel}',
       child: CustomPaint(
-        painter: const _TrayPainter(),
+        painter: const SoftSurfacePainter(edge: N360Colors.cardEdge, shadow: true),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.sm, N360Space.sm, N360Space.sm, 0),
+          padding: const EdgeInsets.fromLTRB(N360Space.sm + 2, N360Space.sm + 2, N360Space.sm + 2, N360Space.xs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -590,7 +588,7 @@ class _SlipRow extends StatelessWidget {
   }
 }
 
-/// Paper edges showing that more slips are stacked beneath the visible ones.
+/// Soft bars showing that more slips are stacked beneath the visible ones.
 class _HiddenEdges extends StatelessWidget {
   const _HiddenEdges({required this.count});
 
@@ -600,13 +598,21 @@ class _HiddenEdges extends StatelessWidget {
   Widget build(BuildContext context) {
     final int layers = math.min(count, 3);
     return Padding(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: 4),
       child: Column(
         children: <Widget>[
           for (var i = 0; i < layers; i++)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 3.0 + i * 3),
-              child: const SizedBox(height: 3, child: ColoredBox(color: N360Colors.paperEdge)),
+              padding: EdgeInsets.fromLTRB(8.0 + i * 8, 0, 8.0 + i * 8, 2),
+              child: const SizedBox(
+                height: 3,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: N360Colors.paper2,
+                    borderRadius: BorderRadius.all(Radius.circular(2)),
+                  ),
+                ),
+              ),
             ),
         ],
       ),
@@ -623,12 +629,12 @@ class _TrayLip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 44,
       child: Row(
         children: <Widget>[
-          const SizedBox(width: 2),
-          const Icon(Icons.inbox_outlined, size: 20, color: N360Colors.ink2),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
+          const Icon(Icons.inbox_outlined, size: 20, color: N360Colors.inkLabel),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               label ?? '',
@@ -639,36 +645,11 @@ class _TrayLip extends StatelessWidget {
           ),
           RollingNumber(
             value: '$count',
-            style: N360Type.figure.copyWith(color: N360Colors.ink),
+            style: N360Type.heading.copyWith(fontSize: 18, color: N360Colors.ink),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
         ],
       ),
     );
   }
-}
-
-/// The tray itself: a shallow paper2 tray with a stronger lower lip.
-class _TrayPainter extends CustomPainter {
-  const _TrayPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const radius = Radius.circular(N360Radius.small);
-    final RRect tray = RRect.fromRectAndRadius(Offset.zero & size, radius);
-    canvas.drawRRect(tray, Paint()..color = N360Colors.paper2);
-    canvas.drawRRect(
-      tray.deflate(0.5),
-      Paint()
-        ..color = N360Colors.ruleStrong
-        ..style = PaintingStyle.stroke,
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(0, size.height - 2.5, size.width, 2.5),
-      Paint()..color = N360Colors.ink2,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

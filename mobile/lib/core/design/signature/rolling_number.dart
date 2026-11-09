@@ -12,7 +12,7 @@ import '../typography.dart';
 /// Everything is painted by one `CustomPainter` from a shared cache of laid-out
 /// digits, so a frame is a handful of glyph draws and no widget rebuilds. Digits
 /// are placed outwards from the decimal point, so the units column stays the
-/// units column when a digit is added or removed, and the width glides between
+/// units column when a digit is added or removed, and every width glides between
 /// the old and new sizes instead of jumping.
 ///
 /// Screen readers get the full value once, as a single label. There is no `Text`
@@ -243,10 +243,9 @@ class _Glyphs {
   /// The glyph set for this style merged with [other], sharing the cache.
   _Glyphs withStyle(TextStyle? other) => other == null ? this : _Glyphs.of(style.merge(other), scaler);
 
-  double widthOf(String? char) {
-    if (char == null) return 0;
-    return _digitOf(char) != null ? digitWidth : glyph(char).width;
-  }
+  /// A digit's own width. In DM Mono these are all equal, so columns stay
+  /// tabular; Poppins figures keep their natural rhythm instead of a loose "1".
+  double widthOf(String? char) => char == null ? 0 : glyph(char).width;
 }
 
 int? _digitOf(String? char) {

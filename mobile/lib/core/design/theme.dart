@@ -5,15 +5,15 @@ import 'tokens.dart';
 import 'typography.dart';
 
 /// The app's `ThemeData`, so even plain Material widgets land on the ledger:
-/// paper scaffold, square corners, no tint, ripple in faint ink.
+/// warm page, soft rounded corners, no tint, ripple in faint ink.
 ThemeData buildN360Theme() {
   const ColorScheme scheme = ColorScheme(
     brightness: Brightness.light,
-    primary: N360Colors.laterite,
-    onPrimary: N360Colors.sheet,
+    primary: N360Colors.haldi,
+    onPrimary: N360Colors.ink,
     primaryContainer: N360Colors.paper2,
     onPrimaryContainer: N360Colors.ink,
-    secondary: N360Colors.neel,
+    secondary: N360Colors.laterite,
     onSecondary: N360Colors.sheet,
     secondaryContainer: N360Colors.paper2,
     onSecondaryContainer: N360Colors.ink,
@@ -40,13 +40,13 @@ ThemeData buildN360Theme() {
   );
 
   const OutlineInputBorder resting = OutlineInputBorder(
-    borderRadius: N360Radius.sm,
-    borderSide: BorderSide(color: N360Colors.ruleStrong, width: 1.25),
+    borderRadius: N360Radius.md,
+    borderSide: BorderSide(color: N360Colors.ruleStrong, width: 1),
   );
 
   final ButtonStyle pressed = ButtonStyle(
     overlayColor: WidgetStateProperty.all(N360Colors.ink.withValues(alpha: 0.07)),
-    shape: WidgetStateProperty.all(const RoundedRectangleBorder(borderRadius: N360Radius.sm)),
+    shape: WidgetStateProperty.all(const RoundedRectangleBorder(borderRadius: N360Radius.tileRadius)),
     minimumSize: WidgetStateProperty.all(const Size(64, N360Size.tap)),
     textStyle: WidgetStateProperty.all(N360Type.button),
     elevation: WidgetStateProperty.all(0),
@@ -120,8 +120,8 @@ ThemeData buildN360Theme() {
       margin: EdgeInsets.zero,
       surfaceTintColor: Color(0x00000000),
       shape: RoundedRectangleBorder(
-        borderRadius: N360Radius.md,
-        side: BorderSide(color: N360Colors.rule),
+        borderRadius: N360Radius.cardRadius,
+        side: BorderSide(color: N360Colors.cardEdge),
       ),
     ),
     dialogTheme: const DialogThemeData(
@@ -129,8 +129,8 @@ ThemeData buildN360Theme() {
       elevation: 0,
       surfaceTintColor: Color(0x00000000),
       shape: RoundedRectangleBorder(
-        borderRadius: N360Radius.md,
-        side: BorderSide(color: N360Colors.ruleStrong),
+        borderRadius: N360Radius.cardRadius,
+        side: BorderSide(color: N360Colors.cardEdge),
       ),
       titleTextStyle: N360Type.title,
       contentTextStyle: N360Type.body,
@@ -142,8 +142,8 @@ ThemeData buildN360Theme() {
       modalElevation: 0,
       surfaceTintColor: Color(0x00000000),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.medium)),
-        side: BorderSide(color: N360Colors.ruleStrong),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
+        side: BorderSide(color: N360Colors.cardEdge),
       ),
     ),
     snackBarTheme: const SnackBarThemeData(
@@ -151,7 +151,7 @@ ThemeData buildN360Theme() {
       contentTextStyle: TextStyle(fontFamily: N360Type.mukta, fontSize: 16, color: N360Colors.paper),
       elevation: 0,
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: N360Radius.sm),
+      shape: RoundedRectangleBorder(borderRadius: N360Radius.md),
     ),
     inputDecorationTheme: const InputDecorationTheme(
       filled: true,
@@ -164,15 +164,15 @@ ThemeData buildN360Theme() {
       border: resting,
       enabledBorder: resting,
       focusedBorder: OutlineInputBorder(
-        borderRadius: N360Radius.sm,
-        borderSide: BorderSide(color: N360Colors.ink, width: 2.25),
+        borderRadius: N360Radius.md,
+        borderSide: BorderSide(color: N360Colors.laterite, width: 2.25),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: N360Radius.sm,
+        borderRadius: N360Radius.md,
         borderSide: BorderSide(color: N360Colors.stampRed, width: 2),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: N360Radius.sm,
+        borderRadius: N360Radius.md,
         borderSide: BorderSide(color: N360Colors.stampRed, width: 2.25),
       ),
     ),
@@ -182,26 +182,26 @@ ThemeData buildN360Theme() {
       selectionHandleColor: N360Colors.laterite,
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: N360Colors.laterite,
+      color: N360Colors.haldi,
       linearTrackColor: N360Colors.rule,
       circularTrackColor: N360Colors.rule,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: pressed.copyWith(
-        backgroundColor: WidgetStateProperty.all(N360Colors.laterite),
-        foregroundColor: WidgetStateProperty.all(N360Colors.sheet),
+        backgroundColor: WidgetStateProperty.all(N360Colors.haldi),
+        foregroundColor: WidgetStateProperty.all(N360Colors.ink),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: pressed.copyWith(
-        backgroundColor: WidgetStateProperty.all(N360Colors.laterite),
-        foregroundColor: WidgetStateProperty.all(N360Colors.sheet),
+        backgroundColor: WidgetStateProperty.all(N360Colors.haldi),
+        foregroundColor: WidgetStateProperty.all(N360Colors.ink),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: pressed.copyWith(
         foregroundColor: WidgetStateProperty.all(N360Colors.ink),
-        side: WidgetStateProperty.all(const BorderSide(color: N360Colors.ink2, width: 1.5)),
+        side: WidgetStateProperty.all(const BorderSide(color: N360Colors.ruleStrong, width: 1.25)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -214,13 +214,13 @@ ThemeData buildN360Theme() {
       ),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: N360Colors.laterite,
-      foregroundColor: N360Colors.sheet,
+      backgroundColor: N360Colors.haldi,
+      foregroundColor: N360Colors.ink,
       elevation: 0,
       focusElevation: 0,
       hoverElevation: 0,
       highlightElevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: N360Radius.md),
+      shape: RoundedRectangleBorder(borderRadius: N360Radius.tileRadius),
     ),
     checkboxTheme: CheckboxThemeData(
       materialTapTargetSize: MaterialTapTargetSize.padded,
@@ -254,16 +254,16 @@ ThemeData buildN360Theme() {
     ),
     chipTheme: const ChipThemeData(
       backgroundColor: N360Colors.sheet,
-      selectedColor: N360Colors.ink,
+      selectedColor: N360Colors.haldi,
       labelStyle: N360Type.label,
       side: BorderSide(color: N360Colors.ruleStrong),
       shape: RoundedRectangleBorder(borderRadius: N360Radius.sm),
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
     tabBarTheme: const TabBarThemeData(
       labelColor: N360Colors.ink,
       unselectedLabelColor: N360Colors.inkLabel,
-      indicatorColor: N360Colors.laterite,
+      indicatorColor: N360Colors.haldi,
       dividerColor: N360Colors.rule,
       labelStyle: N360Type.bodyStrong,
       unselectedLabelStyle: N360Type.body,
@@ -273,8 +273,8 @@ ThemeData buildN360Theme() {
       elevation: 0,
       surfaceTintColor: Color(0x00000000),
       shape: RoundedRectangleBorder(
-        borderRadius: N360Radius.sm,
-        side: BorderSide(color: N360Colors.ruleStrong),
+        borderRadius: N360Radius.md,
+        side: BorderSide(color: N360Colors.cardEdge),
       ),
       textStyle: N360Type.bodyLarge,
     ),

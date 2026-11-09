@@ -75,14 +75,6 @@ flutter:
 
   # Bundled so every screen renders correctly with no network. All three are OFL.
   fonts:
-    - family: Khand
-      fonts:
-        - asset: assets/fonts/Khand-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Khand-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Khand-Bold.ttf
-          weight: 700
     - family: Mukta
       fonts:
         - asset: assets/fonts/Mukta-Regular.ttf

@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 
 import '../haptics.dart';
 import '../internal/press_target.dart';
+import '../internal/soft_surface.dart';
 import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
+import 'action_tile.dart';
 
 @immutable
 class N360BarItem {
-  const N360BarItem({required this.icon, required this.label});
+  const N360BarItem({required this.icon, required this.label, this.badge});
 
   final IconData icon;
   final String label;
+
+  /// A short count on the corner of the icon. Null hides it.
+  final String? badge;
 }
 
-/// Bottom navigation: icon and word together, 64dp, in the thumb's arc. A laterite
-/// rule slides along the top edge to the chosen item.
+/// Bottom navigation: a floating rounded bar in the thumb's arc. A gold tile
+/// slides to the chosen item. Every icon keeps its word underneath.
 class N360BottomBar extends StatelessWidget {
   const N360BottomBar({
     super.key,
@@ -28,44 +33,42 @@ class N360BottomBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
+  static const double _inset = 6;
+
   @override
   Widget build(BuildContext context) {
     final double safe = MediaQuery.paddingOf(context).bottom;
-    return ColoredBox(
-      color: N360Colors.sheet,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: safe),
-        child: SizedBox(
-          height: N360Size.bar,
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: Row(
-                  children: <Widget>[
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: _BarItem(
-                          item: items[i],
-                          selected: i == currentIndex,
-                          onTap: () {
-                            if (i != currentIndex) onTap(i);
-                          },
-                        ),
-                      ),
-                  ],
+    return Padding(
+      padding: EdgeInsets.fromLTRB(N360Space.gutter - 4, N360Space.sm, N360Space.gutter - 4, N360Space.sm + safe),
+      child: CustomPaint(
+        painter: const SoftSurfacePainter(radius: 26, edge: N360Colors.cardEdge, shadow: true),
+        child: Padding(
+          padding: const EdgeInsets.all(_inset),
+          child: SizedBox(
+            height: N360Size.bar,
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: _SlidingTile(index: currentIndex, count: items.length),
                 ),
-              ),
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: SizedBox(height: 1, child: ColoredBox(color: N360Colors.ruleStrong)),
-              ),
-              Positioned.fill(
-                bottom: null,
-                child: _SlidingRule(index: currentIndex, count: items.length),
-              ),
-            ],
+                Positioned.fill(
+                  child: Row(
+                    children: <Widget>[
+                      for (var i = 0; i < items.length; i++)
+                        Expanded(
+                          child: _BarItem(
+                            item: items[i],
+                            selected: i == currentIndex,
+                            onTap: () {
+                              if (i != currentIndex) onTap(i);
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -73,8 +76,8 @@ class N360BottomBar extends StatelessWidget {
   }
 }
 
-class _SlidingRule extends StatelessWidget {
-  const _SlidingRule({required this.index, required this.count});
+class _SlidingTile extends StatelessWidget {
+  const _SlidingTile({required this.index, required this.count});
 
   final int index;
   final int count;
@@ -88,16 +91,24 @@ class _SlidingRule extends StatelessWidget {
           tween: Tween<double>(end: index.toDouble()),
           duration: context.motion.quick + context.motion.quick,
           curve: N360Curves.rise,
-          builder: (context, value, _) => Transform.translate(
+          builder: (context, value, child) => Transform.translate(
             offset: Offset(value * cell, 0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                width: cell,
-                height: 3,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: ColoredBox(color: N360Colors.laterite),
+            child: child,
+          ),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: cell,
+              height: double.infinity,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 3),
+                child: CustomPaint(
+                  painter: SoftSurfacePainter(
+                    radius: N360Radius.tile,
+                    gradient: N360Gradients.gold,
+                    edge: Color(0x55FFFFFF),
+                  ),
+                  child: SizedBox.expand(),
                 ),
               ),
             ),
@@ -118,19 +129,31 @@ class _BarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color ink = selected ? N360Colors.ink : N360Colors.inkLabel;
+    final String? badge = item.badge;
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
       minHeight: N360Size.bar,
       minWidth: 0,
-      semanticsLabel: item.label,
+      semanticsLabel: badge == null ? item.label : '${item.label}, $badge',
       selected: selected,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.xxs, 5, N360Space.xxs, 3),
+        padding: const EdgeInsets.fromLTRB(4, 6, 4, 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(item.icon, size: 25, color: ink),
+            Stack(
+              clipBehavior: Clip.none,
+              children: <Widget>[
+                Icon(item.icon, size: 25, color: ink),
+                if (badge != null)
+                  Positioned(
+                    top: -6,
+                    right: -14,
+                    child: N360Badge(text: badge),
+                  ),
+              ],
+            ),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
@@ -138,7 +161,7 @@ class _BarItem extends StatelessWidget {
                 maxLines: 1,
                 style: N360Type.caption.copyWith(
                   color: ink,
-                  fontSize: 14,
+                  fontSize: 13,
                   height: 1.3,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
@@ -147,7 +170,7 @@ class _BarItem extends StatelessWidget {
           ],
         ),
       ),
-      builder: (context, depth, child) => Transform.translate(offset: Offset(0, depth * 2), child: child),
+      builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth), child: child),
     );
   }
 }

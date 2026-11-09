@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../haptics.dart';
+import '../internal/soft_surface.dart';
 import '../motion.dart';
 import '../signature/rolling_number.dart';
 import '../tokens.dart';
@@ -207,15 +208,19 @@ class _StepKeyState extends State<_StepKey> with SingleTickerProviderStateMixin 
   @override
   Widget build(BuildContext context) {
     final bool on = widget.enabled;
-    final Color face = !on
-        ? N360Colors.paper2
-        : (widget.filled ? N360Colors.ink : N360Colors.sheet);
-    final Color edge = !on
-        ? N360Colors.rule
-        : (widget.filled ? N360Colors.inkEdge : N360Colors.ink2);
-    final Color ink = !on
-        ? N360Colors.ink3
-        : (widget.filled ? N360Colors.sheet : N360Colors.ink);
+    final SoftSurfacePainter surface = !on
+        ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper2)
+        : widget.filled
+            ? const SoftSurfacePainter(
+                radius: N360Radius.tile,
+                gradient: N360Gradients.gold,
+                edge: Color(0x55FFFFFF),
+              )
+            : const SoftSurfacePainter(
+                radius: N360Radius.tile,
+                edge: N360Colors.ruleStrong,
+              );
+    final Color ink = on ? N360Colors.ink : N360Colors.ink3;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -227,55 +232,15 @@ class _StepKeyState extends State<_StepKey> with SingleTickerProviderStateMixin 
         height: N360Size.tapLarge,
         child: AnimatedBuilder(
           animation: _depth,
-          builder: (context, child) {
-            final double sink = _depth.value * (N360Size.edge - 1);
-            return CustomPaint(
-              painter: StepKeyPainter(face: face, edge: edge, sink: sink, outlined: !widget.filled && on),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: N360Size.edge),
-                child: Transform.translate(
-                  offset: Offset(0, sink),
-                  child: Center(child: Icon(widget.icon, size: 34, color: ink)),
-                ),
-              ),
-            );
-          },
+          builder: (context, child) => Transform.scale(
+            scale: pressedScale(_depth.value),
+            child: CustomPaint(
+              painter: surface,
+              child: Center(child: Icon(widget.icon, size: 32, color: ink)),
+            ),
+          ),
         ),
       ),
     );
   }
-}
-
-/// A chunky square key with a visible block under its face.
-class StepKeyPainter extends CustomPainter {
-  const StepKeyPainter({required this.face, required this.edge, required this.sink, this.outlined = true});
-
-  final Color face;
-  final Color edge;
-  final double sink;
-  final bool outlined;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const radius = Radius.circular(N360Radius.small);
-    canvas.drawRRect(
-      RRect.fromLTRBR(0, N360Size.edge, size.width, size.height, radius),
-      Paint()..color = edge,
-    );
-    final RRect top = RRect.fromLTRBR(0, sink, size.width, size.height - N360Size.edge + sink, radius);
-    canvas.drawRRect(top, Paint()..color = face);
-    if (outlined) {
-      canvas.drawRRect(
-        top.deflate(0.75),
-        Paint()
-          ..color = N360Colors.ink2
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(StepKeyPainter oldDelegate) =>
-      oldDelegate.face != face || oldDelegate.edge != edge || oldDelegate.sink != sink || oldDelegate.outlined != outlined;
 }

@@ -5,20 +5,23 @@ import '../design.dart';
 
 /// One page of the gallery. Each is laid out for a 360dp phone.
 enum GallerySection {
-  page,
-  type,
-  stamps,
+  progress,
+  plan,
+  installed,
+  art,
+  home,
   ledger,
+  stamps,
   buttons,
   entry,
   muster,
-  home,
   choices,
   outbox,
   moments,
+  type,
 }
 
-/// Every component on one scrollable sheet, used to judge the system by eye.
+/// Every component on one scrollable page, used to judge the system by eye.
 /// Pass [section] to show a single page, as the screenshot test does.
 class DesignGallery extends StatelessWidget {
   const DesignGallery({super.key, this.section, this.marathi = false});
@@ -29,28 +32,42 @@ class DesignGallery extends StatelessWidget {
   _Copy get _c => _Copy(marathi);
 
   Widget _build(BuildContext context, GallerySection s) => switch (s) {
-        GallerySection.page => _SheetPage(_c),
-        GallerySection.type => _TypePage(_c),
-        GallerySection.stamps => _StampsPage(_c),
+        GallerySection.progress => _ProgressPage(_c),
+        GallerySection.plan => _PlanPage(_c),
+        GallerySection.installed => _InstalledPage(_c),
+        GallerySection.art => _ArtPage(_c),
+        GallerySection.home => _HomePage(_c),
         GallerySection.ledger => _LedgerPage(_c),
+        GallerySection.stamps => _StampsPage(_c),
         GallerySection.buttons => _ButtonsPage(_c),
         GallerySection.entry => _EntryPage(_c),
         GallerySection.muster => _MusterPage(_c),
-        GallerySection.home => _HomePage(_c),
         GallerySection.choices => _ChoicesPage(_c),
         GallerySection.outbox => _OutboxPage(_c),
         GallerySection.moments => _MomentsPage(_c),
+        GallerySection.type => _TypePage(_c),
       };
+
+  N360BottomBar _bar() => N360BottomBar(
+        currentIndex: 0,
+        onTap: (_) {},
+        items: <N360BarItem>[
+          N360BarItem(icon: Icons.home_outlined, label: _c.t('Home', 'मुख्य')),
+          N360BarItem(icon: Icons.architecture, label: _c.t('Measure', 'मोजमाप')),
+          N360BarItem(icon: Icons.groups_outlined, label: _c.t('Muster', 'हजेरी')),
+          N360BarItem(icon: Icons.approval_outlined, label: _c.t('Approve', 'मंजुरी'), badge: '4'),
+          N360BarItem(icon: Icons.inbox_outlined, label: _c.t('Outbox', 'आउटबॉक्स')),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
     final GallerySection? single = section;
     if (single != null) {
-      final Widget body = _build(context, single);
+      final bool showBar = single == GallerySection.progress || single == GallerySection.home;
       return Scaffold(
-        body: SafeArea(
-          child: single == GallerySection.page ? body : SingleChildScrollView(child: body),
-        ),
+        bottomNavigationBar: showBar ? _bar() : null,
+        body: SafeArea(child: SingleChildScrollView(child: _build(context, single))),
       );
     }
     return Scaffold(
@@ -89,7 +106,7 @@ class _Page extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           SheetHeader(eyebrow: eyebrow, title: title),
-          const SizedBox(height: N360Space.md),
+          const SizedBox(height: N360Space.xs),
           ...children,
         ],
       ),
@@ -97,86 +114,236 @@ class _Page extends StatelessWidget {
   }
 }
 
-/// A whole page in the app's voice: double red margin, line numbers beside it,
-/// ledger figures ruled off on the right.
-class _SheetPage extends StatelessWidget {
-  const _SheetPage(this.c);
+/// The reference's first screen: headline figure, hatched bar, building card.
+class _ProgressPage extends StatelessWidget {
+  const _ProgressPage(this.c);
 
   final _Copy c;
 
   @override
   Widget build(BuildContext context) {
-    final List<(String, String, String)> lines = <(String, String, String)>[
-      (c.t('Excavation in earth', 'मातीतील खोदकाम'), 'F1 – F8', '42.500'),
-      (c.t('PCC 1:4:8 below footings', 'फूटिंगखाली पीसीसी १:४:८'), 'F1 – F8', '6.750'),
-      (c.t('M25 slab, sixth floor', 'एम२५ स्लॅब, सहावा मजला'), c.t('East wing', 'पूर्व विंग'), '15.000'),
-      (c.t('Fe-500 reinforcement', 'फे-५०० सळई'), c.t('Grid C', 'ग्रिड C'), '1.240'),
-      (c.t('Brick masonry, 230 mm', 'विटांचे बांधकाम, २३० मिमी'), c.t('Floor 5', 'पाचवा मजला'), '28.300'),
-    ];
-    return LedgerPaper(
-      marginRule: true,
-      child: Padding(
-        padding: const EdgeInsets.only(left: N360Space.marginText, right: N360Space.gutter, top: N360Space.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            SheetHeader(
-              eyebrow: c.t('MB-04 · Folio 12', 'एमबी-०४ · पान १२'),
-              title: c.t('Kalyani Tower B', 'कल्याणी टॉवर बी'),
-              trailing: RubberStamp(
-                kind: StampKind.inReview,
-                label: c.t('In review', 'तपासणीत'),
-                size: StampSize.small,
-              ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              IconTile(icon: Icons.apartment, semanticLabel: c.t('Project', 'प्रकल्प'), highlight: true),
+              const SizedBox(width: N360Space.md),
+              Expanded(child: Text(c.t('Kalyani Tower B', 'कल्याणी टॉवर बी'), style: N360Type.title)),
+              IconTile(icon: Icons.notifications_outlined, semanticLabel: c.t('Alerts', 'सूचना'), badge: '3', onTap: () {}),
+            ],
+          ),
+          const SizedBox(height: N360Space.md),
+          LedgerCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(child: Text(c.t('Construction progress', 'बांधकामाची प्रगती'), style: N360Type.heading)),
+                    IconTile(icon: Icons.calendar_month_outlined, semanticLabel: c.t('Dates', 'तारखा'), onTap: () {}),
+                  ],
+                ),
+                Text('70.50%', style: N360Type.figureHero),
+                const SizedBox(height: N360Space.xs),
+                Row(
+                  children: <Widget>[
+                    Expanded(child: _Caption(label: c.t('End', 'शेवट'), value: '2026/01/11')),
+                    _Caption(label: c.t('Total', 'एकूण'), value: c.t('234 delay', '234 उशीर'), alignEnd: true),
+                  ],
+                ),
+                const SizedBox(height: N360Space.sm),
+                HatchedProgressBar(fraction: 0.705, markerLabel: c.t('Today', 'आज')),
+              ],
             ),
-            const SizedBox(height: N360Space.sm),
-            for (var i = 0; i < lines.length; i++)
-              StaggeredRise(
-                index: i,
-                child: _MarginedLine(number: '${i + 1}', line: lines[i]),
-              ),
-            const SizedBox(height: N360Space.xs),
-            LedgerRow(
-              label: c.t('Total this folio', 'या पानाची बेरीज'),
-              valueWidget: const RollingQty(value: '93.790', unit: 'cum'),
-              total: true,
+          ),
+          const SizedBox(height: N360Space.md),
+          LedgerCard(
+            padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.md, N360Space.md, N360Space.xs),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    IconTile(icon: Icons.apartment_outlined, semanticLabel: c.t('Building', 'इमारत')),
+                    const SizedBox(width: N360Space.md),
+                    Expanded(child: Text(c.t('Building plan', 'इमारतीचा आराखडा'), style: N360Type.heading)),
+                    IconTile(icon: Icons.calendar_month_outlined, semanticLabel: c.t('Dates', 'तारखा'), onTap: () {}),
+                  ],
+                ),
+                const BuildingProgressArt(fraction: 0.705),
+              ],
             ),
-            const SizedBox(height: N360Space.lg),
-            GloveButton(
-              label: c.t('Send for approval', 'मंजुरीसाठी पाठवा'),
-              icon: Icons.approval,
-              fullWidth: true,
-              large: true,
-              onPressed: () {},
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _MarginedLine extends StatelessWidget {
-  const _MarginedLine({required this.number, required this.line});
+class _Caption extends StatelessWidget {
+  const _Caption({required this.label, required this.value, this.alignEnd = false});
 
-  final String number;
-  final (String, String, String) line;
+  final String label;
+  final String value;
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
-    final (title, place, qty) = line;
-    return Stack(
-      clipBehavior: Clip.none,
+    return Column(
+      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        LedgerRow(label: title, hint: place, value: qty),
-        Positioned(
-          left: -N360Space.marginText + 8,
-          top: 12,
-          width: 26,
-          child: Text(
-            number,
-            textAlign: TextAlign.right,
-            style: N360Type.figureSmall.copyWith(color: N360Colors.stampRed),
+        Text(label, style: N360Type.caption),
+        Text(value, style: N360Type.heading.copyWith(fontSize: 15, height: 1.3)),
+      ],
+    );
+  }
+}
+
+/// The reference's middle screen.
+class _PlanPage extends StatelessWidget {
+  const _PlanPage(this.c);
+
+  final _Copy c;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              IconTile(icon: Icons.arrow_back, semanticLabel: c.t('Back', 'मागे'), onTap: () {}),
+              Expanded(
+                child: Text(
+                  c.t('Construction plan', 'बांधकाम आराखडा'),
+                  textAlign: TextAlign.center,
+                  style: N360Type.heading,
+                ),
+              ),
+              IconTile(icon: Icons.more_horiz, semanticLabel: c.t('More', 'आणखी'), onTap: () {}),
+            ],
+          ),
+          const SizedBox(height: N360Space.sm),
+          const BuildingProgressArt(fraction: 0.42),
+          const SizedBox(height: N360Space.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: StatTile(
+                  title: c.t('Finishing work', 'फिनिशिंग'),
+                  value: '67%',
+                  caption: '25 Nov, 2026',
+                  onTap: () {},
+                ),
+              ),
+              const SizedBox(width: N360Space.sm + 2),
+              Expanded(
+                child: StatTile(
+                  title: c.t('Structural work', 'स्ट्रक्चरल काम'),
+                  value: '42%',
+                  caption: '26 May, 2026',
+                  emphasized: true,
+                  onTap: () {},
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: N360Space.sm + 2),
+          LedgerCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    IconTile(icon: Icons.calendar_month_outlined, semanticLabel: c.t('Date', 'तारीख')),
+                    const SizedBox(width: N360Space.md),
+                    Expanded(child: Text('28.10.2026', style: N360Type.heading.copyWith(fontSize: 19))),
+                    IconTile(icon: Icons.north_east, semanticLabel: c.t('Open', 'उघडा'), onTap: () {}),
+                  ],
+                ),
+                const SizedBox(height: N360Space.sm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    _Caption(label: c.t('Unit range', 'युनिट'), value: '2–46', alignEnd: true),
+                    const SizedBox(width: N360Space.xl),
+                    _Caption(label: c.t('Distance', 'अंतर'), value: '366 m', alignEnd: true),
+                  ],
+                ),
+                const SizedBox(height: N360Space.sm),
+                const TickGauge(fraction: 0.62),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The reference's third screen: a list of soft rows with square percents.
+class _InstalledPage extends StatelessWidget {
+  const _InstalledPage(this.c);
+
+  final _Copy c;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<(String, String, double)> rows = <(String, String, double)>[
+      (c.t('Design phase', 'डिझाइन टप्पा'), c.t('May 2026 – Mar 2027', 'मे 2026 – मार्च 2027'), 0.9),
+      (c.t('Electrical systems', 'विद्युत प्रणाली'), c.t('Apr 2026 – Mar 2027', 'एप्रिल 2026 – मार्च 2027'), 0.85),
+      (c.t('Fire safety', 'अग्निसुरक्षा'), c.t('Mar 2026 – Mar 2027', 'मार्च 2026 – मार्च 2027'), 0.75),
+      (c.t('Plumbing', 'प्लंबिंग'), c.t('Mar 2026 – Mar 2027', 'मार्च 2026 – मार्च 2027'), 0.7),
+    ];
+    return _Page(
+      eyebrow: c.t('Site', 'साइट'),
+      title: c.t('Planned progress', 'नियोजित प्रगती'),
+      children: <Widget>[
+        LedgerCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(child: Text(c.t('Installed', 'बसवलेले'), style: N360Type.heading)),
+                  Text(c.t('See all', 'सर्व पहा'), style: N360Type.caption),
+                ],
+              ),
+              const SizedBox(height: N360Space.sm),
+              for (final (name, dates, f) in rows)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: N360Space.sm),
+                  child: Row(
+                    children: <Widget>[
+                      IconTile(icon: Icons.add, semanticLabel: name, onTap: () {}),
+                      const SizedBox(width: N360Space.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(name, style: N360Type.bodyStrong),
+                            Text(dates, style: N360Type.caption),
+                          ],
+                        ),
+                      ),
+                      SquarePercent(fraction: f, label: '${(f * 100).round()}%'),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
       ],
@@ -184,66 +351,164 @@ class _MarginedLine extends StatelessWidget {
   }
 }
 
-class _TypePage extends StatelessWidget {
-  const _TypePage(this.c);
+class _ArtPage extends StatelessWidget {
+  const _ArtPage(this.c);
 
   final _Copy c;
 
   @override
   Widget build(BuildContext context) {
     return _Page(
-      eyebrow: c.t('MB-04 · Folio 12', 'एमबी-०४ · पान १२'),
-      title: c.t('Measurement book', 'मोजमाप पुस्तिका'),
-      children: <Widget>[
-        Text(c.t('Daily site report', 'दैनिक साइट अहवाल'), style: N360Type.display),
-        Text(c.t('Slab casting, floor 6', 'स्लॅब कास्टिंग, सहावा मजला'), style: N360Type.heading),
-        const SizedBox(height: N360Space.sm),
-        Text(
-          c.t(
-            'Concrete reached the east wing at 11:40. Rebar checked and passed by the structural engineer.',
-            'पूर्व विंगमध्ये काँक्रीट ११:४० ला पोहोचले. स्ट्रक्चरल इंजिनिअरने सळई तपासून मंजूर केली.',
-          ),
-          style: N360Type.body,
+      eyebrow: c.t('Home graphic', 'मुख्य चित्र'),
+      title: c.t('Building progress', 'इमारतीची प्रगती'),
+      children: const <Widget>[
+        BuildingProgressArt(fraction: 1),
+        SizedBox(height: N360Space.sm),
+        Row(
+          children: <Widget>[
+            Expanded(child: BuildingProgressArt(fraction: 0.0)),
+            SizedBox(width: N360Space.sm),
+            Expanded(child: BuildingProgressArt(fraction: 0.36)),
+          ],
         ),
-        const SizedBox(height: N360Space.sm),
-        const RuledDivider(),
-        const SizedBox(height: N360Space.sm),
-        Text('₹1,23,456.50', style: N360Type.figureHero),
-        Text('620.000 cum', style: N360Type.figureLarge),
-        Text('Nos 2 × 10.000 × 5.000 × 0.500', style: N360Type.figure),
-        const SizedBox(height: N360Space.md),
-        SectionLabel(c.t('Outdoor colours', 'रंग')),
-        const SizedBox(height: N360Space.xs),
-        const _Swatches(),
+        SizedBox(height: N360Space.sm),
+        Center(child: SizedBox(width: 150, child: BuildingProgressArt(fraction: 0.62))),
       ],
     );
   }
 }
 
-class _Swatches extends StatelessWidget {
-  const _Swatches();
+class _HomePage extends StatelessWidget {
+  const _HomePage(this.c);
+
+  final _Copy c;
 
   @override
   Widget build(BuildContext context) {
-    const List<Color> colours = <Color>[
-      N360Colors.ink,
-      N360Colors.ink2,
-      N360Colors.inkLabel,
-      N360Colors.stampRed,
-      N360Colors.laterite,
-      N360Colors.haldi,
-      N360Colors.moss,
-      N360Colors.neel,
-    ];
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        for (final colour in colours)
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 3),
-              child: SizedBox(height: 32, child: ColoredBox(color: colour)),
-            ),
+        OfflineBanner(
+          label: c.t('Offline', 'ऑफलाइन'),
+          detail: c.t('Entries wait on phone.', 'नोंदी फोनवर राहतील.'),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.sm, 0),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    SectionLabel(c.t('Kalyani Tower B', 'कल्याणी टॉवर बी')),
+                    Text(c.t('Sachin More', 'सचिन मोरे'), style: N360Type.title),
+                  ],
+                ),
+              ),
+              SyncPill(
+                state: SyncVisualState.pending,
+                count: 3,
+                label: c.t('waiting', 'बाकी'),
+                onTap: () {},
+              ),
+            ],
           ),
+        ),
+        const SizedBox(height: N360Space.sm),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+          child: Column(
+            children: <Widget>[
+              for (final pair in <List<(IconData, String, String?)>>[
+                <(IconData, String, String?)>[
+                  (Icons.architecture, c.t('Measure', 'मोजमाप'), null),
+                  (Icons.assignment_outlined, c.t('Daily report', 'दैनिक अहवाल'), '2'),
+                ],
+                <(IconData, String, String?)>[
+                  (Icons.groups_outlined, c.t('Attendance', 'हजेरी'), null),
+                  (Icons.report_problem_outlined, c.t('Issues', 'समस्या'), '5'),
+                ],
+                <(IconData, String, String?)>[
+                  (Icons.account_balance_wallet_outlined, c.t('Petty cash', 'किरकोळ रोख'), null),
+                  (Icons.approval_outlined, c.t('Approvals', 'मंजुरी'), '12'),
+                ],
+              ]) ...<Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(child: ActionTile(icon: pair[0].$1, label: pair[0].$2, badge: pair[0].$3, onTap: () {})),
+                    const SizedBox(width: N360Space.sm + 2),
+                    Expanded(child: ActionTile(icon: pair[1].$1, label: pair[1].$2, badge: pair[1].$3, onTap: () {})),
+                  ],
+                ),
+                const SizedBox(height: N360Space.sm + 2),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LedgerPage extends StatelessWidget {
+  const _LedgerPage(this.c);
+
+  final _Copy c;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Page(
+      eyebrow: c.t('Item 2.1 · M25 slab', 'बाब 2.1 · M25 स्लॅब'),
+      title: c.t('Footing F12', 'फूटिंग F12'),
+      children: <Widget>[
+        LedgerCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SheetHeader(
+                eyebrow: c.t('Measurement book', 'मोजमाप पुस्तिका'),
+                title: c.t('Sixth floor, east', 'सहावा मजला, पूर्व'),
+                trailing: RubberStamp(
+                  kind: StampKind.queued,
+                  label: c.t('On phone', 'फोनवर'),
+                  size: StampSize.small,
+                ),
+              ),
+              LedgerRow(label: c.t('Nos', 'संख्या'), value: '2.000'),
+              LedgerRow(label: c.t('Length', 'लांबी'), value: '10.000 m'),
+              LedgerRow(label: c.t('Breadth', 'रुंदी'), value: '5.000 m'),
+              LedgerRow(label: c.t('Depth', 'खोली'), value: '0.500 m', ruled: false),
+              const SizedBox(height: N360Space.xs),
+              LedgerRow(label: c.t('Quantity', 'परिमाण'), value: '50.000 cum', total: true),
+            ],
+          ),
+        ),
+        const SizedBox(height: N360Space.md),
+        SectionLabel(c.t('Cash book', 'रोख वही')),
+        const SizedBox(height: N360Space.xs),
+        LedgerCard(
+          child: Row(
+            children: <Widget>[
+              Expanded(child: Text(c.t('Petty cash balance', 'किरकोळ रोख शिल्लक'), style: N360Type.body)),
+              const SizedBox(width: N360Space.sm),
+              const RollingMoney(value: '12,500.00', style: N360Type.figureLarge),
+            ],
+          ),
+        ),
+        const SizedBox(height: N360Space.md),
+        ProgressRule(semanticsLabel: c.t('Syncing', 'पाठवत आहे')),
+        const SizedBox(height: N360Space.md),
+        ErrorSlip(
+          title: c.t('Could not send photo', 'फोटो पाठवता आला नाही'),
+          message: c.t(
+            'The file is larger than the server allows. It is safe on your phone.',
+            'फाइल सर्व्हरच्या मर्यादेपेक्षा मोठी आहे. ती तुमच्या फोनवर सुरक्षित आहे.',
+          ),
+          actionLabel: c.t('Try again', 'पुन्हा प्रयत्न करा'),
+          onAction: () {},
+        ),
       ],
     );
   }
@@ -269,124 +534,42 @@ class _StampsPage extends StatelessWidget {
       eyebrow: c.t('Stamps', 'शिक्के'),
       title: c.t('Status in ink', 'शाईतील स्थिती'),
       children: <Widget>[
-        Wrap(
-          spacing: N360Space.md,
-          runSpacing: N360Space.xs,
-          children: <Widget>[
-            for (final (kind, label) in kinds) RubberStamp(kind: kind, label: label),
-          ],
+        LedgerCard(
+          child: Wrap(
+            spacing: N360Space.sm,
+            runSpacing: N360Space.xs,
+            children: <Widget>[
+              for (final (kind, label) in kinds) RubberStamp(kind: kind, label: label),
+            ],
+          ),
         ),
         const SizedBox(height: N360Space.md),
         LedgerCard(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.xs),
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.lg, vertical: N360Space.xs),
           child: Column(
             children: <Widget>[
               LedgerRow(
-                label: c.t('DPR · 9 Nov', 'डीपीआर · ९ नोव्हें'),
+                label: c.t('DPR · 9 Nov', 'डीपीआर · 9 नोव्हें'),
                 hint: c.t('Slab casting, floor 6', 'स्लॅब कास्टिंग, सहावा मजला'),
-                valueWidget: RubberStamp(
-                  kind: StampKind.approved,
-                  label: c.t('Approved', 'मंजूर'),
-                  size: StampSize.small,
-                ),
+                valueWidget: RubberStamp(kind: StampKind.approved, label: c.t('Approved', 'मंजूर'), size: StampSize.small),
               ),
               LedgerRow(
-                label: c.t('MB 2.1 · 15.000 cum', 'एमबी २.१ · १५.००० घमी'),
+                label: c.t('MB 2.1 · 15.000 cum', 'एमबी 2.1 · 15.000 घमी'),
                 hint: c.t('Footing F12', 'फूटिंग F12'),
-                valueWidget: RubberStamp(
-                  kind: StampKind.inReview,
-                  label: c.t('In review', 'तपासणीत'),
-                  size: StampSize.small,
-                ),
+                valueWidget: RubberStamp(kind: StampKind.inReview, label: c.t('In review', 'तपासणीत'), size: StampSize.small),
               ),
               LedgerRow(
                 label: c.t('Issue · Formwork', 'समस्या · फॉर्मवर्क'),
                 hint: c.t('East wing, grid C', 'पूर्व विंग, ग्रिड C'),
                 ruled: false,
-                valueWidget: RubberStamp(
-                  kind: StampKind.returned,
-                  label: c.t('Returned', 'परत पाठवले'),
-                  size: StampSize.small,
-                ),
+                valueWidget: RubberStamp(kind: StampKind.returned, label: c.t('Returned', 'परत पाठवले'), size: StampSize.small),
               ),
             ],
           ),
         ),
         const SizedBox(height: N360Space.sm),
         Center(
-          child: RubberStamp(
-            kind: StampKind.approved,
-            label: c.t('Approved', 'मंजूर'),
-            size: StampSize.hero,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LedgerPage extends StatelessWidget {
-  const _LedgerPage(this.c);
-
-  final _Copy c;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Page(
-      eyebrow: c.t('Sheet', 'पान'),
-      title: c.t('Ledger surfaces', 'लेजर'),
-      children: <Widget>[
-        LedgerCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              SheetHeader(
-                eyebrow: c.t('Item 2.1 · M25 slab', 'बाब २.१ · M25 स्लॅब'),
-                title: c.t('Footing F12', 'फूटिंग F12'),
-                trailing: RubberStamp(
-                  kind: StampKind.queued,
-                  label: c.t('On phone', 'फोनवर'),
-                  size: StampSize.small,
-                ),
-              ),
-              LedgerRow(label: c.t('Nos', 'संख्या'), value: '2.000'),
-              LedgerRow(label: c.t('Length', 'लांबी'), value: '10.000 m'),
-              LedgerRow(label: c.t('Breadth', 'रुंदी'), value: '5.000 m'),
-              LedgerRow(label: c.t('Depth', 'खोली'), value: '0.500 m', ruled: false),
-              LedgerRow(
-                label: c.t('Quantity', 'परिमाण'),
-                value: '50.000 cum',
-                total: true,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: N360Space.md),
-        SectionLabel(c.t('Cash book', 'रोख वही')),
-        LedgerCard(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Expanded(child: Text(c.t('Petty cash balance', 'किरकोळ रोख शिल्लक'), style: N360Type.body)),
-              const SizedBox(width: N360Space.sm),
-              const RollingMoney(value: '12,500.00', style: N360Type.figureLarge),
-            ],
-          ),
-        ),
-        const SizedBox(height: N360Space.md),
-        const RuledDivider(drawIn: true, color: N360Colors.ink, thickness: 1.5),
-        const SizedBox(height: N360Space.md),
-        ProgressRule(semanticsLabel: c.t('Syncing', 'पाठवत आहे')),
-        const SizedBox(height: N360Space.md),
-        ErrorSlip(
-          title: c.t('Could not send photo', 'फोटो पाठवता आला नाही'),
-          message: c.t(
-            'The file is larger than the server allows. It is safe on your phone.',
-            'फाइल सर्व्हरच्या मर्यादेपेक्षा मोठी आहे. ती तुमच्या फोनवर सुरक्षित आहे.',
-          ),
-          actionLabel: c.t('Try again', 'पुन्हा प्रयत्न करा'),
-          onAction: () {},
+          child: RubberStamp(kind: StampKind.approved, label: c.t('Approved', 'मंजूर'), size: StampSize.hero),
         ),
       ],
     );
@@ -449,18 +632,14 @@ class _ButtonsPage extends StatelessWidget {
               child: GloveButton(
                 label: c.t('Attach bill', 'बिल जोडा'),
                 kind: GloveButtonKind.ghost,
-                icon: Icons.camera_alt,
+                icon: Icons.camera_alt_outlined,
                 fullWidth: true,
                 onPressed: () {},
               ),
             ),
             const SizedBox(width: N360Space.sm),
             Expanded(
-              child: GloveButton(
-                label: c.t('Unavailable', 'उपलब्ध नाही'),
-                fullWidth: true,
-                onPressed: null,
-              ),
+              child: GloveButton(label: c.t('Unavailable', 'उपलब्ध नाही'), fullWidth: true, onPressed: null),
             ),
           ],
         ),
@@ -503,7 +682,7 @@ class _EntryPageState extends State<_EntryPage> {
   @override
   Widget build(BuildContext context) {
     final _Copy c = widget.c;
-    final List<String> labels = <String>['NOS', '× L', '× B', '× D'];
+    final List<String> labels = <String>['Nos', '× L', '× B', '× D'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -511,18 +690,18 @@ class _EntryPageState extends State<_EntryPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, 0),
           child: SheetHeader(
-            eyebrow: c.t('Item 2.1 · cum', 'बाब २.१ · घमी'),
+            eyebrow: c.t('Item 2.1 · cum', 'बाब 2.1 · घमी'),
             title: c.t('New measurement', 'नवीन मोजमाप'),
             trailing: RubberStamp(kind: StampKind.draft, label: c.t('Draft', 'मसुदा'), size: StampSize.small),
           ),
         ),
-        const SizedBox(height: N360Space.md),
+        const SizedBox(height: N360Space.sm),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
           child: Row(
             children: <Widget>[
               for (var i = 0; i < 4; i++) ...<Widget>[
-                if (i > 0) const SizedBox(width: 4),
+                if (i > 0) const SizedBox(width: 6),
                 Expanded(
                   child: DimensionTile(
                     label: labels[i],
@@ -540,11 +719,9 @@ class _EntryPageState extends State<_EntryPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
           child: LedgerCard(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Text(c.t('Quantity', 'परिमाण'), style: N360Type.heading),
+                Expanded(child: Text(c.t('Quantity', 'परिमाण'), style: N360Type.heading)),
                 const RollingQty(value: '110.000', unit: 'cum', style: N360Type.figureLarge),
               ],
             ),
@@ -581,114 +758,38 @@ class _MusterPage extends StatelessWidget {
       (c.t('Prakash More', 'प्रकाश मोरे'), c.t('Electrician', 'इलेक्ट्रिशियन'), null, N360Pictograms.trade('Electrician').icon),
     ];
     return _Page(
-      eyebrow: c.t('Muster roll · 9 Nov', 'हजेरी · ९ नोव्हें'),
-      title: c.t('Today\'s attendance', 'आजची हजेरी'),
+      eyebrow: c.t('Muster roll · 9 Nov', 'हजेरी · 9 नोव्हें'),
+      title: c.t("Today's attendance", 'आजची हजेरी'),
       children: <Widget>[
-        for (final (name, trade, value, icon) in workers) ...<Widget>[
-          Row(
+        LedgerCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(icon, size: 22, color: N360Colors.ink2),
-              const SizedBox(width: N360Space.sm),
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    text: name,
-                    style: N360Type.bodyStrong,
-                    children: <InlineSpan>[
-                      TextSpan(text: '   $trade', style: N360Type.caption),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          HajiriSegment(value: value, onChanged: (_) {}),
-          const SizedBox(height: N360Space.md),
-        ],
-      ],
-    );
-  }
-}
-
-class _HomePage extends StatelessWidget {
-  const _HomePage(this.c);
-
-  final _Copy c;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        OfflineBanner(
-          label: c.t('Offline', 'ऑफलाइन'),
-          detail: c.t('Entries wait on phone.', 'नोंदी फोनवर राहतील.'),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.sm, 0),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              for (final (name, trade, value, icon) in workers) ...<Widget>[
+                Row(
                   children: <Widget>[
-                    SectionLabel(c.t('Kalyani Tower B', 'कल्याणी टॉवर बी')),
-                    Text(c.t('Sachin More', 'सचिन मोरे'), style: N360Type.title),
+                    Icon(icon, size: 22, color: N360Colors.inkLabel),
+                    const SizedBox(width: N360Space.sm),
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
+                          text: name,
+                          style: N360Type.bodyStrong,
+                          children: <InlineSpan>[
+                            TextSpan(text: '   $trade', style: N360Type.caption),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              SyncPill(
-                state: SyncVisualState.pending,
-                count: 3,
-                label: c.t('waiting', 'बाकी'),
-                onTap: () {},
-              ),
+                const SizedBox(height: N360Space.xs),
+                HajiriSegment(value: value, onChanged: (_) {}),
+                const SizedBox(height: N360Space.md),
+              ],
             ],
           ),
-        ),
-        const SizedBox(height: N360Space.sm),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-          child: Column(
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(child: ActionTile(icon: Icons.architecture, label: c.t('Measure', 'मोजमाप'), onTap: () {})),
-                  const SizedBox(width: N360Space.sm),
-                  Expanded(child: ActionTile(icon: Icons.assignment, label: c.t('Daily report', 'दैनिक अहवाल'), onTap: () {}, badge: '2')),
-                ],
-              ),
-              const SizedBox(height: N360Space.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(child: ActionTile(icon: Icons.groups, label: c.t('Attendance', 'हजेरी'), onTap: () {})),
-                  const SizedBox(width: N360Space.sm),
-                  Expanded(child: ActionTile(icon: Icons.report_problem_outlined, label: c.t('Issues', 'समस्या'), onTap: () {}, badge: '5')),
-                ],
-              ),
-              const SizedBox(height: N360Space.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(child: ActionTile(icon: Icons.account_balance_wallet, label: c.t('Petty cash', 'किरकोळ रोख'), onTap: () {})),
-                  const SizedBox(width: N360Space.sm),
-                  Expanded(child: ActionTile(icon: Icons.approval, label: c.t('Approvals', 'मंजुरी'), onTap: () {}, badge: '12')),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: N360Space.md),
-        N360BottomBar(
-          currentIndex: 0,
-          onTap: (_) {},
-          items: <N360BarItem>[
-            N360BarItem(icon: Icons.home_outlined, label: c.t('Home', 'मुख्य')),
-            N360BarItem(icon: Icons.architecture, label: c.t('Measure', 'मोजमाप')),
-            N360BarItem(icon: Icons.approval, label: c.t('Approvals', 'मंजुरी')),
-            N360BarItem(icon: Icons.inbox_outlined, label: c.t('Outbox', 'आउटबॉक्स')),
-          ],
         ),
       ],
     );
@@ -702,59 +803,36 @@ class _ChoicesPage extends StatelessWidget {
 
   String _l(Pictogram p) => lookupAppLocalizations(Locale(c.mr ? 'mr' : 'en')).pictogramLabel(p);
 
+  Widget _choice(String label, List<Pictogram> options, String value, int columns) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        SectionLabel(label),
+        const SizedBox(height: N360Space.xs),
+        PictoChoice<String>(
+          value: value,
+          columns: columns,
+          onChanged: (_) {},
+          options: <PictoOption<String>>[
+            for (final p in options) PictoOption<String>(value: p.key, icon: p.icon, label: _l(p)),
+          ],
+        ),
+        const SizedBox(height: N360Space.md),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return _Page(
       eyebrow: c.t('Choices', 'पर्याय'),
       title: c.t('Pictures first', 'आधी चित्र'),
       children: <Widget>[
-        SectionLabel(c.t('Weather', 'हवामान')),
-        const SizedBox(height: N360Space.xs),
-        PictoChoice<String>(
-          value: 'Rain',
-          columns: 5,
-          onChanged: (_) {},
-          options: <PictoOption<String>>[
-            for (final p in N360Pictograms.weatherKinds)
-              PictoOption<String>(value: p.key, icon: p.icon, label: _l(p)),
-          ],
-        ),
-        const SizedBox(height: N360Space.md),
-        SectionLabel(c.t('Priority', 'प्राधान्य')),
-        const SizedBox(height: N360Space.xs),
-        PictoChoice<String>(
-          value: 'high',
-          columns: 4,
-          onChanged: (_) {},
-          options: <PictoOption<String>>[
-            for (final p in N360Pictograms.issuePriorities)
-              PictoOption<String>(value: p.key, icon: p.icon, label: _l(p)),
-          ],
-        ),
-        const SizedBox(height: N360Space.md),
-        SectionLabel(c.t('Expense', 'खर्च')),
-        const SizedBox(height: N360Space.xs),
-        PictoChoice<String>(
-          value: 'Fuel',
-          columns: 4,
-          onChanged: (_) {},
-          options: <PictoOption<String>>[
-            for (final p in N360Pictograms.expenseCategories)
-              PictoOption<String>(value: p.key, icon: p.icon, label: _l(p)),
-          ],
-        ),
-        const SizedBox(height: N360Space.md),
-        SectionLabel(c.t('Trade', 'काम')),
-        const SizedBox(height: N360Space.xs),
-        PictoChoice<String>(
-          value: 'Bar bender',
-          columns: 4,
-          onChanged: (_) {},
-          options: <PictoOption<String>>[
-            for (final p in N360Pictograms.trades)
-              PictoOption<String>(value: p.key, icon: p.icon, label: _l(p)),
-          ],
-        ),
+        _choice(c.t('Weather', 'हवामान'), N360Pictograms.weatherKinds, 'Rain', 5),
+        _choice(c.t('Priority', 'प्राधान्य'), N360Pictograms.issuePriorities, 'high', 4),
+        _choice(c.t('Expense', 'खर्च'), N360Pictograms.expenseCategories, 'Fuel', 4),
+        _choice(c.t('Trade', 'काम'), N360Pictograms.trades, 'Bar bender', 4),
       ],
     );
   }
@@ -790,34 +868,26 @@ class _OutboxPage extends StatelessWidget {
           trayLabel: c.t('on phone', 'फोनवर'),
           slips: <SlipData>[
             SlipData(
-              id: 'a',
-              title: c.t('Measurement 2.1', 'मोजमाप २.१'),
-              subtitle: '15.000 cum · 9 Nov',
-              status: SlipStatus.sent,
-              statusLabel: c.t('Sent', 'पाठवले'),
-              icon: Icons.architecture,
-            ),
-            SlipData(
               id: 'b',
               title: c.t('Daily report', 'दैनिक अहवाल'),
-              subtitle: c.t('9 Nov · 3 photos', '९ नोव्हें · ३ फोटो'),
+              subtitle: c.t('9 Nov · 3 photos', '9 नोव्हें · 3 फोटो'),
               status: SlipStatus.sending,
               statusLabel: c.t('Sending', 'पाठवत आहे'),
-              icon: Icons.assignment,
+              icon: Icons.assignment_outlined,
             ),
             SlipData(
               id: 'c',
               title: c.t('Fuel ₹2,450.00', 'इंधन ₹2,450.00'),
               status: SlipStatus.waiting,
               statusLabel: c.t('Waiting', 'बाकी'),
-              icon: Icons.local_gas_station,
+              icon: Icons.local_gas_station_outlined,
             ),
             SlipData(
               id: 'd',
-              title: c.t('Attendance, 12 workers', 'हजेरी, १२ कामगार'),
+              title: c.t('Attendance, 12 workers', 'हजेरी, 12 कामगार'),
               status: SlipStatus.attention,
               statusLabel: c.t('Needs a look', 'तपासा'),
-              icon: Icons.groups,
+              icon: Icons.groups_outlined,
             ),
           ],
         ),
@@ -835,7 +905,7 @@ class _MomentsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Page(
       eyebrow: c.t('Feedback', 'सूचना'),
-      title: c.t('Messages on paper', 'कागदावर संदेश'),
+      title: c.t('Messages', 'संदेश'),
       children: <Widget>[
         PaperToast(message: c.t('Saved on phone', 'फोनवर जतन केले'), kind: PaperToastKind.success),
         const SizedBox(height: N360Space.md),
@@ -847,12 +917,74 @@ class _MomentsPage extends StatelessWidget {
         EmptyLedger(
           title: c.t('No measurements yet', 'अजून मोजमाप नाही'),
           message: c.t('Your first entry starts this book.', 'तुमची पहिली नोंद या पुस्तिकेची सुरुवात करेल.'),
-          action: GloveButton(
-            label: c.t('Add measurement', 'मोजमाप जोडा'),
-            icon: Icons.add,
-            onPressed: () {},
-          ),
+          action: GloveButton(label: c.t('Add measurement', 'मोजमाप जोडा'), icon: Icons.add, onPressed: () {}),
         ),
+      ],
+    );
+  }
+}
+
+class _TypePage extends StatelessWidget {
+  const _TypePage(this.c);
+
+  final _Copy c;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Page(
+      eyebrow: c.t('Type', 'टंक'),
+      title: c.t('Headings and figures', 'शीर्षके आणि आकडे'),
+      children: <Widget>[
+        Text(c.t('Daily site report', 'दैनिक साइट अहवाल'), style: N360Type.display),
+        Text(c.t('Slab casting, floor 6', 'स्लॅब कास्टिंग, सहावा मजला'), style: N360Type.heading),
+        const SizedBox(height: N360Space.sm),
+        Text(
+          c.t(
+            'Concrete reached the east wing at 11:40. Rebar checked and passed by the structural engineer.',
+            'पूर्व विंगमध्ये काँक्रीट 11:40 ला पोहोचले. स्ट्रक्चरल इंजिनिअरने सळई तपासून मंजूर केली.',
+          ),
+          style: N360Type.body,
+        ),
+        const SizedBox(height: N360Space.md),
+        Text('₹1,23,456.50', style: N360Type.figureHero.copyWith(fontSize: 36)),
+        Text('620.000 cum', style: N360Type.figureLarge),
+        Text('2 × 10.000 × 5.000', style: N360Type.figure),
+        const SizedBox(height: N360Space.md),
+        const _Swatches(),
+      ],
+    );
+  }
+}
+
+class _Swatches extends StatelessWidget {
+  const _Swatches();
+
+  @override
+  Widget build(BuildContext context) {
+    const List<Color> colours = <Color>[
+      N360Colors.ink,
+      N360Colors.ink2,
+      N360Colors.inkLabel,
+      N360Colors.laterite,
+      N360Colors.orange,
+      N360Colors.amber,
+      N360Colors.peach,
+      N360Colors.moss,
+    ];
+    return Row(
+      children: <Widget>[
+        for (final colour in colours)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: SizedBox(
+                height: 34,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: colour, borderRadius: N360Radius.sm),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
