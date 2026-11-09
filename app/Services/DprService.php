@@ -9,6 +9,7 @@ use App\Models\Dpr;
 use App\Models\DprPhoto;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use App\Support\Idempotent;
 use Illuminate\Http\UploadedFile;
@@ -190,11 +191,11 @@ class DprService
     /** Trashed rows count: the unique key still holds their client_uuid. */
     private function findByClientUuid(int $organizationId, string $uuid): ?Dpr
     {
-        return Dpr::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
+        return ClientUuidRepeat::reachable(Dpr::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first());
     }
 
     private function findPhoto(int $organizationId, string $uuid): ?DprPhoto
     {
-        return DprPhoto::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
+        return ClientUuidRepeat::reachable(DprPhoto::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first());
     }
 }

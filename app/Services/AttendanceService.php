@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Worker;
+use App\Support\ClientUuidRepeat;
 use App\Support\Idempotent;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +58,13 @@ class AttendanceService
     /** Insert the mark, or write over $existing and fill its client_uuid if it had none. */
     public function save(Project $project, string $date, array $mark, User $user, ?Attendance $existing = null): Attendance
     {
+        $uuid = $mark['client_uuid'] ?? null;
+
+        // A key this mark does not already hold may belong to a mark on a project out of reach.
+        if ($uuid && $uuid !== $existing?->client_uuid) {
+            ClientUuidRepeat::reachable(Attendance::withoutGlobalScopes()->where('organization_id', $project->organization_id)->where('client_uuid', $uuid)->first());
+        }
+
         $values = [
             'status' => $mark['status'],
             'ot_hours' => $mark['ot_hours'] ?? 0,

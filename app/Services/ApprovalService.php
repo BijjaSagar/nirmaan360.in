@@ -6,6 +6,7 @@ use App\Models\Approval;
 use App\Models\ApprovalRule;
 use App\Models\ApprovalStep;
 use App\Models\AuditLog;
+use App\Models\Concerns\ProjectAccessScope;
 use App\Models\User;
 use App\Services\Notify\WorkflowNotifier;
 use Illuminate\Database\Eloquent\Collection;
@@ -163,7 +164,8 @@ class ApprovalService
 
     private function alreadyApplied(Approval $approval, string $clientUuid): bool
     {
-        $step = ApprovalStep::where('client_uuid', $clientUuid)->first();
+        // Sees steps on projects out of reach too, so their key is refused below instead of hitting the unique index.
+        $step = ApprovalStep::withoutGlobalScope(ProjectAccessScope::class)->where('client_uuid', $clientUuid)->first();
 
         if ($step && $step->approval_id !== $approval->id) {
             throw ValidationException::withMessages(['client_uuid' => __('This request id was already used on another approval.')]);

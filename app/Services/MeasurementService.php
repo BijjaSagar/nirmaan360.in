@@ -8,6 +8,7 @@ use App\Models\BoqItem;
 use App\Models\MeasurementEntry;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use App\Support\Idempotent;
 use Illuminate\Support\Facades\DB;
@@ -139,10 +140,10 @@ class MeasurementService
 
     private function findByClientUuid(int $organizationId, string $uuid): ?MeasurementEntry
     {
-        return MeasurementEntry::withoutGlobalScopes()
+        return ClientUuidRepeat::reachable(MeasurementEntry::withoutGlobalScopes()
             ->where('organization_id', $organizationId)
             ->where('client_uuid', $uuid)
-            ->first();
+            ->first());
     }
 
     private function assertEditable(MeasurementEntry $entry): void
