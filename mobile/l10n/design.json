@@ -1,0 +1,47 @@
+{
+  "designTradeMason": { "en": "Mason", "mr": "गवंडी", "hi": "राजमिस्त्री" },
+  "designTradeHelper": { "en": "Helper", "mr": "मदतनीस", "hi": "हेल्पर" },
+  "designTradeCarpenter": { "en": "Carpenter", "mr": "सुतार", "hi": "बढ़ई" },
+  "designTradeBarBender": { "en": "Bar bender", "mr": "बार बेंडर", "hi": "बार बेंडर" },
+  "designTradeElectrician": { "en": "Electrician", "mr": "इलेक्ट्रिशियन", "hi": "इलेक्ट्रीशियन" },
+  "designTradePlumber": { "en": "Plumber", "mr": "प्लंबर", "hi": "प्लंबर" },
+  "designTradePainter": { "en": "Painter", "mr": "रंगारी", "hi": "पेंटर" },
+  "designTradeWelder": { "en": "Welder", "mr": "वेल्डर", "hi": "वेल्डर" },
+  "designTradeOperator": { "en": "Operator", "mr": "ऑपरेटर", "hi": "ऑपरेटर" },
+  "designTradeSupervisor": { "en": "Supervisor", "mr": "सुपरवायझर", "hi": "सुपरवाइज़र" },
+
+  "designExpenseFuel": { "en": "Fuel", "mr": "इंधन", "hi": "ईंधन" },
+  "designExpenseFood": { "en": "Food", "mr": "जेवण", "hi": "भोजन" },
+  "designExpenseTravel": { "en": "Travel", "mr": "प्रवास", "hi": "यात्रा" },
+  "designExpenseTools": { "en": "Tools", "mr": "हत्यारे", "hi": "औज़ार" },
+  "designExpenseMaterials": { "en": "Materials", "mr": "साहित्य", "hi": "सामग्री" },
+  "designExpenseLabour": { "en": "Labour", "mr": "मजुरी", "hi": "मज़दूरी" },
+  "designExpenseRepairs": { "en": "Repairs", "mr": "दुरुस्ती", "hi": "मरम्मत" },
+  "designExpenseOther": { "en": "Other", "mr": "इतर", "hi": "अन्य" },
+
+  "designWeatherClear": { "en": "Clear", "mr": "स्वच्छ", "hi": "साफ़" },
+  "designWeatherCloudy": { "en": "Cloudy", "mr": "ढगाळ", "hi": "बादल" },
+  "designWeatherRain": { "en": "Rain", "mr": "पाऊस", "hi": "बारिश" },
+  "designWeatherWindy": { "en": "Windy", "mr": "वारा", "hi": "तेज़ हवा" },
+  "designWeatherHot": { "en": "Hot", "mr": "उष्ण", "hi": "गर्म" },
+
+  "designPriorityLow": { "en": "Low", "mr": "कमी", "hi": "कम" },
+  "designPriorityMedium": { "en": "Medium", "mr": "मध्यम", "hi": "मध्यम" },
+  "designPriorityHigh": { "en": "High", "mr": "जास्त", "hi": "ऊँची" },
+  "designPriorityCritical": { "en": "Critical", "mr": "गंभीर", "hi": "गंभीर" },
+
+  "designIssueOpen": { "en": "Open", "mr": "उघडे", "hi": "खुला" },
+  "designIssueInProgress": { "en": "In progress", "mr": "सुरू आहे", "hi": "चल रहा है" },
+  "designIssueResolved": { "en": "Resolved", "mr": "सोडवले", "hi": "हल हुआ" },
+  "designIssueClosed": { "en": "Closed", "mr": "बंद", "hi": "बंद" },
+
+  "designAttendancePresent": { "en": "Present", "mr": "हजर", "hi": "उपस्थित" },
+  "designAttendanceHalf": { "en": "Half day", "mr": "अर्धा दिवस", "hi": "आधा दिन" },
+  "designAttendanceOvertime": { "en": "Overtime", "mr": "ओव्हरटाइम", "hi": "ओवरटाइम" },
+  "designAttendanceAbsent": { "en": "Absent", "mr": "गैरहजर", "hi": "अनुपस्थित" },
+
+  "designKeypadNext": { "en": "Next", "mr": "पुढे", "hi": "आगे" },
+  "designKeypadDelete": { "en": "Delete", "mr": "हटवा", "hi": "हटाएँ" },
+  "designStepperDecrease": { "en": "Decrease", "mr": "कमी करा", "hi": "कम करें" },
+  "designStepperIncrease": { "en": "Increase", "mr": "वाढवा", "hi": "बढ़ाएँ" }
+}

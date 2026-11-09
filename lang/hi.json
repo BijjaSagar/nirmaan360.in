@@ -190,5 +190,19 @@
     "Save entry": "प्रविष्टि सेव करें",
     "Approval trail": "मंज़ूरी का रिकॉर्ड",
     "Not submitted yet.": "अभी भेजा नहीं गया।",
-    "Remark": "टिप्पणी"
+    "Remark": "टिप्पणी",
+    "Only draft or returned DPRs can be changed.": "केवल ड्राफ़्ट या वापस आई DPR बदली जा सकती हैं।",
+    "This request id was already used on another approval.": "यह अनुरोध आईडी किसी और मंज़ूरी पर पहले ही इस्तेमाल हो चुकी है।",
+    "The parent record has not reached the server yet.": "मूल रिकॉर्ड अभी सर्वर तक नहीं पहुँचा है।",
+    "This record could not be saved.": "यह रिकॉर्ड सेव नहीं हो सका।",
+    "Project not found.": "प्रोजेक्ट नहीं मिला।",
+    "Record not found on the server.": "यह रिकॉर्ड सर्वर पर नहीं मिला।",
+    "This record belongs to another project.": "यह रिकॉर्ड किसी दूसरे प्रोजेक्ट का है।",
+    "A remark is required to return or reject.": "वापस भेजने या अस्वीकार करने के लिए टिप्पणी ज़रूरी है।",
+    "You cannot act on this approval.": "आप इस मंज़ूरी पर कार्रवाई नहीं कर सकते।",
+    "This expense is more than the wallet balance.": "यह ख़र्च वॉलेट की शेष राशि से ज़्यादा है।",
+    "Only draft or returned documents can be submitted.": "केवल ड्राफ़्ट या वापस आए दस्तावेज़ भेजे जा सकते हैं।",
+    "This entry is under review and cannot be changed.": "यह प्रविष्टि समीक्षा में है और बदली नहीं जा सकती।",
+    "Your plan does not include this module. Upgrade to continue.": "आपके प्लान में यह मॉड्यूल शामिल नहीं है। जारी रखने के लिए अपग्रेड करें।",
+    "These details do not match our records.": "ये विवरण हमारे रिकॉर्ड से मेल नहीं खाते।"
 }

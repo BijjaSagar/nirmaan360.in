@@ -1,0 +1,16 @@
+{
+  "appName": { "en": "Nirmaan360", "mr": "निर्माण360", "hi": "निर्माण360" },
+  "commonSave": { "en": "Save", "mr": "जतन करा", "hi": "सहेजें" },
+  "commonCancel": { "en": "Cancel", "mr": "रद्द करा", "hi": "रद्द करें" },
+  "commonRetry": { "en": "Try again", "mr": "पुन्हा प्रयत्न करा", "hi": "फिर से कोशिश करें" },
+  "commonBack": { "en": "Back", "mr": "मागे", "hi": "वापस" },
+  "commonDone": { "en": "Done", "mr": "झाले", "hi": "हो गया" },
+  "commonToday": { "en": "Today", "mr": "आज", "hi": "आज" },
+  "statusDraft": { "en": "Draft", "mr": "मसुदा", "hi": "मसौदा" },
+  "statusInReview": { "en": "In review", "mr": "तपासणीत", "hi": "समीक्षा में" },
+  "statusApproved": { "en": "Approved", "mr": "मंजूर", "hi": "मंज़ूर" },
+  "statusReturned": { "en": "Returned", "mr": "परत पाठवले", "hi": "वापस भेजा" },
+  "statusRejected": { "en": "Rejected", "mr": "नाकारले", "hi": "अस्वीकृत" },
+  "statusQueued": { "en": "On phone", "mr": "फोनवर", "hi": "फ़ोन पर" },
+  "statusSynced": { "en": "Sent", "mr": "पाठवले", "hi": "भेजा गया" }
+}

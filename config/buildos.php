@@ -128,4 +128,8 @@ return [
     'expense_categories' => ['Fuel', 'Food', 'Travel', 'Tools', 'Materials', 'Labour', 'Repairs', 'Other'],
     'trades' => ['Mason', 'Helper', 'Carpenter', 'Bar bender', 'Electrician', 'Plumber', 'Painter', 'Welder', 'Operator', 'Supervisor'],
     'units' => ['cum', 'sqm', 'rmt', 'nos', 'kg', 'MT', 'ltr', 'bag', 'LS'],
+    'weather' => ['Clear', 'Cloudy', 'Rain', 'Windy', 'Hot'],
+
+    // How far back a device's first pull reaches for transactional records.
+    'sync_window_days' => (int) env('SYNC_WINDOW_DAYS', 60),
 ];

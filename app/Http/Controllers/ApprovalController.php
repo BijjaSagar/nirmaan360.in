@@ -15,13 +15,11 @@ class ApprovalController extends Controller
 
     public function index(Request $request): View
     {
-        $user = $request->user();
-
-        $open = Approval::with('approvable', 'submitter')->where('status', 'IN_REVIEW')->latest('id')->get();
+        [$mine, $waiting] = $this->service->inbox($request->user());
 
         return view('approvals.index', [
-            'mine' => $open->filter(fn ($approval) => $this->service->canAct($approval, $user)),
-            'waiting' => $open->reject(fn ($approval) => $this->service->canAct($approval, $user)),
+            'mine' => $mine,
+            'waiting' => $waiting,
             'recent' => Approval::with('approvable', 'submitter')->where('status', '!=', 'IN_REVIEW')->latest('completed_at')->take(15)->get(),
         ]);
     }

@@ -3,87 +3,51 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\BoqItem;
-use App\Models\MeasurementEntry;
-use App\Models\Project;
-use App\Services\MeasurementService;
+use App\Services\SyncService;
+use App\Support\ClientTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
-/** Offline outbox for the field app. Measurements are the first supported record type. */
+/** Offline outbox and delta pull for the field app. Permissions are checked per item. */
 class SyncController extends Controller
 {
-    public function __construct(private MeasurementService $measurements) {}
+    public function __construct(private SyncService $sync) {}
 
     public function push(Request $request): JsonResponse
     {
-        abort_unless($request->user()->hasPermission('measurement.create'), 403);
+        // Only the batch shape is checked here: a bad item is reported in its own result.
+        $items = $request->validate(['items' => ['required', 'array', 'max:200']])['items'];
 
-        $batch = $request->validate([
-            'items' => ['required', 'array', 'max:200'],
-            'items.*.type' => ['required', Rule::in(['measurement'])],
-            'items.*.client_uuid' => ['required', 'uuid'],
-            'items.*.project_id' => ['required', 'integer'],
-            'items.*.data' => ['required', 'array'],
-        ])['items'];
-
-        $results = [];
-
-        foreach ($batch as $item) {
-            $results[] = ['client_uuid' => $item['client_uuid'], ...$this->pushMeasurement($request, $item)];
-        }
-
-        return response()->json(['results' => $results]);
+        return response()->json(['results' => $this->sync->push($items, $request->user())]);
     }
 
     public function pull(Request $request): JsonResponse
     {
-        $since = $request->validate(['since' => ['nullable', 'date']])['since'] ?? null;
-        $sinceTime = $since ? Carbon::parse($since) : null;
-        $serverTime = now()->toIso8601String();
+        // An unencoded "+05:30" in a query string arrives as " 05:30".
+        $since = preg_replace('/(T[\d:.]+) (\d{2}:?\d{2})$/', '$1+$2', (string) $request->query('since'));
+        Validator::make(['since' => $since], ['since' => ['nullable', 'date']])->validate();
 
-        return response()->json([
-            'server_time' => $serverTime,
-            'projects' => Project::when($sinceTime, fn ($q) => $q->where('updated_at', '>', $sinceTime))->get(['id', 'code', 'name', 'status', 'updated_at']),
-            'boq_items' => BoqItem::when($sinceTime, fn ($q) => $q->where('updated_at', '>', $sinceTime))->get(['id', 'project_id', 'code', 'description', 'unit', 'qty', 'rate', 'updated_at']),
-            'measurements' => MeasurementEntry::when($sinceTime, fn ($q) => $q->where('updated_at', '>', $sinceTime))->get(['id', 'project_id', 'boq_item_id', 'qty', 'status', 'client_uuid', 'updated_at']),
-        ]);
+        return response()->json($this->sync->pull($request->user(), ClientTime::parse($since)));
     }
 
-    /** One bad record is reported back and does not stop the rest of the batch. */
-    private function pushMeasurement(Request $request, array $item): array
+    public function upload(Request $request): JsonResponse
     {
-        $project = Project::find($item['project_id']);
+        $mimes = $request->input('type') === 'petty_bill' ? 'jpg,jpeg,png,webp,pdf' : 'jpg,jpeg,png,webp';
 
-        if (! $project) {
-            return ['status' => 'error', 'errors' => ['project_id' => ['Project not found.']]];
-        }
-
-        $validator = Validator::make($item['data'], [
-            'boq_item_id' => ['required', Rule::exists('boq_items', 'id')->where('project_id', $project->id)->whereNull('deleted_at')],
-            'measured_on' => ['required', 'date'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:120'],
-            'nos' => ['required', 'numeric', 'gt:0'],
-            'length' => ['nullable', 'numeric', 'gt:0'],
-            'breadth' => ['nullable', 'numeric', 'gt:0'],
-            'depth' => ['nullable', 'numeric', 'gt:0'],
-            'is_deduction' => ['sometimes', 'boolean'],
+        $data = $request->validate([
+            'type' => ['required', Rule::in(['dpr_photo', 'petty_bill'])],
+            'client_uuid' => ['required', 'uuid'],
+            'parent_client_uuid' => ['nullable', 'uuid', 'required_without:parent_id'],
+            'parent_id' => ['nullable', 'integer'],
+            'file' => ['required', 'file', 'mimes:'.$mimes, 'max:8192'],
+            'caption' => ['nullable', 'string', 'max:255'],
+            'taken_at' => ['nullable', 'date'],
         ]);
 
-        if ($validator->fails()) {
-            return ['status' => 'error', 'errors' => $validator->errors()->toArray()];
-        }
+        $result = $this->sync->upload($data, $request->file('file'), $request->user());
 
-        $entry = $this->measurements->create($project, [
-            ...$validator->validated(),
-            'is_deduction' => (bool) ($item['data']['is_deduction'] ?? false),
-            'client_uuid' => $item['client_uuid'],
-        ], $request->user());
-
-        return ['status' => $entry->wasRecentlyCreated ? 'created' : 'duplicate', 'id' => $entry->id];
+        return response()->json($result, $result['status'] === 'created' ? 201 : 200);
     }
 }

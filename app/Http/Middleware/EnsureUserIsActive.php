@@ -15,7 +15,7 @@ class EnsureUserIsActive
             return $next($request);
         }
 
-        if ($request->expectsJson()) {
+        if ($request->expectsJson() || $request->is('api/*')) {
             abort(403, 'This account has been deactivated.');
         }
 

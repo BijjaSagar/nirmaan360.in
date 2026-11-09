@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
             'feature' => RequireFeature::class,
+            'locale' => SetLocale::class,
         ]);
         $middleware->redirectUsersTo(fn () => route('dashboard'));
     })
