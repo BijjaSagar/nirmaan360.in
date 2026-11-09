@@ -208,7 +208,7 @@
 
     <div class="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-[3px] border border-ink/70 bg-sheet px-5 py-4">
         <p class="font-display text-2xl font-semibold">{{ __('Track these quantities against your BOQ.') }}</p>
-        <a href="{{ route('register') }}" class="btn btn-primary">{{ __('Start a 30-day trial') }}</a>
+        <a href="{{ route('register') }}" class="btn btn-primary">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}</a>
     </div>
 </section>
 @endsection

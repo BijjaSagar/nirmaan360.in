@@ -44,6 +44,14 @@ final class Dec
         );
     }
 
+    /** The value before tax inside a tax-inclusive amount, rounded to money precision. */
+    public static function beforePercent(mixed $inclusive, mixed $percent): string
+    {
+        return self::money(
+            self::of($inclusive)->multipliedBy(100)->dividedBy(self::of($percent)->plus(100), 6, RoundingMode::HalfUp)
+        );
+    }
+
     /** Group digits the Indian way: 12,34,567.00 */
     public static function indian(mixed $value, int $scale = 2): string
     {

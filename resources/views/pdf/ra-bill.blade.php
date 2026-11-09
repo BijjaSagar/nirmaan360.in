@@ -78,7 +78,7 @@
     @foreach ($bill->deductions as $deduction)
         <tr><td>Less: {{ $deduction->label }} @if ($deduction->pct !== null && (float) $deduction->pct > 0)({{ (float) $deduction->pct }}%)@endif</td><td class="r">{{ inr($deduction->amount) }}</td></tr>
     @endforeach
-    <tr><td>Add: GST ({{ (float) ($bill->terms['gst_pct'] ?? 0) }}%)</td><td class="r">{{ inr($bill->gst_amount) }}</td></tr>
+    <tr><td>{{ $bill->hasGst() ? 'Add: GST ('.(float) ($bill->terms['gst_pct'] ?? 0).'%)' : 'GST' }}</td><td class="r">{{ $bill->hasGst() ? inr($bill->gst_amount) : 'Not charged' }}</td></tr>
     <tr class="net"><td>Net payable</td><td class="r">{{ inr($bill->net_payable) }}</td></tr>
 </table>
 

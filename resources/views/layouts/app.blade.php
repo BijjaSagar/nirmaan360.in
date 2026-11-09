@@ -97,6 +97,12 @@
                 @can('audit.view')
                     <a href="{{ route('audit.index') }}" class="{{ $nav('audit.*') }}">{{ __('Audit log') }}</a>
                 @endcan
+                @can('billing.manage')
+                    <a href="{{ route('billing.index') }}" class="{{ $nav('billing.*') }}">{{ __('Billing') }}</a>
+                @endcan
+                @if (auth()->user()->isPlatformAdmin())
+                    <a href="{{ route('admin.index') }}" class="{{ $nav('admin.*') }}">{{ __('Platform admin') }}</a>
+                @endif
             </div>
         </nav>
     </aside>

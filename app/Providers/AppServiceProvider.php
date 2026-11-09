@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\Approval;
 use App\Models\User;
 use App\Services\ApprovalService;
+use App\Support\DynamicTranslator;
+use App\Support\PlatformSettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
@@ -13,8 +15,22 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->singleton(PlatformSettings::class);
+
+        $this->app->extend('translator', function ($translator, $app) {
+            $dynamic = new DynamicTranslator($app['translation.loader'], $translator->getLocale());
+            $dynamic->setFallback($translator->getFallback());
+
+            return $dynamic;
+        });
+    }
+
     public function boot(): void
     {
+        $this->app->make(PlatformSettings::class)->applyToConfig();
+
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
         }

@@ -23,6 +23,19 @@
             <x-field :label="__('Period from')" name="period_from"><input id="period_from" name="period_from" type="date" value="{{ old('period_from', now()->startOfMonth()->format('Y-m-d')) }}" class="input" required></x-field>
             <x-field :label="__('Period to')" name="period_to"><input id="period_to" name="period_to" type="date" value="{{ old('period_to', now()->format('Y-m-d')) }}" class="input" required></x-field>
             <x-field :label="__('Material recovery (₹)')" name="material_recovery" class="sm:col-span-2"><input id="material_recovery" name="material_recovery" type="number" step="0.01" min="0" value="{{ old('material_recovery', 0) }}" class="input num"></x-field>
+            <fieldset class="sm:col-span-2">
+                <legend class="label">{{ __('GST on this bill') }}</legend>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <label class="flex items-start gap-2 rounded-[3px] border border-rule p-3 text-sm has-checked:border-laterite">
+                        <input type="radio" name="gst" value="with" class="mt-0.5" @checked(old('gst', 'with') === 'with')>
+                        <span><span class="block font-semibold">{{ __('With GST') }}</span><span class="block text-xs text-ink-3">{{ __('At the GST % set on the project or work order.') }}</span></span>
+                    </label>
+                    <label class="flex items-start gap-2 rounded-[3px] border border-rule p-3 text-sm has-checked:border-laterite">
+                        <input type="radio" name="gst" value="without" class="mt-0.5" @checked(old('gst') === 'without')>
+                        <span><span class="block font-semibold">{{ __('Without GST') }}</span><span class="block text-xs text-ink-3">{{ __('No GST is added to this bill.') }}</span></span>
+                    </label>
+                </div>
+            </fieldset>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-rule px-4 py-3">
             <p class="text-sm text-ink-3" x-show="type === 'client'">{{ __(':count approved measurements are ready to bill.', ['count' => $unbilledClient]) }}</p>

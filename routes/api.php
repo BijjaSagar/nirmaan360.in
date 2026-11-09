@@ -10,10 +10,12 @@ use App\Http\Controllers\Api\PettyCashApiController;
 use App\Http\Controllers\Api\ProjectApiController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\WorkerApiController;
+use App\Http\Controllers\RazorpayWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthApiController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/webhooks/razorpay', RazorpayWebhookController::class)->middleware('throttle:120,1');
 
     Route::middleware(['auth:sanctum', 'active', 'locale', 'throttle:120,1'])->group(function () {
         Route::post('/auth/logout', [AuthApiController::class, 'logout']);

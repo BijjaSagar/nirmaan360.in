@@ -52,3 +52,14 @@ php artisan test
 6. Deploy command: `php artisan migrate --force`.
 7. Set `APP_NAME=Nirmaan360`, `APP_ENV=production`, `APP_DEBUG=false` and `APP_URL=https://nirmaan360.in`.
 8. Add `nirmaan360.in` as a custom domain and create the DNS records Laravel Cloud shows.
+
+## Going live with subscriptions
+
+Set these in Laravel Cloud's environment variables:
+
+- `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`. Until both are set, plans can't be bought online.
+- `RAZORPAY_WEBHOOK_SECRET`, with a Razorpay webhook pointing at `https://nirmaan360.in/api/v1/webhooks/razorpay` for the `payment.captured` event.
+- `PLATFORM_ADMIN_EMAILS`, a comma-separated list of emails that can open `/admin`.
+- A real mail driver (`MAIL_MAILER` and its settings). Password reset stays hidden in production until this is set.
+
+Plan prices live in `config/buildos.php`. Plans are prepaid per month or year and do not renew by themselves.

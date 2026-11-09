@@ -45,7 +45,7 @@
                 @foreach ($bill->deductions as $deduction)
                     <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __($deduction->label) }}</dt><dd class="num text-laterite">−{{ inr($deduction->amount) }}</dd></div>
                 @endforeach
-                <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('GST') }}</dt><dd class="num">+{{ inr($bill->gst_amount) }}</dd></div>
+                <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('GST') }}</dt><dd class="num">{{ $bill->hasGst() ? '+'.inr($bill->gst_amount) : __('Not charged') }}</dd></div>
                 <div class="flex items-baseline justify-between bg-paper-2/60 px-4 py-3"><dt class="font-display text-lg font-semibold">{{ __('Net payable') }}</dt><dd class="num text-lg font-medium">{{ inr($bill->net_payable) }}</dd></div>
             </dl>
         </section>

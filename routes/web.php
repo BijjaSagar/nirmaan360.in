@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BoqController;
 use App\Http\Controllers\ClientSignoffController;
 use App\Http\Controllers\DashboardController;
@@ -22,10 +26,18 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\WorkerController;
 use App\Http\Controllers\WorkOrderController;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicController::class, 'home'])->name('home');
 Route::get('/calculators', [PublicController::class, 'calculators'])->name('calculators');
+Route::get('/pricing', [PublicController::class, 'pricing'])->name('pricing');
+Route::get('/ai', [PublicController::class, 'ai'])->name('ai');
+Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
+Route::post('/contact', [PublicController::class, 'storeContact'])->name('contact.store')->middleware('throttle:6,1');
+Route::get('/privacy', [PublicController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [PublicController::class, 'terms'])->name('terms');
+Route::get('/brand/logo', [PublicController::class, 'logo'])->name('brand.logo');
 Route::get('/locale/{locale}', LocaleController::class)->name('locale');
 
 Route::middleware('signed')->group(function () {
@@ -41,6 +53,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/login/otp', [OtpController::class, 'show'])->name('otp.show');
     Route::post('/login/otp/send', [OtpController::class, 'send'])->name('otp.send')->middleware('throttle:5,1');
     Route::post('/login/otp/verify', [OtpController::class, 'verify'])->name('otp.verify')->middleware('throttle:10,1');
+    Route::get('/forgot-password', [PasswordResetController::class, 'showForgot'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'send'])->name('password.email')->middleware('throttle:5,1');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update')->middleware('throttle:10,1');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
@@ -48,6 +64,35 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/notifications/read', NotificationController::class)->name('notifications.read');
+
+    // Subscription
+    Route::middleware('can:billing.manage')->group(function () {
+        Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+        Route::post('/billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout')->middleware('throttle:10,1');
+        Route::post('/billing/confirm', [BillingController::class, 'confirm'])->name('billing.confirm');
+    });
+
+    // Platform staff only: the controller answers 404 for everyone else.
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    Route::patch('/admin/organizations/{organization}', [AdminController::class, 'updateOrganization'])->name('admin.organizations.update');
+
+    Route::prefix('admin')->name('admin.')->middleware(EnsurePlatformAdmin::class)->controller(AdminSettingsController::class)->group(function () {
+        Route::get('/plans', 'plans')->name('plans');
+        Route::patch('/plans', 'updatePlans')->name('plans.update');
+        Route::get('/payments', 'payments')->name('payments');
+        Route::patch('/payments', 'updatePayments')->name('payments.update');
+        Route::post('/payments/test', 'testPayments')->name('payments.test')->middleware('throttle:10,1');
+        Route::get('/email', 'email')->name('email');
+        Route::patch('/email', 'updateEmail')->name('email.update');
+        Route::post('/email/test', 'testEmail')->name('email.test')->middleware('throttle:10,1');
+        Route::get('/website', 'website')->name('website');
+        Route::post('/website', 'updateWebsite')->name('website.update');
+        Route::get('/texts', 'texts')->name('texts');
+        Route::patch('/texts', 'updateTexts')->name('texts.update');
+        Route::get('/admins', 'admins')->name('admins');
+        Route::post('/admins', 'addAdmin')->name('admins.store');
+        Route::delete('/admins/{user}', 'removeAdmin')->name('admins.destroy');
+    });
 
     // Projects
     Route::middleware('can:project.view')->group(function () {

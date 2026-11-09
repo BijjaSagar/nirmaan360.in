@@ -25,27 +25,58 @@ return [
     // Trial length for new organisations, in days.
     'trial_days' => 30,
 
+    // Days a lapsed paid plan keeps working before it falls back to free.
+    'payment_grace_days' => 3,
+
+    'subscription_gst_pct' => 18,
+
+    // plus: GST is added to the plan price. included: the plan price already has GST in it. none: no GST.
+    'subscription_gst_mode' => 'plus',
+
+    // Comma-separated emails that can open the platform admin screen.
+    'platform_admins' => array_values(array_filter(array_map(
+        fn ($email) => strtolower(trim($email)),
+        explode(',', (string) env('PLATFORM_ADMIN_EMAILS', ''))
+    ))),
+
+    // Prices are in rupees before GST. Null means priced by conversation.
     'plans' => [
         'free' => [
             'label' => 'Free / Site',
+            'tagline' => 'For one engineer on one site',
+            'monthly' => 0,
+            'yearly' => 0,
+            'buyable' => false,
             'max_users' => 3,
             'max_projects' => 1,
             'features' => ['site', 'measurement', 'labour', 'petty_cash'],
         ],
         'contractor' => [
             'label' => 'Contractor',
+            'tagline' => 'For contractors running several sites',
+            'monthly' => 2999,
+            'yearly' => 29990,
+            'buyable' => true,
             'max_users' => 25,
             'max_projects' => 5,
             'features' => ['site', 'measurement', 'labour', 'petty_cash', 'billing', 'parties'],
         ],
         'business' => [
             'label' => 'Business',
+            'tagline' => 'For builders and consultants at scale',
+            'monthly' => 7999,
+            'yearly' => 79990,
+            'buyable' => true,
             'max_users' => null,
             'max_projects' => null,
             'features' => ['site', 'measurement', 'labour', 'petty_cash', 'billing', 'parties', 'api'],
         ],
         'enterprise' => [
             'label' => 'Enterprise / Infra',
+            'tagline' => 'For EPC and infrastructure companies',
+            'monthly' => null,
+            'yearly' => null,
+            'buyable' => false,
             'max_users' => null,
             'max_projects' => null,
             'features' => ['site', 'measurement', 'labour', 'petty_cash', 'billing', 'parties', 'api'],
