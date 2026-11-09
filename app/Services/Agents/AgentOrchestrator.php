@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Notifications\ApprovalUpdate;
 use App\Support\Dec;
 use App\Support\Idempotent;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -281,14 +282,16 @@ class AgentOrchestrator
     {
         $project = $run->project;
 
-        return implode("\n", [
+        return implode("\n", array_filter([
             '# This conversation',
             'Today is '.now('Asia/Kolkata')->format('l, j F Y').' in India.',
             'Company: '.$organization->name.'.',
             'The user\'s role: '.$actor->roleLabel().'.',
             'Their app language: '.config('buildos.locales.'.($actor->locale ?: 'en'), 'English').'.',
             $project ? "Project in scope: {$project->name} (id {$project->id}, code {$project->code})." : 'No project is in scope.',
-        ]);
+            // Site staff never receive money figures. Tool results already send them null; this stops the model filling the gap.
+            Money::visible($actor) ? null : 'This user may not see money. Rates, amounts, contract values, bill totals and payments reach you as null for them. Never state, estimate or work out a rupee figure in your answer; speak of quantities and progress, and if asked about money say their role does not see it.',
+        ]));
     }
 
     /** @return array{0:AgentStep,1:bool} The step, and whether its full cost could be charged. */

@@ -3,6 +3,8 @@
 namespace App\Models\Concerns;
 
 use App\Models\Approval;
+use App\Models\User;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
@@ -11,7 +13,24 @@ trait Approvable
 {
     abstract public function approvalDocType(): string;
 
+    /** Names the document without any money figure, so every role can read it. */
     abstract public function approvalTitle(): string;
+
+    /** The rupee figure that goes with the title, or null for a document that carries none. */
+    public function approvalAmount(): ?string
+    {
+        return null;
+    }
+
+    /** The title with its amount for someone who may see money, and without it for everyone else. */
+    public function approvalTitleFor(?User $viewer = null): string
+    {
+        $amount = $this->approvalAmount();
+
+        return $amount !== null && Money::visible($viewer)
+            ? $this->approvalTitle().' · '.inr($amount)
+            : $this->approvalTitle();
+    }
 
     public function approvals(): MorphMany
     {

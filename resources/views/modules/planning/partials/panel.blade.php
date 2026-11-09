@@ -19,7 +19,7 @@
                 <span class="num">{{ $summary['planned_pct'] }}%</span>
             </div>
             <div class="mt-1 h-3 rounded-[2px] bg-paper-2"><div class="h-3 rounded-[2px] bg-ink-3" style="width: {{ min(100, (float) $summary['planned_pct']) }}%"></div></div>
-            <p class="num mt-0.5 text-xs text-ink-3">{{ inr($summary['planned']) }}</p>
+            @can('money.view')<p class="num mt-0.5 text-xs text-ink-3">{{ inr($summary['planned']) }}</p>@endcan
         </div>
         <div>
             <div class="flex items-baseline justify-between text-sm">
@@ -27,7 +27,7 @@
                 <span class="num">{{ $summary['actual_pct'] }}%</span>
             </div>
             <div class="mt-1 h-3 rounded-[2px] bg-paper-2"><div class="h-3 rounded-[2px] bg-neel" style="width: {{ min(100, (float) $summary['actual_pct']) }}%"></div></div>
-            <p class="num mt-0.5 text-xs text-ink-3">{{ __(':earned of :total', ['earned' => inr($summary['earned']), 'total' => inr($summary['total'])]) }}</p>
+            @can('money.view')<p class="num mt-0.5 text-xs text-ink-3">{{ __(':earned of :total', ['earned' => inr($summary['earned']), 'total' => inr($summary['total'])]) }}</p>@endcan
         </div>
     </div>
     <dl class="grid grid-cols-2 border-t border-rule text-sm sm:grid-cols-4">

@@ -10,7 +10,7 @@
             <x-empty :title="__('No projects yet')" :note="__('Create your first project, then add its BOQ.')" />
         @else
             <table class="ledger">
-                <thead><tr><th>{{ __('Code') }}</th><th>{{ __('Project') }}</th><th>{{ __('Client') }}</th><th>{{ __('Location') }}</th><th class="r">{{ __('Contract value') }}</th><th>{{ __('Status') }}</th></tr></thead>
+                <thead><tr><th>{{ __('Code') }}</th><th>{{ __('Project') }}</th><th>{{ __('Client') }}</th><th>{{ __('Location') }}</th>@can('money.view')<th class="r">{{ __('Contract value') }}</th>@endcan<th>{{ __('Status') }}</th></tr></thead>
                 <tbody>
                 @foreach ($projects as $row)
                     <tr>
@@ -18,7 +18,7 @@
                         <td><a href="{{ route('projects.show', $row) }}" class="link">{{ $row->name }}</a></td>
                         <td>{{ $row->client?->name ?? '—' }}</td>
                         <td>{{ $row->location ?? '—' }}</td>
-                        <td class="r">{{ inr($row->contract_value) }}</td>
+                        @can('money.view')<td class="r">{{ inr($row->contract_value) }}</td>@endcan
                         <td><x-stamp :status="$row->status" /></td>
                     </tr>
                 @endforeach

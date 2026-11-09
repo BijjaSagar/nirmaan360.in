@@ -48,7 +48,8 @@ class BoqService
                 'boq_section_id' => $section,
                 'code' => filled($data['code'] ?? null) ? $data['code'] : $this->nextCode($project),
                 'qty' => Dec::qty($data['qty']),
-                'rate' => Dec::money($data['rate']),
+                // Someone who may not see money cannot enter a rate; the line waits for an estimator to price it.
+                'rate' => Dec::money($data['rate'] ?? 0),
                 'sort' => (int) $project->boqItems()->max('sort') + 1,
             ]);
         });

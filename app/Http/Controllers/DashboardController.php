@@ -12,6 +12,7 @@ use App\Models\Project;
 use App\Models\RaBill;
 use App\Services\ApprovalService;
 use App\Services\BillingExtras\ContractPositionService;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -21,6 +22,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $today = now()->toDateString();
+        $seesMoney = Money::visible($user);
 
         $pending = Approval::with('approvable')
             ->where('status', 'IN_REVIEW')
@@ -31,6 +33,7 @@ class DashboardController extends Controller
         $projects = Project::whereIn('status', ['planning', 'active'])->latest('id')->take(8)->get();
 
         // These roll-ups are for display only. Bills are calculated with exact decimals.
+        // Everyone gets the percentage; the rupee figures behind it only go to people who may see money.
         $boqValues = BoqItem::selectRaw('project_id, SUM(qty * rate) as total')
             ->whereIn('project_id', $projects->pluck('id'))
             ->groupBy('project_id')
@@ -45,14 +48,18 @@ class DashboardController extends Controller
             ->pluck('total', 'measurement_entries.project_id');
 
         return view('dashboard.index', [
+            'seesMoney' => $seesMoney,
             'pending' => $pending->take(6),
             'pendingCount' => $pending->count(),
             'projects' => $projects,
             'boqValues' => $boqValues,
             'approvedValues' => $approvedValues,
             'activeProjects' => Project::where('status', 'active')->count(),
-            'contractValue' => Project::whereIn('status', ['planning', 'active'])->sum('contract_value'),
-            'billed' => RaBill::where('type', 'client')->whereIn('status', ['APPROVED', 'PAID'])->sum('gross_amount') + (float) app(ContractPositionService::class)->clientNoteAdjustment(),
+            'contractValue' => $seesMoney ? Project::whereIn('status', ['planning', 'active'])->sum('contract_value') : null,
+            'billed' => $seesMoney
+                ? RaBill::where('type', 'client')->whereIn('status', ['APPROVED', 'PAID'])->sum('gross_amount') + (float) app(ContractPositionService::class)->clientNoteAdjustment()
+                : null,
+            'inReview' => MeasurementEntry::where('status', 'IN_REVIEW')->count(),
             'openIssues' => Issue::whereIn('status', ['open', 'in_progress'])->count(),
             'presentToday' => Attendance::whereDate('attendance_date', $today)->whereIn('status', ['present', 'half', 'overtime'])->count(),
             'dprsToday' => Dpr::whereDate('report_date', $today)->count(),

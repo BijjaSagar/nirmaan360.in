@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Services\Reports\Download;
 use App\Services\Reports\MeasurementSheetService;
+use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -24,6 +25,7 @@ class MeasurementSheetController extends Controller
         $from = CarbonImmutable::parse($data['from'])->startOfDay();
         $to = CarbonImmutable::parse($data['to'])->startOfDay();
 
-        return Download::file($service->pdf($project, $from, $to), $service->filename($project, $from, $to), Download::PDF);
+        // Site staff get the quantities; the rates, amounts and total value need money.view.
+        return Download::file($service->pdf($project, $from, $to, Money::visible($request->user())), $service->filename($project, $from, $to), Download::PDF);
     }
 }

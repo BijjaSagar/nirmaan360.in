@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\PurchaseOrder;
 use App\Services\Procurement\PurchaseOrderService;
 use App\Support\Dec;
+use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,8 +62,11 @@ class PurchaseOrderController extends Controller
         return back()->with('success', $order->status === 'CANCELLED' ? __('Purchase order cancelled.') : __('Purchase order closed short.'));
     }
 
-    public function pdf(PurchaseOrder $purchaseOrder): Response
+    public function pdf(Request $request, PurchaseOrder $purchaseOrder): Response
     {
+        // A purchase order PDF is rates and amounts, so there is no quantities-only version of it.
+        abort_unless(Money::visible($request->user()), 403, Money::refusal());
+
         $purchaseOrder->load('organization', 'project', 'vendor', 'store.site', 'items.material', 'items.unit');
 
         return Pdf::loadView('modules.procurement.pdf.purchase-order', ['order' => $purchaseOrder])

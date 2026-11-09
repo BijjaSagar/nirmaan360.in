@@ -28,6 +28,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Models\Worker;
 use App\Support\ClientTime;
+use App\Support\Money;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -134,11 +135,15 @@ class SyncService
             'boq_items' => $when($can('boq.view'), fn () => $delta(BoqItem::withLedger()->with('section'))->orderBy('sort')->orderBy('id')->get()->map(BoqItemPresenter::present(...))),
             'boq_balances' => $when($can('boq.view'), fn () => $this->movedBalances($since, $removedDrafts)),
             'workers' => $when($can('worker.view', 'labour'), fn () => $delta(Worker::query())->get()->map(WorkerPresenter::present(...))),
-            'wallets' => $when($can('petty_cash.view', 'petty_cash'), fn () => PettyCashWallet::with('entries')->get()->map(WalletPresenter::present(...))),
+            // Someone who may not see money gets the wallet they hold and its entries, nothing of anyone else's.
+            'wallets' => $when($can('petty_cash.view', 'petty_cash'), fn () => PettyCashWallet::visibleTo($user)->with('entries')->get()->map(WalletPresenter::present(...))),
             'dprs' => $when($can('dpr.view', 'site'), fn () => $this->window(Dpr::with(DprPresenter::RELATIONS), $changedSince, fn ($q) => $q->whereNotIn('status', self::FINAL_DOCUMENT_STATUSES))->get()->map(DprPresenter::present(...))),
             'issues' => $when($can('issue.view', 'site'), fn () => $this->window(Issue::query(), $changedSince, fn ($q) => $q->whereIn('status', self::OPEN_ISSUE_STATUSES))->get()->map(IssuePresenter::present(...))),
             'attendance' => $when($can('attendance.view', 'labour'), fn () => $this->window(Attendance::query(), $changedSince)->get()->map(AttendancePresenter::present(...))),
-            'petty_cash_entries' => $when($can('petty_cash.view', 'petty_cash'), fn () => $this->window(PettyCashEntry::query(), $changedSince)->get()->map(PettyEntryPresenter::present(...))),
+            'petty_cash_entries' => $when($can('petty_cash.view', 'petty_cash'), fn () => $this->window(
+                PettyCashEntry::query()->when(! Money::visible($user), fn ($q) => $q->whereIn('petty_cash_wallet_id', PettyCashWallet::visibleTo($user)->select('id'))),
+                $changedSince,
+            )->get()->map(PettyEntryPresenter::present(...))),
             'measurements' => $when($canSeeMeasurements, fn () => $this->window(MeasurementEntry::with(MeasurementPresenter::RELATIONS), $changedSince, fn ($q) => $q->whereNotIn('status', self::FINAL_DOCUMENT_STATUSES))->get()->map(MeasurementPresenter::present(...))),
             'approvals' => ApprovalPresenter::collection($this->approvals->inbox($user)[0], $user),
             'deleted' => [

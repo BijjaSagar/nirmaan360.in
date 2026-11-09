@@ -11,9 +11,11 @@ use App\Models\MeasurementEntry;
 use App\Models\RaBill;
 use App\Models\User;
 use App\Services\ApprovalService;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
+/** Bill amounts keep their keys but go out as null to anyone who may not see money. */
 final class ApprovalPresenter
 {
     /**
@@ -41,7 +43,7 @@ final class ApprovalPresenter
                 'id' => $approval->id,
                 'doc_type' => $approval->doc_type,
                 'status' => $approval->status,
-                'title' => $approval->approvable->approvalTitle(),
+                'title' => $approval->approvable->approvalTitleFor($user),
                 'project' => [
                     'id' => $approval->approvable->project->id,
                     'code' => $approval->approvable->project->code,
@@ -99,10 +101,10 @@ final class ApprovalPresenter
             'ra_bill_number' => $note->bill?->number,
             'party_name' => $note->party?->name,
             'reason' => $note->reason,
-            'taxable_amount' => $note->taxable_amount,
-            'gst_amount' => $note->gst_amount,
-            'total_amount' => $note->total_amount,
-            'net_effect' => $note->net_effect,
+            'taxable_amount' => Money::orNull($note->taxable_amount),
+            'gst_amount' => Money::orNull($note->gst_amount),
+            'total_amount' => Money::orNull($note->total_amount),
+            'net_effect' => Money::orNull($note->net_effect),
         ];
     }
 
@@ -160,10 +162,10 @@ final class ApprovalPresenter
             'period_from' => $bill->period_from?->toDateString(),
             'period_to' => $bill->period_to?->toDateString(),
             'party_name' => $bill->party?->name,
-            'gross_amount' => $bill->gross_amount,
-            'deduction_total' => $bill->deduction_total,
-            'gst_amount' => $bill->gst_amount,
-            'net_payable' => $bill->net_payable,
+            'gross_amount' => Money::orNull($bill->gross_amount),
+            'deduction_total' => Money::orNull($bill->deduction_total),
+            'gst_amount' => Money::orNull($bill->gst_amount),
+            'net_payable' => Money::orNull($bill->net_payable),
         ];
     }
 }

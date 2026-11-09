@@ -6,6 +6,7 @@ use App\Models\BoqItem;
 use App\Models\Project;
 use App\Services\BoqService;
 use App\Support\Dec;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,9 +24,12 @@ class BoqController extends Controller
     {
         $items = BoqItem::withLedger()->with('section')->where('project_id', $project->id)->orderBy('sort')->orderBy('id')->get();
 
-        $total = $items->reduce(fn ($sum, $item) => $sum->plus(Dec::of($item->amount())), Dec::of(0));
+        // The BOQ value is money, so it is only worked out for someone who may see it.
+        $total = Money::visible()
+            ? Dec::money($items->reduce(fn ($sum, $item) => $sum->plus(Dec::of($item->amount())), Dec::of(0)))
+            : null;
 
-        return view('boq.index', ['project' => $project, 'items' => $items, 'total' => Dec::money($total)]);
+        return view('boq.index', ['project' => $project, 'items' => $items, 'total' => $total]);
     }
 
     public function store(Request $request, Project $project): RedirectResponse
@@ -67,7 +71,8 @@ class BoqController extends Controller
     {
         $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
 
-        $rows = $this->readCsv($request->file('file')->getRealPath());
+        $columns = $this->columnsFor($request);
+        $rows = $this->readCsv($request->file('file')->getRealPath(), $columns);
 
         DB::transaction(function () use ($rows, $project) {
             $sort = (int) $project->boqItems()->max('sort');
@@ -78,8 +83,12 @@ class BoqController extends Controller
                     'description' => $row['description'],
                     'unit' => $row['unit'],
                     'qty' => Dec::qty($row['qty']),
-                    'rate' => Dec::money($row['rate']),
                 ];
+
+                // A file from someone who may not see money has no rate column; existing rates are kept.
+                if (array_key_exists('rate', $row)) {
+                    $values['rate'] = Dec::money($row['rate']);
+                }
 
                 $existing = $project->boqItems()->where('code', $row['code'])->first();
 
@@ -87,6 +96,7 @@ class BoqController extends Controller
                     $existing->update($values);
                 } else {
                     BoqItem::create([
+                        'rate' => 0,
                         ...$values,
                         'organization_id' => $project->organization_id,
                         'project_id' => $project->id,
@@ -100,23 +110,26 @@ class BoqController extends Controller
         return back()->with('success', __(':count BOQ rows imported.', ['count' => count($rows)]));
     }
 
-    public function export(Project $project): StreamedResponse
+    public function export(Request $request, Project $project): StreamedResponse
     {
         $items = $project->boqItems()->with('section')->orderBy('sort')->orderBy('id')->get();
+        $columns = $this->columnsFor($request);
 
-        return response()->streamDownload(function () use ($items) {
+        return response()->streamDownload(function () use ($items, $columns) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, self::COLUMNS, ',', '"', '');
+            fputcsv($out, $columns, ',', '"', '');
 
             foreach ($items as $item) {
-                fputcsv($out, [
-                    $this->safeCell($item->section?->name),
-                    $this->safeCell($item->code),
-                    $this->safeCell($item->description),
-                    $this->safeCell($item->unit),
-                    $item->qty,
-                    $item->rate,
-                ], ',', '"', '');
+                $cells = [
+                    'section' => $this->safeCell($item->section?->name),
+                    'code' => $this->safeCell($item->code),
+                    'description' => $this->safeCell($item->description),
+                    'unit' => $this->safeCell($item->unit),
+                    'qty' => $item->qty,
+                    'rate' => $item->rate,
+                ];
+
+                fputcsv($out, array_values(array_intersect_key($cells, array_flip($columns))), ',', '"', '');
             }
 
             fclose($out);
@@ -134,16 +147,29 @@ class BoqController extends Controller
         }, 'boq-template.csv', ['Content-Type' => 'text/csv']);
     }
 
-    /** @return list<array<string,string>> */
-    private function readCsv(string $path): array
+    /**
+     * Site staff work with quantities only: the rate column is left out of their files, both ways.
+     *
+     * @return list<string>
+     */
+    private function columnsFor(Request $request): array
+    {
+        return Money::visible($request->user()) ? self::COLUMNS : array_values(array_diff(self::COLUMNS, ['rate']));
+    }
+
+    /**
+     * @param  list<string>  $columns
+     * @return list<array<string,string>>
+     */
+    private function readCsv(string $path, array $columns): array
     {
         $handle = fopen($path, 'r');
         $header = fgetcsv($handle, 0, ',', '"', '');
         $header = array_map(fn ($cell) => strtolower(trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))), $header ?: []);
 
-        if (array_diff(self::COLUMNS, $header) !== []) {
+        if (array_diff($columns, $header) !== []) {
             fclose($handle);
-            throw ValidationException::withMessages(['file' => __('The file must have these columns: :columns', ['columns' => implode(', ', self::COLUMNS)])]);
+            throw ValidationException::withMessages(['file' => __('The file must have these columns: :columns', ['columns' => implode(', ', $columns)])]);
         }
 
         $rows = [];
@@ -161,9 +187,11 @@ class BoqController extends Controller
                 continue;
             }
 
-            $row = array_map('trim', array_combine($header, array_map('strval', $cells)));
+            $row = array_intersect_key(array_map('trim', array_combine($header, array_map('strval', $cells))), array_flip($columns));
 
-            if ($row['code'] === '' || $row['description'] === '' || $row['unit'] === '' || ! is_numeric($row['qty']) || ! is_numeric($row['rate']) || $row['qty'] < 0 || $row['rate'] < 0) {
+            $badRate = array_key_exists('rate', $row) && (! is_numeric($row['rate']) || $row['rate'] < 0);
+
+            if ($row['code'] === '' || $row['description'] === '' || $row['unit'] === '' || ! is_numeric($row['qty']) || $row['qty'] < 0 || $badRate) {
                 $errors[] = __('Line :line is incomplete or has an invalid number.', ['line' => $line]);
 
                 continue;
@@ -191,6 +219,14 @@ class BoqController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate($this->service->rules());
+        $rules = $this->service->rules();
+
+        // Rates are money: someone who may not see them cannot set them either.
+        // A new line waits for an estimator to price it, and an edited line keeps its rate.
+        if (! Money::visible($request->user())) {
+            unset($rules['rate']);
+        }
+
+        return $request->validate($rules);
     }
 }

@@ -75,8 +75,8 @@ class CompanyOverview extends Tool
 
         return new ToolResult([
             'as_of' => $today,
-            'to_collect_from_clients' => $this->billTotals($unpaid->where('type', 'client')),
-            'to_pay_subcontractors' => $this->billTotals($unpaid->where('type', 'subcontractor')),
+            'to_collect_from_clients' => $this->billTotals($unpaid->where('type', 'client'), $context),
+            'to_pay_subcontractors' => $this->billTotals($unpaid->where('type', 'subcontractor'), $context),
             'oldest_unpaid_bills' => $unpaid->take(self::ROWS)->map(fn (RaBill $bill) => [
                 'id' => $bill->id,
                 'number' => $bill->number,
@@ -84,9 +84,9 @@ class CompanyOverview extends Tool
                 'project' => $bill->project->name,
                 'party' => $bill->party?->name,
                 'approved_on' => $bill->approved_at?->toDateString(),
-                'net_payable' => $bill->net_payable,
+                'net_payable' => $this->money($context, $bill->net_payable),
             ])->values()->all(),
-            'ready_to_bill' => $this->readyToBill($organizationId, $active),
+            'ready_to_bill' => $this->readyToBill($organizationId, $active, $context),
             'late_projects' => $late->take(self::ROWS)->map(fn (Project $project) => ['id' => $project->id, 'name' => $project->name, 'end_date' => $project->end_date->toDateString()])->all(),
             'active_projects_with_no_dpr_in_two_days' => $silent->take(self::ROWS)->map(fn (Project $project) => ['id' => $project->id, 'name' => $project->name])->all(),
             'urgent_issues' => $issues->map(fn (Issue $issue) => ['id' => $issue->id, 'title' => $issue->title, 'priority' => $issue->priority, 'project' => $issue->project?->name, 'due_date' => $issue->due_date?->toDateString()])->all(),
@@ -94,15 +94,15 @@ class CompanyOverview extends Tool
         ], $sources);
     }
 
-    private function billTotals($bills): array
+    private function billTotals($bills, ToolContext $context): array
     {
         return [
             'count' => $bills->count(),
-            'net_payable' => Dec::money($bills->reduce(fn ($sum, RaBill $bill) => $sum->plus(Dec::of($bill->net_payable)), Dec::of(0))),
+            'net_payable' => $this->money($context, Dec::money($bills->reduce(fn ($sum, RaBill $bill) => $sum->plus(Dec::of($bill->net_payable)), Dec::of(0)))),
         ];
     }
 
-    private function readyToBill(int $organizationId, $projects): array
+    private function readyToBill(int $organizationId, $projects, ToolContext $context): array
     {
         $names = $projects->pluck('name', 'id');
 
@@ -119,7 +119,7 @@ class CompanyOverview extends Tool
                 'project_id' => (int) $row->project_id,
                 'project' => $names[$row->project_id] ?? null,
                 'entries' => (int) $row->entries,
-                'approx_value' => Dec::money($row->value),
+                'approx_value' => $this->money($context, Dec::money($row->value)),
             ])
             ->all();
     }

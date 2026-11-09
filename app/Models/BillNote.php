@@ -39,7 +39,12 @@ class BillNote extends Model
 
     public function approvalTitle(): string
     {
-        return $this->label().' '.$this->number.' · '.inr($this->total_amount);
+        return $this->label().' '.$this->number;
+    }
+
+    public function approvalAmount(): ?string
+    {
+        return $this->total_amount;
     }
 
     public function onApprovalApproved(): void

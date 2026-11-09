@@ -48,8 +48,11 @@ class BoqExcelService
 
     public function __construct(private BoqService $boq) {}
 
-    /** The project's BOQ as an .xlsx file, in the same columns the import reads. */
-    public function export(Project $project): string
+    /**
+     * The project's BOQ as an .xlsx file, in the same columns the import reads.
+     * Without $withMoney the rate and amount columns are left out: site staff get quantities only.
+     */
+    public function export(Project $project, bool $withMoney = true): string
     {
         $items = $project->boqItems()->with('section')->orderBy('sort')->orderBy('id')->get();
 
@@ -57,7 +60,8 @@ class BoqExcelService
         $sheet = $book->getActiveSheet();
         $sheet->setTitle('BOQ');
 
-        $this->headerRow($sheet, [...self::COLUMNS, 'amount']);
+        $columns = $withMoney ? [...self::COLUMNS, 'amount'] : array_values(array_diff(self::COLUMNS, ['rate']));
+        $this->headerRow($sheet, $columns);
 
         $row = 1;
 
@@ -68,11 +72,14 @@ class BoqExcelService
             Spreadsheet::text($sheet, 3, $row, $item->description);
             Spreadsheet::text($sheet, 4, $row, $item->unit);
             Spreadsheet::number($sheet, 5, $row, Dec::qty($item->qty), Spreadsheet::QTY_FORMAT);
-            Spreadsheet::number($sheet, 6, $row, Dec::money($item->rate), Spreadsheet::MONEY_FORMAT);
-            Spreadsheet::number($sheet, 7, $row, $item->amount(), Spreadsheet::MONEY_FORMAT);
+
+            if ($withMoney) {
+                Spreadsheet::number($sheet, 6, $row, Dec::money($item->rate), Spreadsheet::MONEY_FORMAT);
+                Spreadsheet::number($sheet, 7, $row, $item->amount(), Spreadsheet::MONEY_FORMAT);
+            }
         }
 
-        $this->widths($sheet, 7);
+        $this->widths($sheet, count($columns));
 
         return Spreadsheet::bytes($book);
     }

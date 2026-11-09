@@ -13,6 +13,7 @@ return [
     ],
 
     'nav' => [
-        ['place' => 'project', 'label' => 'Contract position', 'route' => 'billing-extras.position', 'active' => 'billing-extras.*', 'can' => 'ra_bill.view', 'order' => 20],
+        // Money from end to end, so the page and its menu entry need money.view rather than ra_bill.view.
+        ['place' => 'project', 'label' => 'Contract position', 'route' => 'billing-extras.position', 'active' => 'billing-extras.*', 'can' => 'money.view', 'order' => 20],
     ],
 ];

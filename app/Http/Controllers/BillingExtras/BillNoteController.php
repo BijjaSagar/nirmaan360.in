@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BillNote;
 use App\Models\RaBill;
 use App\Services\BillingExtras\BillNoteService;
+use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,8 +60,11 @@ class BillNoteController extends Controller
         return back()->with('success', __('Note cancelled.'));
     }
 
-    public function pdf(BillNote $note): Response
+    public function pdf(Request $request, BillNote $note): Response
     {
+        // A note PDF is nothing but amounts, so there is no quantities-only version of it.
+        abort_unless(Money::visible($request->user()), 403, Money::refusal());
+
         $note->load('bill', 'party', 'project', 'organization');
 
         return Pdf::loadView('modules.billing_extras.pdf.bill-note', ['note' => $note])

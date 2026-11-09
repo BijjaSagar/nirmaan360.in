@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use App\Support\Idempotent;
+use App\Support\Money;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -37,13 +38,21 @@ class PettyCashService
         ];
     }
 
-    /** Open a wallet. A repeated client_uuid returns the original row. */
-    public function createWallet(Project $project, array $data): PettyCashWallet
+    /**
+     * Open a wallet. A repeated client_uuid returns the original row.
+     * Someone who may not see money only ever sees the wallet they hold, so a wallet they
+     * open without naming a holder is theirs; otherwise it would vanish from their own screen.
+     */
+    public function createWallet(Project $project, array $data, ?User $creator = null): PettyCashWallet
     {
         $uuid = $data['client_uuid'] ?? null;
 
         if ($uuid && ($existing = $this->findWallet($project->organization_id, $uuid))) {
             return $existing;
+        }
+
+        if ($creator && empty($data['user_id']) && ! Money::visible($creator)) {
+            $data['user_id'] = $creator->id;
         }
 
         return Idempotent::create(

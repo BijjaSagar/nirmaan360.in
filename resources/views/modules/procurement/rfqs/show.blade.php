@@ -59,7 +59,11 @@
                                         @php $cell = $line['cells'][$quotation->id] ?? null; @endphp
                                         <td class="r {{ $line['l1'] === $quotation->id ? 'bg-moss/10 font-medium text-moss' : '' }}">
                                             @if ($cell)
-                                                {{ inr($cell['rate']) }}<span class="block text-[11px] text-ink-3">{{ __('GST :pct%', ['pct' => $cell['gst_pct']]) }} · {{ inr($cell['total']) }}</span>
+                                                @can('money.view')
+                                                    {{ inr($cell['rate']) }}<span class="block text-[11px] text-ink-3">{{ __('GST :pct%', ['pct' => $cell['gst_pct']]) }} · {{ inr($cell['total']) }}</span>
+                                                @else
+                                                    {{ __('Quoted') }}
+                                                @endcan
                                             @else
                                                 —
                                             @endif
@@ -68,6 +72,7 @@
                                 </tr>
                             @endforeach
                             </tbody>
+                            @can('money.view')
                             <tfoot>
                                 <tr>
                                     <td colspan="2" class="font-semibold">{{ __('Total including GST') }}</td>
@@ -76,6 +81,7 @@
                                     @endforeach
                                 </tr>
                             </tfoot>
+                            @endcan
                         </table>
                     </div>
                     @if ($rfq->isOpen())

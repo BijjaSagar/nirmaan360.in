@@ -53,13 +53,15 @@
 
         <section class="card">
             <div class="card-head">
-                <h2 class="card-title">{{ __('Budget and baseline') }}</h2>
-                <a href="{{ route('planning.budget', $project) }}" class="link text-sm">{{ __('Open budget') }}</a>
+                <h2 class="card-title">@can('money.overview'){{ __('Budget and baseline') }}@else{{ __('Baseline') }}@endcan</h2>
+                @can('money.overview')<a href="{{ route('planning.budget', $project) }}" class="link text-sm">{{ __('Open budget') }}</a>@endcan
             </div>
             <dl class="divide-y divide-rule text-sm">
-                <div class="flex justify-between gap-3 px-4 py-2.5"><dt class="text-ink-2">{{ __('Current budget') }}</dt><dd class="num">{{ inr($budget['budget']) }}</dd></div>
-                <div class="flex justify-between gap-3 px-4 py-2.5"><dt class="text-ink-2">{{ __('Actual cost') }}</dt><dd class="num {{ $budget['over'] ? 'text-laterite' : '' }}">{{ inr($budget['actual']) }}</dd></div>
-                <div class="flex justify-between gap-3 px-4 py-2.5"><dt class="text-ink-2">{{ __('Budget used') }}</dt><dd class="num">{{ $budget['used_pct'] === null ? '—' : $budget['used_pct'].'%' }}</dd></div>
+                @can('money.overview')
+                    <div class="flex justify-between gap-3 px-4 py-2.5"><dt class="text-ink-2">{{ __('Current budget') }}</dt><dd class="num">{{ inr($budget['budget']) }}</dd></div>
+                    <div class="flex justify-between gap-3 px-4 py-2.5"><dt class="text-ink-2">{{ __('Actual cost') }}</dt><dd class="num {{ $budget['over'] ? 'text-laterite' : '' }}">{{ inr($budget['actual']) }}</dd></div>
+                    <div class="flex justify-between gap-3 px-4 py-2.5"><dt class="text-ink-2">{{ __('Budget used') }}</dt><dd class="num">{{ $budget['used_pct'] === null ? '—' : $budget['used_pct'].'%' }}</dd></div>
+                @endcan
                 <div class="flex justify-between gap-3 px-4 py-2.5">
                     <dt class="text-ink-2">{{ __('Baseline') }}</dt>
                     <dd class="text-right text-xs text-ink-3">

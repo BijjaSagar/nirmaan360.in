@@ -7,6 +7,7 @@ use App\Models\PettyCashWallet;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\PettyCashService;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,9 +19,11 @@ class PettyCashController extends Controller
 {
     public function index(Request $request, Project $project): View
     {
+        // Site staff see the wallet they hold, because they enter those expenses themselves.
+        // Other people's wallets, and with them the company's cash position, need money.view.
         return view('petty.index', [
             'project' => $project,
-            'wallets' => $project->pettyCashWallets()->with(['holder', 'entries' => fn ($q) => $q->latest('entry_date')->latest('id')])->get(),
+            'wallets' => $project->pettyCashWallets()->visibleTo($request->user())->with(['holder', 'entries' => fn ($q) => $q->latest('entry_date')->latest('id')])->get(),
             'users' => User::where('organization_id', $request->user()->organization_id)->where('is_active', true)->orderBy('name')->get(),
             'clientUuid' => (string) Str::uuid(),
         ]);
@@ -28,7 +31,7 @@ class PettyCashController extends Controller
 
     public function storeWallet(Request $request, Project $project, PettyCashService $service): RedirectResponse
     {
-        $service->createWallet($project, $request->validate($service->walletRules($request->user())));
+        $service->createWallet($project, $request->validate($service->walletRules($request->user())), $request->user());
 
         return back()->with('success', __('Wallet created.'));
     }
@@ -50,8 +53,10 @@ class PettyCashController extends Controller
         return back()->with('success', __('Entry saved.'));
     }
 
-    public function bill(PettyCashEntry $entry): StreamedResponse
+    public function bill(Request $request, PettyCashEntry $entry): StreamedResponse
     {
+        // A receipt shows the amount paid, so it follows the wallet it belongs to.
+        abort_unless($entry->wallet->isVisibleTo($request->user()), 403, Money::refusal());
         abort_unless($entry->bill_path, 404);
 
         return Storage::response($entry->bill_path);

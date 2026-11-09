@@ -3,7 +3,7 @@
 @section('content')
     <x-page-header :title="($bill->is_final ? __('Final bill') : __('RA bill')).' '.$bill->number" :subtitle="($bill->type === 'client' ? __('Client') : __('Subcontractor')).' · '.($bill->party?->name ?? '—').' · '.$bill->period_from->format('d M Y').' – '.$bill->period_to->format('d M Y')">
         <x-stamp :status="$bill->status" />
-        <a href="{{ route('ra-bills.pdf', $bill) }}" class="btn btn-ghost">{{ __('Download PDF') }}</a>
+        @can('money.view')<a href="{{ route('ra-bills.pdf', $bill) }}" class="btn btn-ghost">{{ __('Download PDF') }}</a>@endcan
         @can('ra_bill.generate')
             @if ($bill->isCancellable())
                 <form method="POST" action="{{ route('ra-bills.cancel', $bill) }}" onsubmit="return confirm(@js(__('Cancel this bill? Its measurements can then be billed again.')))">@csrf<button class="btn btn-danger">{{ __('Cancel bill') }}</button></form>
@@ -34,7 +34,7 @@
             <section class="card overflow-x-auto">
                 <table class="ledger min-w-[820px]">
                     <thead>
-                    <tr><th>{{ __('Item') }}</th><th class="w-[30%]">{{ __('Description') }}</th><th>{{ __('Unit') }}</th><th class="r">{{ __('Rate') }}</th><th class="r">{{ __('Previous') }}</th><th class="r">{{ __('This bill') }}</th><th class="r">{{ __('Cumulative') }}</th><th class="r">{{ __('Amount') }}</th></tr>
+                    <tr><th>{{ __('Item') }}</th><th class="w-[30%]">{{ __('Description') }}</th><th>{{ __('Unit') }}</th>@can('money.view')<th class="r">{{ __('Rate') }}</th>@endcan<th class="r">{{ __('Previous') }}</th><th class="r">{{ __('This bill') }}</th><th class="r">{{ __('Cumulative') }}</th>@can('money.view')<th class="r">{{ __('Amount') }}</th>@endcan</tr>
                     </thead>
                     <tbody>
                     @foreach ($bill->items as $line)
@@ -42,11 +42,11 @@
                             <td class="num text-xs">{{ $line->code }}</td>
                             <td>{{ \Illuminate\Support\Str::limit($line->description, 80) }}</td>
                             <td>{{ $line->unit }}</td>
-                            <td class="r">{{ \App\Support\Dec::indian($line->rate) }}</td>
+                            @can('money.view')<td class="r">{{ \App\Support\Dec::indian($line->rate) }}</td>@endcan
                             <td class="r">{{ fmt_qty($line->prev_qty) }}</td>
                             <td class="r font-medium">{{ fmt_qty($line->current_qty) }}</td>
                             <td class="r">{{ fmt_qty($line->cumulative_qty) }}</td>
-                            <td class="r font-medium">{{ \App\Support\Dec::indian($line->current_amount) }}</td>
+                            @can('money.view')<td class="r font-medium">{{ \App\Support\Dec::indian($line->current_amount) }}</td>@endcan
                         </tr>
                     @endforeach
                     </tbody>
@@ -55,6 +55,7 @@
         </div>
 
         <div class="space-y-5">
+            @can('money.view')
             <section class="card">
                 <div class="card-head"><h2 class="card-title">{{ __('Bill abstract') }}</h2></div>
                 <dl class="text-sm">
@@ -78,6 +79,7 @@
                     <p class="border-t border-rule px-4 py-2 text-xs text-ink-3">{{ __('Lump sum work order: each item stops earning once it reaches its fixed value.') }}</p>
                 @endif
             </section>
+            @endcan
             @include('modules.billing_extras._bill-notes', ['bill' => $bill])
             <x-approval-trail :approvals="$bill->approvals" />
         </div>

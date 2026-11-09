@@ -7,6 +7,7 @@ use App\Models\RaBill;
 use App\Models\WorkOrder;
 use App\Services\ApprovalService;
 use App\Services\RaBillService;
+use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,8 +97,11 @@ class RaBillController extends Controller
         return back()->with('success', __('Bill marked as paid.'));
     }
 
-    public function pdf(RaBill $bill): Response
+    public function pdf(Request $request, RaBill $bill): Response
     {
+        // A bill PDF is amounts from top to bottom, so there is no quantities-only version of it.
+        abort_unless(Money::visible($request->user()), 403, Money::refusal());
+
         $bill->load('items', 'deductions', 'party', 'workOrder', 'project', 'organization');
 
         return Pdf::loadView('pdf.ra-bill', ['bill' => $bill])

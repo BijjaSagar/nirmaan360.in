@@ -42,7 +42,12 @@ class RaBill extends Model
 
     public function approvalTitle(): string
     {
-        return ($this->is_final ? 'Final Bill ' : 'RA Bill ').$this->number.' · '.inr($this->net_payable);
+        return ($this->is_final ? 'Final Bill ' : 'RA Bill ').$this->number;
+    }
+
+    public function approvalAmount(): ?string
+    {
+        return $this->net_payable;
     }
 
     public function lockedStatuses(): array

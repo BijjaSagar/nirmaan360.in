@@ -7,6 +7,7 @@ use App\Models\Ncr;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Qhs\NcrService;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -36,7 +37,13 @@ class NcrController extends Controller
 
     public function store(Request $request, Project $project): RedirectResponse
     {
-        $ncr = $this->service->create($project, $request->validate($this->service->rules($project, $request->user())), $request->user());
+        $data = $request->validate($this->service->rules($project, $request->user()));
+
+        if (! Money::visible($request->user())) {
+            unset($data['rework_cost']);
+        }
+
+        $ncr = $this->service->create($project, $data, $request->user());
 
         return redirect()->route('ncrs.show', $ncr)->with('success', __('NCR raised.'));
     }
@@ -52,7 +59,14 @@ class NcrController extends Controller
 
     public function update(Request $request, Ncr $ncr): RedirectResponse
     {
-        $this->service->update($ncr, $request->validate($this->service->updateRules($ncr->project, $request->user())), $request->user());
+        $data = $request->validate($this->service->updateRules($ncr->project, $request->user()));
+
+        // Rework cost is money: someone who may not see it leaves the figure as it stands.
+        if (! Money::visible($request->user())) {
+            unset($data['rework_cost']);
+        }
+
+        $this->service->update($ncr, $data, $request->user());
 
         return back()->with('success', __('NCR updated.'));
     }

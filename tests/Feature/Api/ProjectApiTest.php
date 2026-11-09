@@ -27,10 +27,11 @@ class ProjectApiTest extends ApiTestCase
         $site->item->update(['boq_section_id' => $section->id]);
         $this->draftEntry($site->project, $site->item, $site->user);
 
+        // A site engineer gets the quantities; the rate keeps its key and is null for them.
         $this->getJson(self::API."/projects/{$site->project->id}/boq")->assertOk()
             ->assertJsonPath('data.0.section', 'Superstructure')
             ->assertJsonPath('data.0.qty', '100.000')
-            ->assertJsonPath('data.0.rate', '5000.00')
+            ->assertJsonPath('data.0.rate', null)
             ->assertJsonPath('data.0.measured_qty', '50.000')
             ->assertJsonPath('data.0.approved_qty', '0.000')
             ->assertJsonPath('data.0.balance_qty', '50.000');

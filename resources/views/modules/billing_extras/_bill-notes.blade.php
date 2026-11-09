@@ -8,16 +8,18 @@
             @forelse ($bill->notes as $note)
                 <a href="{{ route('bill-notes.show', $note) }}" class="flex items-center justify-between gap-2 border-b border-rule px-4 py-2 text-sm last:border-b-0 hover:bg-paper/70">
                     <span class="num text-xs">{{ $note->number }}</span>
-                    <span class="num ml-auto whitespace-nowrap {{ $note->lowersPosition() ? 'text-laterite' : '' }}">{{ $note->lowersPosition() ? '−' : '+' }}{{ inr($note->total_amount) }}</span>
+                    @can('money.view')<span class="num ml-auto whitespace-nowrap {{ $note->lowersPosition() ? 'text-laterite' : '' }}">{{ $note->lowersPosition() ? '−' : '+' }}{{ inr($note->total_amount) }}</span>@else<span class="ml-auto"></span>@endcan
                     <x-stamp :status="$note->status" />
                 </a>
             @empty
                 <p class="px-4 py-3 text-sm text-ink-3">{{ __('No notes against this bill.') }}</p>
             @endforelse
         @endcan
-        <div class="flex items-baseline justify-between border-t border-rule bg-paper-2/60 px-4 py-2 text-sm">
-            <span class="font-semibold">{{ __('Net after approved notes') }}</span>
-            <span class="num font-medium whitespace-nowrap">{{ inr($bill->adjustedNet()) }}</span>
-        </div>
+        @can('money.view')
+            <div class="flex items-baseline justify-between border-t border-rule bg-paper-2/60 px-4 py-2 text-sm">
+                <span class="font-semibold">{{ __('Net after approved notes') }}</span>
+                <span class="num font-medium whitespace-nowrap">{{ inr($bill->adjustedNet()) }}</span>
+            </div>
+        @endcan
     </section>
 @endif
