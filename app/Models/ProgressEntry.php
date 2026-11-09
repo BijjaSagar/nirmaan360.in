@@ -4,13 +4,15 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToOrganization;
+use App\Models\Concerns\ProgressAppendOnly;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** Work done on one BOQ line on one day. A correction is a new entry with a negative quantity. */
 class ProgressEntry extends Model
 {
-    use Auditable, BelongsToOrganization;
+    use Auditable, BelongsToOrganization, ProgressAppendOnly;
 
     protected $guarded = [];
 
@@ -46,5 +48,32 @@ class ProgressEntry extends Model
     public function enteredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'entered_by');
+    }
+
+    /** Corrections made to this entry, oldest first. */
+    public function corrections(): HasMany
+    {
+        return $this->hasMany(self::class, 'corrects_entry_id')->orderBy('id');
+    }
+
+    /** The entries that closed this pending remark. */
+    public function resolutions(): HasMany
+    {
+        return $this->hasMany(self::class, 'resolves_entry_id')->orderBy('id');
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(ProgressPhoto::class);
+    }
+
+    public function isCorrection(): bool
+    {
+        return $this->corrects_entry_id !== null;
+    }
+
+    public function isResolution(): bool
+    {
+        return $this->resolves_entry_id !== null;
     }
 }
