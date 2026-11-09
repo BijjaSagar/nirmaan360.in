@@ -24,9 +24,10 @@ class WorkflowNotifier
             foreach ($this->nextApprovers($approval) as $user) {
                 $locale = $this->localeOf($user);
 
+                // The title carries the amount only for a recipient who may see money.
                 $this->notifier->send($user, new NotificationMessage(
                     event: 'approval.waiting',
-                    title: __('Approval needed: :document', ['document' => $document->approvalTitle()], $locale),
+                    title: __('Approval needed: :document', ['document' => $document->approvalTitleFor($user)], $locale),
                     body: __('Sent by :name', ['name' => (string) User::find($approval->submitted_by)?->name], $locale),
                     url: route('approvals.index'),
                 ));
@@ -43,7 +44,7 @@ class WorkflowNotifier
                 return;
             }
 
-            $replace = ['document' => $document->approvalTitle()];
+            $replace = ['document' => $document->approvalTitleFor($submitter)];
             $locale = $this->localeOf($submitter);
 
             [$event, $title] = match ($action) {

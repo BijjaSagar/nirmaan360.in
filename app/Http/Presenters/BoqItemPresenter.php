@@ -4,8 +4,9 @@ namespace App\Http\Presenters;
 
 use App\Models\BoqItem;
 use App\Support\Dec;
+use App\Support\Money;
 
-/** Expects a row loaded with the withLedger scope. */
+/** Expects a row loaded with the withLedger scope. The rate goes out as null to anyone who may not see money. */
 final class BoqItemPresenter
 {
     public static function present(BoqItem $item): array
@@ -18,7 +19,7 @@ final class BoqItemPresenter
             'description' => $item->description,
             'unit' => $item->unit,
             'qty' => $item->qty,
-            'rate' => $item->rate,
+            'rate' => Money::orNull($item->rate),
             'sort' => (int) $item->sort,
             ...self::ledger($item),
             'updated_at' => $item->updated_at?->toIso8601String(),

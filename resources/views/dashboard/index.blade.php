@@ -4,8 +4,12 @@
     <x-page-header :title="__('Dashboard')" :subtitle="now()->format('l, d F Y')" />
 
     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <x-stat :label="__('Active projects')" :value="$activeProjects" :note="inr($contractValue).' '.__('contract value')" />
-        <x-stat :label="__('Billed to clients')" :value="inr($billed)" :note="__('Approved RA bills')" />
+        <x-stat :label="__('Active projects')" :value="$activeProjects" :note="$seesMoney ? inr($contractValue).' '.__('contract value') : null" />
+        @if ($seesMoney)
+            <x-stat :label="__('Billed to clients')" :value="inr($billed)" :note="__('Approved RA bills')" />
+        @else
+            <x-stat :label="__('In review')" :value="$inReview" :note="__('Measurements waiting for approval')" />
+        @endif
         <x-stat :label="__('Waiting on you')" :value="$pendingCount" :note="__('Approvals')" :accent="$pendingCount > 0" />
         <x-stat :label="__('Today on site')" :value="$presentToday" :note="trans_choice(':count DPR|:count DPRs', $dprsToday).' · '.$openIssues.' '.__('open issues')" />
     </div>
@@ -28,7 +32,11 @@
                         <p class="num shrink-0 text-xs text-ink-2">{{ number_format($percent, 1) }}%</p>
                     </div>
                     <div class="mt-1.5 h-1.5 bg-paper-2"><div class="h-full bg-laterite" style="width: {{ $percent }}%"></div></div>
-                    <p class="num mt-1 text-[11px] text-ink-3">{{ inr($approved) }} / {{ inr($boq) }} {{ __('approved of BOQ') }}</p>
+                    @if ($seesMoney)
+                        <p class="num mt-1 text-[11px] text-ink-3">{{ inr($approved) }} / {{ inr($boq) }} {{ __('approved of BOQ') }}</p>
+                    @else
+                        <p class="mt-1 text-[11px] text-ink-3">{{ __('approved of BOQ') }}</p>
+                    @endif
                 </a>
             @empty
                 <x-empty :title="__('No projects yet')" :note="__('Create your first project, then add its BOQ.')">
@@ -45,7 +53,7 @@
                 </div>
                 @forelse ($pending as $approval)
                     <a href="{{ $approval->documentUrl() }}" class="block border-b border-rule px-4 py-2.5 text-sm last:border-b-0 hover:bg-paper/70">
-                        {{ $approval->approvable?->approvalTitle() }}
+                        {{ $approval->approvable?->approvalTitleFor(auth()->user()) }}
                     </a>
                 @empty
                     <p class="px-4 py-5 text-sm text-ink-3">{{ __('Nothing to approve.') }}</p>

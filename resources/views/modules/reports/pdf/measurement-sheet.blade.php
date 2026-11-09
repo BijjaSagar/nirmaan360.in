@@ -100,7 +100,7 @@
             <tr>
                 <th>{{ __('Item') }}</th><th style="width: 30%">{{ __('Description') }}</th><th>{{ __('Unit') }}</th>
                 <th class="r">{{ __('BOQ qty') }}</th><th class="r">{{ __('Previous') }}</th><th class="r">{{ __('This period') }}</th><th class="r">{{ __('Cumulative') }}</th>
-                <th class="r">{{ __('Rate') }}</th><th class="r">{{ __('Amount') }}</th>
+                @if ($with_money)<th class="r">{{ __('Rate') }}</th><th class="r">{{ __('Amount') }}</th>@endif
             </tr>
             </thead>
             <tbody>
@@ -109,10 +109,12 @@
                     <td>{{ $item['code'] }}</td><td>{{ $item['description'] }}</td><td>{{ $item['unit'] }}</td>
                     <td class="r">{{ fmt_qty($item['boq_qty']) }}</td><td class="r">{{ fmt_qty($item['previous_qty']) }}</td>
                     <td class="r">{{ fmt_qty($item['period_qty']) }}</td><td class="r">{{ fmt_qty($item['cumulative_qty']) }}</td>
-                    <td class="r">{{ \App\Support\Dec::indian($item['rate']) }}</td><td class="r">{{ \App\Support\Dec::indian($item['amount']) }}</td>
+                    @if ($with_money)<td class="r">{{ \App\Support\Dec::indian($item['rate']) }}</td><td class="r">{{ \App\Support\Dec::indian($item['amount']) }}</td>@endif
                 </tr>
             @endforeach
-            <tr class="total"><td colspan="8">{{ __('Total value of work this period') }}</td><td class="r">{{ inr($total_amount) }}</td></tr>
+            @if ($with_money)
+                <tr class="total"><td colspan="8">{{ __('Total value of work this period') }}</td><td class="r">{{ inr($total_amount) }}</td></tr>
+            @endif
             </tbody>
         </table>
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\Download;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -28,9 +29,9 @@ class BoqExcelController extends Controller
         ]);
     }
 
-    public function export(Project $project): Response
+    public function export(Request $request, Project $project): Response
     {
-        return Download::file($this->service->export($project), 'boq-'.$project->code.'.xlsx', Download::XLSX);
+        return Download::file($this->service->export($project, Money::visible($request->user())), 'boq-'.$project->code.'.xlsx', Download::XLSX);
     }
 
     public function template(): Response
@@ -47,7 +48,7 @@ class BoqExcelController extends Controller
         if ($result->ok()) {
             return redirect()->route('boq.excel.index', $project)
                 ->with('success', __(':count BOQ rows imported.', ['count' => $result->rows()]))
-                ->with('boq_import', ['created' => $result->created, 'updated' => $result->updated, 'unchanged' => $result->unchanged, 'errors' => []]);
+                ->with('boq_import', ['created' => $result->created, 'updated' => $result->updated, 'unchanged' => $result->unchanged, 'errors' => [], 'notes' => $result->notes]);
         }
 
         return redirect()->route('boq.excel.index', $project)->with('boq_import', [

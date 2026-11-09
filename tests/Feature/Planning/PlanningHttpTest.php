@@ -92,7 +92,8 @@ class PlanningHttpTest extends TestCase
         $this->actingAs($viewer);
         $this->get($this->url())->assertOk()->assertDontSee('Save baseline');
         $this->get($this->url('/schedule'))->assertOk();
-        $this->get($this->url('/budget'))->assertOk();
+        // The budget is total spend, which needs money.overview; a viewer never holds it.
+        $this->get($this->url('/budget'))->assertForbidden();
         $this->get('/planning/activities/'.$activity->id)->assertOk()->assertDontSee('Delete activity');
 
         $this->post($this->url('/baseline'))->assertForbidden();

@@ -2,6 +2,7 @@
 
 namespace App\Services\Agents\Tools;
 
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -90,6 +91,19 @@ abstract class Tool
     protected function date(string $description): array
     {
         return ['type' => 'string', 'format' => 'date', 'description' => $description];
+    }
+
+    /**
+     * A rupee figure for a person who may see money, and null for everyone else. The key stays,
+     * so the model sees that a figure exists but never learns it, and cannot pass it on to site staff.
+     */
+    protected function money(ToolContext $context, mixed $value): ?string
+    {
+        if ($value === null || ! Money::visible($context->user)) {
+            return null;
+        }
+
+        return (string) $value;
     }
 
     /** Case-insensitive search that treats % and _ in the term as ordinary characters. */

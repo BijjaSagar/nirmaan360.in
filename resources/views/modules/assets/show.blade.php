@@ -23,8 +23,12 @@
             @if ($where->count() > 1)<p class="mt-0.5 text-xs text-ink-3">{{ $where->skip(1)->join(' · ') }}</p>@endif
         </div>
         <x-stat :label="__('Worked')" :value="fmt_qty($asset->meter_unit === 'km' ? $summary['km'] : $summary['hours']).' '.($unit ?? 'h')" :note="$asset->meter_unit ? null : __('No meter set')" />
-        <x-stat :label="__('Fuel used')" :value="fmt_qty($summary['fuel_litres']).' L'" :note="$summary['consumption'] ? $summary['consumption'].' '.$summary['consumption_unit'] : inr($summary['fuel_cost'])" />
-        <x-stat :label="__('Repairs and services')" :value="inr($summary['repair_cost'])" />
+        <x-stat :label="__('Fuel used')" :value="fmt_qty($summary['fuel_litres']).' L'" :note="$summary['consumption'] ? $summary['consumption'].' '.$summary['consumption_unit'] : (auth()->user()->can('money.view') ? inr($summary['fuel_cost']) : null)" />
+        @can('money.view')
+            <x-stat :label="__('Repairs and services')" :value="inr($summary['repair_cost'])" />
+        @else
+            <x-stat :label="__('Breakdowns')" :value="$breakdowns->count()" />
+        @endcan
     </div>
 
     <div class="mt-5 grid gap-5 lg:grid-cols-[1fr_16rem]" x-data="{ tab: @js(old('_tab', request('tab', 'log'))) }">
@@ -96,7 +100,9 @@
                         <input type="hidden" name="_tab" value="fuel"><input type="hidden" name="asset_id" value="{{ $asset->id }}"><input type="hidden" name="client_uuid" value="{{ $uuid() }}">
                         <x-field :label="__('Date')" name="issue_date"><input id="issue_date" name="issue_date" type="date" max="{{ now()->format('Y-m-d') }}" value="{{ old('issue_date', now()->format('Y-m-d')) }}" class="input" required></x-field>
                         <x-field :label="__('Litres')" name="litres"><input id="litres" name="litres" type="number" step="0.001" min="0" inputmode="decimal" value="{{ old('litres') }}" class="input num" required></x-field>
-                        <x-field :label="__('Rate per litre (₹)')" name="rate"><input id="rate" name="rate" type="number" step="0.01" min="0" inputmode="decimal" value="{{ old('rate') }}" class="input num" required></x-field>
+                        @can('money.view')
+                            <x-field :label="__('Rate per litre (₹)')" name="rate"><input id="rate" name="rate" type="number" step="0.01" min="0" inputmode="decimal" value="{{ old('rate') }}" class="input num" required></x-field>
+                        @endcan
                         <x-field :label="__('Meter reading')" name="reading"><input id="reading" name="reading" type="number" step="0.1" min="0" value="{{ old('reading') }}" class="input num"></x-field>
                         <x-field :label="__('Taken from')" name="source"><input id="source" name="source" value="{{ old('source') }}" class="input" maxlength="80" placeholder="{{ __('Site tank, pump') }}"></x-field>
                         <x-field :label="__('Slip no.')" name="slip_no"><input id="slip_no" name="slip_no" value="{{ old('slip_no') }}" class="input" maxlength="40"></x-field>
@@ -114,14 +120,16 @@
                         <x-empty :title="__('No fuel issued yet')" />
                     @else
                         <table class="ledger min-w-[560px]">
-                            <thead><tr><th>{{ __('Date') }}</th><th class="r">{{ __('Litres') }}</th><th class="r">{{ __('Rate') }}</th><th class="r">{{ __('Amount') }}</th><th>{{ __('Taken from') }}</th><th>{{ __('Slip no.') }}</th></tr></thead>
+                            <thead><tr><th>{{ __('Date') }}</th><th class="r">{{ __('Litres') }}</th>@can('money.view')<th class="r">{{ __('Rate') }}</th><th class="r">{{ __('Amount') }}</th>@endcan<th>{{ __('Taken from') }}</th><th>{{ __('Slip no.') }}</th></tr></thead>
                             <tbody>
                             @foreach ($fuelIssues as $fuel)
                                 <tr>
                                     <td class="num">{{ $fuel->issue_date->format('d M Y') }}</td>
                                     <td class="r">{{ fmt_qty($fuel->litres) }}</td>
-                                    <td class="r">{{ inr($fuel->rate) }}</td>
-                                    <td class="r">{{ inr($fuel->amount) }}</td>
+                                    @can('money.view')
+                                        <td class="r">{{ inr($fuel->rate) }}</td>
+                                        <td class="r">{{ inr($fuel->amount) }}</td>
+                                    @endcan
                                     <td>{{ $fuel->source ?? '—' }}</td>
                                     <td class="num">{{ $fuel->slip_no ?? '—' }}</td>
                                 </tr>
@@ -153,7 +161,7 @@
                         <p class="mt-0.5 text-xs text-ink-3">
                             <span class="num">{{ $breakdown->reported_at->format('d M Y H:i') }}</span>
                             @if ($breakdown->cause) · {{ $breakdown->cause }} @endif
-                            @if ($breakdown->resolved_at) · {{ __('Down for :hours h', ['hours' => $breakdown->downtimeHours()]) }} · {{ inr($breakdown->repair_cost) }} @endif
+                            @if ($breakdown->resolved_at) · {{ __('Down for :hours h', ['hours' => $breakdown->downtimeHours()]) }} @can('money.view') · {{ inr($breakdown->repair_cost) }} @endcan @endif
                         </p>
                         @if ($breakdown->resolution)<p class="mt-1 text-sm text-ink-2">{{ $breakdown->resolution }}</p>@endif
                         @if ($breakdown->isOpen() && $canManage)
@@ -221,7 +229,7 @@
                     @foreach ($serviceRecords as $record)
                         <div class="flex flex-wrap justify-between gap-2 border-b border-rule px-4 py-2 text-sm last:border-b-0">
                             <span><span class="num">{{ $record->done_on->format('d M Y') }}</span> · {{ $record->description }}@if ($record->done_by) <span class="text-ink-3">· {{ $record->done_by }}</span>@endif</span>
-                            <span class="num">{{ inr($record->cost) }}</span>
+                            @can('money.view')<span class="num">{{ inr($record->cost) }}</span>@endcan
                         </div>
                     @endforeach
                 @endif
@@ -278,7 +286,7 @@
                     @forelse ($hireBills as $bill)
                         <a href="{{ route('hire-bills.show', $bill) }}" class="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-4 py-2.5 text-sm last:border-b-0 hover:bg-paper/70">
                             <span><span class="num">{{ $bill->number }}</span> <span class="text-ink-3">· {{ $bill->period_from->format('d M') }} – {{ $bill->period_to->format('d M Y') }}</span></span>
-                            <span class="flex items-center gap-3"><span class="num">{{ inr($bill->net_payable) }}</span>@include('modules.field_ops._chip', ['set' => 'bill', 'value' => $bill->status])</span>
+                            <span class="flex items-center gap-3">@can('money.view')<span class="num">{{ inr($bill->net_payable) }}</span>@endcan @include('modules.field_ops._chip', ['set' => 'bill', 'value' => $bill->status])</span>
                         </a>
                     @empty
                         <x-empty :title="__('No hire bills yet')" />
@@ -299,11 +307,17 @@
                     @if ($asset->serial_no)<div><dt class="eyebrow text-ink-3">{{ __('Serial / chassis no.') }}</dt><dd class="num">{{ $asset->serial_no }}</dd></div>@endif
                     @if ($asset->isHired())
                         <div><dt class="eyebrow text-ink-3">{{ __('Owner of the machine') }}</dt><dd>{{ $asset->vendor?->name ?? '—' }}</dd></div>
-                        <div><dt class="eyebrow text-ink-3">{{ __('Hire rate (₹)') }}</dt><dd class="num">{{ inr($asset->hire_rate) }} · {{ __(config('modules.assets.hire_bases')[$asset->hire_basis] ?? '') }}</dd></div>
+                        @can('money.view')
+                            <div><dt class="eyebrow text-ink-3">{{ __('Hire rate (₹)') }}</dt><dd class="num">{{ inr($asset->hire_rate) }} · {{ __(config('modules.assets.hire_bases')[$asset->hire_basis] ?? '') }}</dd></div>
+                        @else
+                            <div><dt class="eyebrow text-ink-3">{{ __('Hire basis') }}</dt><dd>{{ __(config('modules.assets.hire_bases')[$asset->hire_basis] ?? '—') }}</dd></div>
+                        @endcan
                         <div><dt class="eyebrow text-ink-3">{{ __('Fuel') }}</dt><dd>{{ __(config('modules.assets.hire_types')[$asset->hire_type] ?? '') }}</dd></div>
                         @if ($asset->min_hours_per_month !== null)<div><dt class="eyebrow text-ink-3">{{ __('Minimum hours per month') }}</dt><dd class="num">{{ fmt_qty($asset->min_hours_per_month) }}</dd></div>@endif
-                    @elseif ($asset->purchase_cost !== null)
+                    @elseif ($asset->purchase_cost !== null && auth()->user()->can('money.view'))
                         <div><dt class="eyebrow text-ink-3">{{ __('Purchase cost (₹)') }}</dt><dd class="num">{{ inr($asset->purchase_cost) }}@if ($asset->purchase_date) <span class="text-ink-3">· {{ $asset->purchase_date->format('d M Y') }}</span>@endif</dd></div>
+                    @elseif ($asset->purchase_date)
+                        <div><dt class="eyebrow text-ink-3">{{ __('Purchased on') }}</dt><dd class="num">{{ $asset->purchase_date->format('d M Y') }}</dd></div>
                     @endif
                     @if ($asset->notes)<div><dt class="eyebrow text-ink-3">{{ __('Notes') }}</dt><dd class="whitespace-pre-line">{{ $asset->notes }}</dd></div>@endif
                 </dl>

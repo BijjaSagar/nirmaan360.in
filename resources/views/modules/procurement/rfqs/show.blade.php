@@ -1,7 +1,10 @@
 @extends('layouts.app')
 @section('title', $rfq->number)
 @section('content')
-    @php $vendorsQuoted = $comparison['vendors']; @endphp
+    @php
+        $vendorsQuoted = $comparison['vendors'];
+        $vendorWarnings = app(\App\Services\MaterialControl\SupplierRecordService::class)->summaries($vendors, auth()->user()->organization_id);
+    @endphp
     <x-page-header :title="$rfq->number" :subtitle="__('From indent :number', ['number' => $rfq->indent->number])">
         <x-stamp :status="$rfq->status" />
         @if ($rfq->isOpen())
@@ -59,7 +62,11 @@
                                         @php $cell = $line['cells'][$quotation->id] ?? null; @endphp
                                         <td class="r {{ $line['l1'] === $quotation->id ? 'bg-moss/10 font-medium text-moss' : '' }}">
                                             @if ($cell)
-                                                {{ inr($cell['rate']) }}<span class="block text-[11px] text-ink-3">{{ __('GST :pct%', ['pct' => $cell['gst_pct']]) }} · {{ inr($cell['total']) }}</span>
+                                                @can('money.view')
+                                                    {{ inr($cell['rate']) }}<span class="block text-[11px] text-ink-3">{{ __('GST :pct%', ['pct' => $cell['gst_pct']]) }} · {{ inr($cell['total']) }}</span>
+                                                @else
+                                                    {{ __('Quoted') }}
+                                                @endcan
                                             @else
                                                 —
                                             @endif
@@ -68,6 +75,7 @@
                                 </tr>
                             @endforeach
                             </tbody>
+                            @can('money.view')
                             <tfoot>
                                 <tr>
                                     <td colspan="2" class="font-semibold">{{ __('Total including GST') }}</td>
@@ -76,6 +84,7 @@
                                     @endforeach
                                 </tr>
                             </tfoot>
+                            @endcan
                         </table>
                     </div>
                     @if ($rfq->isOpen())
@@ -100,7 +109,7 @@
                             <x-field :label="__('Vendor')" name="party_id">
                                 <select id="party_id" name="party_id" class="input" required>
                                     <option value="">{{ __('Choose') }}</option>
-                                    @foreach ($vendors as $vendor)<option value="{{ $vendor->id }}">{{ $vendor->name }}</option>@endforeach
+                                    @foreach ($vendors as $vendor)<option value="{{ $vendor->id }}">{{ $vendor->name }}@if ($vendorWarnings[$vendor->id]['warn']) ({{ $vendorWarnings[$vendor->id]['warning'] }})@endif</option>@endforeach
                                 </select>
                             </x-field>
                             <x-field :label="__('Quote reference')" name="quote_ref"><input id="quote_ref" name="quote_ref" class="input" maxlength="60"></x-field>
@@ -133,7 +142,7 @@
                     <x-field :label="__('Add a vendor to this RFQ')" name="party_id" class="min-w-48 flex-1">
                         <select name="party_id" class="input" required>
                             <option value="">{{ __('Choose') }}</option>
-                            @foreach ($vendors as $vendor)<option value="{{ $vendor->id }}">{{ $vendor->name }}</option>@endforeach
+                            @foreach ($vendors as $vendor)<option value="{{ $vendor->id }}">{{ $vendor->name }}@if ($vendorWarnings[$vendor->id]['warn']) ({{ $vendorWarnings[$vendor->id]['warning'] }})@endif</option>@endforeach
                         </select>
                     </x-field>
                     <button class="btn btn-ghost">{{ __('Add vendor') }}</button>

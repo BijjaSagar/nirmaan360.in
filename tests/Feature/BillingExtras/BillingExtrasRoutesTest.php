@@ -211,9 +211,13 @@ class BillingExtrasRoutesTest extends TestCase
         $this->get(route('billing-extras.final-bills.create', $project))->assertForbidden();
         $this->post(route('billing-extras.final-bills.store', $project), ['type' => 'client', 'period_from' => '2026-11-01', 'period_to' => '2026-11-30'])->assertForbidden();
 
+        // The position is money from end to end, so a viewer (no money.view) is turned away and accounts is let in.
         $this->actingAs($this->member($contract->organization, 'viewer'));
-        $this->get(route('billing-extras.position', $project))->assertOk();
+        $this->get(route('billing-extras.position', $project))->assertForbidden();
         $this->get(route('billing-extras.final-bills.create', $project))->assertForbidden();
+
+        $this->actingAs($this->member($contract->organization, 'accounts'));
+        $this->get(route('billing-extras.position', $project))->assertOk();
     }
 
     public function test_another_companys_position_and_final_bills_are_a_404(): void

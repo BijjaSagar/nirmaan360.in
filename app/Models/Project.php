@@ -20,6 +20,9 @@ class Project extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
+            'deadline_date' => 'date',
+            'budget_amount' => 'decimal:2',
+            'budget_margin_pct' => 'decimal:2',
             'contract_value' => 'decimal:2',
             'retention_pct' => 'decimal:2',
             'tds_pct' => 'decimal:2',

@@ -4,6 +4,7 @@ namespace App\Services\Agents\Tools;
 
 use App\Models\RaBill;
 use App\Services\ApprovalService;
+use App\Support\Money;
 
 class RaBillSubmitForApproval extends Tool
 {
@@ -43,7 +44,9 @@ class RaBillSubmitForApproval extends Tool
     {
         $bill = $this->bill($input, $context);
 
-        return 'Submit RA bill '.$bill->number.' ('.inr($bill->net_payable).') for approval';
+        $amount = Money::visible($context->user) ? ' ('.inr($bill->net_payable).')' : '';
+
+        return 'Submit RA bill '.$bill->number.$amount.' for approval';
     }
 
     public function actionProjectId(array $input, ToolContext $context): ?int

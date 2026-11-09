@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\FieldOps\CreatesOnce;
 use App\Support\ClientTime;
 use App\Support\Dec;
+use App\Support\Money;
 use Illuminate\Validation\ValidationException;
 
 /** The daily record of a machine: what it worked, what fuel it took and when it broke down. */
@@ -46,7 +47,8 @@ class PlantLogService
             'project_id' => ['bail', 'nullable', 'integer', $this->projectRule($org)],
             'issue_date' => ['required', 'date', 'before_or_equal:today'],
             'litres' => ['required', 'numeric', 'gt:0', 'max:100000'],
-            'rate' => ['required', 'numeric', 'min:0', 'max:100000'],
+            // The rate is money. Site staff who may not see it do not enter it; the issue takes the asset's last rate.
+            'rate' => Money::visible($user) ? ['required', 'numeric', 'min:0', 'max:100000'] : ['nullable', 'numeric', 'min:0', 'max:100000'],
             'reading' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'source' => ['nullable', 'string', 'max:80'],
             'slip_no' => ['nullable', 'string', 'max:40'],
@@ -125,6 +127,12 @@ class PlantLogService
         $log->delete();
     }
 
+    /** The rate on the asset's latest fuel issue, so an entry by someone who never sees rates is still costed. Zero on the first issue. */
+    private function lastFuelRate(Asset $asset): string
+    {
+        return Dec::money($asset->fuelIssues()->latest('issue_date')->latest('id')->value('rate') ?? 0);
+    }
+
     public function issueFuel(array $data, User $user): FuelIssue
     {
         $asset = $this->asset($data['asset_id'], $user);
@@ -132,14 +140,16 @@ class PlantLogService
         return $this->createOnce(FuelIssue::class, $user->organization_id, $data['client_uuid'] ?? null, function () use ($asset, $data, $user) {
             $this->assertWorkable($asset, $data['issue_date'], 'issue_date');
 
+            $rate = Money::visible($user) ? Dec::money($data['rate'] ?? 0) : $this->lastFuelRate($asset);
+
             return FuelIssue::create([
                 'organization_id' => $asset->organization_id,
                 'asset_id' => $asset->id,
                 'project_id' => $data['project_id'] ?? $asset->project_id,
                 'issue_date' => $data['issue_date'],
                 'litres' => Dec::qty($data['litres']),
-                'rate' => Dec::money($data['rate']),
-                'amount' => Dec::money(Dec::of($data['litres'])->multipliedBy(Dec::of($data['rate']))),
+                'rate' => $rate,
+                'amount' => Dec::money(Dec::of($data['litres'])->multipliedBy(Dec::of($rate))),
                 'reading' => filled($data['reading'] ?? null) ? Dec::qty($data['reading']) : null,
                 'source' => $data['source'] ?? null,
                 'slip_no' => $data['slip_no'] ?? null,

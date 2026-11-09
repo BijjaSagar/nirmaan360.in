@@ -48,7 +48,12 @@ class VendorBill extends Model
 
     public function approvalTitle(): string
     {
-        return 'Vendor bill '.$this->bill_no.' · '.inr($this->total_amount);
+        return 'Vendor bill '.$this->bill_no;
+    }
+
+    public function approvalAmount(): ?string
+    {
+        return $this->total_amount;
     }
 
     public function lockedStatuses(): array

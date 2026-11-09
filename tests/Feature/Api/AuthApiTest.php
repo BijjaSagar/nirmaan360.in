@@ -24,8 +24,17 @@ class AuthApiTest extends ApiTestCase
             'project.view', 'project.manage', 'boq.view', 'boq.manage', 'dpr.view', 'dpr.create', 'dpr.approve', 'issue.view', 'issue.manage',
             'attendance.view', 'attendance.manage', 'worker.view', 'worker.manage', 'petty_cash.view', 'petty_cash.manage',
             'measurement.view', 'measurement.create', 'measurement.approve', 'ra_bill.view', 'ra_bill.approve',
-            'progress.view', 'progress.create',
+            'money.view', 'money.overview',
+            'progress.view', 'progress.create', 'progress.manage',
+            'material_control.view', 'material_control.challan', 'material_control.consume', 'material_control.count',
+            'material_control.reason', 'material_control.extra', 'material_control.bills', 'material_control.suppliers', 'material_control.adjust',
+            'contractor.view', 'contractor.request', 'contractor.approve', 'contractor.manage', 'contractor.tender', 'contractor.award',
+            'asset.log', 'checklist.fill', 'procurement.stock',
         ], array_keys($can));
+        $this->assertFalse($can['money.view']);
+        $this->assertTrue($can['progress.create']);
+        $this->assertTrue($can['material_control.challan']);
+        $this->assertFalse($can['contractor.approve']);
         $this->assertTrue($can['dpr.create']);
         $this->assertFalse($can['dpr.approve']);
     }

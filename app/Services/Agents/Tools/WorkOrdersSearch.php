@@ -50,7 +50,7 @@ class WorkOrdersSearch extends Tool
                     'title' => $order->title,
                     'party' => $order->party?->name,
                     'status' => $order->status,
-                    'total_value' => $order->totalValue(),
+                    'total_value' => $this->money($context, $order->totalValue()),
                 ])->all(),
                 'more_exist' => $orders->count() > $limit,
             ],

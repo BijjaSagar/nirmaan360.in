@@ -49,6 +49,8 @@ Protect every route with `feature:<name>` when the module has a feature, and wit
 - Use the migration date assigned to your module so timestamps never collide. Migrations must be additive and have a working `down()`.
 - A link to another module's table is a nullable id with no foreign key, so modules can merge in any order.
 - Do not touch `mobile/`.
+- Site staff never receive money. Rates, amounts, contract values and payments need `money.view`; budget and total spend need `money.overview`. Enforce this in the controller, API presenter, export and view alike, not only by hiding a column. Work out progress only through `App\Services\SiteControl\WorkProgress`.
+  `App\Support\Money::visible()` / `overview()` answer the question in code and `Money::orNull()` keeps a JSON key while blanking its figure; views use `@can('money.view')`. `tests/Feature/SiteControl/MoneyVisibilityTest` walks every signed-in GET route as engineer, store keeper and viewer and fails on any rupee figure, so a new route needs a row for its model in `BuildsMoneyWorld` (the walk names the model it is missing).
 - Every tenant model needs a `project_id` column, a `PROJECT_VIA` constant naming the relation that leads to one, or `COMPANY_WIDE = true`. Without this, people limited to chosen projects could read the record by id.
 - An outside service (WhatsApp, FCM, SMS, AI model, Tally, SSO) sits behind a small gateway class that reads its keys from `PlatformSettings` or `config/services.php`. With no keys it must report "not connected" clearly, and tests use a fake. Never fake a success, and never show a feature as live when it is not connected.
 - Never put keys, passwords or personal details in the repository. The repository is public.
@@ -57,3 +59,15 @@ Protect every route with `feature:<name>` when the module has a feature, and wit
 ## Definition of done
 
 Every module needs feature tests for permission and tenant isolation, service tests for money or quantity logic, UI text through `__()` with Hindi and Marathi translations, and a phone-width check of its screens. `php artisan test` must pass, `vendor/bin/pint --dirty` must be clean, and `npm run build` must work.
+
+## Plugging into site alerts and the site dashboard
+
+The `site_alerts` module runs other modules' checks and shows their cards without knowing them. Add keys to your own `config/modules/<name>.php`:
+
+| Key | Each class implements | What it does |
+| --- | --- | --- |
+| `alert_sources` | `App\Services\SiteAlerts\Contracts\AlertSource` | `types()` lists the alert types you raise; `findings(Project, today)` returns a `Finding` for every cause present today. The engine opens, refreshes and resolves alerts by type and reference, and tells people through `Notifier`. Runs daily (`site-alerts:scan`) and on demand. |
+| `dashboard_cards` | `App\Services\SiteAlerts\Contracts\DashboardCard` | `cards(Project, viewer, today)` yields `Card` objects, rendered on `/projects/{project}/site-dashboard` and returned by the mobile API as they are. |
+| `spend_sources` | `App\Services\SiteAlerts\Contracts\SpendSource` | `spent(Project)` is money already gone from your records, counted once, added into spend against budget. |
+
+A `Finding` with a rupee figure must set `needs` to `money.view` or `money.overview`; it is then hidden from, and never sent to, anyone without that permission. Its `notify` names the permission of the people told when it opens, or is null when your module has already told them itself. A card shows money only when `$viewer->can('money.overview')`. Work percentages come from `App\Services\SiteControl\WorkProgress`.

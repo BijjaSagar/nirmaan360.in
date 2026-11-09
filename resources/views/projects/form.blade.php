@@ -122,6 +122,8 @@
             </div>
         </section>
 
+        @include('modules.project_setup._project-fields')
+
         <section class="card">
             <div class="card-head"><h2 class="card-title">{{ __('Client billing terms') }}</h2></div>
             <div class="grid gap-4 p-4 sm:grid-cols-3">

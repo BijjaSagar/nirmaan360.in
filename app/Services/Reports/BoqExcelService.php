@@ -7,7 +7,10 @@ use App\Models\Concerns\OrganizationScope;
 use App\Models\MeasurementEntry;
 use App\Models\Project;
 use App\Services\BoqService;
+use App\Services\ProjectSetup\BoqCategories;
+use App\Services\ProjectSetup\BoqRevisions;
 use App\Support\Dec;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -33,14 +36,21 @@ class BoqExcelService
 
     private const REQUIRED = ['code', 'description', 'unit', 'qty', 'rate'];
 
+    /** Read when the sheet has them. A sheet without them still imports, and leaves them as they are. */
+    public const OPTIONAL = ['category', 'details'];
+
     /** Header text people commonly use, after lower-casing and dropping punctuation. */
     private const ALIASES = [
         'section' => ['section', 'chapter', 'section name', 'group'],
         'code' => ['code', 'item code', 'item no', 'item number', 'sr no', 'sl no', 's no'],
-        'description' => ['description', 'item description', 'description of item', 'particulars'],
+        'description' => ['description', 'item description', 'description of item', 'description of items', 'description of work', 'particulars'],
         'unit' => ['unit', 'units', 'uom'],
         'qty' => ['qty', 'quantity', 'boq qty', 'boq quantity'],
         'rate' => ['rate', 'unit rate', 'rate inr', 'rate rs', 'rate in inr'],
+        'category' => ['category', 'work category', 'type of work', 'head of work'],
+        'details' => ['details', 'detail', 'item details', 'specification', 'specifications'],
+        'amount' => ['amount', 'amount in rs', 'amount rs', 'amount in inr', 'total amount'],
+        'remark' => ['remark', 'remarks'],
     ];
 
     /** Sheets bigger than this when unpacked are refused. A small file can unpack to a huge one. */
@@ -48,8 +58,11 @@ class BoqExcelService
 
     public function __construct(private BoqService $boq) {}
 
-    /** The project's BOQ as an .xlsx file, in the same columns the import reads. */
-    public function export(Project $project): string
+    /**
+     * The project's BOQ as an .xlsx file, in the same columns the import reads.
+     * Without $withMoney the rate and amount columns are left out: site staff get quantities only.
+     */
+    public function export(Project $project, bool $withMoney = true): string
     {
         $items = $project->boqItems()->with('section')->orderBy('sort')->orderBy('id')->get();
 
@@ -57,7 +70,8 @@ class BoqExcelService
         $sheet = $book->getActiveSheet();
         $sheet->setTitle('BOQ');
 
-        $this->headerRow($sheet, [...self::COLUMNS, 'amount']);
+        $columns = $withMoney ? [...self::COLUMNS, 'amount'] : array_values(array_diff(self::COLUMNS, ['rate']));
+        $this->headerRow($sheet, [...$columns, ...self::OPTIONAL]);
 
         $row = 1;
 
@@ -68,11 +82,18 @@ class BoqExcelService
             Spreadsheet::text($sheet, 3, $row, $item->description);
             Spreadsheet::text($sheet, 4, $row, $item->unit);
             Spreadsheet::number($sheet, 5, $row, Dec::qty($item->qty), Spreadsheet::QTY_FORMAT);
-            Spreadsheet::number($sheet, 6, $row, Dec::money($item->rate), Spreadsheet::MONEY_FORMAT);
-            Spreadsheet::number($sheet, 7, $row, $item->amount(), Spreadsheet::MONEY_FORMAT);
+
+            if ($withMoney) {
+                Spreadsheet::number($sheet, 6, $row, Dec::money($item->rate), Spreadsheet::MONEY_FORMAT);
+                Spreadsheet::number($sheet, 7, $row, $item->amount(), Spreadsheet::MONEY_FORMAT);
+            }
+
+            $next = count($columns) + 1;
+            Spreadsheet::text($sheet, $next, $row, $item->category);
+            Spreadsheet::text($sheet, $next + 1, $row, $item->details);
         }
 
-        $this->widths($sheet, 7);
+        $this->widths($sheet, count($columns) + count(self::OPTIONAL));
 
         return Spreadsheet::bytes($book);
     }
@@ -83,11 +104,11 @@ class BoqExcelService
         $book = new Workbook;
         $sheet = $book->getActiveSheet();
         $sheet->setTitle('BOQ');
-        $this->headerRow($sheet, self::COLUMNS);
+        $this->headerRow($sheet, [...self::COLUMNS, ...self::OPTIONAL]);
 
         foreach ([
-            ['Substructure', '1.1', 'Earthwork in excavation in all soils', 'cum', '250.000', '185.00'],
-            ['Superstructure', '2.1', 'RCC M25 in slab including shuttering', 'cum', '120.000', '7450.00'],
+            ['Substructure', '1.1', 'Earthwork in excavation in all soils', 'cum', '250.000', '185.00', 'excavation', ''],
+            ['Superstructure', '2.1', 'RCC M25 in slab including shuttering', 'cum', '120.000', '7450.00', 'rcc', 'M25 grade, 150 mm thick, with centering and shuttering.'],
         ] as $index => $values) {
             $row = $index + 2;
             Spreadsheet::text($sheet, 1, $row, $values[0]);
@@ -96,9 +117,11 @@ class BoqExcelService
             Spreadsheet::text($sheet, 4, $row, $values[3]);
             Spreadsheet::number($sheet, 5, $row, $values[4], Spreadsheet::QTY_FORMAT);
             Spreadsheet::number($sheet, 6, $row, $values[5], Spreadsheet::MONEY_FORMAT);
+            Spreadsheet::text($sheet, 7, $row, $values[6]);
+            Spreadsheet::text($sheet, 8, $row, $values[7]);
         }
 
-        $this->widths($sheet, 6);
+        $this->widths($sheet, 8);
 
         $notes = $book->createSheet();
         $notes->setTitle('Notes');
@@ -109,6 +132,7 @@ class BoqExcelService
             __('A row whose item code already exists in the project updates that item. Other rows are added.'),
             __('If any row has a problem, nothing is imported and each problem is listed with its row number.'),
             __('Use values, not formulas, in quantity and rate.'),
+            __('Category and details are optional. Category is one of: :categories', ['categories' => implode(', ', BoqCategories::keys())]),
         ] as $index => $line) {
             Spreadsheet::text($notes, 1, $index + 1, $line);
         }
@@ -122,11 +146,26 @@ class BoqExcelService
     /** Check the file against the project and, only if it is clean, add and update BOQ lines. */
     public function import(Project $project, string $path): BoqImportResult
     {
-        return DB::transaction(function () use ($project, $path) {
+        [$grid, $missingValue, $fileError] = $this->read($path);
+
+        if ($fileError !== null) {
+            return new BoqImportResult([['row' => 0, 'field' => null, 'message' => $fileError]]);
+        }
+
+        return $this->importGrid($project, $grid, $missingValue);
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $grid  Row => column => saved value.
+     * @param  array<int, array<int, true>>  $missingValue  Formula cells that have no saved value.
+     */
+    public function importGrid(Project $project, array $grid, array $missingValue = []): BoqImportResult
+    {
+        return DB::transaction(function () use ($project, $grid, $missingValue) {
             // The same lock BoqService::create takes, so an import and a hand-added line cannot race for sort order.
             $project = Project::lockForUpdate()->findOrFail($project->id);
 
-            [$rows, $errors] = $this->check($project, $path);
+            [$rows, $errors, $notes] = $this->checkGrid($project, $grid, $missingValue);
 
             if ($errors !== []) {
                 return new BoqImportResult($errors);
@@ -136,54 +175,72 @@ class BoqExcelService
             $sort = (int) $project->boqItems()->max('sort');
             $created = $updated = $unchanged = 0;
 
-            foreach ($rows as $row) {
-                $values = [
-                    'boq_section_id' => $this->boq->sectionId($project, $row['section']),
-                    'description' => $row['description'],
-                    'unit' => $row['unit'],
-                    'qty' => Dec::qty($row['qty']),
-                    'rate' => Dec::money($row['rate']),
-                ];
+            BoqRevisions::with(__('Imported from an Excel file'), 'excel_import', function () use ($rows, $project, $existing, &$sort, &$created, &$updated, &$unchanged) {
+                foreach ($rows as $row) {
+                    $values = [
+                        'boq_section_id' => $this->boq->sectionId($project, $row['section']),
+                        'description' => $row['description'],
+                        'unit' => $row['unit'],
+                        'qty' => Dec::qty($row['qty']),
+                        'rate' => Dec::money($row['rate']),
+                        ...Arr::only($row, self::OPTIONAL),
+                    ];
 
-                if ($item = $existing->get($row['code'])) {
-                    $item->update($values);
-                    $item->wasChanged() ? $updated++ : $unchanged++;
+                    if ($item = $existing->get($row['code'])) {
+                        $item->update($values);
+                        $item->wasChanged() ? $updated++ : $unchanged++;
 
-                    continue;
+                        continue;
+                    }
+
+                    BoqItem::create([
+                        ...$values,
+                        'organization_id' => $project->organization_id,
+                        'project_id' => $project->id,
+                        'code' => $row['code'],
+                        'sort' => ++$sort,
+                    ]);
+                    $created++;
                 }
+            }, batch: true);
 
-                BoqItem::create([
-                    ...$values,
-                    'organization_id' => $project->organization_id,
-                    'project_id' => $project->id,
-                    'code' => $row['code'],
-                    'sort' => ++$sort,
-                ]);
-                $created++;
-            }
-
-            return new BoqImportResult([], $created, $updated, $unchanged);
+            return new BoqImportResult([], $created, $updated, $unchanged, $notes);
         });
     }
 
     /**
-     * Read the file and list every problem. Returns the clean rows and the errors.
+     * Read the file and list every problem. Returns the clean rows, the errors and anything worth a second look.
      *
-     * @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>}
+     * @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>, 2: list<array{row:int,message:string}>}
      */
     public function check(Project $project, string $path): array
     {
         [$grid, $missingValue, $fileError] = $this->read($path);
 
         if ($fileError !== null) {
-            return [[], [['row' => 0, 'field' => null, 'message' => $fileError]]];
+            return [[], [['row' => 0, 'field' => null, 'message' => $fileError]], []];
         }
 
+        return $this->checkGrid($project, $grid, $missingValue);
+    }
+
+    /** @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>, 2: list<array{row:int,message:string}>} */
+    private function checkGrid(Project $project, array $grid, array $missingValue): array
+    {
         [$headerRow, $columns] = $this->findHeader($grid);
 
         if ($headerRow === null) {
-            return [[], [['row' => 0, 'field' => null, 'message' => __('Could not find the heading row. The sheet needs these columns: :columns', ['columns' => implode(', ', self::REQUIRED)])]]];
+            return [[], [['row' => 0, 'field' => null, 'message' => __('Could not find the heading row. The sheet needs these columns: :columns', ['columns' => implode(', ', self::REQUIRED)])]], []];
         }
+
+        $notes = [];
+
+        if (EstimateSheet::applies($columns)) {
+            [$grid, $columns, $notes] = (new EstimateSheet)->standardise($grid, $columns, $headerRow);
+            $missingValue = [];
+        }
+
+        unset($columns['amount'], $columns['remark']);
 
         $existing = $this->existingByCode($project);
         $approved = MeasurementEntry::withoutGlobalScope(OrganizationScope::class)
@@ -229,6 +286,32 @@ class BoqExcelService
                 }
             }
 
+            $optional = [];
+
+            foreach (self::OPTIONAL as $field) {
+                if (! isset($columns[$field])) {
+                    continue;
+                }
+
+                $value = $this->text($get($field));
+
+                if ($field === 'category' && $value !== '') {
+                    $key = BoqCategories::fromText($value);
+
+                    if ($key === null) {
+                        $fail($field, __('Category :value is not recognised. Use one of: :categories', ['value' => $value, 'categories' => implode(', ', BoqCategories::keys())]));
+                    }
+
+                    $value = (string) $key;
+                }
+
+                if ($field === 'details' && mb_strlen($value) > 10000) {
+                    $fail($field, __(':field is longer than :max characters.', ['field' => $this->label($field), 'max' => 10000]));
+                }
+
+                $optional[$field] = $value === '' ? null : $value;
+            }
+
             $numbers = [];
 
             foreach (['qty' => '99999999999', 'rate' => '9999999999999'] as $field => $max) {
@@ -264,14 +347,14 @@ class BoqExcelService
                 continue;
             }
 
-            $rows[] = [...$text, 'qty' => $numbers['qty'], 'rate' => $numbers['rate']];
+            $rows[] = [...$text, 'qty' => $numbers['qty'], 'rate' => $numbers['rate'], ...$optional];
         }
 
         if ($errors === [] && $rows === []) {
             $errors[] = ['row' => 0, 'field' => null, 'message' => __('The file has no rows.')];
         }
 
-        return [$rows, $errors];
+        return [$rows, $errors, $notes];
     }
 
     /** @return Collection<string, BoqItem> The lowest id wins when a code repeats. */
@@ -419,6 +502,8 @@ class BoqExcelService
             'unit' => __('Unit'),
             'qty' => __('Quantity'),
             'rate' => __('Rate'),
+            'category' => __('Category'),
+            'details' => __('Details'),
         };
     }
 

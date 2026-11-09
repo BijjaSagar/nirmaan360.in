@@ -198,18 +198,18 @@ class AdminSettingsTest extends TestCase
     public function test_any_website_text_can_be_changed_per_language_and_reset(): void
     {
         $this->admin();
-        $hash = sha1('One BOQ line.');
+        $hash = sha1('Three things go untracked on a site.');
 
         $this->patch('/admin/texts', ['page' => 'home', 'locale' => 'en', 'texts' => [$hash => 'Every line accounted for.']])->assertSessionHasNoErrors();
-        $this->get('/')->assertSee('Every line accounted for.')->assertDontSee('One BOQ line.');
+        $this->get('/')->assertSee('Every line accounted for.')->assertDontSee('Three things go untracked on a site.');
 
         $this->get('/locale/hi');
-        $this->get('/')->assertSee('एक BOQ लाइन।');
+        $this->get('/')->assertSee('साइट पर तीन चीज़ों का हिसाब नहीं रहता।');
         $this->get('/locale/en');
 
         $this->patch('/admin/texts', ['page' => 'home', 'locale' => 'en', 'texts' => [$hash => '']]);
         $this->assertSame(0, SiteText::count());
-        $this->get('/')->assertSee('One BOQ line.');
+        $this->get('/')->assertSee('Three things go untracked on a site.');
     }
 
     public function test_text_from_arrays_and_guest_only_links_is_listed(): void

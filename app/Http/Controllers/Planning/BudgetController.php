@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PlanCostEntry;
 use App\Models\Project;
 use App\Services\Planning\BudgetService;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,8 +15,11 @@ class BudgetController extends Controller
 {
     public function __construct(private BudgetService $budget) {}
 
-    public function index(Project $project): View
+    public function index(Request $request, Project $project): View
     {
+        // Budget and actual cost are the company's total spend, which needs money.overview.
+        abort_unless(Money::overview($request->user()), 403, Money::refusal());
+
         return view('modules.planning.budget', [
             'project' => $project,
             'report' => $this->budget->report($project),

@@ -9,6 +9,7 @@ use App\Models\PettyCashEntry;
 use App\Models\PettyCashWallet;
 use App\Models\Project;
 use App\Services\PettyCashService;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,9 +21,10 @@ class PettyCashApiController extends Controller
 
     public function __construct(private PettyCashService $service) {}
 
-    public function index(Project $project): JsonResponse
+    public function index(Request $request, Project $project): JsonResponse
     {
-        $wallets = $project->pettyCashWallets()->with(['entries' => fn ($q) => $q->latest('entry_date')->latest('id')])->get();
+        // Someone who may not see money gets the wallet they hold and nothing of anyone else's.
+        $wallets = $project->pettyCashWallets()->visibleTo($request->user())->with(['entries' => fn ($q) => $q->latest('entry_date')->latest('id')])->get();
 
         return response()->json([
             'data' => $wallets->map(fn (PettyCashWallet $wallet) => [
@@ -37,7 +39,7 @@ class PettyCashApiController extends Controller
         $wallet = $this->service->createWallet($project, $request->validate([
             ...$this->service->walletRules($request->user()),
             'client_uuid' => ['nullable', 'uuid'],
-        ]));
+        ]), $request->user());
 
         return response()->json(['data' => WalletPresenter::present($wallet)], $wallet->wasRecentlyCreated ? 201 : 200);
     }
@@ -55,8 +57,9 @@ class PettyCashApiController extends Controller
         return response()->json(['data' => PettyEntryPresenter::present($entry)], $entry->wasRecentlyCreated ? 201 : 200);
     }
 
-    public function bill(PettyCashEntry $entry): StreamedResponse
+    public function bill(Request $request, PettyCashEntry $entry): StreamedResponse
     {
+        abort_unless($entry->wallet->isVisibleTo($request->user()), 403, Money::refusal());
         abort_unless($entry->bill_path && Storage::exists($entry->bill_path), 404);
 
         return Storage::response($entry->bill_path);

@@ -6,7 +6,9 @@ use App\Models\BoqItem;
 use App\Models\Party;
 use App\Models\Project;
 use App\Services\ProjectService;
+use App\Services\SiteControl\WorkProgress;
 use App\Support\Dec;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -47,10 +49,15 @@ class ProjectController extends Controller
             $approvedValue = $approvedValue->plus(Dec::of(Dec::qty($item->approved_qty ?? 0))->multipliedBy(Dec::of($item->rate)));
         }
 
+        // Everyone sees how far the work has come as a percentage. The rupee figures behind it need money.view.
+        $seesMoney = Money::visible();
+
         return view('projects.show', [
             'project' => $project->load('client', 'sites'),
-            'boqValue' => Dec::money($boqValue),
-            'approvedValue' => Dec::money($approvedValue),
+            'seesMoney' => $seesMoney,
+            'boqValue' => $seesMoney ? Dec::money($boqValue) : null,
+            'approvedValue' => $seesMoney ? Dec::money($approvedValue) : null,
+            'approvedPercent' => app(WorkProgress::class)->percent($approvedValue, $boqValue),
             'itemCount' => $items->count(),
             'openIssues' => $project->issues()->whereIn('status', ['open', 'in_progress'])->count(),
             'dprCount' => $project->dprs()->count(),

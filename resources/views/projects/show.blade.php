@@ -7,9 +7,15 @@
     </x-page-header>
 
     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <x-stat :label="__('Contract value')" :value="inr($project->contract_value)" />
-        <x-stat :label="__('BOQ value')" :value="inr($boqValue)" :note="$itemCount.' '.__('items')" />
-        <x-stat :label="__('Approved work')" :value="inr($approvedValue)" />
+        @if ($seesMoney)
+            <x-stat :label="__('Contract value')" :value="inr($project->contract_value)" />
+            <x-stat :label="__('BOQ value')" :value="inr($boqValue)" :note="$itemCount.' '.__('items')" />
+            <x-stat :label="__('Approved work')" :value="inr($approvedValue)" :note="$approvedPercent.'% '.__('of BOQ')" />
+        @else
+            <x-stat :label="__('BOQ items')" :value="$itemCount" />
+            <x-stat :label="__('Approved work')" :value="$approvedPercent.'%'" :note="__('of BOQ, from approved measurements')" />
+            <x-stat :label="__('Sites')" :value="$project->sites->count()" />
+        @endif
         <x-stat :label="__('Open issues')" :value="$openIssues" :note="$dprCount.' '.__('daily reports')" :accent="$openIssues > 0" />
     </div>
 
@@ -31,7 +37,7 @@
             @forelse ($bills as $bill)
                 <a href="{{ route('ra-bills.show', $bill) }}" class="flex items-center justify-between gap-3 border-b border-rule px-4 py-2.5 text-sm last:border-b-0 hover:bg-paper/70">
                     <span class="num text-xs">{{ $bill->number }}</span>
-                    <span class="num ml-auto">{{ inr($bill->net_payable) }}</span>
+                    @can('money.view')<span class="num ml-auto">{{ inr($bill->net_payable) }}</span>@else<span class="ml-auto"></span>@endcan
                     <x-stamp :status="$bill->status" />
                 </a>
             @empty

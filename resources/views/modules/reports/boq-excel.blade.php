@@ -19,7 +19,7 @@
                     @foreach ($import['errors'] as $error)
                         <tr>
                             <td class="num">{{ $error['row'] > 0 ? $error['row'] : '—' }}</td>
-                            <td>{{ $error['field'] ? __(['section' => 'Section', 'code' => 'Item code', 'description' => 'Description', 'unit' => 'Unit', 'qty' => 'Quantity', 'rate' => 'Rate'][$error['field']] ?? $error['field']) : __('File') }}</td>
+                            <td>{{ $error['field'] ? __(['section' => 'Section', 'code' => 'Item code', 'description' => 'Description', 'unit' => 'Unit', 'qty' => 'Quantity', 'rate' => 'Rate', 'category' => 'Category', 'details' => 'Details'][$error['field']] ?? $error['field']) : __('File') }}</td>
                             <td>{{ $error['message'] }}</td>
                         </tr>
                     @endforeach
@@ -38,6 +38,16 @@
                 <x-stat :label="__('Updated')" :value="$import['updated']" />
                 <x-stat :label="__('Unchanged')" :value="$import['unchanged']" />
             </div>
+            @if (! empty($import['notes']))
+                <div class="border-t border-line p-4">
+                    <h3 class="text-sm font-medium">{{ __('Please check these') }}</h3>
+                    <ul class="mt-2 space-y-1 text-sm text-ink-2">
+                        @foreach ($import['notes'] as $note)
+                            <li>@if ($note['row'] > 0)<span class="num text-ink-3">{{ __('Row') }} {{ $note['row'] }}:</span> @endif{{ $note['message'] }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </section>
     @endif
 
@@ -58,6 +68,7 @@
                 <div class="space-y-3 p-4">
                     <p class="text-sm text-ink-3">{{ __('Rows with an existing item code are updated. If any row has a problem, nothing is imported.') }}</p>
                     <p class="text-sm text-ink-3">{{ __('Quantity cannot go below what is already approved. Use values, not formulas.') }}</p>
+                    <p class="text-sm text-ink-3">{{ __('An engineer\'s estimate also works: Sr. No., Description, Qty, Rate, Unit and Amount columns. Part rows, add-on percentages and totals are read for you.') }}</p>
                     <x-field :label="__('Excel file (.xlsx)')" name="file"><input id="file" name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="input" required></x-field>
                     <div class="flex items-center justify-between gap-2">
                         <a href="{{ route('boq.excel.template') }}" class="link text-sm">{{ __('Download template') }}</a>

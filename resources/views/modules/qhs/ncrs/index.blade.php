@@ -8,7 +8,7 @@
 
         <div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <x-stat :label="__('Open NCRs')" :value="$openCount" :accent="$openCount > 0" />
-            <x-stat :label="__('Rework cost')" :value="inr($reworkTotal)" :note="__('Across all NCRs on this project')" />
+            @can('money.view')<x-stat :label="__('Rework cost')" :value="inr($reworkTotal)" :note="__('Across all NCRs on this project')" />@endcan
         </div>
 
         @can('qhs.manage')
@@ -51,7 +51,7 @@
                 <x-empty :title="__('No NCRs')" :note="__('Raise one when work does not meet the drawing, specification or a test.')" />
             @else
                 <table class="ledger min-w-[820px]">
-                    <thead><tr><th>{{ __('NCR') }}</th><th>{{ __('Category') }}</th><th>{{ __('Severity') }}</th><th>{{ __('Assigned to') }}</th><th>{{ __('Due') }}</th><th class="r">{{ __('Rework cost') }}</th><th>{{ __('Status') }}</th></tr></thead>
+                    <thead><tr><th>{{ __('NCR') }}</th><th>{{ __('Category') }}</th><th>{{ __('Severity') }}</th><th>{{ __('Assigned to') }}</th><th>{{ __('Due') }}</th>@can('money.view')<th class="r">{{ __('Rework cost') }}</th>@endcan<th>{{ __('Status') }}</th></tr></thead>
                     <tbody>
                     @foreach ($ncrs as $ncr)
                         <tr>
@@ -64,7 +64,7 @@
                             <td>@include('modules.field_ops._chip', ['set' => 'severity', 'value' => $ncr->severity])</td>
                             <td>{{ $ncr->assignee?->name ?? '—' }}</td>
                             <td class="num text-xs {{ $ncr->isOverdue() ? 'font-medium text-laterite' : '' }}">{{ $ncr->due_date?->format('d M Y') ?? '—' }}</td>
-                            <td class="r">{{ inr($ncr->rework_cost) }}</td>
+                            @can('money.view')<td class="r">{{ inr($ncr->rework_cost) }}</td>@endcan
                             <td>@include('modules.field_ops._chip', ['set' => 'ncr_status', 'value' => $ncr->status])</td>
                         </tr>
                     @endforeach

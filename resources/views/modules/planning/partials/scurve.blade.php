@@ -11,13 +11,15 @@
         ->map(fn ($point) => $x($point['day']).','.$y($point[$field]))
         ->implode(' ');
 
+    // The curve is percentages for everyone; the rupee values behind each point need money.view.
+    $seesMoney = auth()->user()->can('money.view');
     $chart = collect($points)->map(fn ($point) => [
         'x' => $x($point['day']),
         'date' => \Illuminate\Support\Carbon::parse($point['date'])->format('d M Y'),
         'planned' => $point['planned_pct'],
-        'plannedValue' => inr($point['planned']),
+        'plannedValue' => $seesMoney ? inr($point['planned']) : null,
         'actual' => $point['actual_pct'],
-        'actualValue' => $point['actual'] === null ? null : inr($point['actual']),
+        'actualValue' => $seesMoney && $point['actual'] !== null ? inr($point['actual']) : null,
     ])->values();
 
     $count = count($points);
@@ -80,15 +82,15 @@
                 <summary class="link cursor-pointer text-xs">{{ __('Show the figures') }}</summary>
                 <div class="mt-2 overflow-x-auto">
                     <table class="ledger">
-                        <thead><tr><th>{{ __('Date') }}</th><th class="r">{{ __('Planned') }} %</th><th class="r">{{ __('Planned') }} ₹</th><th class="r">{{ __('Actual') }} %</th><th class="r">{{ __('Actual') }} ₹</th></tr></thead>
+                        <thead><tr><th>{{ __('Date') }}</th><th class="r">{{ __('Planned') }} %</th>@if ($seesMoney)<th class="r">{{ __('Planned') }} ₹</th>@endif<th class="r">{{ __('Actual') }} %</th>@if ($seesMoney)<th class="r">{{ __('Actual') }} ₹</th>@endif</tr></thead>
                         <tbody>
                         @foreach ($points as $point)
                             <tr>
                                 <td class="whitespace-nowrap">{{ \Illuminate\Support\Carbon::parse($point['date'])->format('d M Y') }}</td>
                                 <td class="r">{{ $point['planned_pct'] }}</td>
-                                <td class="r">{{ inr($point['planned']) }}</td>
+                                @if ($seesMoney)<td class="r">{{ inr($point['planned']) }}</td>@endif
                                 <td class="r">{{ $point['actual_pct'] ?? '—' }}</td>
-                                <td class="r">{{ $point['actual'] === null ? '—' : inr($point['actual']) }}</td>
+                                @if ($seesMoney)<td class="r">{{ $point['actual'] === null ? '—' : inr($point['actual']) }}</td>@endif
                             </tr>
                         @endforeach
                         </tbody>
