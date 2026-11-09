@@ -354,6 +354,19 @@
         @apply bg-white/12 font-semibold text-paper;
     }
 
+    .nav-group summary {
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .nav-group summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .nav-group[open] .nav-chevron {
+        transform: rotate(180deg);
+    }
+
     .nav-no {
         @apply font-mono text-[10px] text-paper/40;
     }

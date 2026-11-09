@@ -9,6 +9,7 @@ use App\Models\Concerns\Immutable;
 use App\Support\Dec;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MeasurementEntry extends Model
@@ -41,6 +42,9 @@ class MeasurementEntry extends Model
                 );
             }
         });
+
+        // The foreign key would remove the rows but leave their files behind.
+        static::deleting(fn (self $entry) => $entry->attachments()->get()->each->delete());
     }
 
     /** Nos × L × B × D. Blank dimensions are skipped; deductions come out negative. */
@@ -100,6 +104,11 @@ class MeasurementEntry extends Model
     public function reversal(): HasOne
     {
         return $this->hasOne(self::class, 'reversal_of_id');
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(MeasurementAttachment::class)->orderBy('id');
     }
 
     public function isBilled(): bool

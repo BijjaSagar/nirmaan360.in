@@ -9,7 +9,7 @@
 <header class="bg-neel-deep px-5 py-4 text-paper"><x-brand /></header>
 <main class="mx-auto max-w-4xl px-5 py-8">
     <p class="eyebrow text-ink-3">{{ $bill->organization->name }}</p>
-    <h1 class="mt-1 text-4xl">{{ __('RA bill') }} {{ $bill->number }}</h1>
+    <h1 class="mt-1 text-4xl">{{ $bill->is_final ? __('Final bill') : __('RA bill') }} {{ $bill->number }}</h1>
     <p class="mt-1 text-sm text-ink-3">{{ $bill->project->name }} · {{ $bill->period_from->format('d M Y') }} – {{ $bill->period_to->format('d M Y') }}</p>
 
     @if (session('success'))
@@ -46,6 +46,9 @@
                     <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __($deduction->label) }}</dt><dd class="num text-laterite">−{{ inr($deduction->amount) }}</dd></div>
                 @endforeach
                 <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('GST') }}</dt><dd class="num">{{ $bill->hasGst() ? '+'.inr($bill->gst_amount) : __('Not charged') }}</dd></div>
+                @if ($bill->is_final)
+                    <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('Retention released') }}</dt><dd class="num">+{{ inr($bill->retention_released) }}</dd></div>
+                @endif
                 <div class="flex items-baseline justify-between bg-paper-2/60 px-4 py-3"><dt class="font-display text-lg font-semibold">{{ __('Net payable') }}</dt><dd class="num text-lg font-medium">{{ inr($bill->net_payable) }}</dd></div>
             </dl>
         </section>

@@ -1,0 +1,96 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('purchase_orders', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('project_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('rfq_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('party_id')->constrained('parties');
+            $table->foreignId('store_id')->constrained('material_stores');
+            $table->string('number', 40);
+            $table->date('po_date');
+            $table->date('delivery_by')->nullable();
+            $table->string('status', 20)->default('DRAFT');
+            $table->decimal('subtotal', 15, 2)->default(0);
+            $table->decimal('gst_amount', 15, 2)->default(0);
+            $table->decimal('total', 15, 2)->default(0);
+            $table->text('terms')->nullable();
+            $table->uuid('client_uuid')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('issued_at')->nullable();
+            $table->timestamp('closed_at')->nullable();
+            $table->timestamps();
+            $table->unique(['organization_id', 'number']);
+            $table->unique(['organization_id', 'client_uuid']);
+            $table->index(['project_id', 'status']);
+        });
+
+        Schema::create('purchase_order_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('purchase_order_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('rfq_item_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('material_id')->constrained();
+            $table->decimal('qty', 14, 3);
+            $table->foreignId('unit_id')->constrained('material_units');
+            $table->decimal('base_qty', 14, 3);
+            $table->decimal('rate', 15, 2);
+            $table->decimal('gst_pct', 5, 2)->default(0);
+            $table->decimal('amount', 15, 2);
+            $table->decimal('gst_amount', 15, 2)->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('grns', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('project_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('purchase_order_id')->constrained();
+            $table->foreignId('store_id')->constrained('material_stores');
+            $table->string('number', 40);
+            $table->date('grn_date');
+            $table->string('challan_no', 60)->nullable();
+            $table->string('vehicle_no', 30)->nullable();
+            $table->text('remarks')->nullable();
+            $table->string('status', 20)->default('POSTED');
+            $table->uuid('client_uuid')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('reversed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('reversed_at')->nullable();
+            $table->string('reversal_reason', 255)->nullable();
+            $table->timestamps();
+            $table->unique(['organization_id', 'number']);
+            $table->unique(['organization_id', 'client_uuid']);
+            $table->index(['project_id', 'grn_date']);
+        });
+
+        Schema::create('grn_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('grn_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('purchase_order_item_id')->constrained();
+            $table->foreignId('material_id')->constrained();
+            $table->decimal('qty', 14, 3);
+            $table->foreignId('unit_id')->constrained('material_units');
+            $table->decimal('base_qty', 14, 3);
+            $table->decimal('rejected_qty', 14, 3)->default(0);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('grn_items');
+        Schema::dropIfExists('grns');
+        Schema::dropIfExists('purchase_order_items');
+        Schema::dropIfExists('purchase_orders');
+    }
+};

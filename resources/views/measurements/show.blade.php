@@ -50,6 +50,8 @@
                 </div>
             </section>
 
+            @include('modules.billing_extras._measurement-attachments', ['entry' => $entry])
+
             @can('measurement.create')
                 @if ($entry->status === 'APPROVED' && ! $entry->reversal && ! $entry->reversal_of_id)
                     <form method="POST" action="{{ route('measurements.reverse', $entry) }}" class="card p-4" x-data="{ open: false }">

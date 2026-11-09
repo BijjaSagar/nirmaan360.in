@@ -10,6 +10,8 @@ class RaBillItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'bill';
+
     protected $guarded = [];
 
     protected function casts(): array

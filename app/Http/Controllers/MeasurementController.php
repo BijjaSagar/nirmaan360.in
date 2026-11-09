@@ -35,7 +35,7 @@ class MeasurementController extends Controller
             'project' => $project,
             'entry' => new MeasurementEntry(['measured_on' => now(), 'nos' => 1]),
             'boqItems' => $project->boqItems()->orderBy('sort')->orderBy('id')->get(),
-            'workOrders' => $project->workOrders()->with('party')->get(),
+            'workOrders' => $project->workOrders()->with('party')->where('status', 'ACTIVE')->get(),
             'clientUuid' => (string) Str::uuid(),
         ]);
     }
@@ -49,7 +49,7 @@ class MeasurementController extends Controller
 
     public function show(MeasurementEntry $measurement, ApprovalService $approvals): View
     {
-        $measurement->load('boqItem', 'creator', 'workOrder', 'reversalOf', 'reversal', 'approvals.steps.user');
+        $measurement->load('boqItem', 'creator', 'workOrder', 'reversalOf', 'reversal', 'approvals.steps.user', 'attachments');
 
         return view('measurements.show', [
             'entry' => $measurement,
@@ -66,7 +66,7 @@ class MeasurementController extends Controller
             'project' => $measurement->project,
             'entry' => $measurement,
             'boqItems' => $measurement->project->boqItems()->orderBy('sort')->orderBy('id')->get(),
-            'workOrders' => $measurement->project->workOrders()->with('party')->get(),
+            'workOrders' => $measurement->project->workOrders()->with('party')->where('status', 'ACTIVE')->get(),
             'clientUuid' => null,
         ]);
     }

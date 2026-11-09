@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Issue;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\BillingExtras\IssuePhotoService;
 use App\Services\IssueService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\View\View;
 
 class IssueController extends Controller
@@ -20,7 +22,7 @@ class IssueController extends Controller
 
         return view('issues.index', [
             'project' => $project,
-            'issues' => $project->issues()->with('assignee')
+            'issues' => $project->issues()->with('assignee', 'photos')
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->latest('id')->paginate(25)->withQueryString(),
             'users' => $this->users($request),
@@ -28,9 +30,17 @@ class IssueController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(Request $request, Project $project, IssuePhotoService $photos): RedirectResponse
     {
-        $this->service->create($project, $request->validate($this->service->rules($project, $request->user())), $request->user());
+        $data = $request->validate([...$this->service->rules($project, $request->user()), ...$photos->listRules()]);
+
+        $issue = $this->service->create($project, Arr::except($data, 'photos'), $request->user());
+
+        if ($issue->wasRecentlyCreated) {
+            foreach ($request->file('photos', []) as $photo) {
+                $photos->add($issue, $photo, ['kind' => 'before'], $request->user());
+            }
+        }
 
         return back()->with('success', __('Issue raised.'));
     }

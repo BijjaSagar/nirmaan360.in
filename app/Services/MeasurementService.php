@@ -8,6 +8,7 @@ use App\Models\BoqItem;
 use App\Models\MeasurementEntry;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use App\Support\Idempotent;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,8 @@ class MeasurementService
     {
         return [
             'boq_item_id' => ['bail', 'required', 'integer', Rule::exists('boq_items', 'id')->where('project_id', $project->id)->whereNull('deleted_at')],
-            'work_order_id' => ['bail', 'nullable', 'integer', Rule::exists('work_orders', 'id')->where('project_id', $project->id)],
+            // A closed work order can take no further bills, so work measured against it could never be paid.
+            'work_order_id' => ['bail', 'nullable', 'integer', Rule::exists('work_orders', 'id')->where('project_id', $project->id)->where('status', 'ACTIVE')],
             'measured_on' => ['required', 'date', 'before_or_equal:today'],
             'description' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:120'],
@@ -138,10 +140,10 @@ class MeasurementService
 
     private function findByClientUuid(int $organizationId, string $uuid): ?MeasurementEntry
     {
-        return MeasurementEntry::withoutGlobalScopes()
+        return ClientUuidRepeat::reachable(MeasurementEntry::withoutGlobalScopes()
             ->where('organization_id', $organizationId)
             ->where('client_uuid', $uuid)
-            ->first();
+            ->first());
     }
 
     private function assertEditable(MeasurementEntry $entry): void

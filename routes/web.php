@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Access\InvitationController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\ApprovalController;
@@ -43,6 +44,8 @@ Route::get('/locale/{locale}', LocaleController::class)->name('locale');
 Route::middleware('signed')->group(function () {
     Route::get('/client/bills/{bill}', [ClientSignoffController::class, 'show'])->name('client.bill');
     Route::post('/client/bills/{bill}', [ClientSignoffController::class, 'act'])->name('client.bill.act')->middleware('throttle:20,1');
+    Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show')->middleware('throttle:30,1');
+    Route::post('/invitations/{token}', [InvitationController::class, 'accept'])->name('invitations.accept')->middleware('throttle:20,1');
 });
 
 Route::middleware('guest')->group(function () {
@@ -196,9 +199,14 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Organisation admin
     Route::middleware('can:user.manage')->group(function () {
         Route::get('/team', [TeamController::class, 'index'])->name('team.index');
-        Route::post('/team', [TeamController::class, 'store'])->name('team.store');
+        Route::post('/team', [TeamController::class, 'store'])->name('team.store')->middleware('throttle:20,1');
         Route::patch('/team/{user}', [TeamController::class, 'update'])->name('team.update');
     });
+
+    // Each module adds its own screens in routes/modules/<name>.php. See docs/MODULES.md.
+    foreach (glob(base_path('routes/modules/*.php')) ?: [] as $moduleRoutes) {
+        require $moduleRoutes;
+    }
 
     Route::middleware('can:settings.manage')->group(function () {
         Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');

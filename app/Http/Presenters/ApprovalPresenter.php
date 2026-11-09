@@ -4,6 +4,7 @@ namespace App\Http\Presenters;
 
 use App\Models\Approval;
 use App\Models\ApprovalStep;
+use App\Models\BillNote;
 use App\Models\BoqItem;
 use App\Models\Dpr;
 use App\Models\MeasurementEntry;
@@ -26,6 +27,7 @@ final class ApprovalPresenter
             MeasurementEntry::class => ['boqItem', 'project'],
             Dpr::class => ['project', 'creator', 'manpower', 'workItems.boqItem', 'photos'],
             RaBill::class => ['project', 'party'],
+            BillNote::class => ['project', 'party', 'bill'],
         ]);
 
         $boqIds = $approvals->pluck('approvable')->filter(fn ($document) => $document instanceof MeasurementEntry)->pluck('boq_item_id')->unique();
@@ -83,8 +85,25 @@ final class ApprovalPresenter
             $document instanceof MeasurementEntry => self::measurement($document, $ledger),
             $document instanceof Dpr => self::dpr($document),
             $document instanceof RaBill => self::raBill($document),
+            $document instanceof BillNote => self::billNote($document),
             default => [],
         };
+    }
+
+    private static function billNote(BillNote $note): array
+    {
+        return [
+            'id' => $note->id,
+            'number' => $note->number,
+            'kind' => $note->kind,
+            'ra_bill_number' => $note->bill?->number,
+            'party_name' => $note->party?->name,
+            'reason' => $note->reason,
+            'taxable_amount' => $note->taxable_amount,
+            'gst_amount' => $note->gst_amount,
+            'total_amount' => $note->total_amount,
+            'net_effect' => $note->net_effect,
+        ];
     }
 
     private static function measurement(MeasurementEntry $entry, Collection $ledger): array

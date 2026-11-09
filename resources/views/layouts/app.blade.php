@@ -74,9 +74,14 @@
                                 <a href="{{ route('ra-bills.index', $project) }}" class="{{ $nav('ra-bills.*') }}"><span class="nav-no">09</span>{{ __('RA bills') }}</a>
                             @endcan
                         @endif
+                        @include('layouts.partials.module-nav', ['place' => 'project', 'project' => $project])
                     </div>
                 </div>
             @endif
+
+            <div class="space-y-0.5">
+                @include('layouts.partials.module-nav', ['place' => 'company'])
+            </div>
 
             <div class="space-y-0.5">
                 <p class="eyebrow px-2.5 pb-1 text-[10px] text-paper/45">{{ __('Company') }}</p>

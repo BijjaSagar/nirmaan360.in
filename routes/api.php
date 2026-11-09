@@ -26,6 +26,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/projects/{project}/boq', [ProjectApiController::class, 'boq'])->middleware('can:boq.view');
         Route::post('/projects/{project}/boq-items', [ProjectApiController::class, 'storeBoqItem'])->middleware('can:boq.manage');
 
+        // Each module adds its own endpoints in routes/api_modules/<name>.php. See docs/MODULES.md.
+        foreach (glob(base_path('routes/api_modules/*.php')) ?: [] as $moduleRoutes) {
+            require $moduleRoutes;
+        }
+
         Route::middleware('feature:measurement')->group(function () {
             Route::get('/projects/{project}/measurements', [MeasurementApiController::class, 'index'])->middleware('can:measurement.view');
             Route::post('/projects/{project}/measurements', [MeasurementApiController::class, 'store'])->middleware('can:measurement.create');

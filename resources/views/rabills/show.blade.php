@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $bill->number)
 @section('content')
-    <x-page-header :title="__('RA bill').' '.$bill->number" :subtitle="($bill->type === 'client' ? __('Client') : __('Subcontractor')).' · '.($bill->party?->name ?? '—').' · '.$bill->period_from->format('d M Y').' – '.$bill->period_to->format('d M Y')">
+    <x-page-header :title="($bill->is_final ? __('Final bill') : __('RA bill')).' '.$bill->number" :subtitle="($bill->type === 'client' ? __('Client') : __('Subcontractor')).' · '.($bill->party?->name ?? '—').' · '.$bill->period_from->format('d M Y').' – '.$bill->period_to->format('d M Y')">
         <x-stamp :status="$bill->status" />
         <a href="{{ route('ra-bills.pdf', $bill) }}" class="btn btn-ghost">{{ __('Download PDF') }}</a>
         @can('ra_bill.generate')
@@ -66,9 +66,19 @@
                         </div>
                     @endforeach
                     <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('GST') }} @if ($bill->hasGst())<span class="num text-xs text-ink-3">{{ (float) ($bill->terms['gst_pct'] ?? 0) }}%</span>@endif</dt><dd class="num">{{ $bill->hasGst() ? '+'.inr($bill->gst_amount) : __('Not charged') }}</dd></div>
+                    @if ($bill->is_final)
+                        <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('Retention released') }}</dt><dd class="num whitespace-nowrap">+{{ inr($bill->retention_released) }}</dd></div>
+                    @endif
                     <div class="flex items-baseline justify-between bg-paper-2/60 px-4 py-3"><dt class="font-display text-lg font-semibold whitespace-nowrap">{{ __('Net payable') }}</dt><dd class="num text-lg font-medium whitespace-nowrap">{{ inr($bill->net_payable) }}</dd></div>
                 </dl>
+                @if ($bill->is_final && \App\Support\Dec::of($bill->net_payable)->isNegative())
+                    <p class="border-t border-rule px-4 py-2 text-xs text-laterite">{{ __('A negative amount is recoverable from the party.') }}</p>
+                @endif
+                @if (($bill->terms['rate_type'] ?? null) === 'lump_sum')
+                    <p class="border-t border-rule px-4 py-2 text-xs text-ink-3">{{ __('Lump sum work order: each item stops earning once it reaches its fixed value.') }}</p>
+                @endif
             </section>
+            @include('modules.billing_extras._bill-notes', ['bill' => $bill])
             <x-approval-trail :approvals="$bill->approvals" />
         </div>
     </div>

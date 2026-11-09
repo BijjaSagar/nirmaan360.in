@@ -10,6 +10,8 @@ class DprWorkItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'dpr';
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -20,5 +22,10 @@ class DprWorkItem extends Model
     public function boqItem(): BelongsTo
     {
         return $this->belongsTo(BoqItem::class);
+    }
+
+    public function dpr(): BelongsTo
+    {
+        return $this->belongsTo(Dpr::class);
     }
 }
