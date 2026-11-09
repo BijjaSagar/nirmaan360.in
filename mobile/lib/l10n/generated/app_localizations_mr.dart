@@ -77,10 +77,25 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsDocBill => 'RA बिल';
 
   @override
+  String get approvalsDocBillNote => 'क्रेडिट / डेबिट नोट';
+
+  @override
   String get approvalsDocDpr => 'दैनिक अहवाल';
 
   @override
+  String get approvalsDocIndent => 'इंडेंट';
+
+  @override
   String get approvalsDocMeasurement => 'मोजमाप';
+
+  @override
+  String get approvalsDocOther => 'दस्तऐवज';
+
+  @override
+  String get approvalsDocRfi => 'RFI';
+
+  @override
+  String get approvalsDocVendorBill => 'विक्रेत्याचे बिल';
 
   @override
   String get approvalsEmptyBody => 'नवीन मंजुरी इथे दिसतील.';
@@ -173,6 +188,30 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsNetPayable => 'देय रक्कम';
 
   @override
+  String get approvalsNoteAgainstBill => 'संबंधित बिल';
+
+  @override
+  String get approvalsNoteCredit => 'क्रेडिट नोट';
+
+  @override
+  String get approvalsNoteDebit => 'डेबिट नोट';
+
+  @override
+  String get approvalsNoteEffect => 'बिलावर परिणाम';
+
+  @override
+  String get approvalsNoteNumber => 'नोट क्रमांक';
+
+  @override
+  String get approvalsNoteReason => 'कारण';
+
+  @override
+  String get approvalsNoteTaxable => 'करपात्र रक्कम';
+
+  @override
+  String get approvalsNoteTotal => 'नोटची एकूण रक्कम';
+
+  @override
   String get approvalsOffline => 'नेटवर्क नाही.';
 
   @override
@@ -184,6 +223,10 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsOpen => 'उघडा';
+
+  @override
+  String get approvalsOpenOnWeb =>
+      'हा दस्तऐवज अजून फोनवर दिसत नाही. कृपया वेबसाइटवर तपासून मंजूर करा.';
 
   @override
   String get approvalsParty => 'पक्षकार';
@@ -208,6 +251,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsReasonManpower => 'मनुष्यबळाची संख्या चुकली आहे';
+
+  @override
+  String get approvalsReasonNote => 'कारण स्पष्ट नाही';
 
   @override
   String get approvalsReasonPeriod => 'बिलाचा कालावधी चुकला आहे';
@@ -2218,6 +2264,10 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncReasonPlanFeature => 'तुमच्या प्लॅनमध्ये हा विभाग नाही.';
+
+  @override
+  String get syncReasonProjectGone =>
+      'या प्रकल्पाचा प्रवेश आता तुमच्याकडे नाही. कार्यालयाला पुन्हा जोडायला सांगा आणि मग पुन्हा प्रयत्न करा.';
 
   @override
   String get syncReasonRejected =>

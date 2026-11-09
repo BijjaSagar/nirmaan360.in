@@ -24,6 +24,81 @@
     "mr": "RA बिल",
     "hi": "RA बिल"
   },
+  "approvalsDocBillNote": {
+    "en": "Credit or debit note",
+    "mr": "क्रेडिट / डेबिट नोट",
+    "hi": "क्रेडिट / डेबिट नोट"
+  },
+  "approvalsDocVendorBill": {
+    "en": "Vendor bill",
+    "mr": "विक्रेत्याचे बिल",
+    "hi": "विक्रेता बिल"
+  },
+  "approvalsDocIndent": {
+    "en": "Indent",
+    "mr": "इंडेंट",
+    "hi": "इंडेंट"
+  },
+  "approvalsDocRfi": {
+    "en": "RFI",
+    "mr": "RFI",
+    "hi": "RFI"
+  },
+  "approvalsDocOther": {
+    "en": "Document",
+    "mr": "दस्तऐवज",
+    "hi": "दस्तावेज़"
+  },
+  "approvalsNoteCredit": {
+    "en": "Credit note",
+    "mr": "क्रेडिट नोट",
+    "hi": "क्रेडिट नोट"
+  },
+  "approvalsNoteDebit": {
+    "en": "Debit note",
+    "mr": "डेबिट नोट",
+    "hi": "डेबिट नोट"
+  },
+  "approvalsNoteNumber": {
+    "en": "Note number",
+    "mr": "नोट क्रमांक",
+    "hi": "नोट नंबर"
+  },
+  "approvalsNoteAgainstBill": {
+    "en": "Against bill",
+    "mr": "संबंधित बिल",
+    "hi": "संबंधित बिल"
+  },
+  "approvalsNoteReason": {
+    "en": "Reason",
+    "mr": "कारण",
+    "hi": "कारण"
+  },
+  "approvalsNoteTaxable": {
+    "en": "Taxable amount",
+    "mr": "करपात्र रक्कम",
+    "hi": "कर योग्य राशि"
+  },
+  "approvalsNoteTotal": {
+    "en": "Note total",
+    "mr": "नोटची एकूण रक्कम",
+    "hi": "नोट की कुल राशि"
+  },
+  "approvalsNoteEffect": {
+    "en": "Effect on bill",
+    "mr": "बिलावर परिणाम",
+    "hi": "बिल पर असर"
+  },
+  "approvalsReasonNote": {
+    "en": "Reason is not clear",
+    "mr": "कारण स्पष्ट नाही",
+    "hi": "कारण स्पष्ट नहीं है"
+  },
+  "approvalsOpenOnWeb": {
+    "en": "This document cannot be shown on the phone yet. Please review and approve it on the website.",
+    "mr": "हा दस्तऐवज अजून फोनवर दिसत नाही. कृपया वेबसाइटवर तपासून मंजूर करा.",
+    "hi": "यह दस्तावेज़ अभी फ़ोन पर नहीं दिखता। कृपया वेबसाइट पर जाँचकर मंज़ूर करें।"
+  },
   "approvalsWorkers": {
     "en": "workers",
     "mr": "कामगार",

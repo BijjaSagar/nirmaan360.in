@@ -218,7 +218,7 @@ class _Hero extends StatelessWidget {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: row.docType == 'ra_bill'
+                    child: isMoneyDoc(row.docType)
                         ? RollingMoney(
                             key: const ValueKey<String>('approval-figure'),
                             value: figure.value,

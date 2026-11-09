@@ -103,6 +103,34 @@ Map<String, dynamic> bill(int id) => {
   'steps': [],
 };
 
+Map<String, dynamic> billNote(int id) => {
+  'id': id,
+  'doc_type': 'bill_note',
+  'status': 'IN_REVIEW',
+  'title': 'Credit note CN-2',
+  'project': {'id': 1, 'code': 'KT-B', 'name': 'Kalyani Tower B'},
+  'submitted_by': {'id': 6, 'name': 'Anita Kulkarni'},
+  'submitted_at': '2026-11-08T17:30:00+05:30',
+  'current_level': 1,
+  'levels': ['pm'],
+  'current_role': 'pm',
+  'current_role_label': 'Project Manager',
+  'can_act': true,
+  'document': {
+    'id': 4,
+    'number': 'CN-2',
+    'kind': 'credit',
+    'ra_bill_number': 'RA-7',
+    'party_name': 'Patil Constructions',
+    'reason': 'Short supply of steel',
+    'taxable_amount': '10000.00',
+    'gst_amount': '1800.00',
+    'total_amount': '11800.00',
+    'net_effect': '-11800.00',
+  },
+  'steps': [],
+};
+
 Future<TestApp> approvalsApp(ActingApi api, {FakeConnectivity? connectivity}) async {
   api.approvalInbox.addAll(<Map<String, dynamic>>[measurement(7), bill(8)]);
   final TestApp app = await bookApp(api: api, connectivity: connectivity);
@@ -343,6 +371,41 @@ void main() {
     await pumpBook(tester, app, start: Routes.approvalDetail(7));
     await settle(tester);
 
+    expect(find.byKey(_approve), findsNothing);
+    expect(find.byKey(_sendBack), findsNothing);
+  });
+
+  testWidgets('a credit note shows its money and reason before anyone approves it', (tester) async {
+    final ActingApi api = ActingApi();
+    api.approvalInbox.add(billNote(9));
+    final TestApp app = await bookApp(api: api);
+    addTearDown(app.dispose);
+    await pumpBook(tester, app, start: Routes.approvalDetail(9));
+    await settle(tester);
+
+    expect(find.text('Credit note'), findsOneWidget);
+    expect(find.text('RA-7'), findsOneWidget);
+    expect(find.text('Short supply of steel'), findsOneWidget);
+    expect(find.text('₹10,000.00'), findsOneWidget);
+    expect(find.textContaining('₹11,800.00'), findsWidgets);
+    expect(find.text('−₹11,800.00'), findsOneWidget);
+    expect(find.byKey(_approve), findsOneWidget);
+  });
+
+  testWidgets('a document the phone cannot show offers no approve button', (tester) async {
+    final ActingApi api = ActingApi();
+    api.approvalInbox.add(<String, dynamic>{
+      ...billNote(9),
+      'doc_type': 'vendor_bill',
+      'title': 'Vendor bill VB-3',
+      'document': <String, dynamic>{},
+    });
+    final TestApp app = await bookApp(api: api);
+    addTearDown(app.dispose);
+    await pumpBook(tester, app, start: Routes.approvalDetail(9));
+    await settle(tester);
+
+    expect(find.textContaining('review and approve it on the website'), findsOneWidget);
     expect(find.byKey(_approve), findsNothing);
     expect(find.byKey(_sendBack), findsNothing);
   });

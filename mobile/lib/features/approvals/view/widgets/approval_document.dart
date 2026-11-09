@@ -22,7 +22,8 @@ class ApprovalDocument extends StatelessWidget {
       'measurement' => _MeasurementDoc(doc: row.document, today: today),
       'dpr' => _DprDoc(doc: row.document, today: today),
       'ra_bill' => _BillDoc(doc: row.document, today: today),
-      _ => LedgerCard(child: Text(row.title, style: N360Type.bodyLarge)),
+      'bill_note' => _BillNoteDoc(doc: row.document),
+      _ => const _WebOnlyDoc(),
     };
   }
 }
@@ -167,6 +168,76 @@ class _BillDoc extends StatelessWidget {
       if (net != null)
         BookRow(label: l.approvalsNetPayable, total: true, value: net.inr(), valueStyle: N360Type.figure),
     ]);
+  }
+}
+
+/// A credit or debit note against a running bill.
+class _BillNoteDoc extends StatelessWidget {
+  const _BillNoteDoc({required this.doc});
+
+  final Map<String, dynamic> doc;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String? number = readText(doc['number']);
+    final String? bill = readText(doc['ra_bill_number']);
+    final String? party = readText(doc['party_name']);
+    final String? reason = readText(doc['reason']);
+    final String? kind = switch (readText(doc['kind'])) {
+      'credit' => l.approvalsNoteCredit,
+      'debit' => l.approvalsNoteDebit,
+      final String? other => other,
+    };
+    Money? money(String key) => readMoney(doc[key]);
+    final Money? taxable = money('taxable_amount');
+    final Money? gst = money('gst_amount');
+    final Money? total = money('total_amount');
+    final Money? effect = money('net_effect');
+
+    return _sheet(<Widget>[
+      if (number != null) BookRow(label: l.approvalsNoteNumber, value: number),
+      if (kind != null) BookRow.words(label: l.approvalsBillType, value: kind),
+      if (bill != null) BookRow(label: l.approvalsNoteAgainstBill, value: bill),
+      if (party != null) BookRow.words(label: l.approvalsParty, value: party),
+      if (reason != null) ...<Widget>[
+        _Heading(l.approvalsNoteReason),
+        Text(reason, style: N360Type.body),
+        const SizedBox(height: N360Space.sm),
+      ],
+      if (taxable != null) BookRow(label: l.approvalsNoteTaxable, value: taxable.inr()),
+      if (gst != null) BookRow(label: l.approvalsGst, value: gst.inr()),
+      if (total != null)
+        BookRow(label: l.approvalsNoteTotal, total: true, value: total.inr(), valueStyle: N360Type.figure),
+      if (effect != null) BookRow(label: l.approvalsNoteEffect, value: _signed(effect), ruled: false),
+    ]);
+  }
+
+  /// A credit note takes money off the bill, so the sign has to be readable.
+  String _signed(Money value) {
+    final String text = value.inr();
+    return text.startsWith('₹-') ? '−₹${text.substring(2)}' : '+$text';
+  }
+}
+
+/// A document this version of the app cannot lay out. It says where to go
+/// rather than showing a title with buttons under it.
+class _WebOnlyDoc extends StatelessWidget {
+  const _WebOnlyDoc();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return LedgerCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Icon(Icons.language, size: N360IconSize.md, color: N360Colors.ink2),
+          const SizedBox(width: N360Space.sm),
+          Expanded(child: Text(l.approvalsOpenOnWeb, style: N360Type.body)),
+        ],
+      ),
+    );
   }
 }
 

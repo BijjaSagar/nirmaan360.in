@@ -43,12 +43,17 @@ ApprovalFigure? figureOf(ApprovalRow row, AppLocalizations l) {
     case 'ra_bill':
       final Money? net = readMoney(doc['net_payable']);
       return net == null ? null : ApprovalFigure(net.inr());
+    case 'bill_note':
+      final Money? total = readMoney(doc['total_amount']);
+      return total == null ? null : ApprovalFigure(total.inr());
     case 'dpr':
       final String? total = readText(doc['manpower_total']);
       return total == null ? null : ApprovalFigure(total, unit: l.approvalsWorkers);
   }
   return null;
 }
+
+bool isMoneyDoc(String docType) => docType == 'ra_bill' || docType == 'bill_note';
 
 /// A measurement's size against its BOQ line, for a progress mark.
 class ApprovalShare {
@@ -82,7 +87,7 @@ String headlineOf(ApprovalRow row) {
       final String? code = readText(boq['code']);
       final String? name = readText(doc['location']) ?? readText(doc['description']) ?? readText(boq['description']);
       if (code != null && name != null) return '$code · $name';
-    case 'ra_bill':
+    case 'ra_bill' || 'bill_note':
       final String? number = readText(doc['number']);
       final String? party = readText(doc['party_name']);
       if (number != null && party != null) return '$number · $party';
@@ -113,13 +118,21 @@ String docTypeWord(AppLocalizations l, String docType) => switch (docType) {
   'measurement' => l.approvalsDocMeasurement,
   'dpr' => l.approvalsDocDpr,
   'ra_bill' => l.approvalsDocBill,
-  _ => docType,
+  'bill_note' => l.approvalsDocBillNote,
+  'vendor_bill' => l.approvalsDocVendorBill,
+  'indent' => l.approvalsDocIndent,
+  'rfi' => l.approvalsDocRfi,
+  _ => l.approvalsDocOther,
 };
 
 IconData docTypeIcon(String docType) => switch (docType) {
   'measurement' => Icons.architecture,
   'dpr' => Icons.assignment,
   'ra_bill' => Icons.request_quote,
+  'bill_note' => Icons.receipt_long,
+  'vendor_bill' => Icons.receipt,
+  'indent' => Icons.inventory_2_outlined,
+  'rfi' => Icons.help_outline,
   _ => Icons.description,
 };
 

@@ -52,6 +52,7 @@ class _SendBackSheetState extends State<_SendBackSheet> {
     ],
     'dpr' => <String>[l.approvalsReasonManpower, l.approvalsReasonWorkDetail, l.approvalsReasonPhotos],
     'ra_bill' => <String>[l.approvalsReasonAmounts, l.approvalsReasonPeriod, l.approvalsReasonDeductions],
+    'bill_note' => <String>[l.approvalsReasonAmounts, l.approvalsReasonNote],
     _ => <String>[l.approvalsReasonDimensions, l.approvalsReasonAmounts],
   };
 

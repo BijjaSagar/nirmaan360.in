@@ -421,6 +421,10 @@ class FakeApi implements NirmaanApi {
         return _error(item, {
           'nos': ['Nos must be more than zero.'],
         });
+      case 'error_project':
+        return _error(item, {
+          'project_id': ['Project not found.'],
+        });
       case 'forbidden_feature':
         return _forbidden(item, 'feature');
       default:

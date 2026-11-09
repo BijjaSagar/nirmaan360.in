@@ -76,10 +76,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsDocBill => 'RA bill';
 
   @override
+  String get approvalsDocBillNote => 'Credit or debit note';
+
+  @override
   String get approvalsDocDpr => 'Daily report';
 
   @override
+  String get approvalsDocIndent => 'Indent';
+
+  @override
   String get approvalsDocMeasurement => 'Measurement';
+
+  @override
+  String get approvalsDocOther => 'Document';
+
+  @override
+  String get approvalsDocRfi => 'RFI';
+
+  @override
+  String get approvalsDocVendorBill => 'Vendor bill';
 
   @override
   String get approvalsEmptyBody => 'New approvals will appear here.';
@@ -172,6 +187,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsNetPayable => 'Net payable';
 
   @override
+  String get approvalsNoteAgainstBill => 'Against bill';
+
+  @override
+  String get approvalsNoteCredit => 'Credit note';
+
+  @override
+  String get approvalsNoteDebit => 'Debit note';
+
+  @override
+  String get approvalsNoteEffect => 'Effect on bill';
+
+  @override
+  String get approvalsNoteNumber => 'Note number';
+
+  @override
+  String get approvalsNoteReason => 'Reason';
+
+  @override
+  String get approvalsNoteTaxable => 'Taxable amount';
+
+  @override
+  String get approvalsNoteTotal => 'Note total';
+
+  @override
   String get approvalsOffline => 'No network.';
 
   @override
@@ -183,6 +222,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsOpen => 'Open';
+
+  @override
+  String get approvalsOpenOnWeb =>
+      'This document cannot be shown on the phone yet. Please review and approve it on the website.';
 
   @override
   String get approvalsParty => 'Party';
@@ -207,6 +250,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsReasonManpower => 'Manpower count is wrong';
+
+  @override
+  String get approvalsReasonNote => 'Reason is not clear';
 
   @override
   String get approvalsReasonPeriod => 'Billing period is wrong';
@@ -2262,6 +2308,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncReasonPlanFeature => 'Your plan does not include this module.';
+
+  @override
+  String get syncReasonProjectGone =>
+      'You no longer have access to this project. Ask your office to add you back, then try again.';
 
   @override
   String get syncReasonRejected =>

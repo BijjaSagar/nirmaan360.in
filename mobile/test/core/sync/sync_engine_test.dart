@@ -260,6 +260,48 @@ void main() {
       expect(local.nos, Qty.parse('9.000'));
     });
 
+    test('a project taken away leaves the phone, except work not yet sent', () async {
+      app.api.addProject(id: 2, code: 'OT-1', name: 'Other site');
+      app.api.boqItems.add({
+        ...app.api.boqItems.first,
+        'id': 2,
+        'project_id': 2,
+        'code': '9.9',
+        'updated_at': app.api.stampNow(),
+      });
+
+      final sent = await app.services.measurements.create(entryInput());
+      final draft = await app.services.dpr.saveDraft(
+        const DprInput(projectId: 1, reportDate: '2026-11-09', summary: 'Draft'),
+      );
+      await app.sync();
+      final stuck = await app.services.measurements.create(entryInput(nos: '3.000'));
+      _scriptedResults(app.api, ['error_project']);
+      await app.sync();
+
+      final project = app.api.projects.firstWhere((p) => p['id'] == 1);
+      app.api.softDeleteOnWeb('projects', project);
+      app.api.projects.remove(project);
+      await app.sync();
+
+      expect((await app.db.select(app.db.projects).get()).map((p) => p.id), [2]);
+      final boq = await app.db.select(app.db.boqItems).get();
+      expect(boq.map((b) => b.projectId), [2]);
+      expect(await app.db.select(app.db.sites).get(), isEmpty);
+
+      final entries = await app.db.select(app.db.measurements).get();
+      expect(entries.map((m) => m.clientUuid), [stuck]);
+      expect(entries.map((m) => m.clientUuid), isNot(contains(sent)));
+
+      final dprs = await app.db.select(app.db.dprs).get();
+      expect(dprs.map((d) => d.clientUuid), [draft], reason: 'an unsent draft is the engineer\'s own work');
+
+      final attention = (await allOutbox(app)).firstWhere((r) => r.status == OutboxStatus.attention);
+      await app.services.syncCenter.discard(attention.id);
+      await app.sync();
+      expect(await app.db.select(app.db.measurements).get(), isEmpty);
+    });
+
     test('a DPR draft with no outbox item survives a pull', () async {
       final uuid = await app.services.dpr.saveDraft(
         const DprInput(projectId: 1, reportDate: '2026-11-09', summary: 'Pour'),
@@ -650,6 +692,22 @@ void main() {
       final calls = app.api.pushCalls.length;
       await app.sync();
       expect(app.api.pushCalls.length, calls);
+    });
+
+    test('an entry for a project taken away says so, and can be retried', () async {
+      await app.services.measurements.create(entryInput());
+      _scriptedResults(app.api, ['error_project']);
+
+      await app.sync();
+
+      final row = (await allOutbox(app)).single;
+      expect(row.status, OutboxStatus.attention);
+      expect(row.attentionCode, AttentionCode.projectGone);
+      expect(row.attentionReason, contains('no longer have access'));
+
+      await app.services.syncCenter.retry(row.id);
+      await app.sync();
+      expect((await allOutbox(app)).single.status, OutboxStatus.done);
     });
 
     test('retry sends an attention item again', () async {

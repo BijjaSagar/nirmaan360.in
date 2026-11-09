@@ -214,17 +214,47 @@ abstract class AppLocalizations {
   /// **'RA bill'**
   String get approvalsDocBill;
 
+  /// No description provided for @approvalsDocBillNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit or debit note'**
+  String get approvalsDocBillNote;
+
   /// No description provided for @approvalsDocDpr.
   ///
   /// In en, this message translates to:
   /// **'Daily report'**
   String get approvalsDocDpr;
 
+  /// No description provided for @approvalsDocIndent.
+  ///
+  /// In en, this message translates to:
+  /// **'Indent'**
+  String get approvalsDocIndent;
+
   /// No description provided for @approvalsDocMeasurement.
   ///
   /// In en, this message translates to:
   /// **'Measurement'**
   String get approvalsDocMeasurement;
+
+  /// No description provided for @approvalsDocOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Document'**
+  String get approvalsDocOther;
+
+  /// No description provided for @approvalsDocRfi.
+  ///
+  /// In en, this message translates to:
+  /// **'RFI'**
+  String get approvalsDocRfi;
+
+  /// No description provided for @approvalsDocVendorBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Vendor bill'**
+  String get approvalsDocVendorBill;
 
   /// No description provided for @approvalsEmptyBody.
   ///
@@ -364,6 +394,54 @@ abstract class AppLocalizations {
   /// **'Net payable'**
   String get approvalsNetPayable;
 
+  /// No description provided for @approvalsNoteAgainstBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Against bill'**
+  String get approvalsNoteAgainstBill;
+
+  /// No description provided for @approvalsNoteCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit note'**
+  String get approvalsNoteCredit;
+
+  /// No description provided for @approvalsNoteDebit.
+  ///
+  /// In en, this message translates to:
+  /// **'Debit note'**
+  String get approvalsNoteDebit;
+
+  /// No description provided for @approvalsNoteEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'Effect on bill'**
+  String get approvalsNoteEffect;
+
+  /// No description provided for @approvalsNoteNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Note number'**
+  String get approvalsNoteNumber;
+
+  /// No description provided for @approvalsNoteReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get approvalsNoteReason;
+
+  /// No description provided for @approvalsNoteTaxable.
+  ///
+  /// In en, this message translates to:
+  /// **'Taxable amount'**
+  String get approvalsNoteTaxable;
+
+  /// No description provided for @approvalsNoteTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Note total'**
+  String get approvalsNoteTotal;
+
   /// No description provided for @approvalsOffline.
   ///
   /// In en, this message translates to:
@@ -387,6 +465,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open'**
   String get approvalsOpen;
+
+  /// No description provided for @approvalsOpenOnWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'This document cannot be shown on the phone yet. Please review and approve it on the website.'**
+  String get approvalsOpenOnWeb;
 
   /// No description provided for @approvalsParty.
   ///
@@ -435,6 +519,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manpower count is wrong'**
   String get approvalsReasonManpower;
+
+  /// No description provided for @approvalsReasonNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason is not clear'**
+  String get approvalsReasonNote;
 
   /// No description provided for @approvalsReasonPeriod.
   ///
@@ -4113,6 +4203,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your plan does not include this module.'**
   String get syncReasonPlanFeature;
+
+  /// No description provided for @syncReasonProjectGone.
+  ///
+  /// In en, this message translates to:
+  /// **'You no longer have access to this project. Ask your office to add you back, then try again.'**
+  String get syncReasonProjectGone;
 
   /// No description provided for @syncReasonRejected.
   ///

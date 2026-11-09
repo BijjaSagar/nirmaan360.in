@@ -8,6 +8,12 @@ import '../../../core/sync/pull_applier.dart';
 
 export '../../../core/db/app_database.dart' show ApprovalRow;
 
+extension ApprovalReview on ApprovalRow {
+  /// Whether this phone can show the whole document. Anything else is decided
+  /// on the website, because nobody should sign off on a title alone.
+  bool get reviewableHere => const <String>{'measurement', 'dpr', 'ra_bill', 'bill_note'}.contains(docType);
+}
+
 /// Approvals are online only, by design. The inbox is a cache of the last
 /// pull or refresh; acting on an item goes straight to the server.
 class ApprovalRepository {

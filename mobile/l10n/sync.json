@@ -22,6 +22,7 @@
   "syncReasonPlanFeature": { "en": "Your plan does not include this module.", "mr": "तुमच्या प्लॅनमध्ये हा विभाग नाही.", "hi": "आपके प्लान में यह मॉड्यूल शामिल नहीं है।" },
   "syncReasonFileMissing": { "en": "The photo is missing from this phone.", "mr": "फोटो या फोनवर सापडला नाही.", "hi": "फ़ोटो इस फ़ोन पर नहीं मिली।" },
   "syncReasonParentMissing": { "en": "The record this file belongs to was not found on the server.", "mr": "ही फाइल ज्या नोंदीची आहे ती सर्व्हरवर सापडली नाही.", "hi": "जिस रिकॉर्ड की यह फ़ाइल है वह सर्वर पर नहीं मिला।" },
+  "syncReasonProjectGone": { "en": "You no longer have access to this project. Ask your office to add you back, then try again.", "mr": "या प्रकल्पाचा प्रवेश आता तुमच्याकडे नाही. कार्यालयाला पुन्हा जोडायला सांगा आणि मग पुन्हा प्रयत्न करा.", "hi": "अब इस प्रोजेक्ट की पहुँच आपके पास नहीं है। ऑफ़िस से दोबारा जोड़ने को कहें, फिर से कोशिश करें।" },
   "syncReasonUnexpected": { "en": "The server sent an unexpected reply.", "mr": "सर्व्हरकडून अनपेक्षित उत्तर आले.", "hi": "सर्वर से अप्रत्याशित उत्तर मिला।" },
   "syncTypeDpr": { "en": "Daily report", "mr": "दैनिक अहवाल", "hi": "दैनिक रिपोर्ट" },
   "syncTypeDprPhoto": { "en": "Report photo", "mr": "अहवालाचा फोटो", "hi": "रिपोर्ट फ़ोटो" },

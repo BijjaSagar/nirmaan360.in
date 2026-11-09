@@ -46,7 +46,7 @@ class ApprovalDetailState extends Equatable {
   /// The BOQ lines on this phone, for showing a measurement's share of BOQ.
   final BoqIndex boq;
 
-  bool get canAct => item != null && item!.canAct && !gone && !finished;
+  bool get canAct => item != null && item!.canAct && item!.reviewableHere && !gone && !finished;
 
   /// Buttons work only with a network: approvals are never queued.
   bool get actionsEnabled => canAct && online && !acting && failure != ApprovalFailure.raceLost;

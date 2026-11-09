@@ -608,6 +608,44 @@ class PullApplier {
         await _db.writeMeta(MetaKey.tombstones, jsonEncode(tombstones));
       }
     }
+
+    await _dropRemovedProjectData(unsent);
+  }
+
+  /// Clears what the phone still holds for projects it no longer has, whether
+  /// deleted or taken away from this person. Work that never reached the
+  /// server stays until it is sent or discarded, then the next pull clears it.
+  Future<void> _dropRemovedProjectData(Set<String> unsent) async {
+    final known = _db.selectOnly(_db.projects)..addColumns([_db.projects.id]);
+
+    await (_db.delete(_db.sites)..where((t) => t.projectId.isNotInQuery(known))).go();
+    await (_db.delete(_db.boqItems)..where((t) => t.projectId.isNotInQuery(known))).go();
+    await (_db.delete(_db.wallets)..where((t) => t.projectId.isNotInQuery(known))).go();
+
+    await (_db.delete(_db.measurements)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+    await (_db.delete(_db.issues)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+    await (_db.delete(_db.attendanceMarks)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+    await (_db.delete(_db.pettyCashEntries)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+
+    final dprs = await (_db.select(_db.dprs)
+          ..where(
+            (t) =>
+                t.projectId.isNotInQuery(known) &
+                t.localDraft.equals(false) &
+                t.clientUuid.isNotIn(unsent),
+          ))
+        .get();
+    for (final row in dprs) {
+      await _deleteDpr(row.clientUuid);
+    }
   }
 
   /// A row soft-deleted on the server while it had unsent work is listed in

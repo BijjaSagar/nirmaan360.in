@@ -71,10 +71,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get approvalsDocBill => 'RA बिल';
 
   @override
+  String get approvalsDocBillNote => 'क्रेडिट / डेबिट नोट';
+
+  @override
   String get approvalsDocDpr => 'दैनिक रिपोर्ट';
 
   @override
+  String get approvalsDocIndent => 'इंडेंट';
+
+  @override
   String get approvalsDocMeasurement => 'माप';
+
+  @override
+  String get approvalsDocOther => 'दस्तावेज़';
+
+  @override
+  String get approvalsDocRfi => 'RFI';
+
+  @override
+  String get approvalsDocVendorBill => 'विक्रेता बिल';
 
   @override
   String get approvalsEmptyBody => 'नई मंज़ूरियाँ यहाँ दिखेंगी।';
@@ -161,6 +176,30 @@ class AppLocalizationsHi extends AppLocalizations {
   String get approvalsNetPayable => 'देय राशि';
 
   @override
+  String get approvalsNoteAgainstBill => 'संबंधित बिल';
+
+  @override
+  String get approvalsNoteCredit => 'क्रेडिट नोट';
+
+  @override
+  String get approvalsNoteDebit => 'डेबिट नोट';
+
+  @override
+  String get approvalsNoteEffect => 'बिल पर असर';
+
+  @override
+  String get approvalsNoteNumber => 'नोट नंबर';
+
+  @override
+  String get approvalsNoteReason => 'कारण';
+
+  @override
+  String get approvalsNoteTaxable => 'कर योग्य राशि';
+
+  @override
+  String get approvalsNoteTotal => 'नोट की कुल राशि';
+
+  @override
   String get approvalsOffline => 'नेटवर्क नहीं है।';
 
   @override
@@ -172,6 +211,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get approvalsOpen => 'खोलें';
+
+  @override
+  String get approvalsOpenOnWeb =>
+      'यह दस्तावेज़ अभी फ़ोन पर नहीं दिखता। कृपया वेबसाइट पर जाँचकर मंज़ूर करें।';
 
   @override
   String get approvalsParty => 'पार्टी';
@@ -196,6 +239,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get approvalsReasonManpower => 'मज़दूर संख्या गलत है';
+
+  @override
+  String get approvalsReasonNote => 'कारण स्पष्ट नहीं है';
 
   @override
   String get approvalsReasonPeriod => 'बिल की अवधि गलत है';
@@ -2210,6 +2256,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get syncReasonPlanFeature =>
       'आपके प्लान में यह मॉड्यूल शामिल नहीं है।';
+
+  @override
+  String get syncReasonProjectGone =>
+      'अब इस प्रोजेक्ट की पहुँच आपके पास नहीं है। ऑफ़िस से दोबारा जोड़ने को कहें, फिर से कोशिश करें।';
 
   @override
   String get syncReasonRejected =>

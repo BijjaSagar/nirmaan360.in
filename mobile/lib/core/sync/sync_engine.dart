@@ -472,11 +472,15 @@ class SyncEngine {
           reason: _conflictReason(result.reason),
         );
       case 'error':
+        // The project itself was refused, so nothing in the entry can fix it.
+        final projectGone = result.errors?.containsKey('project_id') ?? false;
         await _outbox.markAttention(
           row.id,
           resultStatus: 'error',
-          code: AttentionCode.validation,
-          reason: _validationReason(result.errors, result.reason),
+          code: projectGone ? AttentionCode.projectGone : AttentionCode.validation,
+          reason: projectGone
+              ? 'You no longer have access to this project.'
+              : _validationReason(result.errors, result.reason),
           errors: result.errors,
         );
       case 'forbidden':
@@ -653,11 +657,17 @@ class SyncEngine {
     Set<String> deferredGroups,
   ) async {
     if (row.notFoundCount + 1 >= parentMissingAttempts) {
+      final project = await (_db.select(_db.projects)
+            ..where((t) => t.id.equals(row.projectId)))
+          .getSingleOrNull();
+      final projectGone = project == null;
       await _outbox.markAttention(
         row.id,
         resultStatus: 'error',
-        code: AttentionCode.parentMissing,
-        reason: 'The record this file belongs to was not found on the server.',
+        code: projectGone ? AttentionCode.projectGone : AttentionCode.parentMissing,
+        reason: projectGone
+            ? 'You no longer have access to this project.'
+            : 'The record this file belongs to was not found on the server.',
       );
       _sentThisRun++;
     } else {

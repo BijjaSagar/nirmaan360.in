@@ -28,6 +28,7 @@ extension SyncLabels on AppLocalizations {
         AttentionCode.planFeature => syncReasonPlanFeature,
         AttentionCode.fileMissing => syncReasonFileMissing,
         AttentionCode.parentMissing => syncReasonParentMissing,
+        AttentionCode.projectGone => syncReasonProjectGone,
         _ => syncReasonUnexpected,
       };
 }

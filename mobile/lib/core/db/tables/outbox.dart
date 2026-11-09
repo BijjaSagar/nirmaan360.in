@@ -94,5 +94,6 @@ abstract final class AttentionCode {
   static const planFeature = 'plan_feature';
   static const fileMissing = 'file_missing';
   static const parentMissing = 'parent_missing';
+  static const projectGone = 'project_gone';
   static const unexpected = 'unexpected';
 }
