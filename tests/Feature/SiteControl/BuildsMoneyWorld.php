@@ -5,6 +5,7 @@ namespace Tests\Feature\SiteControl;
 use App\Models\Agent;
 use App\Models\AgentConversation;
 use App\Models\AgentRun;
+use App\Models\Alert;
 use App\Models\Asset;
 use App\Models\AssetBreakdown;
 use App\Models\AssetHireBill;
@@ -13,12 +14,21 @@ use App\Models\AssetServiceRecord;
 use App\Models\Attendance;
 use App\Models\BbsSchedule;
 use App\Models\BillNote;
+use App\Models\BoqCurrentRate;
 use App\Models\BoqItem;
+use App\Models\BoqRevision;
 use App\Models\BoqSection;
 use App\Models\ChecklistTemplate;
+use App\Models\ContractorBid;
+use App\Models\ContractorBidItem;
+use App\Models\ContractorMilestone;
+use App\Models\ContractorPayment;
+use App\Models\ContractorTender;
+use App\Models\ContractorTenderItem;
 use App\Models\CrmLead;
 use App\Models\CrmTender;
 use App\Models\CustomRole;
+use App\Models\DeliveryChallan;
 use App\Models\Dpr;
 use App\Models\DprPhoto;
 use App\Models\DprWorkItem;
@@ -49,6 +59,7 @@ use App\Models\MaterialStore;
 use App\Models\MaterialUnit;
 use App\Models\MeasurementAttachment;
 use App\Models\MeasurementEntry;
+use App\Models\MepStageCell;
 use App\Models\Ncr;
 use App\Models\Organization;
 use App\Models\Party;
@@ -58,7 +69,12 @@ use App\Models\PlanActivity;
 use App\Models\PlanBoqLink;
 use App\Models\PlanBudgetLine;
 use App\Models\PlanCostEntry;
+use App\Models\ProgressEntry;
+use App\Models\ProgressPhoto;
 use App\Models\Project;
+use App\Models\ProjectFloor;
+use App\Models\ProjectPermit;
+use App\Models\ProjectPermitFile;
 use App\Models\PurchaseOrder;
 use App\Models\QualityTest;
 use App\Models\RaBill;
@@ -84,6 +100,10 @@ use App\Models\Worker;
 use App\Models\WorkOrder;
 use App\Services\Agents\AgentRegistry;
 use App\Services\ApprovalService;
+use App\Services\ContractorControl\ContractorPaymentService;
+use App\Services\MaterialControl\DeliveryChallanService;
+use App\Services\SiteProgress\FloorService;
+use App\Support\Dec;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -141,6 +161,14 @@ trait BuildsMoneyWorld
         'wage_net' => '83614767.00',
         'tender_value' => '83614768.00',
         'lead_value' => '83614769.00',
+        'payment' => '83614770.00',
+        'bid' => '83614771.00',
+        'milestone' => '83614772.00',
+        'permit_fee' => '83614773.00',
+        'challan_bill' => '83614774.00',
+        'current_rate' => '83614775.00',
+        'revision_value' => '83614776.00',
+        'alert_money' => '83614777.00',
     ];
 
     protected Organization $organization;
@@ -165,7 +193,7 @@ trait BuildsMoneyWorld
         // Photos, receipts and drawings are real (empty) files, so the routes that serve them answer rather than fail.
         Storage::fake();
 
-        foreach (['none/measurement.jpg', 'none/photo.jpg', 'none/issue.jpg', 'none/bill.jpg', 'none/ncr.jpg', 'none/A-101.pdf'] as $path) {
+        foreach (['none/measurement.jpg', 'none/photo.jpg', 'none/issue.jpg', 'none/bill.jpg', 'none/ncr.jpg', 'none/A-101.pdf', 'none/progress.jpg', 'none/payment-bill.jpg', 'none/challan.jpg', 'none/challan-bill.pdf', 'none/permit.pdf'] as $path) {
             Storage::put($path, 'stored file');
         }
 
@@ -343,7 +371,7 @@ trait BuildsMoneyWorld
         ]);
         $wageRun = WageRun::create(['organization_id' => $org, 'number' => 'WR-001', 'project_id' => $project->id, 'period_from' => '2026-10-01', 'period_to' => '2026-10-31', 'status' => 'DRAFT', 'total_days' => '1.000', 'total_gross' => $money['wage_net'], 'total_net' => $money['wage_net'], 'prepared_by' => $owner->id]);
         $wageLine = WageRunLine::create(['organization_id' => $org, 'wage_run_id' => $wageRun->id, 'worker_id' => $worker->id, 'worker_name' => $worker->name, 'trade' => $worker->trade, 'daily_wage' => $money['wage'], 'present_days' => '1.000', 'payable_days' => '1.000', 'day_pay' => $money['wage_net'], 'gross' => $money['wage_net'], 'net' => $money['wage_net']]);
-        $tender = CrmTender::create(['organization_id' => $org, 'title' => 'Road widening, NH-48', 'authority' => 'PWD Pune', 'stage' => 'enquiry', 'estimated_value' => $money['tender_value']]);
+        $crmTender = CrmTender::create(['organization_id' => $org, 'title' => 'Road widening, NH-48', 'authority' => 'PWD Pune', 'stage' => 'enquiry', 'estimated_value' => $money['tender_value']]);
         $lead = CrmLead::create(['organization_id' => $org, 'name' => 'Ramesh Kulkarni', 'company_name' => 'Kulkarni Developers', 'source' => 'referral', 'status' => 'new', 'expected_value' => $money['lead_value']]);
 
         // Staff claims: the engineer's own and a manager's
@@ -363,6 +391,39 @@ trait BuildsMoneyWorld
             'max_steps' => 5, 'max_seconds' => 60, 'max_credits' => '1.0000', 'started_at' => now(), 'finished_at' => now(),
         ]);
 
+        // Site control: a floor with a target, work done on it, a photo and a stage-tracker cell
+        $floor = app(FloorService::class)->create($project, ['name' => '2nd floor']);
+        app(FloorService::class)->setTarget($floor, $item, '50');
+        $progress = ProgressEntry::create(['organization_id' => $org, 'project_id' => $project->id, 'boq_item_id' => $item->id, 'project_floor_id' => $floor->id, 'work_order_id' => $workOrder->id, 'work_date' => '2026-11-08', 'qty_done' => '20.000', 'entered_by' => $engineer->id]);
+        $progressPhoto = ProgressPhoto::create(['organization_id' => $org, 'project_id' => $project->id, 'progress_entry_id' => $progress->id, 'path' => 'none/progress.jpg', 'uploaded_by' => $engineer->id]);
+        $cell = MepStageCell::create(['organization_id' => $org, 'project_id' => $project->id, 'project_floor_id' => $floor->id, 'trade' => 'plumbing', 'stage' => 'core_cutting', 'status' => 'in_progress', 'status_at' => now(), 'updated_by' => $engineer->id]);
+
+        // Contractor control: a milestone, a payment the engineer raised, and a tender with one bid
+        $milestone = ContractorMilestone::create(['organization_id' => $org, 'project_id' => $project->id, 'work_order_id' => $workOrder->id, 'title' => 'Slab complete', 'amount' => $money['milestone'], 'sort' => 1, 'created_by' => $owner->id]);
+        $payment = app(ContractorPaymentService::class)->raise($workOrder, ['paid_on' => '2026-11-06', 'amount' => $money['payment'], 'mode' => 'bank', 'paid_to' => 'Shree Formwork', 'boq_item_id' => $item->id], null, $engineer);
+        $payment->update(['bill_path' => 'none/payment-bill.jpg']);
+        $tender = ContractorTender::create(['organization_id' => $org, 'project_id' => $project->id, 'number' => 'CT-001', 'title' => 'Flooring tender', 'status' => 'OPEN', 'created_by' => $owner->id]);
+        $tenderItem = ContractorTenderItem::create(['organization_id' => $org, 'contractor_tender_id' => $tender->id, 'boq_item_id' => $item->id, 'qty' => '100.000', 'boq_rate' => $money['boq_rate']]);
+        $bid = ContractorBid::create(['organization_id' => $org, 'contractor_tender_id' => $tender->id, 'party_id' => $subcontractor->id, 'quoted_amount' => $money['bid'], 'received_on' => '2026-11-04', 'entered_by' => $owner->id]);
+        ContractorBidItem::create(['organization_id' => $org, 'contractor_bid_id' => $bid->id, 'contractor_tender_item_id' => $tenderItem->id, 'rate' => Dec::money(Dec::of($money['bid'])->dividedBy(100, 2)), 'amount' => $money['bid']]);
+
+        // Material control: a delivery challan with its photo and supplier bill
+        $challan = app(DeliveryChallanService::class)->create($project, ['party_id' => $vendor->id, 'store_id' => $store->id, 'material_id' => $cement->id, 'unit_id' => $kg->id, 'qty' => '100', 'challan_date' => '2026-11-03', 'vehicle_no' => 'MH12AB1234'], $owner);
+        // A posted challan only ever changes on its bill side, so the photo goes in underneath the model.
+        $challan->update(['bill_status' => 'attached', 'bill_path' => 'none/challan-bill.pdf', 'bill_no' => 'B-1001', 'bill_date' => '2026-11-05', 'bill_amount' => $money['challan_bill'], 'bill_attached_by' => $owner->id, 'bill_attached_at' => now()]);
+        DeliveryChallan::whereKey($challan->id)->update(['photo_path' => 'none/challan.jpg']);
+        $challan->refresh();
+
+        // Project setup: a permission with its fee and file, a BOQ revision and a current market rate
+        $permit = ProjectPermit::create(['organization_id' => $org, 'project_id' => $project->id, 'name' => 'Building permission', 'authority' => 'PMC', 'fee' => $money['permit_fee'], 'status' => 'applied', 'applied_on' => '2026-01-10']);
+        $permitFile = ProjectPermitFile::create(['organization_id' => $org, 'project_id' => $project->id, 'project_permit_id' => $permit->id, 'path' => 'none/permit.pdf', 'original_name' => 'permit.pdf', 'uploaded_by' => $owner->id]);
+        BoqRevision::create(['organization_id' => $org, 'project_id' => $project->id, 'boq_item_id' => $item->id, 'action' => 'edited', 'source' => 'manual', 'item_code' => $item->code, 'item_description' => $item->description, 'changes' => ['rate' => ['1.00', $money['boq_rate']]], 'reason' => 'Rate agreed with the client', 'valuation_before' => $money['revision_value'], 'valuation_after' => $money['revision_value'], 'user_id' => $owner->id]);
+        BoqCurrentRate::create(['organization_id' => $org, 'project_id' => $project->id, 'boq_item_id' => $item->id, 'rate' => $money['current_rate'], 'noted_on' => '2026-11-01', 'source' => 'Market enquiry', 'noted_by' => $owner->id]);
+
+        // Alerts: one about money that only money.overview may read, and one about time that everyone may
+        Alert::create(['organization_id' => $org, 'project_id' => $project->id, 'type' => 'budget_over', 'reference' => 'project', 'severity' => 'critical', 'title' => 'Spend is over the approved budget', 'message' => 'Spend of ₹'.Dec::indian($money['alert_money']).' is above the approved budget.', 'needs_permission' => 'money.overview', 'status' => 'open', 'first_seen_at' => now(), 'last_seen_at' => now()]);
+        Alert::create(['organization_id' => $org, 'project_id' => $project->id, 'type' => 'schedule_lag', 'reference' => 'project', 'severity' => 'warning', 'title' => 'Work is behind time', 'message' => 'Time used 50%, work done 35%.', 'status' => 'open', 'first_seen_at' => now(), 'last_seen_at' => now()]);
+
         $customRole = CustomRole::create(['organization_id' => $org, 'name' => 'Site lead', 'permissions' => ['project.view', 'boq.view'], 'created_by' => $owner->id]);
 
         $this->rows = [
@@ -379,7 +440,10 @@ trait BuildsMoneyWorld
             BbsSchedule::class => $schedule, TakeoffLayer::class => $layer, ExpenseClaim::class => $ownClaim, StaffLeave::class => $leave,
             Agent::class => $agent, AgentConversation::class => $conversation, AgentRun::class => $run,
             AssetHireBill::class => $hireBill, VendorBill::class => $vendorBill, GstInvoice::class => $invoice,
-            WageRun::class => $wageRun, WageRunLine::class => $wageLine, CrmTender::class => $tender, CrmLead::class => $lead,
+            WageRun::class => $wageRun, WageRunLine::class => $wageLine, CrmTender::class => $crmTender, CrmLead::class => $lead,
+            ProjectFloor::class => $floor, ProgressEntry::class => $progress, ProgressPhoto::class => $progressPhoto, MepStageCell::class => $cell,
+            ContractorMilestone::class => $milestone, ContractorPayment::class => $payment, ContractorTender::class => $tender,
+            DeliveryChallan::class => $challan, ProjectPermit::class => $permit, ProjectPermitFile::class => $permitFile, Party::class => $vendor,
             CustomRole::class => $customRole, User::class => $engineer,
         ];
 

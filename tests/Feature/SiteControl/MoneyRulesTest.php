@@ -198,7 +198,8 @@ class MoneyRulesTest extends TestCase
         file_put_contents($path, app(BoqExcelService::class)->export($this->project, withMoney: false));
         $header = IOFactory::load($path)->getActiveSheet()->toArray()[0];
         unlink($path);
-        $this->assertSame(['section', 'code', 'description', 'unit', 'qty'], array_values(array_filter($header, fn ($cell) => $cell !== null)));
+        // Category and details are not money, so they stay; the rate and amount columns go.
+        $this->assertSame(['section', 'code', 'description', 'unit', 'qty', 'category', 'details'], array_values(array_filter($header, fn ($cell) => $cell !== null)));
 
         $sheet = app(MeasurementSheetService::class)->build($this->project, CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-12-31'), withMoney: false);
         $this->assertFalse($sheet['with_money']);

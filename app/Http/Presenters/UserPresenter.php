@@ -17,6 +17,11 @@ final class UserPresenter
         'measurement.view', 'measurement.create', 'measurement.approve',
         'ra_bill.view', 'ra_bill.approve',
         'money.view', 'money.overview',
+        'progress.view', 'progress.create', 'progress.manage',
+        'material_control.view', 'material_control.challan', 'material_control.consume', 'material_control.count',
+        'material_control.reason', 'material_control.extra', 'material_control.bills', 'material_control.suppliers', 'material_control.adjust',
+        'contractor.view', 'contractor.request', 'contractor.approve', 'contractor.manage', 'contractor.tender', 'contractor.award',
+        'asset.log', 'checklist.fill', 'procurement.stock',
     ];
 
     public static function present(User $user): array

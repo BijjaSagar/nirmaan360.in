@@ -175,6 +175,9 @@ class BoqController extends Controller
             throw ValidationException::withMessages(['file' => __('The file must have these columns: :columns', ['columns' => implode(', ', $columns)])]);
         }
 
+        // Category and details are read when the file has them. They are not money, so every role may keep them.
+        $wanted = [...$columns, ...array_values(array_intersect(self::OPTIONAL_COLUMNS, $header))];
+
         $rows = [];
         $errors = [];
         $line = 1;
@@ -190,7 +193,7 @@ class BoqController extends Controller
                 continue;
             }
 
-            $row = array_intersect_key(array_map('trim', array_combine($header, array_map('strval', $cells))), array_flip($columns));
+            $row = array_intersect_key(array_map('trim', array_combine($header, array_map('strval', $cells))), array_flip($wanted));
 
             if (isset($row['category']) && $row['category'] !== '') {
                 $category = BoqCategories::fromText($row['category']);
