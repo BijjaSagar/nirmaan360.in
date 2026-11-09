@@ -15,6 +15,7 @@
                 <div class="mt-8 space-y-2 border-t border-black/10 pt-6 text-[17px] font-semibold">
                     @if (site_setting('contact_phone'))<a href="tel:{{ preg_replace('/[^0-9+]/', '', site_setting('contact_phone')) }}" class="flex items-center gap-3"><x-icon name="call" class="size-5 text-laterite" />{{ site_setting('contact_phone') }}</a>@endif
                     @if (site_setting('contact_email'))<a href="mailto:{{ site_setting('contact_email') }}" class="flex items-center gap-3"><x-icon name="mail" class="size-5 text-laterite" />{{ site_setting('contact_email') }}</a>@endif
+                    @if (site_setting('info_email'))<a href="mailto:{{ site_setting('info_email') }}" class="flex items-center gap-3"><x-icon name="mail" class="size-5 text-laterite" />{{ site_setting('info_email') }}</a>@endif
                 </div>
             @endif
         </div>

@@ -303,10 +303,6 @@
         @apply font-medium underline underline-offset-4;
     }
 
-    .site .locale-link {
-        @apply rounded-md px-2;
-    }
-
     .site .eyebrow {
         font-family: var(--font-sans);
         font-size: 15px;
