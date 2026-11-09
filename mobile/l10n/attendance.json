@@ -35,7 +35,7 @@
     "hi": "कल"
   },
   "attendanceLeft": {
-    "en": "Left",
+    "en": "Unmarked",
     "mr": "बाकी",
     "hi": "बाकी"
   },
@@ -55,9 +55,9 @@
     "hi": "सबकी हाज़िरी हो गई"
   },
   "attendanceAllPresentHelper": {
-    "en": "Fills unmarked workers only. Absent stays absent.",
-    "mr": "फक्त राहिलेल्यांना हजर लावते. गैरहजर बदलत नाहीत.",
-    "hi": "सिर्फ़ बचे लोगों को उपस्थित करता है। अनुपस्थित नहीं बदलते।"
+    "en": "Skips anyone already marked.",
+    "mr": "ज्यांची हजेरी लागली आहे त्यांना वगळते.",
+    "hi": "जिनकी हाज़िरी लग चुकी है, उन्हें छोड़ देता है।"
   },
   "attendanceAllPresentDone": {
     "en": "{count} marked present",
@@ -231,5 +231,15 @@
     "en": "Ask the office to add the workers.",
     "mr": "ऑफिसला कामगार जोडायला सांगा.",
     "hi": "ऑफ़िस से कामगार जुड़वाएँ।"
+  },
+  "attendanceLoading": {
+    "en": "Loading the muster",
+    "mr": "हजेरी लोड होत आहे",
+    "hi": "हाज़िरी लोड हो रही है"
+  },
+  "attendanceChooseProject": {
+    "en": "Choose a project",
+    "mr": "प्रकल्प निवडा",
+    "hi": "प्रोजेक्ट चुनें"
   }
 }

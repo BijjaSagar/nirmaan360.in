@@ -44,11 +44,7 @@ class PettySyncStamp extends StatelessWidget {
 /// placeholder. Decoding is capped with `cacheWidth` so a list of receipts stays
 /// cheap on a low-end phone.
 class BillThumbnail extends StatelessWidget {
-  const BillThumbnail({
-    super.key,
-    required this.load,
-    required this.size,
-  });
+  const BillThumbnail({super.key, required this.load, required this.size});
 
   /// Bytes of the image, or null when there is nothing to show.
   final Future<Uint8List>? load;
@@ -57,18 +53,26 @@ class BillThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final int cacheWidth =
-        (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(40, 400);
+    final int cacheWidth = (size * MediaQuery.devicePixelRatioOf(context))
+        .round()
+        .clamp(40, 400);
 
     final Widget placeholder = ColoredBox(
       color: N360Colors.paper2,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          const Icon(Icons.receipt_long, size: 20, color: N360Colors.ink2),
+          const Icon(
+            Icons.receipt_long,
+            size: N360IconSize.lg,
+            color: N360Colors.ink2,
+          ),
           Text(
             l.pettyCashBillLabel,
-            style: N360Type.caption.copyWith(fontSize: 11, height: 1.1, color: N360Colors.ink2),
+            style: N360Type.fit(
+              N360Type.caption,
+              l.pettyCashBillLabel,
+            ).copyWith(height: 1.1, color: N360Colors.ink2),
           ),
         ],
       ),
@@ -125,7 +129,7 @@ class PettyAmountCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(label, style: N360Type.heading),
+          Text(label, style: N360Type.fit(N360Type.heading, label)),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -138,6 +142,79 @@ class PettyAmountCard extends StatelessWidget {
             const SizedBox(height: N360Space.xs),
             footer!,
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The amount already typed, on the second step of a form, as one tappable
+/// row. The line under the word says it can be changed, because a card with a
+/// figure on it does not look like a button.
+class PettyAmountSummary extends StatelessWidget {
+  const PettyAmountSummary({
+    super.key,
+    required this.amount,
+    required this.onTap,
+    this.walletName,
+  });
+
+  /// The amount as `Money.indian` writes it, or null when nothing is typed.
+  final String? amount;
+
+  /// Goes back to the keypad.
+  final VoidCallback onTap;
+
+  /// Named only when the project has more than one wallet, so the choice made
+  /// on the first step stays in sight.
+  final String? walletName;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String hint = walletName == null || walletName!.isEmpty
+        ? l.pettyCashTapToChange
+        : '$walletName · ${l.pettyCashTapToChange}';
+    final String figure = amount ?? '0.00';
+
+    return LedgerCard(
+      onTap: onTap,
+      semanticsLabel: '${l.pettyCashAmount} ₹$figure. $hint',
+      padding: const EdgeInsets.symmetric(
+        horizontal: N360Space.card,
+        vertical: N360Space.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Text(
+                l.pettyCashAmount,
+                style: N360Type.fit(N360Type.heading, l.pettyCashAmount),
+              ),
+              const SizedBox(width: N360Space.sm),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: RollingMoney(
+                      value: figure,
+                      style: N360Type.figureLarge,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Text(
+            hint,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: N360Type.fit(N360Type.caption, hint),
+          ),
         ],
       ),
     );
@@ -163,7 +240,8 @@ class PettyDateChoice extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final String locale = Localizations.localeOf(context).toString();
-    String shortDay(String iso) => DateFormat('d MMM', locale).format(DateTime.parse(iso));
+    String shortDay(String iso) =>
+        DateFormat('d MMM', locale).format(DateTime.parse(iso));
 
     return Row(
       children: <Widget>[

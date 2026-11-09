@@ -77,4 +77,32 @@ void main() {
     cubit.setFilter(IssueFilter.closed);
     expect(cubit.state.visible.single.record.title, 'Closed');
   });
+
+  group('refresh', () {
+    test('pulls what the office changed and says the server was reached', () async {
+      final cubit = IssueListCubit(app.services);
+      addTearDown(cubit.close);
+      await cubit.stream.firstWhere((s) => s.load == IssueListLoad.ready);
+
+      expect(await cubit.refresh(), isTrue);
+    });
+
+    test('says false when the phone has no network, and does not try', () async {
+      final cubit = IssueListCubit(app.services);
+      addTearDown(cubit.close);
+      await cubit.stream.firstWhere((s) => s.load == IssueListLoad.ready);
+      app.connectivity.setOnline(false);
+
+      expect(await cubit.refresh(), isFalse);
+    });
+
+    test('says false when the server cannot be reached', () async {
+      final cubit = IssueListCubit(app.services);
+      addTearDown(cubit.close);
+      await cubit.stream.firstWhere((s) => s.load == IssueListLoad.ready);
+      app.api.offline = true;
+
+      expect(await cubit.refresh(), isFalse);
+    });
+  });
 }

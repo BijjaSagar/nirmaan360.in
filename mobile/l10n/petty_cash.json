@@ -348,5 +348,20 @@
     "en": "Could not save the money. Try again.",
     "mr": "रक्कम जतन करता आली नाही. पुन्हा प्रयत्न करा.",
     "hi": "रकम सेव नहीं हुई। फिर से कोशिश करें।"
+  },
+  "pettyCashLoading": {
+    "en": "Loading the cash book",
+    "mr": "रोख वही लोड होत आहे",
+    "hi": "नकद बही लोड हो रही है"
+  },
+  "pettyCashTapToChange": {
+    "en": "Tap to change",
+    "mr": "बदलण्यासाठी टॅप करा",
+    "hi": "बदलने के लिए टैप करें"
+  },
+  "pettyCashChooseProject": {
+    "en": "Choose a project",
+    "mr": "प्रकल्प निवडा",
+    "hi": "प्रोजेक्ट चुनें"
   }
 }

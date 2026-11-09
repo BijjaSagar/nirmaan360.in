@@ -8,9 +8,11 @@ import '../internal/press_target.dart';
 import '../internal/soft_surface.dart';
 import '../tokens.dart';
 
-/// A rounded-square icon tile, with a spoken name for screen readers.
+/// A square icon tile: white with a hairline, the icon in ink. With
+/// [highlight] it is the primary colour with a white icon, for the one
+/// action on a row that matters most.
 ///
-/// The tile itself is [size] across ([N360Size.tile], 44dp, by default) so it
+/// The tile itself is [size] across ([N360Size.tile], 40dp, by default) so it
 /// sits lightly beside text. When it is tappable the hit area grows to at
 /// least [N360Size.tap] around it, so a gloved thumb still lands on it.
 ///
@@ -35,7 +37,7 @@ class IconTile extends StatelessWidget {
   /// A short count on the corner. Null hides it.
   final String? badge;
 
-  /// Fills the tile with gold.
+  /// Fills the tile with the primary colour.
   final bool highlight;
 
   /// The visible side of the tile. The tap target is never smaller than
@@ -55,13 +57,11 @@ class IconTile extends StatelessWidget {
           Positioned.fill(
             child: CustomPaint(
               painter: highlight
-                  ? const SoftSurfacePainter(
-                      radius: N360Radius.medium,
-                      gradient: N360Gradients.gold,
-                      edge: Color(0x55FFFFFF),
-                    )
-                  : const SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.paper2),
-              child: Center(child: Icon(icon, size: iconSize, color: N360Colors.ink)),
+                  ? const SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.primary)
+                  : const SoftSurfacePainter(radius: N360Radius.medium, edge: N360Colors.rule),
+              child: Center(
+                child: Icon(icon, size: iconSize, color: highlight ? N360Colors.onPrimary : N360Colors.ink),
+              ),
             ),
           ),
           if (badge != null) Positioned(top: -5, right: -5, child: N360Badge(text: badge!)),

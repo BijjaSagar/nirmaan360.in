@@ -41,7 +41,9 @@ class _WalletFormViewState extends State<_WalletFormView> {
 
   void _onProjectKnown(BuildContext context, WalletFormState state) {
     if (_name.text.isNotEmpty) return;
-    final String name = AppLocalizations.of(context).pettyCashWalletDefaultName(state.project!.code);
+    final String name = AppLocalizations.of(
+      context,
+    ).pettyCashWalletDefaultName(state.project!.code);
     _name.text = name;
     context.read<WalletFormCubit>().setName(name);
   }
@@ -63,7 +65,10 @@ class _WalletFormViewState extends State<_WalletFormView> {
       kind: moneyLost ? PaperToastKind.warning : PaperToastKind.success,
       duration: const Duration(seconds: 4),
     );
-    Navigator.of(context).maybePop();
+    // A plain pop: `maybePop` would meet the PopScope below, which turns a
+    // pop on the second step into "back to the details".
+    final NavigatorState navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop();
   }
 
   @override
@@ -102,7 +107,7 @@ class _WalletFormViewState extends State<_WalletFormView> {
                       ),
                       if (!state.online)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: N360Space.sm),
+                          padding: const EdgeInsets.only(bottom: N360Space.xs),
                           child: OfflineBanner(
                             label: l.pettyCashWalletOffline,
                             detail: l.pettyCashWalletOfflineDetail,
@@ -134,54 +139,39 @@ class _DetailsStep extends StatelessWidget {
   Future<void> _pickHolder(BuildContext context) async {
     final AppLocalizations l = AppLocalizations.of(context);
     final WalletFormCubit cubit = context.read<WalletFormCubit>();
-    final int? chosen = await showModalBottomSheet<int>(
-      context: context,
-      useSafeArea: true,
+    final int? chosen = await showLedgerSheet<int>(
+      context,
       isScrollControlled: true,
-      backgroundColor: N360Colors.paper,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
       ),
-      builder: (sheetContext) => SizedBox(
-        height: MediaQuery.sizeOf(sheetContext).height * 0.6,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                N360Space.gutter,
-                N360Space.lg,
-                N360Space.gutter,
-                N360Space.sm,
-              ),
-              child: SheetHeader(title: l.pettyCashWalletHolder),
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+            child: SheetHeader(title: l.pettyCashWalletHolder),
+          ),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: ledgerSheetPadding,
+              itemCount: state.users.length,
+              separatorBuilder: (_, _) => const SizedBox(height: N360Space.xs),
+              itemBuilder: (context, index) {
+                final UserRow user = state.users[index];
+                return FieldChoiceTile(
+                  width: double.infinity,
+                  icon: Icons.person,
+                  label: user.name,
+                  selected: user.id == state.holderId,
+                  onTap: () => Navigator.of(sheetContext).pop(user.id),
+                );
+              },
             ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(
-                  N360Space.gutter,
-                  0,
-                  N360Space.gutter,
-                  N360Space.lg,
-                ),
-                itemCount: state.users.length,
-                itemBuilder: (context, index) {
-                  final UserRow user = state.users[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: N360Space.sm),
-                    child: FieldChoiceTile(
-                      width: double.infinity,
-                      icon: Icons.person,
-                      label: user.name,
-                      selected: user.id == state.holderId,
-                      onTap: () => Navigator.of(sheetContext).pop(user.id),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
     if (chosen != null) cubit.setHolder(chosen);
@@ -221,11 +211,18 @@ class _DetailsStep extends StatelessWidget {
                       onChanged: cubit.setName,
                     ),
                     const SizedBox(height: N360Space.md),
-                    Text(l.pettyCashWalletHolder, style: N360Type.label),
+                    Text(
+                      l.pettyCashWalletHolder,
+                      style: N360Type.fit(
+                        N360Type.label,
+                        l.pettyCashWalletHolder,
+                      ),
+                    ),
                     const SizedBox(height: N360Space.xs),
                     FieldChoiceTile(
                       width: double.infinity,
                       icon: Icons.person_outline,
+                      trailingIcon: Icons.unfold_more,
                       label: holder,
                       selected: false,
                       semanticsLabel: '${l.pettyCashWalletHolder}: $holder',
@@ -267,24 +264,27 @@ class _AmountStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                N360Space.gutter,
-                N360Space.xs,
-                N360Space.gutter,
-                N360Space.sm,
-              ),
-              child: PettyAmountCard(
-                label: l.pettyCashOpeningAmount,
-                typed: state.amountText,
-                footer: failed
-                    ? FieldInlineError(l.pettyCashWalletFailed)
-                    : Text(
+          child: SingleChildScrollView(
+            // Reversed, so the figure sits on the keypad that fills it.
+            reverse: true,
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.gutter,
+              N360Space.xs,
+              N360Space.gutter,
+              N360Space.md,
+            ),
+            child: PettyAmountCard(
+              label: l.pettyCashOpeningAmount,
+              typed: state.amountText,
+              footer: failed
+                  ? FieldInlineError(l.pettyCashWalletFailed)
+                  : Text(
+                      l.pettyCashOpeningHelper,
+                      style: N360Type.fit(
+                        N360Type.body,
                         l.pettyCashOpeningHelper,
-                        style: N360Type.body.copyWith(color: N360Colors.ink2),
-                      ),
-              ),
+                      ).copyWith(color: N360Colors.ink2),
+                    ),
             ),
           ),
         ),
@@ -302,7 +302,9 @@ class _AmountStep extends StatelessWidget {
               decimalPlaces: 2,
               maxIntegerDigits: 7,
               onChanged: cubit.setAmount,
-              onNext: canCreate ? () => cubit.create(openingNote: l.pettyCashOpeningNote) : null,
+              onNext: canCreate
+                  ? () => cubit.create(openingNote: l.pettyCashOpeningNote)
+                  : null,
               nextLabel: l.pettyCashWalletCreateKey,
               nextIcon: Icons.check,
               backspaceLabel: l.designKeypadDelete,

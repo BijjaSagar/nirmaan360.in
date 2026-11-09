@@ -174,6 +174,106 @@ void main() {
     expect(keypad.onNext, isNull);
   });
 
+  testWidgets('once D has a figure the keypad key saves, so the thumb never leaves it', (tester) async {
+    final TestApp app = await bookApp(qty: '100.000');
+    addTearDown(app.dispose);
+    await pumpBook(tester, app, start: Routes.measurementForm);
+    await _pickLine(tester);
+    await _typeEntry(tester);
+
+    final Finder saveKey = find.descendant(of: find.byType(GloveKeypad), matching: find.text('Save'));
+    expect(saveKey, findsOneWidget);
+    await tester.tap(saveKey);
+    await pumpDrift(tester, 8);
+    expect((await app.db.select(app.db.measurements).get()).single.qty, Qty.parse('50.000'));
+    DimensionTile nos() => tester.widget(find.byKey(const ValueKey<String>('tile-nos')));
+    expect(nos().active, isTrue);
+    expect(find.descendant(of: find.byType(GloveKeypad), matching: find.text('Next')), findsOneWidget);
+  });
+
+  testWidgets('leaving with typed figures asks first; keeping them is the easy way', (tester) async {
+    final TestApp app = await bookApp();
+    addTearDown(app.dispose);
+    final router = await pumpBook(tester, app, start: Routes.measurements);
+    router.push(Routes.measurementForm);
+    await pumpDrift(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    await pumpDrift(tester);
+
+    await typeKeys(tester, '2');
+    await tester.tap(find.text('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Leave without saving?'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey<String>('measurement-leave-keep')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(GloveKeypad), findsOneWidget);
+    DimensionTile nos() => tester.widget(find.byKey(const ValueKey<String>('tile-nos')));
+    expect(nos().value, '2');
+
+    await tester.tap(find.text('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const ValueKey<String>('measurement-leave-go')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    await pumpDrift(tester);
+    expect(find.byType(GloveKeypad), findsNothing);
+  });
+
+  testWidgets('leaving saved rows behind says they are still drafts', (tester) async {
+    final TestApp app = await bookApp();
+    addTearDown(app.dispose);
+    final router = await pumpBook(tester, app, start: Routes.measurements);
+    router.push(Routes.measurementForm);
+    await pumpDrift(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    await pumpDrift(tester);
+    await _pickLine(tester);
+    await typeKeys(tester, '1');
+    await tester.tap(find.byKey(_save));
+    await pumpDrift(tester, 8);
+
+    await tester.tap(find.text('Back'));
+    await tester.pump();
+    await pumpDrift(tester, 8);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.textContaining('kept as a draft'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+  });
+
+  testWidgets('the last saved row can be corrected from the tally', (tester) async {
+    final TestApp app = await bookApp(qty: '100.000');
+    addTearDown(app.dispose);
+    final router = await pumpBook(tester, app, start: Routes.measurements);
+    router.push(Routes.measurementForm);
+    await pumpDrift(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    await pumpDrift(tester);
+    await _pickLine(tester);
+    await typeKeys(tester, '3');
+    await tester.tap(find.byKey(_save));
+    await pumpDrift(tester, 8);
+    expect(find.textContaining('net 3.000'), findsOneWidget);
+
+    await tester.tap(find.text('Fix last'));
+    await pumpDrift(tester, 12);
+    await tester.pump(const Duration(milliseconds: 400));
+    await pumpDrift(tester, 8);
+    expect(find.byType(GloveKeypad), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byType(GloveKeypad), matching: find.text('Delete')));
+    await tester.pump();
+    await typeKeys(tester, '4');
+    await tester.tap(find.byKey(_save));
+    await pumpDrift(tester, 8);
+    await tester.pump(const Duration(milliseconds: 600));
+    await pumpDrift(tester, 12);
+    expect(find.textContaining('net 4.000'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+  });
+
   testWidgets('figures are never typed on the phone keyboard', (tester) async {
     final TestApp app = await bookApp();
     addTearDown(app.dispose);
@@ -329,7 +429,7 @@ void main() {
     await typeKeys(tester, '2');
     await tester.tap(find.byKey(_save));
     await pumpDrift(tester, 8);
-    expect(find.text('Send 2 rows'), findsOneWidget);
+    expect(find.text('Send 2 for approval'), findsOneWidget);
 
     await tester.tap(find.byKey(_send));
     await pumpDrift(tester, 8);

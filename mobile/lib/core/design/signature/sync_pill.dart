@@ -11,8 +11,8 @@ import 'rolling_number.dart';
 
 enum SyncVisualState { synced, pending, syncing, offline, attention }
 
-/// The sync status tag for the top of a screen. An icon and words are always
-/// shown, so colour never carries the meaning alone. The tag is
+/// The sync status tag for the top of a screen: a white hairline tag with an
+/// icon and words, so colour never carries the meaning alone. The tag is
 /// [N360Size.control] tall inside a full [N360Size.tap] target.
 ///
 /// When the state becomes synced the tick lands with the stamp curve: the one
@@ -87,9 +87,9 @@ class SyncPill extends StatelessWidget {
             child: Transform.translate(
               offset: Offset(0, depth * 1),
               child: CustomPaint(
-                painter: const SoftSurfacePainter(radius: N360Radius.small + 2, edge: N360Colors.rule),
+                painter: const SoftSurfacePainter(radius: N360Radius.medium, edge: N360Colors.rule),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: N360Size.control - 4),
+                  constraints: const BoxConstraints(minHeight: N360Size.control),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: N360Space.tile, vertical: N360Space.xs),
                     child: child,
@@ -137,7 +137,7 @@ class _StatusIconState extends State<_StatusIcon> with SingleTickerProviderState
 
   @override
   Widget build(BuildContext context) {
-    final Widget icon = Icon(widget.icon, size: N360IconSize.md, color: widget.color);
+    final Widget icon = Icon(widget.icon, size: N360IconSize.sm, color: widget.color);
     final land = _land;
     if (land == null) return icon;
     return RepaintBoundary(
@@ -188,7 +188,7 @@ class _SpinningIconState extends State<_SpinningIcon> with SingleTickerProviderS
     return RepaintBoundary(
       child: RotationTransition(
         turns: _spin,
-        child: Icon(widget.icon, size: N360IconSize.md, color: widget.color),
+        child: Icon(widget.icon, size: N360IconSize.sm, color: widget.color),
       ),
     );
   }

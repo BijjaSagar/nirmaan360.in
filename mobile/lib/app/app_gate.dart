@@ -261,7 +261,9 @@ class AppGate extends Cubit<GateState> {
       return s.hasProject ? Routes.home : Routes.projects;
     }
     if (!s.hasProject) {
-      if (path == Routes.projects) return null;
+      // Settings stays open so someone on the wrong account can sign out
+      // instead of being stuck on "ask your office".
+      if (path == Routes.projects || path == Routes.settings) return null;
       if (path == Routes.projectForm && s.canManageProjects) return null;
       return Routes.projects;
     }

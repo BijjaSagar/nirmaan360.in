@@ -106,7 +106,7 @@ class _LanguageCell extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
-                  child: Text(label, maxLines: 1, style: N360Type.button.copyWith(color: N360Colors.ink)),
+                  child: Text(label, maxLines: 1, style: N360Type.fit(N360Type.button, label)),
                 ),
               ),
             ),

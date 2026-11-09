@@ -8,23 +8,72 @@ import '../../../../core/design/design.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../bloc/attendance_cubit.dart';
 
-/// Height of the big "marked so far" row, which folds away as the list scrolls.
-const double kSummaryHeroHeight = 74;
+// The card's height is what its pieces take: some are fixed (paddings, gaps,
+// the accent bars, the gauge) and some grow with the text size (the figures and
+// their words), so the two are counted apart and only the second is scaled.
+// Type sizes are read from the tokens, so a change of scale moves the card too.
+
+/// One line of [style], at the default text size.
+double _line(TextStyle style) => style.fontSize! * style.height!;
+
+/// Fixed height of the folded card: its padding, the accent bar and gap, the
+/// gap above the gauge and the gauge itself, and a little air so that a
+/// fraction of a point in a font's metrics never clips a line.
+const double _foldedFixed =
+    (N360Space.xs + N360Space.sm) +
+    (N360Space.sm + N360Space.tile) +
+    (N360Space.xs + N360Space.xs) +
+    N360Space.sm +
+    N360Space.sm +
+    N360Space.xs;
+
+/// A total's figure and its word, the word with Devanagari's taller line.
+double get _foldedText =>
+    _line(N360Type.figureLarge) + _line(N360Type.forDevanagari(N360Type.label));
+
+/// The "marked so far" word and the hero figure, beside a [N360Size.tap]
+/// square that does not scale.
+double get _heroText =>
+    _line(N360Type.forDevanagari(N360Type.label)) + _line(N360Type.figureHero);
 
 /// Height of the card once folded: five totals and the gauge stay on screen.
-const double kSummaryCollapsedHeight = 100;
+double summaryCollapsedHeight(double textScale) =>
+    _foldedFixed + _foldedText * textScale;
+
+/// Height of the big "marked so far" row, which folds away as the list scrolls.
+double summaryHeroHeight(double textScale) =>
+    math.max(_heroText * textScale + N360Space.xs, N360Size.tap);
+
+/// Height of the card with the big row showing.
+double summaryExpandedHeight(double textScale) =>
+    summaryCollapsedHeight(textScale) +
+    summaryHeroHeight(textScale) +
+    N360Space.cardGap;
 
 /// The muster's summary card. [fold] goes from 0 (the big figure showing) to 1
 /// (only the totals and a thin gauge left) as the list scrolls up.
-class MusterSummaryCard extends StatelessWidget {
+///
+/// The hero figure counts up once, the first time the card appears. The card
+/// keeps its state while the list scrolls, so folding it away and back never
+/// replays the count.
+class MusterSummaryCard extends StatefulWidget {
   const MusterSummaryCard({super.key, required this.fold});
 
   final double fold;
 
   @override
+  State<MusterSummaryCard> createState() => _MusterSummaryCardState();
+}
+
+class _MusterSummaryCardState extends State<MusterSummaryCard> {
+  /// Kept mounted while folded away, so its count-up plays once.
+  late final Widget _hero = const _HeroRow();
+
+  @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final double scale = MediaQuery.textScalerOf(context).scale(1);
+    final double fold = widget.fold;
 
     // The page colour hides rows passing behind the card and in its margins.
     return ColoredBox(
@@ -38,41 +87,73 @@ class MusterSummaryCard extends StatelessWidget {
         ),
         child: RepaintBoundary(
           child: LedgerCard(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.card,
+              N360Space.sm,
+              N360Space.card,
+              N360Space.tile,
+            ),
             child: BlocSelector<AttendanceCubit, AttendanceState, MusterTotals>(
               selector: (state) => state.totals,
               builder: (context, totals) {
-                final double fraction = totals.total == 0 ? 0 : totals.marked / totals.total;
+                final double fraction = totals.total == 0
+                    ? 0
+                    : totals.marked / totals.total;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Expanded(
-                      child: fold > 0.9
-                          ? const SizedBox.shrink()
-                          : ClipRect(
-                              child: OverflowBox(
-                                alignment: Alignment.topCenter,
-                                minHeight: 0,
-                                maxHeight: kSummaryHeroHeight * scale,
-                                child: _HeroRow(totals: totals, fraction: fraction),
-                              ),
-                            ),
+                      child: Offstage(
+                        offstage: fold > 0.9,
+                        child: ClipRect(
+                          child: OverflowBox(
+                            alignment: Alignment.topCenter,
+                            minHeight: 0,
+                            maxHeight: summaryHeroHeight(scale),
+                            child: _hero,
+                          ),
+                        ),
+                      ),
                     ),
                     Row(
                       children: <Widget>[
-                        _Total(accent: N360Colors.moss, value: totals.present, label: l.designAttendancePresent),
-                        _Total(accent: N360Colors.haldi, value: totals.half, label: l.designAttendanceHalf),
-                        _Total(accent: N360Colors.neel, value: totals.overtime, label: l.designAttendanceOvertime),
-                        _Total(accent: N360Colors.stampRed, value: totals.absent, label: l.designAttendanceAbsent),
-                        _Total(accent: N360Colors.ink, value: totals.left, label: l.attendanceLeft, emphasised: true),
+                        _Total(
+                          accent: N360Colors.moss,
+                          value: totals.present,
+                          label: l.designAttendancePresent,
+                        ),
+                        _Total(
+                          accent: N360Colors.haldi,
+                          value: totals.half,
+                          label: l.designAttendanceHalf,
+                        ),
+                        _Total(
+                          accent: N360Colors.neel,
+                          value: totals.overtime,
+                          label: l.designAttendanceOvertime,
+                        ),
+                        _Total(
+                          accent: N360Colors.stampRed,
+                          value: totals.absent,
+                          label: l.designAttendanceAbsent,
+                        ),
+                        _Total(
+                          accent: N360Colors.ink,
+                          value: totals.left,
+                          label: l.attendanceLeft,
+                          emphasised: true,
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: N360Space.sm),
                     TickGauge(
                       fraction: fraction,
                       ticks: math.max(totals.total, 12).clamp(12, 60),
-                      height: lerpDouble(20, 10, fold)!,
-                      semanticLabel: l.attendanceGroupProgress(totals.marked, totals.total),
+                      height: lerpDouble(N360Space.lg, N360Space.sm, fold)!,
+                      semanticLabel: l.attendanceGroupProgress(
+                        totals.marked,
+                        totals.total,
+                      ),
                     ),
                   ],
                 );
@@ -85,43 +166,59 @@ class MusterSummaryCard extends StatelessWidget {
   }
 }
 
+/// The big figure and its square. It reads the totals itself, so the card
+/// can hold one instance for as long as it lives.
 class _HeroRow extends StatelessWidget {
-  const _HeroRow({required this.totals, required this.fraction});
-
-  final MusterTotals totals;
-  final double fraction;
+  const _HeroRow();
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(l.attendanceMarkedSoFar, style: N360Type.bodyStrong.copyWith(height: 1.25, color: N360Colors.ink2)),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: RollingNumber(
-                  value: '${totals.marked}',
-                  style: N360Type.figureHero.copyWith(fontSize: 40, height: 1.15),
-                  suffix: ' / ${totals.total}',
-                  suffixStyle: N360Type.figureLarge.copyWith(fontSize: 22, color: N360Colors.inkLabel),
-                ),
+    return BlocSelector<AttendanceCubit, AttendanceState, MusterTotals>(
+      selector: (state) => state.totals,
+      builder: (context, totals) {
+        final double fraction = totals.total == 0
+            ? 0
+            : totals.marked / totals.total;
+        return Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    l.attendanceMarkedSoFar,
+                    style: N360Type.fit(
+                      N360Type.label,
+                      l.attendanceMarkedSoFar,
+                    ).copyWith(color: N360Colors.inkLabel),
+                  ),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: RollingNumber(
+                      value: '${totals.marked}',
+                      style: N360Type.figureHero,
+                      suffix: ' / ${totals.total}',
+                      suffixStyle: N360Type.figureLarge.copyWith(
+                        color: N360Colors.inkLabel,
+                      ),
+                      animateEntry: true,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: N360Space.sm),
-        SquarePercent(
-          fraction: fraction,
-          label: '${(fraction * 100).round()}%',
-          size: 60,
-        ),
-      ],
+            ),
+            const SizedBox(width: N360Space.sm),
+            SquarePercent(
+              fraction: fraction,
+              label: '${(fraction * 100).round()}%',
+              size: N360Size.tap,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -148,20 +245,26 @@ class _Total extends StatelessWidget {
         liveRegion: emphasised,
         child: ExcludeSemantics(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.xxs),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 DecoratedBox(
-                  decoration: BoxDecoration(color: accent, borderRadius: N360Radius.sm),
-                  child: const SizedBox(width: 22, height: 4),
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: N360Radius.sm,
+                  ),
+                  child: const SizedBox(
+                    width: N360Space.xl,
+                    height: N360Space.xs,
+                  ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: N360Space.xs),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: RollingNumber(
                     value: '$value',
-                    style: N360Type.figureLarge.copyWith(fontSize: 22, height: 1.15),
+                    style: N360Type.figureLarge,
                   ),
                 ),
                 FittedBox(
@@ -169,11 +272,8 @@ class _Total extends StatelessWidget {
                   child: Text(
                     label,
                     maxLines: 1,
-                    style: N360Type.caption.copyWith(
-                      fontSize: 13,
-                      height: 1.25,
+                    style: N360Type.fit(N360Type.label, label).copyWith(
                       color: emphasised ? N360Colors.ink : N360Colors.inkLabel,
-                      fontWeight: emphasised ? FontWeight.w700 : FontWeight.w600,
                     ),
                   ),
                 ),

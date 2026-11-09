@@ -11,8 +11,9 @@ import '../typography.dart';
 
 enum GloveButtonKind { primary, secondary, ghost, danger }
 
-/// A button made for a gloved thumb. The primary is a gold gradient with dark
-/// ink on it, and every button squeezes under the thumb. The words are required.
+/// A button made for a gloved thumb. The primary is flat [N360Colors.primary]
+/// with white words; the secondary is white with a hairline; every button
+/// squeezes under the thumb. The words are required.
 ///
 /// The face is the full [N360Size.tap] tall: a primary action earns its height.
 class GloveButton extends StatelessWidget {
@@ -122,19 +123,19 @@ class _Look {
     }
     return switch (kind) {
       GloveButtonKind.primary => const _Look(
-          surface: SoftSurfacePainter(radius: r, gradient: N360Gradients.gold, edge: Color(0x55FFFFFF)),
-          text: N360Colors.ink,
+          surface: SoftSurfacePainter(radius: r, fill: N360Colors.primary),
+          text: N360Colors.onPrimary,
         ),
       GloveButtonKind.secondary => const _Look(
-          surface: SoftSurfacePainter(radius: r, edge: N360Colors.ruleStrong, edgeWidth: 1.25),
+          surface: SoftSurfacePainter(radius: r, edge: N360Colors.ruleStrong),
           text: N360Colors.ink,
         ),
       GloveButtonKind.ghost => const _Look(
-          surface: SoftSurfacePainter(radius: r, fill: N360Colors.paper2),
+          surface: SoftSurfacePainter(radius: r, fill: N360Colors.paper, edge: N360Colors.rule),
           text: N360Colors.ink,
         ),
       GloveButtonKind.danger => const _Look(
-          surface: SoftSurfacePainter(radius: r, edge: N360Colors.stampRed, edgeWidth: 1.5),
+          surface: SoftSurfacePainter(radius: r, edge: N360Colors.stampRed, edgeWidth: 1.25),
           text: N360Colors.stampRed,
         ),
     };

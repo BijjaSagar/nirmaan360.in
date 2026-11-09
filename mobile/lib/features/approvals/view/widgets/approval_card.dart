@@ -46,12 +46,7 @@ class ApprovalCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(type, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
-                  Text(
-                    row.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: N360Type.heading.copyWith(fontSize: 16, height: 1.3),
-                  ),
+                  Text(headlineOf(row), maxLines: 2, overflow: TextOverflow.ellipsis, style: N360Type.heading),
                 ],
               ),
             ),
@@ -76,7 +71,7 @@ class ApprovalCard extends StatelessWidget {
                           ),
                       ],
                     ),
-                    style: N360Type.figureHero.copyWith(color: figureInk, fontSize: 32),
+                    style: N360Type.figureLarge.copyWith(color: figureInk),
                   ),
                 ),
               ),
@@ -85,7 +80,7 @@ class ApprovalCard extends StatelessWidget {
                 Semantics(
                   label: '${portion.label} ${l.measurementShareOfBoq}',
                   child: ExcludeSemantics(
-                    child: SquarePercent(fraction: portion.fraction, label: portion.label, size: 56),
+                    child: SquarePercent(fraction: portion.fraction, label: portion.label),
                   ),
                 ),
               ],
@@ -114,7 +109,7 @@ class ApprovalCard extends StatelessWidget {
               )
             else ...<Widget>[
               Text(l.approvalsOpen, style: N360Type.label.copyWith(color: N360Colors.laterite, height: 1.3)),
-              const Icon(Icons.north_east, size: 18, color: N360Colors.laterite),
+              const Icon(Icons.north_east, size: N360IconSize.sm, color: N360Colors.laterite),
             ],
           ],
         ),
@@ -124,7 +119,7 @@ class ApprovalCard extends StatelessWidget {
     return LedgerCard(
       padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.md, N360Space.md, N360Space.sm + 2),
       onTap: onTap,
-      semanticsLabel: '$type. ${row.title}. $project. $figureSpoken. $who',
+      semanticsLabel: '$type. ${headlineOf(row)}. $project. $figureSpoken. $who',
       child: body,
     );
   }
@@ -147,7 +142,7 @@ class _DeviationFlag extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Icon(Icons.warning_amber, size: 18, color: N360Colors.ink),
+              const Icon(Icons.warning_amber, size: N360IconSize.sm, color: N360Colors.ink),
               const SizedBox(width: 4),
               Text(label, style: N360Type.bodyStrong.copyWith(height: 1.3, fontWeight: FontWeight.w700)),
             ],

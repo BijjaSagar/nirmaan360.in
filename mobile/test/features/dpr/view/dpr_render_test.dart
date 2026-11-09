@@ -258,6 +258,15 @@ void main() {
     return const DprListScreen();
   }
 
+  shot('list_missed_en', (app) async {
+    await app.services.dpr.saveDraft(
+      const DprInput(projectId: 1, reportDate: today, manpower: [ManpowerLine(trade: 'Mason', count: 6)]),
+    );
+    await app.services.dpr.saveDraft(
+      const DprInput(projectId: 1, reportDate: '2026-11-07', manpower: [ManpowerLine(trade: 'Mason', count: 8)]),
+    );
+    return const DprListScreen();
+  });
   shot('list_en', listScene);
   shot('list_mr', listScene, locale: _mr);
 

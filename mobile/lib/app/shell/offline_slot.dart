@@ -10,15 +10,21 @@ import 'sync_status_cubit.dart';
 /// when there is no network. The two slide past each other inside the slot, so
 /// losing the network never moves anything else on the screen.
 class OfflineSlot extends StatelessWidget {
-  const OfflineSlot({super.key, required this.online, this.offlineLabel});
+  const OfflineSlot({super.key, required this.online, this.offlineLabel, this.height = OfflineSlot.standard});
 
   final Widget online;
 
   /// Replaces the general offline wording, for a tab with something specific to say.
   final String? offlineLabel;
 
-  /// Fits the banner: its 34dp badge plus its own padding.
-  static const double height = 56;
+  /// The slot's fixed height. Never under [compact], or the banner is clipped.
+  final double height;
+
+  /// Fits the banner with a little air: its 30dp badge, its own padding and 6dp.
+  static const double standard = 56;
+
+  /// The least the banner needs: for a slot that doubles as a card's title row.
+  static const double compact = 50;
 
   @override
   Widget build(BuildContext context) {

@@ -73,7 +73,16 @@ class _IssueDetailView extends StatelessWidget {
               builder: (context, state) {
                 switch (state.load) {
                   case IssueDetailLoad.loading:
-                    return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        FieldTopBar(title: l.issuesTitle),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+                          child: LedgerSkeleton(lines: 3, semanticsLabel: l.issuesLoading),
+                        ),
+                      ],
+                    );
                   case IssueDetailLoad.missing:
                     return ListView(
                       children: <Widget>[
@@ -96,18 +105,30 @@ class _IssueDetailView extends StatelessWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+class _Body extends StatefulWidget {
   const _Body({required this.state});
 
   final IssueDetailState state;
 
   @override
+  State<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<_Body> {
+  /// The status the issue had when the page opened. The stamp lands only when
+  /// the status changes while the page is open: that is the moment the work is
+  /// confirmed. Opening an issue just shows it.
+  late final String _openedWith = widget.state.issue!.record.status;
+
+  @override
   Widget build(BuildContext context) {
+    final IssueDetailState state = widget.state;
     final AppLocalizations l = AppLocalizations.of(context);
     final SyncedRecord<IssueRow> record = state.issue!;
     final IssueRow issue = record.record;
     final String? assignee = state.userNames[issue.assignedTo];
     final String? raisedBy = state.userNames[issue.raisedBy];
+    final bool hasDescription = issue.description != null && issue.description!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -133,14 +154,14 @@ class _Body extends StatelessWidget {
                         Expanded(
                           child: LedgerHero(
                             tag: 'issue-title-${issue.clientUuid}',
-                            child: Text(issue.title, style: N360Type.title),
+                            child: Text(issue.title, style: N360Type.fit(N360Type.title, issue.title)),
                           ),
                         ),
                         const SizedBox(width: N360Space.sm),
                         IssueStatusStamp(
                           status: issue.status,
                           size: StampSize.medium,
-                          animate: true,
+                          animate: issue.status != _openedWith,
                         ),
                       ],
                     ),
@@ -168,9 +189,31 @@ class _Body extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: N360Space.md),
+              // What is wrong comes before who and when: the description is the
+              // part a person reads to decide what to do.
+              if (hasDescription) ...<Widget>[
+                const SizedBox(height: N360Space.cardGap),
+                StaggeredRise(
+                  index: 0,
+                  child: LedgerCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        SectionLabel(l.issuesDetailDescription),
+                        const SizedBox(height: N360Space.xs),
+                        Text(
+                          issue.description!,
+                          style: N360Type.fit(N360Type.body, issue.description!),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: N360Space.cardGap),
               StaggeredRise(
-                index: 0,
+                index: 1,
                 child: LedgerCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,7 +245,7 @@ class _Body extends StatelessWidget {
                           label: l.issuesDetailResolvedOn,
                           ruled: false,
                           valueWidget: Text(
-                            shortDate(context, issue.resolvedAt!.toIso8601String()),
+                            shortDay(context, issue.resolvedAt!),
                             style: N360Type.bodyStrong,
                           ),
                         ),
@@ -210,23 +253,6 @@ class _Body extends StatelessWidget {
                   ),
                 ),
               ),
-              if (issue.description != null && issue.description!.isNotEmpty) ...<Widget>[
-                const SizedBox(height: N360Space.md),
-                StaggeredRise(
-                  index: 1,
-                  child: LedgerCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        SectionLabel(l.issuesDetailDescription),
-                        const SizedBox(height: N360Space.xs),
-                        Text(issue.description!, style: N360Type.body),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -246,9 +272,9 @@ class _DueValue extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final String? due = issue.dueDate;
     if (due == null) {
-      return Text(l.issuesNoDueDate, style: N360Type.body);
+      return Text(l.issuesNoDueDate, style: N360Type.fit(N360Type.body, l.issuesNoDueDate));
     }
-    return Text(shortDate(context, due), style: N360Type.bodyStrong);
+    return Text(shortDate(context, due), style: N360Type.fit(N360Type.bodyStrong, shortDate(context, due)));
   }
 }
 

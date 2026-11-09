@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/app_services.dart';
+import '../../../core/db/status.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../bloc/measurement_book.dart';
@@ -38,6 +39,30 @@ class _FormView extends StatelessWidget {
     } else {
       context.go(Routes.measurements);
     }
+  }
+
+  /// Back, from the key or from the phone. Typed figures are never thrown
+  /// away quietly, and rows left unsent are mentioned on the way out.
+  Future<void> _requestLeave(BuildContext context) async {
+    final MeasurementFormCubit cubit = context.read<MeasurementFormCubit>();
+    final AppLocalizations l = AppLocalizations.of(context);
+    if (cubit.state.busy) return;
+    if (cubit.state.isDirty) {
+      final bool? leave = await showLedgerSheet<bool>(context, builder: (_) => const _LeaveSheet());
+      if (leave != true || !context.mounted) return;
+    }
+    final int drafts = cubit.state.saved.length;
+    if (drafts > 0) showPaperToast(context, l.measurementDraftsLeft(drafts));
+    _leave(context);
+  }
+
+  /// Opens the row just saved for correction, and takes its new figure back.
+  Future<void> _fixLast(BuildContext context) async {
+    final MeasurementFormCubit cubit = context.read<MeasurementFormCubit>();
+    if (cubit.state.saved.isEmpty) return;
+    final String uuid = cubit.state.saved.last.clientUuid;
+    await context.push<void>('${Routes.measurementForm}?uuid=$uuid');
+    cubit.refreshSaved(uuid);
   }
 
   Future<void> _pickLine(BuildContext context) async {
@@ -149,12 +174,15 @@ class _FormView extends StatelessWidget {
           (!previous.deviation && current.deviation),
       listener: (context, state) => N360Haptics.warning(),
       builder: (context, state) {
-        if (state.loading) return const Scaffold(backgroundColor: Colors.transparent);
+        if (state.loading) return _loadingPage(l);
         if (state.locked) return _lockedPage(context, l);
 
         final MeasurementFormCubit cubit = context.read<MeasurementFormCubit>();
         return PopScope(
-          canPop: !state.busy,
+          canPop: !state.busy && !state.isDirty && state.saved.isEmpty,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _requestLeave(context);
+          },
           child: Scaffold(
             backgroundColor: Colors.transparent,
             resizeToAvoidBottomInset: false,
@@ -163,7 +191,7 @@ class _FormView extends StatelessWidget {
                 bottom: false,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final bool compact = constraints.maxHeight - media.padding.bottom < 735;
+                    final bool compact = constraints.maxHeight - media.padding.bottom < 700;
                     return _layout(context, l, state, cubit, compact: compact, media: media);
                   },
                 ),
@@ -186,7 +214,7 @@ class _FormView extends StatelessWidget {
     final Widget header = LineHeader(
       line: state.line,
       compact: compact,
-      onBack: () => _leave(context),
+      onBack: () => _requestLeave(context),
       onChange: () => _pickLine(context),
     );
 
@@ -215,7 +243,7 @@ class _FormView extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(
-            flex: 7,
+            flex: 5,
             child: SignToggle(deduction: state.isDeduction, onChanged: cubit.setDeduction),
           ),
           const SizedBox(width: N360Space.sm),
@@ -241,7 +269,7 @@ class _FormView extends StatelessWidget {
       if (state.saved.isNotEmpty) ...<Widget>[
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-          child: _SittingTally(state: state),
+          child: _SittingTally(state: state, onFix: () => _fixLast(context)),
         ),
         const SizedBox(height: N360Space.sm),
       ],
@@ -267,13 +295,13 @@ class _FormView extends StatelessWidget {
             children: <Widget>[
               if (!state.online) _offline(l),
               header,
-              const SizedBox(height: 6),
+              const SizedBox(height: N360Space.xs),
               ...notes,
               dims,
-              const SizedBox(height: 4),
+              const SizedBox(height: N360Space.xs),
               band,
               ...alerts,
-              const SizedBox(height: N360Space.sm),
+              const SizedBox(height: N360Space.xs),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
                 child: detailsKey,
@@ -297,7 +325,7 @@ class _FormView extends StatelessWidget {
                       toggleRow,
                       const SizedBox(height: N360Space.sm),
                       ...notes,
-                      if (notes.isEmpty && box.maxHeight > 276)
+                      if (notes.isEmpty && box.maxHeight > 256)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
                           child: Text(l.measurementPreviewNote, style: N360Type.caption),
@@ -326,13 +354,28 @@ class _FormView extends StatelessWidget {
           child: GloveKeypad(
             value: state.activeText,
             onChanged: cubit.typed,
-            onNext: state.active == DimField.depth ? null : cubit.next,
-            nextLabel: l.measurementNext,
+            onNext: state.active != DimField.depth ? cubit.next : (state.keypadFinishes ? () => _save(context) : null),
+            nextLabel: state.keypadFinishes ? l.commonSave : l.measurementNext,
+            nextIcon: state.keypadFinishes ? Icons.check : Icons.arrow_forward,
             backspaceLabel: l.measurementDelete,
             maxIntegerDigits: 8,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _loadingPage(AppLocalizations l) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: LedgerPaper(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(N360Space.gutter),
+            child: LedgerSkeleton(figure: true, lines: 3, semanticsLabel: l.measurementLoading),
+          ),
+        ),
+      ),
     );
   }
 
@@ -390,7 +433,7 @@ class _ReturnedNote extends StatelessWidget {
               children: <Widget>[
                 const Padding(
                   padding: EdgeInsets.only(top: 1),
-                  child: Icon(Icons.reply, size: 20, color: N360Colors.haldiInk),
+                  child: Icon(Icons.reply, size: N360IconSize.md, color: N360Colors.haldiInk),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -416,35 +459,91 @@ class _ReturnedNote extends StatelessWidget {
   }
 }
 
-/// Counts the rows saved so far, and is honest about where they are.
+/// Asks before typed figures are lost. Keeping them is the easy choice.
+class _LeaveSheet extends StatelessWidget {
+  const _LeaveSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return Padding(
+      padding: ledgerSheetPadding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l.measurementLeaveTitle, style: N360Type.title),
+          const SizedBox(height: N360Space.xs),
+          Text(l.measurementLeaveBody, style: N360Type.body),
+          const SizedBox(height: N360Space.lg),
+          GloveButton(
+            key: const ValueKey<String>('measurement-leave-keep'),
+            label: l.measurementLeaveKeep,
+            large: true,
+            fullWidth: true,
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          const SizedBox(height: N360Space.sm),
+          GloveButton(
+            key: const ValueKey<String>('measurement-leave-go'),
+            label: l.measurementLeaveGo,
+            kind: GloveButtonKind.secondary,
+            fullWidth: true,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Counts the rows saved so far, and offers the last one back for correction.
 class _SittingTally extends StatelessWidget {
-  const _SittingTally({required this.state});
+  const _SittingTally({required this.state, required this.onFix});
 
   final MeasurementFormState state;
+  final VoidCallback onFix;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final int count = state.saved.length;
     final String net = '${formatQty(state.savedNet)} ${state.unit ?? ''}'.trim();
-    return Semantics(
-      container: true,
-      liveRegion: true,
-      label: '${l.measurementTally(count)}. ${l.measurementNet} $net',
-      child: ExcludeSemantics(
-        child: Row(
-          children: <Widget>[
-            const Icon(Icons.task_alt, size: 20, color: N360Colors.mossInk),
-            const SizedBox(width: 6),
-            Expanded(
+    return Row(
+      children: <Widget>[
+        const Icon(Icons.task_alt, size: N360IconSize.md, color: N360Colors.mossInk),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Semantics(
+            container: true,
+            liveRegion: true,
+            label: '${l.measurementTally(count)}. ${l.measurementNet} $net',
+            child: ExcludeSemantics(
               child: Text(
                 '${l.measurementTally(count)} · ${l.measurementNet} $net',
                 style: N360Type.bodyStrong.copyWith(color: N360Colors.mossInk, height: 1.3),
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        PressTarget(
+          onTap: onFix,
+          haptic: N360Haptics.tap,
+          semanticsLabel: l.measurementFixLast,
+          builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth), child: child),
+          child: Padding(
+            padding: const EdgeInsets.only(left: N360Space.sm),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(l.measurementFixLast, style: N360Type.label.copyWith(color: N360Colors.laterite)),
+                const SizedBox(width: 2),
+                const Icon(Icons.edit, size: N360IconSize.sm, color: N360Colors.laterite),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -460,9 +559,9 @@ class _ActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final int rows = state.saved.length + (state.hasAnyDims ? 1 : 0);
-    final String sendLabel = state.isEditing
+    final String sendLabel = state.originalStatus == DocStatus.returned
         ? l.measurementSendAgain
-        : (rows > 1 ? l.measurementSendCount(rows) : l.measurementSendForApproval);
+        : (rows > 1 && !state.isEditing ? l.measurementSendCount(rows) : l.measurementSendForApproval);
 
     return IntrinsicHeight(
       child: Row(

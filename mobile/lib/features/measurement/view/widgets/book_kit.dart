@@ -6,9 +6,6 @@ import '../../../../core/design/design.dart';
 import '../../../../core/sync/record_sync.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
-/// How far a pressed tile gives under the thumb.
-double pressScale(double depth) => 1 - 0.035 * depth;
-
 /// The way back: an arrow with its word under it, on a soft tile, because an
 /// icon alone means little to someone who reads little.
 class LedgerBackKey extends StatelessWidget {
@@ -23,21 +20,22 @@ class LedgerBackKey extends StatelessWidget {
       onTap: onTap,
       haptic: N360Haptics.tap,
       semanticsLabel: label,
-      builder: (context, depth, child) => Transform.scale(scale: pressScale(depth), child: child),
+      builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth), child: child),
       child: SizedBox.square(
         dimension: N360Size.tap,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Icon(Icons.arrow_back, size: 22, color: N360Colors.ink),
-              Text(
-                label,
-                maxLines: 1,
-                style: N360Type.caption.copyWith(color: N360Colors.ink2, height: 1.15, fontSize: 12.5),
+        child: Center(
+          child: SizedBox.square(
+            dimension: N360Size.tile,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.sm),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const Icon(Icons.arrow_back, size: N360IconSize.md, color: N360Colors.ink),
+                  Text(label, maxLines: 1, style: N360Type.caption.copyWith(height: 1.15)),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -59,7 +57,7 @@ class BookTitleBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final VoidCallback? back = onBack;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.sm),
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.xs),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: N360Size.tap),
         child: Row(
@@ -80,7 +78,7 @@ class BookTitleBar extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: N360Type.title.copyWith(fontSize: 19, height: 1.3),
+                    style: N360Type.title,
                   ),
                 ],
               ),
@@ -108,6 +106,7 @@ class ChoiceTile extends StatelessWidget {
     this.count,
     this.look = ChoiceLook.gold,
     this.centered = true,
+    this.compact = false,
   });
 
   final String label;
@@ -117,6 +116,10 @@ class ChoiceTile extends StatelessWidget {
   final int? count;
   final ChoiceLook look;
   final bool centered;
+
+  /// Draws a tile of [N360Size.tile] inside the full [N360Size.tap] target, for
+  /// a row of filters that should stay quiet.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -136,31 +139,29 @@ class ChoiceTile extends StatelessWidget {
       haptic: N360Haptics.select,
       semanticsLabel: count == null ? label : '$label $count',
       selected: selected,
-      builder: (context, depth, child) => Transform.scale(
-        scale: pressScale(depth),
-        child: DecoratedBox(decoration: face, child: child),
-      ),
+      builder: (context, depth, child) {
+        final Widget tile = DecoratedBox(decoration: face, child: child);
+        return Transform.scale(
+          scale: pressedScale(depth),
+          child: compact ? Center(widthFactor: 1, child: tile) : tile,
+        );
+      },
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: N360Size.tap),
+        constraints: BoxConstraints(minHeight: compact ? N360Size.tile : N360Size.tap),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.xs),
           child: Row(
             mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
             mainAxisAlignment: centered ? MainAxisAlignment.center : MainAxisAlignment.start,
             children: <Widget>[
-              if (icon != null) ...<Widget>[Icon(icon, size: 22, color: N360Colors.ink), const SizedBox(width: 6)],
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: centered ? 1 : 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.button.copyWith(height: 1.3),
-                ),
-              ),
-              if (count != null) ...<Widget>[
+              if (icon != null) ...<Widget>[
+                Icon(icon, size: N360IconSize.button, color: N360Colors.ink),
                 const SizedBox(width: 6),
-                Text('$count', style: N360Type.figureSmall.copyWith(fontWeight: FontWeight.w500)),
               ],
+              Flexible(
+                child: Text(label, maxLines: centered ? 1 : 2, overflow: TextOverflow.ellipsis, style: N360Type.button),
+              ),
+              if (count != null) ...<Widget>[const SizedBox(width: 6), Text('$count', style: N360Type.figureSmall)],
             ],
           ),
         ),
@@ -178,15 +179,15 @@ class CodeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox.square(
-      dimension: 52,
+      dimension: N360Size.tile,
       child: DecoratedBox(
         decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
         child: Padding(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(N360Space.xs),
           child: Center(
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(code, maxLines: 1, style: N360Type.figure.copyWith(fontSize: 16)),
+              child: Text(code, maxLines: 1, style: N360Type.figureSmall),
             ),
           ),
         ),
@@ -223,7 +224,7 @@ class TintedNote extends StatelessWidget {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.only(top: 1),
-              child: Icon(icon, size: 22, color: ink),
+              child: Icon(icon, size: N360IconSize.lg, color: ink),
             ),
             const SizedBox(width: N360Space.sm),
             Expanded(
@@ -271,7 +272,7 @@ class BookRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle figure = valueStyle ?? (total ? N360Type.figure.copyWith(fontSize: 20) : N360Type.figure);
+    final TextStyle figure = valueStyle ?? (total ? N360Type.figure : N360Type.figure);
     return LedgerRow(
       label: label,
       hint: hint,
@@ -341,7 +342,7 @@ class SyncMark extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Icon(look.icon, size: 16, color: look.ink),
+        Icon(look.icon, size: N360IconSize.sm, color: look.ink),
         const SizedBox(width: 4),
         Flexible(
           child: Text(

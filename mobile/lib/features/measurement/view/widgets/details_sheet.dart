@@ -16,12 +16,9 @@ class EntryDetails {
 /// Location, note and date live in a sheet, so a phone keyboard for words never
 /// pushes the figure keypad off the screen.
 Future<EntryDetails?> showDetailsSheet(BuildContext context, {required EntryDetails initial, required String today}) {
-  return showModalBottomSheet<EntryDetails>(
-    context: context,
-    useRootNavigator: true,
+  return showLedgerSheet<EntryDetails>(
+    context,
     isScrollControlled: true,
-    useSafeArea: true,
-    sheetAnimationStyle: context.motion.reduced ? AnimationStyle.noAnimation : null,
     builder: (_) => _DetailsSheet(initial: initial, today: today),
   );
 }
@@ -82,7 +79,7 @@ class _DetailsSheetState extends State<_DetailsSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
+        padding: ledgerSheetPadding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -325,7 +325,10 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get attendanceAllPresentHelper =>
-      'फक्त राहिलेल्यांना हजर लावते. गैरहजर बदलत नाहीत.';
+      'ज्यांची हजेरी लागली आहे त्यांना वगळते.';
+
+  @override
+  String get attendanceChooseProject => 'प्रकल्प निवडा';
 
   @override
   String attendanceDateTitle(String date) {
@@ -358,6 +361,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get attendanceLoadFailedTitle => 'हजेरी उघडता आली नाही';
+
+  @override
+  String get attendanceLoading => 'हजेरी लोड होत आहे';
 
   @override
   String get attendanceMarkedSoFar => 'आतापर्यंत नोंदवले';
@@ -478,7 +484,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get boqFormDescription => 'कामाचे वर्णन';
 
   @override
-  String get boqFormDescriptionHint => 'स्लॅबमध्ये M25 काँक्रीट';
+  String get boqFormDescriptionHint => 'उदा. स्लॅबमध्ये M25 काँक्रीट';
 
   @override
   String get boqFormDescriptionRequired => 'कामाचे वर्णन लिहा.';
@@ -508,7 +514,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get boqFormSection => 'विभाग (ऐच्छिक)';
 
   @override
-  String get boqFormSectionHint => 'सुपरस्ट्रक्चर';
+  String get boqFormSectionHint => 'उदा. सुपरस्ट्रक्चर';
 
   @override
   String get boqFormTitle => 'BOQ आयटम जोडा';
@@ -523,6 +529,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String boqLinesAdded(int count) {
     return '$count ओळी जोडल्या';
   }
+
+  @override
+  String get boqLoading => 'BOQ लोड होत आहे';
 
   @override
   String boqMeasuredShare(int percent) {
@@ -562,6 +571,15 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get boqOpenAction => 'BOQ उघडा';
+
+  @override
+  String boqOver(String qty, String unit) {
+    return '$qty $unit जास्त';
+  }
+
+  @override
+  String get boqRefreshFailed =>
+      'अपडेट करता आले नाही. फोनवर आहे तेच दाखवत आहे.';
 
   @override
   String get boqSearchHint => 'कोड किंवा काम';
@@ -742,6 +760,9 @@ class AppLocalizationsMr extends AppLocalizations {
       'कॅमेरा उघडला नाही. फोनच्या सेटिंगमध्ये कॅमेऱ्याला परवानगी द्या.';
 
   @override
+  String get dprCanStillSend => 'तरीही पाठवता येईल.';
+
+  @override
   String get dprChooseAnother => 'दुसरा आयटम';
 
   @override
@@ -775,7 +796,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get dprListTitle => 'दैनिक अहवाल';
 
   @override
+  String get dprLoading => 'लोड होत आहे';
+
+  @override
   String get dprLocked => 'हा अहवाल मंजुरीसाठी गेला आहे, आता बदलता येणार नाही.';
+
+  @override
+  String get dprMissedDays => 'राहिलेले दिवस';
 
   @override
   String dprMoreRows(int count) {
@@ -791,11 +818,16 @@ class AppLocalizationsMr extends AppLocalizations {
   String get dprNeedWeather => 'आजचे हवामान निवडा.';
 
   @override
-  String get dprNeedWorkers =>
-      'आलेल्या कामगारांची संख्या भरा. साइट बंद असेल तर अडथळ्यांमध्ये कारण लिहा.';
+  String get dprNeedWorkers => 'आलेल्या कामगारांची संख्या भरा.';
+
+  @override
+  String get dprNoPhotosYet => 'फोटो जोडलेले नाहीत.';
 
   @override
   String get dprNoProject => 'आधी प्रकल्प निवडा';
+
+  @override
+  String get dprNoWorkYet => 'काम जोडलेले नाही.';
 
   @override
   String get dprNotSaved => 'जतन झाले नाही';
@@ -813,6 +845,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String dprOfDays(int days) {
     return '$days दिवसांपैकी';
   }
+
+  @override
+  String get dprOpenOutbox => 'आउटबॉक्स उघडा';
 
   @override
   String get dprOpenToday => 'आजचा अहवाल उघडा';
@@ -845,6 +880,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get dprRemove => 'काढा';
+
+  @override
+  String get dprRemoved => 'काढले';
 
   @override
   String get dprReportsThisMonth => 'या महिन्याचे अहवाल';
@@ -924,6 +962,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get dprSendReport => 'अहवाल पाठवा';
 
   @override
+  String get dprSiteClosedWrite => 'साइट बंद? कारण लिहा';
+
+  @override
   String get dprSyncAttention => 'लक्ष द्या';
 
   @override
@@ -942,6 +983,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get dprTotalWorkers => 'एकूण कामगार';
 
   @override
+  String get dprUndo => 'परत आणा';
+
+  @override
   String dprWorkersCount(int count) {
     return '$count कामगार';
   }
@@ -952,6 +996,11 @@ class AppLocalizationsMr extends AppLocalizations {
   @override
   String dprWorkersWord(int count) {
     return 'कामगार';
+  }
+
+  @override
+  String dprWriteFor(String date) {
+    return '$date चा अहवाल लिहा';
   }
 
   @override
@@ -1034,10 +1083,14 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesFilterAll => 'सर्व';
 
   @override
-  String get issuesFormAssignee => 'कोण दुरुस्त करेल?';
+  String get issuesFormAssignee => 'कोण दुरुस्त करेल? (ऐच्छिक)';
 
   @override
-  String get issuesFormDue => 'कधीपर्यंत दुरुस्त करायचे?';
+  String get issuesFormDue => 'कधीपर्यंत दुरुस्त करायचे? (ऐच्छिक)';
+
+  @override
+  String get issuesFormDueClear =>
+      'निवडलेल्या दिवसावर पुन्हा टॅप करून तो काढा.';
 
   @override
   String get issuesFormDueThree => '3 दिवस';
@@ -1052,10 +1105,10 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesFormEyebrow => 'नवीन समस्या';
 
   @override
-  String get issuesFormLocation => 'साइटवर कुठे?';
+  String get issuesFormLocation => 'साइटवर कुठे? (ऐच्छिक)';
 
   @override
-  String get issuesFormLocationHint => 'ग्रिड C, तिसरा मजला';
+  String get issuesFormLocationHint => 'उदा. ग्रिड C, तिसरा मजला';
 
   @override
   String get issuesFormPriority => 'किती तातडीचे आहे?';
@@ -1070,10 +1123,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesFormWhat => 'काय बिघडले आहे?';
 
   @override
-  String get issuesFormWhatHint => 'कॉलम C3 ला भेग';
+  String get issuesFormWhatHint => 'उदा. कॉलम C3 ला भेग';
 
   @override
   String get issuesFormWhatRequired => 'काय बिघडले ते लिहा.';
+
+  @override
+  String get issuesLoading => 'समस्या लोड होत आहेत';
 
   @override
   String get issuesNoDueDate => 'मुदत नाही';
@@ -1092,6 +1148,15 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get issuesRaise => 'समस्या नोंदवा';
+
+  @override
+  String get issuesRefreshFailed =>
+      'अपडेट करता आले नाही. फोनवर आहे तेच दाखवत आहे.';
+
+  @override
+  String issuesResolvedOn(String date) {
+    return 'सोडवले $date';
+  }
 
   @override
   String get issuesSaveFailed =>
@@ -1208,7 +1273,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get measurementDetailTitle => 'मोजमाप';
 
   @override
-  String get measurementDetailsShort => 'तपशील';
+  String get measurementDetailsShort => 'ठिकाण, तारीख';
 
   @override
   String get measurementDetailsTitle => 'ठिकाण, टीप आणि तारीख';
@@ -1224,6 +1289,17 @@ class AppLocalizationsMr extends AppLocalizations {
   @override
   String get measurementDeviationDetail =>
       'ही नोंद BOQ प्रमाण आणि सवलतीपेक्षा जास्त आहे, त्यामुळे प्रकल्प व्यवस्थापकाची मंजुरी लागेल.';
+
+  @override
+  String measurementDraftsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ओळी मसुदा म्हणून ठेवल्या. पुस्तिकेतून पाठवा.',
+      one: '1 ओळ मसुदा म्हणून ठेवली. पुस्तिकेतून पाठवा.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get measurementEdit => 'बदला';
@@ -1244,6 +1320,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get measurementFilterAll => 'सर्व';
 
   @override
+  String get measurementFixLast => 'शेवटची दुरुस्त करा';
+
+  @override
   String get measurementFormulaHint => 'सुरुवातीला नग भरा';
 
   @override
@@ -1253,13 +1332,32 @@ class AppLocalizationsMr extends AppLocalizations {
   String get measurementGoneTitle => 'नोंद सापडली नाही';
 
   @override
+  String get measurementInReviewBody =>
+      'मंजूर करणाऱ्याकडे आहे. निर्णय होईपर्यंत बदलता येणार नाही.';
+
+  @override
   String get measurementItem => 'बाब';
+
+  @override
+  String get measurementLeaveBody => 'या ओळीचे भरलेले आकडे जातील.';
+
+  @override
+  String get measurementLeaveGo => 'बाहेर पडा';
+
+  @override
+  String get measurementLeaveKeep => 'भरत राहा';
+
+  @override
+  String get measurementLeaveTitle => 'जतन न करता बाहेर पडायचे?';
 
   @override
   String get measurementLength => 'लांबी';
 
   @override
   String get measurementLengthShort => 'लांबी';
+
+  @override
+  String get measurementLoading => 'लोड होत आहे';
 
   @override
   String get measurementLocationHint => 'ग्रिड, मजला, फूटिंग';
@@ -1330,6 +1428,10 @@ class AppLocalizationsMr extends AppLocalizations {
   String get measurementRecentLines => 'अलीकडचे';
 
   @override
+  String get measurementRejectedBody =>
+      'ही नोंद नाकारली आहे, ती धरली जाणार नाही. पुन्हा मोजायचे असल्यास नवीन नोंद करा.';
+
+  @override
   String measurementRowCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1357,7 +1459,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String measurementSendCount(int count) {
-    return '$count ओळी पाठवा';
+    return '$count मंजुरीसाठी पाठवा';
   }
 
   @override
@@ -1437,6 +1539,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get pettyCashCategoryRequired => 'कशासाठी ते निवडा.';
 
   @override
+  String get pettyCashChooseProject => 'प्रकल्प निवडा';
+
+  @override
   String get pettyCashConfirmed => 'पक्की शिल्लक';
 
   @override
@@ -1471,6 +1576,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get pettyCashFormTitle => 'खर्च जोडा';
+
+  @override
+  String get pettyCashLoading => 'रोख वही लोड होत आहे';
 
   @override
   String get pettyCashNoProjectMessage =>
@@ -1538,6 +1646,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get pettyCashSyncSending => 'पाठवत आहे';
+
+  @override
+  String get pettyCashTapToChange => 'बदलण्यासाठी टॅप करा';
 
   @override
   String get pettyCashTitle => 'किरकोळ रोख';
@@ -1652,6 +1763,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String shellOutboxAttention(int count) {
     return '$count नोंदींकडे लक्ष द्या';
   }
+
+  @override
+  String get shellOutboxLoading => 'आउटबॉक्स आणत आहे';
 
   @override
   String get shellOutboxLogTitle => 'लागू झाले नाही';

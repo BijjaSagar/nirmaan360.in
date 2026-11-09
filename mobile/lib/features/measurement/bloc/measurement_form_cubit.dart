@@ -49,6 +49,8 @@ class MeasurementFormState extends Equatable {
     this.remarks,
     this.returnRemark,
     this.originalStatus,
+    this.originalDims = const {},
+    this.originalDeduction = false,
     this.countedQty,
     this.saved = const [],
     this.busy = false,
@@ -76,6 +78,10 @@ class MeasurementFormState extends Equatable {
   final String? returnRemark;
   final String? originalStatus;
 
+  /// The entry as it was loaded, to tell whether anything has been changed.
+  final Map<DimField, String> originalDims;
+  final bool originalDeduction;
+
   /// When editing, the quantity already inside the line's preview balance.
   final Qty? countedQty;
   final List<SavedRow> saved;
@@ -101,6 +107,16 @@ class MeasurementFormState extends Equatable {
   Qty? get depth => _parsed(DimField.depth);
 
   bool get hasAnyDims => dims.values.any((value) => value.isNotEmpty);
+
+  /// Figures are on the form that Save has not kept.
+  bool get isDirty {
+    if (!isEditing) return hasAnyDims;
+    if (isDeduction != originalDeduction) return true;
+    return DimField.values.any((field) => text(field) != (originalDims[field] ?? ''));
+  }
+
+  /// On the last tile with a value in it, the keypad's Next key becomes Save.
+  bool get keypadFinishes => active == DimField.depth && text(DimField.depth).isNotEmpty;
 
   /// The live figure. Without a Nos there is nothing to multiply yet, even
   /// though the server's formula would count a missing Nos as one.
@@ -170,6 +186,8 @@ class MeasurementFormState extends Equatable {
     String? remarks,
     String? returnRemark,
     String? originalStatus,
+    Map<DimField, String>? originalDims,
+    bool? originalDeduction,
     Qty? countedQty,
     List<SavedRow>? saved,
     bool? busy,
@@ -193,6 +211,8 @@ class MeasurementFormState extends Equatable {
       remarks: remarks ?? this.remarks,
       returnRemark: returnRemark ?? this.returnRemark,
       originalStatus: originalStatus ?? this.originalStatus,
+      originalDims: originalDims ?? this.originalDims,
+      originalDeduction: originalDeduction ?? this.originalDeduction,
       countedQty: countedQty ?? this.countedQty,
       saved: saved ?? this.saved,
       busy: busy ?? this.busy,
@@ -219,6 +239,8 @@ class MeasurementFormState extends Equatable {
     remarks,
     returnRemark,
     originalStatus,
+    originalDims,
+    originalDeduction,
     countedQty,
     saved,
     busy,
@@ -284,6 +306,12 @@ class MeasurementFormCubit extends Cubit<MeasurementFormState> {
     if (isClosed) return;
 
     String typed(Qty? value) => value == null ? '' : bookFigure(value);
+    final Map<DimField, String> loaded = {
+      DimField.nos: typed(entry.nos),
+      DimField.length: typed(entry.length),
+      DimField.breadth: typed(entry.breadth),
+      DimField.depth: typed(entry.depth),
+    };
 
     _set(
       state.copyWith(
@@ -298,12 +326,9 @@ class MeasurementFormCubit extends Cubit<MeasurementFormState> {
         returnRemark: entry.returnRemark,
         originalStatus: entry.status,
         countedQty: entry.qty,
-        dims: {
-          DimField.nos: typed(entry.nos),
-          DimField.length: typed(entry.length),
-          DimField.breadth: typed(entry.breadth),
-          DimField.depth: typed(entry.depth),
-        },
+        dims: loaded,
+        originalDims: loaded,
+        originalDeduction: entry.isDeduction,
       ),
     );
     _watchLine(entry.boqItemId);
@@ -429,6 +454,23 @@ class MeasurementFormCubit extends Cubit<MeasurementFormState> {
       _fail(failure);
       return FormResult.failed;
     }
+  }
+
+  /// A saved row was corrected from the tally. Take its new figure.
+  void refreshSaved(String uuid) {
+    late final StreamSubscription<SyncedRecord<MeasurementRow>?> once;
+    once = _repo.watchOne(uuid).listen((entry) {
+      unawaited(once.cancel());
+      final Qty? qty = entry?.record.qty;
+      _set(
+        state.copyWith(
+          saved: [
+            for (final SavedRow row in state.saved)
+              if (row.clientUuid != uuid) row else if (qty != null) SavedRow(uuid, qty),
+          ],
+        ),
+      );
+    });
   }
 
   /// Sends the entry, and any rows saved in this sitting, for approval.

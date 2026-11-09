@@ -68,63 +68,88 @@ class _IssueScroll extends StatelessWidget {
     return <_Section>[for (final entry in byStatus.entries) (entry.key, entry.value)];
   }
 
+  /// Pulls from the office. When the server cannot be reached the list stays
+  /// as it was, and a toast says so rather than leaving the pull unexplained.
+  Future<void> _refresh(BuildContext context) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool reached = await context.read<IssueListCubit>().refresh();
+    if (reached || !context.mounted) return;
+    showPaperToast(context, l.issuesRefreshFailed, kind: PaperToastKind.info);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: <Widget>[
-        const SliverToBoxAdapter(child: _Header()),
-        const SliverToBoxAdapter(child: _FilterStrip()),
-        BlocBuilder<IssueListCubit, IssueListState>(
-          buildWhen: (a, b) =>
-              a.load != b.load ||
-              a.filter != b.filter ||
-              !identical(a.visible, b.visible) ||
-              a.userNames != b.userNames,
-          builder: (context, state) {
-            final AppLocalizations l = AppLocalizations.of(context);
-            switch (state.load) {
-              case IssueListLoad.loading:
-                return const SliverToBoxAdapter(child: SizedBox(height: 160));
-              case IssueListLoad.noProject:
-                return SliverToBoxAdapter(
-                  child: EmptyLedger(
-                    title: l.issuesNoProjectTitle,
-                    message: l.issuesNoProjectMessage,
-                  ),
-                );
-              case IssueListLoad.ready:
-                if (state.visible.isEmpty) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return LedgerRefresh(
+      onRefresh: () => _refresh(context),
+      semanticsLabel: l.issuesLoading,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: <Widget>[
+          const SliverToBoxAdapter(child: _Header()),
+          const SliverToBoxAdapter(child: _FilterStrip()),
+          BlocBuilder<IssueListCubit, IssueListState>(
+            buildWhen: (a, b) =>
+                a.load != b.load ||
+                a.filter != b.filter ||
+                !identical(a.visible, b.visible) ||
+                a.userNames != b.userNames,
+            builder: (context, state) {
+              final AppLocalizations l = AppLocalizations.of(context);
+              switch (state.load) {
+                case IssueListLoad.loading:
                   return SliverToBoxAdapter(
-                    child: state.all.isEmpty
-                        ? EmptyLedger(
-                            title: l.issuesEmptyTitle,
-                            message: l.issuesEmptyMessage,
-                          )
-                        : EmptyLedger(
-                            title: l.issuesEmptyFilterTitle,
-                            message: l.issuesEmptyFilterMessage,
-                          ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        N360Space.gutter,
+                        N360Space.sm,
+                        N360Space.gutter,
+                        N360Space.md,
+                      ),
+                      child: LedgerSkeletonList(lines: 2, semanticsLabel: l.issuesLoading),
+                    ),
                   );
-                }
-                var firstIndex = 0;
-                return SliverMainAxisGroup(
-                  slivers: <Widget>[
-                    for (final (status, rows) in _sections(state.visible)) ...() {
-                      final int start = firstIndex;
-                      firstIndex += rows.length;
-                      return <Widget>[
-                        SliverToBoxAdapter(
-                          child: _SectionTitle(status: status, count: rows.length),
-                        ),
-                        _IssueGroup(rows: rows, state: state, firstIndex: start),
-                      ];
-                    }(),
-                  ],
-                );
-            }
-          },
-        ),
-      ],
+                case IssueListLoad.noProject:
+                  return SliverToBoxAdapter(
+                    child: EmptyLedger(
+                      title: l.issuesNoProjectTitle,
+                      message: l.issuesNoProjectMessage,
+                    ),
+                  );
+                case IssueListLoad.ready:
+                  if (state.visible.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: state.all.isEmpty
+                          ? EmptyLedger(
+                              title: l.issuesEmptyTitle,
+                              message: l.issuesEmptyMessage,
+                            )
+                          : EmptyLedger(
+                              title: l.issuesEmptyFilterTitle,
+                              message: l.issuesEmptyFilterMessage,
+                            ),
+                    );
+                  }
+                  var firstIndex = 0;
+                  return SliverMainAxisGroup(
+                    slivers: <Widget>[
+                      for (final (status, rows) in _sections(state.visible)) ...() {
+                        final int start = firstIndex;
+                        firstIndex += rows.length;
+                        return <Widget>[
+                          SliverToBoxAdapter(
+                            child: _SectionTitle(status: status, count: rows.length),
+                          ),
+                          _IssueGroup(rows: rows, state: state, firstIndex: start),
+                        ];
+                      }(),
+                    ],
+                  );
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -169,7 +194,7 @@ class _FilterStrip extends StatelessWidget {
       buildWhen: (a, b) => a.filter != b.filter || !identical(a.all, b.all),
       builder: (context, state) {
         return SizedBox(
-          height: 66,
+          height: N360Size.tap + N360Space.sm,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
@@ -204,16 +229,20 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final Pictogram picture = N360Pictograms.issueStatus(status);
+    final String word = l.pictogramLabel(picture);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter + 4, N360Space.sm, N360Space.gutter + 4, N360Space.sm),
+      padding: const EdgeInsets.fromLTRB(
+        N360Space.gutter + N360Space.xs,
+        N360Space.sm,
+        N360Space.gutter + N360Space.xs,
+        N360Space.sm,
+      ),
       child: Row(
         children: <Widget>[
-          Icon(picture.icon, size: 20, color: N360Colors.ink),
+          Icon(picture.icon, size: N360IconSize.sm, color: N360Colors.ink),
           const SizedBox(width: N360Space.sm),
-          Expanded(
-            child: Text(l.pictogramLabel(picture), style: N360Type.heading),
-          ),
-          Text('$count', style: N360Type.bodyStrong.copyWith(color: N360Colors.inkLabel)),
+          Expanded(child: Text(word, style: N360Type.fit(N360Type.heading, word))),
+          Text('$count', style: N360Type.label.copyWith(color: N360Colors.inkLabel)),
         ],
       ),
     );
@@ -233,7 +262,7 @@ class _IssueGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FieldGroupSliver(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.all(N360Space.xs),
       sliver: SliverList.builder(
         itemCount: rows.length,
         itemBuilder: (context, index) {
@@ -247,7 +276,7 @@ class _IssueGroup extends StatelessWidget {
               children: <Widget>[
                 if (index > 0)
                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    padding: EdgeInsets.symmetric(horizontal: N360Space.md),
                     child: RuledDivider(),
                   ),
                 _IssueRow(
@@ -285,47 +314,52 @@ class _IssueRow extends StatelessWidget {
       onTap: () => context.push(Routes.issueDetail(issue.clientUuid)),
       semanticsLabel: '${l.pictogramLabel(N360Pictograms.priority(issue.priority))}, ${issue.title}',
       builder: (context, depth, child) => Transform.scale(
-        scale: 1 - 0.0175 * depth,
-        child: Padding(padding: const EdgeInsets.fromLTRB(8, 12, 10, 12), child: child),
+        scale: pressedScale(depth * 0.5),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: N360Space.md),
+          child: child,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           PriorityMarker(priority: issue.priority),
-          const SizedBox(width: 10),
+          const SizedBox(width: N360Space.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Expanded(
-                      child: LedgerHero(
-                        tag: 'issue-title-${issue.clientUuid}',
-                        child: Text(
-                          issue.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: N360Type.heading.copyWith(fontSize: 16, height: 1.3),
-                        ),
-                      ),
-                    ),
-                    if (unsent) ...<Widget>[
-                      const SizedBox(width: N360Space.xs),
-                      IssueSyncStamp(state: record.syncState),
-                    ],
-                  ],
+                LedgerHero(
+                  tag: 'issue-title-${issue.clientUuid}',
+                  child: Text(
+                    issue.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: N360Type.fit(N360Type.heading, issue.title),
+                  ),
                 ),
-                const SizedBox(height: 3),
                 if (issue.locationNote != null && issue.locationNote!.isNotEmpty)
                   IssueMeta(icon: Icons.place_outlined, text: issue.locationNote!),
                 DueLine(issue: issue, today: today),
-                IssueMeta(
-                  icon: Icons.person_outline,
-                  text: assignee ??
-                      (issue.assignedTo == null ? l.issuesUnassigned : l.issuesAssignedUnknown),
+                // The sync stamp sits on the last line so the title keeps the
+                // whole width of the row.
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: IssueMeta(
+                        icon: Icons.person_outline,
+                        text: assignee ??
+                            (issue.assignedTo == null
+                                ? l.issuesUnassigned
+                                : l.issuesAssignedUnknown),
+                      ),
+                    ),
+                    if (unsent) ...<Widget>[
+                      const SizedBox(width: N360Space.sm),
+                      IssueSyncStamp(state: record.syncState),
+                    ],
+                  ],
                 ),
               ],
             ),

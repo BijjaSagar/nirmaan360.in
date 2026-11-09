@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
+import 'package:nirmaan360/features/attendance/view/widgets/field_kit.dart';
 import 'package:nirmaan360/features/issues/view/issue_detail_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_form_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_list_screen.dart';
@@ -17,7 +18,11 @@ import '../../attendance/view/field_test_support.dart';
 const String _dir = String.fromEnvironment('N360_FIELD_DIR');
 
 late String _crackUuid;
+late String _resolvedUuid;
+late String _marathiUuid;
 
+/// Some issues have reached the office, and some are still on the phone, so
+/// the list shows both honestly.
 Future<TestApp> _seeded() async {
   final app = await TestApp.create();
   app.api.users.add({'id': 7, 'name': 'Prakash More', 'role': 'pm'});
@@ -27,6 +32,10 @@ Future<TestApp> _seeded() async {
   _crackUuid = await issues.raise(
     projectId: 1,
     title: 'Crack in column C3',
+    description:
+        'Diagonal crack about 2 mm wide on the east face, from the beam '
+        'junction down. Props are in place. Engineer to inspect before the '
+        'next pour.',
     priority: 'critical',
     locationNote: 'Grid C, third floor',
     assignedTo: 4,
@@ -41,14 +50,7 @@ Future<TestApp> _seeded() async {
     dueDate: '2026-11-09',
   );
   await issues.changeStatus(started, 'in_progress');
-  await issues.raise(
-    projectId: 1,
-    title: 'Shuttering panels short at slab S2',
-    priority: 'medium',
-    locationNote: 'Slab S2',
-    dueDate: '2026-11-14',
-  );
-  final done = await issues.raise(
+  _resolvedUuid = await issues.raise(
     projectId: 1,
     title: 'Scaffold tie loose on east side',
     priority: 'low',
@@ -56,7 +58,26 @@ Future<TestApp> _seeded() async {
     assignedTo: 8,
     dueDate: '2026-11-05',
   );
-  await issues.changeStatus(done, 'resolved');
+  await issues.changeStatus(_resolvedUuid, 'resolved');
+  await app.sync();
+  // These two stay on the phone.
+  await issues.raise(
+    projectId: 1,
+    title:
+        'Shuttering panels short at slab S2, need forty more before Thursday',
+    priority: 'medium',
+    locationNote: 'Slab S2',
+    dueDate: '2026-11-14',
+  );
+  _marathiUuid = await issues.raise(
+    projectId: 1,
+    title: 'तिसऱ्या मजल्यावर स्लॅबला पाणी गळती',
+    description: 'पावसानंतर स्लॅबच्या खालून पाणी टपकते. वॉटरप्रूफिंग तपासा.',
+    priority: 'high',
+    locationNote: 'तिसरा मजला, ग्रिड बी',
+    assignedTo: 7,
+    dueDate: '2026-11-12',
+  );
   return app;
 }
 
@@ -80,14 +101,20 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
   }
 
+  Future<void> settle(WidgetTester tester) async {
+    await pumpDrift(tester);
+    await tester.pump(const Duration(milliseconds: 800));
+  }
+
   testWidgets('issue screens', (tester) async {
     phone(tester);
     final app = await _seeded();
     addTearDown(app.dispose);
 
-    final String uuid = _crackUuid;
-
-    for (final (name, locale) in <(String, Locale)>[('en', const Locale('en')), ('mr', const Locale('mr'))]) {
+    for (final (name, locale) in <(String, Locale)>[
+      ('en', const Locale('en')),
+      ('mr', const Locale('mr')),
+    ]) {
       await tester.pumpWidget(
         fieldRouterApp(
           app.services,
@@ -96,27 +123,85 @@ void main() {
           routes: {
             Routes.issues: (_) => const IssueListScreen(),
             Routes.issueForm: (_) => const IssueFormScreen(),
-            '/issues/:uuid': (s) => IssueDetailScreen(clientUuid: s.pathParameters['uuid']!),
+            '/issues/:uuid': (s) =>
+                IssueDetailScreen(clientUuid: s.pathParameters['uuid']!),
           },
         ),
       );
-      await pumpDrift(tester);
-      await tester.pump(const Duration(milliseconds: 800));
+      await settle(tester);
       await capture(tester, '${name}_issues_list');
+
+      // Scrolled to the foot, where the Marathi issue and the resolved group are.
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
+      await settle(tester);
+      await capture(tester, '${name}_issues_list_foot');
 
       await tester.pumpWidget(
         fieldApp(app.services, const IssueFormScreen(), locale: locale),
       );
-      await pumpDrift(tester);
-      await tester.pump(const Duration(milliseconds: 800));
+      await settle(tester);
       await capture(tester, '${name}_issue_form');
 
-      await tester.pumpWidget(
-        fieldApp(app.services, IssueDetailScreen(clientUuid: uuid), locale: locale),
+      // A form that has been filled in: the day chosen says how to clear it.
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Crack in column C3',
       );
-      await pumpDrift(tester);
-      await tester.pump(const Duration(milliseconds: 800));
+      await tester.tap(find.byType(FieldChoiceTile).last);
+      await settle(tester);
+      await capture(tester, '${name}_issue_form_filled');
+
+      await tester.tap(find.byIcon(Icons.expand_more));
+      await settle(tester);
+      await capture(tester, '${name}_issue_assignee_sheet');
+
+      // Choosing someone closes the sheet and shows the name in the field.
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(BottomSheet),
+              matching: find.byType(FieldChoiceTile),
+            )
+            .at(2),
+      );
+      await settle(tester);
+      await capture(tester, '${name}_issue_form_assigned');
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.pumpWidget(
+        fieldApp(
+          app.services,
+          IssueDetailScreen(clientUuid: _crackUuid),
+          locale: locale,
+        ),
+      );
+      await settle(tester);
       await capture(tester, '${name}_issue_detail');
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.pumpWidget(
+        fieldApp(
+          app.services,
+          IssueDetailScreen(clientUuid: _resolvedUuid),
+          locale: locale,
+        ),
+      );
+      await settle(tester);
+      await capture(tester, '${name}_issue_detail_resolved');
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.pumpWidget(
+        fieldApp(
+          app.services,
+          IssueDetailScreen(clientUuid: _marathiUuid),
+          locale: locale,
+        ),
+      );
+      await settle(tester);
+      await capture(tester, '${name}_issue_detail_unsent');
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();

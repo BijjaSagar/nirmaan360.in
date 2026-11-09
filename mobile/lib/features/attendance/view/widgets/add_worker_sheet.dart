@@ -6,18 +6,14 @@ import '../../../../core/design/design.dart';
 import '../../../../core/money/money.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../bloc/add_worker_cubit.dart';
+import 'field_kit.dart';
 
 /// Opens the add-worker sheet: name and trade, then wage on the keypad.
 Future<void> showAddWorkerSheet(BuildContext context) {
   final AppServices services = context.read<AppServices>();
-  return showModalBottomSheet<void>(
-    context: context,
+  return showLedgerSheet<void>(
+    context,
     isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: N360Colors.paper,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
-    ),
     builder: (sheetContext) => BlocProvider<AddWorkerCubit>(
       create: (_) => AddWorkerCubit(services),
       child: _AddWorkerSheet(parentContext: context),
@@ -46,12 +42,16 @@ class _AddWorkerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
+    final AddWorkerCubit cubit = context.read<AddWorkerCubit>();
     return BlocConsumer<AddWorkerCubit, AddWorkerState>(
       listenWhen: (a, b) => !a.done && b.done,
       listener: _onDone,
       builder: (context, state) {
+        final bool onWage = state.online && state.step == 1;
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -59,13 +59,24 @@ class _AddWorkerSheet extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   N360Space.gutter,
-                  N360Space.md,
+                  0,
                   N360Space.gutter,
                   0,
                 ),
                 child: SheetHeader(
                   eyebrow: l.attendanceTitle,
                   title: l.attendanceSheetTitle,
+                  // Back sits in the header so the wage step keeps its room.
+                  trailing: onWage
+                      ? GloveButton(
+                          label: l.commonBack,
+                          kind: GloveButtonKind.ghost,
+                          icon: Icons.arrow_back,
+                          onPressed: state.submitting
+                              ? null
+                              : cubit.backToDetails,
+                        )
+                      : null,
                 ),
               ),
               if (!state.online)
@@ -90,28 +101,34 @@ class _OfflinePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        N360Space.gutter,
-        N360Space.lg,
-        N360Space.gutter,
-        N360Space.lg,
-      ),
+      padding: ledgerSheetPadding.copyWith(top: N360Space.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.wifi_off, size: 40, color: N360Colors.ink2),
-          const SizedBox(height: N360Space.sm),
+          Center(
+            child: IconTile(
+              icon: Icons.wifi_off,
+              semanticLabel: l.attendanceSheetOfflineTitle,
+            ),
+          ),
+          const SizedBox(height: N360Space.md),
           Text(
             l.attendanceSheetOfflineTitle,
             textAlign: TextAlign.center,
-            style: N360Type.heading,
+            style: N360Type.fit(
+              N360Type.heading,
+              l.attendanceSheetOfflineTitle,
+            ),
           ),
           const SizedBox(height: N360Space.xs),
           Text(
             l.attendanceSheetOfflineMessage,
             textAlign: TextAlign.center,
-            style: N360Type.body,
+            style: N360Type.fit(
+              N360Type.body,
+              l.attendanceSheetOfflineMessage,
+            ).copyWith(color: N360Colors.ink2),
           ),
           const SizedBox(height: N360Space.lg),
           GloveButton(
@@ -137,7 +154,9 @@ class _DetailsStep extends StatefulWidget {
 }
 
 class _DetailsStepState extends State<_DetailsStep> {
-  late final TextEditingController _name = TextEditingController(text: widget.state.name);
+  late final TextEditingController _name = TextEditingController(
+    text: widget.state.name,
+  );
 
   @override
   void dispose() {
@@ -154,12 +173,7 @@ class _DetailsStepState extends State<_DetailsStep> {
 
     return Flexible(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          N360Space.gutter,
-          N360Space.md,
-          N360Space.gutter,
-          N360Space.gutter,
-        ),
+        padding: ledgerSheetPadding.copyWith(top: N360Space.sm),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -175,8 +189,11 @@ class _DetailsStepState extends State<_DetailsStep> {
                   ? l.attendanceSheetNameRequired
                   : null,
             ),
-            const SizedBox(height: N360Space.md),
-            Text(l.attendanceSheetTrade, style: N360Type.label),
+            const SizedBox(height: N360Space.lg),
+            Text(
+              l.attendanceSheetTrade,
+              style: N360Type.fit(N360Type.label, l.attendanceSheetTrade),
+            ),
             const SizedBox(height: N360Space.xs),
             PictoChoice<String>(
               columns: 4,
@@ -193,8 +210,8 @@ class _DetailsStepState extends State<_DetailsStep> {
               ],
             ),
             if (state.problem == AddWorkerProblem.tradeRequired) ...<Widget>[
-              const SizedBox(height: N360Space.xs),
-              _InlineError(l.attendanceSheetTradeRequired),
+              const SizedBox(height: N360Space.sm),
+              FieldInlineError(l.attendanceSheetTradeRequired),
             ],
             const SizedBox(height: N360Space.lg),
             GloveButton(
@@ -219,7 +236,12 @@ class _WageStep extends StatelessWidget {
   String _formatted(String text) {
     if (text.isEmpty) return '0';
     final Money? parsed = Money.tryParse(text);
-    return parsed == null ? text : indianGroup(parsed.value, text.contains('.') ? text.split('.').last.length : 0);
+    return parsed == null
+        ? text
+        : indianGroup(
+            parsed.value,
+            text.contains('.') ? text.split('.').last.length : 0,
+          );
   }
 
   @override
@@ -233,90 +255,59 @@ class _WageStep extends StatelessWidget {
     } else if (state.problem == AddWorkerProblem.failed) {
       error = l.attendanceSheetFailed;
     }
+    final String wageFor = l.attendanceSheetWageFor(state.name.trim());
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        N360Space.gutter,
-        N360Space.md,
-        N360Space.gutter,
-        N360Space.gutter,
-      ),
+      padding: ledgerSheetPadding.copyWith(top: N360Space.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  l.attendanceSheetWageFor(state.name.trim()),
-                  style: N360Type.label,
-                ),
-              ),
-              GloveButton(
-                label: l.commonBack,
-                kind: GloveButtonKind.ghost,
-                icon: Icons.arrow_back,
-                onPressed: state.submitting ? null : cubit.backToDetails,
-              ),
-            ],
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: RollingMoney(
-                value: _formatted(state.wageText),
-                style: N360Type.figureHero.copyWith(fontSize: 36),
-              ),
+          Text(wageFor, style: N360Type.fit(N360Type.heading, wageFor)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: RollingMoney(
+              value: _formatted(state.wageText),
+              style: N360Type.figureHero,
             ),
           ),
-          Text(l.attendanceSheetWageHelper, style: N360Type.caption),
-          if (error != null) ...<Widget>[
-            const SizedBox(height: N360Space.xs),
-            _InlineError(error),
-          ],
-          const SizedBox(height: N360Space.sm),
-          GloveKeypad(
-            value: state.wageText,
-            decimalPlaces: 2,
-            maxIntegerDigits: 7,
-            onChanged: cubit.setWage,
-            onNext: state.submitting ? null : cubit.save,
-            nextLabel: l.commonSave,
-            nextIcon: Icons.check,
-            backspaceLabel: l.designKeypadDelete,
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: N360Space.xs),
+              child: FieldInlineError(error),
+            )
+          else
+            Text(
+              l.attendanceSheetWageHelper,
+              style: N360Type.fit(
+                N360Type.caption,
+                l.attendanceSheetWageHelper,
+              ),
+            ),
+          const SizedBox(height: N360Space.md),
+          // The white keys need a warm tray: the sheet itself is white.
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              color: N360Colors.paper,
+              borderRadius: N360Radius.cardRadius,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(N360Space.sm),
+              child: GloveKeypad(
+                value: state.wageText,
+                decimalPlaces: 2,
+                maxIntegerDigits: 7,
+                onChanged: cubit.setWage,
+                onNext: state.submitting ? null : cubit.save,
+                nextLabel: l.commonSave,
+                nextIcon: Icons.check,
+                backspaceLabel: l.designKeypadDelete,
+              ),
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _InlineError extends StatelessWidget {
-  const _InlineError(this.message);
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Padding(
-          padding: EdgeInsets.only(top: 2, right: 6),
-          child: Icon(Icons.error_outline, size: 18, color: N360Colors.stampRed),
-        ),
-        Expanded(
-          child: Text(
-            message,
-            style: N360Type.caption.copyWith(
-              color: N360Colors.stampRed,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

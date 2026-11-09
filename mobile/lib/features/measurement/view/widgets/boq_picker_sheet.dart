@@ -17,12 +17,9 @@ Future<BoqLine?> showBoqPicker(
   required int projectId,
   int? selectedId,
 }) {
-  return showModalBottomSheet<BoqLine>(
-    context: context,
-    useRootNavigator: true,
+  return showLedgerSheet<BoqLine>(
+    context,
     isScrollControlled: true,
-    useSafeArea: true,
-    sheetAnimationStyle: context.motion.reduced ? AnimationStyle.noAnimation : null,
     builder: (sheetContext) => BlocProvider<BoqPickerCubit>(
       create: (_) => BoqPickerCubit(services: services, projectId: projectId)..start(),
       child: _BoqPicker(services: services, selectedId: selectedId),
@@ -80,7 +77,7 @@ class _BoqPicker extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final MediaQueryData media = MediaQuery.of(context);
     return SizedBox(
-      height: media.size.height * 0.84,
+      height: media.size.height * 0.8,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -100,6 +97,17 @@ class _BoqPicker extends StatelessWidget {
           Expanded(
             child: BlocBuilder<BoqPickerCubit, BoqPickerState>(
               builder: (context, state) {
+                if (state.loading) {
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, 0),
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: 4,
+                    itemBuilder: (context, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: N360Space.sm),
+                      child: LedgerSkeleton(flat: true, lines: 1, semanticsLabel: l.measurementLoading),
+                    ),
+                  );
+                }
                 final List<_Item> items = _items(state, l);
                 if (!state.loading && items.isEmpty) {
                   if (state.query.trim().isEmpty) return BoqMissingPrompt(services: services);
@@ -184,7 +192,7 @@ class _BoqRow extends StatelessWidget {
         selected: selected,
         semanticsLabel: '${line.item.code} ${line.item.description}. ${l.measurementBalance} $balance $unit',
         builder: (context, depth, child) => Transform.scale(
-          scale: pressScale(depth),
+          scale: pressedScale(depth),
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: selected ? N360Colors.goldTint : N360Colors.sheet,
@@ -228,7 +236,7 @@ class _BoqRow extends StatelessWidget {
               ),
               if (selected) ...const <Widget>[
                 SizedBox(width: N360Space.sm),
-                Icon(Icons.check, size: 24, color: N360Colors.ink),
+                Icon(Icons.check, size: N360IconSize.lg, color: N360Colors.ink),
               ],
             ],
           ),

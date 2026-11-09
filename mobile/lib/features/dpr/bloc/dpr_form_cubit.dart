@@ -399,6 +399,13 @@ class DprFormCubit extends Cubit<DprFormState> {
     _edit(state.copyWith(work: List<WorkLine>.of(state.work)..removeAt(index)));
   }
 
+  /// Puts a removed row back where it was, for Undo.
+  void restoreWork(WorkLine line, int index) {
+    final work = List<WorkLine>.of(state.work);
+    work.insert(index.clamp(0, work.length), line);
+    _edit(state.copyWith(work: work));
+  }
+
   void setHindrances(String value) {
     if (value == state.hindrances) return;
     _edit(state.copyWith(hindrances: value));

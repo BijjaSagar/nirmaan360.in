@@ -93,9 +93,9 @@
     "hi": "काम का विवरण"
   },
   "boqFormDescriptionHint": {
-    "en": "M25 concrete in slab",
-    "mr": "स्लॅबमध्ये M25 काँक्रीट",
-    "hi": "स्लैब में M25 कंक्रीट"
+    "en": "e.g. M25 concrete in slab",
+    "mr": "उदा. स्लॅबमध्ये M25 काँक्रीट",
+    "hi": "जैसे: स्लैब में M25 कंक्रीट"
   },
   "boqFormDescriptionRequired": {
     "en": "Write the work description.",
@@ -118,9 +118,9 @@
     "hi": "सेक्शन (वैकल्पिक)"
   },
   "boqFormSectionHint": {
-    "en": "Superstructure",
-    "mr": "सुपरस्ट्रक्चर",
-    "hi": "सुपरस्ट्रक्चर"
+    "en": "e.g. Superstructure",
+    "mr": "उदा. सुपरस्ट्रक्चर",
+    "hi": "जैसे: सुपरस्ट्रक्चर"
   },
   "boqFormCode": {
     "en": "Code (optional)",
@@ -216,5 +216,28 @@
     "en": "Open BOQ",
     "mr": "BOQ उघडा",
     "hi": "BOQ खोलें"
+  },
+  "boqLoading": {
+    "en": "Loading BOQ",
+    "mr": "BOQ लोड होत आहे",
+    "hi": "BOQ लोड हो रहा है"
+  },
+  "boqRefreshFailed": {
+    "en": "Could not update. Showing what is on this phone.",
+    "mr": "अपडेट करता आले नाही. फोनवर आहे तेच दाखवत आहे.",
+    "hi": "अपडेट नहीं हो सका। फ़ोन पर जो है वही दिखा रहे हैं।"
+  },
+  "boqOver": {
+    "en": "Over by {qty} {unit}",
+    "mr": "{qty} {unit} जास्त",
+    "hi": "{qty} {unit} ज़्यादा",
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -5,6 +5,7 @@ import 'package:nirmaan360/core/design/design.dart';
 import 'package:nirmaan360/features/home/view/home_screen.dart';
 import 'package:nirmaan360/features/projects/view/project_form_screen.dart';
 import 'package:nirmaan360/features/projects/view/project_picker_screen.dart';
+import 'package:nirmaan360/features/settings/view/settings_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
 import '../../../app/shell_test_helpers.dart';
@@ -126,5 +127,17 @@ void main() {
     expect(find.text(en.shellPickerEmptyTitle), findsOneWidget);
     expect(find.text(en.commonRetry), findsOneWidget);
     expect(tester.getSize(find.byType(GloveButton)).height, greaterThanOrEqualTo(N360Size.tap));
+  });
+
+  testWidgets('with no projects, settings is one tap away so the wrong account can sign out', (tester) async {
+    final app = await TestApp.create(seed: false);
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app);
+
+    await tester.tap(find.text(en.shellSettings));
+    await settle(tester);
+
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.text(en.shellSignOut), findsOneWidget);
   });
 }

@@ -10,7 +10,7 @@ import '../bloc/issue_form_cubit.dart';
 import 'widgets/issue_widgets.dart';
 
 /// Raising an issue takes under half a minute: a title, an urgency, done.
-/// Everything else is optional.
+/// Everything else is optional, and says so.
 class IssueFormScreen extends StatelessWidget {
   const IssueFormScreen({super.key});
 
@@ -87,12 +87,16 @@ class _IssueFormViewState extends State<_IssueFormView> {
           child: BlocBuilder<IssueFormCubit, IssueFormState>(
             builder: (context, state) {
               final IssueFormCubit cubit = context.read<IssueFormCubit>();
+              final bool failed =
+                  state.problem == IssueFormProblem.saveFailed ||
+                  state.problem == IssueFormProblem.noProject;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   FieldTopBar(title: l.issuesFormTitle, subtitle: l.issuesFormEyebrow),
                   Expanded(
                     child: ListView(
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.fromLTRB(
                         N360Space.gutter,
                         N360Space.xs,
@@ -139,7 +143,7 @@ class _IssueFormViewState extends State<_IssueFormView> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: N360Space.md),
+                        const SizedBox(height: N360Space.cardGap),
                         StaggeredRise(
                           index: 1,
                           child: LedgerCard(
@@ -157,11 +161,8 @@ class _IssueFormViewState extends State<_IssueFormView> {
                                 const SizedBox(height: N360Space.md),
                                 _LabelledBlock(
                                   label: l.issuesFormAssignee,
-                                  child: FieldChoiceTile(
-                                    width: double.infinity,
-                                    icon: Icons.person_outline,
-                                    label: _assigneeName(state) ?? l.issuesUnassigned,
-                                    selected: false,
+                                  child: _AssigneeField(
+                                    name: _assigneeName(state),
                                     semanticsLabel:
                                         '${l.issuesFormAssignee}: ${_assigneeName(state) ?? l.issuesUnassigned}',
                                     onTap: () => _pickAssignee(state),
@@ -179,18 +180,25 @@ class _IssueFormViewState extends State<_IssueFormView> {
                             ),
                           ),
                         ),
-                        if (state.problem == IssueFormProblem.saveFailed ||
-                            state.problem == IssueFormProblem.noProject) ...<Widget>[
-                          const SizedBox(height: N360Space.md),
-                          ErrorSlip(
-                            title: state.problem == IssueFormProblem.noProject
-                                ? l.issuesNoProjectTitle
-                                : l.issuesSaveFailed,
-                          ),
-                        ],
                       ],
                     ),
                   ),
+                  // A failure sits just above the button that caused it, where
+                  // it cannot be scrolled out of sight.
+                  if (failed)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        N360Space.gutter,
+                        N360Space.xs,
+                        N360Space.gutter,
+                        0,
+                      ),
+                      child: ErrorSlip(
+                        title: state.problem == IssueFormProblem.noProject
+                            ? l.issuesNoProjectTitle
+                            : l.issuesSaveFailed,
+                      ),
+                    ),
                   FieldActionBar(
                     child: GloveButton(
                       label: l.issuesFormSave,
@@ -223,10 +231,63 @@ class _LabelledBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(label, style: N360Type.label),
+        Text(label, style: N360Type.fit(N360Type.label, label)),
         const SizedBox(height: N360Space.xs),
         child,
       ],
+    );
+  }
+}
+
+/// The person chosen, drawn like the fields above it with a chevron, so it
+/// reads as something that opens a list rather than a button that is already
+/// pressed.
+class _AssigneeField extends StatelessWidget {
+  const _AssigneeField({required this.name, required this.semanticsLabel, required this.onTap});
+
+  final String? name;
+  final String semanticsLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String shown = name ?? l.issuesUnassigned;
+    return PressTarget(
+      onTap: onTap,
+      haptic: N360Haptics.select,
+      semanticsLabel: semanticsLabel,
+      builder: (context, depth, child) => Transform.scale(
+        scale: pressedScale(depth),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: N360Colors.sheet,
+            borderRadius: N360Radius.md,
+            border: Border.all(color: N360Colors.ruleStrong),
+          ),
+          child: child,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.sm),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.person_outline, size: N360IconSize.lg, color: N360Colors.ink2),
+            const SizedBox(width: N360Space.md),
+            Expanded(
+              child: Text(
+                shown,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: N360Type.fit(N360Type.bodyLarge, shown).copyWith(
+                  color: name == null ? N360Colors.inkLabel : N360Colors.ink,
+                ),
+              ),
+            ),
+            const Icon(Icons.expand_more, size: N360IconSize.lg, color: N360Colors.ink2),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -246,17 +307,31 @@ class _DueChips extends StatelessWidget {
       (DueChoice.week, l.issuesFormDueWeek),
     ];
     // Tapping the chosen chip again clears it, so no "no date" chip is needed.
-    return Row(
+    // The line under the chips says so once a day is chosen.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        for (final (index, (choice, label)) in options.indexed) ...<Widget>[
-          if (index > 0) const SizedBox(width: N360Space.sm),
-          Expanded(
-            child: FieldChoiceTile(
-              width: double.infinity,
-              label: label,
-              selected: value == choice,
-              onTap: () => onChanged(value == choice ? DueChoice.none : choice),
-            ),
+        Row(
+          children: <Widget>[
+            for (final (index, (choice, label)) in options.indexed) ...<Widget>[
+              if (index > 0) const SizedBox(width: N360Space.sm),
+              Expanded(
+                child: FieldChoiceTile(
+                  width: double.infinity,
+                  label: label,
+                  selected: value == choice,
+                  onTap: () => onChanged(value == choice ? DueChoice.none : choice),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (value != DueChoice.none) ...<Widget>[
+          const SizedBox(height: N360Space.xs),
+          Text(
+            l.issuesFormDueClear,
+            style: N360Type.fit(N360Type.caption, l.issuesFormDueClear),
           ),
         ],
       ],

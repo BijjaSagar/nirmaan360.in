@@ -78,43 +78,44 @@ class BuildingProgressArt extends StatelessWidget {
   }
 }
 
-/// Warm concrete and gold, in three tones per surface for a simple sun from the
-/// upper left.
+/// Quiet concrete in the palette's own warm greys, with the orange kept for
+/// the crane and the finished slab edges, so the drawing reads as a plan
+/// diagram rather than a cartoon.
 abstract final class _Art {
-  static const Color slabTop = Color(0xFFF4EEE4);
-  static const Color slabTopBack = Color(0xFFE9E1D4);
-  static const Color wallLeft = Color(0xFFE9DFD0);
-  static const Color wallRight = Color(0xFFCFC2AE);
-  static const Color wallShadeLeft = Color(0xFFD3C7B5);
-  static const Color wallShadeRight = Color(0xFFB7A995);
+  static const Color slabTop = Color(0xFFF4F0EA);
+  static const Color slabTopBack = Color(0xFFEAE4DC);
+  static const Color wallLeft = Color(0xFFEDE7E0);
+  static const Color wallRight = Color(0xFFD8CFC6);
+  static const Color wallShadeLeft = Color(0xFFDDD5CC);
+  static const Color wallShadeRight = Color(0xFFC4B9AE);
   static const Color windowLeft = Color(0xFF575250);
   static const Color windowRight = Color(0xFF45413F);
-  static const Color windowGlow = Color(0xFFEDBB91);
-  static const Color goldLeft = Color(0xFFE1985E);
-  static const Color goldRight = Color(0xFFBC5E2F);
-  static const Color goldTop = Color(0xFFEFC4A2);
+  static const Color windowGlow = Color(0xFFE1C9BB);
+  static const Color goldLeft = Color(0xFFBC5E2F);
+  static const Color goldRight = Color(0xFF8F4622);
+  static const Color goldTop = Color(0xFFE1985E);
 
-  static const Color frameTop = Color(0xFFF1EBE1);
-  static const Color frameLeft = Color(0xFFE2D8C9);
-  static const Color frameRight = Color(0xFFC6B9A6);
-  static const Color rebar = Color(0xFF8C7E6C);
+  static const Color frameTop = Color(0xFFF1EDE7);
+  static const Color frameLeft = Color(0xFFE3DCD3);
+  static const Color frameRight = Color(0xFFCBC2B8);
+  static const Color rebar = Color(0xFF8C8378);
 
-  static const Color groundTop = Color(0xFFF0E9DE);
-  static const Color groundLeft = Color(0xFFDAD0C0);
-  static const Color groundRight = Color(0xFFC3B6A3);
-  static const Color groundLine = Color(0xFFE2D8C8);
+  static const Color groundTop = Color(0xFFEFECEB);
+  static const Color groundLeft = Color(0xFFE3D6CF);
+  static const Color groundRight = Color(0xFFCFC2B8);
+  static const Color groundLine = Color(0xFFE3D6CF);
 
-  static const Color craneMain = Color(0xFFE1985E);
-  static const Color craneDark = Color(0xFFBC5E2F);
+  static const Color craneMain = Color(0xFFBC5E2F);
+  static const Color craneDark = Color(0xFF8F4622);
   static const Color craneCounter = Color(0xFF575250);
   static const Color cable = Color(0xFF575250);
 
-  static const Color pipeBody = Color(0xFFE98A1E);
-  static const Color pipeLight = Color(0xFFF7AE4B);
-  static const Color pipeEnd = Color(0xFF9E5A10);
-  static const Color pallet = Color(0xFF9A7A58);
-  static const Color block = Color(0xFFD9CDBB);
-  static const Color blockSide = Color(0xFFC0B29F);
+  static const Color pipeBody = Color(0xFF9FA2A7);
+  static const Color pipeLight = Color(0xFFC9CBCE);
+  static const Color pipeEnd = Color(0xFF6F7276);
+  static const Color pallet = Color(0xFFA89C8E);
+  static const Color block = Color(0xFFE3DCD3);
+  static const Color blockSide = Color(0xFFCBC2B8);
 }
 
 /// World units: one bay is 1, one floor is [_floor]. X runs down to the right on

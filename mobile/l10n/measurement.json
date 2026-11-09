@@ -165,9 +165,9 @@
     "hi": "मंज़ूरी के लिए भेजें"
   },
   "measurementSendCount": {
-    "en": "Send {count} rows",
-    "mr": "{count} ओळी पाठवा",
-    "hi": "{count} पंक्तियाँ भेजें",
+    "en": "Send {count} for approval",
+    "mr": "{count} मंजुरीसाठी पाठवा",
+    "hi": "{count} मंज़ूरी के लिए भेजें",
     "placeholders": {
       "count": {
         "type": "int"
@@ -210,9 +210,9 @@
     "hi": "स्थान, नोट और तारीख़"
   },
   "measurementDetailsShort": {
-    "en": "Details",
-    "mr": "तपशील",
-    "hi": "विवरण"
+    "en": "Location, date",
+    "mr": "ठिकाण, तारीख",
+    "hi": "स्थान, तारीख़"
   },
   "measurementPreviewTag": {
     "en": "preview",
@@ -438,5 +438,55 @@
     "en": "BOQ used",
     "mr": "वापरलेला BOQ",
     "hi": "उपयोग हुआ BOQ"
+  },
+  "measurementLeaveTitle": {
+    "en": "Leave without saving?",
+    "mr": "जतन न करता बाहेर पडायचे?",
+    "hi": "बिना सहेजे बाहर जाएँ?"
+  },
+  "measurementLeaveBody": {
+    "en": "The figures typed for this row will be lost.",
+    "mr": "या ओळीचे भरलेले आकडे जातील.",
+    "hi": "इस पंक्ति के भरे आँकड़े मिट जाएँगे।"
+  },
+  "measurementLeaveKeep": {
+    "en": "Keep entering",
+    "mr": "भरत राहा",
+    "hi": "भरते रहें"
+  },
+  "measurementLeaveGo": {
+    "en": "Leave",
+    "mr": "बाहेर पडा",
+    "hi": "बाहर जाएँ"
+  },
+  "measurementFixLast": {
+    "en": "Fix last",
+    "mr": "शेवटची दुरुस्त करा",
+    "hi": "आख़िरी सुधारें"
+  },
+  "measurementDraftsLeft": {
+    "en": "{count, plural, =1{1 row kept as a draft. Send it from the book.} other{{count} rows kept as drafts. Send them from the book.}}",
+    "mr": "{count, plural, =1{1 ओळ मसुदा म्हणून ठेवली. पुस्तिकेतून पाठवा.} other{{count} ओळी मसुदा म्हणून ठेवल्या. पुस्तिकेतून पाठवा.}}",
+    "hi": "{count, plural, =1{1 पंक्ति मसौदे में रखी। पुस्तिका से भेजें।} other{{count} पंक्तियाँ मसौदे में रखीं। पुस्तिका से भेजें।}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "measurementInReviewBody": {
+    "en": "With the approver. It cannot be changed until they decide.",
+    "mr": "मंजूर करणाऱ्याकडे आहे. निर्णय होईपर्यंत बदलता येणार नाही.",
+    "hi": "मंज़ूर करने वाले के पास है। फ़ैसले तक बदला नहीं जा सकता।"
+  },
+  "measurementRejectedBody": {
+    "en": "This entry was rejected and will not count. Make a new entry if the work needs measuring again.",
+    "mr": "ही नोंद नाकारली आहे, ती धरली जाणार नाही. पुन्हा मोजायचे असल्यास नवीन नोंद करा.",
+    "hi": "यह एंट्री अस्वीकृत है, गिनी नहीं जाएगी। फिर मापना हो तो नई एंट्री करें।"
+  },
+  "measurementLoading": {
+    "en": "Loading",
+    "mr": "लोड होत आहे",
+    "hi": "लोड हो रहा है"
   }
 }

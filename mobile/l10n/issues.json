@@ -110,9 +110,9 @@
     "hi": "क्या गड़बड़ है?"
   },
   "issuesFormWhatHint": {
-    "en": "Crack in column C3",
-    "mr": "कॉलम C3 ला भेग",
-    "hi": "कॉलम C3 में दरार"
+    "en": "e.g. Crack in column C3",
+    "mr": "उदा. कॉलम C3 ला भेग",
+    "hi": "जैसे: कॉलम C3 में दरार"
   },
   "issuesFormWhatRequired": {
     "en": "Write what is wrong.",
@@ -125,24 +125,24 @@
     "hi": "कितना ज़रूरी है?"
   },
   "issuesFormLocation": {
-    "en": "Where on site?",
-    "mr": "साइटवर कुठे?",
-    "hi": "साइट पर कहाँ?"
+    "en": "Where on site? (optional)",
+    "mr": "साइटवर कुठे? (ऐच्छिक)",
+    "hi": "साइट पर कहाँ? (वैकल्पिक)"
   },
   "issuesFormLocationHint": {
-    "en": "Grid C, third floor",
-    "mr": "ग्रिड C, तिसरा मजला",
-    "hi": "ग्रिड C, तीसरी मंज़िल"
+    "en": "e.g. Grid C, third floor",
+    "mr": "उदा. ग्रिड C, तिसरा मजला",
+    "hi": "जैसे: ग्रिड C, तीसरी मंज़िल"
   },
   "issuesFormAssignee": {
-    "en": "Who will fix it?",
-    "mr": "कोण दुरुस्त करेल?",
-    "hi": "कौन ठीक करेगा?"
+    "en": "Who will fix it? (optional)",
+    "mr": "कोण दुरुस्त करेल? (ऐच्छिक)",
+    "hi": "कौन ठीक करेगा? (वैकल्पिक)"
   },
   "issuesFormDue": {
-    "en": "Fix by",
-    "mr": "कधीपर्यंत दुरुस्त करायचे?",
-    "hi": "कब तक ठीक करना है?"
+    "en": "Fix by (optional)",
+    "mr": "कधीपर्यंत दुरुस्त करायचे? (ऐच्छिक)",
+    "hi": "कब तक ठीक करना है? (वैकल्पिक)"
   },
   "issuesFormDueToday": {
     "en": "Today",
@@ -253,5 +253,30 @@
     "en": "Assigned",
     "mr": "सोपवलेले",
     "hi": "सौंपा गया"
+  },
+  "issuesFormDueClear": {
+    "en": "Tap the chosen day again to clear it.",
+    "mr": "निवडलेल्या दिवसावर पुन्हा टॅप करून तो काढा.",
+    "hi": "चुने हुए दिन पर फिर से टैप करके उसे हटाएँ।"
+  },
+  "issuesLoading": {
+    "en": "Loading issues",
+    "mr": "समस्या लोड होत आहेत",
+    "hi": "समस्याएँ लोड हो रही हैं"
+  },
+  "issuesRefreshFailed": {
+    "en": "Could not update. Showing what is on this phone.",
+    "mr": "अपडेट करता आले नाही. फोनवर आहे तेच दाखवत आहे.",
+    "hi": "अपडेट नहीं हो सका। फ़ोन पर जो है वही दिखा रहे हैं।"
+  },
+  "issuesResolvedOn": {
+    "en": "Resolved {date}",
+    "mr": "सोडवले {date}",
+    "hi": "हल हुआ {date}",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

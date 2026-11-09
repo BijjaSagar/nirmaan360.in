@@ -2,37 +2,42 @@ import 'package:flutter/widgets.dart';
 
 import 'tokens.dart';
 
-/// Poppins for headings and big figures, Mukta for body, DM Mono only where
-/// columns of figures must line up.
+/// One type voice: Mukta, for Latin and Devanagari alike, with tabular figures.
 ///
-/// The scale is set against the reference design: small, quiet type with air
-/// around it. Body is 14, labels 13, captions 12, a section heading 15, a
-/// screen title 18, a stat figure 22 and the one hero figure on a screen 34.
+/// Mukta's Latin and Devanagari were drawn together, so a Marathi label and the
+/// English one beside it share a rhythm, and its `tnum` feature gives every
+/// figure the same width, so columns of quantities and rupees line up without a
+/// second family. Weight does the work: 400 for body, 500 for labels and
+/// captions, 600 for headings and buttons, 700 for the one hero figure.
+///
+/// The scale is small and quiet: body 14, labels 13, captions 12, a section
+/// heading 15, a screen title 18, a stat figure 22 and the hero figure 32.
 /// Nothing on screen is set under 12.
 ///
 /// Devanagari reads a touch smaller than Latin at the same size and its matras
 /// reach well above and below the line, so [fit] gives small Devanagari text one
-/// extra point and a 1.4 line. Line heights here never go under 1.3, body stays
-/// at 1.4 or more, and `TextLeadingDistribution.even` keeps a line centred in
-/// its slot. Every style falls back to Mukta.
+/// extra point and a 1.4 line. Line heights never go under 1.3; body stays at
+/// 1.4 or more.
 abstract final class N360Type {
-  static const String poppins = 'Poppins';
+  /// The family for everything.
   static const String mukta = 'Mukta';
-  static const String mono = 'DMMono';
 
-  static const List<String> _fallback = <String>[mukta];
+  /// Kept so screens that name them still compile. The design no longer sets
+  /// anything in Poppins or DM Mono; both resolve to Mukta through fallback.
+  static const String poppins = 'Mukta';
+  static const String mono = 'Mukta';
+
   static const List<FontFeature> _tabular = <FontFeature>[FontFeature.tabularFigures()];
 
   /// The smallest size any text is set at, in either script.
   static const double minimumSize = 12;
 
-  // Poppins headings.
+  // Headings.
 
   /// A welcome or a first-run headline. One per screen at most.
   static const TextStyle displayLarge = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
-    fontSize: 30,
+    fontFamily: mukta,
+    fontSize: 28,
     height: 1.3,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.3,
@@ -43,11 +48,10 @@ abstract final class N360Type {
 
   /// A big heading on a detail page.
   static const TextStyle display = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
-    fontSize: 24,
+    fontFamily: mukta,
+    fontSize: 22,
     height: 1.3,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w700,
     letterSpacing: -0.2,
     color: N360Colors.ink,
     leadingDistribution: TextLeadingDistribution.even,
@@ -56,8 +60,7 @@ abstract final class N360Type {
 
   /// The screen title.
   static const TextStyle title = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
+    fontFamily: mukta,
     fontSize: 18,
     height: 1.35,
     fontWeight: FontWeight.w600,
@@ -68,8 +71,7 @@ abstract final class N360Type {
 
   /// A card or section heading.
   static const TextStyle heading = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
+    fontFamily: mukta,
     fontSize: 15,
     height: 1.4,
     fontWeight: FontWeight.w600,
@@ -80,8 +82,7 @@ abstract final class N360Type {
 
   /// Button and control labels.
   static const TextStyle button = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
+    fontFamily: mukta,
     fontSize: 15,
     height: 1.35,
     fontWeight: FontWeight.w600,
@@ -90,7 +91,7 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
-  // Mukta body.
+  // Body.
 
   /// Lead text and field input.
   static const TextStyle bodyLarge = TextStyle(
@@ -128,7 +129,7 @@ abstract final class N360Type {
     fontFamily: mukta,
     fontSize: 13,
     height: 1.4,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500,
     color: N360Colors.ink,
     leadingDistribution: TextLeadingDistribution.even,
     decoration: TextDecoration.none,
@@ -145,26 +146,12 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
-  // Figures.
+  // Figures. All tabular, so columns line up.
 
-  /// DM Mono, for figures stacked in a column.
+  /// A small figure beside a caption, or in a dense row.
   static const TextStyle figureSmall = TextStyle(
-    fontFamily: mono,
-    fontFamilyFallback: _fallback,
+    fontFamily: mukta,
     fontSize: 13,
-    height: 1.35,
-    fontWeight: FontWeight.w400,
-    color: N360Colors.ink,
-    fontFeatures: _tabular,
-    leadingDistribution: TextLeadingDistribution.even,
-    decoration: TextDecoration.none,
-  );
-
-  /// DM Mono, for figures stacked in a column.
-  static const TextStyle figure = TextStyle(
-    fontFamily: mono,
-    fontFamilyFallback: _fallback,
-    fontSize: 16,
     height: 1.35,
     fontWeight: FontWeight.w500,
     color: N360Colors.ink,
@@ -173,10 +160,21 @@ abstract final class N360Type {
     decoration: TextDecoration.none,
   );
 
-  /// Poppins, for a figure that stands on its own: a stat card value.
+  /// A figure in a ledger row.
+  static const TextStyle figure = TextStyle(
+    fontFamily: mukta,
+    fontSize: 15,
+    height: 1.35,
+    fontWeight: FontWeight.w500,
+    color: N360Colors.ink,
+    fontFeatures: _tabular,
+    leadingDistribution: TextLeadingDistribution.even,
+    decoration: TextDecoration.none,
+  );
+
+  /// A figure that stands on its own: a stat card value.
   static const TextStyle figureLarge = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
+    fontFamily: mukta,
     fontSize: 22,
     height: 1.3,
     fontWeight: FontWeight.w600,
@@ -189,11 +187,10 @@ abstract final class N360Type {
 
   /// The one confident number at the top of a screen. One per screen.
   static const TextStyle figureHero = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
-    fontSize: 34,
+    fontFamily: mukta,
+    fontSize: 32,
     height: 1.2,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w700,
     letterSpacing: -0.6,
     color: N360Colors.ink,
     fontFeatures: _tabular,
@@ -229,8 +226,7 @@ abstract final class N360Type {
   }
 
   static const TextStyle _sectionLatin = TextStyle(
-    fontFamily: poppins,
-    fontFamilyFallback: _fallback,
+    fontFamily: mukta,
     fontSize: 12,
     height: 1.4,
     fontWeight: FontWeight.w500,
@@ -243,20 +239,21 @@ abstract final class N360Type {
     fontFamily: mukta,
     fontSize: 13,
     height: 1.4,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500,
     color: N360Colors.inkLabel,
     leadingDistribution: TextLeadingDistribution.even,
     decoration: TextDecoration.none,
   );
 
-  /// The small section label style for [text]. Devanagari sets better in Mukta.
+  /// The small section label style for [text].
   static TextStyle eyebrowFor(String text) =>
       isDevanagari(text) ? _sectionDevanagari : _sectionLatin;
 
-  /// Section labels are no longer upper-cased, so this returns [text] as given.
+  /// Section labels are not upper-cased, so this returns [text] as given.
   static String eyebrowText(String text) => text;
 
-  /// Stamp lettering: Latin in capitals. Devanagari has no case.
+  /// Lettering for the one real stamp: Latin in capitals. Devanagari has no
+  /// case. Status pills show their label as given.
   static String stampText(String text) =>
       isDevanagari(text) ? text : text.toUpperCase();
 
@@ -269,8 +266,8 @@ abstract final class N360Type {
 /// How far the system text size setting may push the app.
 ///
 /// Below [min] a 12 caption would fall under what a site engineer can read in
-/// sun; above [max] a 34 hero figure no longer fits a 360dp card beside its
-/// icon. The app shell wraps the whole app once:
+/// sun; above [max] a 32 hero figure no longer fits a 360dp card beside its
+/// meta. The app shell wraps the whole app once:
 ///
 /// ```dart
 /// builder: (context, child) => N360TextScaling(child: LedgerPaper.root(child: child)),

@@ -37,6 +37,12 @@ String dprDateLabel(BuildContext context, String ymd) {
   return '${d.weekdayShort}, ${d.day} ${d.month}';
 }
 
+/// "9 Nov".
+String dprDayMonth(BuildContext context, String ymd) {
+  final d = _dateParts(context, ymd);
+  return '${d.day} ${d.month}';
+}
+
 /// "Monday".
 String dprWeekday(BuildContext context, String ymd) => _dateParts(context, ymd).weekday;
 
@@ -149,6 +155,9 @@ void dprGoBack(BuildContext context) {
   }
   GoRouter.maybeOf(context)?.go(Routes.home);
 }
+
+/// Opens the Outbox, where a report that could not be sent gets fixed.
+void dprGoOutbox(BuildContext context) => GoRouter.maybeOf(context)?.go(Routes.outbox);
 
 void dprGoHome(BuildContext context) {
   final router = GoRouter.maybeOf(context);

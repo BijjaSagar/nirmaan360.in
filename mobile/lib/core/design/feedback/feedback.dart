@@ -39,21 +39,12 @@ class PaperToast extends StatelessWidget {
       label: message,
       child: ExcludeSemantics(
         child: CustomPaint(
-          painter: const SoftSurfacePainter(radius: N360Radius.tile + 2, edge: N360Colors.cardEdge, shadow: true),
+          painter: const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.rule),
           child: Padding(
-            padding: const EdgeInsets.all(N360Space.tile),
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.md),
             child: Row(
               children: <Widget>[
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: look.wash,
-                    borderRadius: const BorderRadius.all(Radius.circular(N360Radius.small)),
-                  ),
-                  child: SizedBox.square(
-                    dimension: N360Size.tileSmall,
-                    child: Icon(icon ?? look.icon, size: N360IconSize.md, color: look.ink),
-                  ),
-                ),
+                Icon(icon ?? look.icon, size: N360IconSize.lg, color: look.ink),
                 const SizedBox(width: N360Space.md),
                 Expanded(child: Text(message, style: N360Type.fit(N360Type.bodyStrong, message))),
                 const SizedBox(width: N360Space.xs),
@@ -174,18 +165,12 @@ class OfflineBanner extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.xs, N360Space.md, N360Space.xs),
           child: CustomPaint(
-            painter: const SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.goldTint),
+            painter: const SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.sheet, edge: N360Colors.rule),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: N360Space.sm + 2, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm + 2),
               child: Row(
                 children: <Widget>[
-                  const SizedBox.square(
-                    dimension: 30,
-                    child: CustomPaint(
-                      painter: SoftSurfacePainter(radius: N360Radius.small - 1, gradient: N360Gradients.gold),
-                      child: Icon(Icons.cloud_off, size: N360IconSize.sm, color: N360Colors.ink),
-                    ),
-                  ),
+                  const Icon(Icons.cloud_off, size: N360IconSize.md, color: N360Colors.ink2),
                   const SizedBox(width: N360Space.sm + 2),
                   Expanded(
                     child: Text.rich(
@@ -223,7 +208,7 @@ class ErrorSlip extends StatelessWidget {
       container: true,
       liveRegion: true,
       child: CustomPaint(
-        painter: const SoftSurfacePainter(edge: N360Colors.cardEdge, shadow: true),
+        painter: const SoftSurfacePainter(edge: N360Colors.rule),
         child: Padding(
           padding: const EdgeInsets.all(N360Space.card),
           child: Column(
@@ -233,16 +218,7 @@ class ErrorSlip extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFBE9E6),
-                      borderRadius: BorderRadius.all(Radius.circular(N360Radius.small)),
-                    ),
-                    child: SizedBox.square(
-                      dimension: N360Size.tileSmall,
-                      child: Icon(Icons.error_outline, size: N360IconSize.md, color: N360Colors.stampRed),
-                    ),
-                  ),
+                  const Icon(Icons.error_outline, size: N360IconSize.lg, color: N360Colors.stampRed),
                   const SizedBox(width: N360Space.md),
                   Expanded(child: Text(title, style: N360Type.fit(N360Type.heading, title))),
                 ],
@@ -301,7 +277,7 @@ class EmptyLedger extends StatelessWidget {
   /// False shows the still drawing even when motion is allowed.
   final bool animated;
 
-  static const double artWidth = 176;
+  static const double artWidth = 160;
 
   @override
   Widget build(BuildContext context) {

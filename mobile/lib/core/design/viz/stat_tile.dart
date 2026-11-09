@@ -6,8 +6,9 @@ import '../internal/soft_surface.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// A compact figure card: a small title, a figure, a caption, and a corner
-/// icon. [value] is a formatted string, so it never touches a `double`.
+/// A compact figure card: a small title, a figure, a caption, and a quiet
+/// icon at the corner. [value] is a formatted string, so it never touches a
+/// `double`.
 class StatTile extends StatelessWidget {
   const StatTile({
     super.key,
@@ -23,11 +24,11 @@ class StatTile extends StatelessWidget {
   final String value;
   final String? caption;
 
-  /// Shown in a rounded tile at the corner. Defaults to an arrow when tappable.
+  /// Shown small at the corner. Defaults to an arrow when tappable.
   final IconData? icon;
   final VoidCallback? onTap;
 
-  /// Fills the card with gold.
+  /// Fills the card with the primary colour, white text on it.
   final bool emphasized;
 
   static const double minHeight = 84;
@@ -35,67 +36,50 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final IconData? corner = icon ?? (onTap != null ? Icons.north_east : null);
-    final Color secondary = emphasized ? N360Colors.ink : N360Colors.inkLabel;
+    final Color ink = emphasized ? N360Colors.onPrimary : N360Colors.ink;
+    final Color secondary = emphasized ? N360Colors.onPrimary : N360Colors.inkLabel;
+    final Color glyph = emphasized ? N360Colors.onPrimary : N360Colors.ink2;
 
     final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(
-          title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: N360Type.fit(N360Type.label, title).copyWith(
-            height: 1.3,
-            fontWeight: FontWeight.w500,
-            color: emphasized ? N360Colors.ink : N360Colors.ink2,
-          ),
-        ),
-        const SizedBox(height: N360Space.xs),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(value, maxLines: 1, style: N360Type.figureLarge),
-                  ),
-                  if (caption != null)
-                    Text(
-                      caption!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.fit(N360Type.caption, caption!).copyWith(color: secondary, height: 1.3),
-                    ),
-                ],
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: N360Type.fit(N360Type.caption, title).copyWith(color: secondary),
               ),
             ),
             if (corner != null) ...<Widget>[
               const SizedBox(width: N360Space.sm),
-              SizedBox.square(
-                dimension: N360Size.tileSmall,
-                child: CustomPaint(
-                  painter: SoftSurfacePainter(
-                    radius: N360Radius.small,
-                    fill: emphasized ? const Color(0x40FFFFFF) : N360Colors.paper2,
-                  ),
-                  child: Center(child: Icon(corner, size: N360IconSize.md, color: N360Colors.ink)),
-                ),
-              ),
+              Icon(corner, size: N360IconSize.md, color: glyph),
             ],
           ],
         ),
+        const SizedBox(height: N360Space.sm),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(value, maxLines: 1, style: N360Type.figureLarge.copyWith(color: ink)),
+        ),
+        if (caption != null)
+          Text(
+            caption!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: N360Type.fit(N360Type.caption, caption!).copyWith(color: secondary, height: 1.3),
+          ),
       ],
     );
 
     final SoftSurfacePainter surface = emphasized
-        ? const SoftSurfacePainter(gradient: N360Gradients.gold, edge: Color(0x55FFFFFF))
-        : const SoftSurfacePainter(edge: N360Colors.cardEdge, shadow: true, shadowStrength: 0.8);
+        ? const SoftSurfacePainter(fill: N360Colors.primary)
+        : const SoftSurfacePainter(edge: N360Colors.rule);
 
     final String spoken = caption == null ? '$title, $value' : '$title, $value, $caption';
     final tap = onTap;

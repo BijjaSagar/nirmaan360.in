@@ -175,7 +175,7 @@
     "hi": "जोड़ें"
   },
   "dprChooseAnother": {
-    "en": "Other item",
+    "en": "Change item",
     "mr": "दुसरा आयटम",
     "hi": "दूसरा आइटम"
   },
@@ -229,6 +229,21 @@
       }
     }
   },
+  "dprLoading": { "en": "Loading", "mr": "लोड होत आहे", "hi": "लोड हो रहा है" },
+  "dprOpenOutbox": { "en": "Open Outbox", "mr": "आउटबॉक्स उघडा", "hi": "आउटबॉक्स खोलें" },
+  "dprNoWorkYet": { "en": "No work added.", "mr": "काम जोडलेले नाही.", "hi": "कोई काम नहीं जोड़ा।" },
+  "dprNoPhotosYet": { "en": "No photos added.", "mr": "फोटो जोडलेले नाहीत.", "hi": "कोई फ़ोटो नहीं जोड़ी।" },
+  "dprCanStillSend": { "en": "You can still send.", "mr": "तरीही पाठवता येईल.", "hi": "फिर भी भेज सकते हैं।" },
+  "dprRemoved": { "en": "Removed", "mr": "काढले", "hi": "हटाया" },
+  "dprUndo": { "en": "Undo", "mr": "परत आणा", "hi": "वापस लाएँ" },
+  "dprMissedDays": { "en": "Missed days", "mr": "राहिलेले दिवस", "hi": "छूटे हुए दिन" },
+  "dprWriteFor": {
+    "en": "Write report for {date}",
+    "mr": "{date} चा अहवाल लिहा",
+    "hi": "{date} की रिपोर्ट लिखें",
+    "placeholders": { "date": { "type": "String" } }
+  },
+
   "dprTakePhoto": {
     "en": "Take photo",
     "mr": "फोटो काढा",
@@ -330,10 +345,11 @@
     "hi": "आज का मौसम चुनें।"
   },
   "dprNeedWorkers": {
-    "en": "Enter the workers who came. If the site was closed, write why under Hindrances.",
-    "mr": "आलेल्या कामगारांची संख्या भरा. साइट बंद असेल तर अडथळ्यांमध्ये कारण लिहा.",
-    "hi": "आए कामगारों की संख्या भरें। साइट बंद थी तो रुकावटों में कारण लिखें।"
+    "en": "Enter the workers who came.",
+    "mr": "आलेल्या कामगारांची संख्या भरा.",
+    "hi": "आए कामगारों की संख्या भरें।"
   },
+  "dprSiteClosedWrite": { "en": "Site closed? Write the reason", "mr": "साइट बंद? कारण लिहा", "hi": "साइट बंद? कारण लिखें" },
   "dprFutureDate": {
     "en": "The report date cannot be in the future.",
     "mr": "अहवालाची तारीख भविष्यातील असू शकत नाही.",

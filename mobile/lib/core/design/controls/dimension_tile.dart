@@ -7,8 +7,8 @@ import '../signature/rolling_number.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// One measured dimension: Nos, L, B or D. The active tile has a gold outline
-/// and a gold bar under the figure, so the eye knows where digits will go.
+/// One measured dimension: Nos, L, B or D. The active tile has a primary edge
+/// and a thin primary bar under the figure, so the eye knows where digits go.
 class DimensionTile extends StatelessWidget {
   const DimensionTile({
     super.key,
@@ -85,12 +85,12 @@ class DimensionTile extends StatelessWidget {
           child: CustomPaint(
             painter: active
                 ? const SoftSurfacePainter(
-                    radius: N360Radius.medium,
-                    fill: N360Colors.goldTint,
-                    edge: N360Colors.orange,
+                    radius: N360Radius.tile,
+                    fill: N360Colors.sheet,
+                    edge: N360Colors.primary,
                     edgeWidth: 1.5,
                   )
-                : const SoftSurfacePainter(radius: N360Radius.medium, edge: N360Colors.rule),
+                : const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.rule),
             foregroundPainter: active ? const _ActiveBarPainter() : null,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: _minHeight),
@@ -112,10 +112,10 @@ class _ActiveBarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const double inset = 8;
-    final Rect bar = Rect.fromLTWH(inset, size.height - 6.5, size.width - inset * 2, 2.5);
+    final Rect bar = Rect.fromLTWH(inset, size.height - 6, size.width - inset * 2, 2);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(bar, const Radius.circular(1.25)),
-      Paint()..shader = N360Gradients.gold.createShader(bar),
+      RRect.fromRectAndRadius(bar, const Radius.circular(1)),
+      Paint()..color = N360Colors.primary,
     );
   }
 

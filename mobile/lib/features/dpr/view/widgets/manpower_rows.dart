@@ -19,7 +19,7 @@ class DprTradeRow extends StatelessWidget {
   final int count;
   final ValueChanged<int> onChanged;
 
-  static const double _labelWidth = 84;
+  static const double _labelWidth = 76;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class DprTradeRow extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(picture.icon, size: 26, color: ink),
+                Icon(picture.icon, size: N360IconSize.lg, color: ink),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
@@ -86,6 +86,7 @@ class DprWorkerTotal extends StatelessWidget {
             style: N360Type.figureHero.copyWith(
               color: total > 0 ? N360Colors.ink : N360Colors.inkLabel,
             ),
+            animateEntry: true,
             suffix: ' ${l.dprWorkersWord(total)}',
             suffixStyle: N360Type.bodyStrong.copyWith(color: N360Colors.ink2, letterSpacing: 0),
             semanticsLabel: l.dprWorkersCount(total),

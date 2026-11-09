@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../app/routes.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -28,6 +30,11 @@ class AttendanceScreen extends StatelessWidget {
 class _AttendanceView extends StatelessWidget {
   const _AttendanceView();
 
+  /// How far a toast sits above the screen foot: the action bar with its hint
+  /// line and a little air.
+  static const double _toastLift =
+      N360Size.tapLarge + N360Space.xxxl + N360Space.md;
+
   void _onNotice(BuildContext context, AttendanceState state) {
     final AppLocalizations l = AppLocalizations.of(context);
     switch (state.notice) {
@@ -37,7 +44,7 @@ class _AttendanceView extends StatelessWidget {
           context,
           l.attendanceSaveFailed,
           kind: PaperToastKind.error,
-          bottomOffset: 132,
+          bottomOffset: _toastLift,
         );
       case AllPresentDone(:final count):
         N360Haptics.success();
@@ -46,7 +53,7 @@ class _AttendanceView extends StatelessWidget {
           l.attendanceAllPresentDone(count),
           kind: PaperToastKind.success,
           icon: Icons.task_alt,
-          bottomOffset: 132,
+          bottomOffset: _toastLift,
           duration: const Duration(milliseconds: 1800),
         );
       case null:
@@ -82,22 +89,33 @@ class _MusterScroll extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double scale = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3).scale(1);
-    return CustomScrollView(
-      slivers: <Widget>[
-        const SliverToBoxAdapter(child: _Header()),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _SummaryDelegate(
-            collapsed: kSummaryCollapsedHeight * scale,
-            expanded: (kSummaryCollapsedHeight + kSummaryHeroHeight + 10) * scale,
-          ),
-        ),
-        const SliverPadding(
-          padding: EdgeInsets.only(top: N360Space.xs),
-          sliver: _MusterList(),
-        ),
-      ],
+    final double scale = MediaQuery.textScalerOf(
+      context,
+    ).clamp(maxScaleFactor: 1.3).scale(1);
+    return BlocSelector<AttendanceCubit, AttendanceState, bool>(
+      // A card of zeros says nothing while loading, with no project, or with
+      // no workers, so it waits until there is a muster to total.
+      selector: (state) =>
+          state.load == AttendanceLoad.ready && state.workerCount > 0,
+      builder: (context, hasMuster) {
+        return CustomScrollView(
+          slivers: <Widget>[
+            const SliverToBoxAdapter(child: _Header()),
+            if (hasMuster)
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SummaryDelegate(
+                  collapsed: summaryCollapsedHeight(scale),
+                  expanded: summaryExpandedHeight(scale),
+                ),
+              ),
+            const SliverPadding(
+              padding: EdgeInsets.only(top: N360Space.xs),
+              sliver: _MusterList(),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -115,7 +133,11 @@ class _SummaryDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => expanded;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
       child: MusterSummaryCard(
@@ -139,20 +161,27 @@ class _Header extends StatelessWidget {
       buildWhen: (a, b) => a.date != b.date || a.project?.id != b.project?.id,
       builder: (context, state) {
         final String locale = Localizations.localeOf(context).toString();
-        final String date = DateFormat('d MMM', locale).format(DateTime.parse(state.date));
+        final String date = DateFormat(
+          'd MMM',
+          locale,
+        ).format(DateTime.parse(state.date));
         final String? projectCode = state.project?.code;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             FieldTopBar(
-              title: state.isToday ? l.attendanceTodayTitle : l.attendanceDateTitle(date),
+              title: state.isToday
+                  ? l.attendanceTodayTitle
+                  : l.attendanceDateTitle(date),
               subtitle: projectCode == null
                   ? l.attendanceEyebrow
                   : '${l.attendanceEyebrow} · $projectCode',
             ),
-            const DayStrip(),
-            const SizedBox(height: N360Space.xs),
+            if (state.project != null) ...<Widget>[
+              const DayStrip(),
+              const SizedBox(height: N360Space.xs),
+            ],
           ],
         );
       },
@@ -171,12 +200,19 @@ class _MusterList extends StatelessWidget {
       builder: (context, state) {
         switch (state.load) {
           case AttendanceLoad.loading:
-            return const SliverToBoxAdapter(child: SizedBox(height: 180));
+            return SliverToBoxAdapter(
+              child: _MusterSkeleton(label: l.attendanceLoading),
+            );
           case AttendanceLoad.noProject:
             return SliverToBoxAdapter(
               child: EmptyLedger(
                 title: l.attendanceNoProjectTitle,
                 message: l.attendanceNoProjectMessage,
+                action: GloveButton(
+                  label: l.attendanceChooseProject,
+                  icon: Icons.swap_horiz,
+                  onPressed: () => context.push(Routes.projectsSwitch),
+                ),
               ),
             );
           case AttendanceLoad.failed:
@@ -215,6 +251,28 @@ class _MusterList extends StatelessWidget {
             );
         }
       },
+    );
+  }
+}
+
+/// The muster's shape while it loads: the summary card, then a trade card.
+class _MusterSkeleton extends StatelessWidget {
+  const _MusterSkeleton({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LedgerSkeleton(figure: true, lines: 2, semanticsLabel: label),
+          const SizedBox(height: N360Space.cardGap),
+          const ExcludeSemantics(child: LedgerSkeleton(lines: 4)),
+        ],
+      ),
     );
   }
 }
@@ -261,29 +319,50 @@ class _BottomActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    return BlocSelector<AttendanceCubit, AttendanceState, (int left, int total, bool ready)>(
-      selector: (state) => (state.totals.left, state.workerCount, state.load == AttendanceLoad.ready),
+    return BlocSelector<
+      AttendanceCubit,
+      AttendanceState,
+      (int left, int total, bool ready)
+    >(
+      selector: (state) => (
+        state.totals.left,
+        state.workerCount,
+        state.load == AttendanceLoad.ready,
+      ),
       builder: (context, data) {
         final (left, total, ready) = data;
-        final bool showAllPresent = ready && total > 0;
+        if (!ready) return const SizedBox.shrink();
+
+        final bool showAllPresent = total > 0;
         final bool done = left == 0;
         final AttendanceCubit cubit = context.read<AttendanceCubit>();
         final bool animate = !context.motion.reduced;
-        final bool canAddWorker = context.read<AppServices>().auth.can('worker.manage');
+        final bool canAddWorker = context.read<AppServices>().auth.can(
+          'worker.manage',
+        );
 
-        if (ready && total == 0 && !canAddWorker) return const SizedBox.shrink();
+        if (total == 0 && !canAddWorker) return const SizedBox.shrink();
 
         return FieldActionBar(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              if (showAllPresent && !done)
+              // Only when it can be misread: some marked, some not.
+              if (showAllPresent && !done && left < total)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, N360Space.xs + 2),
+                  padding: const EdgeInsets.fromLTRB(
+                    N360Space.xs,
+                    0,
+                    N360Space.xs,
+                    N360Space.sm,
+                  ),
                   child: Text(
                     l.attendanceAllPresentHelper,
-                    style: N360Type.caption.copyWith(color: N360Colors.ink2),
+                    style: N360Type.fit(
+                      N360Type.caption,
+                      l.attendanceAllPresentHelper,
+                    ).copyWith(color: N360Colors.ink2),
                   ),
                 ),
               Row(
@@ -291,11 +370,17 @@ class _BottomActions extends StatelessWidget {
                   if (showAllPresent)
                     Expanded(
                       child: GloveButton(
-                        label: done ? l.attendanceAllMarked : l.attendanceAllPresent(left),
-                        icon: done ? Icons.check_circle_outline : Icons.done_all,
+                        label: done
+                            ? l.attendanceAllMarked
+                            : l.attendanceAllPresent(left),
+                        icon: done
+                            ? Icons.check_circle_outline
+                            : Icons.done_all,
                         large: true,
                         fullWidth: true,
-                        onPressed: done ? null : () => cubit.markAllPresent(animate: animate),
+                        onPressed: done
+                            ? null
+                            : () => cubit.markAllPresent(animate: animate),
                       ),
                     ),
                   if (showAllPresent && canAddWorker) ...<Widget>[
@@ -309,9 +394,8 @@ class _BottomActions extends StatelessWidget {
                   if (!showAllPresent && canAddWorker)
                     Expanded(
                       child: GloveButton(
-                        label: ready && total == 0 ? l.attendanceAddFirstWorker : l.attendanceAddWorker,
+                        label: l.attendanceAddFirstWorker,
                         icon: Icons.person_add_alt_1,
-                        kind: ready && total == 0 ? GloveButtonKind.primary : GloveButtonKind.secondary,
                         large: true,
                         fullWidth: true,
                         onPressed: () => showAddWorkerSheet(context),

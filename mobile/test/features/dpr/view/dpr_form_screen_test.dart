@@ -155,6 +155,55 @@ void main() {
     await tapAndSettle(tester, find.text('Remove'));
     expect(find.text('Remove'), findsNothing);
     expect((await app.db.select(app.db.dprs).get()).single.workItems, isEmpty);
+
+    // A gloved mis-tap must not cost the figure.
+    await tapAndSettle(tester, find.text('Undo'));
+    expect(find.text('Remove'), findsOneWidget);
+    expect(
+      (await app.db.select(app.db.dprs).get()).single.workItems.single.qty,
+      Qty.parse('15.5'),
+    );
+    expect(find.text('Undo'), findsNothing);
+  });
+
+  testWidgets('the date chip says Today so the wrong day is hard to miss', (tester) async {
+    await show(tester);
+    expect(find.textContaining('Today'), findsOneWidget);
+  });
+
+  testWidgets('a filled section shows a tick', (tester) async {
+    await show(tester);
+    expect(find.byIcon(Icons.check_circle), findsNothing);
+
+    await tester.tap(find.text('Rain'));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+  });
+
+  testWidgets('a closed site has a way forward from the workers message', (tester) async {
+    await show(tester);
+    await tapAndSettle(tester, find.text('Send report'));
+
+    await tapAndSettle(tester, find.text('Site closed? Write the reason'));
+    await settle(tester);
+
+    expect(find.text('Hindrances'), findsOneWidget);
+  });
+
+  testWidgets('review points out what is missing but still allows sending', (tester) async {
+    await show(tester);
+    await tester.tap(find.text('Rain'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.add).first);
+    await tester.pump();
+    await settle(tester);
+
+    await tapAndSettle(tester, find.text('Send report'));
+
+    expect(find.textContaining('No work added.'), findsOneWidget);
+    expect(find.textContaining('No photos added.'), findsOneWidget);
+    expect(find.widgetWithText(GloveButton, 'Send'), findsOneWidget);
   });
 
   testWidgets('photos: camera saves the draft first, then attaches and can remove', (tester) async {

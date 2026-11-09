@@ -109,7 +109,7 @@ class _GloveStepperState extends State<GloveStepper> {
                   child: SizedBox(
                     height: N360Size.tap,
                     child: Center(
-                      child: RollingNumber(value: '$_value', style: N360Type.figureLarge.copyWith(fontSize: 26)),
+                      child: RollingNumber(value: '$_value', style: N360Type.figureLarge.copyWith(fontSize: 26, letterSpacing: 0)),
                     ),
                   ),
                 ),
@@ -214,16 +214,13 @@ class _StepKeyState extends State<_StepKey> with SingleTickerProviderStateMixin 
     final SoftSurfacePainter surface = !on
         ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper2)
         : widget.filled
-            ? const SoftSurfacePainter(
-                radius: N360Radius.tile,
-                gradient: N360Gradients.gold,
-                edge: Color(0x55FFFFFF),
-              )
-            : const SoftSurfacePainter(
-                radius: N360Radius.tile,
-                edge: N360Colors.ruleStrong,
-              );
-    final Color ink = on ? N360Colors.ink : N360Colors.ink3;
+            ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.primary)
+            : const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.ruleStrong);
+    final Color ink = !on
+        ? N360Colors.inkLabel
+        : widget.filled
+            ? N360Colors.onPrimary
+            : N360Colors.ink;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

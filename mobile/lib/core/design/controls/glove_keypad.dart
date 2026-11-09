@@ -152,12 +152,12 @@ class _DigitKey extends StatelessWidget {
       haptic: N360Haptics.tap,
       minHeight: N360Size.key,
       semanticsLabel: digit,
-      child: Text(digit, style: N360Type.figureLarge.copyWith(height: 1.1, letterSpacing: 0)),
+      child: Text(digit, style: N360Type.figureLarge.copyWith(height: 1.1, letterSpacing: 0, fontWeight: FontWeight.w500)),
       builder: (context, depth, child) {
         return Transform.scale(
           scale: pressedScale(depth),
           child: CustomPaint(
-            painter: const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.cardEdge),
+            painter: const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.rule),
             child: SizedBox(height: N360Size.key, child: Center(child: child)),
           ),
         );
@@ -181,13 +181,13 @@ class _ActionKey extends StatelessWidget {
     final SoftSurfacePainter surface = !on
         ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper2)
         : primary
-            ? const SoftSurfacePainter(
-                radius: N360Radius.tile,
-                gradient: N360Gradients.gold,
-                edge: Color(0x55FFFFFF),
-              )
-            : const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper2);
-    final Color ink = on ? N360Colors.ink : N360Colors.inkLabel;
+            ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.primary)
+            : const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper, edge: N360Colors.rule);
+    final Color ink = !on
+        ? N360Colors.inkLabel
+        : primary
+            ? N360Colors.onPrimary
+            : N360Colors.ink;
 
     return PressTarget(
       onTap: onTap,

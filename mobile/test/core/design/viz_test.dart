@@ -169,9 +169,9 @@ void main() {
       expect(taps, 1);
     });
 
-    testWidgets('an emphasised StatTile keeps dark ink on gold', (tester) async {
+    testWidgets('an emphasised StatTile is the primary colour with white on it', (tester) async {
       await pumpDesign(tester, const SizedBox(width: 170, child: StatTile(title: 'Work', value: '42%', emphasized: true)));
-      expect(tester.widget<Text>(find.text('42%')).style!.color, N360Colors.ink);
+      expect(tester.widget<Text>(find.text('42%')).style!.color, N360Colors.onPrimary);
     });
   });
 
@@ -180,27 +180,43 @@ void main() {
         .widget<CustomPaint>(find.descendant(of: find.byType(LedgerCard), matching: find.byType(CustomPaint)).first)
         .painter! as SoftSurfacePainter;
 
-    testWidgets('a card has a shadow, a row built by a list builder does not', (tester) async {
+    testWidgets('a card is white with a hairline and no shadow, flat or not', (tester) async {
       await pumpDesign(tester, const LedgerCard(child: Text('Card')));
-      expect(cardPainter(tester).shadow, isTrue);
+      expect(cardPainter(tester).shadow, isFalse);
+      expect(cardPainter(tester).edge, N360Colors.rule);
+      expect(cardPainter(tester).fill, N360Colors.sheet);
 
+      await pumpDesign(tester, const LedgerCard(flat: true, child: Text('Card')));
+      expect(cardPainter(tester).shadow, isFalse);
+      expect(cardPainter(tester).edge, N360Colors.rule);
+    });
+
+    testWidgets('LedgerList lays rows out with hairlines between them, and tiles are tap targets', (tester) async {
+      var taps = 0;
       await pumpDesign(
         tester,
         SizedBox(
-          width: 300,
-          height: 400,
-          child: ListView.builder(
-            itemCount: 40,
-            itemBuilder: (_, i) => LedgerCard(child: Text('Row $i')),
+          width: 340,
+          child: LedgerList(
+            header: const Text('Open'),
+            children: <Widget>[
+              LedgerListTile(
+                title: 'Shuttering plates short',
+                subtitle: 'Store yard',
+                status: const StatusPill(kind: StampKind.rejected, label: 'Critical'),
+                onTap: () => taps++,
+              ),
+              const LedgerListTile(title: 'Honeycombing at C7', subtitle: 'Grid C7'),
+            ],
           ),
         ),
       );
-      expect(cardPainter(tester).shadow, isFalse);
-    });
-
-    testWidgets('flat drops the shadow by request', (tester) async {
-      await pumpDesign(tester, const LedgerCard(flat: true, child: Text('Card')));
-      expect(cardPainter(tester).shadow, isFalse);
+      expect(find.byType(RuledDivider), findsNWidgets(2));
+      expectTapHeight(tester, find.byType(LedgerListTile).first);
+      await tester.tap(find.text('Shuttering plates short'));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(taps, 1);
+      expect(find.text('Critical'), findsOneWidget);
     });
 
     testWidgets('the bottom bar keeps a word under every icon and shows badges', (tester) async {

@@ -4,8 +4,8 @@ import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// A rounded-square progress mark: a gold line runs around the square, with the
-/// percent in the middle. The caller formats [label], usually "90%". The line
+/// A rounded-square progress mark: an orange line runs around the square, with
+/// the percent in the middle. The caller formats [label], usually "90%". The line
 /// draws round once on entry, over [N360Durations.fill]; the label is painted
 /// from the first frame.
 ///
@@ -40,12 +40,12 @@ class SquarePercent extends StatelessWidget {
                   padding: const EdgeInsets.all(7),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(label, style: N360Type.button.copyWith(fontSize: fontSize, height: 1.2)),
+                    child: Text(label, style: N360Type.figureSmall.copyWith(fontSize: fontSize, height: 1.2, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ),
               builder: (context, value, child) => CustomPaint(
-                painter: _SquareArcPainter(fraction: value, radius: size * 0.3),
+                painter: _SquareArcPainter(fraction: value, radius: size * 0.22),
                 child: child,
               ),
             ),
@@ -64,7 +64,7 @@ class _SquareArcPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const double stroke = 3;
+    const double stroke = 2.5;
     final Rect rect = (Offset.zero & size).deflate(stroke / 2);
     final RRect shape = RRect.fromRectAndRadius(rect, Radius.circular(radius));
 
@@ -72,7 +72,7 @@ class _SquareArcPainter extends CustomPainter {
     canvas.drawRRect(
       shape,
       Paint()
-        ..color = N360Colors.rule
+        ..color = N360Colors.paper2
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke,
     );
@@ -84,7 +84,7 @@ class _SquareArcPainter extends CustomPainter {
     canvas.drawPath(
       arc,
       Paint()
-        ..shader = N360Gradients.gold.createShader(rect)
+        ..color = N360Colors.orange
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeWidth = stroke,

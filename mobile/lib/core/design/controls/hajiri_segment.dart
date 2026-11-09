@@ -153,8 +153,8 @@ class _HajiriPainter extends CustomPainter {
         text: TextSpan(
           text: text,
           style: TextStyle(
-            fontFamily: N360Type.poppins,
-            fontSize: 17,
+            fontFamily: N360Type.mukta,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             height: 1.1,
             color: color,
@@ -171,6 +171,10 @@ class _HajiriPainter extends CustomPainter {
     final double cell = (size.width - _gap * 3) / 4;
     const radius = Radius.circular(N360Radius.medium);
     final Paint paint = Paint();
+    final Paint edge = Paint()
+      ..color = N360Colors.rule
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
 
     for (var i = 0; i < 4; i++) {
       final option = HajiriValue.values[i];
@@ -183,7 +187,10 @@ class _HajiriPainter extends CustomPainter {
         final TextPainter letter = _letter(option.letter, look.ink, scaler);
         letter.paint(canvas, Offset(left + (cell - letter.width) / 2, (size.height - letter.height) / 2));
       } else {
-        canvas.drawRRect(tile, paint..color = N360Colors.paper2);
+        // Unmarked: a white tile with a hairline, so the one colour on the row
+        // is the mark that has been made.
+        canvas.drawRRect(tile, paint..color = N360Colors.sheet);
+        canvas.drawRRect(tile.deflate(0.5), edge);
         final TextPainter letter = _letter(option.letter, N360Colors.ink2, scaler);
         letter.paint(canvas, Offset(left + (cell - letter.width) / 2, (size.height - letter.height) / 2));
       }

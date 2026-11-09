@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
 import 'package:nirmaan360/core/money/money.dart';
 import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
+import 'package:nirmaan360/features/measurement/view/widgets/book_kit.dart';
 import 'package:nirmaan360/features/measurement/view/widgets/form_parts.dart';
 
 import '../../../core/design/test_helpers.dart';
@@ -195,6 +196,16 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       expect(tester.takeException(), isNull);
       await shot(tester, '${locale}_form_2_typed');
+
+      // Backing out with figures typed.
+      await tester.tap(find.byType(LedgerBackKey));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(tester.takeException(), isNull);
+      await shot(tester, '${locale}_leave_sheet');
+      await tester.tap(find.byKey(const ValueKey<String>('measurement-leave-keep')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // The details sheet.
       await tester.tap(find.byType(DetailsKey));

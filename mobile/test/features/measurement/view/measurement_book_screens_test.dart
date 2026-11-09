@@ -198,6 +198,36 @@ void main() {
       expect(tester.widget<MeasurementFormScreen>(find.byType(MeasurementFormScreen)).clientUuid, uuid);
     });
 
+    testWidgets('a rejected entry says what to do next, and offers it', (tester) async {
+      final TestApp app = await bookApp();
+      addTearDown(app.dispose);
+      final String uuid = await app.services.measurements.create(_entry());
+      await app.sync();
+      app.api.setServerStatus(app.api.measurementByUuid(uuid), 'REJECTED');
+      await app.sync();
+
+      await pumpBook(tester, app, start: Routes.measurementDetail(uuid));
+      await settle(tester);
+
+      expect(find.textContaining('will not count'), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('measurement-new')), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('measurement-edit')), findsNothing);
+    });
+
+    testWidgets('an entry in review says who has it', (tester) async {
+      final TestApp app = await bookApp();
+      addTearDown(app.dispose);
+      final String uuid = await app.services.measurements.create(_entry());
+      await app.sync();
+      app.api.setServerStatus(app.api.measurementByUuid(uuid), 'IN_REVIEW');
+      await app.sync();
+
+      await pumpBook(tester, app, start: Routes.measurementDetail(uuid));
+      await settle(tester);
+
+      expect(find.textContaining('With the approver'), findsOneWidget);
+    });
+
     testWidgets('a missing entry says so', (tester) async {
       final TestApp app = await bookApp();
       addTearDown(app.dispose);

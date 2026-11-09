@@ -32,12 +32,17 @@ class _TopUpView extends StatelessWidget {
     N360Haptics.success();
     showPaperToast(
       context,
-      state.savedWhileOffline ? l.pettyCashSavedOffline : l.pettyCashSavedOnline,
+      state.savedWhileOffline
+          ? l.pettyCashSavedOffline
+          : l.pettyCashSavedOnline,
       kind: PaperToastKind.success,
       icon: state.savedWhileOffline ? Icons.phone_android : Icons.task_alt,
       duration: const Duration(milliseconds: 3200),
     );
-    Navigator.of(context).maybePop();
+    // A plain pop: `maybePop` would meet the PopScope below, which turns a
+    // pop on the second step into "back to the amount".
+    final NavigatorState navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop();
   }
 
   @override
@@ -95,48 +100,53 @@ class _AmountStep extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (state.wallets.length > 1)
-          SizedBox(
-            height: 68,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-              itemCount: state.wallets.length,
-              separatorBuilder: (_, _) => const SizedBox(width: N360Space.sm),
-              itemBuilder: (context, index) {
-                final WalletLine line = state.wallets[index];
-                return Center(
-                  child: FieldChoiceTile(
-                    label: line.wallet.name,
-                    detail: line.previewBalance.inr(),
-                    selected: line.wallet.id == state.walletId,
-                    onTap: () => cubit.setWallet(line.wallet.id),
-                  ),
-                );
-              },
+        if (state.wallets.length > 1) ...<Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.gutter,
+              N360Space.xs,
+              N360Space.gutter,
+              0,
             ),
+            child: SectionLabel(l.pettyCashWallet),
           ),
+          FieldChoiceStrip(
+            itemCount: state.wallets.length,
+            itemBuilder: (context, index) {
+              final WalletLine line = state.wallets[index];
+              return FieldChoiceTile(
+                label: line.wallet.name,
+                detail: line.previewBalance.inr(),
+                selected: line.wallet.id == state.walletId,
+                onTap: () => cubit.setWallet(line.wallet.id),
+              );
+            },
+          ),
+        ],
         Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                N360Space.gutter,
-                N360Space.xs,
-                N360Space.gutter,
-                N360Space.sm,
-              ),
-              child: PettyAmountCard(
-                label: l.pettyCashAmount,
-                typed: state.amountText,
-                footer: state.problem == TopUpProblem.amountRequired
-                    ? FieldInlineError(l.pettyCashAmountRequired)
-                    : balance == null
-                    ? null
-                    : Text(
-                        '${l.pettyCashBalance}: ${balance.inr()}',
-                        style: N360Type.body.copyWith(color: N360Colors.ink2),
-                      ),
-              ),
+          child: SingleChildScrollView(
+            // Reversed, so the figure sits on the keypad that fills it.
+            reverse: true,
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.gutter,
+              N360Space.xs,
+              N360Space.gutter,
+              N360Space.md,
+            ),
+            child: PettyAmountCard(
+              label: l.pettyCashAmount,
+              typed: state.amountText,
+              footer: state.problem == TopUpProblem.amountRequired
+                  ? FieldInlineError(l.pettyCashAmountRequired)
+                  : balance == null
+                  ? null
+                  : Text(
+                      '${l.pettyCashBalance}: ${balance.inr()}',
+                      style: N360Type.fit(
+                        N360Type.body,
+                        l.pettyCashBalance,
+                      ).copyWith(color: N360Colors.ink2),
+                    ),
             ),
           ),
         ),
@@ -188,31 +198,12 @@ class _DetailsStep extends StatelessWidget {
               N360Space.sm,
             ),
             children: <Widget>[
-              LedgerCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              PettyAmountSummary(
+                amount: amount?.indian(),
                 onTap: cubit.backToAmount,
-                semanticsLabel: '${l.pettyCashAmount} ${amount?.inr() ?? ''}. ${l.commonBack}',
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: Row(
-                    children: <Widget>[
-                      Text(l.pettyCashAmount, style: N360Type.heading),
-                      const SizedBox(width: N360Space.sm),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: RollingMoney(
-                              value: amount == null ? '0.00' : amount.indian(),
-                              style: N360Type.figureLarge,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                walletName: state.wallets.length > 1
+                    ? state.wallet?.wallet.name
+                    : null,
               ),
               const SizedBox(height: N360Space.md),
               LedgerCard(
@@ -227,7 +218,10 @@ class _DetailsStep extends StatelessWidget {
                       textInputAction: TextInputAction.done,
                     ),
                     const SizedBox(height: N360Space.md),
-                    Text(l.pettyCashDate, style: N360Type.label),
+                    Text(
+                      l.pettyCashDate,
+                      style: N360Type.fit(N360Type.label, l.pettyCashDate),
+                    ),
                     const SizedBox(height: N360Space.xs),
                     PettyDateChoice(
                       today: state.today,
@@ -238,21 +232,34 @@ class _DetailsStep extends StatelessWidget {
                   ],
                 ),
               ),
-              if (state.problem == TopUpProblem.failed) ...<Widget>[
-                const SizedBox(height: N360Space.md),
-                ErrorSlip(title: l.pettyCashTopUpFailed),
-              ],
             ],
           ),
         ),
         FieldActionBar(
-          child: GloveButton(
-            label: l.pettyCashTopUpSave,
-            icon: Icons.check,
-            large: true,
-            fullWidth: true,
-            loading: state.saving,
-            onPressed: state.saving ? null : cubit.submit,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // Beside the button that failed, not at the foot of the form.
+              if (state.problem == TopUpProblem.failed)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    N360Space.xs,
+                    N360Space.xs,
+                    N360Space.xs,
+                    N360Space.sm,
+                  ),
+                  child: FieldInlineError(l.pettyCashTopUpFailed),
+                ),
+              GloveButton(
+                label: l.pettyCashTopUpSave,
+                icon: Icons.check,
+                large: true,
+                fullWidth: true,
+                loading: state.saving,
+                onPressed: state.saving ? null : cubit.submit,
+              ),
+            ],
           ),
         ),
       ],

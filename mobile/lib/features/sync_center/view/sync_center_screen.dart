@@ -129,8 +129,8 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
 
   Future<void> _discard(OutboxItem item, AppLocalizations t) async {
     final String title = t.syncTypeLabel(item.type);
-    final bool? confirmed = await showModalBottomSheet<bool>(
-      context: context,
+    final bool? confirmed = await showLedgerSheet<bool>(
+      context,
       isScrollControlled: true,
       builder: (context) => _ConfirmSheet(
         title: t.shellDiscardTitle,
@@ -151,7 +151,9 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
 
     return BlocBuilder<SyncCenterCubit, SyncCenterState>(
       builder: (context, state) {
-        if (!state.loaded) return const SizedBox.shrink();
+        // Still paper while the first read lands: the shape of the tray card
+        // and a few slips, never a spinner.
+        if (!state.loaded) return _OutboxLoading(label: t.shellOutboxLoading);
         _track(state, reduced);
         final bool trayShown = state.waiting.isNotEmpty || _inTray.isNotEmpty;
         final bool allSent = !trayShown && state.attention.isEmpty;
@@ -173,10 +175,14 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
                 ? _AllSent(animate: _stampAllSent)
                 : const SizedBox.shrink();
 
+        final String attentionTitle = t.shellOutboxAttention(state.attention.length);
         final List<Widget> extras = <Widget>[
           if (state.attention.isNotEmpty) ...<Widget>[
             const SizedBox(height: N360Space.md),
-            Text(t.shellOutboxAttention(state.attention.length), style: N360Type.heading.copyWith(color: N360Colors.stampRed)),
+            Text(
+              attentionTitle,
+              style: N360Type.fit(N360Type.heading, attentionTitle).copyWith(color: N360Colors.stampRed),
+            ),
             const SizedBox(height: N360Space.xs),
             for (final item in state.attention)
               Padding(
@@ -235,7 +241,31 @@ class _OutboxTitle extends StatelessWidget {
     final t = AppLocalizations.of(context);
     return Align(
       alignment: Alignment.centerLeft,
-      child: Text(t.shellOutboxTitle, style: N360Type.title),
+      child: Text(t.shellOutboxTitle, style: N360Type.fit(N360Type.title, t.shellOutboxTitle)),
+    );
+  }
+}
+
+/// The page before its first read: the title in place, then the shape of the
+/// tray card and three slips with one slow sheen across them.
+class _OutboxLoading extends StatelessWidget {
+  const _OutboxLoading({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const OfflineSlot(online: _OutboxTitle()),
+          LedgerSkeleton(figure: true, lines: 1, semanticsLabel: label),
+          const SizedBox(height: N360Space.sm),
+          LedgerSkeletonList(semanticsLabel: label),
+        ],
+      ),
     );
   }
 }
@@ -268,12 +298,15 @@ class _LastSynced extends StatelessWidget {
         Row(
           mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
           children: <Widget>[
-            const Icon(Icons.history, size: 18, color: N360Colors.ink2),
+            const Icon(Icons.history, size: N360IconSize.md, color: N360Colors.ink2),
             const SizedBox(width: N360Space.xs),
-            Flexible(child: Text(lastLine, style: N360Type.body.copyWith(color: N360Colors.ink2))),
+            Flexible(
+              child: Text(lastLine, style: N360Type.fit(N360Type.body, lastLine).copyWith(color: N360Colors.ink2)),
+            ),
           ],
         ),
-        if (issue != null) Text(issue, style: N360Type.bodyStrong.copyWith(color: N360Colors.haldiInk)),
+        if (issue != null)
+          Text(issue, style: N360Type.fit(N360Type.bodyStrong, issue).copyWith(color: N360Colors.haldiInk)),
       ],
     );
   }
@@ -306,7 +339,12 @@ class _TrayCard extends StatelessWidget {
                 children: <Widget>[
                   RollingNumber(value: '$waiting', style: N360Type.figureHero),
                   const SizedBox(width: N360Space.md),
-                  Expanded(child: Text(t.shellOutboxWaitingLabel, style: N360Type.heading)),
+                  Expanded(
+                    child: Text(
+                      t.shellOutboxWaitingLabel,
+                      style: N360Type.fit(N360Type.heading, t.shellOutboxWaitingLabel),
+                    ),
+                  ),
                 ],
               ),
               const _LastSynced(),
@@ -322,7 +360,8 @@ class _TrayCard extends StatelessWidget {
   }
 }
 
-/// The closing stamp on a clean white card.
+/// The moment it has all reached the office: the finished building with light
+/// moving through its windows, and the closing stamp under it.
 class _AllSent extends StatelessWidget {
   const _AllSent({required this.animate});
 
@@ -332,16 +371,21 @@ class _AllSent extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     return LedgerCard(
-      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.xl, N360Space.lg, N360Space.xl),
+      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.lg, N360Space.lg, N360Space.xl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          SizedBox(
+            width: EmptyLedger.artWidth,
+            child: LoopingArt.allSent(semanticLabel: t.shellOutboxAllSentStamp),
+          ),
+          const SizedBox(height: N360Space.md),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: RubberStamp(
               kind: StampKind.synced,
               label: t.shellOutboxAllSentStamp,
-              size: StampSize.hero,
+              size: StampSize.large,
               animate: animate,
               onLanded: N360Haptics.success,
             ),
@@ -350,7 +394,7 @@ class _AllSent extends StatelessWidget {
           Text(
             t.shellOutboxAllSentBody,
             textAlign: TextAlign.center,
-            style: N360Type.bodyLarge.copyWith(color: N360Colors.ink2),
+            style: N360Type.fit(N360Type.bodyLarge, t.shellOutboxAllSentBody).copyWith(color: N360Colors.ink2),
           ),
           const SizedBox(height: N360Space.xs),
           const _LastSynced(centered: true),
@@ -393,19 +437,19 @@ class _AttentionSlip extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(title, style: N360Type.bodyStrong),
-                    if (subtitle != null) Text(subtitle, style: N360Type.caption),
+                    Text(title, style: N360Type.fit(N360Type.bodyStrong, title)),
+                    if (subtitle != null) Text(subtitle, style: N360Type.fit(N360Type.caption, subtitle)),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: N360Space.sm),
-          Text(t.syncReasonFor(item), style: N360Type.body),
+          Text(t.syncReasonFor(item), style: N360Type.fit(N360Type.body, t.syncReasonFor(item))),
           for (final detail in details)
             Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(detail, style: N360Type.caption),
+              padding: const EdgeInsets.only(top: N360Space.xxs),
+              child: Text(detail, style: N360Type.fit(N360Type.caption, detail)),
             ),
           const SizedBox(height: N360Space.sm),
           IntrinsicHeight(
@@ -453,7 +497,7 @@ class _StaleLog extends StatelessWidget {
       children: <Widget>[
         SectionLabel(t.shellOutboxLogTitle),
         const SizedBox(height: N360Space.xs),
-        Text(t.syncStaleLog, style: N360Type.body.copyWith(color: N360Colors.ink2)),
+        Text(t.syncStaleLog, style: N360Type.fit(N360Type.body, t.syncStaleLog).copyWith(color: N360Colors.ink2)),
         const SizedBox(height: N360Space.xs),
         LedgerCard(
           padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.xs, N360Space.md, N360Space.xs),
@@ -519,16 +563,17 @@ class _ConfirmSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.lg, N360Space.lg, N360Space.lg),
+        padding: ledgerSheetPadding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(title, style: N360Type.title),
+            Text(title, style: N360Type.fit(N360Type.title, title)),
             const SizedBox(height: N360Space.xs),
-            Text(detail, style: N360Type.bodyStrong),
-            Text(body, style: N360Type.body.copyWith(color: N360Colors.ink2)),
+            Text(detail, style: N360Type.fit(N360Type.bodyStrong, detail)),
+            Text(body, style: N360Type.fit(N360Type.body, body).copyWith(color: N360Colors.ink2)),
             const SizedBox(height: N360Space.lg),
             GloveButton(
               label: confirmLabel,

@@ -52,7 +52,10 @@ class _DprDetailBody extends StatelessWidget {
                   Expanded(
                     child: details == null
                         ? (state.loading
-                              ? const SizedBox.shrink()
+                              ? Padding(
+                                  padding: const EdgeInsets.all(N360Space.gutter),
+                                  child: LedgerSkeletonList(rows: 3, semanticsLabel: l.dprLoading),
+                                )
                               : Center(child: EmptyLedger(title: l.dprEmptyTitle)))
                         : DprActionLayout(
                             body: _body(context, state, details),
@@ -87,20 +90,21 @@ class _DprDetailBody extends StatelessWidget {
     void add(Widget child) {
       cards.add(
         Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+          padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.cardGap),
           child: child,
         ),
       );
     }
 
-    Widget card(Widget child) => LedgerCard(padding: const EdgeInsets.all(N360Space.lg), child: child);
+    Widget card(Widget child) => LedgerCard(padding: const EdgeInsets.all(N360Space.card), child: child);
 
     Widget nothing() => Padding(
-      padding: const EdgeInsets.only(top: N360Space.md),
+      padding: const EdgeInsets.only(top: N360Space.sm),
       child: Text(l.dprNothingRecorded, style: N360Type.body.copyWith(color: N360Colors.inkLabel)),
     );
 
-    // Masthead: the day, where it stands.
+    // Masthead: the day, where it stands, and the weather on one line.
+    final String? weather = dpr.weather;
     add(
       card(
         Column(
@@ -115,14 +119,31 @@ class _DprDetailBody extends StatelessWidget {
               tag: dprHeroTag(dpr.clientUuid),
               child: DprReportFace(record: record, large: true),
             ),
+            if (weather != null) ...<Widget>[
+              const SizedBox(height: N360Space.sm),
+              Row(
+                children: <Widget>[
+                  Icon(N360Pictograms.weather(weather).icon, size: N360IconSize.md, color: N360Colors.ink2),
+                  const SizedBox(width: N360Space.xs),
+                  Text(l.pictogramLabel(N360Pictograms.weather(weather)), style: N360Type.label),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
 
-    // Where it stands, honestly.
+    // Where it stands, honestly, and the way out when something is stuck.
     if (record.syncState == LocalSyncState.attention) {
-      add(ErrorSlip(title: l.dprSyncAttention, message: l.dprAttentionBody));
+      add(
+        ErrorSlip(
+          title: l.dprSyncAttention,
+          message: l.dprAttentionBody,
+          actionLabel: l.dprOpenOutbox,
+          onAction: () => dprGoOutbox(context),
+        ),
+      );
     } else if (record.syncState != LocalSyncState.synced) {
       add(
         PaperToast(
@@ -140,65 +161,7 @@ class _DprDetailBody extends StatelessWidget {
       add(DprRemarkCard(title: l.dprReturnedTitle, message: l.dprReturnedNoRemark));
     }
 
-    // The figures, big.
-    add(
-      IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Expanded(
-              child: StatTile(
-                title: l.dprSectionWorkers,
-                value: '$total',
-                icon: Icons.groups,
-                emphasized: true,
-              ),
-            ),
-            const SizedBox(width: N360Space.sm),
-            Expanded(
-              child: StatTile(
-                title: l.dprSectionWork,
-                value: '${dpr.workItems.length}',
-                icon: Icons.assignment_turned_in_outlined,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    // Weather.
-    final String? weather = dpr.weather;
-    add(
-      card(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            DprCardTitle(
-              icon: Icons.wb_sunny_outlined,
-              title: l.dprSectionWeather,
-              trailing: weather == null
-                  ? null
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Icon(N360Pictograms.weather(weather).icon, size: 28, color: N360Colors.ink),
-                        const SizedBox(width: N360Space.sm),
-                        Text(
-                          l.pictogramLabel(N360Pictograms.weather(weather)),
-                          style: N360Type.bodyStrong,
-                        ),
-                      ],
-                    ),
-            ),
-            if (weather == null) nothing(),
-          ],
-        ),
-      ),
-    );
-
-    // Workers.
+    // Workers: the screen's one big figure, then who made it up.
     final List<ManpowerLine> crew = dpr.manpower.toList()
       ..sort((a, b) => b.count.compareTo(a.count));
     add(
@@ -208,13 +171,21 @@ class _DprDetailBody extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             DprCardTitle(icon: Icons.groups, title: l.dprWorkersOnSite),
+            const SizedBox(height: N360Space.xs),
+            RollingNumber(
+              value: '$total',
+              style: N360Type.figureHero,
+              animateEntry: true,
+              suffix: ' ${l.dprWorkersWord(total)}',
+              suffixStyle: N360Type.bodyStrong.copyWith(color: N360Colors.ink2, letterSpacing: 0),
+              semanticsLabel: l.dprWorkersCount(total),
+            ),
             if (crew.isEmpty)
               nothing()
             else ...<Widget>[
-              const SizedBox(height: N360Space.sm),
+              const SizedBox(height: N360Space.xs),
               for (var i = 0; i < crew.length; i++)
                 _TradeLine(line: crew[i], ruled: i != crew.length - 1),
-              LedgerRow(label: l.dprTotalWorkers, value: '$total', total: true),
             ],
           ],
         ),
@@ -228,7 +199,13 @@ class _DprDetailBody extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            DprCardTitle(icon: Icons.assignment_turned_in_outlined, title: l.dprSectionWork),
+            DprCardTitle(
+              icon: Icons.assignment_turned_in_outlined,
+              title: l.dprSectionWork,
+              trailing: dpr.workItems.isEmpty
+                  ? null
+                  : Text(l.dprRowsCount(dpr.workItems.length), style: N360Type.label),
+            ),
             if (dpr.workItems.isEmpty)
               nothing()
             else
@@ -289,12 +266,12 @@ class _DprDetailBody extends StatelessWidget {
             if (hindrances.isNotEmpty) ...<Widget>[
               const SizedBox(height: N360Space.md),
               Text(l.dprHindrances, style: N360Type.label),
-              Text(hindrances, style: N360Type.bodyLarge),
+              Text(hindrances, style: N360Type.body),
             ],
             if (notes.isNotEmpty) ...<Widget>[
               const SizedBox(height: N360Space.md),
               Text(l.dprNotes, style: N360Type.label),
-              Text(notes, style: N360Type.bodyLarge),
+              Text(notes, style: N360Type.body),
             ],
           ],
         ),
@@ -325,7 +302,6 @@ class _TradeLine extends StatelessWidget {
       label: l.pictogramLabel(picture),
       value: '${line.count}',
       ruled: ruled,
-      valueStyle: N360Type.figureLarge.copyWith(fontSize: 20),
     );
   }
 }
@@ -343,7 +319,7 @@ class _WorkLine extends StatelessWidget {
       children: <Widget>[
         if (item != null) ...<Widget>[
           DprBoqPercent(line: item),
-          const SizedBox(width: N360Space.md),
+          const SizedBox(width: N360Space.tile),
         ],
         Expanded(
           child: Column(

@@ -431,6 +431,11 @@
     "mr": "फोनवर",
     "hi": "फ़ोन पर"
   },
+  "shellOutboxLoading": {
+    "en": "Loading the outbox",
+    "mr": "आउटबॉक्स आणत आहे",
+    "hi": "आउटबॉक्स ला रहे हैं"
+  },
   "shellOutboxNeverSynced": {
     "en": "Not synced yet",
     "mr": "अजून सिंक झालेले नाही",

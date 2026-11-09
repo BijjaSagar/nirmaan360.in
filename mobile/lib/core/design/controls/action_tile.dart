@@ -6,8 +6,8 @@ import '../internal/soft_surface.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// A home-screen tile: a picture in a small rounded square with its name
-/// beneath. A small gold badge counts what is waiting.
+/// A home-screen tile: a quiet icon, its name beneath, on a white card with a
+/// hairline. A small count sits at the corner when something is waiting.
 class ActionTile extends StatelessWidget {
   const ActionTile({
     super.key,
@@ -21,10 +21,10 @@ class ActionTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  /// Shown as a small gold count. Null hides it.
+  /// Shown as a small count. Null hides it.
   final String? badge;
 
-  static const double _minHeight = 104;
+  static const double _minHeight = 92;
 
   @override
   Widget build(BuildContext context) {
@@ -35,23 +35,17 @@ class ActionTile extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            SizedBox.square(
-              dimension: N360Size.tile,
-              child: CustomPaint(
-                painter: const SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.goldTint),
-                child: Center(child: Icon(icon, size: N360IconSize.tile, color: N360Colors.laterite)),
-              ),
-            ),
+            Icon(icon, size: N360IconSize.xl, color: N360Colors.laterite),
             const Spacer(),
             if (badge != null) N360Badge(text: badge!),
           ],
         ),
-        const SizedBox(height: N360Space.sm + 2),
+        const SizedBox(height: N360Space.md),
         Text(
           label,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: N360Type.fit(N360Type.heading, label),
+          style: N360Type.fit(N360Type.bodyStrong, label),
         ),
       ],
     );
@@ -66,7 +60,7 @@ class ActionTile extends StatelessWidget {
         return Transform.scale(
           scale: pressedScale(depth * 0.7),
           child: CustomPaint(
-            painter: const SoftSurfacePainter(edge: N360Colors.cardEdge, shadow: true, shadowStrength: 0.8),
+            painter: const SoftSurfacePainter(edge: N360Colors.rule),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: _minHeight),
               child: Padding(
@@ -81,7 +75,7 @@ class ActionTile extends StatelessWidget {
   }
 }
 
-/// A small gold count, used on tiles and in the bottom bar. Dark ink on gold.
+/// A small count on the primary colour, with white figures.
 class N360Badge extends StatelessWidget {
   const N360Badge({super.key, required this.text});
 
@@ -90,12 +84,17 @@ class N360Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: const SoftSurfacePainter(radius: 7, gradient: N360Gradients.gold),
+      painter: const SoftSurfacePainter(radius: N360Radius.small, fill: N360Colors.primary),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         child: Text(
           text,
-          style: N360Type.button.copyWith(fontSize: N360Type.minimumSize, height: 1.3),
+          style: N360Type.figureSmall.copyWith(
+            fontSize: N360Type.minimumSize,
+            height: 1.3,
+            fontWeight: FontWeight.w600,
+            color: N360Colors.onPrimary,
+          ),
         ),
       ),
     );

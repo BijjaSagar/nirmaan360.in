@@ -53,6 +53,11 @@ class _DprFormBodyState extends State<_DprFormBody> {
   final Set<Object> _landed = <Object>{};
   late final AppLifecycleListener _lifecycle;
 
+  /// A work row just removed, offered back for a few seconds. A gloved thumb
+  /// can land on Remove by mistake, and the row held a figure.
+  ({WorkLine line, int index})? _undo;
+  Timer? _undoTimer;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +72,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
 
   @override
   void dispose() {
+    _undoTimer?.cancel();
     _lifecycle.dispose();
     _scroll.dispose();
     _hindrances.dispose();
@@ -79,7 +85,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
 
   /// A toast that clears the floating Send footer.
   void _toast(String message, PaperToastKind kind) {
-    showPaperToast(context, message, kind: kind, bottomOffset: 104);
+    showPaperToast(context, message, kind: kind, bottomOffset: 92);
   }
 
   Future<void> _copyYesterday() async {
@@ -113,6 +119,25 @@ class _DprFormBodyState extends State<_DprFormBody> {
     cubit.putWork(line, index: (target != null && target >= 0) ? target : null);
   }
 
+  void _removeWork(int index) {
+    final cubit = context.read<DprFormCubit>();
+    final WorkLine line = cubit.state.work[index];
+    cubit.removeWork(index);
+    _undoTimer?.cancel();
+    _undoTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted) setState(() => _undo = null);
+    });
+    setState(() => _undo = (line: line, index: index));
+  }
+
+  void _undoRemove() {
+    final undo = _undo;
+    if (undo == null) return;
+    _undoTimer?.cancel();
+    context.read<DprFormCubit>().restoreWork(undo.line, undo.index);
+    setState(() => _undo = null);
+  }
+
   Future<void> _takePhoto() async {
     final cubit = context.read<DprFormCubit>();
     final l = AppLocalizations.of(context);
@@ -136,11 +161,25 @@ class _DprFormBodyState extends State<_DprFormBody> {
     _toast(l.dprLocked, PaperToastKind.error);
   }
 
+  /// Opens the hindrances field and takes the engineer there, from anywhere
+  /// on the sheet. The card may not be built yet, so it scrolls down first.
   void _openNotes() {
     context.read<DprFormCubit>().openNotes();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _hindrancesFocus.requestFocus();
+    final binding = WidgetsBinding.instance;
+    binding.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      _scroll.jumpTo(_scroll.position.maxScrollExtent);
+      binding.addPostFrameCallback((_) {
+        if (!mounted || !_scroll.hasClients) return;
+        _scroll.jumpTo(_scroll.position.maxScrollExtent);
+        binding.addPostFrameCallback((_) {
+          if (mounted) _hindrancesFocus.requestFocus();
+        });
+        binding.ensureVisualUpdate();
+      });
+      binding.ensureVisualUpdate();
     });
+    binding.ensureVisualUpdate();
   }
 
   Future<void> _onSendPressed() async {
@@ -211,7 +250,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
       },
       builder: (context, state) {
         return switch (state.phase) {
-          DprFormPhase.loading => const Scaffold(body: LedgerPaper()),
+          DprFormPhase.loading => const _Loading(),
           DprFormPhase.noProject => const _NoProject(),
           DprFormPhase.locked => DprDetailScreen(clientUuid: state.clientUuid!),
           DprFormPhase.editing => _screen(context, state),
@@ -278,7 +317,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
     void add(Widget child) {
       cards.add(
         Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+          padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.cardGap),
           child: StaggeredRise(index: rise++, child: child),
         ),
       );
@@ -297,7 +336,11 @@ class _DprFormBodyState extends State<_DprFormBody> {
             flex: 4,
             child: DprInfoChip(
               icon: Icons.calendar_month,
-              text: dprDateLabel(context, state.reportDate),
+              // Says "Today" out loud: a report filed against the wrong day is
+              // the mistake a tired eye makes.
+              text: state.reportDate == services.context.today
+                  ? '${l.commonToday}, ${dprDayMonth(context, state.reportDate)}'
+                  : dprDateLabel(context, state.reportDate),
             ),
           ),
         ],
@@ -316,7 +359,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
     // Weather.
     add(
       LedgerCard(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(N360Space.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -324,6 +367,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
             DprCardTitle(
               icon: Icons.wb_sunny_outlined,
               title: l.dprSectionWeather,
+              done: state.weather != null,
               error: state.problems.contains(DprFormProblem.weather) ? l.dprNeedWeather : null,
             ),
             const SizedBox(height: N360Space.md),
@@ -350,7 +394,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
     final List<String> visible = state.visibleTrades;
     add(
       LedgerCard(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(N360Space.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -358,9 +402,20 @@ class _DprFormBodyState extends State<_DprFormBody> {
             DprCardTitle(
               icon: Icons.groups,
               title: l.dprWorkersOnSite,
+              done: state.totalWorkers > 0,
               error: state.problems.contains(DprFormProblem.workers) ? l.dprNeedWorkers : null,
             ),
-            const SizedBox(height: N360Space.sm),
+            if (state.problems.contains(DprFormProblem.workers)) ...<Widget>[
+              const SizedBox(height: N360Space.sm),
+              GloveButton(
+                label: l.dprSiteClosedWrite,
+                icon: Icons.edit_note,
+                kind: GloveButtonKind.ghost,
+                fullWidth: true,
+                onPressed: _openNotes,
+              ),
+            ],
+            const SizedBox(height: N360Space.xs),
             DprWorkerTotal(total: state.totalWorkers, yesterday: state.yesterdayTotal),
             if (state.canCopyYesterday) ...<Widget>[
               const SizedBox(height: N360Space.md),
@@ -399,7 +454,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
     // Work done.
     add(
       LedgerCard(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(N360Space.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -407,6 +462,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
             DprCardTitle(
               icon: Icons.assignment_turned_in_outlined,
               title: l.dprSectionWork,
+              done: state.work.isNotEmpty,
               trailing: state.work.isEmpty
                   ? null
                   : Text(l.dprRowsCount(state.work.length), style: N360Type.label),
@@ -421,9 +477,13 @@ class _DprFormBodyState extends State<_DprFormBody> {
                   line: state.work[i],
                   services: services,
                   onChange: () => unawaited(_openWork(state, index: i)),
-                  onRemove: () => cubit.removeWork(i),
+                  onRemove: () => _removeWork(i),
                 ),
               ),
+            ],
+            if (_undo != null) ...<Widget>[
+              const SizedBox(height: N360Space.sm),
+              _UndoRow(onUndo: _undoRemove),
             ],
             const SizedBox(height: N360Space.md),
             DprActionTile(
@@ -439,7 +499,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
     // Photos.
     add(
       LedgerCard(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(N360Space.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -447,6 +507,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
             DprCardTitle(
               icon: Icons.photo_library_outlined,
               title: l.dprSectionPhotos,
+              done: state.photos.isNotEmpty,
               trailing: state.photos.isEmpty
                   ? null
                   : Text(l.dprPhotosCount(state.photos.length), style: N360Type.label),
@@ -456,9 +517,8 @@ class _DprFormBodyState extends State<_DprFormBody> {
               icon: Icons.photo_camera,
               label: l.dprTakePhoto,
               tall: true,
-              onTap: (state.capturing || state.photos.length >= dprMaxPhotos)
-                  ? null
-                  : () => unawaited(_takePhoto()),
+              // Stays tappable at the limit, so the app can say why.
+              onTap: state.capturing ? null : () => unawaited(_takePhoto()),
             ),
             if (state.photos.isNotEmpty) ...<Widget>[
               const SizedBox(height: N360Space.md),
@@ -477,7 +537,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
     // Hindrances and notes.
     add(
       LedgerCard(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(N360Space.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -485,6 +545,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
             DprCardTitle(
               icon: Icons.edit_note,
               title: l.dprSectionNotes,
+              done: state.hindrances.trim().isNotEmpty || state.notes.trim().isNotEmpty,
               trailing: state.notesOpen ? null : Text(l.dprOptional, style: N360Type.caption),
             ),
             const SizedBox(height: N360Space.md),
@@ -523,6 +584,65 @@ class _DprFormBodyState extends State<_DprFormBody> {
     );
 
     return cards;
+  }
+}
+
+class _Loading extends StatelessWidget {
+  const _Loading();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Scaffold(
+      body: LedgerPaper(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              DprTopBar(title: l.dprFormTitle),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    LedgerSkeleton(lines: 1, semanticsLabel: l.dprLoading),
+                    const SizedBox(height: N360Space.cardGap),
+                    LedgerSkeleton(lines: 2, figure: true, semanticsLabel: l.dprLoading),
+                    const SizedBox(height: N360Space.cardGap),
+                    LedgerSkeleton(lines: 2, semanticsLabel: l.dprLoading),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Offers a just-removed work row back.
+class _UndoRow extends StatelessWidget {
+  const _UndoRow({required this.onUndo});
+
+  final VoidCallback onUndo;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return DprTapPad(
+      onTap: onUndo,
+      semanticsLabel: l.dprUndo,
+      child: Row(
+        children: <Widget>[
+          const Icon(Icons.undo, size: N360IconSize.md, color: N360Colors.ink2),
+          const SizedBox(width: N360Space.sm),
+          Expanded(child: Text(l.dprRemoved, style: N360Type.label)),
+          Text(l.dprUndo, style: N360Type.bodyStrong.copyWith(color: N360Colors.laterite)),
+        ],
+      ),
+    );
   }
 }
 
@@ -586,7 +706,7 @@ class _SaveIndicator extends StatelessWidget {
                   failed
                       ? Icons.error_outline
                       : (pending ? Icons.radio_button_unchecked : Icons.check_circle),
-                  size: 20,
+                  size: N360IconSize.sm,
                   color: pending ? N360Colors.ink3 : ink,
                 ),
               ),

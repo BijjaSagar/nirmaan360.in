@@ -29,13 +29,15 @@ void main() {
     expect(find.text('Kalyani Tower B'), findsOneWidget);
     expect(find.text(en.shellReportNotStarted), findsOneWidget);
     expect(find.text('1/2'), findsOneWidget);
-    expect(tester.widget<StatTile>(tile(en.shellTileMeasure)).value, '1');
     expect(find.text('₹1,240'), findsOneWidget);
     expect(tester.widget<StatTile>(tile(en.shellTileDaily)).emphasized, isTrue);
+    // Measuring and approving live on the bar, so they are not tiles too.
+    expect(tile(en.shellTileMeasure), findsNothing);
+    expect(find.byType(StatTile), findsNWidgets(4));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('tiles follow permission, with the approvals count', (tester) async {
+  testWidgets('tiles follow permission, and approvals sit on the bar', (tester) async {
     final app = await TestApp.create(seed: false, signedIn: false);
     addTearDown(app.dispose);
     final can = app.api.user['can'] as Map;
@@ -49,7 +51,8 @@ void main() {
     expect(tile(en.shellTileDaily), findsOneWidget);
     expect(tile(en.shellTileExpenses), findsOneWidget);
     expect(tile(en.shellTileIssues), findsNothing);
-    expect(tile(en.shellTileApprovals), findsOneWidget);
+    expect(tile(en.shellTileApprovals), findsNothing);
+    expect(find.descendant(of: find.byType(N360BottomBar), matching: find.text(en.shellTabApprovals)), findsOneWidget);
   });
 
   testWidgets('pending sync is visible and opens the outbox', (tester) async {
@@ -273,7 +276,7 @@ void main() {
       await app.sync();
       await pumpShellApp(tester, app);
 
-      final Finder step = find.byWidgetPredicate((w) => w is PressTarget && w.minHeight == 76);
+      final Finder step = find.byWidgetPredicate((w) => w is PressTarget && w.minHeight == N360Size.tap + N360Space.lg);
       expect(step, findsNWidgets(3));
       expect(tester.getSize(step.first).height, greaterThanOrEqualTo(N360Size.tap));
       expect(tester.takeException(), isNull);

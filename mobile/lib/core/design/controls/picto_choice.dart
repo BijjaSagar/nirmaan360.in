@@ -105,7 +105,7 @@ class _PictoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color ink = N360Colors.ink;
+    final Color ink = selected ? N360Colors.laterite : N360Colors.ink;
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
@@ -121,7 +121,11 @@ class _PictoTile extends StatelessWidget {
           _WholeWordLabel(
             label: label,
             maxWidth: labelWidth,
-            style: N360Type.fit(N360Type.label, label).copyWith(color: ink, height: 1.28),
+            style: N360Type.fit(N360Type.label, label).copyWith(
+              color: selected ? N360Colors.ink : N360Colors.ink,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              height: 1.28,
+            ),
           ),
         ],
       ),
@@ -132,8 +136,9 @@ class _PictoTile extends StatelessWidget {
             painter: selected
                 ? const SoftSurfacePainter(
                     radius: N360Radius.tile,
-                    gradient: N360Gradients.gold,
-                    edge: Color(0x55FFFFFF),
+                    fill: N360Colors.primaryTint,
+                    edge: N360Colors.primary,
+                    edgeWidth: 1.5,
                   )
                 : const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.rule),
             child: ConstrainedBox(

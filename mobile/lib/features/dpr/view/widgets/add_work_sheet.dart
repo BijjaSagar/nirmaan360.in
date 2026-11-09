@@ -24,9 +24,10 @@ Future<WorkLine?> showDprAddWorkSheet(
   required Map<int, Qty> added,
   WorkLine? existing,
 }) {
-  return showDprSheet<WorkLine>(
+  return showLedgerSheet<WorkLine>(
     context,
-    (_) => DprAddWorkSheet(
+    isScrollControlled: true,
+    builder: (_) => DprAddWorkSheet(
       services: services,
       projectId: projectId,
       yesterdayIds: yesterdayIds,
@@ -136,9 +137,7 @@ class _DprAddWorkSheetState extends State<DprAddWorkSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final double height = mq.size.height - mq.padding.top - 12;
-    final double keyboard = mq.viewInsets.bottom;
+    final double keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final Key stepKey = ValueKey<bool>(_onKeypad);
 
     final Widget step = _onKeypad
@@ -165,32 +164,29 @@ class _DprAddWorkSheetState extends State<DprAddWorkSheet> {
             added: widget.added,
           );
 
-    return SizedBox(
-      height: height,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: keyboard),
-        child: Column(
-          children: <Widget>[
-            const DprSheetGrip(),
-            Expanded(
-              child: ClipRect(
-                child: AnimatedSwitcher(
-                  duration: context.motion.rise,
-                  switchInCurve: N360Curves.rise,
-                  switchOutCurve: Curves.easeIn,
-                  transitionBuilder: (child, animation) {
-                    final bool incoming = child.key == stepKey;
-                    final tween = Tween<Offset>(
-                      begin: Offset(incoming ? 1 : -1, 0),
-                      end: Offset.zero,
-                    );
-                    return SlideTransition(position: animation.drive(tween), child: child);
-                  },
-                  child: step,
-                ),
-              ),
+    // Below the theme's drag handle the sheet takes all the height it is given,
+    // so the keypad sits at the foot, under the thumb, on any phone.
+    return LayoutBuilder(
+      builder: (context, box) => SizedBox(
+        height: box.maxHeight,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: keyboard),
+          child: ClipRect(
+            child: AnimatedSwitcher(
+              duration: context.motion.rise,
+              switchInCurve: N360Curves.rise,
+              switchOutCurve: N360Curves.exit,
+              transitionBuilder: (child, animation) {
+                final bool incoming = child.key == stepKey;
+                final tween = Tween<Offset>(
+                  begin: Offset(incoming ? 1 : -1, 0),
+                  end: Offset.zero,
+                );
+                return SlideTransition(position: animation.drive(tween), child: child);
+              },
+              child: step,
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -318,7 +314,7 @@ class _BoqRow extends StatelessWidget {
             border: Border.fromBorderSide(BorderSide(color: N360Colors.rule)),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(N360Space.md),
+            padding: const EdgeInsets.all(N360Space.tile),
             child: Row(
               children: <Widget>[
                 DprBoqPercent(line: line),
@@ -351,7 +347,7 @@ class _BoqRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: N360Space.xs),
-                const Icon(Icons.chevron_right, size: 26, color: N360Colors.ink2),
+                const Icon(Icons.chevron_right, size: N360IconSize.lg, color: N360Colors.ink2),
               ],
             ),
           ),
@@ -435,7 +431,7 @@ class _KeypadStep extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const Icon(Icons.arrow_back, size: 24, color: N360Colors.ink),
+                      const Icon(Icons.arrow_back, size: N360IconSize.md, color: N360Colors.ink),
                       const SizedBox(width: 6),
                       Text(editing ? l.commonBack : l.dprChooseAnother, style: N360Type.bodyStrong),
                     ],
@@ -501,7 +497,7 @@ class _KeypadStep extends StatelessWidget {
                 child: over
                     ? Row(
                         children: <Widget>[
-                          const Icon(Icons.warning_amber, size: 18, color: N360Colors.haldiInk),
+                          const Icon(Icons.warning_amber, size: N360IconSize.sm, color: N360Colors.haldiInk),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(

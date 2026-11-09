@@ -61,7 +61,8 @@ class _BoqFormViewState extends State<_BoqFormView> {
       l.boqFormAdded,
       kind: PaperToastKind.success,
       icon: Icons.task_alt,
-      bottomOffset: 110,
+      // Clears the action bar, which is a large button on a card.
+      bottomOffset: N360Size.tapLarge + N360Space.xxl + N360Space.md,
       duration: const Duration(milliseconds: 1800),
     );
   }
@@ -135,12 +136,17 @@ class _AddedCount extends StatelessWidget {
           borderRadius: N360Radius.tileRadius,
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.tile),
           child: Row(
             children: <Widget>[
-              const Icon(Icons.task_alt, size: 20, color: N360Colors.ink),
+              const Icon(Icons.task_alt, size: N360IconSize.md, color: N360Colors.ink),
               const SizedBox(width: N360Space.sm),
-              Expanded(child: Text(l.boqLinesAdded(count), style: N360Type.bodyStrong)),
+              Expanded(
+                child: Text(
+                  l.boqLinesAdded(count),
+                  style: N360Type.fit(N360Type.bodyStrong, l.boqLinesAdded(count)),
+                ),
+              ),
             ],
           ),
         ),
@@ -207,7 +213,7 @@ class _DetailsStep extends StatelessWidget {
                         onChanged: cubit.setDescription,
                       ),
                       const SizedBox(height: N360Space.md),
-                      Text(l.boqFormUnit, style: N360Type.label),
+                      Text(l.boqFormUnit, style: N360Type.fit(N360Type.label, l.boqFormUnit)),
                       const SizedBox(height: N360Space.xs),
                       _UnitChips(units: state.units, value: state.unit, onChanged: cubit.setUnit),
                       if (unitError != null) ...<Widget>[
@@ -400,7 +406,7 @@ class _FiguresStep extends StatelessWidget {
                     description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: N360Type.bodyStrong,
+                    style: N360Type.fit(N360Type.bodyStrong, description),
                   ),
                   const SizedBox(height: N360Space.sm),
                   Row(
@@ -433,12 +439,12 @@ class _FiguresStep extends StatelessWidget {
                   const SizedBox(height: N360Space.sm),
                   LedgerCard(
                     flat: true,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: N360Space.lg, vertical: N360Space.sm),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 40),
+                      constraints: const BoxConstraints(minHeight: N360Size.control),
                       child: Row(
                         children: <Widget>[
-                          Text(l.boqFormAmount, style: N360Type.heading),
+                          Text(l.boqFormAmount, style: N360Type.fit(N360Type.heading, l.boqFormAmount)),
                           const SizedBox(width: N360Space.sm),
                           Expanded(
                             child: Align(

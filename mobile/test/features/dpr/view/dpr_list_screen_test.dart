@@ -63,8 +63,25 @@ void main() {
     await show(tester);
 
     expect(find.text('Reports this month'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget, reason: 'October is not this month');
+    final RollingNumber figure = tester.widget(find.byType(RollingNumber));
+    expect(figure.value, '2', reason: 'October is not this month');
     expect(find.text('of 9 days'), findsOneWidget);
+  });
+
+  testWidgets('a recent missed day can be written from the list', (tester) async {
+    await report('2026-11-08');
+    await show(tester);
+
+    expect(find.text('Missed days'), findsOneWidget);
+
+    await tester.tap(find.text('Sat, 7 Nov'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await pumpDrift(tester, 10);
+
+    expect(find.byType(DprFormScreen), findsOneWidget);
+    expect(find.textContaining('7 Nov'), findsWidgets);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('sync state is visible on each row', (tester) async {

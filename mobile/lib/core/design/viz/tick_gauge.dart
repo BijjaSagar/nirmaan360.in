@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../motion.dart';
 import '../tokens.dart';
 
-/// A strip of ticks: done ticks run amber to orange, the rest stay pale. The
-/// ticks light up once on entry, left to right, over [N360Durations.fill].
+/// A strip of ticks: done ticks are orange, the rest the light surface tone.
+/// The ticks light up once on entry, left to right, over [N360Durations.fill].
 ///
 /// [fraction] is a layout value: compute it from `Decimal` before passing it.
 class TickGauge extends StatelessWidget {
@@ -12,7 +12,7 @@ class TickGauge extends StatelessWidget {
     super.key,
     required this.fraction,
     this.ticks = 40,
-    this.height = 28,
+    this.height = 20,
     this.semanticLabel,
   });
 
@@ -65,9 +65,7 @@ class _TickPainter extends CustomPainter {
 
     for (var i = 0; i < ticks; i++) {
       final bool on = i < lit;
-      paint.color = on
-          ? Color.lerp(N360Colors.amber, N360Colors.accent, i / (ticks - 1))!
-          : N360Colors.rule;
+      paint.color = on ? N360Colors.orange : N360Colors.paper2;
       final double x = i * slot + (slot - width) / 2;
       canvas.drawRRect(
         RRect.fromRectAndRadius(Rect.fromLTWH(x, 0, width, size.height), radius),

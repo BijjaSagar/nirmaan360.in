@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -40,6 +42,18 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
   late final AnimationController _shift = AnimationController(vsync: this, value: 1);
   double _from = 0;
 
+  /// Approvals waiting on this person, for the badge on the Approvals tab.
+  StreamSubscription<int>? _approvals;
+  int _waitingApprovals = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _approvals ??= context.read<AppServices>().approvals.watchCount().listen((count) {
+      if (mounted && count != _waitingApprovals) setState(() => _waitingApprovals = count);
+    });
+  }
+
   @override
   void didUpdateWidget(covariant HomeShell oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -54,6 +68,7 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
 
   @override
   void dispose() {
+    _approvals?.cancel();
     _shift.dispose();
     super.dispose();
   }
@@ -71,7 +86,13 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
     final List<_ShellTab> tabs = <_ShellTab>[
       _ShellTab(0, Icons.home_outlined, t.shellTabHome),
       _ShellTab(1, Icons.architecture, t.shellTabMeasure),
-      if (canApprove) _ShellTab(2, Icons.approval_outlined, t.shellTabApprovals),
+      if (canApprove)
+        _ShellTab(
+          _approvalsBranch,
+          Icons.approval_outlined,
+          t.shellTabApprovals,
+          badge: _waitingApprovals > 0 ? '$_waitingApprovals' : null,
+        ),
       _ShellTab(3, Icons.inbox_outlined, t.shellTabOutbox, badge: unsent > 0 ? '$unsent' : null),
     ];
     final int current = tabs.indexWhere((tab) => tab.branch == shell.currentIndex);

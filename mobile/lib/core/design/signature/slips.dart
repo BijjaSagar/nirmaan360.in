@@ -42,8 +42,9 @@ class SlipData {
       );
 }
 
-/// One queued entry, as a paper slip torn from a pad. When [status] becomes
-/// [SlipStatus.sent], a small tick is stamped onto it.
+/// One queued entry: a white row with a hairline and a short status band at
+/// its left edge. When [status] becomes [SlipStatus.sent], a small tick is
+/// stamped onto it.
 class OutboxSlip extends StatefulWidget {
   const OutboxSlip({
     super.key,
@@ -138,14 +139,8 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         if (widget.icon != null) ...<Widget>[
-          SizedBox.square(
-            dimension: N360Size.tileSmall,
-            child: CustomPaint(
-              painter: const SoftSurfacePainter(radius: N360Radius.small + 2),
-              child: Center(child: Icon(widget.icon, size: N360IconSize.md, color: N360Colors.ink2)),
-            ),
-          ),
-          const SizedBox(width: N360Space.tile),
+          Icon(widget.icon, size: N360IconSize.lg, color: N360Colors.ink2),
+          const SizedBox(width: N360Space.md),
         ],
         Expanded(
           child: Column(
@@ -206,7 +201,7 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
   }
 }
 
-/// A soft rounded slip with a short status band on its left edge.
+/// A white slip with a hairline and a short status band on its left edge.
 class _SlipPainter extends CustomPainter {
   const _SlipPainter({required this.band});
 
@@ -216,9 +211,16 @@ class _SlipPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final RRect face = RRect.fromRectAndRadius(
       Offset.zero & size,
-      const Radius.circular(N360Radius.medium),
+      const Radius.circular(N360Radius.tile),
     );
-    canvas.drawRRect(face, Paint()..color = N360Colors.paper);
+    canvas.drawRRect(face, Paint()..color = N360Colors.sheet);
+    canvas.drawRRect(
+      face.deflate(0.5),
+      Paint()
+        ..color = N360Colors.rule
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 12, 3, size.height - 24),
@@ -293,7 +295,7 @@ class _TickStamp extends StatelessWidget {
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: tick,
-        child: const CustomPaint(size: Size.square(28), painter: _TickPainter()),
+        child: const CustomPaint(size: Size.square(24), painter: _TickPainter()),
         builder: (context, child) {
           final double local = landAt <= 0 ? 1 : (tick.value / landAt).clamp(0.0, 1.0);
           final double v = N360Curves.stamp.transform(local);
@@ -315,7 +317,7 @@ class _TickPainter extends CustomPainter {
     canvas.translate(c.dx, c.dy);
     canvas.rotate(-7 * math.pi / 180);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromCircle(center: Offset.zero, radius: r - 1), const Radius.circular(9)),
+      RRect.fromRectAndRadius(Rect.fromCircle(center: Offset.zero, radius: r - 1), const Radius.circular(7)),
       Paint()..color = N360Colors.moss,
     );
     final Path check = Path()
@@ -329,7 +331,7 @@ class _TickPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = 3,
+        ..strokeWidth = 2.5,
     );
     canvas.restore();
   }
@@ -524,9 +526,9 @@ class _SlipStackState extends State<SlipStack> with SingleTickerProviderStateMix
       container: true,
       label: widget.trayLabel == null ? '${widget.count}' : '${widget.count} ${widget.trayLabel}',
       child: CustomPaint(
-        painter: const SoftSurfacePainter(edge: N360Colors.cardEdge, shadow: true),
+        painter: const SoftSurfacePainter(fill: N360Colors.paper, edge: N360Colors.rule),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.sm + 2, N360Space.sm + 2, N360Space.sm + 2, N360Space.xs),
+          padding: const EdgeInsets.fromLTRB(N360Space.sm, N360Space.sm, N360Space.sm, N360Space.xs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,

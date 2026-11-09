@@ -19,11 +19,12 @@ class N360BarItem {
   final String? badge;
 }
 
-/// Bottom navigation: a floating rounded bar in the thumb's arc. A gold tile
-/// slides to the chosen item and settles. Every icon keeps its word underneath.
+/// Bottom navigation: a white bar with a hairline along its top. A quiet
+/// page-toned tile slides to the chosen item and settles. Every icon keeps its
+/// word underneath.
 ///
 /// Each item is a full [N360Size.tap] target; the painted tile behind the
-/// active one is [N360Size.barTile] high, so the bar looks light.
+/// active one is [N360Size.barTile] high.
 class N360BottomBar extends StatelessWidget {
   const N360BottomBar({
     super.key,
@@ -36,42 +37,40 @@ class N360BottomBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const double _inset = 4;
-
   @override
   Widget build(BuildContext context) {
     final double safe = MediaQuery.paddingOf(context).bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(N360Space.md, N360Space.sm, N360Space.md, N360Space.sm + safe),
-      child: CustomPaint(
-        painter: const SoftSurfacePainter(radius: N360Radius.card, edge: N360Colors.cardEdge, shadow: true),
-        child: Padding(
-          padding: const EdgeInsets.all(_inset),
-          child: SizedBox(
-            height: N360Size.bar,
-            child: Stack(
-              children: <Widget>[
-                Positioned.fill(
-                  child: _SlidingTile(index: currentIndex, count: items.length),
-                ),
-                Positioned.fill(
-                  child: Row(
-                    children: <Widget>[
-                      for (var i = 0; i < items.length; i++)
-                        Expanded(
-                          child: _BarItem(
-                            item: items[i],
-                            selected: i == currentIndex,
-                            onTap: () {
-                              if (i != currentIndex) onTap(i);
-                            },
-                          ),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: N360Colors.sheet,
+        border: Border(top: BorderSide(color: N360Colors.rule)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(N360Space.sm, 0, N360Space.sm, safe),
+        child: SizedBox(
+          height: N360Size.bar,
+          child: Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: _SlidingTile(index: currentIndex, count: items.length),
+              ),
+              Positioned.fill(
+                child: Row(
+                  children: <Widget>[
+                    for (var i = 0; i < items.length; i++)
+                      Expanded(
+                        child: _BarItem(
+                          item: items[i],
+                          selected: i == currentIndex,
+                          onTap: () {
+                            if (i != currentIndex) onTap(i);
+                          },
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -105,13 +104,9 @@ class _SlidingTile extends StatelessWidget {
                 width: cell,
                 height: N360Size.barTile,
                 child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 3),
+                  padding: EdgeInsets.symmetric(horizontal: 4),
                   child: CustomPaint(
-                    painter: SoftSurfacePainter(
-                      radius: N360Radius.tile,
-                      gradient: N360Gradients.gold,
-                      edge: Color(0x55FFFFFF),
-                    ),
+                    painter: SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.paper),
                     child: SizedBox.expand(),
                   ),
                 ),
@@ -133,7 +128,7 @@ class _BarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color ink = selected ? N360Colors.ink : N360Colors.inkLabel;
+    final Color ink = selected ? N360Colors.laterite : N360Colors.ink2;
     final String? badge = item.badge;
     return PressTarget(
       onTap: onTap,
@@ -168,7 +163,7 @@ class _BarItem extends StatelessWidget {
                 style: N360Type.fit(N360Type.caption, item.label).copyWith(
                   color: ink,
                   height: 1.25,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ),

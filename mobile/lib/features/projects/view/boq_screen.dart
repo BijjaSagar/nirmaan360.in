@@ -61,47 +61,72 @@ class _BoqScroll extends StatelessWidget {
 
   final bool canManage;
 
+  /// Pulls from the office. When the server cannot be reached the list stays
+  /// as it was, and a toast says so rather than leaving the pull unexplained.
+  Future<void> _refresh(BuildContext context) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool reached = await context.read<BoqCubit>().refresh();
+    if (reached || !context.mounted) return;
+    showPaperToast(context, l.boqRefreshFailed, kind: PaperToastKind.info);
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    return BlocBuilder<BoqCubit, BoqState>(
-      builder: (context, state) {
-        return CustomScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          slivers: <Widget>[
-            SliverToBoxAdapter(
-              child: FieldTopBar(title: l.boqTitle, subtitle: state.project?.name),
-            ),
-            if (state.all.isNotEmpty)
+    return LedgerRefresh(
+      onRefresh: () => _refresh(context),
+      semanticsLabel: l.boqLoading,
+      child: BlocBuilder<BoqCubit, BoqState>(
+        builder: (context, state) {
+          return CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: <Widget>[
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    N360Space.gutter,
-                    0,
-                    N360Space.gutter,
-                    N360Space.sm,
-                  ),
-                  child: GloveTextField(
-                    label: l.boqSearchLabel,
-                    hint: l.boqSearchHint,
-                    prefixIcon: Icons.search,
-                    textCapitalization: TextCapitalization.none,
-                    textInputAction: TextInputAction.search,
-                    onChanged: context.read<BoqCubit>().search,
+                child: FieldTopBar(title: l.boqTitle, subtitle: state.project?.name),
+              ),
+              // With no lines there is nothing to search, so the box stays away.
+              if (state.all.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      N360Space.gutter,
+                      0,
+                      N360Space.gutter,
+                      N360Space.sm,
+                    ),
+                    child: GloveTextField(
+                      label: l.boqSearchLabel,
+                      hint: l.boqSearchHint,
+                      prefixIcon: Icons.search,
+                      textCapitalization: TextCapitalization.none,
+                      textInputAction: TextInputAction.search,
+                      onChanged: context.read<BoqCubit>().search,
+                    ),
                   ),
                 ),
-              ),
-            _body(l, state),
-          ],
-        );
-      },
+              _body(l, state),
+            ],
+          );
+        },
+      ),
     );
   }
 
   Widget _body(AppLocalizations l, BoqState state) {
     switch (state.load) {
       case BoqLoad.loading:
-        return const SliverToBoxAdapter(child: SizedBox(height: 160));
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              N360Space.gutter,
+              N360Space.sm,
+              N360Space.gutter,
+              N360Space.md,
+            ),
+            child: LedgerSkeletonList(lines: 2, semanticsLabel: l.boqLoading),
+          ),
+        );
       case BoqLoad.noProject:
         return SliverToBoxAdapter(
           child: EmptyLedger(
@@ -158,15 +183,15 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        N360Space.gutter + 4,
+        N360Space.gutter + N360Space.xs,
         N360Space.sm,
-        N360Space.gutter + 4,
+        N360Space.gutter + N360Space.xs,
         N360Space.sm,
       ),
       child: Row(
         children: <Widget>[
-          Expanded(child: Text(name, style: N360Type.heading)),
-          Text('$count', style: N360Type.bodyStrong.copyWith(color: N360Colors.inkLabel)),
+          Expanded(child: Text(name, style: N360Type.fit(N360Type.heading, name))),
+          Text('$count', style: N360Type.label.copyWith(color: N360Colors.inkLabel)),
         ],
       ),
     );
@@ -185,7 +210,7 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FieldGroupSliver(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.xs),
       sliver: SliverList.builder(
         itemCount: lines.length,
         itemBuilder: (context, index) {
@@ -220,9 +245,14 @@ class _BoqRow extends StatelessWidget {
     final item = line.item;
     final MeasuredShare share = measuredShareOf(line);
     final bool over = line.previewBalance.isNegative;
+    // More measured than the BOQ allows is said in words, not only in red.
+    final String balance = over
+        ? l.boqOver(line.previewBalance.abs().format(), item.unit)
+        : l.boqBalance(line.previewBalance.format(), item.unit);
+    final Color balanceInk = over ? N360Colors.stampRed : N360Colors.ink;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: N360Space.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -237,20 +267,27 @@ class _BoqRow extends StatelessWidget {
                   item.description,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: N360Type.bodyStrong.copyWith(height: 1.3),
+                  style: N360Type.fit(N360Type.bodyStrong, item.description),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: N360Space.xxs),
                 Text(
                   '${item.qty.format()} ${item.unit} × ${item.rate.inr()}',
-                  style: N360Type.caption.copyWith(color: N360Colors.ink2),
+                  style: N360Type.caption,
                 ),
-                Text(
-                  l.boqBalance(line.previewBalance.format(), item.unit),
-                  style: N360Type.bodyStrong.copyWith(
-                    fontSize: 15,
-                    height: 1.3,
-                    color: over ? N360Colors.stampRed : N360Colors.ink,
-                  ),
+                const SizedBox(height: N360Space.xxs),
+                Row(
+                  children: <Widget>[
+                    if (over) ...<Widget>[
+                      Icon(Icons.warning_amber, size: N360IconSize.sm, color: balanceInk),
+                      const SizedBox(width: N360Space.xs),
+                    ],
+                    Flexible(
+                      child: Text(
+                        balance,
+                        style: N360Type.fit(N360Type.label, balance).copyWith(color: balanceInk),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -269,23 +306,33 @@ class _BoqRow extends StatelessWidget {
   }
 }
 
+/// The item code on a tile that is [N360Size.tile] square for a short code and
+/// grows a little for a longer one, so the code stays at its real size instead
+/// of shrinking under the 12 that nothing on screen goes below.
 class _CodeTile extends StatelessWidget {
   const _CodeTile({required this.code});
 
   final String code;
 
+  static const double _maxWidth = N360Size.tap + N360Space.xs;
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: 52,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: N360Size.tile,
+        maxWidth: _maxWidth,
+        minHeight: N360Size.tile,
+      ),
       child: DecoratedBox(
         decoration: const BoxDecoration(color: N360Colors.paper2, borderRadius: N360Radius.md),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Center(
+        child: Center(
+          widthFactor: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.xs + N360Space.xxs),
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(code, maxLines: 1, style: N360Type.figure.copyWith(fontSize: 16)),
+              child: Text(code, maxLines: 1, style: N360Type.figureSmall.copyWith(fontWeight: FontWeight.w500)),
             ),
           ),
         ),

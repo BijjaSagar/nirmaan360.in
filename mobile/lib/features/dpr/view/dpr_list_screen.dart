@@ -74,7 +74,12 @@ class _DprListBody extends StatelessWidget {
   }
 
   Widget _content(BuildContext context, DprListState state, AppLocalizations l) {
-    if (state.loading) return const SizedBox.shrink();
+    if (state.loading) {
+      return Padding(
+        padding: const EdgeInsets.all(N360Space.gutter),
+        child: LedgerSkeletonList(rows: 4, semanticsLabel: l.dprLoading),
+      );
+    }
     if (state.project == null) {
       return Center(child: EmptyLedger(title: l.dprNoProject));
     }
@@ -97,7 +102,7 @@ class _DprListBody extends StatelessWidget {
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: N360Space.md),
+            padding: const EdgeInsets.only(bottom: N360Space.cardGap),
             child: _MonthCard(state: state),
           );
         }
@@ -131,6 +136,7 @@ class _MonthCard extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final int days = state.daysThisMonth;
     final int filed = state.filedThisMonth;
+    final List<String> missed = state.missedDays;
     return LedgerCard(
         padding: const EdgeInsets.all(N360Space.lg),
         child: Column(
@@ -154,17 +160,19 @@ class _MonthCard extends StatelessWidget {
             ),
             const SizedBox(height: N360Space.xs),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
-                Text('$filed', style: N360Type.figureHero),
+                RollingNumber(value: '$filed', style: N360Type.figureHero, animateEntry: true),
                 const SizedBox(width: N360Space.sm),
                 Flexible(
-                  child: Text(
-                    l.dprOfDays(days),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: N360Type.bodyStrong.copyWith(color: N360Colors.ink2),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: N360Space.xs + 2),
+                    child: Text(
+                      l.dprOfDays(days),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.bodyStrong.copyWith(color: N360Colors.ink2),
+                    ),
                   ),
                 ),
               ],
@@ -172,11 +180,65 @@ class _MonthCard extends StatelessWidget {
             const SizedBox(height: N360Space.sm),
             HatchedProgressBar(
               fraction: days == 0 ? 0 : (filed / days),
-              height: 36,
+              height: 32,
               semanticLabel: '$filed ${l.dprOfDays(days)}',
             ),
+            if (missed.isNotEmpty) ...<Widget>[
+              const SizedBox(height: N360Space.md),
+              Text(l.dprMissedDays, style: N360Type.label),
+              const SizedBox(height: N360Space.xs),
+              Row(
+                children: <Widget>[
+                  for (var i = 0; i < missed.length && i < 2; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(width: N360Space.sm),
+                    Expanded(child: _MissedDay(ymd: missed[i])),
+                  ],
+                ],
+              ),
+            ],
           ],
         ),
+    );
+  }
+}
+
+/// A recent day with no report, one tap from being written.
+class _MissedDay extends StatelessWidget {
+  const _MissedDay({required this.ymd});
+
+  final String ymd;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final String date = dprDateLabel(context, ymd);
+    return DprTapPad(
+      onTap: () => dprOpenForm(context, date: ymd),
+      semanticsLabel: l.dprWriteFor(date),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: N360Colors.paper2,
+          borderRadius: N360Radius.tileRadius,
+        ),
+        child: SizedBox(
+          height: N360Size.tap,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Icon(Icons.add, size: N360IconSize.md, color: N360Colors.ink),
+              const SizedBox(width: N360Space.xs),
+              Flexible(
+                child: Text(
+                  date,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: N360Type.button,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

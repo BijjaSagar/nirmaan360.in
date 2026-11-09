@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
 import 'package:nirmaan360/core/design/design.dart';
+import 'package:nirmaan360/core/money/money.dart';
 import 'package:nirmaan360/features/dpr/view/widgets/add_work_sheet.dart';
+import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
 import 'package:nirmaan360/features/measurement/view/widgets/boq_picker_sheet.dart';
+import 'package:nirmaan360/features/projects/view/boq_missing_prompt.dart';
 import 'package:nirmaan360/features/projects/view/boq_form_screen.dart';
 import 'package:nirmaan360/features/projects/view/boq_screen.dart';
 
+import '../../../core/design/test_helpers.dart' show expectTapHeight;
 import '../../attendance/view/field_test_support.dart';
 
 Future<TestApp> _emptyProject({bool manage = true}) async {
@@ -77,6 +81,7 @@ void main() {
     expect(find.text('No BOQ lines yet'), findsOneWidget);
     expect(find.textContaining('list of work'), findsOneWidget);
     expect(find.text('Add item'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing, reason: 'nothing to search yet');
   });
 
   testWidgets('empty BOQ without the permission says who to ask', (tester) async {
@@ -236,6 +241,158 @@ void main() {
 
       expect(find.text('This project has no BOQ lines yet'), findsOneWidget);
       expect(find.text('Open BOQ'), findsOneWidget);
+    });
+  });
+
+  group('list', () {
+    Future<TestApp> twoLines() async {
+      final api = FakeApi();
+      final app = await TestApp.create(seed: false, api: api);
+      api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      await api.addBoqItem(id: 1, projectId: 1, code: '2.1', qty: '620.000');
+      await api.addBoqItem(id: 2, projectId: 1, code: 'FIN-4.1', qty: '12.000');
+      await app.sync();
+      return app;
+    }
+
+    testWidgets('a line measured past its quantity says so in words, with an icon', (tester) async {
+      setPhone(tester);
+      final app = await twoLines();
+      addTearDown(app.dispose);
+      await app.services.measurements.create(
+        MeasurementInput(
+          projectId: 1,
+          boqItemId: 2,
+          measuredOn: '2026-11-09',
+          nos: Qty.parse('1.000'),
+          length: Qty.parse('14.000'),
+        ),
+      );
+
+      await _openBoq(tester, app);
+
+      expect(find.text('Over by 2.000 cum'), findsOneWidget);
+      expect(find.text('Balance 620.000 cum'), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber), findsOneWidget);
+    });
+
+    testWidgets('the code tile is never smaller than a tile and never wider than a cap', (tester) async {
+      setPhone(tester);
+      final app = await twoLines();
+      addTearDown(app.dispose);
+
+      await _openBoq(tester, app);
+
+      // The test font is wider than the real one, so only the bounds are
+      // asserted here; the render test shows the real look.
+      Size tile(String code) => tester.getSize(
+        find.ancestor(of: find.text(code), matching: find.byType(DecoratedBox)).first,
+      );
+      for (final String code in <String>['2.1', 'FIN-4.1']) {
+        expect(tile(code).height, N360Size.tile, reason: code);
+        expect(tile(code).width, greaterThanOrEqualTo(N360Size.tile), reason: code);
+        expect(tile(code).width, lessThanOrEqualTo(N360Size.tap + N360Space.xs), reason: code);
+      }
+      expect(tile('FIN-4.1').width, greaterThanOrEqualTo(tile('2.1').width));
+    });
+
+    testWidgets('shows a skeleton while loading, then the lines', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(fieldApp(app.services, const BoqScreen()));
+      expect(find.byType(LedgerSkeleton), findsWidgets);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+
+      await pumpDrift(tester);
+      expect(find.byType(LedgerSkeleton), findsNothing);
+      expect(find.text('RCC work 2.1'), findsOneWidget);
+    });
+
+    testWidgets('pulling to refresh with no network says why nothing changed', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      app.connectivity.setOnline(false);
+
+      await tester.pumpWidget(fieldApp(app.services, const BoqScreen()));
+      await pumpDrift(tester);
+      expect(find.byType(LedgerRefresh), findsOneWidget);
+
+      await tester.fling(find.byType(CustomScrollView), const Offset(0, 400), 1000);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('Could not update. Showing what is on this phone.'), findsOneWidget);
+      await settleToasts(tester);
+    });
+
+    testWidgets('the add button is a large, full-width target at the foot', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create(api: FakeApi()..grant('boq.manage'));
+      addTearDown(app.dispose);
+
+      await _openBoq(tester, app);
+
+      expectTapHeight(tester, find.widgetWithText(GloveButton, 'Add item'), min: N360Size.tapLarge);
+      expect(tester.getCenter(find.text('Add item')).dy, greaterThan(600));
+    });
+  });
+
+  group('form', () {
+    testWidgets('hints read as examples, so an empty field never looks filled', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create(api: FakeApi()..grant('boq.manage'));
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(fieldApp(app.services, const BoqFormScreen()));
+      await pumpDrift(tester);
+
+      expect(find.text('e.g. M25 concrete in slab'), findsOneWidget);
+      expect(find.text('e.g. Superstructure'), findsOneWidget);
+    });
+
+    testWidgets('the save buttons are large targets and the figures step has its keypad', (tester) async {
+      setPhone(tester);
+      final app = await TestApp.create(api: FakeApi()..grant('boq.manage'));
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(fieldApp(app.services, const BoqFormScreen()));
+      await pumpDrift(tester);
+      await tester.enterText(find.byType(TextField).first, 'M25 slab');
+      await tester.tap(find.text('cum'));
+      await tester.pump();
+      await tester.tap(find.text('Next'));
+      await tester.pump();
+
+      expectTapHeight(
+        tester,
+        find.widgetWithText(GloveButton, 'Save and add another'),
+        min: N360Size.tapLarge,
+      );
+      expectTapHeight(
+        tester,
+        find.widgetWithText(GloveButton, 'Save and finish'),
+        min: N360Size.tapLarge,
+      );
+      expect(find.byType(GloveKeypad), findsOneWidget);
+    });
+  });
+
+  group('missing prompt', () {
+    testWidgets('offers the BOQ as a large button and says why, to someone who can add lines', (tester) async {
+      setPhone(tester);
+      final app = await _emptyProject();
+      addTearDown(app.dispose);
+
+      await tester.pumpWidget(
+        fieldApp(app.services, Scaffold(body: BoqMissingPrompt(services: app.services))),
+      );
+      await pumpDrift(tester);
+
+      expect(find.text('This project has no BOQ lines yet'), findsOneWidget);
+      expectTapHeight(tester, find.widgetWithText(GloveButton, 'Open BOQ'), min: N360Size.tapLarge);
     });
   });
 }

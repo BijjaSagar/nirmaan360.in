@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show ProjectRow, UserRow;
+import '../../../core/sync/sync_status.dart' show SyncOutcome, SyncRunResult;
 import '../data/issue_repository.dart';
 import 'issue_helpers.dart';
 
@@ -128,6 +129,20 @@ class IssueListCubit extends Cubit<IssueListState> {
 
   void setFilter(IssueFilter filter) {
     emit(state.copyWith(filter: filter, visible: _narrow(state.all, filter)));
+  }
+
+  /// Sends what is waiting and pulls what the office has changed. The list
+  /// updates itself from the database, so this only reports whether the server
+  /// was reached: false means the phone is showing what it already had.
+  Future<bool> refresh() async {
+    if (!_services.connectivity.isOnline) return false;
+    try {
+      final SyncRunResult result = await _services.sync.syncNow();
+      // Busy means a sync is already running and will bring the same data.
+      return result.isSuccess || result.outcome == SyncOutcome.busy;
+    } on Object {
+      return false;
+    }
   }
 
   @override

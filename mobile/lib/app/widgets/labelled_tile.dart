@@ -30,6 +30,9 @@ class LabelledTile extends StatelessWidget {
 
   static const double width = 64;
 
+  /// The tile, the gap and the fixed line of its word.
+  static const double height = N360Size.tap + 2 + 18;
+
   @override
   Widget build(BuildContext context) {
     final Widget column = SizedBox(
@@ -56,7 +59,7 @@ class LabelledTile extends StatelessWidget {
                   child: Text(
                     label,
                     maxLines: 1,
-                    style: N360Type.caption.copyWith(fontSize: 12.5, height: 1.25, color: labelColor),
+                    style: N360Type.fit(N360Type.caption, label).copyWith(height: 1.25, color: labelColor),
                   ),
                 ),
               ),

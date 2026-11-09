@@ -324,8 +324,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get attendanceAllPresentHelper =>
-      'Fills unmarked workers only. Absent stays absent.';
+  String get attendanceAllPresentHelper => 'Skips anyone already marked.';
+
+  @override
+  String get attendanceChooseProject => 'Choose a project';
 
   @override
   String attendanceDateTitle(String date) {
@@ -350,7 +352,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceHoursUnit => 'h';
 
   @override
-  String get attendanceLeft => 'Left';
+  String get attendanceLeft => 'Unmarked';
 
   @override
   String get attendanceLoadFailedMessage =>
@@ -358,6 +360,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get attendanceLoadFailedTitle => 'Could not open the muster';
+
+  @override
+  String get attendanceLoading => 'Loading the muster';
 
   @override
   String get attendanceMarkedSoFar => 'Marked so far';
@@ -478,7 +483,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boqFormDescription => 'Work description';
 
   @override
-  String get boqFormDescriptionHint => 'M25 concrete in slab';
+  String get boqFormDescriptionHint => 'e.g. M25 concrete in slab';
 
   @override
   String get boqFormDescriptionRequired => 'Write the work description.';
@@ -508,7 +513,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boqFormSection => 'Section (optional)';
 
   @override
-  String get boqFormSectionHint => 'Superstructure';
+  String get boqFormSectionHint => 'e.g. Superstructure';
 
   @override
   String get boqFormTitle => 'Add BOQ item';
@@ -529,6 +534,9 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$count $_temp0 added';
   }
+
+  @override
+  String get boqLoading => 'Loading BOQ';
 
   @override
   String boqMeasuredShare(int percent) {
@@ -568,6 +576,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get boqOpenAction => 'Open BOQ';
+
+  @override
+  String boqOver(String qty, String unit) {
+    return 'Over by $qty $unit';
+  }
+
+  @override
+  String get boqRefreshFailed =>
+      'Could not update. Showing what is on this phone.';
 
   @override
   String get boqSearchHint => 'Code or work';
@@ -748,7 +765,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not open the camera. Allow camera in phone settings.';
 
   @override
-  String get dprChooseAnother => 'Other item';
+  String get dprCanStillSend => 'You can still send.';
+
+  @override
+  String get dprChooseAnother => 'Change item';
 
   @override
   String get dprCorrectAndSend => 'Correct and send again';
@@ -781,8 +801,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprListTitle => 'Daily reports';
 
   @override
+  String get dprLoading => 'Loading';
+
+  @override
   String get dprLocked =>
       'This report has gone for approval and cannot be changed now.';
+
+  @override
+  String get dprMissedDays => 'Missed days';
 
   @override
   String dprMoreRows(int count) {
@@ -798,11 +824,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprNeedWeather => 'Choose today\'s weather.';
 
   @override
-  String get dprNeedWorkers =>
-      'Enter the workers who came. If the site was closed, write why under Hindrances.';
+  String get dprNeedWorkers => 'Enter the workers who came.';
+
+  @override
+  String get dprNoPhotosYet => 'No photos added.';
 
   @override
   String get dprNoProject => 'Pick a project first';
+
+  @override
+  String get dprNoWorkYet => 'No work added.';
 
   @override
   String get dprNotSaved => 'Not saved';
@@ -820,6 +851,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String dprOfDays(int days) {
     return 'of $days days';
   }
+
+  @override
+  String get dprOpenOutbox => 'Open Outbox';
 
   @override
   String get dprOpenToday => 'Open today\'s report';
@@ -858,6 +892,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dprRemove => 'Remove';
+
+  @override
+  String get dprRemoved => 'Removed';
 
   @override
   String get dprReportsThisMonth => 'Reports this month';
@@ -938,6 +975,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprSendReport => 'Send report';
 
   @override
+  String get dprSiteClosedWrite => 'Site closed? Write the reason';
+
+  @override
   String get dprSyncAttention => 'Needs attention';
 
   @override
@@ -954,6 +994,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dprTotalWorkers => 'Total workers';
+
+  @override
+  String get dprUndo => 'Undo';
 
   @override
   String dprWorkersCount(int count) {
@@ -978,6 +1021,11 @@ class AppLocalizationsEn extends AppLocalizations {
       one: 'worker',
     );
     return '$_temp0';
+  }
+
+  @override
+  String dprWriteFor(String date) {
+    return 'Write report for $date';
   }
 
   @override
@@ -1060,10 +1108,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesFilterAll => 'All';
 
   @override
-  String get issuesFormAssignee => 'Who will fix it?';
+  String get issuesFormAssignee => 'Who will fix it? (optional)';
 
   @override
-  String get issuesFormDue => 'Fix by';
+  String get issuesFormDue => 'Fix by (optional)';
+
+  @override
+  String get issuesFormDueClear => 'Tap the chosen day again to clear it.';
 
   @override
   String get issuesFormDueThree => '3 days';
@@ -1078,10 +1129,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesFormEyebrow => 'New issue';
 
   @override
-  String get issuesFormLocation => 'Where on site?';
+  String get issuesFormLocation => 'Where on site? (optional)';
 
   @override
-  String get issuesFormLocationHint => 'Grid C, third floor';
+  String get issuesFormLocationHint => 'e.g. Grid C, third floor';
 
   @override
   String get issuesFormPriority => 'How urgent is it?';
@@ -1096,10 +1147,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesFormWhat => 'What is wrong?';
 
   @override
-  String get issuesFormWhatHint => 'Crack in column C3';
+  String get issuesFormWhatHint => 'e.g. Crack in column C3';
 
   @override
   String get issuesFormWhatRequired => 'Write what is wrong.';
+
+  @override
+  String get issuesLoading => 'Loading issues';
 
   @override
   String get issuesNoDueDate => 'No due date';
@@ -1124,6 +1178,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get issuesRaise => 'Raise issue';
+
+  @override
+  String get issuesRefreshFailed =>
+      'Could not update. Showing what is on this phone.';
+
+  @override
+  String issuesResolvedOn(String date) {
+    return 'Resolved $date';
+  }
 
   @override
   String get issuesSaveFailed => 'Could not save the issue. Try again.';
@@ -1239,7 +1302,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementDetailTitle => 'Measurement';
 
   @override
-  String get measurementDetailsShort => 'Details';
+  String get measurementDetailsShort => 'Location, date';
 
   @override
   String get measurementDetailsTitle => 'Location, note and date';
@@ -1255,6 +1318,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get measurementDeviationDetail =>
       'This entry goes over the BOQ quantity plus tolerance, so the project manager must approve it.';
+
+  @override
+  String measurementDraftsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rows kept as drafts. Send them from the book.',
+      one: '1 row kept as a draft. Send it from the book.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get measurementEdit => 'Edit';
@@ -1275,6 +1349,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementFilterAll => 'All';
 
   @override
+  String get measurementFixLast => 'Fix last';
+
+  @override
   String get measurementFormulaHint => 'Enter Nos to begin';
 
   @override
@@ -1284,13 +1361,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementGoneTitle => 'Entry not found';
 
   @override
+  String get measurementInReviewBody =>
+      'With the approver. It cannot be changed until they decide.';
+
+  @override
   String get measurementItem => 'Item';
+
+  @override
+  String get measurementLeaveBody =>
+      'The figures typed for this row will be lost.';
+
+  @override
+  String get measurementLeaveGo => 'Leave';
+
+  @override
+  String get measurementLeaveKeep => 'Keep entering';
+
+  @override
+  String get measurementLeaveTitle => 'Leave without saving?';
 
   @override
   String get measurementLength => 'Length';
 
   @override
   String get measurementLengthShort => '× L';
+
+  @override
+  String get measurementLoading => 'Loading';
 
   @override
   String get measurementLocationHint => 'Grid, floor, footing';
@@ -1364,6 +1461,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementRecentLines => 'Recent';
 
   @override
+  String get measurementRejectedBody =>
+      'This entry was rejected and will not count. Make a new entry if the work needs measuring again.';
+
+  @override
   String measurementRowCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -1392,7 +1493,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String measurementSendCount(int count) {
-    return 'Send $count rows';
+    return 'Send $count for approval';
   }
 
   @override
@@ -1470,6 +1571,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pettyCashCategoryRequired => 'Choose what it was for.';
 
   @override
+  String get pettyCashChooseProject => 'Choose a project';
+
+  @override
   String get pettyCashConfirmed => 'Confirmed';
 
   @override
@@ -1504,6 +1608,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pettyCashFormTitle => 'Add an expense';
+
+  @override
+  String get pettyCashLoading => 'Loading the cash book';
 
   @override
   String get pettyCashNoProjectMessage =>
@@ -1570,6 +1677,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pettyCashSyncSending => 'Sending';
+
+  @override
+  String get pettyCashTapToChange => 'Tap to change';
 
   @override
   String get pettyCashTitle => 'Petty cash';
@@ -1690,6 +1800,9 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get shellOutboxLoading => 'Loading the outbox';
 
   @override
   String get shellOutboxLogTitle => 'Not applied';

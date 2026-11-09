@@ -4,9 +4,12 @@ import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// Progress as a gold fill and a diagonally hatched remainder, with a marker
-/// labelled for "today". The marker's label is painted from the first frame;
-/// only the fill runs in, once, over [N360Durations.fill].
+/// Progress as a thin flat bar: orange done, the light surface tone for the
+/// rest, and a marker labelled for "today". The marker's label is painted from
+/// the first frame; only the fill runs in, once, over [N360Durations.fill].
+///
+/// The name is kept from the earlier design, which hatched the remainder. The
+/// bar is plain now.
 ///
 /// [fraction] is a layout value: compute it from `Decimal` before passing it.
 class HatchedProgressBar extends StatelessWidget {
@@ -14,8 +17,9 @@ class HatchedProgressBar extends StatelessWidget {
     super.key,
     required this.fraction,
     this.markerLabel,
-    this.height = 32,
+    this.height = 8,
     this.semanticLabel,
+    this.delayed = false,
   });
 
   /// How far along, 0 to 1.
@@ -24,18 +28,21 @@ class HatchedProgressBar extends StatelessWidget {
   /// Text beside the marker, such as "Today". Null shows no text.
   final String? markerLabel;
 
-  /// The bar itself. 32 for the hero card, 20 for a row.
+  /// The bar itself. 8 for a card, 6 for a row.
   final double height;
 
   /// Spoken instead of the percent, such as "70 percent complete".
   final String? semanticLabel;
+
+  /// Fills in the urgent red-orange instead of orange, for work behind plan.
+  final bool delayed;
 
   @override
   Widget build(BuildContext context) {
     final double target = fraction.clamp(0.0, 1.0);
     final motion = context.motion;
     final TextScaler scaler = N360TextScale.of(context);
-    final double headroom = markerLabel == null ? 8 : 22 * scaler.scale(1);
+    final double headroom = markerLabel == null ? 6 : 22 * scaler.scale(1);
 
     return Semantics(
       container: true,
@@ -48,12 +55,13 @@ class HatchedProgressBar extends StatelessWidget {
             curve: N360Curves.rise,
             builder: (context, value, _) => CustomPaint(
               size: Size(double.infinity, height + headroom),
-              painter: _HatchedBarPainter(
+              painter: _BarPainter(
                 fraction: value,
                 label: markerLabel,
                 barHeight: height,
                 headroom: headroom,
                 scaler: scaler,
+                fill: delayed ? N360Colors.accent : N360Colors.orange,
               ),
             ),
           ),
@@ -63,13 +71,14 @@ class HatchedProgressBar extends StatelessWidget {
   }
 }
 
-class _HatchedBarPainter extends CustomPainter {
-  const _HatchedBarPainter({
+class _BarPainter extends CustomPainter {
+  const _BarPainter({
     required this.fraction,
     required this.label,
     required this.barHeight,
     required this.headroom,
     required this.scaler,
+    required this.fill,
   });
 
   final double fraction;
@@ -77,69 +86,29 @@ class _HatchedBarPainter extends CustomPainter {
   final double barHeight;
   final double headroom;
   final TextScaler scaler;
-
-  static const double _stripeStep = 10;
-  static const double _stripeWidth = 4;
+  final Color fill;
 
   @override
   void paint(Canvas canvas, Size size) {
     final Rect bar = Rect.fromLTWH(0, headroom, size.width, barHeight);
     final double splitX = size.width * fraction;
-    final RRect shape = RRect.fromRectAndRadius(bar, Radius.circular(barHeight * 0.3));
+    final Radius radius = Radius.circular(barHeight / 2);
 
-    canvas.drawRRect(shape, Paint()..color = N360Colors.paper2);
-
-    canvas.save();
-    canvas.clipRRect(shape);
-
-    // The filled part: a warm wash with white hatching across it.
-    final Rect filled = Rect.fromLTRB(0, bar.top, splitX, bar.bottom);
-    if (filled.width > 0) {
-      canvas.drawRect(filled, Paint()..shader = N360Gradients.goldFade.createShader(filled));
-      _stripes(canvas, filled, Paint()..color = N360Colors.sheet.withValues(alpha: 0.38));
+    canvas.drawRRect(RRect.fromRectAndRadius(bar, radius), Paint()..color = N360Colors.paper2);
+    if (splitX > 0) {
+      final Rect done = Rect.fromLTRB(0, bar.top, splitX.clamp(barHeight, size.width), bar.bottom);
+      canvas.drawRRect(RRect.fromRectAndRadius(done, radius), Paint()..color = fill);
     }
-
-    // The remainder: orange hatching on the pale track.
-    final Rect rest = Rect.fromLTRB(splitX, bar.top, size.width, bar.bottom);
-    if (rest.width > 0) {
-      _stripes(canvas, rest, Paint()..color = N360Colors.orange.withValues(alpha: 0.68));
-    }
-    canvas.restore();
 
     _marker(canvas, size, splitX, bar);
   }
 
-  void _stripes(Canvas canvas, Rect area, Paint paint) {
-    canvas.save();
-    canvas.clipRect(area);
-    final double h = area.height;
-    final Path stripes = Path();
-    // Stripes are anchored to the bar, so they stay put as the fill grows.
-    for (double x = -h; x < area.right + h; x += _stripeStep) {
-      if (x + h + _stripeWidth < area.left) continue;
-      stripes
-        ..moveTo(x, area.bottom)
-        ..lineTo(x + h, area.top)
-        ..lineTo(x + h + _stripeWidth, area.top)
-        ..lineTo(x + _stripeWidth, area.bottom)
-        ..close();
-    }
-    canvas.drawPath(stripes, paint);
-    canvas.restore();
-  }
-
   void _marker(Canvas canvas, Size size, double x, Rect bar) {
-    final double px = x.clamp(1.0, size.width - 1.0);
-    final Paint line = Paint()
-      ..color = N360Colors.orange
-      ..strokeWidth = 1.5;
-    final double dotY = label == null ? bar.top - 4 : bar.top - 6;
-    canvas.drawLine(Offset(px, dotY), Offset(px, bar.bottom), line);
-    canvas.drawCircle(Offset(px, dotY), 3.5, Paint()..color = N360Colors.orange);
-    canvas.drawCircle(Offset(px, dotY), 1.4, Paint()..color = N360Colors.sheet);
-
     final String? text = label;
     if (text == null || text.isEmpty) return;
+    // A small dot above the bar, not a line through it.
+    final double px = x.clamp(3.0, size.width - 3.0);
+    canvas.drawCircle(Offset(px, bar.top - 6), 3, Paint()..color = N360Colors.ink2);
     final TextPainter painter = TextPainter(
       text: TextSpan(
         text: text,
@@ -150,14 +119,15 @@ class _HatchedBarPainter extends CustomPainter {
       maxLines: 1,
     )..layout(maxWidth: size.width);
     final double textX = (px - painter.width / 2).clamp(0.0, size.width - painter.width);
-    painter.paint(canvas, Offset(textX, dotY - 6 - painter.height));
+    painter.paint(canvas, Offset(textX, bar.top - 11 - painter.height));
     painter.dispose();
   }
 
   @override
-  bool shouldRepaint(_HatchedBarPainter oldDelegate) =>
+  bool shouldRepaint(_BarPainter oldDelegate) =>
       oldDelegate.fraction != fraction ||
       oldDelegate.label != label ||
       oldDelegate.barHeight != barHeight ||
-      oldDelegate.scaler != scaler;
+      oldDelegate.scaler != scaler ||
+      oldDelegate.fill != fill;
 }

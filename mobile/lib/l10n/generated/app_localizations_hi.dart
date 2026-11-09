@@ -313,7 +313,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get attendanceAllPresentHelper =>
-      'सिर्फ़ बचे लोगों को उपस्थित करता है। अनुपस्थित नहीं बदलते।';
+      'जिनकी हाज़िरी लग चुकी है, उन्हें छोड़ देता है।';
+
+  @override
+  String get attendanceChooseProject => 'प्रोजेक्ट चुनें';
 
   @override
   String attendanceDateTitle(String date) {
@@ -346,6 +349,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get attendanceLoadFailedTitle => 'हाज़िरी नहीं खुली';
+
+  @override
+  String get attendanceLoading => 'हाज़िरी लोड हो रही है';
 
   @override
   String get attendanceMarkedSoFar => 'अब तक दर्ज';
@@ -467,7 +473,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get boqFormDescription => 'काम का विवरण';
 
   @override
-  String get boqFormDescriptionHint => 'स्लैब में M25 कंक्रीट';
+  String get boqFormDescriptionHint => 'जैसे: स्लैब में M25 कंक्रीट';
 
   @override
   String get boqFormDescriptionRequired => 'काम का विवरण लिखें।';
@@ -497,7 +503,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get boqFormSection => 'सेक्शन (वैकल्पिक)';
 
   @override
-  String get boqFormSectionHint => 'सुपरस्ट्रक्चर';
+  String get boqFormSectionHint => 'जैसे: सुपरस्ट्रक्चर';
 
   @override
   String get boqFormTitle => 'BOQ आइटम जोड़ें';
@@ -512,6 +518,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String boqLinesAdded(int count) {
     return '$count लाइनें जोड़ीं';
   }
+
+  @override
+  String get boqLoading => 'BOQ लोड हो रहा है';
 
   @override
   String boqMeasuredShare(int percent) {
@@ -551,6 +560,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get boqOpenAction => 'BOQ खोलें';
+
+  @override
+  String boqOver(String qty, String unit) {
+    return '$qty $unit ज़्यादा';
+  }
+
+  @override
+  String get boqRefreshFailed =>
+      'अपडेट नहीं हो सका। फ़ोन पर जो है वही दिखा रहे हैं।';
 
   @override
   String get boqSearchHint => 'कोड या काम';
@@ -731,6 +749,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'कैमरा नहीं खुला। फ़ोन की सेटिंग में कैमरे की अनुमति दें।';
 
   @override
+  String get dprCanStillSend => 'फिर भी भेज सकते हैं।';
+
+  @override
   String get dprChooseAnother => 'दूसरा आइटम';
 
   @override
@@ -764,8 +785,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprListTitle => 'दैनिक रिपोर्ट';
 
   @override
+  String get dprLoading => 'लोड हो रहा है';
+
+  @override
   String get dprLocked =>
       'यह रिपोर्ट मंज़ूरी के लिए जा चुकी है, अब बदली नहीं जा सकती।';
+
+  @override
+  String get dprMissedDays => 'छूटे हुए दिन';
 
   @override
   String dprMoreRows(int count) {
@@ -781,11 +808,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprNeedWeather => 'आज का मौसम चुनें।';
 
   @override
-  String get dprNeedWorkers =>
-      'आए कामगारों की संख्या भरें। साइट बंद थी तो रुकावटों में कारण लिखें।';
+  String get dprNeedWorkers => 'आए कामगारों की संख्या भरें।';
+
+  @override
+  String get dprNoPhotosYet => 'कोई फ़ोटो नहीं जोड़ी।';
 
   @override
   String get dprNoProject => 'पहले प्रोजेक्ट चुनें';
+
+  @override
+  String get dprNoWorkYet => 'कोई काम नहीं जोड़ा।';
 
   @override
   String get dprNotSaved => 'सेव नहीं हुआ';
@@ -803,6 +835,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String dprOfDays(int days) {
     return '$days दिनों में से';
   }
+
+  @override
+  String get dprOpenOutbox => 'आउटबॉक्स खोलें';
 
   @override
   String get dprOpenToday => 'आज की रिपोर्ट खोलें';
@@ -835,6 +870,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get dprRemove => 'हटाएँ';
+
+  @override
+  String get dprRemoved => 'हटाया';
 
   @override
   String get dprReportsThisMonth => 'इस महीने की रिपोर्ट';
@@ -914,6 +952,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprSendReport => 'रिपोर्ट भेजें';
 
   @override
+  String get dprSiteClosedWrite => 'साइट बंद? कारण लिखें';
+
+  @override
   String get dprSyncAttention => 'ध्यान दें';
 
   @override
@@ -932,6 +973,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprTotalWorkers => 'कुल कामगार';
 
   @override
+  String get dprUndo => 'वापस लाएँ';
+
+  @override
   String dprWorkersCount(int count) {
     return '$count कामगार';
   }
@@ -942,6 +986,11 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String dprWorkersWord(int count) {
     return 'कामगार';
+  }
+
+  @override
+  String dprWriteFor(String date) {
+    return '$date की रिपोर्ट लिखें';
   }
 
   @override
@@ -1024,10 +1073,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get issuesFilterAll => 'सभी';
 
   @override
-  String get issuesFormAssignee => 'कौन ठीक करेगा?';
+  String get issuesFormAssignee => 'कौन ठीक करेगा? (वैकल्पिक)';
 
   @override
-  String get issuesFormDue => 'कब तक ठीक करना है?';
+  String get issuesFormDue => 'कब तक ठीक करना है? (वैकल्पिक)';
+
+  @override
+  String get issuesFormDueClear => 'चुने हुए दिन पर फिर से टैप करके उसे हटाएँ।';
 
   @override
   String get issuesFormDueThree => '3 दिन';
@@ -1042,10 +1094,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get issuesFormEyebrow => 'नई समस्या';
 
   @override
-  String get issuesFormLocation => 'साइट पर कहाँ?';
+  String get issuesFormLocation => 'साइट पर कहाँ? (वैकल्पिक)';
 
   @override
-  String get issuesFormLocationHint => 'ग्रिड C, तीसरी मंज़िल';
+  String get issuesFormLocationHint => 'जैसे: ग्रिड C, तीसरी मंज़िल';
 
   @override
   String get issuesFormPriority => 'कितना ज़रूरी है?';
@@ -1060,10 +1112,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get issuesFormWhat => 'क्या गड़बड़ है?';
 
   @override
-  String get issuesFormWhatHint => 'कॉलम C3 में दरार';
+  String get issuesFormWhatHint => 'जैसे: कॉलम C3 में दरार';
 
   @override
   String get issuesFormWhatRequired => 'क्या गड़बड़ है, लिखें।';
+
+  @override
+  String get issuesLoading => 'समस्याएँ लोड हो रही हैं';
 
   @override
   String get issuesNoDueDate => 'कोई समय सीमा नहीं';
@@ -1082,6 +1137,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get issuesRaise => 'समस्या दर्ज करें';
+
+  @override
+  String get issuesRefreshFailed =>
+      'अपडेट नहीं हो सका। फ़ोन पर जो है वही दिखा रहे हैं।';
+
+  @override
+  String issuesResolvedOn(String date) {
+    return 'हल हुआ $date';
+  }
 
   @override
   String get issuesSaveFailed => 'समस्या सेव नहीं हुई। फिर से कोशिश करें।';
@@ -1197,7 +1261,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get measurementDetailTitle => 'माप';
 
   @override
-  String get measurementDetailsShort => 'विवरण';
+  String get measurementDetailsShort => 'स्थान, तारीख़';
 
   @override
   String get measurementDetailsTitle => 'स्थान, नोट और तारीख़';
@@ -1213,6 +1277,17 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get measurementDeviationDetail =>
       'यह एंट्री BOQ मात्रा और छूट से ज़्यादा है, इसलिए प्रोजेक्ट मैनेजर की मंज़ूरी लगेगी।';
+
+  @override
+  String measurementDraftsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count पंक्तियाँ मसौदे में रखीं। पुस्तिका से भेजें।',
+      one: '1 पंक्ति मसौदे में रखी। पुस्तिका से भेजें।',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get measurementEdit => 'बदलें';
@@ -1234,6 +1309,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get measurementFilterAll => 'सभी';
 
   @override
+  String get measurementFixLast => 'आख़िरी सुधारें';
+
+  @override
   String get measurementFormulaHint => 'शुरू करने के लिए नग भरें';
 
   @override
@@ -1243,13 +1321,32 @@ class AppLocalizationsHi extends AppLocalizations {
   String get measurementGoneTitle => 'एंट्री नहीं मिली';
 
   @override
+  String get measurementInReviewBody =>
+      'मंज़ूर करने वाले के पास है। फ़ैसले तक बदला नहीं जा सकता।';
+
+  @override
   String get measurementItem => 'आइटम';
+
+  @override
+  String get measurementLeaveBody => 'इस पंक्ति के भरे आँकड़े मिट जाएँगे।';
+
+  @override
+  String get measurementLeaveGo => 'बाहर जाएँ';
+
+  @override
+  String get measurementLeaveKeep => 'भरते रहें';
+
+  @override
+  String get measurementLeaveTitle => 'बिना सहेजे बाहर जाएँ?';
 
   @override
   String get measurementLength => 'लंबाई';
 
   @override
   String get measurementLengthShort => 'लंबाई';
+
+  @override
+  String get measurementLoading => 'लोड हो रहा है';
 
   @override
   String get measurementLocationHint => 'ग्रिड, मंज़िल, फ़ुटिंग';
@@ -1323,6 +1420,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get measurementRecentLines => 'हाल के';
 
   @override
+  String get measurementRejectedBody =>
+      'यह एंट्री अस्वीकृत है, गिनी नहीं जाएगी। फिर मापना हो तो नई एंट्री करें।';
+
+  @override
   String measurementRowCount(int count) {
     return '$count एंट्री';
   }
@@ -1345,7 +1446,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String measurementSendCount(int count) {
-    return '$count पंक्तियाँ भेजें';
+    return '$count मंज़ूरी के लिए भेजें';
   }
 
   @override
@@ -1424,6 +1525,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashCategoryRequired => 'किसके लिए, चुनें।';
 
   @override
+  String get pettyCashChooseProject => 'प्रोजेक्ट चुनें';
+
+  @override
   String get pettyCashConfirmed => 'पक्का शेष';
 
   @override
@@ -1459,6 +1563,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pettyCashFormTitle => 'ख़र्च जोड़ें';
+
+  @override
+  String get pettyCashLoading => 'नकद बही लोड हो रही है';
 
   @override
   String get pettyCashNoProjectMessage =>
@@ -1526,6 +1633,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pettyCashSyncSending => 'भेज रहे हैं';
+
+  @override
+  String get pettyCashTapToChange => 'बदलने के लिए टैप करें';
 
   @override
   String get pettyCashTitle => 'फुटकर नकद';
@@ -1638,6 +1748,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String shellOutboxAttention(int count) {
     return '$count प्रविष्टियों पर ध्यान दें';
   }
+
+  @override
+  String get shellOutboxLoading => 'आउटबॉक्स ला रहे हैं';
 
   @override
   String get shellOutboxLogTitle => 'लागू नहीं हुआ';

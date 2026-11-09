@@ -85,10 +85,10 @@ void main() {
         attendance.mark(projectId: 1, workerId: id, date: today, status: status, otHours: ot);
 
     await mark(10, 'present');
-    await mark(11, 'present');
+    await mark(11, 'overtime', ot: Hours.fromInt(3));
     await mark(12, 'half');
-    await mark(13, 'overtime', ot: Hours.fromInt(3));
-    await mark(14, 'absent');
+    await mark(13, 'present');
+    await mark(15, 'absent');
 
     for (final (name, locale) in <(String, Locale)>[('en', const Locale('en')), ('mr', const Locale('mr'))]) {
       await tester.pumpWidget(fieldApp(app.services, const AttendanceScreen(), locale: locale));
@@ -141,6 +141,69 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.runAsync(() => capturePng(tester, _dir, 'en_add_worker_wage'));
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('capture loading and empty muster', (tester) async {
+    tester.view.devicePixelRatio = 2.5;
+    tester.view.physicalSize = const Size(360, 780) * 2.5;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final app = await _seededMuster();
+    addTearDown(app.dispose);
+
+    // The first frame, before the muster has been read: the skeleton.
+    await tester.pumpWidget(fieldApp(app.services, const AttendanceScreen()));
+    await tester.runAsync(() => capturePng(tester, _dir, 'en_muster_loading'));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    final empty = await TestApp.create(seed: false);
+    addTearDown(empty.dispose);
+    empty.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+    await empty.sync();
+    for (final (name, locale) in <(String, Locale)>[('en', const Locale('en')), ('mr', const Locale('mr'))]) {
+      await tester.pumpWidget(fieldApp(empty.services, const AttendanceScreen(), locale: locale));
+      await pumpDrift(tester);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.runAsync(() => capturePng(tester, _dir, '${name}_muster_empty'));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    }
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('capture add worker sheet offline and in Marathi', (tester) async {
+    tester.view.devicePixelRatio = 2.5;
+    tester.view.physicalSize = const Size(360, 780) * 2.5;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final app = await _seededMuster();
+    addTearDown(app.dispose);
+
+    await tester.pumpWidget(fieldApp(app.services, const AttendanceScreen(), locale: const Locale('mr')));
+    await pumpDrift(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('कामगार जोडा'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() => capturePng(tester, _dir, 'mr_add_worker_details'));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+
+    final offline = await _seededMuster();
+    addTearDown(offline.dispose);
+    offline.connectivity.setOnline(false);
+    await tester.pumpWidget(fieldApp(offline.services, const AttendanceScreen()));
+    await pumpDrift(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Add worker'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() => capturePng(tester, _dir, 'en_add_worker_offline'));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
   });

@@ -6,6 +6,9 @@ import '../../../../l10n/generated/app_localizations.dart';
 /// Pieces shared by the attendance, issues and petty cash screens, so the three
 /// read as one app. They live here because `lib/core` belongs to the design
 /// system and these are only compositions of it.
+///
+/// Every visible thing here is sized for the eye (a 44dp tile, 18 and 14 point
+/// type) and every tappable thing carries a 56dp target around it.
 
 /// The top of a screen: a labelled back tile, a centred title, and an optional
 /// tile on the right. The back tile keeps its word, so nothing depends on
@@ -26,12 +29,15 @@ class FieldTopBar extends StatelessWidget {
   final VoidCallback? onBack;
   final Widget? trailing;
 
-  static const double _sideWidth = 64;
+  /// Room each side keeps, so the title stays centred whichever side is empty.
+  static const double _sideWidth = N360Size.tap + N360Space.sm;
 
   @override
   Widget build(BuildContext context) {
     final NavigatorState navigator = Navigator.of(context);
-    final VoidCallback? back = onBack ?? (navigator.canPop() ? () => navigator.maybePop() : null);
+    final VoidCallback? back =
+        onBack ?? (navigator.canPop() ? () => navigator.maybePop() : null);
+    final String? sub = subtitle;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -53,20 +59,23 @@ class FieldTopBar extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Text(
-                    title,
-                    maxLines: 2,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    style: N360Type.heading.copyWith(fontSize: 18, height: 1.3),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.fit(N360Type.title, title),
+                    ),
                   ),
-                  if (subtitle != null)
+                  if (sub != null)
                     Text(
-                      subtitle!,
+                      sub,
                       maxLines: 1,
                       textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,
-                      style: N360Type.caption,
+                      style: N360Type.fit(N360Type.caption, sub),
                     ),
                 ],
               ),
@@ -91,35 +100,43 @@ class _BackTile extends StatelessWidget {
     return PressTarget(
       onTap: onTap,
       semanticsLabel: l.commonBack,
-      minWidth: 56,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.chevron_left, size: 26, color: N360Colors.ink),
+          const Icon(
+            Icons.chevron_left,
+            size: N360IconSize.xl,
+            color: N360Colors.ink,
+          ),
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               l.commonBack,
               maxLines: 1,
-              style: N360Type.caption.copyWith(
-                fontSize: 13,
-                height: 1.15,
-                color: N360Colors.ink,
-                fontWeight: FontWeight.w600,
-              ),
+              style: N360Type.fit(N360Type.label, l.commonBack),
             ),
           ),
         ],
       ),
-      builder: (context, depth, child) => Transform.scale(
-        scale: 1 - 0.035 * depth,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: N360Colors.sheet,
-            borderRadius: N360Radius.tileRadius,
+      // The tile is light; the 56dp target around it is the press surface. It
+      // grows with a larger text size rather than clip its word.
+      builder: (context, depth, child) => Center(
+        child: Transform.scale(
+          scale: pressedScale(depth),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: N360Colors.sheet,
+              borderRadius: N360Radius.tileRadius,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: N360Size.barTile,
+                minHeight: N360Size.barTile,
+              ),
+              child: Center(widthFactor: 1, heightFactor: 1, child: child),
+            ),
           ),
-          child: SizedBox(height: N360Size.tap, child: Center(child: child)),
         ),
       ),
     );
@@ -138,9 +155,14 @@ class FieldActionBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.md, N360Space.xs, N360Space.md, N360Space.sm),
+        padding: const EdgeInsets.fromLTRB(
+          N360Space.md,
+          N360Space.xs,
+          N360Space.md,
+          N360Space.sm,
+        ),
         child: LedgerCard(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(N360Space.tile),
           child: child,
         ),
       ),
@@ -154,12 +176,17 @@ class FieldGroupSliver extends StatelessWidget {
   const FieldGroupSliver({
     super.key,
     required this.sliver,
-    this.padding = const EdgeInsets.fromLTRB(12, 12, 12, 4),
+    this.padding = const EdgeInsets.fromLTRB(
+      N360Space.md,
+      N360Space.md,
+      N360Space.md,
+      N360Space.xs,
+    ),
     this.margin = const EdgeInsets.fromLTRB(
       N360Space.gutter,
       0,
       N360Space.gutter,
-      N360Space.md,
+      N360Space.cardGap,
     ),
   });
 
@@ -183,8 +210,47 @@ class FieldGroupSliver extends StatelessWidget {
   }
 }
 
-/// A selectable chip: white at rest, gold with dark ink when chosen. At least
-/// 56dp high for a gloved thumb.
+/// A horizontal strip of [FieldChoiceTile]s: the days of the week, the wallets
+/// of a project. Tiles keep their 56dp target and the strip gives them air.
+///
+/// Build each tile in [itemBuilder]; the strip centres it. With [reverse] the
+/// first item sits at the right edge, where the thumb rests.
+class FieldChoiceStrip extends StatelessWidget {
+  const FieldChoiceStrip({
+    super.key,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.reverse = false,
+  });
+
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+  final bool reverse;
+
+  /// A 56dp target with a little room above and below.
+  static const double height = N360Size.tap + N360Space.sm;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      child: ListView.separated(
+        reverse: reverse,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+        itemCount: itemCount,
+        separatorBuilder: (_, _) => const SizedBox(width: N360Space.sm),
+        itemBuilder: (context, index) =>
+            Center(child: itemBuilder(context, index)),
+      ),
+    );
+  }
+}
+
+/// A selectable chip: white at rest, solid ink with white words when chosen.
+/// Ink on white is the strongest contrast the app has, so the choice reads in
+/// direct sun, and orange stays the colour of the one main action. The tile is
+/// light and sits inside a 56dp target, so it is easy to hit in gloves.
 class FieldChoiceTile extends StatelessWidget {
   const FieldChoiceTile({
     super.key,
@@ -193,6 +259,7 @@ class FieldChoiceTile extends StatelessWidget {
     required this.onTap,
     this.icon,
     this.trailing,
+    this.trailingIcon,
     this.detail,
     this.width,
     this.semanticsLabel,
@@ -206,6 +273,10 @@ class FieldChoiceTile extends StatelessWidget {
   /// A count after the label.
   final String? trailing;
 
+  /// A small mark after the label that says the tile opens a list. It sits
+  /// beside the label and never stands alone.
+  final IconData? trailingIcon;
+
   /// A second, smaller line under the label.
   final String? detail;
 
@@ -215,9 +286,17 @@ class FieldChoiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String spoken = semanticsLabel ??
-        <String>[label, ?detail, ?trailing].join(', ');
-    final Color secondary = selected ? N360Colors.ink : N360Colors.inkLabel;
+    final String spoken =
+        semanticsLabel ?? <String>[label, ?detail, ?trailing].join(', ');
+    final Color primary = selected ? N360Colors.sheet : N360Colors.ink;
+    final Color secondary = selected ? N360Colors.sheet : N360Colors.inkLabel;
+    final String? sub = detail;
+    final String? count = trailing;
+
+    // A tile of fixed width gives its words the room the padding would take.
+    final double inset = width != null && width!.isFinite
+        ? N360Space.sm
+        : N360Space.md;
 
     final Widget text = Column(
       mainAxisSize: MainAxisSize.min,
@@ -227,16 +306,22 @@ class FieldChoiceTile extends StatelessWidget {
           child: Text(
             label,
             maxLines: 1,
-            style: N360Type.bodyStrong.copyWith(height: 1.25, color: N360Colors.ink),
+            style: N360Type.fit(
+              N360Type.bodyStrong,
+              label,
+            ).copyWith(color: primary),
           ),
         ),
-        if (detail != null)
+        if (sub != null)
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              detail!,
+              sub,
               maxLines: 1,
-              style: N360Type.caption.copyWith(fontSize: 13, height: 1.2, color: secondary),
+              style: N360Type.fit(
+                N360Type.caption,
+                sub,
+              ).copyWith(color: secondary),
             ),
           ),
       ],
@@ -247,42 +332,63 @@ class FieldChoiceTile extends StatelessWidget {
       haptic: N360Haptics.select,
       semanticsLabel: spoken,
       selected: selected,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: N360Size.tap),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: Row(
-            mainAxisSize: width == null ? MainAxisSize.min : MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              if (icon != null) ...<Widget>[
-                Icon(icon, size: 20, color: N360Colors.ink),
-                const SizedBox(width: 6),
-              ],
-              if (width == null) text else Flexible(child: text),
-              if (trailing != null) ...<Widget>[
-                const SizedBox(width: 6),
-                Text(
-                  trailing!,
-                  style: N360Type.bodyStrong.copyWith(height: 1.25, color: secondary),
-                ),
-              ],
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: inset,
+          vertical: N360Space.xs,
+        ),
+        child: Row(
+          mainAxisSize: width == null ? MainAxisSize.min : MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            if (icon != null) ...<Widget>[
+              Icon(icon, size: N360IconSize.lg, color: primary),
+              const SizedBox(width: N360Space.sm),
             ],
-          ),
+            if (width == null)
+              text
+            else if (trailingIcon != null)
+              // A tile that opens a list reads left to right, with its mark
+              // at the far edge.
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: text,
+                ),
+              )
+            else
+              Flexible(child: text),
+            if (count != null) ...<Widget>[
+              const SizedBox(width: N360Space.sm),
+              Text(
+                count,
+                style: N360Type.bodyStrong.copyWith(color: secondary),
+              ),
+            ],
+            if (trailingIcon != null) ...<Widget>[
+              const SizedBox(width: N360Space.sm),
+              Icon(trailingIcon, size: N360IconSize.lg, color: secondary),
+            ],
+          ],
         ),
       ),
-      builder: (context, depth, child) => Transform.scale(
-        scale: 1 - 0.035 * depth,
-        child: SizedBox(
-          width: width,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: selected ? null : N360Colors.sheet,
-              gradient: selected ? N360Gradients.gold : null,
-              borderRadius: N360Radius.tileRadius,
-              border: selected ? null : Border.all(color: N360Colors.rule),
+      builder: (context, depth, child) => Center(
+        widthFactor: 1,
+        child: Transform.scale(
+          scale: pressedScale(depth),
+          child: SizedBox(
+            width: width,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: selected ? N360Colors.ink : N360Colors.sheet,
+                borderRadius: N360Radius.tileRadius,
+                border: selected ? null : Border.all(color: N360Colors.rule),
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: N360Size.tile),
+                child: Center(widthFactor: 1, heightFactor: 1, child: child),
+              ),
             ),
-            child: child,
           ),
         ),
       ),
@@ -304,42 +410,45 @@ class FieldSideTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
+  /// Wide enough for "Add worker" and its Marathi and Hindi words at 13 points.
+  static const double _width = 92;
+
   @override
   Widget build(BuildContext context) {
     return PressTarget(
       onTap: onTap,
       minHeight: N360Size.tapLarge,
       semanticsLabel: label,
-      child: SizedBox(
-        width: 92,
-        height: N360Size.tapLarge,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(icon, size: 24, color: N360Colors.ink),
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: N360Type.label.copyWith(height: 1.2, color: N360Colors.ink),
-                ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.xs),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(icon, size: N360IconSize.xl, color: N360Colors.ink),
+            const SizedBox(height: N360Space.xxs),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: N360Type.fit(N360Type.label, label),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       builder: (context, depth, child) => Transform.scale(
-        scale: 1 - 0.035 * depth,
+        scale: pressedScale(depth),
         child: DecoratedBox(
           decoration: const BoxDecoration(
             color: N360Colors.paper2,
             borderRadius: N360Radius.tileRadius,
           ),
-          child: child,
+          child: SizedBox(
+            width: _width,
+            height: N360Size.tapLarge,
+            child: child,
+          ),
         ),
       ),
     );
@@ -354,23 +463,34 @@ class FieldInlineError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Padding(
-          padding: EdgeInsets.only(top: 2, right: 6),
-          child: Icon(Icons.error_outline, size: 18, color: N360Colors.stampRed),
-        ),
-        Expanded(
-          child: Text(
-            message,
-            style: N360Type.caption.copyWith(
-              color: N360Colors.stampRed,
-              fontWeight: FontWeight.w600,
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: message,
+      child: ExcludeSemantics(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Padding(
+              padding: EdgeInsets.only(top: N360Space.xxs, right: N360Space.sm),
+              child: Icon(
+                Icons.error_outline,
+                size: N360IconSize.md,
+                color: N360Colors.stampRed,
+              ),
             ),
-          ),
+            Expanded(
+              child: Text(
+                message,
+                style: N360Type.fit(
+                  N360Type.label,
+                  message,
+                ).copyWith(color: N360Colors.stampRed),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

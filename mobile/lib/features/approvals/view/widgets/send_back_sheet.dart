@@ -8,14 +8,7 @@ import '../../../measurement/view/widgets/book_kit.dart';
 /// Asks why the document is going back. Returns the remark, or null when the
 /// user changes their mind. A remark is required: the sender must know what to fix.
 Future<String?> showSendBackSheet(BuildContext context, {required String docType}) {
-  return showModalBottomSheet<String>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    sheetAnimationStyle: context.motion.reduced ? AnimationStyle.noAnimation : null,
-    builder: (_) => _SendBackSheet(docType: docType),
-  );
+  return showLedgerSheet<String>(context, isScrollControlled: true, builder: (_) => _SendBackSheet(docType: docType));
 }
 
 class _SendBackSheet extends StatefulWidget {
@@ -85,7 +78,7 @@ class _SendBackSheetState extends State<_SendBackSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
+        padding: ledgerSheetPadding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -69,7 +69,19 @@ class _DetailView extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     return BlocBuilder<ApprovalDetailCubit, ApprovalDetailState>(
       builder: (context, state) {
-        if (state.loading) return const Scaffold(backgroundColor: Colors.transparent);
+        if (state.loading) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: LedgerPaper(
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(N360Space.gutter),
+                  child: LedgerSkeleton(figure: true, lines: 3, semanticsLabel: l.measurementLoading),
+                ),
+              ),
+            ),
+          );
+        }
         final ApprovalRow? row = state.item;
         if (state.gone || row == null) return _goneView(context, l);
         final AppServices services = context.read<AppServices>();
@@ -170,7 +182,9 @@ class _Hero extends StatelessWidget {
       if (row.submittedAt != null) agoText(l, row.submittedAt, now),
     ].join(' · ');
     final Color figureInk = figure?.negative == true ? N360Colors.laterite : N360Colors.ink;
+    final TextStyle heroStyle = N360Type.figureHero.copyWith(color: figureInk);
     final ApprovalShare? portion = share;
+    final String? formula = formulaOf(row);
 
     return LedgerCard(
       child: Column(
@@ -188,34 +202,35 @@ class _Hero extends StatelessWidget {
                   children: <Widget>[
                     if (project.isNotEmpty)
                       Text(project, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
-                    Text(row.title, style: N360Type.heading.copyWith(height: 1.3)),
+                    Text(headlineOf(row), style: N360Type.heading),
                   ],
                 ),
               ),
             ],
           ),
           if (figure != null) ...<Widget>[
-            const SizedBox(height: N360Space.sm),
+            const SizedBox(height: N360Space.md),
             Row(
               children: <Widget>[
                 Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text.rich(
-                      key: const ValueKey<String>('approval-figure'),
-                      TextSpan(
-                        text: figure.value,
-                        children: <InlineSpan>[
-                          if (figure.unit != null)
-                            TextSpan(
-                              text: ' ${figure.unit}',
-                              style: N360Type.heading.copyWith(color: figureInk, fontWeight: FontWeight.w500),
-                            ),
-                        ],
-                      ),
-                      style: N360Type.figureHero.copyWith(color: figureInk, fontSize: 40),
-                    ),
+                    child: row.docType == 'ra_bill'
+                        ? RollingMoney(
+                            key: const ValueKey<String>('approval-figure'),
+                            value: figure.value,
+                            style: heroStyle,
+                            animateEntry: true,
+                          )
+                        : RollingQty(
+                            key: const ValueKey<String>('approval-figure'),
+                            value: figure.value,
+                            unit: figure.unit,
+                            style: heroStyle,
+                            unitStyle: N360Type.heading.copyWith(color: figureInk, fontWeight: FontWeight.w500),
+                            animateEntry: true,
+                          ),
                   ),
                 ),
                 if (portion != null) ...<Widget>[
@@ -223,19 +238,25 @@ class _Hero extends StatelessWidget {
                   Semantics(
                     label: '${portion.label} ${l.measurementShareOfBoq}',
                     child: ExcludeSemantics(
-                      child: SquarePercent(fraction: portion.fraction, label: portion.label, size: 60),
+                      child: SquarePercent(fraction: portion.fraction, label: portion.label),
                     ),
                   ),
                 ],
               ],
             ),
           ],
+          if (formula != null)
+            FittedBox(
+              alignment: Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              child: Text(formula, style: N360Type.figureSmall.copyWith(color: N360Colors.ink2)),
+            ),
           const SizedBox(height: N360Space.sm),
           Row(
             children: <Widget>[
-              const Icon(Icons.person_outline, size: 20, color: N360Colors.ink2),
+              const Icon(Icons.person_outline, size: N360IconSize.md, color: N360Colors.ink2),
               const SizedBox(width: 6),
-              Expanded(child: Text(who, style: N360Type.bodyStrong.copyWith(height: 1.3))),
+              Expanded(child: Text(who, style: N360Type.bodyStrong)),
               if (row.status == 'IN_REVIEW')
                 RubberStamp(kind: StampKind.inReview, label: l.statusInReview, size: StampSize.small),
             ],
@@ -300,7 +321,7 @@ class _ActionBar extends StatelessWidget {
             if (!state.online) ...<Widget>[
               Row(
                 children: <Widget>[
-                  const Icon(Icons.cloud_off, size: 20, color: N360Colors.ink2),
+                  const Icon(Icons.cloud_off, size: N360IconSize.md, color: N360Colors.ink2),
                   const SizedBox(width: 6),
                   Expanded(child: Text(l.approvalsNeedsNetwork, style: N360Type.bodyStrong.copyWith(height: 1.3))),
                 ],

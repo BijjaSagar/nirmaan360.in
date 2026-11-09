@@ -138,7 +138,8 @@
       }
     }
   },
-  "attendanceAllPresentHelper": "Fills unmarked workers only. Absent stays absent.",
+  "attendanceAllPresentHelper": "Skips anyone already marked.",
+  "attendanceChooseProject": "Choose a project",
   "attendanceDateTitle": "Attendance for {date}",
   "@attendanceDateTitle": {
     "placeholders": {
@@ -162,9 +163,10 @@
     }
   },
   "attendanceHoursUnit": "h",
-  "attendanceLeft": "Left",
+  "attendanceLeft": "Unmarked",
   "attendanceLoadFailedMessage": "Your marks are safe on this phone. Try again.",
   "attendanceLoadFailedTitle": "Could not open the muster",
+  "attendanceLoading": "Loading the muster",
   "attendanceMarkedSoFar": "Marked so far",
   "attendanceNoProjectMessage": "Choose a project first, then mark the muster here.",
   "attendanceNoProjectTitle": "No project chosen",
@@ -224,7 +226,7 @@
   "boqFormCode": "Code (optional)",
   "boqFormCodeHelper": "Leave blank to get the next number.",
   "boqFormDescription": "Work description",
-  "boqFormDescriptionHint": "M25 concrete in slab",
+  "boqFormDescriptionHint": "e.g. M25 concrete in slab",
   "boqFormDescriptionRequired": "Write the work description.",
   "boqFormFailed": "The line could not be saved. Try again.",
   "boqFormFinish": "Save and finish",
@@ -234,7 +236,7 @@
   "boqFormRateRequired": "Enter the rate.",
   "boqFormSaveAnother": "Save and add another",
   "boqFormSection": "Section (optional)",
-  "boqFormSectionHint": "Superstructure",
+  "boqFormSectionHint": "e.g. Superstructure",
   "boqFormTitle": "Add BOQ item",
   "boqFormUnit": "Unit",
   "boqFormUnitRequired": "Choose the unit.",
@@ -246,6 +248,7 @@
       }
     }
   },
+  "boqLoading": "Loading BOQ",
   "boqMeasuredShare": "{percent}% measured",
   "@boqMeasuredShare": {
     "placeholders": {
@@ -265,6 +268,18 @@
   "boqOfflineDetail": "BOQ lines can be saved only online.",
   "boqOfflineTitle": "No network.",
   "boqOpenAction": "Open BOQ",
+  "boqOver": "Over by {qty} {unit}",
+  "@boqOver": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "boqRefreshFailed": "Could not update. Showing what is on this phone.",
   "boqSearchHint": "Code or work",
   "boqSearchLabel": "Search lines",
   "boqTitle": "BOQ",
@@ -330,7 +345,8 @@
   },
   "dprBoqEmpty": "No BOQ items found.",
   "dprCameraFailed": "Could not open the camera. Allow camera in phone settings.",
-  "dprChooseAnother": "Other item",
+  "dprCanStillSend": "You can still send.",
+  "dprChooseAnother": "Change item",
   "dprCorrectAndSend": "Correct and send again",
   "dprEdit": "Edit",
   "dprEmptyMessage": "Your first report starts this book.",
@@ -341,7 +357,9 @@
   "dprHindrances": "Hindrances",
   "dprHindrancesHint": "Material late, rain, power cut",
   "dprListTitle": "Daily reports",
+  "dprLoading": "Loading",
   "dprLocked": "This report has gone for approval and cannot be changed now.",
+  "dprMissedDays": "Missed days",
   "dprMoreRows": "and {count} more",
   "@dprMoreRows": {
     "placeholders": {
@@ -359,8 +377,10 @@
     }
   },
   "dprNeedWeather": "Choose today's weather.",
-  "dprNeedWorkers": "Enter the workers who came. If the site was closed, write why under Hindrances.",
+  "dprNeedWorkers": "Enter the workers who came.",
+  "dprNoPhotosYet": "No photos added.",
   "dprNoProject": "Pick a project first",
+  "dprNoWorkYet": "No work added.",
   "dprNotSaved": "Not saved",
   "dprNotes": "Notes",
   "dprNotesHint": "Anything else from today",
@@ -373,6 +393,7 @@
       }
     }
   },
+  "dprOpenOutbox": "Open Outbox",
   "dprOpenToday": "Open today's report",
   "dprOptional": "Optional",
   "dprOverBalance": "More than the BOQ balance. Check the figure.",
@@ -390,6 +411,7 @@
   "dprQtyShort": "Qty",
   "dprQuantity": "Quantity",
   "dprRemove": "Remove",
+  "dprRemoved": "Removed",
   "dprReportsThisMonth": "Reports this month",
   "dprReturnedNoRemark": "Please correct and send again.",
   "dprReturnedTitle": "Sent back for correction",
@@ -426,12 +448,14 @@
   "dprSendAgain": "Send again",
   "dprSendFailed": "Could not save this report. Try again.",
   "dprSendReport": "Send report",
+  "dprSiteClosedWrite": "Site closed? Write the reason",
   "dprSyncAttention": "Needs attention",
   "dprSyncPhoneOnly": "Only on this phone",
   "dprSyncSending": "Sending",
   "dprSyncWaiting": "Waiting to send",
   "dprTakePhoto": "Take photo",
   "dprTotalWorkers": "Total workers",
+  "dprUndo": "Undo",
   "dprWorkersCount": "{count, plural, =1{1 worker} other{{count} workers}}",
   "@dprWorkersCount": {
     "placeholders": {
@@ -446,6 +470,14 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "dprWriteFor": "Write report for {date}",
+  "@dprWriteFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
       }
     }
   },
@@ -481,20 +513,22 @@
   "issuesEmptyTitle": "No issues on this site",
   "issuesEyebrow": "Site issues",
   "issuesFilterAll": "All",
-  "issuesFormAssignee": "Who will fix it?",
-  "issuesFormDue": "Fix by",
+  "issuesFormAssignee": "Who will fix it? (optional)",
+  "issuesFormDue": "Fix by (optional)",
+  "issuesFormDueClear": "Tap the chosen day again to clear it.",
   "issuesFormDueThree": "3 days",
   "issuesFormDueToday": "Today",
   "issuesFormDueWeek": "1 week",
   "issuesFormEyebrow": "New issue",
-  "issuesFormLocation": "Where on site?",
-  "issuesFormLocationHint": "Grid C, third floor",
+  "issuesFormLocation": "Where on site? (optional)",
+  "issuesFormLocationHint": "e.g. Grid C, third floor",
   "issuesFormPriority": "How urgent is it?",
   "issuesFormSave": "Save issue",
   "issuesFormTitle": "Raise an issue",
   "issuesFormWhat": "What is wrong?",
-  "issuesFormWhatHint": "Crack in column C3",
+  "issuesFormWhatHint": "e.g. Crack in column C3",
   "issuesFormWhatRequired": "Write what is wrong.",
+  "issuesLoading": "Loading issues",
   "issuesNoDueDate": "No due date",
   "issuesNoProjectMessage": "Choose a project first, then raise issues here.",
   "issuesNoProjectTitle": "No project chosen",
@@ -507,6 +541,15 @@
     }
   },
   "issuesRaise": "Raise issue",
+  "issuesRefreshFailed": "Could not update. Showing what is on this phone.",
+  "issuesResolvedOn": "Resolved {date}",
+  "@issuesResolvedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "issuesSaveFailed": "Could not save the issue. Try again.",
   "issuesSavedOffline": "Saved on phone. Sends when network returns.",
   "issuesSavedOnline": "Saved. Sending now.",
@@ -550,7 +593,7 @@
   "measurementDescriptionHint": "What was measured",
   "measurementDescriptionLabel": "Description",
   "measurementDetailTitle": "Measurement",
-  "measurementDetailsShort": "Details",
+  "measurementDetailsShort": "Location, date",
   "measurementDetailsTitle": "Location, note and date",
   "measurementDeviation": "Deviation",
   "measurementDeviationBody": "Over BOQ + {percent}%. It will need PM approval.",
@@ -562,18 +605,33 @@
     }
   },
   "measurementDeviationDetail": "This entry goes over the BOQ quantity plus tolerance, so the project manager must approve it.",
+  "measurementDraftsLeft": "{count, plural, =1{1 row kept as a draft. Send it from the book.} other{{count} rows kept as drafts. Send them from the book.}}",
+  "@measurementDraftsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "measurementEdit": "Edit",
   "measurementEmptyBody": "Your first entry starts this book.",
   "measurementEmptyFilteredBody": "No entries have this status.",
   "measurementEmptyFilteredTitle": "Nothing here",
   "measurementEmptyTitle": "No measurements yet",
   "measurementFilterAll": "All",
+  "measurementFixLast": "Fix last",
   "measurementFormulaHint": "Enter Nos to begin",
   "measurementGoneBody": "It may have been deleted on the web.",
   "measurementGoneTitle": "Entry not found",
+  "measurementInReviewBody": "With the approver. It cannot be changed until they decide.",
   "measurementItem": "Item",
+  "measurementLeaveBody": "The figures typed for this row will be lost.",
+  "measurementLeaveGo": "Leave",
+  "measurementLeaveKeep": "Keep entering",
+  "measurementLeaveTitle": "Leave without saving?",
   "measurementLength": "Length",
   "measurementLengthShort": "× L",
+  "measurementLoading": "Loading",
   "measurementLocationHint": "Grid, floor, footing",
   "measurementLocationLabel": "Location",
   "measurementLockedBody": "It has been approved or is under review.",
@@ -596,6 +654,7 @@
   "measurementProblemUnknown": "Could not save. Please try again.",
   "measurementQuantity": "Quantity",
   "measurementRecentLines": "Recent",
+  "measurementRejectedBody": "This entry was rejected and will not count. Make a new entry if the work needs measuring again.",
   "measurementRowCount": "{count, plural, =1{1 entry} other{{count} entries}}",
   "@measurementRowCount": {
     "placeholders": {
@@ -609,7 +668,7 @@
   "measurementSearchHint": "e.g. 2.1 or slab",
   "measurementSearchLines": "Search code or description",
   "measurementSendAgain": "Send again",
-  "measurementSendCount": "Send {count} rows",
+  "measurementSendCount": "Send {count} for approval",
   "@measurementSendCount": {
     "placeholders": {
       "count": {
@@ -652,6 +711,7 @@
   "pettyCashBillRetake": "Take again",
   "pettyCashCategory": "What was it for?",
   "pettyCashCategoryRequired": "Choose what it was for.",
+  "pettyCashChooseProject": "Choose a project",
   "pettyCashConfirmed": "Confirmed",
   "pettyCashCreateWallet": "Create wallet",
   "pettyCashDate": "Date",
@@ -664,6 +724,7 @@
   "pettyCashFinalAfterSync": "The final balance comes after sync.",
   "pettyCashFormEyebrow": "New expense",
   "pettyCashFormTitle": "Add an expense",
+  "pettyCashLoading": "Loading the cash book",
   "pettyCashNoProjectMessage": "Choose a project first, then record expenses here.",
   "pettyCashNoProjectTitle": "No project chosen",
   "pettyCashNoWalletManageMessage": "Create one to record site expenses here.",
@@ -691,6 +752,7 @@
   "pettyCashSavedOnline": "Saved on phone. Sending now.",
   "pettyCashSyncAttention": "Needs attention",
   "pettyCashSyncSending": "Sending",
+  "pettyCashTapToChange": "Tap to change",
   "pettyCashTitle": "Petty cash",
   "pettyCashTopUpEyebrow": "Money into the wallet",
   "pettyCashTopUpFailed": "Could not save the money. Try again.",
@@ -753,6 +815,7 @@
       }
     }
   },
+  "shellOutboxLoading": "Loading the outbox",
   "shellOutboxLogTitle": "Not applied",
   "shellOutboxNeverSynced": "Not synced yet",
   "shellOutboxServerError": "The server is having trouble. Your work is safe and will send later.",

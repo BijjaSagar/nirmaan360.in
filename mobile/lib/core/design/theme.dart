@@ -17,8 +17,8 @@ ThemeData buildN360Theme({bool devanagari = false}) {
 
   const ColorScheme scheme = ColorScheme(
     brightness: Brightness.light,
-    primary: N360Colors.haldi,
-    onPrimary: N360Colors.ink,
+    primary: N360Colors.primary,
+    onPrimary: N360Colors.onPrimary,
     primaryContainer: N360Colors.paper2,
     onPrimaryContainer: N360Colors.ink,
     secondary: N360Colors.laterite,
@@ -44,7 +44,7 @@ ThemeData buildN360Theme({bool devanagari = false}) {
     scrim: N360Colors.ink,
     inverseSurface: N360Colors.ink,
     onInverseSurface: N360Colors.paper,
-    inversePrimary: N360Colors.haldi,
+    inversePrimary: N360Colors.primaryTint,
   );
 
   const OutlineInputBorder resting = OutlineInputBorder(
@@ -69,19 +69,19 @@ ThemeData buildN360Theme({bool devanagari = false}) {
     colorScheme: scheme,
     fontFamily: N360Type.mukta,
     scaffoldBackgroundColor: N360Colors.paper,
-    canvasColor: N360Colors.paper,
-    cardColor: N360Colors.sheet,
     dividerColor: N360Colors.rule,
-    disabledColor: N360Colors.inkLabel,
-    hintColor: N360Colors.inkLabel,
     shadowColor: const Color(0x00000000),
     splashFactory: InkRipple.splashFactory,
-    splashColor: N360Colors.ink.withValues(alpha: 0.08),
-    highlightColor: N360Colors.ink.withValues(alpha: 0.05),
-    hoverColor: N360Colors.ink.withValues(alpha: 0.04),
-    focusColor: N360Colors.ink.withValues(alpha: 0.08),
+    splashColor: N360Colors.ink.withValues(alpha: 0.06),
+    highlightColor: N360Colors.ink.withValues(alpha: 0.04),
+    hoverColor: N360Colors.ink.withValues(alpha: 0.03),
+    focusColor: N360Colors.ink.withValues(alpha: 0.06),
     visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
+    canvasColor: N360Colors.paper,
+    cardColor: N360Colors.sheet,
+    disabledColor: N360Colors.inkLabel,
+    hintColor: N360Colors.inkLabel,
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: N360PageTransitionsBuilder(),
@@ -150,8 +150,8 @@ ThemeData buildN360Theme({bool devanagari = false}) {
       elevation: 0,
       modalElevation: 0,
       surfaceTintColor: Color(0x00000000),
-      dragHandleColor: N360Colors.rule,
-      dragHandleSize: Size(36, 4),
+      dragHandleColor: N360Colors.ruleStrong,
+      dragHandleSize: Size(32, 3),
       showDragHandle: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
@@ -190,25 +190,25 @@ ThemeData buildN360Theme({bool devanagari = false}) {
     ),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: N360Colors.laterite,
-      selectionColor: N360Colors.haldi.withValues(alpha: 0.4),
+      selectionColor: N360Colors.primaryTint,
       selectionHandleColor: N360Colors.laterite,
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: N360Colors.haldi,
+      color: N360Colors.orange,
       linearTrackColor: N360Colors.rule,
       circularTrackColor: N360Colors.rule,
       strokeWidth: 2.5,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: pressed.copyWith(
-        backgroundColor: WidgetStateProperty.all(N360Colors.haldi),
-        foregroundColor: WidgetStateProperty.all(N360Colors.ink),
+        backgroundColor: WidgetStateProperty.all(N360Colors.primary),
+        foregroundColor: WidgetStateProperty.all(N360Colors.onPrimary),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: pressed.copyWith(
-        backgroundColor: WidgetStateProperty.all(N360Colors.haldi),
-        foregroundColor: WidgetStateProperty.all(N360Colors.ink),
+        backgroundColor: WidgetStateProperty.all(N360Colors.primary),
+        foregroundColor: WidgetStateProperty.all(N360Colors.onPrimary),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -228,8 +228,8 @@ ThemeData buildN360Theme({bool devanagari = false}) {
       ),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: N360Colors.haldi,
-      foregroundColor: N360Colors.ink,
+      backgroundColor: N360Colors.primary,
+      foregroundColor: N360Colors.onPrimary,
       elevation: 0,
       focusElevation: 0,
       hoverElevation: 0,
@@ -268,7 +268,7 @@ ThemeData buildN360Theme({bool devanagari = false}) {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: N360Colors.sheet,
-      selectedColor: N360Colors.haldi,
+      selectedColor: N360Colors.ink,
       labelStyle: t(N360Type.label),
       side: const BorderSide(color: N360Colors.ruleStrong),
       shape: const RoundedRectangleBorder(borderRadius: N360Radius.sm),
@@ -277,7 +277,7 @@ ThemeData buildN360Theme({bool devanagari = false}) {
     tabBarTheme: TabBarThemeData(
       labelColor: N360Colors.ink,
       unselectedLabelColor: N360Colors.inkLabel,
-      indicatorColor: N360Colors.haldi,
+      indicatorColor: N360Colors.primary,
       dividerColor: N360Colors.rule,
       labelStyle: t(N360Type.bodyStrong),
       unselectedLabelStyle: t(N360Type.body),

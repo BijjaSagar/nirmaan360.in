@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show ProjectRow;
+import '../../../core/sync/clock.dart' show dateString;
 import '../data/dpr_repository.dart';
 
 @immutable
@@ -24,6 +25,19 @@ class DprListState {
   final List<SyncedRecord<DprRow>> rows;
 
   bool get hasToday => rows.any((row) => row.record.reportDate == today);
+
+  /// Recent days with no report, newest first. Only the last three days count,
+  /// so a weekly holiday drops off by itself and does not nag.
+  List<String> get missedDays {
+    if (today.length < 10 || rows.isEmpty) return const [];
+    final parts = today.split('-').map(int.parse).toList();
+    final filed = rows.map((row) => row.record.reportDate).toSet();
+    return <String>[
+      for (var back = 1; back <= 3; back++)
+        if (!filed.contains(dateString(DateTime.utc(parts[0], parts[1], parts[2] - back))))
+          dateString(DateTime.utc(parts[0], parts[1], parts[2] - back)),
+    ];
+  }
 
   /// Days of the current month so far, today included.
   int get daysThisMonth => today.length < 10 ? 0 : int.parse(today.substring(8, 10));

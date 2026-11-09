@@ -50,15 +50,25 @@ void main() {
       }
     });
 
-    test('text on gold is dark ink, and it passes across the whole gradient', () {
+    test('the primary carries white text at 4.5:1 or better, and the gold data fills carry dark ink', () {
+      expect(_contrast(N360Colors.onPrimary, N360Colors.primary), greaterThanOrEqualTo(4.5));
       for (final gold in <Color>[N360Colors.amber, N360Colors.haldi, N360Colors.orange]) {
         expect(_contrast(N360Colors.ink, gold), greaterThanOrEqualTo(4.5), reason: '$gold');
       }
-      expect(N360Gradients.gold.colors, containsAll(<Color>[N360Colors.amber, N360Colors.orange]));
+      expect(N360Gradients.gold.colors, everyElement(N360Colors.primary), reason: 'the design is flat');
+      expect(N360Gradients.page.colors, everyElement(N360Colors.paper), reason: 'one flat page');
     });
 
-    test('white on orange fails outdoors, which is why gold carries dark ink', () {
+    test('white on the exact orange is just under 4.5:1, which is why the primary is a deeper cut', () {
       expect(_contrast(N360Colors.sheet, N360Colors.orange), lessThan(4.5));
+      expect(_contrast(N360Colors.sheet, N360Colors.orange), greaterThan(4.2));
+      expect(_contrast(N360Colors.primary, N360Colors.orange), lessThan(1.15), reason: 'visually the same colour');
+    });
+
+    test('status pill washes keep their ink at 4.5:1', () {
+      for (final kind in StampKind.values) {
+        expect(_contrast(kind.inkColor, kind.washColor), greaterThanOrEqualTo(4.5), reason: '$kind');
+      }
     });
 
     test('white text on the filled status colours reaches 4.5:1', () {
@@ -69,20 +79,30 @@ void main() {
   });
 
   group('typography', () {
-    test('headings use Poppins, body uses Mukta, and Khand is gone', () {
+    test('one voice: every style is Mukta, and every figure is tabular', () {
       for (final style in <TextStyle>[
         N360Type.displayLarge,
         N360Type.display,
         N360Type.title,
         N360Type.heading,
         N360Type.button,
+        N360Type.bodyLarge,
+        N360Type.body,
+        N360Type.bodyStrong,
+        N360Type.label,
+        N360Type.caption,
+        N360Type.figureSmall,
+        N360Type.figure,
         N360Type.figureLarge,
         N360Type.figureHero,
+        N360Type.eyebrowFor('Item'),
+        N360Type.eyebrowFor('बाब'),
       ]) {
-        expect(style.fontFamily, 'Poppins');
+        expect(style.fontFamily, 'Mukta', reason: '$style');
       }
-      expect(N360Type.body.fontFamily, 'Mukta');
-      expect(N360Type.figure.fontFamily, 'DMMono');
+      for (final figure in <TextStyle>[N360Type.figureSmall, N360Type.figure, N360Type.figureLarge, N360Type.figureHero]) {
+        expect(figure.fontFeatures, contains(const FontFeature.tabularFigures()));
+      }
     });
 
     test('Devanagari line heights are generous', () {
@@ -105,8 +125,8 @@ void main() {
       }
     });
 
-    test('column figures fall back to Mukta for the rupee sign and are tabular', () {
-      expect(N360Type.figure.fontFamilyFallback, contains('Mukta'));
+    test('column figures are Mukta with tabular figures, so columns line up', () {
+      expect(N360Type.figure.fontFamily, 'Mukta');
       expect(N360Type.figure.fontFeatures, contains(const FontFeature.tabularFigures()));
     });
 
@@ -343,13 +363,14 @@ void main() {
       expect(theme.colorScheme.surfaceTint.a, 0);
       expect(theme.appBarTheme.scrolledUnderElevation, 0);
       expect(theme.cardTheme.elevation, 0);
-      expect(theme.splashColor, N360Colors.ink.withValues(alpha: 0.08));
+      expect(theme.splashColor, N360Colors.ink.withValues(alpha: 0.06), reason: 'a quiet ripple');
     });
 
-    test('the primary is gold with dark ink on it', () {
+    test('the primary is the flat terracotta with white on it', () {
       final ThemeData theme = buildN360Theme();
-      expect(theme.colorScheme.primary, N360Colors.haldi);
-      expect(theme.colorScheme.onPrimary, N360Colors.ink);
+      expect(theme.colorScheme.primary, N360Colors.primary);
+      expect(theme.colorScheme.onPrimary, N360Colors.onPrimary);
+      expect(theme.cardTheme.shape, isA<RoundedRectangleBorder>());
     });
   });
 }

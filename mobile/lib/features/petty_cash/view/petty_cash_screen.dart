@@ -37,11 +37,15 @@ class _PettyCashView extends StatelessWidget {
           child: BlocBuilder<PettyCashCubit, PettyCashState>(
             builder: (context, state) {
               final AppLocalizations l = AppLocalizations.of(context);
-              final bool canManage = context.read<AppServices>().auth.can('petty_cash.manage');
+              final bool canManage = context.read<AppServices>().auth.can(
+                'petty_cash.manage',
+              );
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Expanded(child: _Scroll(state: state, canManage: canManage)),
+                  Expanded(
+                    child: _Scroll(state: state, canManage: canManage),
+                  ),
                   if (state.load == PettyCashLoad.ready)
                     FieldActionBar(
                       child: Row(
@@ -104,17 +108,28 @@ class _Scroll extends StatelessWidget {
           ),
         ),
         switch (state.load) {
-          PettyCashLoad.loading => const SliverToBoxAdapter(child: SizedBox(height: 160)),
+          PettyCashLoad.loading => SliverToBoxAdapter(
+            child: _WalletSkeleton(label: l.pettyCashLoading),
+          ),
           PettyCashLoad.noProject => SliverToBoxAdapter(
             child: EmptyLedger(
               title: l.pettyCashNoProjectTitle,
               message: l.pettyCashNoProjectMessage,
+              action: GloveButton(
+                label: l.pettyCashChooseProject,
+                icon: Icons.swap_horiz,
+                onPressed: () => context.push(Routes.projectsSwitch),
+              ),
             ),
           ),
           PettyCashLoad.noWallet => SliverToBoxAdapter(
             child: EmptyLedger(
-              title: canManage ? l.pettyCashNoWalletManageTitle : l.pettyCashNoWalletTitle,
-              message: canManage ? l.pettyCashNoWalletManageMessage : l.pettyCashNoWalletMessage,
+              title: canManage
+                  ? l.pettyCashNoWalletManageTitle
+                  : l.pettyCashNoWalletTitle,
+              message: canManage
+                  ? l.pettyCashNoWalletManageMessage
+                  : l.pettyCashNoWalletMessage,
             ),
           ),
           PettyCashLoad.ready => _Wallet(state: state),
@@ -134,7 +149,9 @@ class _Wallet extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final WalletLine? wallet = state.selected;
     if (wallet == null) {
-      return const SliverToBoxAdapter(child: SizedBox(height: 120));
+      return SliverToBoxAdapter(
+        child: _WalletSkeleton(label: l.pettyCashLoading),
+      );
     }
     final entries = state.entries;
 
@@ -146,12 +163,15 @@ class _Wallet extends StatelessWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              N360Space.gutter + 4,
+              N360Space.gutter + N360Space.xs,
               N360Space.lg,
-              N360Space.gutter + 4,
+              N360Space.gutter + N360Space.xs,
               N360Space.sm,
             ),
-            child: Text(l.pettyCashEntries, style: N360Type.heading),
+            child: Text(
+              l.pettyCashEntries,
+              style: N360Type.fit(N360Type.heading, l.pettyCashEntries),
+            ),
           ),
         ),
         if (entries.isEmpty)
@@ -163,7 +183,10 @@ class _Wallet extends StatelessWidget {
           )
         else
           FieldGroupSliver(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: N360Space.md,
+              vertical: N360Space.xs,
+            ),
             sliver: SliverList.builder(
               itemCount: entries.length,
               itemBuilder: (context, index) {
@@ -198,25 +221,39 @@ class _WalletSwitcher extends StatelessWidget {
     final PettyCashCubit cubit = context.read<PettyCashCubit>();
     return Padding(
       padding: const EdgeInsets.only(bottom: N360Space.sm),
-      child: SizedBox(
-        height: 66,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-          itemCount: state.wallets.length,
-          separatorBuilder: (_, _) => const SizedBox(width: N360Space.sm),
-          itemBuilder: (context, index) {
-            final WalletLine line = state.wallets[index];
-            return Center(
-              child: FieldChoiceTile(
-                label: line.wallet.name,
-                detail: line.previewBalance.inr(),
-                selected: line.wallet.id == state.selectedWalletId,
-                onTap: () => cubit.selectWallet(line.wallet.id),
-              ),
-            );
-          },
-        ),
+      child: FieldChoiceStrip(
+        itemCount: state.wallets.length,
+        itemBuilder: (context, index) {
+          final WalletLine line = state.wallets[index];
+          return FieldChoiceTile(
+            label: line.wallet.name,
+            detail: line.previewBalance.inr(),
+            selected: line.wallet.id == state.selectedWalletId,
+            onTap: () => cubit.selectWallet(line.wallet.id),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The wallet's shape while it loads: the balance card, then a few entries.
+class _WalletSkeleton extends StatelessWidget {
+  const _WalletSkeleton({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          LedgerSkeleton(figure: true, lines: 2, semanticsLabel: label),
+          const SizedBox(height: N360Space.cardGap),
+          const ExcludeSemantics(child: LedgerSkeletonList(rows: 3, lines: 1)),
+        ],
       ),
     );
   }
@@ -235,7 +272,8 @@ class _BalanceCard extends StatelessWidget {
   double _remainingShare() {
     final Money confirmed = wallet.serverBalance;
     if (confirmed <= Money.zero) return 0;
-    final double share = (wallet.previewBalance.value / confirmed.value).toDouble();
+    final double share = (wallet.previewBalance.value / confirmed.value)
+        .toDouble();
     return share.clamp(0.0, 1.0);
   }
 
@@ -261,21 +299,25 @@ class _BalanceCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text(l.pettyCashBalance, style: N360Type.heading),
-                      if (name.isNotEmpty) Text(name, style: N360Type.caption),
+                      Text(
+                        l.pettyCashBalance,
+                        style: N360Type.fit(
+                          N360Type.heading,
+                          l.pettyCashBalance,
+                        ),
+                      ),
+                      if (name.isNotEmpty)
+                        Text(name, style: N360Type.fit(N360Type.caption, name)),
                     ],
                   ),
                 ),
+                // A word, never a bare picture: the figure below is either
+                // final or it says so here.
                 if (provisional)
                   RubberStamp(
                     kind: StampKind.queued,
                     label: l.pettyCashProvisional,
                     size: StampSize.medium,
-                  )
-                else
-                  IconTile(
-                    icon: Icons.account_balance_wallet_outlined,
-                    semanticLabel: l.pettyCashWallet,
                   ),
               ],
             ),
@@ -285,7 +327,11 @@ class _BalanceCard extends StatelessWidget {
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: RollingMoney(value: balance.indian(), style: N360Type.figureHero),
+                child: RollingMoney(
+                  value: balance.indian(),
+                  style: N360Type.figureHero,
+                  animateEntry: true,
+                ),
               ),
             ),
             if (provisional) ...<Widget>[
@@ -310,13 +356,15 @@ class _BalanceCard extends StatelessWidget {
               const SizedBox(height: N360Space.xs),
               HatchedProgressBar(
                 fraction: _remainingShare(),
-                height: 36,
                 semanticLabel: l.pettyCashFinalAfterSync,
               ),
               const SizedBox(height: N360Space.xs),
               Text(
                 l.pettyCashFinalAfterSync,
-                style: N360Type.caption.copyWith(color: N360Colors.ink2),
+                style: N360Type.fit(
+                  N360Type.caption,
+                  l.pettyCashFinalAfterSync,
+                ).copyWith(color: N360Colors.ink2),
               ),
             ],
           ],
@@ -338,13 +386,15 @@ class _Figure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: end ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: end
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(label, style: N360Type.caption),
+        Text(label, style: N360Type.fit(N360Type.caption, label)),
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(value, maxLines: 1, style: N360Type.button.copyWith(fontSize: 16)),
+          child: Text(value, maxLines: 1, style: N360Type.heading),
         ),
       ],
     );
@@ -365,10 +415,18 @@ class _EntryRow extends StatelessWidget {
     final Pictogram picture = N360Pictograms.expense(entry.category ?? 'Other');
     final String title = expense ? l.pictogramLabel(picture) : l.pettyCashTopup;
     final String locale = Localizations.localeOf(context).toString();
-    final String date = DateFormat('d MMM', locale).format(DateTime.parse(entry.entryDate));
+    final String date = DateFormat(
+      'd MMM',
+      locale,
+    ).format(DateTime.parse(entry.entryDate));
+
+    final String? description = entry.description;
+    final String detail = description == null || description.isEmpty
+        ? date
+        : '$date · $description';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: N360Space.tile),
       child: Row(
         children: <Widget>[
           DecoratedBox(
@@ -377,15 +435,15 @@ class _EntryRow extends StatelessWidget {
               borderRadius: N360Radius.md,
             ),
             child: SizedBox.square(
-              dimension: 48,
+              dimension: N360Size.tile,
               child: Icon(
                 expense ? picture.icon : Icons.south_west,
-                size: 24,
+                size: N360IconSize.tile,
                 color: expense ? N360Colors.ink : N360Colors.sheet,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: N360Space.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,18 +453,19 @@ class _EntryRow extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: N360Type.bodyStrong.copyWith(fontSize: 17, height: 1.25),
+                  style: N360Type.fit(N360Type.bodyStrong, title),
                 ),
                 Text(
-                  entry.description == null || entry.description!.isEmpty
-                      ? date
-                      : '$date · ${entry.description}',
+                  detail,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: N360Type.caption.copyWith(color: N360Colors.ink2),
+                  style: N360Type.fit(
+                    N360Type.caption,
+                    detail,
+                  ).copyWith(color: N360Colors.ink2),
                 ),
                 if (record.syncState != LocalSyncState.synced) ...<Widget>[
-                  const SizedBox(height: 3),
+                  const SizedBox(height: N360Space.xs),
                   PettySyncStamp(state: record.syncState),
                 ],
               ],
@@ -420,13 +479,15 @@ class _EntryRow extends StatelessWidget {
               Text(
                 expense ? entry.amount.inr() : '+${entry.amount.inr()}',
                 style: N360Type.figure.copyWith(
-                  fontSize: 16,
                   color: expense ? N360Colors.ink : N360Colors.mossInk,
                 ),
               ),
               if (entry.hasBill) ...<Widget>[
-                const SizedBox(height: 4),
-                BillThumbnail(load: cubit.billBytes(entry), size: 44),
+                const SizedBox(height: N360Space.xs),
+                BillThumbnail(
+                  load: cubit.billBytes(entry),
+                  size: N360Size.tile,
+                ),
               ],
             ],
           ),

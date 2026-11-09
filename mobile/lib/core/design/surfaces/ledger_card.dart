@@ -6,8 +6,9 @@ import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// A white card with a thin light edge and one soft warm shadow. Padding is
-/// [N360Space.card] on every side unless the screen says otherwise.
+/// A white card with a hairline. Padding is [N360Space.card] on every side
+/// unless the screen says otherwise. For a list, use [LedgerList] instead of a
+/// card per row.
 class LedgerCard extends StatelessWidget {
   const LedgerCard({
     super.key,
@@ -25,19 +26,12 @@ class LedgerCard extends StatelessWidget {
   final VoidCallback? onTap;
   final String? semanticsLabel;
 
-  /// Drops the shadow. Use it for each row of a long list.
+  /// Kept for screens that pass it. Cards have no shadow to drop now.
   final bool flat;
 
   @override
   Widget build(BuildContext context) {
-    // A card built by a list builder is a row, and rows carry no shadow, so a
-    // long list stays cheap without every screen having to say so.
-    final bool lazyRow =
-        context.findAncestorWidgetOfExactType<SliverList>()?.delegate is SliverChildBuilderDelegate;
-    final SoftSurfacePainter surface = SoftSurfacePainter(
-      edge: N360Colors.cardEdge,
-      shadow: !flat && !lazyRow,
-    );
+    const SoftSurfacePainter surface = SoftSurfacePainter(edge: N360Colors.rule);
     final tap = onTap;
     if (tap == null) {
       return CustomPaint(
@@ -136,7 +130,7 @@ class LedgerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle figureStyle = valueStyle ??
-        (total ? N360Type.figureLarge.copyWith(fontSize: 18, letterSpacing: 0) : N360Type.figure);
+        (total ? N360Type.figureLarge.copyWith(fontSize: 17, letterSpacing: 0) : N360Type.figure);
     final Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
@@ -160,12 +154,13 @@ class LedgerRow extends StatelessWidget {
     );
 
     if (total) {
+      // A total closes the column with a stronger rule above it, not a tint.
       return DecoratedBox(
-        decoration: const BoxDecoration(color: N360Colors.goldTint, borderRadius: N360Radius.sm),
+        decoration: const BoxDecoration(border: Border(top: BorderSide(color: N360Colors.ruleStrong))),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm),
+            padding: const EdgeInsets.symmetric(vertical: N360Space.sm + 2),
             child: row,
           ),
         ),
@@ -189,13 +184,15 @@ class LedgerRow extends StatelessWidget {
   }
 }
 
-/// A very faint separator, optionally drawn in from the left.
+/// A hairline separator, optionally drawn in from the left and optionally
+/// inset from both ends so it does not touch a card's edge.
 class RuledDivider extends StatefulWidget {
   const RuledDivider({
     super.key,
     this.drawIn = false,
     this.color = N360Colors.rule,
     this.thickness = N360Size.hairline,
+    this.indent = 0,
   });
 
   /// Kept for screens that ask for a heavier close. It is now a single rule.
@@ -204,11 +201,15 @@ class RuledDivider extends StatefulWidget {
     this.drawIn = false,
     this.color = N360Colors.rule,
     this.thickness = N360Size.hairline,
+    this.indent = 0,
   });
 
   final bool drawIn;
   final Color color;
   final double thickness;
+
+  /// Space left clear at both ends.
+  final double indent;
 
   @override
   State<RuledDivider> createState() => _RuledDividerState();
@@ -234,23 +235,143 @@ class _RuledDividerState extends State<RuledDivider> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final draw = _draw;
+    final Widget rule;
     if (draw == null) {
-      return SizedBox(
+      rule = SizedBox(
         height: widget.thickness,
         child: CustomPaint(painter: _RulePainter(color: widget.color, thickness: widget.thickness)),
       );
-    }
-    return RepaintBoundary(
-      child: SizedBox(
-        height: widget.thickness,
-        child: CustomPaint(
-          painter: _RulePainter(
-            color: widget.color,
-            thickness: widget.thickness,
-            progress: draw.drive(CurveTween(curve: N360Curves.rise)),
+    } else {
+      rule = RepaintBoundary(
+        child: SizedBox(
+          height: widget.thickness,
+          child: CustomPaint(
+            painter: _RulePainter(
+              color: widget.color,
+              thickness: widget.thickness,
+              progress: draw.drive(CurveTween(curve: N360Curves.rise)),
+            ),
           ),
         ),
+      );
+    }
+    if (widget.indent == 0) return rule;
+    return Padding(padding: EdgeInsets.symmetric(horizontal: widget.indent), child: rule);
+  }
+}
+
+/// A list as one white card of rows with hairlines between them, instead of a
+/// card per row. Give it [LedgerListTile]s or your own rows; an optional
+/// [header] sits above the first row inside the card.
+///
+/// ```dart
+/// LedgerList(children: [
+///   for (final issue in issues)
+///     LedgerListTile(title: issue.title, subtitle: issue.where, status: StatusPill(...), onTap: ...),
+/// ])
+/// ```
+class LedgerList extends StatelessWidget {
+  const LedgerList({super.key, required this.children, this.header, this.dividers = true});
+
+  final List<Widget> children;
+  final Widget? header;
+
+  /// Hairlines between rows, inset by the card padding.
+  final bool dividers;
+
+  @override
+  Widget build(BuildContext context) {
+    return LedgerCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (header != null) ...<Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(N360Space.card, N360Space.md, N360Space.card, N360Space.sm),
+              child: header,
+            ),
+            const RuledDivider(),
+          ],
+          for (final (i, child) in children.indexed) ...<Widget>[
+            if (i > 0 && dividers) const RuledDivider(indent: N360Space.card),
+            child,
+          ],
+        ],
       ),
+    );
+  }
+}
+
+/// One structured row of a [LedgerList]: an optional leading glyph, a title,
+/// a subtitle, an optional status pill and a trailing figure or chevron. At
+/// least [N360Size.tap] tall when tappable.
+class LedgerListTile extends StatelessWidget {
+  const LedgerListTile({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.leading,
+    this.status,
+    this.trailing,
+    this.onTap,
+    this.semanticsLabel,
+  });
+
+  final String title;
+  final String? subtitle;
+
+  /// Usually an `Icon` at [N360IconSize.lg] in [N360Colors.ink2].
+  final Widget? leading;
+
+  /// Usually a [StatusPill].
+  final Widget? status;
+
+  /// A figure or a short word. When null and tappable, a chevron.
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget? trail = trailing ??
+        (onTap == null ? null : const Icon(Icons.chevron_right, size: N360IconSize.lg, color: N360Colors.ink3));
+    final Widget row = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.tile),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          if (leading != null) ...<Widget>[leading!, const SizedBox(width: N360Space.md)],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(title, style: N360Type.fit(N360Type.bodyStrong, title), maxLines: 2, overflow: TextOverflow.ellipsis),
+                if (subtitle != null)
+                  Text(subtitle!, style: N360Type.fit(N360Type.caption, subtitle!), maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          if (status != null) ...<Widget>[const SizedBox(width: N360Space.sm), status!],
+          if (trail != null) ...<Widget>[const SizedBox(width: N360Space.sm), trail],
+        ],
+      ),
+    );
+    final tap = onTap;
+    if (tap == null) {
+      return Semantics(
+        container: true,
+        label: semanticsLabel,
+        child: ConstrainedBox(constraints: const BoxConstraints(minHeight: N360Size.tap), child: row),
+      );
+    }
+    return PressTarget(
+      onTap: tap,
+      semanticsLabel: semanticsLabel ?? (subtitle == null ? title : '$title, $subtitle'),
+      child: row,
+      builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth * 0.4), child: child),
     );
   }
 }

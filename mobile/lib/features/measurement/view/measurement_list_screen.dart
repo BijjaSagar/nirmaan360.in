@@ -83,7 +83,8 @@ class _BookView extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  if (!state.online && canGoBack) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
+                  if (!state.online && canGoBack)
+                    OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   BookTitleBar(
                     eyebrow: state.projectName,
                     title: l.measurementBookTitle,
@@ -101,7 +102,17 @@ class _BookView extends StatelessWidget {
   }
 
   Widget _body(BuildContext context, AppLocalizations l, MeasurementListState state, List<_Item> items) {
-    if (state.loading) return const SizedBox.shrink();
+    if (state.loading) {
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 4,
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(bottom: N360Space.sm),
+          child: LedgerSkeleton(flat: true, semanticsLabel: l.measurementLoading),
+        ),
+      );
+    }
     if (items.isEmpty) {
       final bool all = state.filter == null;
       return Center(
@@ -178,7 +189,7 @@ class _EntryRow extends StatelessWidget {
       minHeight: 76,
       semanticsLabel: '${boq?.code ?? ''} ${entryTitle(entry, boq)}. $qty. $status',
       builder: (context, depth, child) => Transform.scale(
-        scale: pressScale(depth * 0.4),
+        scale: pressedScale(depth * 0.4),
         child: CustomPaint(
           painter: _GroupRowPainter(first: first, last: last),
           child: child,
@@ -256,14 +267,14 @@ class MeasurementRowFace extends StatelessWidget {
                 Semantics(
                   label: '$percent ${l.measurementShareOfBoq}',
                   child: ExcludeSemantics(
-                    child: SquarePercent(fraction: fraction, label: percent, size: 52),
+                    child: SquarePercent(fraction: fraction, label: percent),
                   ),
                 ),
               ],
             ],
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 64, top: 2),
+            padding: const EdgeInsets.only(left: N360Size.tile + N360Space.md, top: 2),
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -281,7 +292,7 @@ class MeasurementRowFace extends StatelessWidget {
                             ),
                         ],
                       ),
-                      style: N360Type.figure.copyWith(color: qtyInk, fontSize: 17),
+                      style: N360Type.figure.copyWith(color: qtyInk),
                     ),
                   ),
                 ),
@@ -381,6 +392,7 @@ class _Footer extends StatelessWidget {
                 return Padding(
                   padding: EdgeInsets.only(right: index == filters.length - 1 ? 0 : N360Space.sm),
                   child: ChoiceTile(
+                    compact: true,
                     label: label,
                     count: state.countOf(status),
                     selected: state.filter == status,

@@ -21,9 +21,10 @@ Future<DprSendResult?> showDprReviewSheet(
   required DprFormCubit cubit,
   required AppServices services,
 }) {
-  return showDprSheet<DprSendResult>(
+  return showLedgerSheet<DprSendResult>(
     context,
-    (_) => BlocProvider<DprFormCubit>.value(
+    isScrollControlled: true,
+    builder: (_) => BlocProvider<DprFormCubit>.value(
       value: cubit,
       child: DprReviewSheet(services: services),
     ),
@@ -81,7 +82,6 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const DprSheetGrip(),
             Row(
               children: <Widget>[
                 Expanded(child: Text(l.dprReviewTitle, style: N360Type.title)),
@@ -91,7 +91,7 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const Icon(Icons.edit, size: 22, color: N360Colors.ink),
+                      const Icon(Icons.edit, size: N360IconSize.md, color: N360Colors.ink),
                       const SizedBox(width: 6),
                       Text(l.dprEdit, style: N360Type.bodyStrong),
                     ],
@@ -102,7 +102,7 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
             Row(
               children: <Widget>[
                 if (weather != null) ...<Widget>[
-                  Icon(N360Pictograms.weather(weather).icon, size: 20, color: N360Colors.ink2),
+                  Icon(N360Pictograms.weather(weather).icon, size: N360IconSize.sm, color: N360Colors.ink2),
                   const SizedBox(width: 4),
                   Text(
                     l.pictogramLabel(N360Pictograms.weather(weather)),
@@ -168,6 +168,17 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
             if (work.length > shownRows)
               Text(l.dprMoreRows(work.length - shownRows), style: N360Type.caption),
             if (work.isNotEmpty) const SizedBox(height: N360Space.md),
+            // The last chance to notice something was forgotten. Never a block.
+            if (work.isEmpty || state.photos.isEmpty) ...<Widget>[
+              _Missing(
+                text: <String>[
+                  if (work.isEmpty) l.dprNoWorkYet,
+                  if (state.photos.isEmpty) l.dprNoPhotosYet,
+                ].join(' '),
+                stillOk: l.dprCanStillSend,
+              ),
+              const SizedBox(height: N360Space.md),
+            ],
             if (offline) ...<Widget>[
               PaperToast(message: l.dprReviewOffline, kind: PaperToastKind.warning),
               const SizedBox(height: N360Space.sm),
@@ -183,6 +194,32 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _Missing extends StatelessWidget {
+  const _Missing({required this.text, required this.stillOk});
+
+  final String text;
+  final String stillOk;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const Padding(
+          padding: EdgeInsets.only(top: N360Space.xxs, right: N360Space.xs),
+          child: Icon(Icons.info_outline, size: N360IconSize.sm, color: N360Colors.haldiInk),
+        ),
+        Expanded(
+          child: Text(
+            '$text $stillOk',
+            style: N360Type.label.copyWith(color: N360Colors.haldiInk),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -22,7 +22,7 @@ class DprPhotoStrip extends StatelessWidget {
   final ValueChanged<DprPhotoRow>? onRemove;
   final Set<Object> landed;
 
-  static const double _thumb = 112;
+  static const double _thumb = 96;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,7 @@ class DprPhotoStrip extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            const Icon(Icons.close, size: 22, color: N360Colors.stampRed),
+                            const Icon(Icons.close, size: N360IconSize.md, color: N360Colors.stampRed),
                             const SizedBox(width: 4),
                             Text(
                               l.dprRemove,

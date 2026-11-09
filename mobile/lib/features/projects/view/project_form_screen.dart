@@ -77,8 +77,8 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
 
   Future<void> _enterValue() async {
     FocusScope.of(context).unfocus();
-    final String? result = await showModalBottomSheet<String>(
-      context: context,
+    final String? result = await showLedgerSheet<String>(
+      context,
       isScrollControlled: true,
       builder: (context) => _ValueSheet(initial: _value),
     );
@@ -162,7 +162,7 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
                                   enabled: !busy,
                                   errorText: _nameMissing ? t.shellProjectNameRequired : errors['name'],
                                 ),
-                                const SizedBox(height: N360Space.sm),
+                                const SizedBox(height: N360Space.md),
                                 GloveTextField(
                                   label: t.shellProjectLocation,
                                   controller: _location,
@@ -171,7 +171,7 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
                                   enabled: !busy,
                                   errorText: errors['location'],
                                 ),
-                                const SizedBox(height: N360Space.sm),
+                                const SizedBox(height: N360Space.md),
                                 IntrinsicHeight(
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -200,7 +200,7 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: N360Space.sm),
+                                const SizedBox(height: N360Space.md),
                                 _TapField(
                                   label: t.shellProjectValue,
                                   value: value == null || value.isZero ? null : value.inr(),
@@ -270,6 +270,7 @@ class _TapField extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? shown = value;
     final String? error = errorText;
+    final String text = shown ?? placeholder;
     final Widget box = DecoratedBox(
       decoration: BoxDecoration(
         color: N360Colors.sheet,
@@ -277,21 +278,22 @@ class _TapField extends StatelessWidget {
         border: Border.all(color: error == null ? N360Colors.ruleStrong : N360Colors.stampRed, width: error == null ? 1 : 2),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: N360Size.tapLarge),
+        constraints: const BoxConstraints(minHeight: N360Size.tap),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: N360Space.md),
           child: Row(
             children: <Widget>[
-              Icon(icon, size: 22, color: N360Colors.ink2),
+              Icon(icon, size: N360IconSize.lg, color: N360Colors.ink2),
               const SizedBox(width: N360Space.sm),
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    shown ?? placeholder,
+                    text,
                     maxLines: 1,
-                    style: N360Type.bodyLarge.copyWith(color: shown == null ? N360Colors.inkLabel : N360Colors.ink),
+                    style: N360Type.fit(N360Type.bodyLarge, text)
+                        .copyWith(color: shown == null ? N360Colors.inkLabel : N360Colors.ink),
                   ),
                 ),
               ),
@@ -305,12 +307,15 @@ class _TapField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(label, maxLines: 2, style: N360Type.label),
+        Text(label, maxLines: 2, style: N360Type.fit(N360Type.label, label)),
         const SizedBox(height: N360Space.xs),
         box,
         if (error != null) ...<Widget>[
           const SizedBox(height: N360Space.xs),
-          Text(error, style: N360Type.caption.copyWith(color: N360Colors.stampRed, fontWeight: FontWeight.w600)),
+          Text(
+            error,
+            style: N360Type.fit(N360Type.caption, error).copyWith(color: N360Colors.stampRed, fontWeight: FontWeight.w600),
+          ),
         ],
       ],
     );
@@ -320,7 +325,7 @@ class _TapField extends StatelessWidget {
       container: true,
       button: true,
       enabled: tap != null,
-      label: '$label, ${shown ?? placeholder}${error == null ? '' : '. $error'}',
+      label: '$label, $text${error == null ? '' : '. $error'}',
       onTap: tap,
       child: ExcludeSemantics(
         child: tap == null ? field : PressRow(onTap: tap, child: field),
@@ -353,18 +358,19 @@ class _ValueSheetState extends State<_ValueSheet> {
     final t = AppLocalizations.of(context);
     final Money amount = Money.tryParse(_text.endsWith('.') ? _text.substring(0, _text.length - 1) : _text) ?? Money.zero;
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.all(N360Space.lg),
+        padding: ledgerSheetPadding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(t.shellProjectValue, style: N360Type.heading),
+            Text(t.shellProjectValue, style: N360Type.fit(N360Type.heading, t.shellProjectValue)),
             Align(
               alignment: Alignment.centerRight,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: RollingMoney(value: amount.inr(), style: N360Type.figureHero.copyWith(fontSize: 36)),
+                child: RollingMoney(value: amount.inr(), style: N360Type.figureHero),
               ),
             ),
             const SizedBox(height: N360Space.sm),

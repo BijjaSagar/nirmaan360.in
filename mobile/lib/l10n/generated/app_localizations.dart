@@ -637,8 +637,14 @@ abstract class AppLocalizations {
   /// No description provided for @attendanceAllPresentHelper.
   ///
   /// In en, this message translates to:
-  /// **'Fills unmarked workers only. Absent stays absent.'**
+  /// **'Skips anyone already marked.'**
   String get attendanceAllPresentHelper;
+
+  /// No description provided for @attendanceChooseProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a project'**
+  String get attendanceChooseProject;
 
   /// No description provided for @attendanceDateTitle.
   ///
@@ -679,7 +685,7 @@ abstract class AppLocalizations {
   /// No description provided for @attendanceLeft.
   ///
   /// In en, this message translates to:
-  /// **'Left'**
+  /// **'Unmarked'**
   String get attendanceLeft;
 
   /// No description provided for @attendanceLoadFailedMessage.
@@ -693,6 +699,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the muster'**
   String get attendanceLoadFailedTitle;
+
+  /// No description provided for @attendanceLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the muster'**
+  String get attendanceLoading;
 
   /// No description provided for @attendanceMarkedSoFar.
   ///
@@ -907,7 +919,7 @@ abstract class AppLocalizations {
   /// No description provided for @boqFormDescriptionHint.
   ///
   /// In en, this message translates to:
-  /// **'M25 concrete in slab'**
+  /// **'e.g. M25 concrete in slab'**
   String get boqFormDescriptionHint;
 
   /// No description provided for @boqFormDescriptionRequired.
@@ -967,7 +979,7 @@ abstract class AppLocalizations {
   /// No description provided for @boqFormSectionHint.
   ///
   /// In en, this message translates to:
-  /// **'Superstructure'**
+  /// **'e.g. Superstructure'**
   String get boqFormSectionHint;
 
   /// No description provided for @boqFormTitle.
@@ -993,6 +1005,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} {count, plural, =1{line} other{lines}} added'**
   String boqLinesAdded(int count);
+
+  /// No description provided for @boqLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading BOQ'**
+  String get boqLoading;
 
   /// No description provided for @boqMeasuredShare.
   ///
@@ -1065,6 +1083,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open BOQ'**
   String get boqOpenAction;
+
+  /// No description provided for @boqOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Over by {qty} {unit}'**
+  String boqOver(String qty, String unit);
+
+  /// No description provided for @boqRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update. Showing what is on this phone.'**
+  String get boqRefreshFailed;
 
   /// No description provided for @boqSearchHint.
   ///
@@ -1414,10 +1444,16 @@ abstract class AppLocalizations {
   /// **'Could not open the camera. Allow camera in phone settings.'**
   String get dprCameraFailed;
 
+  /// No description provided for @dprCanStillSend.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still send.'**
+  String get dprCanStillSend;
+
   /// No description provided for @dprChooseAnother.
   ///
   /// In en, this message translates to:
-  /// **'Other item'**
+  /// **'Change item'**
   String get dprChooseAnother;
 
   /// No description provided for @dprCorrectAndSend.
@@ -1480,11 +1516,23 @@ abstract class AppLocalizations {
   /// **'Daily reports'**
   String get dprListTitle;
 
+  /// No description provided for @dprLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get dprLoading;
+
   /// No description provided for @dprLocked.
   ///
   /// In en, this message translates to:
   /// **'This report has gone for approval and cannot be changed now.'**
   String get dprLocked;
+
+  /// No description provided for @dprMissedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed days'**
+  String get dprMissedDays;
 
   /// No description provided for @dprMoreRows.
   ///
@@ -1507,14 +1555,26 @@ abstract class AppLocalizations {
   /// No description provided for @dprNeedWorkers.
   ///
   /// In en, this message translates to:
-  /// **'Enter the workers who came. If the site was closed, write why under Hindrances.'**
+  /// **'Enter the workers who came.'**
   String get dprNeedWorkers;
+
+  /// No description provided for @dprNoPhotosYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos added.'**
+  String get dprNoPhotosYet;
 
   /// No description provided for @dprNoProject.
   ///
   /// In en, this message translates to:
   /// **'Pick a project first'**
   String get dprNoProject;
+
+  /// No description provided for @dprNoWorkYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No work added.'**
+  String get dprNoWorkYet;
 
   /// No description provided for @dprNotSaved.
   ///
@@ -1545,6 +1605,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'of {days} days'**
   String dprOfDays(int days);
+
+  /// No description provided for @dprOpenOutbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Outbox'**
+  String get dprOpenOutbox;
 
   /// No description provided for @dprOpenToday.
   ///
@@ -1605,6 +1671,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove'**
   String get dprRemove;
+
+  /// No description provided for @dprRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed'**
+  String get dprRemoved;
 
   /// No description provided for @dprReportsThisMonth.
   ///
@@ -1738,6 +1810,12 @@ abstract class AppLocalizations {
   /// **'Send report'**
   String get dprSendReport;
 
+  /// No description provided for @dprSiteClosedWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Site closed? Write the reason'**
+  String get dprSiteClosedWrite;
+
   /// No description provided for @dprSyncAttention.
   ///
   /// In en, this message translates to:
@@ -1774,6 +1852,12 @@ abstract class AppLocalizations {
   /// **'Total workers'**
   String get dprTotalWorkers;
 
+  /// No description provided for @dprUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get dprUndo;
+
   /// No description provided for @dprWorkersCount.
   ///
   /// In en, this message translates to:
@@ -1791,6 +1875,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{worker} other{workers}}'**
   String dprWorkersWord(int count);
+
+  /// No description provided for @dprWriteFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Write report for {date}'**
+  String dprWriteFor(String date);
 
   /// No description provided for @dprWriteToday.
   ///
@@ -1945,14 +2035,20 @@ abstract class AppLocalizations {
   /// No description provided for @issuesFormAssignee.
   ///
   /// In en, this message translates to:
-  /// **'Who will fix it?'**
+  /// **'Who will fix it? (optional)'**
   String get issuesFormAssignee;
 
   /// No description provided for @issuesFormDue.
   ///
   /// In en, this message translates to:
-  /// **'Fix by'**
+  /// **'Fix by (optional)'**
   String get issuesFormDue;
+
+  /// No description provided for @issuesFormDueClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the chosen day again to clear it.'**
+  String get issuesFormDueClear;
 
   /// No description provided for @issuesFormDueThree.
   ///
@@ -1981,13 +2077,13 @@ abstract class AppLocalizations {
   /// No description provided for @issuesFormLocation.
   ///
   /// In en, this message translates to:
-  /// **'Where on site?'**
+  /// **'Where on site? (optional)'**
   String get issuesFormLocation;
 
   /// No description provided for @issuesFormLocationHint.
   ///
   /// In en, this message translates to:
-  /// **'Grid C, third floor'**
+  /// **'e.g. Grid C, third floor'**
   String get issuesFormLocationHint;
 
   /// No description provided for @issuesFormPriority.
@@ -2017,7 +2113,7 @@ abstract class AppLocalizations {
   /// No description provided for @issuesFormWhatHint.
   ///
   /// In en, this message translates to:
-  /// **'Crack in column C3'**
+  /// **'e.g. Crack in column C3'**
   String get issuesFormWhatHint;
 
   /// No description provided for @issuesFormWhatRequired.
@@ -2025,6 +2121,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Write what is wrong.'**
   String get issuesFormWhatRequired;
+
+  /// No description provided for @issuesLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading issues'**
+  String get issuesLoading;
 
   /// No description provided for @issuesNoDueDate.
   ///
@@ -2055,6 +2157,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Raise issue'**
   String get issuesRaise;
+
+  /// No description provided for @issuesRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update. Showing what is on this phone.'**
+  String get issuesRefreshFailed;
+
+  /// No description provided for @issuesResolvedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved {date}'**
+  String issuesResolvedOn(String date);
 
   /// No description provided for @issuesSaveFailed.
   ///
@@ -2275,7 +2389,7 @@ abstract class AppLocalizations {
   /// No description provided for @measurementDetailsShort.
   ///
   /// In en, this message translates to:
-  /// **'Details'**
+  /// **'Location, date'**
   String get measurementDetailsShort;
 
   /// No description provided for @measurementDetailsTitle.
@@ -2301,6 +2415,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This entry goes over the BOQ quantity plus tolerance, so the project manager must approve it.'**
   String get measurementDeviationDetail;
+
+  /// No description provided for @measurementDraftsLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 row kept as a draft. Send it from the book.} other{{count} rows kept as drafts. Send them from the book.}}'**
+  String measurementDraftsLeft(int count);
 
   /// No description provided for @measurementEdit.
   ///
@@ -2338,6 +2458,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get measurementFilterAll;
 
+  /// No description provided for @measurementFixLast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix last'**
+  String get measurementFixLast;
+
   /// No description provided for @measurementFormulaHint.
   ///
   /// In en, this message translates to:
@@ -2356,11 +2482,41 @@ abstract class AppLocalizations {
   /// **'Entry not found'**
   String get measurementGoneTitle;
 
+  /// No description provided for @measurementInReviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'With the approver. It cannot be changed until they decide.'**
+  String get measurementInReviewBody;
+
   /// No description provided for @measurementItem.
   ///
   /// In en, this message translates to:
   /// **'Item'**
   String get measurementItem;
+
+  /// No description provided for @measurementLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The figures typed for this row will be lost.'**
+  String get measurementLeaveBody;
+
+  /// No description provided for @measurementLeaveGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get measurementLeaveGo;
+
+  /// No description provided for @measurementLeaveKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep entering'**
+  String get measurementLeaveKeep;
+
+  /// No description provided for @measurementLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave without saving?'**
+  String get measurementLeaveTitle;
 
   /// No description provided for @measurementLength.
   ///
@@ -2373,6 +2529,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'× L'**
   String get measurementLengthShort;
+
+  /// No description provided for @measurementLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get measurementLoading;
 
   /// No description provided for @measurementLocationHint.
   ///
@@ -2506,6 +2668,12 @@ abstract class AppLocalizations {
   /// **'Recent'**
   String get measurementRecentLines;
 
+  /// No description provided for @measurementRejectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This entry was rejected and will not count. Make a new entry if the work needs measuring again.'**
+  String get measurementRejectedBody;
+
   /// No description provided for @measurementRowCount.
   ///
   /// In en, this message translates to:
@@ -2545,7 +2713,7 @@ abstract class AppLocalizations {
   /// No description provided for @measurementSendCount.
   ///
   /// In en, this message translates to:
-  /// **'Send {count} rows'**
+  /// **'Send {count} for approval'**
   String measurementSendCount(int count);
 
   /// No description provided for @measurementSendForApproval.
@@ -2674,6 +2842,12 @@ abstract class AppLocalizations {
   /// **'Choose what it was for.'**
   String get pettyCashCategoryRequired;
 
+  /// No description provided for @pettyCashChooseProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a project'**
+  String get pettyCashChooseProject;
+
   /// No description provided for @pettyCashConfirmed.
   ///
   /// In en, this message translates to:
@@ -2745,6 +2919,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add an expense'**
   String get pettyCashFormTitle;
+
+  /// No description provided for @pettyCashLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the cash book'**
+  String get pettyCashLoading;
 
   /// No description provided for @pettyCashNoProjectMessage.
   ///
@@ -2865,6 +3045,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sending'**
   String get pettyCashSyncSending;
+
+  /// No description provided for @pettyCashTapToChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to change'**
+  String get pettyCashTapToChange;
 
   /// No description provided for @pettyCashTitle.
   ///
@@ -3069,6 +3255,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 needs your attention} other{{count} need your attention}}'**
   String shellOutboxAttention(int count);
+
+  /// No description provided for @shellOutboxLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the outbox'**
+  String get shellOutboxLoading;
 
   /// No description provided for @shellOutboxLogTitle.
   ///

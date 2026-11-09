@@ -61,10 +61,22 @@ void main() {
   setUpAll(loadRealFonts);
 
   group('RubberStamp', () {
+    testWidgets('small and medium are straight pills: label as given, a dot, no tilt, no thud', (tester) async {
+      await pumpDesign(tester, const RubberStamp(kind: StampKind.returned, label: 'Returned', animate: true));
+      expect(find.text('Returned'), findsOneWidget);
+      expect(find.text('RETURNED'), findsNothing);
+      expect(find.ancestor(of: find.text('Returned'), matching: find.byType(Transform)), findsNothing);
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(tester.getSize(find.byType(RubberStamp)).height, lessThanOrEqualTo(28));
+
+      await pumpDesign(tester, const StatusPill(kind: StampKind.queued, label: 'On phone'));
+      expect(find.text('On phone'), findsOneWidget);
+    });
+
     testWidgets('with reduced motion it is at rest on the first frame', (tester) async {
       await pumpDesign(
         tester,
-        const RubberStamp(kind: StampKind.approved, label: 'Approved', animate: true),
+        const RubberStamp(kind: StampKind.approved, label: 'Approved', size: StampSize.large, animate: true),
         disableAnimations: true,
       );
       expect(find.byType(RepaintBoundary), findsWidgets);
@@ -72,16 +84,19 @@ void main() {
       final Transform rest = tester.widget<Transform>(
         find.ancestor(of: find.text('APPROVED'), matching: find.byType(Transform)).first,
       );
-      expect(rest.transform.getRotation().getColumn(0).y, closeTo(-0.12187, 0.01));
+      expect(rest.transform.getRotation().getColumn(0).y, closeTo(-0.0698, 0.01));
     });
 
     testWidgets('animated: opaque at frame 0, starts large, lands at rest', (tester) async {
-      await pumpDesign(tester, const RubberStamp(kind: StampKind.rejected, label: 'Rejected', animate: true));
+      await pumpDesign(
+        tester,
+        const RubberStamp(kind: StampKind.rejected, label: 'Rejected', size: StampSize.large, animate: true),
+      );
       expectTextOpaque(tester, 'REJECTED');
       final List<Transform> startFrames = tester
           .widgetList<Transform>(find.ancestor(of: find.text('REJECTED'), matching: find.byType(Transform)))
           .toList();
-      expect(startFrames.any((t) => (t.transform.getMaxScaleOnAxis() - 2.2).abs() < 0.01), isTrue);
+      expect(startFrames.any((t) => (t.transform.getMaxScaleOnAxis() - 2.0).abs() < 0.01), isTrue);
 
       await tester.pump(const Duration(milliseconds: 600));
       final List<Transform> endFrames = tester
@@ -94,7 +109,13 @@ void main() {
       var landed = 0;
       await pumpDesign(
         tester,
-        RubberStamp(kind: StampKind.approved, label: 'Approved', animate: true, onLanded: () => landed++),
+        RubberStamp(
+          kind: StampKind.approved,
+          label: 'Approved',
+          size: StampSize.large,
+          animate: true,
+          onLanded: () => landed++,
+        ),
       );
       expect(landed, 0);
       await tester.pump(const Duration(milliseconds: 80));
@@ -106,7 +127,7 @@ void main() {
     });
 
     testWidgets('a not-animated stamp has no thud at all', (tester) async {
-      await pumpDesign(tester, const RubberStamp(kind: StampKind.draft, label: 'Draft'));
+      await pumpDesign(tester, const RubberStamp(kind: StampKind.draft, label: 'Draft', size: StampSize.large));
       final List<Transform> transforms = tester
           .widgetList<Transform>(find.ancestor(of: find.text('DRAFT'), matching: find.byType(Transform)))
           .toList();

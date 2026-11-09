@@ -54,7 +54,8 @@ void main() {
     await show(tester, uuid);
 
     expect(find.text('Rain'), findsOneWidget);
-    expect(find.text('33'), findsNWidgets(2), reason: 'section total and ledger total');
+    final RollingNumber hero = tester.widget(find.byType(RollingNumber));
+    expect(hero.value, '33');
     expect(find.text('15.500'), findsOneWidget);
     expect(find.text('cum'), findsOneWidget);
     expect(find.text('M25 RCC in slab and beams, sixth floor'), findsOneWidget);
@@ -74,6 +75,18 @@ void main() {
     expect(find.text('Waiting to send'), findsOneWidget);
     expect(find.text('Saved on phone, will send when network returns'), findsOneWidget);
     expect(find.text('Sent'), findsNothing);
+  });
+
+  testWidgets('a report stuck on the phone offers the way out', (tester) async {
+    final uuid = await filled();
+    await app.services.dpr.send(uuid);
+    app.api.scriptPushStatuses(const ['error', 'error']);
+    await app.sync();
+
+    await show(tester, uuid);
+
+    expect(find.text('Needs attention'), findsWidgets);
+    expect(find.text('Open Outbox'), findsOneWidget);
   });
 
   testWidgets('a RETURNED report shows the remark and offers correction', (tester) async {
@@ -120,7 +133,7 @@ void main() {
     );
     await pumpDrift(tester, 10);
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('हवामान'), findsOneWidget);
+    expect(find.text('साइटवरील कामगार'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

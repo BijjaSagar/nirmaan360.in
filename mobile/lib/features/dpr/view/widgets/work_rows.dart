@@ -108,12 +108,12 @@ class _DprWorkRowState extends State<DprWorkRow> {
                 DprTapPad(
                   onTap: widget.onRemove,
                   semanticsLabel: l.dprRemove,
-                  minWidth: 72,
-                  minHeight: 72,
+                  minWidth: 64,
+                  minHeight: 64,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      const Icon(Icons.close, size: 24, color: N360Colors.stampRed),
+                      const Icon(Icons.close, size: N360IconSize.lg, color: N360Colors.stampRed),
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
@@ -140,7 +140,7 @@ class _DprWorkRowState extends State<DprWorkRow> {
 /// The rounded-square progress mark for a BOQ line, measured against its
 /// full quantity. Says so out loud, because a bare number means nothing.
 class DprBoqPercent extends StatelessWidget {
-  const DprBoqPercent({super.key, required this.line, this.size = 56});
+  const DprBoqPercent({super.key, required this.line, this.size = N360Size.tile});
 
   final BoqLine line;
   final double size;

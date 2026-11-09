@@ -46,7 +46,6 @@ class _MeasurementDoc extends StatelessWidget {
     final Map<String, dynamic> boq = readMap(doc['boq_item']);
     final String unit = readText(boq['unit']) ?? '';
     final Qty? qty = readQty(doc['qty']);
-    final bool deduction = doc['is_deduction'] == true;
     final Qty? nos = readQty(doc['nos']);
     final Qty? length = readQty(doc['length']);
     final Qty? breadth = readQty(doc['breadth']);
@@ -59,18 +58,6 @@ class _MeasurementDoc extends StatelessWidget {
     final Color qtyInk = qty?.isNegative == true ? N360Colors.laterite : N360Colors.ink;
     String dim(Qty? value) => value == null ? '—' : bookFigure(value);
 
-    final String? formula = qty == null
-        ? null
-        : bookFormula(
-            nos: nos,
-            length: length,
-            breadth: breadth,
-            depth: depth,
-            deduction: deduction,
-            result: qty,
-            unit: unit,
-          );
-
     return _sheet(<Widget>[
       if (readText(boq['code']) != null)
         BookRow(label: l.measurementItem, value: readText(boq['code'])!, hint: readText(boq['description'])),
@@ -81,24 +68,12 @@ class _MeasurementDoc extends StatelessWidget {
       BookRow(label: l.measurementLength, value: dim(length)),
       BookRow(label: l.measurementBreadth, value: dim(breadth)),
       BookRow(label: l.measurementDepth, value: dim(depth)),
-      if (formula != null)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
-          child: FittedBox(
-            alignment: Alignment.centerLeft,
-            fit: BoxFit.scaleDown,
-            child: Text(
-              formula,
-              style: N360Type.figureSmall.copyWith(color: deduction ? N360Colors.laterite : N360Colors.ink2),
-            ),
-          ),
-        ),
       if (qty != null)
         BookRow(
           label: l.measurementQuantity,
           total: true,
           value: '${formatQty(qty)}${unit.isEmpty ? '' : ' $unit'}',
-          valueStyle: N360Type.figure.copyWith(fontSize: 20, color: qtyInk),
+          valueStyle: N360Type.figure.copyWith(color: qtyInk),
         ),
       if (balance != null)
         BookRow(label: l.measurementBalance, value: '${formatQty(balance)} $unit'.trim(), ruled: false),
@@ -190,12 +165,7 @@ class _BillDoc extends StatelessWidget {
       if (deductions != null) BookRow(label: l.approvalsDeductions, value: deductions.inr()),
       if (gst != null) BookRow(label: l.approvalsGst, value: gst.inr()),
       if (net != null)
-        BookRow(
-          label: l.approvalsNetPayable,
-          total: true,
-          value: net.inr(),
-          valueStyle: N360Type.figure.copyWith(fontSize: 20),
-        ),
+        BookRow(label: l.approvalsNetPayable, total: true, value: net.inr(), valueStyle: N360Type.figure),
     ]);
   }
 }

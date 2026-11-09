@@ -1,20 +1,24 @@
 import 'package:flutter/widgets.dart';
 
-/// The warm palette chosen by the product owner, with white cards.
+/// The product owner's palette, applied with restraint.
+///
+/// The page is the warm grey, every surface is white, and structure comes from
+/// hairlines in the light surface tone rather than shadows or tints. Colour is
+/// spent in three places only: the one primary action, data (progress, status),
+/// and the urgent red-orange. Text on the primary is white; small orange text
+/// and icons use [laterite], a darker cut that holds 4.5:1 on light surfaces.
 ///
 /// The names come from the first version of the app and stay so screens keep
-/// compiling; read them by role, not by the old paper metaphor. Text roles hold
-/// outdoor contrast on every background including the peach foot of the page:
-/// body 7:1, labels 4.5:1. Text on gold is always dark ink, because white on
-/// orange fails in direct sun.
+/// compiling; read them by role. Outdoor contrast holds on every background:
+/// body 7:1, labels 4.5:1.
 abstract final class N360Colors {
-  /// Page base, the top of the warm gradient.
+  /// Page background.
   static const Color paper = Color(0xFFEFECEB);
 
-  /// Soft tile fill on white cards.
+  /// The light surface tone: hairlines, dividers, tracks, disabled fills.
   static const Color paper2 = Color(0xFFE3D6CF);
 
-  /// Card white.
+  /// Every card and control face.
   static const Color sheet = Color(0xFFFFFFFF);
 
   static const Color ink = Color(0xFF070706);
@@ -22,18 +26,29 @@ abstract final class N360Colors {
   /// Charcoal for secondary text and labels. Long body text uses [ink].
   static const Color ink2 = Color(0xFF575250);
 
-  /// Decoration only. Fails 4.5:1 on paper, so never use it for text.
+  /// Decoration only: chevrons, placeholders. Fails 4.5:1 on paper, so never
+  /// use it for text.
   static const Color ink3 = Color(0xFF9FA2A7);
 
-  /// Hairlines on cards.
+  /// Hairlines between rows and around cards.
   static const Color rule = Color(0xFFE3D6CF);
+
+  /// The one primary action: a very slightly deeper cut of [orange] so that
+  /// white text on it passes 4.5:1 (5.0:1). Visually the same colour.
+  static const Color primary = Color(0xFFB0552A);
+
+  /// Text and icons on [primary].
+  static const Color onPrimary = Color(0xFFFFFFFF);
+
+  /// The wash behind a selected tile or an active input, with a [primary] edge.
+  static const Color primaryTint = Color(0xFFE1C9BB);
 
   /// A darker cut of [orange] for small text, icons and focus rings. The palette's
   /// own deep oranges stay below 4.5:1 on light surfaces, so they are fills only.
   static const Color laterite = Color(0xFF8F4622);
   static const Color lateriteDark = Color(0xFF7A3A1B);
 
-  /// Gold accent. Carries dark ink, never white text.
+  /// Gold accent, as a data fill (half day, progress). Carries dark ink.
   static const Color haldi = Color(0xFFE1985E);
 
   /// Slate for "in review". Used sparingly so the palette stays warm.
@@ -41,24 +56,27 @@ abstract final class N360Colors {
   static const Color neelDeep = Color(0xFF1C2F3A);
   static const Color moss = Color(0xFF2E7D50);
 
-  // The gold family.
+  // The gold family, exactly as the owner gave it.
 
   static const Color amber = Color(0xFFE1985E);
+
+  /// Progress fills and highlights. Carries dark ink when it carries text.
   static const Color orange = Color(0xFFBC5E2F);
 
-  /// Warm beige for hatching and tinted panels.
+  /// Warm beige, for tinted panels.
   static const Color beige = Color(0xFFDCB8A4);
 
-  /// Delayed and urgent states, as a fill. Carries dark ink.
+  /// Delayed and urgent states only. As a fill it carries dark ink; as a dot
+  /// it stands beside dark text.
   static const Color accent = Color(0xFFE63E06);
 
   /// The second muted grey, for disabled marks only.
   static const Color muted = Color(0xFFAAAAAA);
 
-  /// Light surface, and the foot of the page.
+  /// Light surface. The same tone as [paper2].
   static const Color peach = Color(0xFFE3D6CF);
 
-  /// Card tint: the wash on tinted surfaces such as active tiles.
+  /// Card tint: the wash on a selected tile.
   static const Color goldTint = Color(0xFFE1C9BB);
 
   // Derived text colours.
@@ -81,52 +99,47 @@ abstract final class N360Colors {
   static const Color gridMajor = Color(0xFFDCB8A4);
   static const Color marginRed = Color(0xFFE1985E);
 
-  /// The soft lip under a pressable tile.
+  /// The soft lip under a pressable tile. Kept for screens that still draw it.
   static const Color paperEdge = Color(0xFFE3D6CF);
 
-  /// A stronger hairline for fields, about 3:1 on white.
+  /// A stronger hairline for fields and secondary buttons, about 3:1 on white.
   static const Color ruleStrong = Color(0xFF8F8B88);
 
   static const Color lateriteEdge = Color(0xFF7A3A1B);
   static const Color inkEdge = Color(0xFF070706);
 
-  /// The thin light line around a white card.
-  static const Color cardEdge = Color(0xFFF5F1EF);
+  /// The hairline around a white card. The same tone as [rule].
+  static const Color cardEdge = Color(0xFFE3D6CF);
 
-  /// The warm tone of the one soft shadow a card has.
+  /// Kept for screens that still paint a shadow. The system itself paints none.
   static const Color shadow = Color(0xFFB9875B);
 }
 
-/// The static gradients. They are painted once and never animate.
+/// Static "gradients". The design is flat; these exist so screens that painted
+/// a gradient still compile and now get the flat primary and the flat page.
 abstract final class N360Gradients {
-  /// Amber to orange, for primary actions and active tiles. Dark ink on top.
+  /// Flat primary. Text on it is [N360Colors.onPrimary].
   static const LinearGradient gold = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: <Color>[N360Colors.amber, N360Colors.orange],
+    colors: <Color>[N360Colors.primary, N360Colors.primary],
   );
 
-  /// The page: light warm grey fading to peach at the foot.
+  /// The page: one flat warm grey.
   static const LinearGradient page = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: <Color>[N360Colors.paper, N360Colors.paper, N360Colors.peach],
-    stops: <double>[0, 0.55, 1],
+    colors: <Color>[N360Colors.paper, N360Colors.paper],
   );
 
-  /// The left-to-right wash of a filled progress bar.
+  /// Flat progress fill.
   static const LinearGradient goldFade = LinearGradient(
-    colors: <Color>[N360Colors.goldTint, N360Colors.amber, N360Colors.orange],
-    stops: <double>[0, 0.62, 1],
+    colors: <Color>[N360Colors.orange, N360Colors.orange],
   );
 }
 
 /// Spacing scale, in logical pixels. Everything sits on a 4dp beat.
 ///
-/// The rhythm is tight on purpose: the reference design gets its calm from
-/// small type with air around it, not from big gaps between big things.
-/// Inside a card use [card] padding and [sm] between lines; between cards
-/// use [md]; between sections use [lg].
+/// Inside a card use [card] padding and [sm] between lines; between cards use
+/// [cardGap]; between sections use [lg].
 abstract final class N360Space {
   static const double xxs = 2;
   static const double xs = 4;
@@ -154,12 +167,12 @@ abstract final class N360Space {
   static const double marginText = 16;
 }
 
-/// Corners: soft rounded tiles and large cards.
+/// Corners. Small, so surfaces read as documents rather than pills.
 abstract final class N360Radius {
-  static const double small = 10;
-  static const double medium = 14;
-  static const double tile = 16;
-  static const double card = 22;
+  static const double small = 6;
+  static const double medium = 8;
+  static const double tile = 10;
+  static const double card = 12;
 
   static const BorderRadius sm = BorderRadius.all(Radius.circular(small));
   static const BorderRadius md = BorderRadius.all(Radius.circular(medium));
@@ -185,17 +198,20 @@ abstract final class N360Size {
   static const double bar = 56;
 
   /// The painted tile behind the active bottom-bar item.
-  static const double barTile = 48;
+  static const double barTile = 44;
 
-  /// The visible side of a rounded-square icon tile.
-  static const double tile = 44;
+  /// The visible side of a square icon tile.
+  static const double tile = 40;
 
   /// A smaller icon tile, for the corner of a stat card or a list row.
-  static const double tileSmall = 36;
+  static const double tileSmall = 32;
 
   /// The visible height of a compact control that still carries a [tap] target
-  /// around it, such as a sync tag or a date chip.
-  static const double control = 40;
+  /// around it, such as a sync tag or a filter chip.
+  static const double control = 36;
+
+  /// A status pill.
+  static const double pill = 22;
 
   /// Space a screen leaves under a tile for its soft lower lip.
   static const double edge = 3;
@@ -214,7 +230,7 @@ abstract final class N360IconSize {
   /// Inline with body text, and the default for a button.
   static const double md = 18;
 
-  /// In a [N360Size.tile] or [N360Size.tileSmall] tile, and in the bottom bar.
+  /// In a [N360Size.tile] tile, and in the bottom bar.
   static const double lg = 20;
 
   /// Bottom bar and stepper keys.

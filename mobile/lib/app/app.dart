@@ -1,25 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/app_services.dart';
-import '../core/design/design.dart';
-import '../l10n/generated/app_localizations.dart';
+import 'app_frame.dart';
 import 'app_gate.dart';
 import 'router.dart';
 import 'routes.dart';
 import 'shell/sync_status_cubit.dart';
 import 'widgets/boot_paper.dart';
-
-const SystemUiOverlayStyle _chrome = SystemUiOverlayStyle(
-  statusBarColor: Colors.transparent,
-  statusBarIconBrightness: Brightness.dark,
-  statusBarBrightness: Brightness.light,
-  // The floating bottom bar leaves the foot of the page showing behind it.
-  systemNavigationBarColor: N360Colors.peach,
-  systemNavigationBarIconBrightness: Brightness.dark,
-);
 
 /// The root of the app. Shows plain paper until the local session is known,
 /// then the real app, so nothing ever flashes the wrong screen.
@@ -69,19 +58,7 @@ class _Nirmaan360AppState extends State<Nirmaan360App> {
           builder: (context, state) {
             if (!state.ready) return const BootPaper();
             final GoRouter router = _router ??= buildRouter(_gate, initialLocation: widget.initialLocation);
-            return MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              onGenerateTitle: (context) => AppLocalizations.of(context).appName,
-              theme: buildN360Theme(),
-              routerConfig: router,
-              locale: state.locale,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-                value: _chrome,
-                child: LedgerPaper.root(child: child!),
-              ),
-            );
+            return N360AppFrame(router: router, locale: state.locale);
           },
         ),
       ),

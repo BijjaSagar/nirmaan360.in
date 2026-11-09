@@ -6,6 +6,7 @@ import '../../../app/app_gate.dart';
 import '../../../app/routes.dart';
 import '../../../app/shell/sync_status_cubit.dart';
 import '../../../app/widgets/back_header.dart';
+import '../../../app/widgets/labelled_tile.dart';
 import '../../../app/widgets/press_row.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
@@ -15,8 +16,14 @@ import '../../../l10n/generated/app_localizations.dart';
 /// Pick the site you are on. Only ever shown with two or more projects, or
 /// while the first pull is still bringing them in. The rows sit in the lower
 /// half of the screen, in thumb reach.
+///
+/// The building here is the one from the sign-in page, at the same size and
+/// already standing, so the two screens read as one place.
 class ProjectPickerScreen extends StatelessWidget {
   const ProjectPickerScreen({super.key});
+
+  /// The same ceiling the sign-in page gives its building.
+  static const double artMaxHeight = 250;
 
   Future<void> _choose(BuildContext context, ProjectRow project) async {
     await context.read<AppGate>().selectProject(project.id);
@@ -41,8 +48,20 @@ class ProjectPickerScreen extends StatelessWidget {
           children: <Widget>[
             if (syncing) ProgressRule(semanticsLabel: t.shellPickerLoading),
             Padding(
-              padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, 0),
-              child: PageHeader(title: welcome ? t.shellSignInWelcome : t.shellPickerTitle, showBack: canGoBack),
+              padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.sm, 0),
+              child: PageHeader(
+                title: welcome ? t.shellSignInWelcome : t.shellPickerTitle,
+                showBack: canGoBack,
+                // With nothing to go back to, settings is the way to sign out
+                // of the wrong account; otherwise Home already offers it.
+                trailing: canGoBack
+                    ? null
+                    : LabelledTile(
+                        icon: Icons.settings_outlined,
+                        label: t.shellSettings,
+                        onTap: () => context.push(Routes.settings),
+                      ),
+              ),
             ),
             Expanded(
               child: projects.isEmpty
@@ -52,12 +71,15 @@ class ProjectPickerScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           // The art takes the spare room, which keeps the rows low.
-                          const Expanded(
+                          Expanded(
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
+                              padding: const EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
                               child: Center(
-                                child: ExcludeSemantics(
-                                  child: BuildingProgressArt(fraction: 0.62, animateEntry: false),
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxHeight: artMaxHeight - N360Space.lg),
+                                  child: const ExcludeSemantics(
+                                    child: BuildingProgressArt(fraction: 0.62, animateEntry: false),
+                                  ),
                                 ),
                               ),
                             ),
@@ -67,7 +89,7 @@ class ProjectPickerScreen extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
                               child: LedgerCard(
-                                padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
+                                padding: const EdgeInsets.symmetric(vertical: N360Space.xs),
                                 child: ListView.separated(
                                   shrinkWrap: true,
                                   padding: EdgeInsets.zero,
@@ -139,7 +161,7 @@ class _ProjectRow extends StatelessWidget {
       child: ExcludeSemantics(
         child: PressRow(
           onTap: onTap,
-          minHeight: 76,
+          minHeight: N360Size.tap + N360Space.md,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm),
             child: Row(
@@ -150,8 +172,18 @@ class _ProjectRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(project.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: N360Type.heading),
-                      Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+                      Text(
+                        project.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: N360Type.fit(N360Type.heading, project.name),
+                      ),
+                      Text(
+                        detail,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: N360Type.fit(N360Type.caption, detail),
+                      ),
                     ],
                   ),
                 ),
@@ -159,7 +191,7 @@ class _ProjectRow extends StatelessWidget {
                   const SizedBox(width: N360Space.xs),
                   RubberStamp(kind: StampKind.synced, label: currentLabel, size: StampSize.small),
                 ] else
-                  const Icon(Icons.chevron_right, size: 28, color: N360Colors.ink2),
+                  const Icon(Icons.chevron_right, size: N360IconSize.lg, color: N360Colors.ink2),
               ],
             ),
           ),
@@ -169,7 +201,8 @@ class _ProjectRow extends StatelessWidget {
   }
 }
 
-/// What a new owner sees: an invitation, with the action in the thumb zone.
+/// What a new owner sees: the crane at work on an empty site, and one
+/// invitation in the thumb zone.
 class _FirstProject extends StatelessWidget {
   const _FirstProject();
 
@@ -179,10 +212,15 @@ class _FirstProject extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const Expanded(
+        Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
-            child: Center(child: ExcludeSemantics(child: BuildingProgressArt(fraction: 0.36))),
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: ProjectPickerScreen.artMaxHeight),
+                child: LoopingArt.craneHoist(semanticLabel: t.shellPickerFirstTitle),
+              ),
+            ),
           ),
         ),
         Padding(
@@ -194,9 +232,12 @@ class _FirstProject extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(t.shellPickerFirstTitle, style: N360Type.title),
+                  Text(t.shellPickerFirstTitle, style: N360Type.fit(N360Type.title, t.shellPickerFirstTitle)),
                   const SizedBox(height: N360Space.xxs),
-                  Text(t.shellPickerFirstBody, style: N360Type.body.copyWith(color: N360Colors.ink2)),
+                  Text(
+                    t.shellPickerFirstBody,
+                    style: N360Type.fit(N360Type.body, t.shellPickerFirstBody).copyWith(color: N360Colors.ink2),
+                  ),
                   const SizedBox(height: N360Space.md),
                   GloveButton(
                     label: t.shellPickerFirstButton,
@@ -215,6 +256,8 @@ class _FirstProject extends StatelessWidget {
   }
 }
 
+/// Signed in, but on no project yet. The crane keeps working while the office
+/// adds them; the button asks the server again.
 class _EmptyProjects extends StatelessWidget {
   const _EmptyProjects({required this.syncing});
 

@@ -11,6 +11,9 @@ import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../bloc/sign_in_cubit.dart';
 
+/// The first screen anyone sees. Language first, in each language's own
+/// script; then the mark, the building rising, and one white card with two
+/// fields and a big gold button in the thumb zone.
 class SignInScreen extends StatelessWidget {
   const SignInScreen({super.key});
 
@@ -43,7 +46,7 @@ class _SignInViewState extends State<_SignInView> {
 
   /// Height of everything except the graphic: language switch, brand row and
   /// the form card, at normal text size.
-  static const double _fixedHeight = 500;
+  static const double _fixedHeight = 456;
 
   @override
   void dispose() {
@@ -88,7 +91,7 @@ class _SignInViewState extends State<_SignInView> {
     // where they are until the focused one needs scrolling into view.
     final MediaQueryData media = MediaQuery.of(context);
     final double usable = media.size.height - media.padding.top - media.viewPadding.bottom;
-    final double room = usable - _fixedHeight - (expired ? 130 : 0);
+    final double room = usable - _fixedHeight - (expired ? 110 : 0);
 
     return BlocConsumer<SignInCubit, SignInState>(
       listenWhen: (previous, next) => previous.problem != next.problem && next.problem != null,
@@ -110,9 +113,9 @@ class _SignInViewState extends State<_SignInView> {
                   const SizedBox(height: N360Space.lg),
                   Row(
                     children: <Widget>[
-                      const ExcludeSemantics(child: BrandMark(size: 52)),
+                      const ExcludeSemantics(child: BrandMark(size: N360Size.tile)),
                       const SizedBox(width: N360Space.md),
-                      Expanded(child: Text(t.appName, style: N360Type.display)),
+                      Expanded(child: Text(t.appName, style: N360Type.title)),
                     ],
                   ),
                   _Graphic(room: room),
@@ -120,11 +123,11 @@ class _SignInViewState extends State<_SignInView> {
                     index: 1,
                     distance: 28,
                     child: LedgerCard(
-                      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.lg, N360Space.lg, N360Space.lg),
+                      padding: const EdgeInsets.all(N360Space.lg),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          Text(t.shellSignInWelcome, style: N360Type.display),
+                          Text(t.shellSignInWelcome, style: N360Type.fit(N360Type.display, t.shellSignInWelcome)),
                           if (expired) ...<Widget>[
                             const SizedBox(height: N360Space.sm),
                             PaperToast(
@@ -192,24 +195,28 @@ class _SignInViewState extends State<_SignInView> {
   }
 }
 
-/// The building, quietly, in whatever room the screen has left. Only drawn when
-/// there is real room for it, and always fixed in size once laid out.
+/// The building rising, quietly, in whatever room the screen has left. Only
+/// drawn when there is real room for it, and fixed in size once laid out. The
+/// picker draws the same building at the same size, so the sign-in page
+/// slides away and the site stays.
 class _Graphic extends StatelessWidget {
   const _Graphic({required this.room});
 
   final double room;
 
   static const double _minHeight = 130;
-  static const double _maxHeight = 250;
+
+  /// Shared with the project picker, so the two screens line up.
+  static const double maxHeight = 250;
 
   @override
   Widget build(BuildContext context) {
     if (room < _minHeight) return const SizedBox(height: N360Space.lg);
-    final double height = math.min(room, _maxHeight);
+    final double height = math.min(room, maxHeight);
     return SizedBox(
       height: room,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
         child: Center(
           child: SizedBox(
             height: height - N360Space.lg,
@@ -249,16 +256,20 @@ class _ShowPassword extends StatelessWidget {
           onTapDown: (_) => N360Haptics.select(),
           onTap: onToggle,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 72, minHeight: N360Size.tapLarge),
+            constraints: const BoxConstraints(minWidth: 72, minHeight: N360Size.tap),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: N360Space.sm),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Icon(shown ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 22, color: N360Colors.ink2),
+                  Icon(
+                    shown ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: N360IconSize.button,
+                    color: N360Colors.ink2,
+                  ),
                   const SizedBox(width: N360Space.xs),
-                  Text(label, style: N360Type.label),
+                  Text(label, style: N360Type.fit(N360Type.label, label)),
                 ],
               ),
             ),

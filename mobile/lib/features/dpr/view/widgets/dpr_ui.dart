@@ -32,7 +32,7 @@ class DprTapPad extends StatelessWidget {
       minHeight: minHeight,
       minWidth: minWidth,
       builder: (context, depth, child) => Transform.scale(
-        scale: 1 - 0.04 * depth,
+        scale: pressedScale(depth),
         child: child,
       ),
       child: child,
@@ -51,28 +51,31 @@ class DprTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.sm),
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.xs),
       child: Row(
         children: <Widget>[
           DprTapPad(
             onTap: () => dprGoBack(context),
             semanticsLabel: l.commonBack,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: N360Colors.paper2,
-                borderRadius: N360Radius.md,
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: N360Size.tap),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      const Icon(Icons.arrow_back, size: 24, color: N360Colors.ink),
-                      const SizedBox(width: 6),
-                      Text(l.commonBack, style: N360Type.bodyStrong),
-                    ],
+            child: Center(
+              widthFactor: 1,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: N360Colors.paper2,
+                  borderRadius: N360Radius.md,
+                ),
+                child: SizedBox(
+                  height: N360Size.tile,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: N360Space.tile),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(Icons.arrow_back, size: N360IconSize.md, color: N360Colors.ink),
+                        const SizedBox(width: N360Space.xs),
+                        Text(l.commonBack, style: N360Type.bodyStrong),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -110,7 +113,7 @@ class DprActionLayout extends StatelessWidget {
 
   /// The space a scrolling body must leave at its foot.
   static double clearance(BuildContext context) =>
-      110 + MediaQuery.paddingOf(context).bottom;
+      96 + MediaQuery.paddingOf(context).bottom;
 
   @override
   Widget build(BuildContext context) {
@@ -121,10 +124,10 @@ class DprActionLayout extends StatelessWidget {
         body,
         if (action != null)
           Positioned(
-            left: 10,
-            right: 10,
+            left: N360Space.gutter - N360Space.xs,
+            right: N360Space.gutter - N360Space.xs,
             bottom: N360Space.sm + safe,
-            child: LedgerCard(padding: const EdgeInsets.all(7), child: action!),
+            child: LedgerCard(padding: const EdgeInsets.all(N360Space.xs + 2), child: action!),
           ),
       ],
     );
@@ -139,6 +142,7 @@ class DprCardTitle extends StatelessWidget {
     required this.title,
     this.trailing,
     this.error,
+    this.done = false,
   });
 
   final IconData icon;
@@ -147,6 +151,10 @@ class DprCardTitle extends StatelessWidget {
 
   /// A plain message about this section. Shown under the heading, in red.
   final String? error;
+
+  /// Whether this section has been filled, shown as a tick so a tired eye can
+  /// run down the sheet and see what is left.
+  final bool done;
 
   @override
   Widget build(BuildContext context) {
@@ -160,18 +168,18 @@ class DprCardTitle extends StatelessWidget {
             DecoratedBox(
               decoration: BoxDecoration(
                 color: bad ? N360Colors.stampRed.withValues(alpha: 0.12) : N360Colors.goldTint,
-                borderRadius: const BorderRadius.all(Radius.circular(13)),
+                borderRadius: N360Radius.sm,
               ),
               child: SizedBox.square(
-                dimension: 42,
+                dimension: N360Size.tileSmall,
                 child: Icon(
                   icon,
-                  size: 23,
+                  size: N360IconSize.tile,
                   color: bad ? N360Colors.stampRed : N360Colors.laterite,
                 ),
               ),
             ),
-            const SizedBox(width: N360Space.md),
+            const SizedBox(width: N360Space.tile),
             Expanded(
               child: Text(
                 title,
@@ -183,6 +191,10 @@ class DprCardTitle extends StatelessWidget {
             if (trailing != null) ...<Widget>[
               const SizedBox(width: N360Space.sm),
               trailing!,
+            ],
+            if (done) ...<Widget>[
+              const SizedBox(width: N360Space.sm),
+              const Icon(Icons.check_circle, size: N360IconSize.md, color: N360Colors.mossInk),
             ],
           ],
         ),
@@ -212,8 +224,8 @@ class DprFieldError extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const Padding(
-              padding: EdgeInsets.only(top: 2, right: 6),
-              child: Icon(Icons.error_outline, size: 22, color: N360Colors.stampRed),
+              padding: EdgeInsets.only(top: N360Space.xxs, right: N360Space.xs),
+              child: Icon(Icons.error_outline, size: N360IconSize.md, color: N360Colors.stampRed),
             ),
             Expanded(
               child: Text(
@@ -245,28 +257,28 @@ class DprRemarkCard extends StatelessWidget {
           borderRadius: N360Radius.cardRadius,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(N360Space.lg),
+          padding: const EdgeInsets.all(N360Space.card),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: N360Gradients.gold,
-                  borderRadius: BorderRadius.all(Radius.circular(13)),
+                  borderRadius: N360Radius.sm,
                 ),
                 child: SizedBox.square(
-                  dimension: 42,
-                  child: Icon(Icons.chat_bubble_outline, size: 22, color: N360Colors.ink),
+                  dimension: N360Size.tileSmall,
+                  child: Icon(Icons.chat_bubble_outline, size: N360IconSize.md, color: N360Colors.ink),
                 ),
               ),
-              const SizedBox(width: N360Space.md),
+              const SizedBox(width: N360Space.tile),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(title, style: N360Type.heading.copyWith(color: N360Colors.ink)),
-                    const SizedBox(height: 2),
+                    Text(title, style: N360Type.heading),
+                    const SizedBox(height: N360Space.xxs),
                     Text(message, style: N360Type.bodyLarge),
                   ],
                 ),
@@ -294,7 +306,7 @@ class DprActionTile extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  /// Stacks the picture over the word, for a large target.
+  /// A larger target with a bigger picture tile, for the camera.
   final bool tall;
 
   /// Fills the picture tile with gold, for the action most likely next.
@@ -302,12 +314,13 @@ class DprActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double tile = tall ? N360Size.tile : N360Size.tileSmall;
     return PressTarget(
       onTap: onTap,
       semanticsLabel: label,
-      minHeight: tall ? 96 : 68,
+      minHeight: tall ? 72 : N360Size.tap,
       builder: (context, depth, child) => Transform.scale(
-        scale: 1 - 0.035 * depth,
+        scale: pressedScale(depth),
         child: DecoratedBox(
           decoration: const BoxDecoration(
             color: N360Colors.paper2,
@@ -317,7 +330,7 @@ class DprActionTile extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(N360Space.tile),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -325,20 +338,24 @@ class DprActionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: gold ? null : N360Colors.sheet,
                 gradient: gold ? N360Gradients.gold : null,
-                borderRadius: const BorderRadius.all(Radius.circular(13)),
+                borderRadius: N360Radius.sm,
               ),
               child: SizedBox.square(
-                dimension: tall ? 52 : 44,
-                child: Icon(icon, size: tall ? 30 : 24, color: N360Colors.ink),
+                dimension: tile,
+                child: Icon(
+                  icon,
+                  size: tall ? N360IconSize.xl : N360IconSize.tile,
+                  color: N360Colors.ink,
+                ),
               ),
             ),
-            const SizedBox(width: N360Space.md),
+            const SizedBox(width: N360Space.tile),
             Flexible(
               child: Text(
                 label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.button.copyWith(fontSize: tall ? 18 : 16),
+                style: N360Type.button,
               ),
             ),
           ],
@@ -367,17 +384,17 @@ class DprInfoChip extends StatelessWidget {
             borderRadius: N360Radius.tileRadius,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(7),
+            padding: const EdgeInsets.all(N360Space.xs + 2),
             child: Row(
               children: <Widget>[
                 DecoratedBox(
                   decoration: const BoxDecoration(
                     color: N360Colors.paper2,
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderRadius: N360Radius.sm,
                   ),
                   child: SizedBox.square(
-                    dimension: 38,
-                    child: Icon(icon, size: 21, color: N360Colors.ink),
+                    dimension: N360Size.tileSmall,
+                    child: Icon(icon, size: N360IconSize.md, color: N360Colors.ink),
                   ),
                 ),
                 const SizedBox(width: N360Space.sm),
@@ -400,11 +417,10 @@ class DprInfoChip extends StatelessWidget {
 
 /// The day of a report as a tile, gold when it is today.
 class DprDateTile extends StatelessWidget {
-  const DprDateTile({super.key, required this.ymd, this.today = false, this.size = 58});
+  const DprDateTile({super.key, required this.ymd, this.today = false});
 
   final String ymd;
   final bool today;
-  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -416,14 +432,11 @@ class DprDateTile extends StatelessWidget {
         borderRadius: N360Radius.md,
       ),
       child: SizedBox.square(
-        dimension: size,
+        dimension: N360Size.tap,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              '${d.day}',
-              style: N360Type.figureLarge.copyWith(fontSize: 22, height: 1.15),
-            ),
+            Text('${d.day}', style: N360Type.figureLarge.copyWith(height: 1.1)),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
@@ -479,8 +492,8 @@ class DprSyncTag extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Icon(look.icon, size: 16, color: look.ink),
-        const SizedBox(width: 4),
+        Icon(look.icon, size: N360IconSize.xs, color: look.ink),
+        const SizedBox(width: N360Space.xs),
         Flexible(
           child: Text(
             look.text,
@@ -501,7 +514,7 @@ class DprPhotoThumb extends StatefulWidget {
     super.key,
     required this.photo,
     required this.repository,
-    this.size = 112,
+    this.size = 96,
   });
 
   final DprPhotoRow photo;
@@ -531,11 +544,11 @@ class _DprPhotoThumbState extends State<DprPhotoThumb> {
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const Icon(Icons.image_not_supported_outlined, size: 26, color: N360Colors.inkLabel),
+                  const Icon(Icons.image_not_supported_outlined, size: N360IconSize.xl, color: N360Colors.inkLabel),
                   Text(l.dprPhotoMissing, textAlign: TextAlign.center, style: N360Type.caption),
                 ],
               )
-            : const Icon(Icons.image_outlined, size: 30, color: N360Colors.ink3),
+            : const Icon(Icons.image_outlined, size: N360IconSize.xl, color: N360Colors.ink3),
       ),
     );
   }
@@ -545,7 +558,7 @@ class _DprPhotoThumbState extends State<DprPhotoThumb> {
     final l = AppLocalizations.of(context);
     final int decodeWidth = (widget.size * MediaQuery.devicePixelRatioOf(context)).round();
     return ClipRRect(
-      borderRadius: N360Radius.tileRadius,
+      borderRadius: N360Radius.md,
       child: SizedBox.square(
         dimension: widget.size,
         child: FutureBuilder<Uint8List>(
@@ -570,8 +583,8 @@ class _DprPhotoThumbState extends State<DprPhotoThumb> {
   }
 }
 
-/// Plays a small lift the first time [id] appears on the sheet and never
-/// again, so scrolling a row out and back does not replay it.
+/// Plays a small lift the first time [id] appears and never again, so
+/// scrolling a row out and back does not replay it.
 class DprLandOnce extends StatefulWidget {
   const DprLandOnce({
     super.key,
@@ -605,44 +618,6 @@ class _DprLandOnceState extends State<DprLandOnce> {
       builder: (context, remaining, child) => Transform.translate(
         offset: Offset(0, 18 * remaining),
         child: child,
-      ),
-    );
-  }
-}
-
-/// The app's bottom sheet: no blur, durations from `context.motion`.
-Future<T?> showDprSheet<T>(BuildContext context, WidgetBuilder builder) {
-  final motion = context.motion;
-  return showModalBottomSheet<T>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    barrierColor: N360Colors.ink.withValues(alpha: 0.55),
-    sheetAnimationStyle: AnimationStyle(
-      duration: motion.of(N360Durations.page),
-      reverseDuration: motion.of(N360Durations.toast),
-    ),
-    builder: builder,
-  );
-}
-
-/// The little grip at the top of a sheet.
-class DprSheetGrip extends StatelessWidget {
-  const DprSheetGrip({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(top: N360Space.sm, bottom: N360Space.xs),
-      child: Center(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: N360Colors.ruleStrong,
-            borderRadius: BorderRadius.all(Radius.circular(2)),
-          ),
-          child: SizedBox(width: 44, height: 4),
-        ),
       ),
     );
   }

@@ -64,7 +64,7 @@ class _NoLine extends StatelessWidget {
       onTap: onTap,
       haptic: N360Haptics.select,
       semanticsLabel: spoken,
-      builder: (context, depth, child) => Transform.scale(scale: pressScale(depth), child: child),
+      builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth), child: child),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: N360Colors.goldTint,
@@ -80,7 +80,7 @@ class _NoLine extends StatelessWidget {
                 Expanded(
                   child: Text(l.measurementChooseLine, style: N360Type.heading.copyWith(color: N360Colors.laterite)),
                 ),
-                const Icon(Icons.expand_more, size: 26, color: N360Colors.laterite),
+                const Icon(Icons.expand_more, size: N360IconSize.lg, color: N360Colors.laterite),
               ],
             ),
           ),
@@ -101,8 +101,8 @@ class _ChosenLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final String eyebrow = '${l.measurementItem} ${line.item.code} · ${line.item.unit}';
     final bool overdrawn = line.previewBalance.isNegative;
-    final TextStyle figure = N360Type.figureSmall.copyWith(fontSize: 13.5);
-    final TextStyle tag = N360Type.caption.copyWith(fontSize: 13, height: 1.25);
+    final TextStyle figure = N360Type.figureSmall;
+    final TextStyle tag = N360Type.caption.copyWith(height: 1.25);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -118,18 +118,15 @@ class _ChosenLine extends StatelessWidget {
                 style: N360Type.caption.copyWith(height: 1.25),
               ),
             ),
-            Text(
-              l.measurementChange,
-              style: N360Type.label.copyWith(color: N360Colors.laterite, fontSize: 14, height: 1.25),
-            ),
-            const Icon(Icons.expand_more, size: 18, color: N360Colors.laterite),
+            Text(l.measurementChange, style: N360Type.label.copyWith(color: N360Colors.laterite, height: 1.25)),
+            const Icon(Icons.expand_more, size: N360IconSize.sm, color: N360Colors.laterite),
           ],
         ),
         Text(
           line.item.description,
           maxLines: compact ? 1 : 2,
           overflow: TextOverflow.ellipsis,
-          style: N360Type.heading.copyWith(fontSize: 15.5, height: 1.3),
+          style: N360Type.heading.copyWith(height: 1.3),
         ),
         Row(
           children: <Widget>[
@@ -263,8 +260,9 @@ class QuantityBand extends StatelessWidget {
       child: RollingQty(
         key: const ValueKey<String>('measurement-qty'),
         value: formatQty(state.qty),
+        animateEntry: true,
         unit: state.unit,
-        style: (compact ? N360Type.figureLarge : N360Type.figureHero.copyWith(fontSize: 40)).copyWith(color: qtyInk),
+        style: (compact ? N360Type.figureLarge : N360Type.figureHero).copyWith(color: qtyInk),
         unitStyle: N360Type.heading.copyWith(color: qtyInk, fontWeight: FontWeight.w500),
       ),
     );
@@ -291,7 +289,10 @@ class QuantityBand extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       fit: BoxFit.scaleDown,
                       child: factors == null
-                          ? Text(l.measurementFormulaHint, style: N360Type.caption)
+                          ? Text(
+                              state.line == null ? l.measurementProblemNoLine : l.measurementFormulaHint,
+                              style: N360Type.caption,
+                            )
                           : Text(factors, key: const ValueKey<String>('measurement-formula'), style: formulaStyle),
                     ),
                   ),
@@ -328,7 +329,10 @@ class QuantityBand extends StatelessWidget {
               alignment: Alignment.centerLeft,
               fit: BoxFit.scaleDown,
               child: formula == null
-                  ? Text(l.measurementFormulaHint, style: N360Type.caption)
+                  ? Text(
+                      state.line == null ? l.measurementProblemNoLine : l.measurementFormulaHint,
+                      style: N360Type.caption,
+                    )
                   : Text(formula, key: const ValueKey<String>('measurement-formula'), style: formulaStyle),
             ),
           ),
@@ -340,7 +344,7 @@ class QuantityBand extends StatelessWidget {
                 Semantics(
                   label: l.measurementBoqUsed(percent),
                   child: ExcludeSemantics(
-                    child: SquarePercent(fraction: fraction, label: percent, size: 54),
+                    child: SquarePercent(fraction: fraction, label: percent),
                   ),
                 ),
               ],
@@ -377,7 +381,7 @@ class _BoqGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double height = compact ? 14 : 20;
+    final double height = compact ? 12 : 16;
     final BoqLine? boq = line;
     final Qty? spoken = used;
     if (deviation) {
@@ -456,9 +460,7 @@ class _BalanceRow extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 text: l.measurementBalanceAfter,
-                children: <InlineSpan>[
-                  TextSpan(text: '  ${l.measurementPreviewTag}', style: N360Type.caption.copyWith(fontSize: 13)),
-                ],
+                children: <InlineSpan>[TextSpan(text: '  ${l.measurementPreviewTag}', style: N360Type.caption)],
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -475,7 +477,7 @@ class _BalanceRow extends StatelessWidget {
                 key: const ValueKey<String>('measurement-balance'),
                 value: balance == null ? '—' : formatQty(balance),
                 unit: balance == null ? null : state.unit,
-                style: N360Type.figure.copyWith(fontSize: 18, color: overdrawn ? N360Colors.laterite : N360Colors.ink),
+                style: N360Type.figure.copyWith(color: overdrawn ? N360Colors.laterite : N360Colors.ink),
               ),
             ),
           ),
@@ -507,7 +509,7 @@ class DeviationStrip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: 6),
             child: Row(
               children: <Widget>[
-                const Icon(Icons.warning_amber, size: 24, color: N360Colors.ink),
+                const Icon(Icons.warning_amber, size: N360IconSize.lg, color: N360Colors.ink),
                 const SizedBox(width: N360Space.sm),
                 Expanded(
                   child: Text.rich(
@@ -547,7 +549,7 @@ class ProblemLine extends StatelessWidget {
       child: ExcludeSemantics(
         child: Row(
           children: <Widget>[
-            const Icon(Icons.error_outline, size: 20, color: N360Colors.stampRed),
+            const Icon(Icons.error_outline, size: N360IconSize.md, color: N360Colors.stampRed),
             const SizedBox(width: 6),
             Expanded(
               child: Text(message, style: N360Type.bodyStrong.copyWith(color: N360Colors.stampRed, height: 1.3)),
@@ -576,7 +578,7 @@ class DetailsKey extends StatelessWidget {
       haptic: N360Haptics.select,
       semanticsLabel: spoken,
       builder: (context, depth, child) => Transform.scale(
-        scale: pressScale(depth),
+        scale: pressedScale(depth),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: N360Colors.sheet,
@@ -594,7 +596,7 @@ class DetailsKey extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Icon(Icons.edit_note, size: 22, color: N360Colors.ink2),
+                const Icon(Icons.edit_note, size: N360IconSize.lg, color: N360Colors.ink2),
                 if (filled) ...const <Widget>[
                   SizedBox(width: 3),
                   SizedBox.square(
@@ -612,7 +614,7 @@ class DetailsKey extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.caption.copyWith(color: N360Colors.ink, fontSize: 12.5, height: 1.2),
+                style: N360Type.caption.copyWith(color: N360Colors.ink, height: 1.2),
               ),
             ),
           ],
@@ -641,7 +643,7 @@ class SignFlipTile extends StatelessWidget {
         minHeight: 72,
         semanticsLabel: word,
         builder: (context, depth, child) => Transform.scale(
-          scale: pressScale(depth),
+          scale: pressedScale(depth),
           child: DecoratedBox(
             decoration: deduction
                 ? const BoxDecoration(color: N360Colors.orange, borderRadius: N360Radius.md)
@@ -654,12 +656,12 @@ class SignFlipTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(deduction ? Icons.remove : Icons.add, size: 24, color: N360Colors.ink),
+              Icon(deduction ? Icons.remove : Icons.add, size: N360IconSize.lg, color: N360Colors.ink),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(word, style: N360Type.button.copyWith(fontSize: 14, height: 1.25)),
+                  child: Text(word, style: N360Type.button.copyWith(height: 1.25)),
                 ),
               ),
             ],

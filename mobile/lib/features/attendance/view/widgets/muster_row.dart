@@ -16,7 +16,6 @@ class MusterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final Pictogram pictogram = N360Pictograms.trade(worker.trade);
 
     return BlocSelector<AttendanceCubit, AttendanceState, DayMark?>(
       selector: (state) => state.marks[worker.id],
@@ -30,18 +29,17 @@ class MusterRow extends StatelessWidget {
             children: <Widget>[
               ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: overtime ? N360Size.tap : 32,
+                  minHeight: overtime ? N360Size.tap : N360Space.xxl,
                 ),
                 child: Row(
                   children: <Widget>[
-                    Icon(pictogram.icon, size: 20, color: N360Colors.ink2),
-                    const SizedBox(width: N360Space.sm),
+                    // The trade is the card's heading, so the name stands alone.
                     Expanded(
                       child: Text(
                         worker.name,
                         maxLines: overtime ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
-                        style: N360Type.bodyStrong.copyWith(fontSize: 17, height: 1.25),
+                        style: N360Type.fit(N360Type.bodyStrong, worker.name),
                       ),
                     ),
                     if (overtime)
@@ -53,7 +51,7 @@ class MusterRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: N360Space.xxs),
               HajiriSegment(
                 value: mark?.value,
                 labels: l.hajiriLabels,
@@ -98,8 +96,9 @@ class MusterGroupHeader extends StatelessWidget {
             ),
           ),
           BlocSelector<AttendanceCubit, AttendanceState, int>(
-            selector: (state) =>
-                group.workers.where((w) => state.marks.containsKey(w.id)).length,
+            selector: (state) => group.workers
+                .where((w) => state.marks.containsKey(w.id))
+                .length,
             builder: (context, marked) => Semantics(
               container: true,
               label: l.attendanceGroupProgress(marked, total),
@@ -161,9 +160,9 @@ class _OvertimeHours extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: N360Space.sm),
               child: RollingNumber(
                 value: hours.toWire(),
-                style: N360Type.figure.copyWith(fontSize: 20),
+                style: N360Type.figure,
                 suffix: ' ${l.attendanceHoursUnit}',
-                suffixStyle: N360Type.caption.copyWith(fontWeight: FontWeight.w600),
+                suffixStyle: N360Type.label,
               ),
             ),
             _HoursKey(
@@ -179,7 +178,11 @@ class _OvertimeHours extends StatelessWidget {
 }
 
 class _HoursKey extends StatelessWidget {
-  const _HoursKey({required this.icon, required this.label, required this.onTap});
+  const _HoursKey({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show ProjectRow;
+import '../../../core/sync/sync_status.dart' show SyncOutcome, SyncRunResult;
 import '../data/project_repository.dart';
 
 export '../data/project_repository.dart' show BoqLine;
@@ -114,6 +115,20 @@ class BoqCubit extends Cubit<BoqState> {
 
   void search(String query) {
     emit(state.copyWith(query: query, sections: _group(state.all, query)));
+  }
+
+  /// Pulls what the office has changed. The lines update themselves from the
+  /// database, so this only reports whether the server was reached: false
+  /// means the phone is showing the BOQ it already had.
+  Future<bool> refresh() async {
+    if (!_services.connectivity.isOnline) return false;
+    try {
+      final SyncRunResult result = await _services.sync.syncNow();
+      // Busy means a sync is already running and will bring the same data.
+      return result.isSuccess || result.outcome == SyncOutcome.busy;
+    } on Object {
+      return false;
+    }
   }
 
   static List<BoqSectionLines> _group(List<BoqLine> lines, String query) {

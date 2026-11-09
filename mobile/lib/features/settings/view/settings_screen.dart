@@ -28,8 +28,8 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
-    final bool? confirmed = await showModalBottomSheet<bool>(
-      context: context,
+    final bool? confirmed = await showLedgerSheet<bool>(
+      context,
       isScrollControlled: true,
       builder: (context) => _SignOutSheet(online: online),
     );
@@ -44,8 +44,8 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _warnUnsent(BuildContext context, int count) async {
     final auth = context.read<AppServices>().auth;
-    final _UnsentChoice? choice = await showModalBottomSheet<_UnsentChoice>(
-      context: context,
+    final _UnsentChoice? choice = await showLedgerSheet<_UnsentChoice>(
+      context,
       isScrollControlled: true,
       builder: (context) => _UnsentSheet(count: count),
     );
@@ -74,25 +74,37 @@ class SettingsScreen extends StatelessWidget {
           children: <Widget>[
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.lg),
+                padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),
                 children: <Widget>[
                   PageHeader(title: t.shellSettings),
                   const SizedBox(height: N360Space.md),
-                  if (user != null) _WhoCard(user: user, eyebrow: t.shellSettingsSignedIn),
+                  if (user != null) StaggeredRise(index: 0, child: _WhoCard(user: user, eyebrow: t.shellSettingsSignedIn)),
                   const SizedBox(height: N360Space.lg),
-                  SectionLabel(t.shellSettingsLanguage),
-                  const SizedBox(height: N360Space.xs),
-                  LanguageSwitch(
-                    current: locale,
-                    onChanged: (code) => context.read<AppServices>().auth.setLocale(code),
+                  StaggeredRise(
+                    index: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        SectionLabel(t.shellSettingsLanguage),
+                        const SizedBox(height: N360Space.xs),
+                        LanguageSwitch(
+                          current: locale,
+                          onChanged: (code) => context.read<AppServices>().auth.setLocale(code),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: N360Space.lg),
-                  LedgerCard(
-                    padding: const EdgeInsets.symmetric(horizontal: N360Space.md),
-                    child: LedgerRow(
-                      label: t.shellSettingsVersion,
-                      value: AppInfo.label,
-                      ruled: false,
+                  StaggeredRise(
+                    index: 2,
+                    child: LedgerCard(
+                      padding: const EdgeInsets.symmetric(horizontal: N360Space.card),
+                      child: LedgerRow(
+                        label: t.shellSettingsVersion,
+                        value: AppInfo.label,
+                        ruled: false,
+                      ),
                     ),
                   ),
                 ],
@@ -127,13 +139,14 @@ class _WhoCard extends StatelessWidget {
     final String initial = user.name.trim().isEmpty ? '?' : user.name.trim().substring(0, 1).toUpperCase();
     return LedgerCard(
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Container(
-            width: 64,
-            height: 64,
+            width: N360Size.tile,
+            height: N360Size.tile,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.tileRadius),
-            child: Text(initial, style: N360Type.display.copyWith(height: 1.1)),
+            decoration: const BoxDecoration(gradient: N360Gradients.gold, borderRadius: N360Radius.md),
+            child: Text(initial, style: N360Type.figureLarge.copyWith(height: 1.1)),
           ),
           const SizedBox(width: N360Space.md),
           Expanded(
@@ -141,9 +154,14 @@ class _WhoCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 SectionLabel(eyebrow),
-                Text(user.name, style: N360Type.heading),
-                if (user.roleLabel.isNotEmpty) Text(user.roleLabel, style: N360Type.body.copyWith(color: N360Colors.ink2)),
-                if (user.organizationName.isNotEmpty) Text(user.organizationName, style: N360Type.caption),
+                Text(user.name, style: N360Type.fit(N360Type.heading, user.name)),
+                if (user.roleLabel.isNotEmpty)
+                  Text(
+                    user.roleLabel,
+                    style: N360Type.fit(N360Type.body, user.roleLabel).copyWith(color: N360Colors.ink2),
+                  ),
+                if (user.organizationName.isNotEmpty)
+                  Text(user.organizationName, style: N360Type.fit(N360Type.caption, user.organizationName)),
                 if (user.email.isNotEmpty) Text(user.email, style: N360Type.caption),
               ],
             ),
@@ -163,15 +181,19 @@ class _SignOutSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.all(N360Space.lg),
+        padding: ledgerSheetPadding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(t.shellSignOutConfirmTitle, style: N360Type.title),
+            Text(t.shellSignOutConfirmTitle, style: N360Type.fit(N360Type.title, t.shellSignOutConfirmTitle)),
             const SizedBox(height: N360Space.xs),
-            Text(t.shellSignOutConfirmBody, style: N360Type.body.copyWith(color: N360Colors.ink2)),
+            Text(
+              t.shellSignOutConfirmBody,
+              style: N360Type.fit(N360Type.body, t.shellSignOutConfirmBody).copyWith(color: N360Colors.ink2),
+            ),
             const SizedBox(height: N360Space.lg),
             GloveButton(
               label: t.shellSignOut,
@@ -206,9 +228,11 @@ class _UnsentSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final String title = t.shellSignOutUnsentTitle(count);
     return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.all(N360Space.lg),
+        padding: ledgerSheetPadding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -217,19 +241,16 @@ class _UnsentSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 const Padding(
-                  padding: EdgeInsets.only(top: 3, right: N360Space.sm),
-                  child: Icon(Icons.warning_amber, size: 30, color: N360Colors.stampRed),
+                  padding: EdgeInsets.only(top: 1, right: N360Space.sm),
+                  child: Icon(Icons.warning_amber, size: N360IconSize.xxl, color: N360Colors.stampRed),
                 ),
                 Expanded(
-                  child: Text(
-                    t.shellSignOutUnsentTitle(count),
-                    style: N360Type.title.copyWith(color: N360Colors.stampRed),
-                  ),
+                  child: Text(title, style: N360Type.fit(N360Type.title, title).copyWith(color: N360Colors.stampRed)),
                 ),
               ],
             ),
             const SizedBox(height: N360Space.xs),
-            Text(t.shellSignOutUnsentBody, style: N360Type.bodyLarge),
+            Text(t.shellSignOutUnsentBody, style: N360Type.fit(N360Type.bodyLarge, t.shellSignOutUnsentBody)),
             const SizedBox(height: N360Space.lg),
             _HoldToConfirm(
               label: t.shellSignOutHold,
@@ -305,13 +326,13 @@ class _HoldToConfirmState extends State<_HoldToConfirm> with SingleTickerProvide
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          const Icon(Icons.touch_app_outlined, size: 24, color: N360Colors.stampRed),
+          const Icon(Icons.touch_app_outlined, size: N360IconSize.button, color: N360Colors.stampRed),
           const SizedBox(width: N360Space.sm),
           Flexible(
             child: Text(
               widget.label,
               textAlign: TextAlign.center,
-              style: N360Type.button.copyWith(color: N360Colors.stampRed),
+              style: N360Type.fit(N360Type.button, widget.label).copyWith(color: N360Colors.stampRed),
             ),
           ),
         ],

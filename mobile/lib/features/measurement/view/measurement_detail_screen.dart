@@ -75,7 +75,7 @@ class _DetailView extends StatelessWidget {
     return BlocBuilder<MeasurementDetailCubit, MeasurementDetailState>(
       builder: (context, state) {
         final SyncedRecord<MeasurementRow>? synced = state.entry;
-        if (state.loading) return const Scaffold(backgroundColor: Colors.transparent);
+        if (state.loading) return _loading(l);
         if (synced == null) return _gone(context, l);
         final MeasurementRow entry = synced.record;
 
@@ -112,6 +112,7 @@ class _DetailView extends StatelessWidget {
                   ),
                   _Actions(
                     state: state,
+                    onNew: () => context.push(Routes.measurementForm),
                     onEdit: () => context.push('${Routes.measurementForm}?uuid=$clientUuid'),
                     onSend: () => _send(context, state),
                   ),
@@ -164,6 +165,25 @@ class _DetailView extends StatelessWidget {
           body: l.measurementApprovedLockedBody,
         ),
       ],
+      if (entry.status == DocStatus.inReview && !state.submitWaiting) ...<Widget>[
+        gap,
+        TintedNote(
+          icon: Icons.hourglass_top,
+          ink: N360Colors.neel,
+          fill: N360Colors.paper2,
+          body: l.measurementInReviewBody,
+        ),
+      ],
+      if (entry.status == DocStatus.rejected) ...<Widget>[
+        gap,
+        TintedNote(
+          icon: Icons.block,
+          ink: N360Colors.stampRed,
+          fill: N360Colors.goldTint,
+          title: l.statusRejected,
+          body: l.measurementRejectedBody,
+        ),
+      ],
       if (state.submitWaiting) ...<Widget>[
         gap,
         TintedNote(
@@ -179,6 +199,26 @@ class _DetailView extends StatelessWidget {
         ErrorSlip(title: l.measurementAttentionTitle, message: synced.attentionReason ?? l.measurementAttentionBody),
       ],
     ];
+  }
+
+  Widget _loading(AppLocalizations l) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: LedgerPaper(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(N360Space.gutter),
+            child: Column(
+              children: <Widget>[
+                LedgerSkeleton(figure: true, lines: 2, semanticsLabel: l.measurementLoading),
+                const SizedBox(height: N360Space.md),
+                LedgerSkeleton(lines: 4, semanticsLabel: l.measurementLoading),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _gone(BuildContext context, AppLocalizations l) {
@@ -255,7 +295,7 @@ class _HeroCard extends StatelessWidget {
                       entryTitle(entry, boq?.item),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: N360Type.heading.copyWith(height: 1.3),
+                      style: N360Type.heading,
                     ),
                   ],
                 ),
@@ -264,26 +304,20 @@ class _HeroCard extends StatelessWidget {
               RubberStamp(kind: stampKindFor(entry.status), label: statusWord(l, entry.status), size: StampSize.small),
             ],
           ),
-          const SizedBox(height: N360Space.sm),
+          const SizedBox(height: N360Space.md),
           Row(
             children: <Widget>[
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text.rich(
+                  child: RollingQty(
                     key: const ValueKey<String>('detail-figure'),
-                    TextSpan(
-                      text: formatQty(entry.qty),
-                      children: <InlineSpan>[
-                        if (unit.isNotEmpty)
-                          TextSpan(
-                            text: ' $unit',
-                            style: N360Type.heading.copyWith(color: qtyInk, fontWeight: FontWeight.w500),
-                          ),
-                      ],
-                    ),
-                    style: N360Type.figureHero.copyWith(color: qtyInk, fontSize: 40),
+                    value: formatQty(entry.qty),
+                    unit: unit.isEmpty ? null : unit,
+                    animateEntry: true,
+                    style: N360Type.figureHero.copyWith(color: qtyInk),
+                    unitStyle: N360Type.heading.copyWith(color: qtyInk, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -292,14 +326,13 @@ class _HeroCard extends StatelessWidget {
                 Semantics(
                   label: '$percent ${l.measurementShareOfBoq}',
                   child: ExcludeSemantics(
-                    child: SquarePercent(fraction: fraction, label: percent, size: 60),
+                    child: SquarePercent(fraction: fraction, label: percent),
                   ),
                 ),
               ],
             ],
           ),
-          if (formula != null) ...<Widget>[
-            const SizedBox(height: 2),
+          if (formula != null)
             FittedBox(
               alignment: Alignment.centerLeft,
               fit: BoxFit.scaleDown,
@@ -308,7 +341,6 @@ class _HeroCard extends StatelessWidget {
                 style: N360Type.figureSmall.copyWith(color: entry.isDeduction ? N360Colors.laterite : N360Colors.ink2),
               ),
             ),
-          ],
           if (row.isUnsent) ...<Widget>[const SizedBox(height: N360Space.xs), SyncMark(state: row.syncState)],
         ],
       ),
@@ -366,12 +398,7 @@ class _MiniTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.caption.copyWith(fontSize: 13),
-                ),
+                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
@@ -450,7 +477,7 @@ class _Figure extends StatelessWidget {
         Text(label, style: N360Type.caption),
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(value, maxLines: 1, style: N360Type.figure.copyWith(color: ink, fontSize: 17)),
+          child: Text(value, maxLines: 1, style: N360Type.figure.copyWith(color: ink)),
         ),
       ],
     );
@@ -488,17 +515,31 @@ class _FactsCard extends StatelessWidget {
 }
 
 class _Actions extends StatelessWidget {
-  const _Actions({required this.state, required this.onEdit, required this.onSend});
+  const _Actions({required this.state, required this.onNew, required this.onEdit, required this.onSend});
 
   final MeasurementDetailState state;
+  final VoidCallback onNew;
   final VoidCallback onEdit;
   final VoidCallback onSend;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
+    final String? status = state.entry?.record.status;
+    if (status == DocStatus.rejected) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+        child: GloveButton(
+          key: const ValueKey<String>('measurement-new'),
+          label: l.measurementAddEntry,
+          icon: Icons.add,
+          large: true,
+          fullWidth: true,
+          onPressed: onNew,
+        ),
+      );
+    }
     if (!state.canChange) return const SizedBox.shrink();
-    final bool returned = state.entry?.record.status == DocStatus.returned;
     return Padding(
       padding: const EdgeInsets.fromLTRB(N360Space.sm, 0, N360Space.sm, N360Space.sm),
       child: LedgerCard(
@@ -522,7 +563,7 @@ class _Actions extends StatelessWidget {
               flex: 5,
               child: GloveButton(
                 key: const ValueKey<String>('measurement-detail-send'),
-                label: returned ? l.measurementSendAgain : l.measurementSendForApproval,
+                label: status == DocStatus.returned ? l.measurementSendAgain : l.measurementSendForApproval,
                 large: true,
                 fullWidth: true,
                 loading: state.busy,

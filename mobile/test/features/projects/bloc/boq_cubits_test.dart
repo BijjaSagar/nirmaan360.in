@@ -207,4 +207,47 @@ void main() {
     expect(cubit.state.problem, BoqFormProblem.unitRequired);
     expect(cubit.state.step, 0);
   });
+
+  group('BoqCubit refresh', () {
+    test('says the server was reached when it was', () async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      final cubit = BoqCubit(app.services);
+      addTearDown(cubit.close);
+      await cubit.stream.firstWhere((s) => s.load == BoqLoad.ready);
+
+      expect(await cubit.refresh(), isTrue);
+    });
+
+    test('says false offline and when the server is down', () async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      final cubit = BoqCubit(app.services);
+      addTearDown(cubit.close);
+      await cubit.stream.firstWhere((s) => s.load == BoqLoad.ready);
+
+      app.api.offline = true;
+      expect(await cubit.refresh(), isFalse);
+
+      app.api.offline = false;
+      app.connectivity.setOnline(false);
+      expect(await cubit.refresh(), isFalse);
+    });
+
+    test('brings in a line the office added since', () async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      final cubit = BoqCubit(app.services);
+      addTearDown(cubit.close);
+      await cubit.stream.firstWhere((s) => s.load == BoqLoad.ready);
+      expect(cubit.state.all, hasLength(1));
+
+      await app.api.addBoqItem(projectId: 1, id: 2, code: '2.2', qty: '10.000');
+      final arrived = cubit.stream.firstWhere((s) => s.all.length == 2);
+      expect(await cubit.refresh(), isTrue);
+      await arrived.timeout(const Duration(seconds: 5));
+
+      expect(cubit.state.all.map((l) => l.item.code), containsAll(<String>['2.1', '2.2']));
+    });
+  });
 }

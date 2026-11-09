@@ -98,7 +98,17 @@ class _InboxView extends StatelessWidget {
     ApprovalsInboxCubit cubit,
     List<_Slot> slots,
   ) {
-    if (state.loading) return const SizedBox.shrink();
+    if (state.loading) {
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(N360Space.gutter, 6, N360Space.gutter, N360Space.md),
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 3,
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(bottom: N360Space.md),
+          child: LedgerSkeleton(figure: true, flat: true, semanticsLabel: l.measurementLoading),
+        ),
+      );
+    }
     if (slots.isEmpty) {
       return Center(
         child: SingleChildScrollView(
@@ -107,10 +117,9 @@ class _InboxView extends StatelessWidget {
       );
     }
     final DateTime now = cubit.now;
-    return RefreshIndicator(
-      color: N360Colors.laterite,
-      backgroundColor: N360Colors.sheet,
+    return LedgerRefresh(
       onRefresh: cubit.refresh,
+      semanticsLabel: l.approvalsRefreshing,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(N360Space.gutter, 6, N360Space.gutter, N360Space.md),
@@ -153,7 +162,7 @@ class _FailureLine extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter, vertical: N360Space.xs),
       child: Row(
         children: <Widget>[
-          const Icon(Icons.error_outline, size: 20, color: N360Colors.stampRed),
+          const Icon(Icons.error_outline, size: N360IconSize.md, color: N360Colors.stampRed),
           const SizedBox(width: 6),
           Expanded(
             child: Text(text, style: N360Type.bodyStrong.copyWith(color: N360Colors.stampRed, height: 1.3)),

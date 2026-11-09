@@ -14,6 +14,10 @@ String shortDate(BuildContext context, String isoDate) {
   return DateFormat('d MMM', locale).format(DateTime.parse(isoDate));
 }
 
+/// `d MMM` for a moment in time, on the phone's own calendar day.
+String shortDay(BuildContext context, DateTime moment) =>
+    shortDate(context, moment.toLocal().toIso8601String());
+
 ({Color tile, Color icon, Color word}) _priorityLook(String priority) => switch (priority) {
   'critical' => (tile: N360Colors.accent, icon: N360Colors.ink, word: N360Colors.stampRed),
   'high' => (tile: N360Colors.goldTint, icon: N360Colors.ink, word: N360Colors.laterite),
@@ -52,9 +56,12 @@ class PriorityMarker extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          tile(32, 20),
-          const SizedBox(width: 8),
-          Text(label, style: N360Type.bodyStrong.copyWith(color: look.word)),
+          tile(N360Size.tileSmall, N360IconSize.md),
+          const SizedBox(width: N360Space.sm),
+          Text(
+            label,
+            style: N360Type.fit(N360Type.bodyStrong, label).copyWith(color: look.word),
+          ),
         ],
       );
     }
@@ -63,20 +70,18 @@ class PriorityMarker extends StatelessWidget {
       label: label,
       child: ExcludeSemantics(
         child: SizedBox(
-          width: 60,
+          width: N360Size.tap,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              tile(52, 28),
-              const SizedBox(height: 4),
+              tile(N360Size.tile, N360IconSize.tile),
+              const SizedBox(height: N360Space.xxs),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   label,
                   maxLines: 1,
-                  style: N360Type.caption.copyWith(
-                    fontSize: 13,
-                    height: 1.2,
+                  style: N360Type.fit(N360Type.caption, label).copyWith(
                     color: look.word,
                     fontWeight: FontWeight.w700,
                   ),
@@ -160,18 +165,18 @@ class OverdueChip extends StatelessWidget {
     return DecoratedBox(
       decoration: const BoxDecoration(color: N360Colors.accent, borderRadius: N360Radius.sm),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: N360Space.sm, vertical: N360Space.xs),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(Icons.warning_amber, size: 17, color: N360Colors.ink),
-            const SizedBox(width: 5),
+            const Icon(Icons.warning_amber, size: N360IconSize.sm, color: N360Colors.ink),
+            const SizedBox(width: N360Space.xs),
             Flexible(
               child: Text(
                 text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.bodyStrong.copyWith(fontSize: 15, height: 1.25, color: N360Colors.ink),
+                style: N360Type.fit(N360Type.label, text).copyWith(color: N360Colors.ink),
               ),
             ),
           ],
@@ -191,13 +196,18 @@ class DueLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
+    // Once it is done the due date no longer matters; when it was done does.
+    final DateTime? resolvedAt = issue.resolvedAt;
+    if (!isOpenStatus(issue.status) && resolvedAt != null) {
+      return IssueMeta(icon: Icons.task_alt, text: l.issuesResolvedOn(shortDay(context, resolvedAt)));
+    }
     final String? due = issue.dueDate;
     if (due == null) {
       return IssueMeta(icon: Icons.event_busy, text: l.issuesNoDueDate);
     }
     if (isOverdue(issue, today)) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: N360Space.xxs),
         child: Align(
           alignment: Alignment.centerLeft,
           child: OverdueChip(text: l.issuesOverdue(daysBetween(due, today))),
@@ -216,7 +226,8 @@ class DueLine extends StatelessWidget {
   }
 }
 
-/// One line of supporting information under an issue title.
+/// One line of supporting information under an issue title: a caption, or a
+/// label when it is the line that matters.
 class IssueMeta extends StatelessWidget {
   const IssueMeta({
     super.key,
@@ -233,23 +244,23 @@ class IssueMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Icon(icon, size: 17, color: color),
-        const SizedBox(width: 5),
-        Expanded(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: (strong ? N360Type.bodyStrong : N360Type.body).copyWith(
-              fontSize: 15,
-              height: 1.3,
-              color: color,
+    final TextStyle base = strong ? N360Type.label : N360Type.caption;
+    return Padding(
+      padding: const EdgeInsets.only(top: N360Space.xxs),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: strong ? N360IconSize.sm : N360IconSize.xs, color: color),
+          const SizedBox(width: N360Space.xs + N360Space.xxs),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: N360Type.fit(base, text).copyWith(color: color),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -268,49 +279,34 @@ Future<AssigneeChoice?> showAssigneeSheet(
   required int? current,
 }) {
   final AppLocalizations l = AppLocalizations.of(context);
-  return showModalBottomSheet<AssigneeChoice>(
-    context: context,
-    useSafeArea: true,
+  return showLedgerSheet<AssigneeChoice>(
+    context,
     isScrollControlled: true,
-    backgroundColor: N360Colors.paper,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
-    ),
     builder: (sheetContext) {
-      return SizedBox(
-        height: MediaQuery.sizeOf(sheetContext).height * 0.6,
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                N360Space.gutter,
-                N360Space.lg,
-                N360Space.gutter,
-                N360Space.sm,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
               child: SheetHeader(title: l.issuesAssigneeSheetTitle),
             ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(
-                  N360Space.gutter,
-                  0,
-                  N360Space.gutter,
-                  N360Space.lg,
-                ),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: ledgerSheetPadding,
                 itemCount: users.length + 1,
+                separatorBuilder: (_, _) => const SizedBox(height: N360Space.sm),
                 itemBuilder: (context, index) {
                   final UserRow? user = index == 0 ? null : users[index - 1];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: N360Space.sm),
-                    child: FieldChoiceTile(
-                      width: double.infinity,
-                      icon: user == null ? Icons.person_off_outlined : Icons.person,
-                      label: user?.name ?? l.issuesUnassigned,
-                      selected: user == null ? current == null : user.id == current,
-                      onTap: () => Navigator.of(sheetContext).pop(AssigneeChoice(user?.id)),
-                    ),
+                  return FieldChoiceTile(
+                    width: double.infinity,
+                    icon: user == null ? Icons.person_off_outlined : Icons.person,
+                    label: user?.name ?? l.issuesUnassigned,
+                    selected: user == null ? current == null : user.id == current,
+                    onTap: () => Navigator.of(sheetContext).pop(AssigneeChoice(user?.id)),
                   );
                 },
               ),

@@ -72,6 +72,41 @@ ApprovalShare? shareOf(ApprovalRow row, BoqIndex boq) {
   return fraction == null || label == null ? null : ApprovalShare(fraction, label);
 }
 
+/// What an approver calls this document. The server's own title repeats the
+/// type and figure shown beside it, and is English in every language.
+String headlineOf(ApprovalRow row) {
+  final Map<String, dynamic> doc = row.document;
+  switch (row.docType) {
+    case 'measurement':
+      final Map<String, dynamic> boq = readMap(doc['boq_item']);
+      final String? code = readText(boq['code']);
+      final String? name = readText(doc['location']) ?? readText(doc['description']) ?? readText(boq['description']);
+      if (code != null && name != null) return '$code · $name';
+    case 'ra_bill':
+      final String? number = readText(doc['number']);
+      final String? party = readText(doc['party_name']);
+      if (number != null && party != null) return '$number · $party';
+  }
+  return row.title;
+}
+
+/// The measurement as the book writes it, or null for other documents.
+String? formulaOf(ApprovalRow row) {
+  if (row.docType != 'measurement') return null;
+  final Map<String, dynamic> doc = row.document;
+  final Qty? qty = readQty(doc['qty']);
+  if (qty == null) return null;
+  return bookFormula(
+    nos: readQty(doc['nos']),
+    length: readQty(doc['length']),
+    breadth: readQty(doc['breadth']),
+    depth: readQty(doc['depth']),
+    deduction: doc['is_deduction'] == true,
+    result: qty,
+    unit: readText(readMap(doc['boq_item'])['unit']),
+  );
+}
+
 bool isDeviationDoc(ApprovalRow row) => row.docType == 'measurement' && row.document['deviation'] == true;
 
 String docTypeWord(AppLocalizations l, String docType) => switch (docType) {
