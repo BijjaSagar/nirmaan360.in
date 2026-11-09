@@ -29,6 +29,7 @@ use App\Services\MeasurementService;
 use App\Services\RaBillService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -155,6 +156,7 @@ class ProjectScopingTest extends TestCase
 
     public function test_every_web_and_api_route_to_a_record_in_another_project_is_a_404(): void
     {
+        $this->withoutMiddleware(ThrottleRequests::class);
         $user = $this->limited();
         $checked = 0;
 
@@ -180,6 +182,7 @@ class ProjectScopingTest extends TestCase
     /** The control for the walk above: without it, a broken fixture would also give 404s. */
     public function test_an_owner_reaches_every_one_of_those_routes(): void
     {
+        $this->withoutMiddleware(ThrottleRequests::class);
         $checked = 0;
 
         foreach ($this->routesReaching() as $route) {

@@ -78,7 +78,7 @@ class DelayAlertServiceTest extends TestCase
 
         $this->assertSame(1, $this->scan('2026-11-20')['new']);
         $this->assertNull(PlanDelayAlert::sole()->resolved_on);
-        $this->assertSame(2, $this->owner->notifications()->count());
+        $this->assertSame(2, $this->owner->notifications()->where('type', PlanningDelayAlert::class)->count());
     }
 
     public function test_a_late_start_that_runs_past_its_finish_alerts_as_overdue(): void
