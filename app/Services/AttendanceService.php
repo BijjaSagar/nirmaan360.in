@@ -60,7 +60,7 @@ class AttendanceService
         $values = [
             'status' => $mark['status'],
             'ot_hours' => $mark['ot_hours'] ?? 0,
-            'method' => 'manual',
+            'method' => $mark['method'] ?? 'manual',
             'marked_by' => $user->id,
             'client_updated_at' => $mark['client_updated_at'] ?? null,
         ];
