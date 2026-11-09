@@ -12,6 +12,7 @@ use App\Models\AssetHireBill;
 use App\Models\AssetMaintenance;
 use App\Models\AssetServiceRecord;
 use App\Models\Attendance;
+use App\Models\AutoBoqInput;
 use App\Models\BbsSchedule;
 use App\Models\BillNote;
 use App\Models\BoqCurrentRate;
@@ -80,6 +81,7 @@ use App\Models\QualityTest;
 use App\Models\RaBill;
 use App\Models\RaBillDeduction;
 use App\Models\RaBillItem;
+use App\Models\RateLibraryItem;
 use App\Models\Rfi;
 use App\Models\Rfq;
 use App\Models\RfqItem;
@@ -169,6 +171,7 @@ trait BuildsMoneyWorld
         'current_rate' => '83614775.00',
         'revision_value' => '83614776.00',
         'alert_money' => '83614777.00',
+        'library_rate' => '83614778.00',
     ];
 
     protected Organization $organization;
@@ -419,6 +422,14 @@ trait BuildsMoneyWorld
         $permitFile = ProjectPermitFile::create(['organization_id' => $org, 'project_id' => $project->id, 'project_permit_id' => $permit->id, 'path' => 'none/permit.pdf', 'original_name' => 'permit.pdf', 'uploaded_by' => $owner->id]);
         BoqRevision::create(['organization_id' => $org, 'project_id' => $project->id, 'boq_item_id' => $item->id, 'action' => 'edited', 'source' => 'manual', 'item_code' => $item->code, 'item_description' => $item->description, 'changes' => ['rate' => ['1.00', $money['boq_rate']]], 'reason' => 'Rate agreed with the client', 'valuation_before' => $money['revision_value'], 'valuation_after' => $money['revision_value'], 'user_id' => $owner->id]);
         BoqCurrentRate::create(['organization_id' => $org, 'project_id' => $project->id, 'boq_item_id' => $item->id, 'rate' => $money['current_rate'], 'noted_on' => '2026-11-01', 'source' => 'Market enquiry', 'noted_by' => $owner->id]);
+
+        // Auto BOQ: the building dimensions a BOQ is worked out from, and a company rate the owner may pick for a line
+        AutoBoqInput::create([
+            'organization_id' => $org, 'project_id' => $project->id, 'floors' => 2, 'floor_height' => '3.000', 'plinth_area' => '100.000', 'plinth_height' => '0.600', 'foundation_depth' => '1.500',
+            'footings' => [['label' => 'F1', 'length' => '1.500', 'breadth' => '1.500', 'depth' => '0.450', 'nos' => '4']],
+            'slabs' => [['label' => 'Typical', 'area' => '100.000', 'openings' => '6.000', 'thickness' => '0.125', 'count' => '2']],
+        ]);
+        RateLibraryItem::create(['organization_id' => $org, 'item' => 'RCC M25 in footings', 'unit' => 'cum', 'rate' => $money['library_rate'], 'category' => 'RCC']);
 
         // Alerts: one about money that only money.overview may read, and one about time that everyone may
         Alert::create(['organization_id' => $org, 'project_id' => $project->id, 'type' => 'budget_over', 'reference' => 'project', 'severity' => 'critical', 'title' => 'Spend is over the approved budget', 'message' => 'Spend of ₹'.Dec::indian($money['alert_money']).' is above the approved budget.', 'needs_permission' => 'money.overview', 'status' => 'open', 'first_seen_at' => now(), 'last_seen_at' => now()]);
