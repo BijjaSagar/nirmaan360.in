@@ -218,5 +218,6 @@
     "Price before GST": "GST से पहले की कीमत",
     "/month": "/महीना",
     "Enter 0 if this contract has no GST.": "इस कॉन्ट्रैक्ट में GST नहीं है तो 0 डालें।",
-    "Client and subcontractor RA bills, with or without GST.": "क्लाइंट और सबकॉन्ट्रैक्टर के RA बिल, GST के साथ या बिना।"
+    "Client and subcontractor RA bills, with or without GST.": "क्लाइंट और सबकॉन्ट्रैक्टर के RA बिल, GST के साथ या बिना।",
+    "Your plan project limit has been reached. Upgrade to add more.": "आपके प्लान की प्रोजेक्ट सीमा पूरी हो गई है। और जोड़ने के लिए अपग्रेड करें।"
 }

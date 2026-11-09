@@ -32,6 +32,16 @@ class PettyCashApiController extends Controller
         ]);
     }
 
+    public function storeWallet(Request $request, Project $project): JsonResponse
+    {
+        $wallet = $this->service->createWallet($project, $request->validate([
+            ...$this->service->walletRules($request->user()),
+            'client_uuid' => ['nullable', 'uuid'],
+        ]));
+
+        return response()->json(['data' => WalletPresenter::present($wallet)], $wallet->wasRecentlyCreated ? 201 : 200);
+    }
+
     public function storeEntry(Request $request, PettyCashWallet $wallet): JsonResponse
     {
         $data = $request->validate([

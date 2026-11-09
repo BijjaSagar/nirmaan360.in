@@ -22,7 +22,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', [AuthApiController::class, 'me']);
 
         Route::get('/projects', [ProjectApiController::class, 'index'])->middleware('can:project.view');
+        Route::post('/projects', [ProjectApiController::class, 'store'])->middleware('can:project.manage');
         Route::get('/projects/{project}/boq', [ProjectApiController::class, 'boq'])->middleware('can:boq.view');
+        Route::post('/projects/{project}/boq-items', [ProjectApiController::class, 'storeBoqItem'])->middleware('can:boq.manage');
 
         Route::middleware('feature:measurement')->group(function () {
             Route::get('/projects/{project}/measurements', [MeasurementApiController::class, 'index'])->middleware('can:measurement.view');
@@ -55,6 +57,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('feature:petty_cash')->group(function () {
             Route::get('/projects/{project}/petty-cash', [PettyCashApiController::class, 'index'])->middleware('can:petty_cash.view');
+            Route::post('/projects/{project}/wallets', [PettyCashApiController::class, 'storeWallet'])->middleware('can:petty_cash.manage');
             Route::post('/petty-wallets/{wallet}/entries', [PettyCashApiController::class, 'storeEntry'])->middleware('can:petty_cash.manage');
             Route::get('/petty-entries/{entry}/bill', [PettyCashApiController::class, 'bill'])->middleware('can:petty_cash.view');
         });

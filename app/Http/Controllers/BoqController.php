@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\BoqItem;
-use App\Models\BoqSection;
 use App\Models\Project;
+use App\Services\BoqService;
 use App\Support\Dec;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +17,8 @@ class BoqController extends Controller
 {
     private const COLUMNS = ['section', 'code', 'description', 'unit', 'qty', 'rate'];
 
+    public function __construct(private BoqService $service) {}
+
     public function index(Project $project): View
     {
         $items = BoqItem::withLedger()->with('section')->where('project_id', $project->id)->orderBy('sort')->orderBy('id')->get();
@@ -28,17 +30,7 @@ class BoqController extends Controller
 
     public function store(Request $request, Project $project): RedirectResponse
     {
-        $data = $this->validated($request);
-        $section = $this->sectionId($project, $data['section'] ?? null);
-        unset($data['section']);
-
-        BoqItem::create([
-            ...$data,
-            'organization_id' => $project->organization_id,
-            'project_id' => $project->id,
-            'boq_section_id' => $section,
-            'sort' => (int) $project->boqItems()->max('sort') + 1,
-        ]);
+        $this->service->create($project, $this->validated($request));
 
         return back()->with('success', __('BOQ item added.'));
     }
@@ -82,7 +74,7 @@ class BoqController extends Controller
 
             foreach ($rows as $row) {
                 $values = [
-                    'boq_section_id' => $this->sectionId($project, $row['section']),
+                    'boq_section_id' => $this->service->sectionId($project, $row['section']),
                     'description' => $row['description'],
                     'unit' => $row['unit'],
                     'qty' => Dec::qty($row['qty']),
@@ -197,28 +189,8 @@ class BoqController extends Controller
         return $value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true) ? "'".$value : $value;
     }
 
-    private function sectionId(Project $project, ?string $name): ?int
-    {
-        $name = trim((string) $name);
-
-        if ($name === '') {
-            return null;
-        }
-
-        return BoqSection::firstOrCreate(
-            ['organization_id' => $project->organization_id, 'project_id' => $project->id, 'name' => $name],
-        )->id;
-    }
-
     private function validated(Request $request): array
     {
-        return $request->validate([
-            'section' => ['nullable', 'string', 'max:120'],
-            'code' => ['required', 'string', 'max:32'],
-            'description' => ['required', 'string', 'max:2000'],
-            'unit' => ['required', 'string', 'max:16'],
-            'qty' => ['required', 'numeric', 'min:0', 'max:99999999999'],
-            'rate' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
-        ]);
+        return $request->validate($this->service->rules());
     }
 }
