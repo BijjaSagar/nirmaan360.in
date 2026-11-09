@@ -6,6 +6,7 @@ use App\Models\BoqItem;
 use App\Models\ProgressEntry;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\WorkOrderItem;
 use App\Services\SiteControl\WorkProgress;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
@@ -28,6 +29,7 @@ class ProgressEntryService
     {
         return [
             'boq_item_id' => ['bail', 'required', 'integer', Rule::exists('boq_items', 'id')->where('project_id', $project->id)->whereNull('deleted_at')],
+            'work_order_id' => ['bail', 'nullable', 'integer', Rule::exists('work_orders', 'id')->where('project_id', $project->id)],
             'project_floor_id' => ['bail', 'nullable', 'integer', Rule::exists('project_floors', 'id')->where('project_id', $project->id)],
             'work_date' => ['nullable', 'date', 'before_or_equal:today'],
             // Left empty only for a pending remark that records no work; record() asks for it otherwise.
@@ -68,11 +70,14 @@ class ProgressEntryService
             throw ValidationException::withMessages(['remark' => __('Say what is pending.')]);
         }
 
+        $workOrderId = $this->contractFor($project, (int) $data['boq_item_id'], $data['work_order_id'] ?? null, ! $quantity->isZero());
+
         return Idempotent::create(
             fn () => ProgressEntry::create([
                 'organization_id' => $project->organization_id,
                 'project_id' => $project->id,
                 'boq_item_id' => $data['boq_item_id'],
+                'work_order_id' => $workOrderId,
                 'project_floor_id' => $data['project_floor_id'] ?? null,
                 'work_date' => $data['work_date'] ?? now()->toDateString(),
                 'qty_done' => Dec::qty($quantity),
@@ -83,6 +88,47 @@ class ProgressEntryService
             ]),
             fn () => $this->find($project->organization_id, (string) $uuid),
         );
+    }
+
+    /**
+     * BOQ lines with more than one active contractor, where site staff must say whose work it is.
+     *
+     * @return array<int, list<array{id:int,label:string}>>
+     */
+    public function sharedLines(Project $project): array
+    {
+        return WorkOrderItem::with('workOrder.party')
+            ->whereHas('workOrder', fn ($query) => $query->where('project_id', $project->id)->where('status', 'ACTIVE'))
+            ->get()
+            ->groupBy('boq_item_id')
+            ->filter(fn ($lines) => $lines->pluck('work_order_id')->unique()->count() > 1)
+            ->map(fn ($lines) => $lines->unique('work_order_id')->map(fn ($line) => [
+                'id' => (int) $line->work_order_id,
+                'label' => $line->workOrder->party?->name ?? $line->workOrder->number,
+            ])->values()->all())
+            ->all();
+    }
+
+    /** Work is credited to a contractor when it is entered, so paid % against work % stays true. */
+    private function contractFor(Project $project, int $boqItemId, mixed $chosen, bool $mustBeKnown): ?int
+    {
+        $active = WorkOrderItem::where('boq_item_id', $boqItemId)
+            ->whereHas('workOrder', fn ($query) => $query->where('project_id', $project->id)->where('status', 'ACTIVE'))
+            ->pluck('work_order_id')
+            ->unique()
+            ->values();
+
+        if ($chosen !== null && $chosen !== '') {
+            return $active->contains((int) $chosen)
+                ? (int) $chosen
+                : throw ValidationException::withMessages(['work_order_id' => __('That contractor is not working on this item.')]);
+        }
+
+        if ($active->count() > 1 && $mustBeKnown) {
+            throw ValidationException::withMessages(['work_order_id' => __('Two or more contractors work on this item. Choose whose work this is.')]);
+        }
+
+        return $active->count() === 1 ? (int) $active->first() : null;
     }
 
     /**

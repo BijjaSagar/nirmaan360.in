@@ -190,5 +190,9 @@
     "Work done": "किया गया काम",
     "Work has been recorded on this floor, so it cannot be removed.": "इस मंज़िल पर काम दर्ज हो चुका है, इसलिए इसे हटाया नहीं जा सकता।",
     "Work on this floor": "इस मंज़िल का काम",
-    "You can view this stage but not change it.": "आप इस चरण को देख सकते हैं, बदल नहीं सकते।"
+    "You can view this stage but not change it.": "आप इस चरण को देख सकते हैं, बदल नहीं सकते।",
+    "Whose work is this?": "यह काम किसका है?",
+    "Choose the contractor": "ठेकेदार चुनें",
+    "That contractor is not working on this item.": "यह ठेकेदार इस काम पर नहीं है।",
+    "Two or more contractors work on this item. Choose whose work this is.": "इस काम पर एक से ज़्यादा ठेकेदार हैं। चुनें कि यह किसका काम है।"
 }

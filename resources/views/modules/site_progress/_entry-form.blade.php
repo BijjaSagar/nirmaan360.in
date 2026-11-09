@@ -8,6 +8,7 @@
         'done' => fmt_qty($item['done_qty']),
         'percent' => \App\Services\SiteProgress\ProgressReport::show($item['percent']),
     ])->values();
+    $sharedLines = app(\App\Services\SiteProgress\ProgressEntryService::class)->sharedLines($project);
     $selectedFloor = (string) old('project_floor_id', $floorId ?? '');
     $knownFloors = collect($floorOptions)->pluck('id')->map(fn ($id) => (string) $id);
     $selectedFloor = $knownFloors->contains($selectedFloor) ? $selectedFloor : '';
@@ -15,12 +16,14 @@
 <form method="POST" action="{{ route('site-progress.entries.store', $project) }}" enctype="multipart/form-data" class="card space-y-4 p-4"
       x-data="{
           items: @js($choices),
+          shared: @js($sharedLines),
           query: '',
           itemId: @js((string) old('boq_item_id', '')),
           pending: @js((bool) old('is_pending')),
           busy: false,
           get shown() { const q = this.query.trim().toLowerCase(); return this.items.filter(i => i.id === this.itemId || q === '' || i.label.toLowerCase().includes(q)); },
           get chosen() { return this.items.find(i => i.id === this.itemId) || null; },
+          get contractors() { return this.shared[this.itemId] || []; },
       }"
       @submit="busy = true">
     @csrf
@@ -40,6 +43,15 @@
             <span x-text="chosen ? @js(__('Done so far')) + ': ' + chosen.done + ' / ' + chosen.qty + ' ' + chosen.unit + ' (' + chosen.percent + ')' : ''"></span>
         </p>
     </x-field>
+
+    <div x-show="contractors.length" x-cloak>
+        <x-field :label="__('Whose work is this?')" name="work_order_id">
+            <select id="work_order_id" name="work_order_id" class="input min-h-12 text-base" :required="contractors.length > 0" :disabled="contractors.length === 0">
+                <option value="">{{ __('Choose the contractor') }}</option>
+                <template x-for="contractor in contractors" :key="contractor.id"><option :value="contractor.id" x-text="contractor.label"></option></template>
+            </select>
+        </x-field>
+    </div>
 
     @if ($lockFloor)
         <input type="hidden" name="project_floor_id" value="{{ $selectedFloor }}">
