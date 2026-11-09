@@ -16,6 +16,7 @@ final class UserPresenter
         'petty_cash.view', 'petty_cash.manage',
         'measurement.view', 'measurement.create', 'measurement.approve',
         'ra_bill.view', 'ra_bill.approve',
+        'progress.view', 'progress.create',
     ];
 
     public static function present(User $user): array
