@@ -29,6 +29,9 @@ class RaBill extends Model
             'terms' => 'array',
             'approved_at' => 'datetime',
             'paid_at' => 'datetime',
+            'is_final' => 'boolean',
+            'retention_released' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
         ];
     }
 
@@ -39,7 +42,7 @@ class RaBill extends Model
 
     public function approvalTitle(): string
     {
-        return 'RA Bill '.$this->number.' · '.inr($this->net_payable);
+        return ($this->is_final ? 'Final Bill ' : 'RA Bill ').$this->number.' · '.inr($this->net_payable);
     }
 
     public function lockedStatuses(): array
@@ -49,12 +52,18 @@ class RaBill extends Model
 
     public function mutableAfterApproval(): array
     {
-        return ['status', 'paid_at'];
+        return ['status', 'paid_at', 'paid_amount'];
     }
 
+    /** Approving a final bill is what closes the contract. Runs for client sign-off too, with no user signed in. */
     public function onApprovalApproved(): void
     {
         $this->update(['status' => 'APPROVED', 'approved_at' => now()]);
+
+        if ($this->is_final) {
+            WorkOrder::withoutGlobalScopes()->find($this->work_order_id)?->update(['status' => 'CLOSED', 'closed_at' => now()]);
+            AuditLog::record('contract.closed', $this, null, ['work_order_id' => $this->work_order_id, 'retention_released' => $this->retention_released]);
+        }
     }
 
     public function project(): BelongsTo
@@ -80,6 +89,29 @@ class RaBill extends Model
     public function deductions(): HasMany
     {
         return $this->hasMany(RaBillDeduction::class)->orderBy('sort');
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(BillNote::class)->latest('id');
+    }
+
+    /** Net payable after every approved credit and debit note. */
+    public function adjustedNet(): string
+    {
+        $net = Dec::of($this->net_payable);
+
+        foreach ($this->notes()->where('status', 'APPROVED')->pluck('net_effect') as $effect) {
+            $net = $net->plus(Dec::of($effect));
+        }
+
+        return Dec::money($net);
+    }
+
+    /** Whether the bill can carry a credit or debit note. Unapproved bills are cancelled and raised again instead. */
+    public function acceptsNotes(): bool
+    {
+        return in_array($this->status, ['APPROVED', 'PAID'], true);
     }
 
     public function hasGst(): bool

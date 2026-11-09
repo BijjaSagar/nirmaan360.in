@@ -35,6 +35,12 @@ class DeductionEngine
 
         foreach ($terms['order'] ?? config('buildos.default_deduction_order') as $type) {
             $base = $basis === 'running' ? $running : $gross;
+
+            // A final bill can recover more advance than the work is worth. Percentages then have nothing to apply to.
+            if (! empty($terms['recover_full_advance']) && $base->isNegative()) {
+                $base = BigDecimal::zero();
+            }
+
             [$pct, $amount] = $this->amountFor($type, $base, $terms);
 
             if (Dec::of($amount)->isZero()) {
@@ -68,7 +74,7 @@ class DeductionEngine
         };
     }
 
-    /** Recovery is a percentage of the base, capped at the advance still outstanding. */
+    /** Recovery is a percentage of the base, capped at the advance still outstanding. A final bill recovers all of it. */
     private function advanceRecovery(BigDecimal $base, array $terms): array
     {
         $pct = Dec::money($terms['advance_recovery_pct'] ?? 0);
@@ -77,6 +83,10 @@ class DeductionEngine
 
         if ($balance->isNegativeOrZero()) {
             return [$pct, '0.00'];
+        }
+
+        if (! empty($terms['recover_full_advance'])) {
+            return [null, Dec::money($balance)];
         }
 
         return [$pct, Dec::money($amount->isGreaterThan($balance) ? $balance : $amount)];

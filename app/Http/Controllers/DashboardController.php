@@ -11,6 +11,7 @@ use App\Models\MeasurementEntry;
 use App\Models\Project;
 use App\Models\RaBill;
 use App\Services\ApprovalService;
+use App\Services\BillingExtras\ContractPositionService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -51,7 +52,7 @@ class DashboardController extends Controller
             'approvedValues' => $approvedValues,
             'activeProjects' => Project::where('status', 'active')->count(),
             'contractValue' => Project::whereIn('status', ['planning', 'active'])->sum('contract_value'),
-            'billed' => RaBill::where('type', 'client')->whereIn('status', ['APPROVED', 'PAID'])->sum('gross_amount'),
+            'billed' => RaBill::where('type', 'client')->whereIn('status', ['APPROVED', 'PAID'])->sum('gross_amount') + (float) app(ContractPositionService::class)->clientNoteAdjustment(),
             'openIssues' => Issue::whereIn('status', ['open', 'in_progress'])->count(),
             'presentToday' => Attendance::whereDate('attendance_date', $today)->whereIn('status', ['present', 'half', 'overtime'])->count(),
             'dprsToday' => Dpr::whereDate('report_date', $today)->count(),

@@ -5,7 +5,8 @@
         <x-stamp :status="$workOrder->status" />
     </x-page-header>
 
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-6">
+        <x-stat :label="__('Rate type')" :value="__(ucfirst(str_replace('_', ' ', $workOrder->rate_type)))" />
         <x-stat :label="__('Value')" :value="inr($workOrder->totalValue())" />
         <x-stat :label="__('Retention')" :value="(float) $workOrder->retention_pct.'%'" />
         <x-stat :label="__('TDS')" :value="(float) $workOrder->tds_pct.'%'" />

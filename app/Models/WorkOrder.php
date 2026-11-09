@@ -27,7 +27,13 @@ class WorkOrder extends Model
             'advance_amount' => 'decimal:2',
             'advance_recovery_pct' => 'decimal:2',
             'deduction_order' => 'array',
+            'closed_at' => 'datetime',
         ];
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === 'CLOSED';
     }
 
     public function project(): BelongsTo

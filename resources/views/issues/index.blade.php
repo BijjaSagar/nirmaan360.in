@@ -7,8 +7,9 @@
         </x-page-header>
 
         @can('issue.manage')
-            <form x-show="add" x-cloak method="POST" action="{{ route('issues.store', $project) }}" class="card mb-5 grid gap-3 p-4 sm:grid-cols-4">
+            <form x-show="add" x-cloak method="POST" action="{{ route('issues.store', $project) }}" enctype="multipart/form-data" class="card mb-5 grid gap-3 p-4 sm:grid-cols-4">
                 @csrf
+                <input type="hidden" name="client_uuid" value="{{ \Illuminate\Support\Str::uuid() }}">
                 <x-field :label="__('Title')" name="title" class="sm:col-span-4"><input id="title" name="title" value="{{ old('title') }}" class="input" required></x-field>
                 <x-field :label="__('Details')" name="description" class="sm:col-span-4"><textarea id="description" name="description" rows="2" class="input">{{ old('description') }}</textarea></x-field>
                 <x-field :label="__('Priority')" name="priority">
@@ -26,6 +27,9 @@
                 </x-field>
                 <x-field :label="__('Location')" name="location_note"><input id="location_note" name="location_note" value="{{ old('location_note') }}" class="input"></x-field>
                 <x-field :label="__('Due date')" name="due_date"><input id="due_date" name="due_date" type="date" value="{{ old('due_date') }}" class="input"></x-field>
+                <x-field :label="__('Before photos')" name="photos" class="sm:col-span-4" :hint="__('Up to 10 photos, JPG, PNG or WebP.')">
+                    <input id="photos" name="photos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple class="input">
+                </x-field>
                 <div class="sm:col-span-4"><button class="btn btn-primary">{{ __('Save issue') }}</button></div>
             </form>
         @endcan
@@ -50,6 +54,7 @@
                                 <p class="font-semibold">{{ $issue->title }}</p>
                                 @if ($issue->description)<p class="text-xs text-ink-3">{{ \Illuminate\Support\Str::limit($issue->description, 120) }}</p>@endif
                                 @if ($issue->location_note)<p class="text-xs text-ink-3">{{ $issue->location_note }}</p>@endif
+                                @include('modules.billing_extras._issue-photos', ['issue' => $issue])
                             </td>
                             <td><x-stamp :status="$issue->priority" /></td>
                             <td>{{ $issue->assignee?->name ?? '—' }}</td>

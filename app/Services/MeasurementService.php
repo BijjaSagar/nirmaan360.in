@@ -23,7 +23,8 @@ class MeasurementService
     {
         return [
             'boq_item_id' => ['bail', 'required', 'integer', Rule::exists('boq_items', 'id')->where('project_id', $project->id)->whereNull('deleted_at')],
-            'work_order_id' => ['bail', 'nullable', 'integer', Rule::exists('work_orders', 'id')->where('project_id', $project->id)],
+            // A closed work order can take no further bills, so work measured against it could never be paid.
+            'work_order_id' => ['bail', 'nullable', 'integer', Rule::exists('work_orders', 'id')->where('project_id', $project->id)->where('status', 'ACTIVE')],
             'measured_on' => ['required', 'date', 'before_or_equal:today'],
             'description' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:120'],

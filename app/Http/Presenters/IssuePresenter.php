@@ -3,9 +3,21 @@
 namespace App\Http\Presenters;
 
 use App\Models\Issue;
+use App\Models\IssuePhoto;
 
 final class IssuePresenter
 {
+    public static function photo(IssuePhoto $photo): array
+    {
+        return [
+            'id' => $photo->id,
+            'issue_id' => $photo->issue_id,
+            'kind' => $photo->kind,
+            'caption' => $photo->caption,
+            'taken_at' => $photo->taken_at?->toIso8601String(),
+        ];
+    }
+
     public static function present(Issue $issue): array
     {
         return [

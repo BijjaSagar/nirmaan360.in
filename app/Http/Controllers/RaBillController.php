@@ -31,7 +31,7 @@ class RaBillController extends Controller
     {
         return view('rabills.create', [
             'project' => $project,
-            'workOrders' => $project->workOrders()->with('party')->get(),
+            'workOrders' => $project->workOrders()->with('party')->where('status', 'ACTIVE')->get(),
             'unbilledClient' => $project->measurements()->where('status', 'APPROVED')->whereNull('billed_client_bill_id')->count(),
         ]);
     }
@@ -63,7 +63,7 @@ class RaBillController extends Controller
 
     public function show(RaBill $bill): View
     {
-        $bill->load('items', 'deductions', 'party', 'workOrder', 'approvals.steps.user');
+        $bill->load('items', 'deductions', 'party', 'workOrder', 'approvals.steps.user', 'notes');
         $approval = $bill->approvals->first();
 
         return view('rabills.show', [

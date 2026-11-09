@@ -62,6 +62,11 @@ class WorkOrderController extends Controller
             throw ValidationException::withMessages(['items' => __('Enter a rate for at least one BOQ item.')]);
         }
 
+        // A lump sum line is worth quantity × rate, so it cannot be billed without a quantity.
+        if ($data['rate_type'] === 'lump_sum' && $lines->contains(fn ($line) => ! Dec::of($line['qty'] ?? 0)->isPositive())) {
+            throw ValidationException::withMessages(['items' => __('Enter a quantity for every item on a lump sum work order.')]);
+        }
+
         $workOrder = DB::transaction(function () use ($data, $lines, $project, $request) {
             $sequence = WorkOrder::withTrashed()->where('project_id', $project->id)->count() + 1;
             unset($data['items']);

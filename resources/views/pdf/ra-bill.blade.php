@@ -31,7 +31,7 @@
             @if ($bill->organization->gstin)<div class="muted">GSTIN: {{ $bill->organization->gstin }}</div>@endif
         </td>
         <td class="r">
-            <h1>{{ $bill->type === 'client' ? 'Running Account Bill' : 'Subcontractor Bill' }}</h1>
+            <h1>{{ $bill->is_final ? 'Final Bill' : ($bill->type === 'client' ? 'Running Account Bill' : 'Subcontractor Bill') }}</h1>
             <div>{{ $bill->number }}</div>
             <div class="muted">Period: {{ $bill->period_from->format('d M Y') }} to {{ $bill->period_to->format('d M Y') }}</div>
             <div class="muted">Status: {{ str_replace('_', ' ', $bill->status) }}</div>
@@ -79,6 +79,9 @@
         <tr><td>Less: {{ $deduction->label }} @if ($deduction->pct !== null && (float) $deduction->pct > 0)({{ (float) $deduction->pct }}%)@endif</td><td class="r">{{ inr($deduction->amount) }}</td></tr>
     @endforeach
     <tr><td>{{ $bill->hasGst() ? 'Add: GST ('.(float) ($bill->terms['gst_pct'] ?? 0).'%)' : 'GST' }}</td><td class="r">{{ $bill->hasGst() ? inr($bill->gst_amount) : 'Not charged' }}</td></tr>
+    @if ($bill->is_final)
+        <tr><td>Add: Retention released</td><td class="r">{{ inr($bill->retention_released) }}</td></tr>
+    @endif
     <tr class="net"><td>Net payable</td><td class="r">{{ inr($bill->net_payable) }}</td></tr>
 </table>
 

@@ -2,11 +2,23 @@
 
 namespace App\Http\Presenters;
 
+use App\Models\MeasurementAttachment;
 use App\Models\MeasurementEntry;
 
 final class MeasurementPresenter
 {
     public const RELATIONS = ['currentApproval.steps'];
+
+    public static function attachment(MeasurementAttachment $attachment): array
+    {
+        return [
+            'id' => $attachment->id,
+            'measurement_entry_id' => $attachment->measurement_entry_id,
+            'kind' => $attachment->kind,
+            'caption' => $attachment->caption,
+            'is_image' => $attachment->isImage(),
+        ];
+    }
 
     public static function present(MeasurementEntry $entry): array
     {

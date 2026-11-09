@@ -17,11 +17,11 @@
                         </select>
                     </x-field>
                     <x-field :label="__('Title')" name="title" class="sm:col-span-2"><input id="title" name="title" value="{{ old('title') }}" class="input" required></x-field>
-                    <x-field :label="__('Rate type')" name="rate_type">
+                    <x-field :label="__('Rate type')" name="rate_type" :hint="__('Lump sum: each item stops earning at quantity × rate. Labour only: material is issued free, so bills carry no material recovery.')">
                         <select id="rate_type" name="rate_type" class="input">
-                            <option value="item_rate">{{ __('Item rate') }}</option>
-                            <option value="lump_sum">{{ __('Lump sum') }}</option>
-                            <option value="labour_only">{{ __('Labour only') }}</option>
+                            <option value="item_rate" @selected(old('rate_type') === 'item_rate')>{{ __('Item rate') }}</option>
+                            <option value="lump_sum" @selected(old('rate_type') === 'lump_sum')>{{ __('Lump sum') }}</option>
+                            <option value="labour_only" @selected(old('rate_type') === 'labour_only')>{{ __('Labour only') }}</option>
                         </select>
                     </x-field>
                     <x-field :label="__('Start date')" name="start_date"><input id="start_date" name="start_date" type="date" value="{{ old('start_date') }}" class="input"></x-field>

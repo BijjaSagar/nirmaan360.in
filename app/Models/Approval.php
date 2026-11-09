@@ -56,6 +56,7 @@ class Approval extends Model
             'measurement' => route('measurements.show', $this->approvable_id),
             'ra_bill' => route('ra-bills.show', $this->approvable_id),
             'dpr' => route('dprs.show', $this->approvable_id),
+            'bill_note' => route('bill-notes.show', $this->approvable_id),
             default => route('approvals.index'),
         };
     }
