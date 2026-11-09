@@ -115,7 +115,10 @@ class _FloorViewState extends State<_FloorView> {
               children: <Widget>[
                 Text(l.progressWorkDone, style: N360Type.fit(N360Type.label, l.progressWorkDone)),
                 Text(percentText(floor.percent), style: N360Type.figureLarge),
-                HatchedProgressBar(fraction: percentFraction(floor.percent)),
+                HatchedProgressBar(
+                  fraction: percentFraction(floor.percent),
+                  semanticLabel: '${l.progressWorkDone} ${percentText(floor.percent)}',
+                ),
               ],
             ),
           ),

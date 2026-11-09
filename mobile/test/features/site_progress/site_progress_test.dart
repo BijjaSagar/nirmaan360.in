@@ -53,7 +53,7 @@ Future<void> setDone(TestApp app, {String status = 'done', List<String> photos =
   );
 }
 
-Future<void> pumpProgress(WidgetTester tester, TestApp app, {String start = Routes.progress}) async {
+Future<void> pumpProgress(WidgetTester tester, TestApp app, {String start = Routes.progress, String locale = 'en'}) async {
   tester.view.devicePixelRatio = 3;
   tester.view.physicalSize = const Size(360, 800) * 3;
   addTearDown(tester.view.resetPhysicalSize);
@@ -73,7 +73,7 @@ Future<void> pumpProgress(WidgetTester tester, TestApp app, {String start = Rout
         child: MaterialApp.router(
           routerConfig: router,
           theme: buildN360Theme(),
-          locale: const Locale('en'),
+          locale: Locale(locale),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, navigator) => MediaQuery(
@@ -393,6 +393,23 @@ void main() {
       expect(find.text('Pending work'), findsOneWidget);
       expect(find.text('Not finished yet'), findsOneWidget);
     });
+
+    for (final String locale in <String>['mr', 'hi']) {
+      testWidgets('every screen fits a small phone in $locale', (tester) async {
+        final TestApp app = await progressApp();
+        addTearDown(app.dispose);
+        for (final String start in <String>[
+          Routes.progress,
+          Routes.progressForm,
+          Routes.progressFloor(11),
+          Routes.progressStage(21, 'plumbing'),
+          Routes.progressBeforeFinishing(11),
+        ]) {
+          await pumpProgress(tester, app, start: start, locale: locale);
+          expect(tester.takeException(), isNull, reason: start);
+        }
+      });
+    }
 
     testWidgets('every control on the form is at least 56dp high', (tester) async {
       final TestApp app = await progressApp();

@@ -201,6 +201,16 @@ Add `project.manage` and `boq.manage` to the `can` list. Add nullable `client_uu
 - The plan project limit is a 422 with `errors.plan`, using the web's message.
 - A wallet top-up is an ordinary `petty_cash` push item with `type: topup`, so it works offline.
 
+### Site progress and stages
+
+Needs the `site_control` plan feature, and `progress.view` and `progress.create` in the `can` list. The API sends quantities and percentages only, never a rate or an amount.
+
+- The app reads `GET /projects/{project}/progress/summary`, `/floors`, `/progress/items`, `/progress/pending` and `/stages`, and keeps the last answer per project. After a sync that sent something it reads them again; otherwise at most every 10 minutes. `GET /floors/{floor}/progress` is read when a floor is opened. The before finishing check is worked out from `/stages`, so it needs no network.
+- These writes are outbox rows posted one at a time to their own endpoints, not through `/sync/push`: `POST /projects/{project}/progress/entries`, `POST /progress/entries/{id}/resolve`, `POST /projects/{project}/stages/cells`, and the photo routes `POST /progress/entries/{id}/photos` and `POST /stage-cells/{id}/photos`.
+- Every one carries a `client_uuid`, and a repeat returns the first row. A photo waits behind its parent and takes the parent's server id from the reply.
+- Screens lay rows waiting to send over the last answer, so quantities and stages are right before they reach the server. A newer change to a stage replaces one still waiting.
+- 422 and 403 go to the Sync Center. 404 says the project is gone when the project has left the phone.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

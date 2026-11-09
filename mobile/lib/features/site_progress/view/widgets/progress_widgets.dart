@@ -80,7 +80,7 @@ class ProgressBarTile extends StatelessWidget {
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
-      semanticsLabel: title,
+      semanticsLabel: '$title, $shown',
       builder: (context, depth, child) => Opacity(opacity: 1 - depth * 0.3, child: child),
       child: ConstrainedBox(constraints: const BoxConstraints(minHeight: N360Size.tap), child: body),
     );
