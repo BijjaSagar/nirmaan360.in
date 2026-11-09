@@ -16,7 +16,7 @@ class PlatformSettings
 {
     private const CACHE_KEY = 'platform_settings.v1';
 
-    public const SECRETS = ['razorpay_key_secret', 'razorpay_webhook_secret', 'mail_password', 'msg91_auth_key', 'whatsapp_access_token', 'fcm_service_account'];
+    public const SECRETS = ['razorpay_key_secret', 'razorpay_webhook_secret', 'mail_password', 'msg91_auth_key', 'whatsapp_access_token', 'fcm_service_account', 'anthropic_api_key'];
 
     /** @var array<string,string|null>|null */
     private ?array $values = null;

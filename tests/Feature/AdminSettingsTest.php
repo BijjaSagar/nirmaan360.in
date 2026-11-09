@@ -44,6 +44,9 @@ class AdminSettingsTest extends TestCase
             // The form offers only the features an admin can switch. Modules add their own on every boot.
             $plans[$key]['features'] = array_values(array_intersect($plan['features'], array_keys(AdminSettingsController::FEATURES)));
 
+            // The form offers only these. Features a module adds are applied on top by Modules::apply.
+            $plans[$key]['features'] = array_values(array_intersect($plan['features'], array_keys(AdminSettingsController::FEATURES)));
+
             if (! $plan['buyable']) {
                 unset($plans[$key]['monthly'], $plans[$key]['yearly']);
             }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillingPayment;
+use App\Services\Agents\CreditService;
 use App\Services\BillingService;
 use App\Services\RazorpayGateway;
 use Illuminate\Http\JsonResponse;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 /** Activates a plan even if the customer closes the browser after paying. */
 class RazorpayWebhookController extends Controller
 {
-    public function __invoke(Request $request, RazorpayGateway $gateway, BillingService $billing): JsonResponse
+    public function __invoke(Request $request, RazorpayGateway $gateway, BillingService $billing, CreditService $credits): JsonResponse
     {
         abort_unless($gateway->webhookSignatureIsValid($request->getContent(), (string) $request->header('X-Razorpay-Signature')), 400, 'Invalid signature.');
 
@@ -24,7 +25,10 @@ class RazorpayWebhookController extends Controller
         $payment = BillingPayment::withoutGlobalScopes()->where('gateway_order_id', $entity['order_id'] ?? '')->first();
 
         if (! $payment) {
-            return response()->json(['status' => 'ignored']);
+            // AI credit top-ups are prepaid orders too, kept in their own table.
+            $status = $credits->settleWebhook($entity);
+
+            return response()->json(['status' => $status], $status === 'amount_mismatch' ? 422 : 200);
         }
 
         if ((string) ($entity['amount'] ?? '') !== $payment->paise()) {

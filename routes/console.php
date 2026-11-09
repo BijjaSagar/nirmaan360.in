@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('company-data:housekeeping')->dailyAt('02:30')->withoutOverlapping();
 Schedule::command('planning:delay-alerts')->dailyAt('07:00')->timezone('Asia/Kolkata');
+Schedule::command('agents:daily-briefs')->dailyAt('08:00')->timezone('Asia/Kolkata');
