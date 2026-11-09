@@ -10,6 +10,8 @@ class DrawingTransmittalItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'transmittal';
+
     protected $guarded = [];
 
     public function transmittal(): BelongsTo

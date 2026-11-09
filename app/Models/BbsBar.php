@@ -11,6 +11,8 @@ class BbsBar extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA = 'schedule';
+
     protected $guarded = [];
 
     protected function casts(): array
