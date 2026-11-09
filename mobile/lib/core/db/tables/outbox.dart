@@ -24,7 +24,8 @@ enum OutboxType {
   materialUse('material_use'),
   stockCount('stock_count'),
   issuePhoto('issue_photo'),
-  measurementPhoto('measurement_photo');
+  measurementPhoto('measurement_photo'),
+  progressCorrection('progress_correction');
 
   const OutboxType(this.wire);
 
@@ -45,7 +46,8 @@ enum OutboxType {
     OutboxType.materialUse ||
     OutboxType.stockCount ||
     OutboxType.issuePhoto ||
-    OutboxType.measurementPhoto => true,
+    OutboxType.measurementPhoto ||
+    OutboxType.progressCorrection => true,
     _ => false,
   };
 }

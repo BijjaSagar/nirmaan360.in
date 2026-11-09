@@ -218,6 +218,7 @@ class SyncRepository {
       case OutboxType.stockCount:
       case OutboxType.issuePhoto:
       case OutboxType.measurementPhoto:
+      case OutboxType.progressCorrection:
         break;
     }
   }

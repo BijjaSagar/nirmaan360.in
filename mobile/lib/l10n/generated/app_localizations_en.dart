@@ -2055,6 +2055,66 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get progressCorrect => 'Correct';
+
+  @override
+  String get progressCorrectFailed =>
+      'Could not save the correction. Please try again.';
+
+  @override
+  String get progressCorrectHint =>
+      'The first entry stays. A correction is added beside it.';
+
+  @override
+  String progressCorrectNow(String qty) {
+    return 'Counted now: $qty';
+  }
+
+  @override
+  String get progressCorrectQty => 'What it should have been';
+
+  @override
+  String get progressCorrectQtyInvalid => 'Enter a quantity from zero up';
+
+  @override
+  String get progressCorrectRemark => 'Why is it being corrected?';
+
+  @override
+  String get progressCorrectRemarkRequired => 'Say why it is being corrected';
+
+  @override
+  String get progressCorrectSame => 'That is already the quantity';
+
+  @override
+  String get progressCorrectSave => 'Save correction';
+
+  @override
+  String get progressCorrectSavedOffline =>
+      'Correction saved on this phone. It will send when you are online.';
+
+  @override
+  String get progressCorrectSavedOnline => 'Correction saved. Sending now.';
+
+  @override
+  String get progressCorrectTakenBack => 'Correction taken back.';
+
+  @override
+  String get progressCorrectTitle => 'Correct this entry';
+
+  @override
+  String get progressCorrectionNotSent => 'Correction not sent yet';
+
+  @override
+  String progressEntryBy(String name) {
+    return 'by $name';
+  }
+
+  @override
+  String progressEntryCorrectedFrom(String qty) {
+    return 'Corrected from $qty';
+  }
+
+  @override
   String get progressFinishingHint =>
       'Read this before plaster, POP or paint starts.';
 
@@ -2218,6 +2278,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get progressReadyTitle => 'Ready for finishing';
+
+  @override
+  String get progressRecentEntries => 'Recent entries on this floor';
 
   @override
   String get progressRefreshFailed =>
@@ -2886,6 +2949,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeProgress => 'Site progress';
+
+  @override
+  String get syncTypeProgressCorrection => 'Progress correction';
 
   @override
   String get syncTypeProgressPhoto => 'Progress photo';

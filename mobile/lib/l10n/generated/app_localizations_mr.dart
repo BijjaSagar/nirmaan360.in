@@ -2026,6 +2026,67 @@ class AppLocalizationsMr extends AppLocalizations {
   }
 
   @override
+  String get progressCorrect => 'दुरुस्त करा';
+
+  @override
+  String get progressCorrectFailed =>
+      'दुरुस्ती जतन झाली नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get progressCorrectHint =>
+      'पहिली नोंद तशीच राहते. तिच्या शेजारी दुरुस्ती जोडली जाते.';
+
+  @override
+  String progressCorrectNow(String qty) {
+    return 'आता मोजलेले: $qty';
+  }
+
+  @override
+  String get progressCorrectQty => 'ते किती असायला हवे होते';
+
+  @override
+  String get progressCorrectQtyInvalid =>
+      'शून्य किंवा त्यापेक्षा जास्त प्रमाण लिहा';
+
+  @override
+  String get progressCorrectRemark => 'दुरुस्ती का करायची आहे?';
+
+  @override
+  String get progressCorrectRemarkRequired => 'दुरुस्ती का करत आहात ते लिहा';
+
+  @override
+  String get progressCorrectSame => 'हेच प्रमाण आधीच आहे';
+
+  @override
+  String get progressCorrectSave => 'दुरुस्ती जतन करा';
+
+  @override
+  String get progressCorrectSavedOffline =>
+      'दुरुस्ती या फोनवर जतन झाली. इंटरनेट आल्यावर पाठवली जाईल.';
+
+  @override
+  String get progressCorrectSavedOnline => 'दुरुस्ती जतन झाली. पाठवत आहे.';
+
+  @override
+  String get progressCorrectTakenBack => 'दुरुस्ती मागे घेतली.';
+
+  @override
+  String get progressCorrectTitle => 'ही नोंद दुरुस्त करा';
+
+  @override
+  String get progressCorrectionNotSent => 'दुरुस्ती अजून गेली नाही';
+
+  @override
+  String progressEntryBy(String name) {
+    return '$name यांनी';
+  }
+
+  @override
+  String progressEntryCorrectedFrom(String qty) {
+    return '$qty वरून दुरुस्त केले';
+  }
+
+  @override
   String get progressFinishingHint =>
       'प्लास्टर, POP किंवा रंगकाम सुरू करण्यापूर्वी हे वाचा.';
 
@@ -2187,6 +2248,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get progressReadyTitle => 'फिनिशिंगसाठी तयार';
+
+  @override
+  String get progressRecentEntries => 'या मजल्यावरील अलीकडील नोंदी';
 
   @override
   String get progressRefreshFailed =>
@@ -2841,6 +2905,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeProgress => 'साइट प्रगती';
+
+  @override
+  String get syncTypeProgressCorrection => 'प्रगतीची दुरुस्ती';
 
   @override
   String get syncTypeProgressPhoto => 'प्रगतीचा फोटो';

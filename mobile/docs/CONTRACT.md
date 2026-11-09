@@ -230,6 +230,16 @@ Needs the `site_control` plan feature, and `progress.view` and `progress.create`
 - Screens lay rows waiting to send over the last answer, so quantities and stages are right before they reach the server. A newer change to a stage replaces one still waiting.
 - 422 and 403 go to the Sync Center. 404 says the project is gone when the project has left the phone.
 
+### Correcting a progress entry
+
+Needs `progress.create`. An entry is never edited: a correction is a new entry that holds the difference, dated the same day, and the first entry stays.
+
+- The floor screen lists the latest entries on the floor that recorded work, newest first, from `GET /projects/{project}/progress/entries?project_floor_id=`. The list is oldest first, 100 to a page, so the phone reads page 1 for `last_page`, then the last page, and the one before it when the last holds fewer than 30. The rows are kept per project under `floor_entries.<projectId>`, 200 to a floor, and the key goes with the project. A correction row folds into the entry it corrects (`corrects_entry_id`), and the entry's quantity is its own plus its corrections.
+- A correction is an outbox row of type `progress_correction`, posted on its own to `POST /progress/entries/{id}/corrections` with `qty_done` (what the entry should have been, not the difference), a required `remark` and the `client_uuid`. A repeat returns the first row. Its group is `correct:<entryId>`, so it holds nothing else back. A newer correction of the same entry replaces one still waiting, and putting the quantity back to what the server counts takes the waiting one back.
+- The reply, like the reply to a new entry, is added to the floor's list in the transaction that finishes the outbox row, so an entry sent from the phone can be corrected at once and a correction shows with no refresh.
+- Until it is sent, a correction shows in the list and in the item's done figure, worked out as the quantity less what the server counted when it was written (`net_before`).
+- Only an entry that recorded work can be corrected, which is why the list leaves out corrections, resolutions and entries with no quantity. The server answers 422 on `qty_done` for a correction of a correction, an entry with no quantity, or a quantity equal to what the entry already counts, and on `remark` when it is blank. The phone checks the last two and a quantity outside 0 to 99,999,999 before queuing; the rest go to the Sync Center. 403 and 404 go there too.
+
 ### Photos on issues
 
 Needs the `site` plan feature. `issue.view` reads and `issue.manage` adds. The kind is `before` or `after`.

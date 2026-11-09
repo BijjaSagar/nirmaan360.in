@@ -13,6 +13,7 @@ import '../session/session_controller.dart';
 import 'attachment_store.dart';
 import 'clock.dart';
 import 'connectivity.dart';
+import 'floor_entries.dart';
 import 'ids.dart';
 import 'pull_applier.dart';
 import 'record_photos.dart';
@@ -68,6 +69,7 @@ class SyncEngine {
   final SessionController? _session;
   final OutboxDao _outbox;
   late final RecordPhotos _photos = RecordPhotos(db: _db, api: _api, attachments: _attachments, clock: _clock);
+  late final FloorEntries _floorEntries = FloorEntries(db: _db, api: _api);
   final String _instanceId;
 
   late final StreamSubscription<bool> _connectivitySub;
@@ -464,6 +466,7 @@ class SyncEngine {
       case OutboxType.stockCount:
       case OutboxType.issuePhoto:
       case OutboxType.measurementPhoto:
+      case OutboxType.progressCorrection:
         return null;
     }
   }
@@ -595,6 +598,7 @@ class SyncEngine {
       case OutboxType.stockCount:
       case OutboxType.issuePhoto:
       case OutboxType.measurementPhoto:
+      case OutboxType.progressCorrection:
         break;
     }
   }
@@ -677,6 +681,10 @@ class SyncEngine {
       // The photo joins the record's list in the same moment its row is
       // finished, so a screen never sees it twice or not at all.
       if (owner != null) await _photos.remember(owner, row.projectId, stored, localRelativePath: relativePath);
+      // The same for an entry or a correction: the floor lists it at once.
+      if (row.type == OutboxType.progressEntry || row.type == OutboxType.progressCorrection) {
+        await _floorEntries.remember(row.projectId, stored);
+      }
     });
     _sentThisRun++;
     _notifyProgress();
@@ -709,6 +717,13 @@ class SyncEngine {
       case OutboxType.progressResolve:
         final entryId = (data['entry_id'] as num).toInt();
         return _api.resolveProgress(entryId, {'remark': data['remark'], 'client_uuid': row.wireUuid});
+      case OutboxType.progressCorrection:
+        final correctedId = (data['entry_id'] as num).toInt();
+        return _api.correctProgress(correctedId, {
+          'qty_done': data['qty_done'],
+          'remark': data['remark'],
+          'client_uuid': row.wireUuid,
+        });
       case OutboxType.stageCell:
         return _api.postStageCell(row.projectId, body);
       case OutboxType.progressPhoto:

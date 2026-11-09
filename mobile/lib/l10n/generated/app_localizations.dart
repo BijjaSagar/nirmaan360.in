@@ -3784,6 +3784,108 @@ abstract class AppLocalizations {
   /// **'Behind by {percent}'**
   String progressBehind(String percent);
 
+  /// No description provided for @progressCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get progressCorrect;
+
+  /// No description provided for @progressCorrectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the correction. Please try again.'**
+  String get progressCorrectFailed;
+
+  /// No description provided for @progressCorrectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The first entry stays. A correction is added beside it.'**
+  String get progressCorrectHint;
+
+  /// No description provided for @progressCorrectNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted now: {qty}'**
+  String progressCorrectNow(String qty);
+
+  /// No description provided for @progressCorrectQty.
+  ///
+  /// In en, this message translates to:
+  /// **'What it should have been'**
+  String get progressCorrectQty;
+
+  /// No description provided for @progressCorrectQtyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a quantity from zero up'**
+  String get progressCorrectQtyInvalid;
+
+  /// No description provided for @progressCorrectRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'Why is it being corrected?'**
+  String get progressCorrectRemark;
+
+  /// No description provided for @progressCorrectRemarkRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Say why it is being corrected'**
+  String get progressCorrectRemarkRequired;
+
+  /// No description provided for @progressCorrectSame.
+  ///
+  /// In en, this message translates to:
+  /// **'That is already the quantity'**
+  String get progressCorrectSame;
+
+  /// No description provided for @progressCorrectSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save correction'**
+  String get progressCorrectSave;
+
+  /// No description provided for @progressCorrectSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction saved on this phone. It will send when you are online.'**
+  String get progressCorrectSavedOffline;
+
+  /// No description provided for @progressCorrectSavedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction saved. Sending now.'**
+  String get progressCorrectSavedOnline;
+
+  /// No description provided for @progressCorrectTakenBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction taken back.'**
+  String get progressCorrectTakenBack;
+
+  /// No description provided for @progressCorrectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct this entry'**
+  String get progressCorrectTitle;
+
+  /// No description provided for @progressCorrectionNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction not sent yet'**
+  String get progressCorrectionNotSent;
+
+  /// No description provided for @progressEntryBy.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String progressEntryBy(String name);
+
+  /// No description provided for @progressEntryCorrectedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Corrected from {qty}'**
+  String progressEntryCorrectedFrom(String qty);
+
   /// No description provided for @progressFinishingHint.
   ///
   /// In en, this message translates to:
@@ -4089,6 +4191,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ready for finishing'**
   String get progressReadyTitle;
+
+  /// No description provided for @progressRecentEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent entries on this floor'**
+  String get progressRecentEntries;
 
   /// No description provided for @progressRefreshFailed.
   ///
@@ -5283,6 +5391,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Site progress'**
   String get syncTypeProgress;
+
+  /// No description provided for @syncTypeProgressCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress correction'**
+  String get syncTypeProgressCorrection;
 
   /// No description provided for @syncTypeProgressPhoto.
   ///

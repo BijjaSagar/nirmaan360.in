@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/app_gate.dart';
 import '../../../app/routes.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -14,6 +15,7 @@ import '../../measurement/bloc/measurement_book.dart';
 import '../bloc/progress_cubit.dart';
 import '../data/progress_repository.dart';
 import 'progress_screen.dart';
+import 'widgets/entry_widgets.dart';
 import 'widgets/progress_widgets.dart';
 
 /// One floor: its flats, its stages, and how much of each item is done.
@@ -43,11 +45,72 @@ class _FloorView extends StatefulWidget {
 class _FloorViewState extends State<_FloorView> {
   FloorDetail? _detail;
   bool _loading = true;
+  RecentEntries? _recent;
+  StreamSubscription<RecentEntries>? _recentSub;
 
   @override
   void initState() {
     super.initState();
     unawaited(_load());
+    _watchEntries();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_recentSub?.cancel());
+    super.dispose();
+  }
+
+  /// The floor's latest entries: what this phone kept, read again from the
+  /// server when it can be reached.
+  void _watchEntries() {
+    final AppServices services = context.read<AppServices>();
+    final int? projectId = context.read<AppGate>().state.currentProject?.id;
+    if (projectId == null) return;
+    _recentSub = services.progress.watchFloorEntries(projectId, widget.floorId).listen((recent) {
+      if (mounted) setState(() => _recent = recent);
+    });
+    unawaited(
+      services.progress.refreshFloorEntries(projectId, widget.floorId).then<void>((_) {}, onError: (Object error) {
+        // Offline, or not allowed: the list the phone has stands.
+        if (error is! ApiFailure) throw error;
+      }),
+    );
+  }
+
+  Future<void> _correct(FloorEntry entry, ProgressOverview? overview, FloorChoice? choice) async {
+    final AppServices services = context.read<AppServices>();
+    final AppLocalizations l = AppLocalizations.of(context);
+    final int? projectId = context.read<AppGate>().state.currentProject?.id;
+    if (projectId == null) return;
+    final ProgressItem? item = overview?.item(entry.boqItemId);
+    final CorrectionAnswer? answer = await showCorrectionSheet(context, entry: entry, unit: item?.unit ?? '');
+    if (answer == null || !mounted) return;
+    try {
+      await services.progress.correctEntry(
+        projectId: projectId,
+        entryId: entry.id,
+        boqItemId: entry.boqItemId,
+        serverQty: entry.net,
+        rightQty: answer.qty,
+        remark: answer.remark,
+        title: item == null ? '' : '${item.code} ${item.description}'.trim(),
+        subtitle: choice?.label,
+      );
+      if (!mounted) return;
+      N360Haptics.success();
+      showPaperToast(
+        context,
+        answer.qty == entry.net
+            ? l.progressCorrectTakenBack
+            : (services.connectivity.isOnline ? l.progressCorrectSavedOnline : l.progressCorrectSavedOffline),
+        kind: PaperToastKind.success,
+      );
+    } on Object {
+      if (!mounted) return;
+      N360Haptics.warning();
+      showPaperToast(context, l.progressCorrectFailed, kind: PaperToastKind.error);
+    }
   }
 
   Future<void> _load() async {
@@ -80,7 +143,7 @@ class _FloorViewState extends State<_FloorView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   FieldTopBar(title: title, subtitle: choice?.parentName ?? l.progressFloorTitle),
-                  Expanded(child: _body(context, l, overview, choice)),
+                  Expanded(child: _body(context, l, overview, choice, canAdd)),
                   if (canAdd)
                     FieldActionBar(
                       child: GloveButton(
@@ -100,7 +163,7 @@ class _FloorViewState extends State<_FloorView> {
     );
   }
 
-  Widget _body(BuildContext context, AppLocalizations l, ProgressOverview? overview, FloorChoice? choice) {
+  Widget _body(BuildContext context, AppLocalizations l, ProgressOverview? overview, FloorChoice? choice, bool canAdd) {
     final FloorDetail? detail = _detail;
     final ProgressFloor? floor = choice?.floor ?? detail?.floor;
     final StageMatrix? matrix = overview?.matrix;
@@ -220,6 +283,30 @@ class _FloorViewState extends State<_FloorView> {
               ),
             ),
           ],
+        ],
+        if (_recent != null && !_recent!.isEmpty) ...<Widget>[
+          const SizedBox(height: N360Space.md),
+          SectionLabel(l.progressRecentEntries),
+          const SizedBox(height: N360Space.xs),
+          LedgerCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                for (final (index, entry) in _recent!.entries.indexed) ...<Widget>[
+                  if (index > 0) const RuledDivider(indent: N360Space.card),
+                  RecentEntryTile(
+                    key: ValueKey<int>(entry.id),
+                    entry: entry,
+                    item: overview?.item(entry.boqItemId),
+                    today: context.read<AppServices>().context.today,
+                    onCorrect: canAdd ? () => _correct(entry, overview, choice) : null,
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ],
     );

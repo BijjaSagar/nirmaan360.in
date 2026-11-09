@@ -333,6 +333,18 @@ class DioNirmaanApi implements NirmaanApi {
       _postData('/progress/entries/$entryId/resolve', body);
 
   @override
+  Future<Map<String, dynamic>> correctProgress(int entryId, Map<String, dynamic> body) =>
+      _postData('/progress/entries/$entryId/corrections', body);
+
+  @override
+  Future<Map<String, dynamic>> progressEntries(int projectId, {int? floorId, int page = 1}) => _call(
+    () => _dio.get(
+      '/projects/$projectId/progress/entries',
+      queryParameters: <String, dynamic>{'project_floor_id': ?floorId, 'page': page},
+    ),
+  );
+
+  @override
   Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body) =>
       _postData('/projects/$projectId/stages/cells', body);
 

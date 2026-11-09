@@ -218,6 +218,15 @@ abstract interface class NirmaanApi {
 
   Future<Map<String, dynamic>> resolveProgress(int entryId, Map<String, dynamic> body);
 
+  /// `POST /progress/entries/{id}/corrections`: [body] holds `qty_done`, what
+  /// the entry should have been, a `remark` and the `client_uuid`. Returns the
+  /// correction entry, which carries the difference.
+  Future<Map<String, dynamic>> correctProgress(int entryId, Map<String, dynamic> body);
+
+  /// One page of `GET /projects/{project}/progress/entries`, in Laravel's page
+  /// shape, oldest entry first. [floorId] limits it to one floor.
+  Future<Map<String, dynamic>> progressEntries(int projectId, {int? floorId, int page = 1});
+
   /// Returns the stored cell.
   Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body);
 

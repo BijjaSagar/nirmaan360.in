@@ -27,6 +27,7 @@ extension SyncLabels on AppLocalizations {
         OutboxType.stockCount => materialCount,
         OutboxType.issuePhoto => syncTypeIssuePhoto,
         OutboxType.measurementPhoto => syncTypeMeasurementPhoto,
+        OutboxType.progressCorrection => syncTypeProgressCorrection,
       };
 
   String syncReasonFor(OutboxItem item) => switch (item.attentionCode) {
@@ -64,4 +65,5 @@ IconData syncTypeIcon(OutboxType type) => switch (type) {
       OutboxType.stockCount => Icons.fact_check_outlined,
       OutboxType.issuePhoto => Icons.photo_camera_outlined,
       OutboxType.measurementPhoto => Icons.photo_camera_outlined,
+      OutboxType.progressCorrection => Icons.edit_note,
     };

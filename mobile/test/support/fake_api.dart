@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert' show base64Decode;
-import 'dart:math' show max;
+import 'dart:math' show max, min;
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
@@ -1571,6 +1571,115 @@ class FakeApi implements NirmaanApi {
   @override
   Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body) async =>
       _storeProgress(stagePosts, body);
+
+  /// The entries the server holds, as `GET .../progress/entries` lists them.
+  final List<Row> progressEntryRows = [];
+
+  /// Corrections by `client_uuid`: a repeat must not add a second.
+  final Map<String, Row> correctionPosts = {};
+
+  /// How many entries a page of the list holds.
+  int progressPageSize = 100;
+
+  /// The floor and page of every read of the entry list.
+  final List<(int?, int)> progressEntryReads = [];
+
+  /// Adds an entry the server already holds, and returns it.
+  Row addProgressEntry({
+    required int boqItemId,
+    int? floorId,
+    String qty = '10.000',
+    String workDate = '2026-11-09',
+    String? remark,
+    int projectId = 1,
+  }) {
+    final row = <String, dynamic>{
+      'id': _progressSerial++,
+      'client_uuid': null,
+      'project_id': projectId,
+      'boq_item_id': boqItemId,
+      'project_floor_id': floorId,
+      'work_date': workDate,
+      'qty_done': qty,
+      'remark': remark,
+      'is_pending': false,
+      'corrects_entry_id': null,
+      'resolves_entry_id': null,
+      'entered_by_name': 'Sachin More',
+      'photos': <Row>[],
+      'created_at': _stampNow(),
+    };
+    progressEntryRows.add(row);
+    return row;
+  }
+
+  @override
+  Future<Map<String, dynamic>> progressEntries(int projectId, {int? floorId, int page = 1}) async {
+    _guard();
+    progressEntryReads.add((floorId, page));
+    final all = progressEntryRows
+        .where((r) => r['project_id'] == projectId && (floorId == null || r['project_floor_id'] == floorId))
+        .toList()
+      ..sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
+    final last = max(1, (all.length / progressPageSize).ceil());
+    final from = (page - 1) * progressPageSize;
+    return {
+      'data': from >= all.length ? <Row>[] : all.sublist(from, min(all.length, from + progressPageSize)),
+      'current_page': page,
+      'last_page': last,
+      'per_page': progressPageSize,
+      'total': all.length,
+    };
+  }
+
+  /// Mirrors `ProgressEntryService::correct`: only an original entry that
+  /// recorded work, a reason, and a quantity that differs from what it counts.
+  @override
+  Future<Map<String, dynamic>> correctProgress(int entryId, Map<String, dynamic> body) async {
+    _guard();
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    final uuid = body['client_uuid'] as String;
+    var row = correctionPosts[uuid];
+    if (row == null) {
+      final entry = progressEntryRows.where((r) => r['id'] == entryId).firstOrNull;
+      if (entry == null) throw const ServerFailure('Not found.', statusCode: 404);
+      Never refuse(String field, String message) =>
+          throw ValidationFailure(message, errors: {field: [message]});
+      final entered = Decimal.parse(entry['qty_done'] as String);
+      if (entry['corrects_entry_id'] != null || entry['resolves_entry_id'] != null || entered == Decimal.zero) {
+        refuse('qty_done', 'Only an entry that recorded work can be corrected. Correct the original entry.');
+      }
+      final reason = ((body['remark'] as String?) ?? '').trim();
+      if (reason.isEmpty) refuse('remark', 'Say why the entry is being corrected.');
+      var net = entered;
+      for (final other in progressEntryRows.where((r) => r['corrects_entry_id'] == entryId)) {
+        net += Decimal.parse(other['qty_done'] as String);
+      }
+      final difference = Decimal.parse(body['qty_done'] as String) - net;
+      if (difference == Decimal.zero) refuse('qty_done', 'That is already the quantity on this entry.');
+      row = {
+        ...entry,
+        'id': _progressSerial++,
+        'client_uuid': uuid,
+        'qty_done': difference.toStringAsFixed(3),
+        'remark': reason,
+        'is_pending': false,
+        'corrects_entry_id': entryId,
+        'created_at': _stampNow(),
+      };
+      correctionPosts[uuid] = row;
+      progressEntryRows.add(row);
+    }
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return row;
+  }
 
   /// Photos and attachments stored by `client_uuid`: a repeat must not add a second.
   final Map<String, Row> photoPosts = {};

@@ -7,6 +7,7 @@ import '../../../core/api/api_failure.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
+import '../../../core/sync/floor_entries.dart';
 import '../../../core/sync/ids.dart';
 import 'progress_models.dart';
 
@@ -25,10 +26,13 @@ class ProgressRepository {
   static const List<OutboxType> _types = <OutboxType>[
     OutboxType.progressEntry,
     OutboxType.progressResolve,
+    OutboxType.progressCorrection,
     OutboxType.stageCell,
   ];
 
   AppDatabase get _db => _ctx.db;
+
+  late final FloorEntries _entries = FloorEntries(db: _ctx.db, api: _ctx.api);
 
   Stream<ProgressOverview?> watchCached(int projectId) =>
       _db.watchMeta(MetaKey.progressOverview(projectId)).map(_decode);
@@ -132,6 +136,109 @@ class ProgressRepository {
       return cached is Map ? FloorDetail.fromJson(cached.cast<String, dynamic>()) : null;
     }
   }
+
+  /// The latest entries on a floor that can be corrected, from the last copy on
+  /// this phone with corrections still waiting to send laid over it.
+  Stream<RecentEntries> watchFloorEntries(int projectId, int floorId) {
+    return _db.watchDerived({_db.keyValues, _db.outbox}, () async {
+      final rows = await _entries.cached(projectId, floorId);
+      final unsent = await (_db.select(_db.outbox)
+            ..where(
+              (t) =>
+                  t.projectId.equals(projectId) &
+                  t.type.equals(OutboxType.progressCorrection.name) &
+                  t.status.equals(OutboxStatus.done.name).not(),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .get();
+      return RecentEntries.build(rows, unsent);
+    });
+  }
+
+  /// Reads the floor's latest entries from the server. Throws an [ApiFailure]
+  /// when it cannot be reached, leaving the last list in place.
+  Future<void> refreshFloorEntries(int projectId, int floorId) => _entries.refresh(projectId, floorId);
+
+  /// Sets what an entry should have been. The first entry stays; the server
+  /// adds one holding the difference. Waits in the outbox like the other
+  /// progress writes, and a newer correction of the same entry replaces one
+  /// still waiting.
+  ///
+  /// [serverQty] is what the server counts for the entry now, not what the
+  /// screen shows, so the difference is right however often it is changed.
+  Future<void> correctEntry({
+    required int projectId,
+    required int entryId,
+    required int boqItemId,
+    required Qty serverQty,
+    required Qty rightQty,
+    required String remark,
+    required String title,
+    String? subtitle,
+  }) async {
+    final String note = remark.trim();
+    if (note.isEmpty) {
+      throw const ValidationFailure(
+        'Say why the entry is being corrected.',
+        errors: <String, List<String>>{
+          'remark': <String>['Say why the entry is being corrected.'],
+        },
+      );
+    }
+    if (rightQty.isNegative || rightQty > Qty.fromInt(_maxQty)) {
+      throw const ValidationFailure(
+        'Enter a quantity from zero up.',
+        errors: <String, List<String>>{
+          'qty_done': <String>['Enter a quantity from zero up.'],
+        },
+      );
+    }
+
+    final String record = 'correct:$entryId';
+    await _db.transaction(() async {
+      if (rightQty == serverQty) {
+        // Back to what the server already has. A correction still waiting is
+        // taken back; with none waiting there is nothing to correct.
+        final int taken = await (_db.delete(_db.outbox)..where(
+              (t) =>
+                  t.recordUuid.equals(record) &
+                  t.type.equals(OutboxType.progressCorrection.name) &
+                  t.status.isIn(<String>[OutboxStatus.pending.name, OutboxStatus.attention.name]),
+            ))
+            .go();
+        if (taken == 0) {
+          throw const ValidationFailure(
+            'That is already the quantity on this entry.',
+            errors: <String, List<String>>{
+              'qty_done': <String>['That is already the quantity on this entry.'],
+            },
+          );
+        }
+        return;
+      }
+      await _ctx.outbox.enqueue(
+        type: OutboxType.progressCorrection,
+        wireUuid: newUuid(),
+        recordUuid: record,
+        groupUuid: record,
+        projectId: projectId,
+        data: <String, dynamic>{
+          'entry_id': entryId,
+          'boq_item_id': boqItemId,
+          'qty_done': rightQty.toWire(),
+          'net_before': serverQty.toWire(),
+          'remark': note,
+        },
+        createdAt: _ctx.clock.now(),
+        title: title,
+        subtitle: subtitle,
+        coalesce: true,
+      );
+    });
+  }
+
+  /// The server refuses a quantity above this.
+  static const int _maxQty = 99999999;
 
   /// The floor and item chosen last time, to save two taps on the next entry.
   Future<({int? floorId, int? itemId})> lastPick(int projectId) async {

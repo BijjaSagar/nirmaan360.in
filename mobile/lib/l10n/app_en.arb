@@ -903,6 +903,44 @@
       }
     }
   },
+  "progressCorrect": "Correct",
+  "progressCorrectFailed": "Could not save the correction. Please try again.",
+  "progressCorrectHint": "The first entry stays. A correction is added beside it.",
+  "progressCorrectNow": "Counted now: {qty}",
+  "@progressCorrectNow": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "progressCorrectQty": "What it should have been",
+  "progressCorrectQtyInvalid": "Enter a quantity from zero up",
+  "progressCorrectRemark": "Why is it being corrected?",
+  "progressCorrectRemarkRequired": "Say why it is being corrected",
+  "progressCorrectSame": "That is already the quantity",
+  "progressCorrectSave": "Save correction",
+  "progressCorrectSavedOffline": "Correction saved on this phone. It will send when you are online.",
+  "progressCorrectSavedOnline": "Correction saved. Sending now.",
+  "progressCorrectTakenBack": "Correction taken back.",
+  "progressCorrectTitle": "Correct this entry",
+  "progressCorrectionNotSent": "Correction not sent yet",
+  "progressEntryBy": "by {name}",
+  "@progressEntryBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "progressEntryCorrectedFrom": "Corrected from {qty}",
+  "@progressEntryCorrectedFrom": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
   "progressFinishingHint": "Read this before plaster, POP or paint starts.",
   "progressFinishingPending": "Pending work",
   "progressFinishingUnfinished": "Not finished yet",
@@ -968,6 +1006,7 @@
   },
   "progressReadyMessage": "All plumbing and electrical stages are done here.",
   "progressReadyTitle": "Ready for finishing",
+  "progressRecentEntries": "Recent entries on this floor",
   "progressRefreshFailed": "Could not refresh. Showing what this phone has.",
   "progressResolveRemark": "Remark (optional)",
   "progressResolveSave": "Resolve",
@@ -1311,6 +1350,7 @@
   "syncTypePettyBill": "Bill photo",
   "syncTypePettyCash": "Petty cash entry",
   "syncTypeProgress": "Site progress",
+  "syncTypeProgressCorrection": "Progress correction",
   "syncTypeProgressPhoto": "Progress photo",
   "syncTypeProgressResolve": "Pending item resolved",
   "syncTypeStage": "Stage update",

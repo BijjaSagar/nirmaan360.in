@@ -2017,6 +2017,65 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get progressCorrect => 'सुधारें';
+
+  @override
+  String get progressCorrectFailed => 'सुधार सेव नहीं हुआ। फिर से कोशिश करें।';
+
+  @override
+  String get progressCorrectHint =>
+      'पहली प्रविष्टि वैसी ही रहती है। उसके साथ सुधार जुड़ जाता है।';
+
+  @override
+  String progressCorrectNow(String qty) {
+    return 'अभी गिना गया: $qty';
+  }
+
+  @override
+  String get progressCorrectQty => 'यह कितना होना चाहिए था';
+
+  @override
+  String get progressCorrectQtyInvalid => 'शून्य या उससे ज़्यादा मात्रा लिखें';
+
+  @override
+  String get progressCorrectRemark => 'सुधार क्यों किया जा रहा है?';
+
+  @override
+  String get progressCorrectRemarkRequired => 'सुधार का कारण लिखें';
+
+  @override
+  String get progressCorrectSame => 'यही मात्रा पहले से है';
+
+  @override
+  String get progressCorrectSave => 'सुधार सेव करें';
+
+  @override
+  String get progressCorrectSavedOffline =>
+      'सुधार इस फ़ोन पर सेव हुआ। इंटरनेट आने पर भेजा जाएगा।';
+
+  @override
+  String get progressCorrectSavedOnline => 'सुधार सेव हुआ। भेज रहे हैं।';
+
+  @override
+  String get progressCorrectTakenBack => 'सुधार वापस ले लिया।';
+
+  @override
+  String get progressCorrectTitle => 'यह प्रविष्टि सुधारें';
+
+  @override
+  String get progressCorrectionNotSent => 'सुधार अभी नहीं गया';
+
+  @override
+  String progressEntryBy(String name) {
+    return '$name द्वारा';
+  }
+
+  @override
+  String progressEntryCorrectedFrom(String qty) {
+    return '$qty से सुधारा गया';
+  }
+
+  @override
   String get progressFinishingHint =>
       'प्लास्टर, POP या पेंट शुरू करने से पहले यह पढ़ें।';
 
@@ -2179,6 +2238,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get progressReadyTitle => 'फ़िनिशिंग के लिए तैयार';
+
+  @override
+  String get progressRecentEntries => 'इस मंज़िल की हाल की प्रविष्टियाँ';
 
   @override
   String get progressRefreshFailed =>
@@ -2834,6 +2896,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get syncTypeProgress => 'साइट प्रगति';
+
+  @override
+  String get syncTypeProgressCorrection => 'प्रगति में सुधार';
 
   @override
   String get syncTypeProgressPhoto => 'प्रगति की फ़ोटो';

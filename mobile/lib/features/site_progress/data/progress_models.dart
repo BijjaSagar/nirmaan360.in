@@ -210,6 +210,107 @@ class PendingEntry {
   bool get notSentYet => id == null;
 }
 
+/// A correction of an entry that is still on this phone, waiting to go.
+class PendingCorrection {
+  const PendingCorrection({required this.qty, required this.remark});
+
+  final Qty qty;
+  final String remark;
+}
+
+/// An entry that recorded work on a floor, with the corrections the server
+/// holds for it added in.
+class FloorEntry {
+  const FloorEntry({
+    required this.id,
+    required this.boqItemId,
+    required this.entered,
+    required this.net,
+    this.workDate,
+    this.remark,
+    this.enteredBy,
+    this.corrections = 0,
+    this.pending,
+  });
+
+  final int id;
+  final int boqItemId;
+  final String? workDate;
+
+  /// What was first written.
+  final Qty entered;
+
+  /// What the server counts for it now.
+  final Qty net;
+  final String? remark;
+  final String? enteredBy;
+
+  /// How many corrections the server has already taken.
+  final int corrections;
+  final PendingCorrection? pending;
+
+  /// What the screen shows. A correction waiting to send counts, so the list
+  /// agrees with the totals, which count it too.
+  Qty get shown => pending?.qty ?? net;
+
+  bool get wasCorrected => corrections > 0;
+}
+
+/// The latest entries on a floor that can still be corrected, newest first.
+class RecentEntries {
+  const RecentEntries(this.entries);
+
+  /// [rows] are the server's entries for the floor and [unsent] this phone's
+  /// outbox rows. Corrections, resolutions and entries with no quantity are
+  /// folded in or left out: the server corrects only an entry that recorded work.
+  factory RecentEntries.build(List<Map<String, dynamic>> rows, List<OutboxRow> unsent, {int limit = 30}) {
+    final Map<int, Qty> corrected = <int, Qty>{};
+    final Map<int, int> counts = <int, int>{};
+    for (final Map<String, dynamic> row in rows) {
+      final int? target = _intOrNull(row['corrects_entry_id']);
+      if (target == null) continue;
+      corrected[target] = (corrected[target] ?? Qty.zero) + _qty(row['qty_done']);
+      counts[target] = (counts[target] ?? 0) + 1;
+    }
+
+    final Map<int, PendingCorrection> waiting = <int, PendingCorrection>{};
+    for (final OutboxRow row in unsent) {
+      if (row.type != OutboxType.progressCorrection) continue;
+      final Map<String, dynamic> data = _map(jsonDecode(row.payload));
+      waiting[_int(data['entry_id'])] = PendingCorrection(qty: _qty(data['qty_done']), remark: _text(data['remark']) ?? '');
+    }
+
+    final List<Map<String, dynamic>> newestFirst = <Map<String, dynamic>>[...rows]
+      ..sort((a, b) => _int(b['id']).compareTo(_int(a['id'])));
+    final List<FloorEntry> entries = <FloorEntry>[];
+    for (final Map<String, dynamic> row in newestFirst) {
+      if (row['corrects_entry_id'] != null || row['resolves_entry_id'] != null) continue;
+      final Qty entered = _qty(row['qty_done']);
+      if (entered.isZero) continue;
+      final int id = _int(row['id']);
+      entries.add(
+        FloorEntry(
+          id: id,
+          boqItemId: _int(row['boq_item_id']),
+          workDate: _text(row['work_date']),
+          entered: entered,
+          net: entered + (corrected[id] ?? Qty.zero),
+          remark: _text(row['remark']),
+          enteredBy: _text(row['entered_by_name']),
+          corrections: counts[id] ?? 0,
+          pending: waiting[id],
+        ),
+      );
+      if (entries.length >= limit) break;
+    }
+    return RecentEntries(entries);
+  }
+
+  final List<FloorEntry> entries;
+
+  bool get isEmpty => entries.isEmpty;
+}
+
 class StageDef {
   const StageDef({required this.key, required this.no, required this.label, this.hint, this.optional = false});
 
@@ -595,6 +696,11 @@ class ProgressOverview {
         case OutboxType.progressResolve:
           unsentCount++;
           resolved.add(_int(data['entry_id']));
+        case OutboxType.progressCorrection:
+          unsentCount++;
+          final int correctedItem = _int(data['boq_item_id']);
+          // The difference from what the server counts, the way the server will work it out.
+          added[correctedItem] = (added[correctedItem] ?? Qty.zero) + (_qty(data['qty_done']) - _qty(data['net_before']));
         case OutboxType.stageCell:
           unsentCount++;
           changed['${_int(data['project_floor_id'])}|${_text(data['trade'])}|${_text(data['stage'])}'] = StageCell(
