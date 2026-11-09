@@ -43,7 +43,7 @@ class AdminSettingsController extends Controller
     ];
 
     private const WEBSITE_FIELDS = [
-        'site_name', 'contact_email', 'contact_phone', 'contact_address',
+        'site_name', 'contact_email', 'info_email', 'contact_phone', 'contact_address',
         'social_facebook', 'social_instagram', 'social_linkedin', 'social_youtube', 'social_x',
         'announcement', 'announcement_link', 'privacy_text', 'terms_text',
         'color_primary', 'color_primary_dark', 'color_accent',
@@ -227,6 +227,7 @@ class AdminSettingsController extends Controller
         $data = $request->validate([
             'site_name' => ['nullable', 'string', 'max:60'],
             'contact_email' => ['nullable', 'email', 'max:190'],
+            'info_email' => ['nullable', 'email', 'max:190'],
             'contact_phone' => ['nullable', 'string', 'max:30'],
             'contact_address' => ['nullable', 'string', 'max:300'],
             'social_facebook' => $url,

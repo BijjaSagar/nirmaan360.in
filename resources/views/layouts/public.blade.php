@@ -22,7 +22,7 @@
 @endif
 <header class="sticky top-0 z-40 bg-paper/90 backdrop-blur" x-data="{ open: false }">
     <div class="site-wrap flex h-[72px] items-center justify-between gap-6">
-        <a href="{{ route('home') }}" aria-label="{{ config('buildos.brand') }}"><x-brand tone="dark" serif /></a>
+        <a href="{{ route('home') }}" aria-label="{{ config('buildos.brand') }}"><x-brand tone="dark" /></a>
         <nav class="hidden items-center gap-7 text-[15px] text-ink-2 lg:flex">
             <a href="{{ route('home') }}#product" class="hover:text-ink">{{ __('Product') }}</a>
             <a href="{{ route('ai') }}" class="hover:text-ink">{{ __('AI agents') }}</a>
@@ -48,7 +48,7 @@
             <a href="{{ route('pricing') }}" class="block">{{ __('Pricing') }}</a>
             <a href="{{ route('calculators') }}" class="block">{{ __('Calculators') }}</a>
             <a href="{{ route('contact') }}" class="block">{{ __('Contact') }}</a>
-            <x-locale-switch />
+            <x-locale-switch align="left" />
             <div class="flex gap-2 pt-1">
                 @auth
                     <a href="{{ route('dashboard') }}" class="site-btn site-btn-primary">{{ __('Open app') }}</a>
@@ -66,10 +66,11 @@
 <footer class="bg-ink text-paper/65">
     <div class="site-wrap grid gap-10 py-16 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div>
-            <x-brand serif />
+            <x-brand />
             <p class="mt-4 max-w-xs text-[15px] leading-relaxed">{{ __('Site-to-bill software for Indian contractors, builders and consultants.') }}</p>
             <ul class="mt-4 space-y-1.5 text-[15px]">
                 @if (site_setting('contact_email'))<li class="flex items-center gap-2"><x-icon name="mail" class="size-4" /><a href="mailto:{{ site_setting('contact_email') }}" class="hover:text-paper">{{ site_setting('contact_email') }}</a></li>@endif
+                @if (site_setting('info_email'))<li class="flex items-center gap-2"><x-icon name="mail" class="size-4" /><a href="mailto:{{ site_setting('info_email') }}" class="hover:text-paper">{{ site_setting('info_email') }}</a></li>@endif
                 @if (site_setting('contact_phone'))<li class="flex items-center gap-2"><x-icon name="call" class="size-4" /><a href="tel:{{ preg_replace('/[^0-9+]/', '', site_setting('contact_phone')) }}" class="hover:text-paper">{{ site_setting('contact_phone') }}</a></li>@endif
                 @if (site_setting('contact_address'))<li class="flex items-start gap-2"><x-icon name="pin" class="mt-1 size-4" /><span>{{ site_setting('contact_address') }}</span></li>@endif
             </ul>

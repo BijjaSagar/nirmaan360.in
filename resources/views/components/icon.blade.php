@@ -41,6 +41,7 @@
         'plan-contractor' => '<path d="M3 20h18"/><path d="M6 20V9h8v11"/><path d="M14 20v-7h4v7"/><path d="M8.5 12h3M8.5 15h3"/>',
         'plan-business' => '<path d="M3 21h18"/><path d="M8 21V8h8v13"/><path d="M10.5 11h3M10.5 14h3M10.5 17h3"/><path d="M12 8V3M12 3 8 5M12 3h7M18 3v3"/>',
         'plan-enterprise' => '<path d="M2 21h20"/><path d="M4 21v-8h5v8"/><path d="M9 21V6h6v15"/><path d="M15 21V10h5v11"/><path d="M11.5 9h1M11.5 12h1M11.5 15h1"/>',
+        'chevron' => '<path d="m6 9 6 6 6-6"/>',
         'layers' =>'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
     ];
 @endphp

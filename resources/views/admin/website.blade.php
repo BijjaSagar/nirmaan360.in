@@ -28,6 +28,7 @@
             <div class="card-head"><h2 class="card-title">{{ __('Contact details') }}</h2></div>
             <div class="grid gap-3 p-4 sm:grid-cols-2">
                 <x-field :label="__('Email')" name="contact_email"><input id="contact_email" name="contact_email" type="email" value="{{ old('contact_email', $values['contact_email']) }}" class="input"></x-field>
+                <x-field :label="__('Second email')" name="info_email"><input id="info_email" name="info_email" type="email" value="{{ old('info_email', $values['info_email']) }}" class="input"></x-field>
                 <x-field :label="__('Mobile')" name="contact_phone"><input id="contact_phone" name="contact_phone" value="{{ old('contact_phone', $values['contact_phone']) }}" class="input"></x-field>
                 <x-field :label="__('Address')" name="contact_address" class="sm:col-span-2"><input id="contact_address" name="contact_address" value="{{ old('contact_address', $values['contact_address']) }}" class="input"></x-field>
                 @foreach (['social_facebook' => 'Facebook', 'social_instagram' => 'Instagram', 'social_linkedin' => 'LinkedIn', 'social_youtube' => 'YouTube', 'social_x' => 'X'] as $field => $label)

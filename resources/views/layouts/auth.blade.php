@@ -7,7 +7,7 @@
 <body class="site font-sans text-ink antialiased">
 <div class="grid min-h-screen lg:grid-cols-[1fr_minmax(0,520px)]">
     <div class="relative m-3 hidden flex-col justify-between overflow-hidden rounded-[28px] bg-sand p-10 lg:flex">
-        <a href="{{ route('home') }}"><x-brand tone="dark" serif /></a>
+        <a href="{{ route('home') }}"><x-brand tone="dark" full /></a>
         <div class="relative z-10 pb-24">
             <p class="text-[15px] text-laterite">{{ __('Site to bill') }}</p>
             <p class="mt-3 max-w-xl font-serif text-[clamp(2.75rem,4.6vw,4.25rem)] leading-[1.06]">{{ __('The quantity you measure is the quantity you bill.') }}</p>
@@ -17,7 +17,7 @@
     </div>
     <div class="flex flex-col px-6 py-8 sm:px-12">
         <div class="flex items-center justify-between lg:justify-end">
-            <a href="{{ route('home') }}" class="lg:hidden"><x-brand tone="dark" serif /></a>
+            <a href="{{ route('home') }}" class="lg:hidden"><x-brand tone="dark" /></a>
             <x-locale-switch />
         </div>
         <div class="my-auto w-full max-w-sm self-center py-8">

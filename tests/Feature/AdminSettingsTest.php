@@ -238,6 +238,47 @@ class AdminSettingsTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Acme Build')->assertSee('sales@example.com')->assertSee('Monsoon offer')->assertSee('--color-laterite:#123456', false)->assertDontSee('Mobile app in testing');
     }
 
+    public function test_supplied_logo_and_icons_are_the_default(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertSee('images/logo.webp', false)
+            ->assertSee('images/logo-on-dark.webp', false)
+            ->assertSee('favicon.png', false)
+            ->assertSee('apple-touch-icon.png', false);
+
+        foreach (['images/logo.webp', 'images/logo-on-dark.webp', 'images/logo-full.webp', 'favicon.png', 'apple-touch-icon.png'] as $file) {
+            $this->assertFileExists(public_path($file));
+        }
+    }
+
+    public function test_company_name_replaces_the_default_logo(): void
+    {
+        $this->admin();
+        $this->post('/admin/website', ['site_name' => 'Acme Build'])->assertSessionHasNoErrors();
+
+        $this->get('/')->assertSee('Acme Build')->assertDontSee('images/logo.webp', false);
+    }
+
+    public function test_second_email_shows_on_the_site(): void
+    {
+        $this->admin();
+
+        $this->post('/admin/website', ['info_email' => 'not-an-email'])->assertSessionHasErrors('info_email');
+        $this->post('/admin/website', ['contact_email' => 'contact@example.com', 'info_email' => 'info@example.com'])->assertSessionHasNoErrors();
+
+        $this->get('/')->assertSee('contact@example.com')->assertSee('info@example.com');
+        $this->get('/contact')->assertSee('info@example.com');
+    }
+
+    public function test_language_choice_is_a_dropdown_with_every_language(): void
+    {
+        $page = $this->get('/login')->assertOk()->assertSee('aria-haspopup="true"', false)->assertSee('Change language');
+
+        foreach (array_keys(config('buildos.locales')) as $code) {
+            $page->assertSee(route('locale', $code), false);
+        }
+    }
+
     public function test_colours_cannot_inject_css(): void
     {
         $this->admin();
