@@ -13,3 +13,5 @@ Schedule::command('planning:delay-alerts')->dailyAt('07:00')->timezone('Asia/Kol
 Schedule::command('agents:daily-briefs')->dailyAt('08:00')->timezone('Asia/Kolkata');
 // Reports module: email the saved report schedules whose time has come. Sends nothing unless email is set up.
 Schedule::command('reports:send-scheduled')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+// CRM module: follow-up reminders and tender deadline warnings go to the in-app bell.
+Schedule::command('crm:send-reminders')->everyTenMinutes()->withoutOverlapping();
