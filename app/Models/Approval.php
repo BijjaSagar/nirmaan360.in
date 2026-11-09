@@ -53,6 +53,7 @@ class Approval extends Model
     public function documentUrl(): string
     {
         return match ($this->doc_type) {
+            'rfi' => route('rfis.show', $this->approvable_id),
             'measurement' => route('measurements.show', $this->approvable_id),
             'ra_bill' => route('ra-bills.show', $this->approvable_id),
             'dpr' => route('dprs.show', $this->approvable_id),
