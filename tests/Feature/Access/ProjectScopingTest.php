@@ -190,6 +190,11 @@ class ProjectScopingTest extends TestCase
                 continue;
             }
 
+            // This form opens from a purchase order, passed in the query string, so it has no page of its own.
+            if ($route->uri() === 'projects/{project}/grns/create') {
+                continue;
+            }
+
             str_starts_with($route->uri(), 'api/') ? Sanctum::actingAs($this->owner) : $this->actingAs($this->owner);
 
             $response = $this->json('GET', '/'.$this->fakeArgsFor($route->uri()));
