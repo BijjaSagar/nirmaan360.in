@@ -50,6 +50,9 @@ class AdminSettingsTest extends TestCase
             // The form only offers the built-in modules. A plugged-in module adds its own feature to every plan it is on.
             $plans[$key]['features'] = array_values(array_intersect($plan['features'], array_keys(AdminSettingsController::FEATURES)));
 
+            // The form only offers the core features. Features that modules add are re-applied on every request.
+            $plans[$key]['features'] = array_values(array_intersect($plan['features'], array_keys(AdminSettingsController::FEATURES)));
+
             if (! $plan['buyable']) {
                 unset($plans[$key]['monthly'], $plans[$key]['yearly']);
             }
