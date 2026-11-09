@@ -13,6 +13,8 @@ class CrmTenderPayment extends Model
 {
     use Auditable, BelongsToOrganization, SoftDeletes;
 
+    public const COMPANY_WIDE = true;
+
     public const KINDS = ['emd', 'tender_fee', 'processing_fee', 'other'];
 
     public const MODES = ['online', 'dd', 'bg', 'fdr', 'cheque', 'cash', 'other'];

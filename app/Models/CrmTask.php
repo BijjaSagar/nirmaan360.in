@@ -12,6 +12,8 @@ class CrmTask extends Model
 {
     use Auditable, BelongsToOrganization, SoftDeletes;
 
+    public const COMPANY_WIDE = true;
+
     public const SUBJECTS = ['lead', 'tender', 'company'];
 
     protected $guarded = [];

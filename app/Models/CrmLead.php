@@ -12,6 +12,8 @@ class CrmLead extends Model
 {
     use Auditable, BelongsToOrganization, SoftDeletes;
 
+    public const COMPANY_WIDE = true;
+
     public const SOURCES = ['website', 'meta_ads', 'referral', 'walk_in', 'tender_portal', 'cold_call', 'other'];
 
     public const STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'];

@@ -11,6 +11,8 @@ class CrmActivity extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     public const KINDS = ['note', 'call', 'meeting', 'email', 'whatsapp', 'stage', 'system'];
 
     /** The kinds a person can log by hand. */

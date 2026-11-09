@@ -11,6 +11,8 @@ class CrmCompanyProfile extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $guarded = [];
 
     protected function casts(): array

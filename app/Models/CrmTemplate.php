@@ -10,6 +10,8 @@ class CrmTemplate extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     public const CHANNELS = ['whatsapp', 'email'];
 
     protected $guarded = [];

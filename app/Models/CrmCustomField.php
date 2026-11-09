@@ -10,6 +10,8 @@ class CrmCustomField extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     public const ENTITIES = ['lead', 'company', 'tender'];
 
     public const TYPES = ['text', 'number', 'date', 'select'];
