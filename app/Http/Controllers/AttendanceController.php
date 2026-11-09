@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Models\Project;
 use App\Models\Worker;
+use App\Services\AttendanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -26,7 +26,7 @@ class AttendanceController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(Request $request, Project $project, AttendanceService $service): RedirectResponse
     {
         $data = $request->validate([
             'date' => ['required', 'date', 'before_or_equal:today'],
@@ -35,22 +35,8 @@ class AttendanceController extends Controller
             'attendance.*.ot_hours' => ['nullable', 'numeric', 'min:0', 'max:16'],
         ]);
 
-        $workerIds = Worker::whereIn('id', array_keys($data['attendance']))->pluck('id');
-
-        DB::transaction(function () use ($data, $project, $workerIds, $request) {
-            foreach ($workerIds as $workerId) {
-                $row = $data['attendance'][$workerId];
-
-                if (blank($row['status'] ?? null)) {
-                    continue;
-                }
-
-                Attendance::updateOrCreate(
-                    ['organization_id' => $project->organization_id, 'project_id' => $project->id, 'worker_id' => $workerId, 'attendance_date' => $data['date']],
-                    ['status' => $row['status'], 'ot_hours' => $row['ot_hours'] ?? 0, 'method' => 'manual', 'marked_by' => $request->user()->id],
-                );
-            }
-        });
+        $marks = collect($data['attendance'])->map(fn ($row, $workerId) => [...$row, 'worker_id' => $workerId])->values()->all();
+        $service->markDay($project, $data['date'], $marks, $request->user());
 
         return redirect()->route('attendance.index', ['project' => $project, 'date' => $data['date']])->with('success', __('Attendance saved.'));
     }

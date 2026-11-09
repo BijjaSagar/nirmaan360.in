@@ -19,7 +19,7 @@ class Dpr extends Model
 
     protected function casts(): array
     {
-        return ['report_date' => 'date'];
+        return ['report_date' => 'date', 'client_updated_at' => 'datetime'];
     }
 
     public function approvalDocType(): string

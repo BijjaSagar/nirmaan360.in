@@ -11,7 +11,7 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->session()->get('locale', $request->user()?->locale);
+        $locale = ($request->hasSession() ? $request->session()->get('locale') : null) ?? $request->user()?->locale;
 
         if ($locale && array_key_exists($locale, config('buildos.locales'))) {
             App::setLocale($locale);

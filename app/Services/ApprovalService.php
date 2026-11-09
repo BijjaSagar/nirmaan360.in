@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\Approval;
 use App\Models\ApprovalRule;
+use App\Models\ApprovalStep;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Notifications\ApprovalUpdate;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -88,8 +90,28 @@ class ApprovalService
         return $approval->submitted_by !== $user->id && $user->role === $approval->currentRole();
     }
 
-    /** Apply approve, return or reject. Return and reject need a remark. */
-    public function act(Approval $approval, User $by, string $action, ?string $remark = null): Approval
+    /**
+     * Everything in review, split into what this user can act on and the rest.
+     *
+     * @return array{0: Collection<int, Approval>, 1: Collection<int, Approval>}
+     */
+    public function inbox(User $user): array
+    {
+        [$mine, $waiting] = Approval::with('approvable', 'submitter')
+            ->where('status', 'IN_REVIEW')
+            ->latest('id')
+            ->get()
+            ->partition(fn (Approval $approval) => $this->canAct($approval, $user));
+
+        return [$mine->values(), $waiting->values()];
+    }
+
+    /**
+     * Apply approve, return or reject. Return and reject need a remark.
+     * A repeated $clientUuid returns the approval as it stands and applies nothing,
+     * even though the caller usually cannot act on it any more.
+     */
+    public function act(Approval $approval, User $by, string $action, ?string $remark = null, ?string $clientUuid = null): Approval
     {
         if (! in_array($action, ['approve', 'return', 'reject'], true)) {
             throw ValidationException::withMessages(['action' => __('Unknown action.')]);
@@ -99,12 +121,16 @@ class ApprovalService
             throw ValidationException::withMessages(['remark' => __('A remark is required to return or reject.')]);
         }
 
-        return DB::transaction(function () use ($approval, $by, $action, $remark) {
+        return DB::transaction(function () use ($approval, $by, $action, $remark, $clientUuid) {
             $approval = Approval::lockForUpdate()->findOrFail($approval->id);
+
+            if ($clientUuid !== null && $this->alreadyApplied($approval, $clientUuid)) {
+                return $approval;
+            }
 
             abort_unless($this->canAct($approval, $by), 403, __('You cannot act on this approval.'));
 
-            $this->applyAction($approval, $action, $remark, $by->role, $by);
+            $this->applyAction($approval, $action, $remark, $by->role, $by, null, $clientUuid);
 
             return $approval->refresh();
         });
@@ -132,12 +158,23 @@ class ApprovalService
         });
     }
 
-    private function applyAction(Approval $approval, string $action, ?string $remark, string $role, ?User $by, ?string $actorName = null): void
+    private function alreadyApplied(Approval $approval, string $clientUuid): bool
+    {
+        $step = ApprovalStep::where('client_uuid', $clientUuid)->first();
+
+        if ($step && $step->approval_id !== $approval->id) {
+            throw ValidationException::withMessages(['client_uuid' => __('This request id was already used on another approval.')]);
+        }
+
+        return $step !== null;
+    }
+
+    private function applyAction(Approval $approval, string $action, ?string $remark, string $role, ?User $by, ?string $actorName = null, ?string $clientUuid = null): void
     {
         $level = $approval->current_level;
         $document = $approval->approvable()->withoutGlobalScopes()->firstOrFail();
 
-        $this->logStep($approval, $level, $role, $by, $action, $remark, $actorName);
+        $this->logStep($approval, $level, $role, $by, $action, $remark, $actorName, $clientUuid);
         AuditLog::record('approval.'.$action, $document, null, ['level' => $level, 'remark' => $remark, 'actor' => $by?->name ?? $actorName]);
 
         match (true) {
@@ -158,7 +195,7 @@ class ApprovalService
         $apply();
     }
 
-    private function logStep(Approval $approval, int $level, ?string $role, ?User $by, string $action, ?string $remark, ?string $actorName = null): void
+    private function logStep(Approval $approval, int $level, ?string $role, ?User $by, string $action, ?string $remark, ?string $actorName = null, ?string $clientUuid = null): void
     {
         $approval->steps()->create([
             'organization_id' => $approval->organization_id,
@@ -169,6 +206,7 @@ class ApprovalService
             'action' => $action,
             'remark' => $remark,
             'acted_at' => now(),
+            'client_uuid' => $clientUuid,
         ]);
     }
 

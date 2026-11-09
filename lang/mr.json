@@ -190,5 +190,19 @@
     "Save entry": "नोंद जतन करा",
     "Approval trail": "मंजुरीची नोंद",
     "Not submitted yet.": "अजून पाठवलेले नाही.",
-    "Remark": "शेरा"
+    "Remark": "शेरा",
+    "Only draft or returned DPRs can be changed.": "फक्त मसुदा किंवा परत आलेले DPR बदलता येतात.",
+    "This request id was already used on another approval.": "हा विनंती क्रमांक दुसऱ्या मंजुरीसाठी आधीच वापरला आहे.",
+    "The parent record has not reached the server yet.": "मूळ नोंद अजून सर्व्हरवर पोहोचलेली नाही.",
+    "This record could not be saved.": "ही नोंद जतन करता आली नाही.",
+    "Project not found.": "प्रकल्प सापडला नाही.",
+    "Record not found on the server.": "ही नोंद सर्व्हरवर सापडली नाही.",
+    "This record belongs to another project.": "ही नोंद दुसऱ्या प्रकल्पाची आहे.",
+    "A remark is required to return or reject.": "परत पाठवण्यासाठी किंवा नाकारण्यासाठी शेरा आवश्यक आहे.",
+    "You cannot act on this approval.": "तुम्ही या मंजुरीवर कारवाई करू शकत नाही.",
+    "This expense is more than the wallet balance.": "हा खर्च वॉलेटमधील शिलकीपेक्षा जास्त आहे.",
+    "Only draft or returned documents can be submitted.": "फक्त मसुदा किंवा परत आलेले दस्तऐवज पाठवता येतात.",
+    "This entry is under review and cannot be changed.": "ही नोंद तपासणीत आहे, त्यामुळे बदलता येत नाही.",
+    "Your plan does not include this module. Upgrade to continue.": "तुमच्या योजनेत हा विभाग नाही. पुढे जाण्यासाठी योजना वाढवा.",
+    "These details do not match our records.": "हे तपशील आमच्या नोंदींशी जुळत नाहीत."
 }

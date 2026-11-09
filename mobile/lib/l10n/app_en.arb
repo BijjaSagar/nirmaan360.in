@@ -1,0 +1,121 @@
+{
+  "@@locale": "en",
+  "appName": "Nirmaan360",
+  "commonBack": "Back",
+  "commonCancel": "Cancel",
+  "commonDone": "Done",
+  "commonRetry": "Try again",
+  "commonSave": "Save",
+  "commonToday": "Today",
+  "designAttendanceAbsent": "Absent",
+  "designAttendanceHalf": "Half day",
+  "designAttendanceOvertime": "Overtime",
+  "designAttendancePresent": "Present",
+  "designExpenseFood": "Food",
+  "designExpenseFuel": "Fuel",
+  "designExpenseLabour": "Labour",
+  "designExpenseMaterials": "Materials",
+  "designExpenseOther": "Other",
+  "designExpenseRepairs": "Repairs",
+  "designExpenseTools": "Tools",
+  "designExpenseTravel": "Travel",
+  "designIssueClosed": "Closed",
+  "designIssueInProgress": "In progress",
+  "designIssueOpen": "Open",
+  "designIssueResolved": "Resolved",
+  "designKeypadDelete": "Delete",
+  "designKeypadNext": "Next",
+  "designPriorityCritical": "Critical",
+  "designPriorityHigh": "High",
+  "designPriorityLow": "Low",
+  "designPriorityMedium": "Medium",
+  "designStepperDecrease": "Decrease",
+  "designStepperIncrease": "Increase",
+  "designTradeBarBender": "Bar bender",
+  "designTradeCarpenter": "Carpenter",
+  "designTradeElectrician": "Electrician",
+  "designTradeHelper": "Helper",
+  "designTradeMason": "Mason",
+  "designTradeOperator": "Operator",
+  "designTradePainter": "Painter",
+  "designTradePlumber": "Plumber",
+  "designTradeSupervisor": "Supervisor",
+  "designTradeWelder": "Welder",
+  "designWeatherClear": "Clear",
+  "designWeatherCloudy": "Cloudy",
+  "designWeatherHot": "Hot",
+  "designWeatherRain": "Rain",
+  "designWeatherWindy": "Windy",
+  "statusApproved": "Approved",
+  "statusDraft": "Draft",
+  "statusInReview": "In review",
+  "statusQueued": "On phone",
+  "statusRejected": "Rejected",
+  "statusReturned": "Returned",
+  "statusSynced": "Sent",
+  "syncAllSent": "Everything is sent",
+  "syncAttentionCount": "{count} need your attention",
+  "@syncAttentionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncBlocked": "Waiting for an earlier item",
+  "syncDiscard": "Discard",
+  "syncInProgress": "Sending…",
+  "syncLastSynced": "Last synced {time}",
+  "@syncLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "syncNow": "Sync now",
+  "syncOffline": "No network. Your work is safe on this phone.",
+  "syncPendingCount": "{count} waiting to send",
+  "@syncPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "syncProgress": "{done} of {total} sent",
+  "@syncProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "syncPulling": "Getting latest figures…",
+  "syncRateLimited": "The server is busy. Sending will resume shortly.",
+  "syncReasonApproved": "This record was already approved. Your change was not applied.",
+  "syncReasonFileMissing": "The photo is missing from this phone.",
+  "syncReasonForbidden": "You do not have permission to do this.",
+  "syncReasonInReview": "This record is with the approver. Your change was not applied.",
+  "syncReasonParentMissing": "The record this file belongs to was not found on the server.",
+  "syncReasonPlanFeature": "Your plan does not include this module.",
+  "syncReasonRejected": "This record was rejected. Your change was not applied.",
+  "syncReasonUnexpected": "The server sent an unexpected reply.",
+  "syncReasonValidation": "The server could not accept this entry. Please correct it.",
+  "syncRetry": "Try again",
+  "syncSignInAgain": "Sign in again to keep sending. Your work is safe.",
+  "syncStaleLog": "A newer change was already on the server, so this one was not applied.",
+  "syncTypeAttendance": "Attendance",
+  "syncTypeDpr": "Daily report",
+  "syncTypeDprPhoto": "Report photo",
+  "syncTypeDprSubmit": "Report submission",
+  "syncTypeIssue": "Issue",
+  "syncTypeIssueStatus": "Issue status",
+  "syncTypeMeasurement": "Measurement",
+  "syncTypeMeasurementSubmit": "Measurement submission",
+  "syncTypePettyBill": "Bill photo",
+  "syncTypePettyCash": "Petty cash entry"
+}

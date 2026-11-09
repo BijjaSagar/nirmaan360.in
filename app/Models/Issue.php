@@ -16,7 +16,7 @@ class Issue extends Model
 
     protected function casts(): array
     {
-        return ['due_date' => 'date', 'resolved_at' => 'datetime'];
+        return ['due_date' => 'date', 'resolved_at' => 'datetime', 'client_updated_at' => 'datetime'];
     }
 
     public function project(): BelongsTo

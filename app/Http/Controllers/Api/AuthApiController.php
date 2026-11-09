@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Presenters\UserPresenter;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class AuthApiController extends Controller
 
         return response()->json([
             'token' => $user->createToken($data['device_name'])->plainTextToken,
-            'user' => $this->profile($user),
+            'user' => UserPresenter::present($user),
         ]);
     }
 
@@ -40,18 +41,6 @@ class AuthApiController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json(['user' => $this->profile($request->user())]);
-    }
-
-    private function profile(User $user): array
-    {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-            'locale' => $user->locale,
-            'organization' => ['id' => $user->organization_id, 'name' => $user->organization->name],
-        ];
+        return response()->json(['user' => UserPresenter::present($request->user())]);
     }
 }

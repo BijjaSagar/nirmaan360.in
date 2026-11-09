@@ -10,7 +10,6 @@ use App\Services\MeasurementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class MeasurementController extends Controller
@@ -120,20 +119,6 @@ class MeasurementController extends Controller
 
     private function validated(Request $request, Project $project): array
     {
-        $data = $request->validate([
-            'boq_item_id' => ['required', Rule::exists('boq_items', 'id')->where('project_id', $project->id)->whereNull('deleted_at')],
-            'work_order_id' => ['nullable', Rule::exists('work_orders', 'id')->where('project_id', $project->id)],
-            'measured_on' => ['required', 'date', 'before_or_equal:today'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:120'],
-            'nos' => ['required', 'numeric', 'gt:0', 'max:99999999'],
-            'length' => ['nullable', 'numeric', 'gt:0', 'max:99999999'],
-            'breadth' => ['nullable', 'numeric', 'gt:0', 'max:99999999'],
-            'depth' => ['nullable', 'numeric', 'gt:0', 'max:99999999'],
-            'remarks' => ['nullable', 'string', 'max:500'],
-            'client_uuid' => ['nullable', 'uuid'],
-        ]);
-
-        return [...$data, 'is_deduction' => $request->boolean('is_deduction')];
+        return [...$request->validate($this->service->rules($project)), 'is_deduction' => $request->boolean('is_deduction')];
     }
 }

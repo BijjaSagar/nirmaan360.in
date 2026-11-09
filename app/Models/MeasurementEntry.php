@@ -28,6 +28,7 @@ class MeasurementEntry extends Model
             'qty' => 'decimal:3',
             'is_deduction' => 'boolean',
             'deviation' => 'boolean',
+            'client_updated_at' => 'datetime',
         ];
     }
 

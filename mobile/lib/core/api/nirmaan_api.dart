@@ -1,0 +1,161 @@
+import 'dart:typed_data';
+
+/// One item in `POST /sync/push`.
+class PushItem {
+  const PushItem({
+    required this.type,
+    required this.clientUuid,
+    required this.projectId,
+    required this.data,
+    this.serverId,
+    this.clientUpdatedAt,
+  });
+
+  final String type;
+  final String clientUuid;
+  final int projectId;
+  final int? serverId;
+  final String? clientUpdatedAt;
+  final Map<String, dynamic> data;
+
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'client_uuid': clientUuid,
+    'project_id': projectId,
+    'server_id': serverId,
+    'client_updated_at': clientUpdatedAt,
+    'data': data,
+  };
+}
+
+/// One entry of the `results` array from `POST /sync/push`.
+class PushResult {
+  const PushResult({
+    required this.clientUuid,
+    required this.status,
+    this.id,
+    this.serverStatus,
+    this.reason,
+    this.errors,
+  });
+
+  factory PushResult.fromJson(Map<String, dynamic> json) => PushResult(
+    // Null when the server could not read the item; it then matches no row.
+    clientUuid: json['client_uuid'] as String? ?? '',
+    status: json['status'] as String,
+    id: (json['id'] as num?)?.toInt(),
+    serverStatus: json['server_status'] as String?,
+    reason: json['reason'] as String?,
+    errors: _errorMap(json['errors']),
+  );
+
+  final String clientUuid;
+  final String status;
+  final int? id;
+  final String? serverStatus;
+  final String? reason;
+  final Map<String, List<String>>? errors;
+}
+
+Map<String, List<String>>? _errorMap(Object? raw) {
+  if (raw is! Map) return null;
+  return raw.map(
+    (key, value) => MapEntry(
+      key.toString(),
+      value is List ? value.map((e) => e.toString()).toList() : [value.toString()],
+    ),
+  );
+}
+
+/// Parses a Laravel validation `errors` map.
+Map<String, List<String>> parseValidationErrors(Object? raw) =>
+    _errorMap(raw) ?? const {};
+
+class LoginResult {
+  const LoginResult({required this.token, required this.user});
+
+  final String token;
+  final Map<String, dynamic> user;
+}
+
+/// A file for `POST /sync/upload`.
+class UploadRequest {
+  const UploadRequest({
+    required this.type,
+    required this.clientUuid,
+    required this.filePath,
+    this.parentClientUuid,
+    this.parentId,
+    this.caption,
+    this.takenAt,
+  });
+
+  /// `dpr_photo` or `petty_bill`.
+  final String type;
+  final String clientUuid;
+
+  /// Absolute path, resolved at send time.
+  final String filePath;
+  final String? parentClientUuid;
+  final int? parentId;
+  final String? caption;
+  final String? takenAt;
+}
+
+class UploadResult {
+  const UploadResult({required this.status, required this.id});
+
+  final String status;
+  final int id;
+}
+
+class ApprovalsResponse {
+  const ApprovalsResponse({required this.items, required this.waitingCount});
+
+  final List<Map<String, dynamic>> items;
+  final int waitingCount;
+}
+
+/// The server, as the app sees it. Every method throws [ApiFailure] subtypes.
+abstract interface class NirmaanApi {
+  Future<LoginResult> login({
+    required String email,
+    required String password,
+    required String deviceName,
+  });
+
+  Future<void> logout();
+
+  /// The `user` object of `GET /me`.
+  Future<Map<String, dynamic>> me();
+
+  Future<List<PushResult>> push(List<PushItem> items);
+
+  /// The whole `GET /sync/pull` body. [since] is passed back byte for byte.
+  Future<Map<String, dynamic>> pull({String? since});
+
+  Future<UploadResult> upload(UploadRequest request);
+
+  Future<ApprovalsResponse> approvals();
+
+  /// `action` is approve, return or reject.
+  Future<Map<String, dynamic>> actOnApproval(
+    int approvalId, {
+    required String action,
+    required String clientUuid,
+    String? remark,
+  });
+
+  /// Returns the created worker row. Idempotent on `clientUuid`.
+  Future<Map<String, dynamic>> addWorker({
+    required String clientUuid,
+    required String name,
+    required String trade,
+    String? phone,
+    String type,
+  });
+
+  Future<Uint8List> dprPhotoBytes(int photoId);
+
+  Future<Uint8List> pettyBillBytes(int entryId);
+}

@@ -9,6 +9,7 @@ use App\Models\Dpr;
 use App\Models\Issue;
 use App\Models\Organization;
 use App\Models\Party;
+use App\Models\PettyCashWallet;
 use App\Models\Project;
 use App\Models\Site;
 use App\Models\User;
@@ -16,6 +17,7 @@ use App\Models\Worker;
 use App\Models\WorkOrder;
 use App\Services\ApprovalService;
 use App\Services\MeasurementService;
+use App\Services\PettyCashService;
 use App\Services\RaBillService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
@@ -123,43 +125,100 @@ class DemoSeeder extends Seeder
         $workOrder->items()->create(['organization_id' => $organization->id, 'boq_item_id' => $items['2.1']->id, 'qty' => '620.000', 'rate' => '2150.00']);
 
         $this->seedSiteRecords($organization, $project, $site, $items, $users);
+        $this->seedPettyCash($organization, $project, $users);
         $this->seedMeasurementsAndBill($project, $items, $users, $workOrder);
     }
 
     private function seedSiteRecords(Organization $organization, Project $project, Site $site, array $items, array $users): void
     {
-        foreach ([['Dattu Pawar', 'Mason', '950'], ['Ganesh Kale', 'Bar bender', '900'], ['Sunil Gaikwad', 'Carpenter', '950'], ['Anita Bhosale', 'Helper', '650']] as [$name, $trade, $wage]) {
+        foreach ([
+            ['Dattu Pawar', 'Mason', '950'], ['Ganesh Kale', 'Bar bender', '900'], ['Sunil Gaikwad', 'Carpenter', '950'],
+            ['Anita Bhosale', 'Helper', '650'], ['Prakash Shinde', 'Mason', '950'], ['Vinod Jagtap', 'Electrician', '1100'],
+            ['Imran Shaikh', 'Plumber', '1050'], ['Lata Mane', 'Helper', '650'], ['Mahesh Thorat', 'Operator', '1200'],
+        ] as $index => [$name, $trade, $wage]) {
             $worker = Worker::create(['organization_id' => $organization->id, 'name' => $name, 'trade' => $trade, 'daily_wage' => $wage]);
-            Attendance::create(['organization_id' => $organization->id, 'project_id' => $project->id, 'worker_id' => $worker->id, 'attendance_date' => now()->toDateString(), 'status' => 'present', 'marked_by' => $users['engineer']->id]);
+
+            // Only the first few are marked, so today's register opens part-done.
+            if ($index < 4) {
+                Attendance::create(['organization_id' => $organization->id, 'project_id' => $project->id, 'worker_id' => $worker->id, 'attendance_date' => now()->toDateString(), 'status' => 'present', 'marked_by' => $users['engineer']->id]);
+            }
         }
 
+        $this->seedDpr($project, $site, $items, $users, 0, 'Level 4 slab casting completed for panels S1 and S2.');
+
+        $approvals = app(ApprovalService::class);
+
+        // Waiting at the PM.
+        $approvals->submit($this->seedDpr($project, $site, $items, $users, 1, 'Level 4 beam reinforcement tied and checked.'), $users['engineer']);
+
+        // Sent back to the engineer.
+        $approval = $approvals->submit($this->seedDpr($project, $site, $items, $users, 2, 'Level 4 shuttering erected for panels S1 to S3.'), $users['engineer']);
+        $approvals->act($approval, $users['pm'], 'return', 'Add the crane hours and the hindrance from the late steel delivery.');
+
+        foreach ([
+            ['Honeycombing at column C7, Level 3', 'high', 'open', 'Grid C7', 3],
+            ['Seepage at lift pit retaining wall', 'medium', 'in_progress', 'Lift pit, basement', 7],
+            ['Shuttering plates short for Level 5', 'critical', 'open', 'Store yard', 1],
+        ] as [$title, $priority, $status, $location, $dueInDays]) {
+            Issue::create([
+                'organization_id' => $organization->id,
+                'project_id' => $project->id,
+                'title' => $title,
+                'priority' => $priority,
+                'status' => $status,
+                'location_note' => $location,
+                'assigned_to' => $users['engineer']->id,
+                'raised_by' => $users['pm']->id,
+                'due_date' => now()->addDays($dueInDays),
+            ]);
+        }
+    }
+
+    private function seedDpr(Project $project, Site $site, array $items, array $users, int $daysAgo, string $summary): Dpr
+    {
         $dpr = Dpr::create([
-            'organization_id' => $organization->id,
+            'organization_id' => $project->organization_id,
             'project_id' => $project->id,
             'site_id' => $site->id,
-            'report_date' => now()->toDateString(),
+            'report_date' => now()->subDays($daysAgo)->toDateString(),
             'weather' => 'Clear',
-            'summary' => 'Level 4 slab casting completed for panels S1 and S2.',
+            'summary' => $summary,
             'status' => 'DRAFT',
             'created_by' => $users['engineer']->id,
         ]);
         $dpr->manpower()->createMany([
-            ['organization_id' => $organization->id, 'trade' => 'Mason', 'count' => 12],
-            ['organization_id' => $organization->id, 'trade' => 'Helper', 'count' => 30],
+            ['organization_id' => $project->organization_id, 'trade' => 'Mason', 'count' => 12],
+            ['organization_id' => $project->organization_id, 'trade' => 'Helper', 'count' => 30],
         ]);
-        $dpr->workItems()->create(['organization_id' => $organization->id, 'boq_item_id' => $items['2.1']->id, 'qty' => '68.000']);
+        $dpr->workItems()->create(['organization_id' => $project->organization_id, 'boq_item_id' => $items['2.1']->id, 'qty' => '68.000']);
 
-        Issue::create([
+        return $dpr;
+    }
+
+    private function seedPettyCash(Organization $organization, Project $project, array $users): void
+    {
+        $wallet = PettyCashWallet::create([
             'organization_id' => $organization->id,
             'project_id' => $project->id,
-            'title' => 'Honeycombing at column C7, Level 3',
-            'priority' => 'high',
-            'status' => 'open',
-            'location_note' => 'Grid C7',
-            'assigned_to' => $users['engineer']->id,
-            'raised_by' => $users['pm']->id,
-            'due_date' => now()->addDays(3),
+            'user_id' => $users['engineer']->id,
+            'name' => 'Site imprest, Tower B',
         ]);
+
+        $service = app(PettyCashService::class);
+
+        foreach ([
+            ['topup', '25000', null, 'Imprest for the month', 5, $users['accounts']],
+            ['expense', '450', 'Fuel', 'Diesel for the site generator', 3, $users['engineer']],
+            ['expense', '1200', 'Food', 'Tea and lunch for the slab pour crew', 1, $users['engineer']],
+        ] as [$type, $amount, $category, $description, $daysAgo, $by]) {
+            $service->addEntry($wallet, [
+                'type' => $type,
+                'amount' => $amount,
+                'category' => $category,
+                'description' => $description,
+                'entry_date' => now()->subDays($daysAgo)->toDateString(),
+            ], $by);
+        }
     }
 
     private function seedMeasurementsAndBill(Project $project, array $items, array $users, WorkOrder $workOrder): void
@@ -195,6 +254,18 @@ class DemoSeeder extends Seeder
             'depth' => '0.5',
         ], $users['engineer']);
         $measurements->submit($pending, $users['engineer']);
+
+        // One sent back to the engineer with a remark.
+        $returned = $measurements->create($project, [
+            'boq_item_id' => $items['2.3']->id,
+            'measured_on' => now()->subDays(2)->toDateString(),
+            'location' => 'Level 3, grid B',
+            'nos' => '4',
+            'length' => '3.2',
+            'breadth' => '0.2',
+            'depth' => '3',
+        ], $users['engineer']);
+        $approvals->act($measurements->submit($returned, $users['engineer']), $users['qs'], 'return', 'Deduct the door openings and resubmit.');
 
         app(RaBillService::class)->generate($project, 'client', now()->startOfMonth()->subMonth()->toDateString(), now()->toDateString(), $users['qs']);
     }
