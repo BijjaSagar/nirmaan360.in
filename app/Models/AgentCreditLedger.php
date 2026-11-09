@@ -9,6 +9,8 @@ class AgentCreditLedger extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     public const UPDATED_AT = null;
 
     protected $table = 'credit_ledger';

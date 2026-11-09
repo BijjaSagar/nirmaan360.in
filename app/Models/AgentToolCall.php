@@ -10,6 +10,8 @@ class AgentToolCall extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'run';
+
     public const PENDING = 'PENDING';
 
     public const OK = 'OK';

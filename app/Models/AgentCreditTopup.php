@@ -11,6 +11,8 @@ class AgentCreditTopup extends Model
 {
     use BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $table = 'credit_topups';
 
     protected $guarded = [];
