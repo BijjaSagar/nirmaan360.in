@@ -11,7 +11,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -27,15 +26,9 @@ class PettyCashController extends Controller
         ]);
     }
 
-    public function storeWallet(Request $request, Project $project): RedirectResponse
+    public function storeWallet(Request $request, Project $project, PettyCashService $service): RedirectResponse
     {
-        $project->pettyCashWallets()->create([
-            ...$request->validate([
-                'name' => ['required', 'string', 'max:120'],
-                'user_id' => ['nullable', Rule::exists('users', 'id')->where('organization_id', $request->user()->organization_id)],
-            ]),
-            'organization_id' => $project->organization_id,
-        ]);
+        $service->createWallet($project, $request->validate($service->walletRules($request->user())));
 
         return back()->with('success', __('Wallet created.'));
     }

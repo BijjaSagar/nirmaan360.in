@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BoqItem;
 use App\Models\Party;
 use App\Models\Project;
+use App\Services\ProjectService;
 use App\Support\Dec;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,8 @@ use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
+    public function __construct(private ProjectService $service) {}
+
     public function index(): View
     {
         return view('projects.index', ['projects' => Project::with('client')->latest('id')->paginate(20)]);
@@ -25,13 +28,9 @@ class ProjectController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        abort_unless($request->user()->organization->canAddProject(), 403, __('Your plan project limit has been reached. Upgrade to add more.'));
+        $this->service->assertWithinPlan($request->user()->organization);
 
-        $project = Project::create([
-            ...$this->validated($request),
-            'status' => 'active',
-            'created_by' => $request->user()->id,
-        ]);
+        $project = $this->service->create($this->validated($request), $request->user());
 
         return redirect()->route('projects.show', $project)->with('success', __('Project created.'));
     }
@@ -94,29 +93,7 @@ class ProjectController extends Controller
 
     private function validated(Request $request, ?Project $project = null): array
     {
-        $organizationId = $request->user()->organization_id;
-
-        $data = $request->validate([
-            'deduction_order' => ['required', Rule::in(array_keys(config('buildos.deduction_orders')))],
-            'code' => [
-                'required', 'string', 'max:32', 'alpha_dash',
-                Rule::unique('projects', 'code')->where('organization_id', $organizationId)->ignore($project?->id),
-            ],
-            'name' => ['required', 'string', 'max:160'],
-            'client_id' => ['nullable', org_exists('parties')],
-            'location' => ['nullable', 'string', 'max:160'],
-            'state' => ['nullable', 'string', 'max:60'],
-            'contract_value' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'retention_pct' => ['required', 'numeric', 'between:0,100'],
-            'tds_pct' => ['required', 'numeric', 'between:0,100'],
-            'gst_pct' => ['required', 'numeric', 'between:0,100'],
-            'advance_amount' => ['required', 'numeric', 'min:0'],
-            'advance_recovery_pct' => ['required', 'numeric', 'between:0,100'],
-            'measurement_tolerance_pct' => ['required', 'numeric', 'between:0,100'],
-            'deduction_basis' => ['required', Rule::in(['gross', 'running'])],
-        ]);
+        $data = $request->validate($this->service->rules($request->user(), $project));
 
         return [...$data, 'deduction_order' => explode(',', $data['deduction_order'])];
     }

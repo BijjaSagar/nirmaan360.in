@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\PettyCashEntry;
 use App\Models\PettyCashWallet;
+use App\Models\Project;
 use App\Models\User;
 use App\Support\Dec;
+use App\Support\Idempotent;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -24,6 +26,29 @@ class PettyCashService
             'entry_date' => ['required', 'date', 'before_or_equal:today'],
             'client_uuid' => ['nullable', 'uuid'],
         ];
+    }
+
+    public function walletRules(User $user): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:120'],
+            'user_id' => ['bail', 'nullable', 'integer', Rule::exists('users', 'id')->where('organization_id', $user->organization_id)],
+        ];
+    }
+
+    /** Open a wallet. A repeated client_uuid returns the original row. */
+    public function createWallet(Project $project, array $data): PettyCashWallet
+    {
+        $uuid = $data['client_uuid'] ?? null;
+
+        if ($uuid && ($existing = $this->findWallet($project->organization_id, $uuid))) {
+            return $existing;
+        }
+
+        return Idempotent::create(
+            fn () => $project->pettyCashWallets()->create([...$data, 'organization_id' => $project->organization_id]),
+            fn () => $this->findWallet($project->organization_id, (string) $uuid),
+        );
     }
 
     /**
@@ -68,6 +93,11 @@ class PettyCashService
 
             return true;
         });
+    }
+
+    private function findWallet(int $organizationId, string $uuid): ?PettyCashWallet
+    {
+        return PettyCashWallet::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
     }
 
     public function findByClientUuid(int $organizationId, string $uuid): ?PettyCashEntry

@@ -21,7 +21,7 @@ class AuthApiTest extends ApiTestCase
 
         $can = $response->json('user')['can'];
         $this->assertSame([
-            'project.view', 'boq.view', 'dpr.view', 'dpr.create', 'dpr.approve', 'issue.view', 'issue.manage',
+            'project.view', 'project.manage', 'boq.view', 'boq.manage', 'dpr.view', 'dpr.create', 'dpr.approve', 'issue.view', 'issue.manage',
             'attendance.view', 'attendance.manage', 'worker.view', 'worker.manage', 'petty_cash.view', 'petty_cash.manage',
             'measurement.view', 'measurement.create', 'measurement.approve', 'ra_bill.view', 'ra_bill.approve',
         ], array_keys($can));

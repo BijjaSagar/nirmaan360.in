@@ -8,7 +8,7 @@ final class UserPresenter
 {
     /** The exact permissions the field app asks about. */
     private const PERMISSIONS = [
-        'project.view', 'boq.view',
+        'project.view', 'project.manage', 'boq.view', 'boq.manage',
         'dpr.view', 'dpr.create', 'dpr.approve',
         'issue.view', 'issue.manage',
         'attendance.view', 'attendance.manage',
