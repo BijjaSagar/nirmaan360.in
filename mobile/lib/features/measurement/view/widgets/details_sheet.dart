@@ -2,15 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/design/design.dart';
+import '../../../../core/sync/record_photos.dart' show RecordPhotos;
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../site_progress/view/widgets/progress_widgets.dart' show ProgressPhotoRow;
 import 'book_kit.dart';
 
 class EntryDetails {
-  const EntryDetails({required this.location, required this.description, required this.measuredOn});
+  const EntryDetails({
+    required this.location,
+    required this.description,
+    required this.measuredOn,
+    this.photos = const <String>[],
+  });
 
   final String location;
   final String description;
   final String measuredOn;
+
+  /// Paths of the photos taken for this row.
+  final List<String> photos;
 }
 
 /// Location, note and date live in a sheet, so a phone keyboard for words never
@@ -37,6 +47,7 @@ class _DetailsSheetState extends State<_DetailsSheet> {
   late final TextEditingController _location = TextEditingController(text: widget.initial.location);
   late final TextEditingController _description = TextEditingController(text: widget.initial.description);
   late String _date = widget.initial.measuredOn;
+  late List<String> _photos = widget.initial.photos;
 
   static const int _locationLimit = 120;
   static const int _descriptionLimit = 255;
@@ -64,9 +75,9 @@ class _DetailsSheetState extends State<_DetailsSheet> {
   }
 
   void _done() {
-    Navigator.of(
-      context,
-    ).pop(EntryDetails(location: _location.text, description: _description.text, measuredOn: _date));
+    Navigator.of(context).pop(
+      EntryDetails(location: _location.text, description: _description.text, measuredOn: _date, photos: _photos),
+    );
   }
 
   @override
@@ -132,6 +143,16 @@ class _DetailsSheetState extends State<_DetailsSheet> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _done(),
               inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(_descriptionLimit)],
+            ),
+            const SizedBox(height: N360Space.md),
+            SectionLabel(l.measurementPhotosTitle),
+            const SizedBox(height: N360Space.xs),
+            ProgressPhotoRow(
+              key: const ValueKey<String>('measurement-form-photos'),
+              photos: _photos,
+              max: RecordPhotos.maxPerKind,
+              onAdd: (String path) => setState(() => _photos = <String>[..._photos, path]),
+              onRemove: (String path) => setState(() => _photos = <String>[for (final String p in _photos) if (p != path) p]),
             ),
             const SizedBox(height: N360Space.lg),
             GloveButton(label: l.commonDone, large: true, fullWidth: true, icon: Icons.check, onPressed: _done),

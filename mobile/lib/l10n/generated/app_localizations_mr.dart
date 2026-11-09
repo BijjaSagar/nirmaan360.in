@@ -1655,6 +1655,30 @@ class AppLocalizationsMr extends AppLocalizations {
   String get measurementOtherDate => 'दुसरी तारीख';
 
   @override
+  String get measurementPhotoAdd => 'फोटो जोडा';
+
+  @override
+  String get measurementPhotoFailed =>
+      'फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get measurementPhotoSaved => 'फोटो जतन झाला. आता पाठवत आहे.';
+
+  @override
+  String get measurementPhotoSavedOffline =>
+      'फोटो फोनवर जतन झाला. नेटवर्क आल्यावर पाठवला जाईल.';
+
+  @override
+  String get measurementPhotosLocked =>
+      'नोंद मंजुरीसाठी गेल्यावर फोटो जोडता येत नाहीत.';
+
+  @override
+  String get measurementPhotosNone => 'अजून फोटो नाहीत';
+
+  @override
+  String get measurementPhotosTitle => 'फोटो';
+
+  @override
   String get measurementPreviewNote =>
       'या फोनवरचे आकडे अंदाजी आहेत. ऑफिसचे आकडे अंतिम असतात.';
 
@@ -2802,6 +2826,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeMeasurement => 'मोजमाप';
+
+  @override
+  String get syncTypeMeasurementPhoto => 'मोजमापाचा फोटो';
 
   @override
   String get syncTypeMeasurementSubmit => 'मोजमाप सादर करणे';

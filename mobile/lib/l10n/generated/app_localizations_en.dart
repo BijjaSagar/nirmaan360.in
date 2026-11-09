@@ -1685,6 +1685,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementOtherDate => 'Other date';
 
   @override
+  String get measurementPhotoAdd => 'Add photo';
+
+  @override
+  String get measurementPhotoFailed => 'Could not add the photo. Try again.';
+
+  @override
+  String get measurementPhotoSaved => 'Photo saved. Sending now.';
+
+  @override
+  String get measurementPhotoSavedOffline =>
+      'Photo saved on phone. Sends when network returns.';
+
+  @override
+  String get measurementPhotosLocked =>
+      'Photos cannot be added once the entry is with the approver.';
+
+  @override
+  String get measurementPhotosNone => 'No photos yet';
+
+  @override
+  String get measurementPhotosTitle => 'Photos';
+
+  @override
   String get measurementPreviewNote =>
       'Figures on this phone are a preview. The office\'s figures are final.';
 
@@ -2848,6 +2871,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeMeasurement => 'Measurement';
+
+  @override
+  String get syncTypeMeasurementPhoto => 'Measurement photo';
 
   @override
   String get syncTypeMeasurementSubmit => 'Measurement submission';

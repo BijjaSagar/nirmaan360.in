@@ -1608,6 +1608,21 @@ class FakeApi implements NirmaanApi {
     fieldPhotoForms.add((fileField, fields));
     final match = RegExp(r'^/(issues|measurements)/(\d+)/').firstMatch(path);
     final parentKey = match == null ? null : (match.group(1) == 'issues' ? 'issue_id' : 'measurement_entry_id');
+    // A measurement locks its attachments with the entry, but a repeat of one
+    // already stored gets the original back.
+    if (match != null && match.group(1) == 'measurements' && !photoPosts.containsKey(clientUuid)) {
+      final entry = measurements.where((m) => m['id'] == int.parse(match.group(2)!)).firstOrNull;
+      final status = entry?['status'];
+      if (status == 'APPROVED') {
+        throw const ServerFailure(
+          'This record is approved and cannot be changed. Create a reversal entry instead.',
+          statusCode: 409,
+        );
+      }
+      if (status != null && status != 'DRAFT' && status != 'RETURNED') {
+        throw const ServerFailure('This entry is under review and its attachments cannot be changed.', statusCode: 409);
+      }
+    }
     return _storeProgress(photoPosts, {
       'client_uuid': clientUuid,
       'kind': fields['kind'],

@@ -84,10 +84,20 @@ class _FormView extends StatelessWidget {
     final EntryDetails? details = await showDetailsSheet(
       context,
       today: context.read<AppServices>().context.today,
-      initial: EntryDetails(location: state.location, description: state.description, measuredOn: state.measuredOn),
+      initial: EntryDetails(
+        location: state.location,
+        description: state.description,
+        measuredOn: state.measuredOn,
+        photos: state.photos,
+      ),
     );
     if (details != null) {
-      cubit.setDetails(location: details.location, description: details.description, measuredOn: details.measuredOn);
+      cubit.setDetails(
+        location: details.location,
+        description: details.description,
+        measuredOn: details.measuredOn,
+        photos: details.photos,
+      );
     }
   }
 
@@ -235,7 +245,7 @@ class _FormView extends StatelessWidget {
     final Widget detailsKey = DetailsKey(
       label: detailsLabel,
       spoken: _detailsSpoken(context, l, state),
-      filled: state.location.trim().isNotEmpty || state.description.trim().isNotEmpty,
+      filled: state.location.trim().isNotEmpty || state.description.trim().isNotEmpty || state.photos.isNotEmpty,
       onTap: () => _editDetails(context),
     );
 

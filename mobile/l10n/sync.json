@@ -39,5 +39,6 @@
   "syncTypeProgressPhoto": { "en": "Progress photo", "mr": "प्रगतीचा फोटो", "hi": "प्रगति की फ़ोटो" },
   "syncTypeStage": { "en": "Stage update", "mr": "टप्प्याची नोंद", "hi": "चरण की जानकारी" },
   "syncTypeStagePhoto": { "en": "Stage photo", "mr": "टप्प्याचा फोटो", "hi": "चरण की फ़ोटो" },
-  "syncTypeIssuePhoto": { "en": "Issue photo", "mr": "समस्येचा फोटो", "hi": "समस्या की फ़ोटो" }
+  "syncTypeIssuePhoto": { "en": "Issue photo", "mr": "समस्येचा फोटो", "hi": "समस्या की फ़ोटो" },
+  "syncTypeMeasurementPhoto": { "en": "Measurement photo", "mr": "मोजमापाचा फोटो", "hi": "माप की फ़ोटो" }
 }

@@ -478,5 +478,40 @@
     "en": "Loading",
     "mr": "लोड होत आहे",
     "hi": "लोड हो रहा है"
+  },
+  "measurementPhotosTitle": {
+    "en": "Photos",
+    "mr": "फोटो",
+    "hi": "फ़ोटो"
+  },
+  "measurementPhotoAdd": {
+    "en": "Add photo",
+    "mr": "फोटो जोडा",
+    "hi": "फ़ोटो जोड़ें"
+  },
+  "measurementPhotosNone": {
+    "en": "No photos yet",
+    "mr": "अजून फोटो नाहीत",
+    "hi": "अभी कोई फ़ोटो नहीं"
+  },
+  "measurementPhotosLocked": {
+    "en": "Photos cannot be added once the entry is with the approver.",
+    "mr": "नोंद मंजुरीसाठी गेल्यावर फोटो जोडता येत नाहीत.",
+    "hi": "एंट्री मंज़ूरी के लिए जाने के बाद फ़ोटो नहीं जोड़ी जा सकतीं।"
+  },
+  "measurementPhotoSaved": {
+    "en": "Photo saved. Sending now.",
+    "mr": "फोटो जतन झाला. आता पाठवत आहे.",
+    "hi": "फ़ोटो सेव हुई। अभी भेज रहे हैं।"
+  },
+  "measurementPhotoSavedOffline": {
+    "en": "Photo saved on phone. Sends when network returns.",
+    "mr": "फोटो फोनवर जतन झाला. नेटवर्क आल्यावर पाठवला जाईल.",
+    "hi": "फ़ोटो फ़ोन पर सेव हुई। नेटवर्क आने पर भेजी जाएगी।"
+  },
+  "measurementPhotoFailed": {
+    "en": "Could not add the photo. Try again.",
+    "mr": "फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "फ़ोटो जोड़ी नहीं जा सकी। फिर से कोशिश करें।"
   }
 }

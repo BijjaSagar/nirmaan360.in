@@ -23,7 +23,8 @@ enum OutboxType {
   materialChallan('material_challan'),
   materialUse('material_use'),
   stockCount('stock_count'),
-  issuePhoto('issue_photo');
+  issuePhoto('issue_photo'),
+  measurementPhoto('measurement_photo');
 
   const OutboxType(this.wire);
 
@@ -32,7 +33,7 @@ enum OutboxType {
   /// File uploads go through `/sync/upload`, one at a time.
   bool get isFile => this == OutboxType.dprPhoto || this == OutboxType.pettyBill;
 
-  /// Site progress, material and the photos on issues have their own endpoints. Each row is
+  /// Site progress, material and the photos on issues and measurements have their own endpoints. Each row is
   /// posted on its own, with the same `client_uuid` on every attempt.
   bool get isDirect => switch (this) {
     OutboxType.progressEntry ||
@@ -43,7 +44,8 @@ enum OutboxType {
     OutboxType.materialChallan ||
     OutboxType.materialUse ||
     OutboxType.stockCount ||
-    OutboxType.issuePhoto => true,
+    OutboxType.issuePhoto ||
+    OutboxType.measurementPhoto => true,
     _ => false,
   };
 }

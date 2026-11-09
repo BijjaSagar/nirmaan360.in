@@ -240,6 +240,16 @@ Needs the `site` plan feature. `issue.view` reads and `issue.manage` adds. The k
 - The server's lists are kept per project under `record_photos.<projectId>` and each picture seen or sent is kept as a file, so photos open with no network. A sent photo joins the list in the same transaction that finishes its outbox row. The key goes when the project does.
 - 422, 403 and 404 go to the Sync Center. A 409 (a record locked while the photo waited) goes there too, as `approved` or `in_review`.
 
+### Photos on measurement entries
+
+Needs the `measurement` plan feature. `measurement.view` reads and `measurement.create` adds.
+
+- The entry detail lists `GET /measurements/{measurement}/attachments` (`id, measurement_entry_id, kind, caption, is_image`) and fetches pictures from `GET /measurement-attachments/{id}`. A scanned PDF sketch from the office is listed as a document and is not drawn. The phone adds photos only: kind `photo`, a JPEG, at most 10 on an entry. The details sheet of the entry form takes photos for the row being measured, and each saved row keeps its own.
+- A photo is an outbox row of type `measurement_photo`, posted on its own to `POST /measurements/{measurement}/attachments` as multipart `file` (not `photo`) with `kind` and `client_uuid`. It reads the entry's `server_id` when it is sent, as issue photos do. A repeat returns the first row, even on an entry approved since.
+- The server refuses a photo with a 409 unless the entry is DRAFT or RETURNED, and the model refuses a change on APPROVED or IN_REVIEW, so the phone offers one only while the entry can still change, and refuses with `RecordLocked` once a submission is waiting to go.
+- A photo always shares its entry's group, so a `measurement_submit` queued after it cannot overtake it. The cost is that a photo needing attention holds the submission until a person retries or discards it.
+- A 409 that arrives anyway (approved or sent for review from the web while the photo waited) goes to the Sync Center as `approved` or `in_review`, with the photo left in place. Lists, pictures and cleanup are the same as for issue photos.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

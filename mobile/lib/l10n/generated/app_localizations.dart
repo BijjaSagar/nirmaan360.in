@@ -3118,6 +3118,48 @@ abstract class AppLocalizations {
   /// **'Other date'**
   String get measurementOtherDate;
 
+  /// No description provided for @measurementPhotoAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get measurementPhotoAdd;
+
+  /// No description provided for @measurementPhotoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add the photo. Try again.'**
+  String get measurementPhotoFailed;
+
+  /// No description provided for @measurementPhotoSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved. Sending now.'**
+  String get measurementPhotoSaved;
+
+  /// No description provided for @measurementPhotoSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved on phone. Sends when network returns.'**
+  String get measurementPhotoSavedOffline;
+
+  /// No description provided for @measurementPhotosLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos cannot be added once the entry is with the approver.'**
+  String get measurementPhotosLocked;
+
+  /// No description provided for @measurementPhotosNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos yet'**
+  String get measurementPhotosNone;
+
+  /// No description provided for @measurementPhotosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get measurementPhotosTitle;
+
   /// No description provided for @measurementPreviewNote.
   ///
   /// In en, this message translates to:
@@ -5211,6 +5253,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Measurement'**
   String get syncTypeMeasurement;
+
+  /// No description provided for @syncTypeMeasurementPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement photo'**
+  String get syncTypeMeasurementPhoto;
 
   /// No description provided for @syncTypeMeasurementSubmit.
   ///

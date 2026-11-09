@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
+import '../../../app/widgets/record_photos.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
 import '../../../core/money/money.dart';
+import '../../../core/sync/record_photos.dart' show RecordPhotos;
 import '../../../core/sync/record_sync.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/data/project_repository.dart';
@@ -69,6 +71,28 @@ class _DetailView extends StatelessWidget {
     }
   }
 
+  Future<void> _addPhoto(BuildContext context) async {
+    final AppServices services = context.read<AppServices>();
+    final MeasurementDetailCubit cubit = context.read<MeasurementDetailCubit>();
+    final String? path = await services.photos.capture();
+    if (path == null || !context.mounted) return;
+    final DetailPhotoResult result = await cubit.addPhoto(path);
+    if (!context.mounted) return;
+    final AppLocalizations l = AppLocalizations.of(context);
+    switch (result) {
+      case DetailPhotoResult.saved:
+        N360Haptics.success();
+        showPaperToast(context, l.measurementPhotoSaved, kind: PaperToastKind.success);
+      case DetailPhotoResult.savedOffline:
+        N360Haptics.success();
+        showPaperToast(context, l.measurementPhotoSavedOffline, kind: PaperToastKind.info, icon: Icons.phone_android);
+      case DetailPhotoResult.locked:
+        showPaperToast(context, l.measurementProblemLocked, kind: PaperToastKind.warning);
+      case DetailPhotoResult.failed:
+        showPaperToast(context, l.measurementPhotoFailed, kind: PaperToastKind.error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -107,6 +131,10 @@ class _DetailView extends StatelessWidget {
                         ],
                         const SizedBox(height: N360Space.md),
                         _FactsCard(entry: entry, line: state.line),
+                        if (state.photos.isNotEmpty || state.canAddPhotos) ...<Widget>[
+                          const SizedBox(height: N360Space.md),
+                          _PhotosCard(state: state, onAdd: () => _addPhoto(context)),
+                        ],
                         const SizedBox(height: N360Space.sm),
                         Text(l.measurementPreviewNote, style: N360Type.caption),
                       ],
@@ -523,6 +551,45 @@ class _FactsCard extends StatelessWidget {
             BookRow.words(label: l.measurementLocationLabel, value: entry.location!, ruled: hasDescription),
           if (hasDescription)
             BookRow.words(label: l.measurementDescriptionLabel, value: entry.description!, ruled: false),
+        ],
+      ),
+    );
+  }
+}
+
+/// The entry's photos: the server's, then those waiting to be sent. The button
+/// is there only while the entry can still change, because the server locks
+/// the photos with it.
+class _PhotosCard extends StatelessWidget {
+  const _PhotosCard({required this.state, required this.onAdd});
+
+  final MeasurementDetailState state;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final AppServices services = context.read<AppServices>();
+    final bool canAdd = state.canAddPhotos && state.photos.length < RecordPhotos.maxPerKind;
+    return LedgerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          RecordPhotoGroup(
+            key: const ValueKey<String>('measurement-photos'),
+            title: l.measurementPhotosTitle,
+            photos: state.photos,
+            loadBytes: services.measurements.photoBytes,
+            localPath: services.context.photos.absolutePath,
+            emptyLabel: l.measurementPhotosNone,
+            addLabel: l.measurementPhotoAdd,
+            onAdd: canAdd ? onAdd : null,
+          ),
+          if (state.mayAddPhotos && !state.canChange) ...<Widget>[
+            const SizedBox(height: N360Space.sm),
+            Text(l.measurementPhotosLocked, style: N360Type.fit(N360Type.caption, l.measurementPhotosLocked)),
+          ],
         ],
       ),
     );

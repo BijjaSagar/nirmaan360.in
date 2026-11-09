@@ -18,6 +18,16 @@ enum PhotoOwner {
     listName: 'photos',
     filePath: 'issue-photos',
     parentKey: 'issue_id',
+    fileField: 'photo',
+  ),
+  measurement(
+    outboxType: OutboxType.measurementPhoto,
+    collection: 'measurements',
+    listName: 'attachments',
+    filePath: 'measurement-attachments',
+    parentKey: 'measurement_entry_id',
+    fileField: 'file',
+    alwaysBehindRecord: true,
   );
 
   const PhotoOwner({
@@ -26,6 +36,8 @@ enum PhotoOwner {
     required this.listName,
     required this.filePath,
     required this.parentKey,
+    required this.fileField,
+    this.alwaysBehindRecord = false,
   });
 
   final OutboxType outboxType;
@@ -35,6 +47,14 @@ enum PhotoOwner {
 
   /// The key in the server's reply that holds the id of the record.
   final String parentKey;
+
+  /// The multipart name the server reads the file from.
+  final String fileField;
+
+  /// True when something else queued for the record must not overtake its
+  /// photos. A measurement is sent for approval after its photos, because the
+  /// server locks the photos the moment it is. An issue has no such order.
+  final bool alwaysBehindRecord;
 
   /// `GET` lists and `POST` adds, e.g. `/issues/5/photos`.
   String listPath(int parentId) => '/$collection/$parentId/$listName';
@@ -55,6 +75,12 @@ abstract final class IssuePhotoKind {
   static const before = 'before';
   static const after = 'after';
   static const all = <String>[before, after];
+}
+
+/// The phone takes photos for a measurement. A sketch is a scan from the office.
+abstract final class MeasurementPhotoKind {
+  static const photo = 'photo';
+  static const sketch = 'sketch';
 }
 
 /// A photo the server holds, as `GET /issues/{id}/photos` lists it.
@@ -147,7 +173,11 @@ class RecordPhotos {
   /// The photos of a record, the server's first and then those waiting to go.
   /// Changes whenever the record, its cached list or its queued photos change.
   Stream<List<RecordPhoto>> watch(PhotoOwner owner, String parentUuid) {
-    return _db.watchDerived(<ResultSetImplementation<dynamic, dynamic>>{_db.outbox, _db.keyValues, _db.issues}, () async {
+    final ResultSetImplementation<dynamic, dynamic> records = switch (owner) {
+      PhotoOwner.issue => _db.issues,
+      PhotoOwner.measurement => _db.measurements,
+    };
+    return _db.watchDerived(<ResultSetImplementation<dynamic, dynamic>>{_db.outbox, _db.keyValues, records}, () async {
       final _Parent? parent = await _parent(owner, parentUuid);
       if (parent == null) return const <RecordPhoto>[];
 
@@ -236,7 +266,8 @@ class RecordPhotos {
   ///
   /// A record the server has never seen is the head of its own queue, and its
   /// photos wait behind it. One the server already knows is posted on its own,
-  /// so a stuck status change cannot hold a photo back.
+  /// so a stuck status change cannot hold a photo back, unless the owner needs
+  /// its photos to go first: see [PhotoOwner.alwaysBehindRecord].
   Future<void> queue(
     PhotoOwner owner,
     List<StagedPhoto> staged, {
@@ -247,12 +278,13 @@ class RecordPhotos {
     required String title,
   }) async {
     final DateTime now = _clock.now();
+    final bool behindRecord = !parentKnownToServer || owner.alwaysBehindRecord;
     for (final StagedPhoto photo in staged) {
       await _outbox.enqueue(
         type: owner.outboxType,
         wireUuid: photo.uuid,
         recordUuid: photo.uuid,
-        groupUuid: parentKnownToServer ? photo.uuid : parentUuid,
+        groupUuid: behindRecord ? parentUuid : photo.uuid,
         projectId: projectId,
         data: <String, dynamic>{'kind': kind, 'taken_at': toWireTimestamp(now)},
         filePath: photo.relativePath,
@@ -268,6 +300,7 @@ class RecordPhotos {
   Future<void> add(PhotoOwner owner, String parentUuid, List<String> sourcePaths, {required String kind}) async {
     final _Parent? parent = await _parent(owner, parentUuid);
     if (parent == null) throw RecordLocked('The record $parentUuid was not found.');
+    if (owner == PhotoOwner.measurement) await _assertMeasurementOpen(parent, parentUuid);
     final List<StagedPhoto> staged = await stage(sourcePaths);
     await _db.transaction(() async {
       await queue(
@@ -338,14 +371,43 @@ class RecordPhotos {
       case PhotoOwner.issue:
         final IssueRow? row = await (_db.select(_db.issues)..where((t) => t.clientUuid.equals(parentUuid))).getSingleOrNull();
         return row == null ? null : _Parent(projectId: row.projectId, serverId: row.serverId, title: row.title);
+      case PhotoOwner.measurement:
+        final MeasurementRow? row =
+            await (_db.select(_db.measurements)..where((t) => t.clientUuid.equals(parentUuid))).getSingleOrNull();
+        return row == null
+            ? null
+            : _Parent(projectId: row.projectId, serverId: row.serverId, title: row.qty.format(), status: row.status);
     }
+  }
+
+  /// The server refuses a photo on an entry that is approved or with the
+  /// approver, and so does the phone, before the file is even copied. An entry
+  /// waiting to be sent for approval counts: its photos would arrive too late.
+  Future<void> _assertMeasurementOpen(_Parent parent, String entryUuid) async {
+    if (parent.status != DocStatus.draft && parent.status != DocStatus.returned) {
+      throw RecordLocked('This entry is ${parent.status} and cannot take photos.');
+    }
+    final OutboxRow? submit =
+        await (_db.select(_db.outbox)
+              ..where(
+                (t) =>
+                    t.recordUuid.equals(entryUuid) &
+                    t.type.equals(OutboxType.measurementSubmit.name) &
+                    t.status.equals(OutboxStatus.done.name).not(),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (submit != null) throw const RecordLocked('This entry has already been sent for approval.');
   }
 }
 
 class _Parent {
-  const _Parent({required this.projectId, required this.serverId, required this.title});
+  const _Parent({required this.projectId, required this.serverId, required this.title, this.status});
 
   final int projectId;
   final int? serverId;
   final String title;
+
+  /// Where an entry is in approval. Null for a record that has none.
+  final String? status;
 }

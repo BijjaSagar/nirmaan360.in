@@ -217,6 +217,7 @@ class SyncRepository {
       case OutboxType.materialUse:
       case OutboxType.stockCount:
       case OutboxType.issuePhoto:
+      case OutboxType.measurementPhoto:
         break;
     }
   }

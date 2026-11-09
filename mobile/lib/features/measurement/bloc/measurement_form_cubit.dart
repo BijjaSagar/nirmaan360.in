@@ -46,6 +46,7 @@ class MeasurementFormState extends Equatable {
     this.isDeduction = false,
     this.location = '',
     this.description = '',
+    this.photos = const [],
     this.remarks,
     this.returnRemark,
     this.originalStatus,
@@ -74,6 +75,10 @@ class MeasurementFormState extends Equatable {
   final String measuredOn;
   final String location;
   final String description;
+
+  /// Paths of the photos taken for the row now being measured. Each row keeps
+  /// its own, so they are cleared when the row is saved.
+  final List<String> photos;
   final String? remarks;
   final String? returnRemark;
   final String? originalStatus;
@@ -110,8 +115,8 @@ class MeasurementFormState extends Equatable {
 
   /// Figures are on the form that Save has not kept.
   bool get isDirty {
-    if (!isEditing) return hasAnyDims;
-    if (isDeduction != originalDeduction) return true;
+    if (!isEditing) return hasAnyDims || photos.isNotEmpty;
+    if (photos.isNotEmpty || isDeduction != originalDeduction) return true;
     return DimField.values.any((field) => text(field) != (originalDims[field] ?? ''));
   }
 
@@ -183,6 +188,7 @@ class MeasurementFormState extends Equatable {
     String? measuredOn,
     String? location,
     String? description,
+    List<String>? photos,
     String? remarks,
     String? returnRemark,
     String? originalStatus,
@@ -208,6 +214,7 @@ class MeasurementFormState extends Equatable {
       isDeduction: isDeduction ?? this.isDeduction,
       location: location ?? this.location,
       description: description ?? this.description,
+      photos: photos ?? this.photos,
       remarks: remarks ?? this.remarks,
       returnRemark: returnRemark ?? this.returnRemark,
       originalStatus: originalStatus ?? this.originalStatus,
@@ -236,6 +243,7 @@ class MeasurementFormState extends Equatable {
     measuredOn,
     location,
     description,
+    photos,
     remarks,
     returnRemark,
     originalStatus,
@@ -363,8 +371,21 @@ class MeasurementFormCubit extends Cubit<MeasurementFormState> {
     _set(state.copyWith(isDeduction: deduction, problem: null));
   }
 
-  void setDetails({required String location, required String description, required String measuredOn}) {
-    _set(state.copyWith(location: location, description: description, measuredOn: measuredOn, problem: null));
+  void setDetails({
+    required String location,
+    required String description,
+    required String measuredOn,
+    List<String>? photos,
+  }) {
+    _set(
+      state.copyWith(
+        location: location,
+        description: description,
+        measuredOn: measuredOn,
+        photos: photos?.take(RecordPhotos.maxPerKind).toList(),
+        problem: null,
+      ),
+    );
   }
 
   FormProblem? _findProblem(MeasurementFormState s) {
@@ -418,6 +439,7 @@ class MeasurementFormCubit extends Cubit<MeasurementFormState> {
       depth: s.depth,
       isDeduction: s.isDeduction,
       remarks: s.remarks,
+      photoPaths: s.photos,
     );
   }
 
@@ -446,6 +468,7 @@ class MeasurementFormCubit extends Cubit<MeasurementFormState> {
           busy: false,
           dims: const {},
           active: DimField.nos,
+          photos: const [],
           saved: [...state.saved, SavedRow(created, qty)],
         ),
       );

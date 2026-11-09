@@ -1644,6 +1644,30 @@ class AppLocalizationsHi extends AppLocalizations {
   String get measurementOtherDate => 'दूसरी तारीख़';
 
   @override
+  String get measurementPhotoAdd => 'फ़ोटो जोड़ें';
+
+  @override
+  String get measurementPhotoFailed =>
+      'फ़ोटो जोड़ी नहीं जा सकी। फिर से कोशिश करें।';
+
+  @override
+  String get measurementPhotoSaved => 'फ़ोटो सेव हुई। अभी भेज रहे हैं।';
+
+  @override
+  String get measurementPhotoSavedOffline =>
+      'फ़ोटो फ़ोन पर सेव हुई। नेटवर्क आने पर भेजी जाएगी।';
+
+  @override
+  String get measurementPhotosLocked =>
+      'एंट्री मंज़ूरी के लिए जाने के बाद फ़ोटो नहीं जोड़ी जा सकतीं।';
+
+  @override
+  String get measurementPhotosNone => 'अभी कोई फ़ोटो नहीं';
+
+  @override
+  String get measurementPhotosTitle => 'फ़ोटो';
+
+  @override
   String get measurementPreviewNote =>
       'इस फ़ोन के आँकड़े अनुमानित हैं। ऑफ़िस के आँकड़े ही अंतिम हैं।';
 
@@ -2795,6 +2819,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get syncTypeMeasurement => 'माप';
+
+  @override
+  String get syncTypeMeasurementPhoto => 'माप की फ़ोटो';
 
   @override
   String get syncTypeMeasurementSubmit => 'माप जमा करना';

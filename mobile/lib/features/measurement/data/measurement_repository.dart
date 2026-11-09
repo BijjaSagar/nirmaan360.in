@@ -6,9 +6,11 @@ import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/failures.dart';
 import '../../../core/sync/ids.dart';
+import '../../../core/sync/record_photos.dart';
 import '../../../core/sync/record_sync.dart';
 
 export '../../../core/db/app_database.dart' show MeasurementRow, DocStatus;
+export '../../../core/sync/record_photos.dart' show RecordPhoto, ServerPhoto, MeasurementPhotoKind, RecordPhotos;
 export '../../../core/sync/record_sync.dart' show SyncedRecord, LocalSyncState;
 
 /// The fields of a measurement entry form.
@@ -25,6 +27,7 @@ class MeasurementInput {
     this.depth,
     this.isDeduction = false,
     this.remarks,
+    this.photoPaths = const <String>[],
   });
 
   final int projectId;
@@ -38,6 +41,9 @@ class MeasurementInput {
   final Qty? depth;
   final bool isDeduction;
   final String? remarks;
+
+  /// Photos taken for this entry, copied in and queued behind it when it is saved.
+  final List<String> photoPaths;
 
   /// Local preview, computed exactly as the server will.
   Qty get qty => computeMeasurementQty(nos, length, breadth, depth, isDeduction);
@@ -54,8 +60,9 @@ class MeasurementRepository {
   ///
   /// Throws [ValidationFailure] for values the server would refuse, so the
   /// engineer can fix them now instead of seeing them rejected a week later.
-  Future<String> create(MeasurementInput input) {
+  Future<String> create(MeasurementInput input) async {
     _validate(input);
+    final List<StagedPhoto> staged = await _stagePhotos(input);
     return _db.transaction(() async {
       final uuid = newUuid();
       final stamp = _ctx.nextStamp(const []);
@@ -81,13 +88,15 @@ class MeasurementRepository {
             ),
           );
       await _enqueueEntry(uuid, input, stamp);
+      await _queuePhotos(staged, uuid, input, serverKnows: false);
       return uuid;
     });
   }
 
   /// Edits a DRAFT or RETURNED entry and queues the change.
-  Future<void> edit(String clientUuid, MeasurementInput input) {
+  Future<void> edit(String clientUuid, MeasurementInput input) async {
     _validate(input);
+    final List<StagedPhoto> staged = await _stagePhotos(input);
     return _db.transaction(() async {
       final entry = await _require(clientUuid);
       await _assertEditable(entry);
@@ -109,7 +118,41 @@ class MeasurementRepository {
         ),
       );
       await _enqueueEntry(clientUuid, input, stamp);
+      await _queuePhotos(staged, clientUuid, input, serverKnows: entry.serverId != null);
     });
+  }
+
+  /// The entry's photos: the server's, then those waiting to be sent.
+  Stream<List<RecordPhoto>> watchPhotos(String clientUuid) => _ctx.photos.watch(PhotoOwner.measurement, clientUuid);
+
+  /// Reads the server's list again. Throws when it cannot be reached.
+  Future<void> refreshPhotos(String clientUuid) => _ctx.photos.refresh(PhotoOwner.measurement, clientUuid);
+
+  /// Queues photos for an entry already on the phone. Throws [RecordLocked]
+  /// once the entry is with the approver, approved, or waiting to be sent.
+  Future<void> addPhotos(String clientUuid, List<String> paths) =>
+      _ctx.photos.add(PhotoOwner.measurement, clientUuid, paths, kind: MeasurementPhotoKind.photo);
+
+  Future<Uint8List> photoBytes(ServerPhoto photo) => _ctx.photos.bytes(PhotoOwner.measurement, photo);
+
+  Future<List<StagedPhoto>> _stagePhotos(MeasurementInput input) =>
+      _ctx.photos.stage(input.photoPaths.take(RecordPhotos.maxPerKind).toList());
+
+  Future<void> _queuePhotos(
+    List<StagedPhoto> staged,
+    String uuid,
+    MeasurementInput input, {
+    required bool serverKnows,
+  }) {
+    return _ctx.photos.queue(
+      PhotoOwner.measurement,
+      staged,
+      parentUuid: uuid,
+      projectId: input.projectId,
+      parentKnownToServer: serverKnows,
+      kind: MeasurementPhotoKind.photo,
+      title: input.qty.format(),
+    );
   }
 
   /// Queues the submission. A second call while one is waiting does nothing.

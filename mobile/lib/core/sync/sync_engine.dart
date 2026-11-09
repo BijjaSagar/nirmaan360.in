@@ -463,6 +463,7 @@ class SyncEngine {
       case OutboxType.materialUse:
       case OutboxType.stockCount:
       case OutboxType.issuePhoto:
+      case OutboxType.measurementPhoto:
         return null;
     }
   }
@@ -593,6 +594,7 @@ class SyncEngine {
       case OutboxType.materialUse:
       case OutboxType.stockCount:
       case OutboxType.issuePhoto:
+      case OutboxType.measurementPhoto:
         break;
     }
   }
@@ -716,7 +718,14 @@ class SyncEngine {
       case OutboxType.issuePhoto:
         return photo(
           PhotoOwner.issue.listPath(await _recordId(OutboxType.issue, row)),
+          fileField: PhotoOwner.issue.fileField,
           fields: <String, String>{'kind': data['kind'] as String? ?? IssuePhotoKind.before},
+        );
+      case OutboxType.measurementPhoto:
+        return photo(
+          PhotoOwner.measurement.listPath(await _recordId(OutboxType.measurement, row)),
+          fileField: PhotoOwner.measurement.fileField,
+          fields: <String, String>{'kind': data['kind'] as String? ?? MeasurementPhotoKind.photo},
         );
       case OutboxType.materialChallan:
         final file = row.filePath;
