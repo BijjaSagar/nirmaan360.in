@@ -294,6 +294,17 @@ A subcontractor can sign in. `GET /me` and the login reply carry `kind` (`contra
 - Everything is read only. A 403 or 404 on the overview, or a login without the permission or plan, keeps `refused` and the page says so calmly. A failed read keeps the last copy. A copy whose `party_id` is not this login's is never shown. Sign-out clears it with the rest of the phone.
 - The server's figures are shown as sent. `status` and the `label` text are not used: the page words the comparison itself ("Paid 56% · Work done 47%") in the app's language. Days left are counted on the phone from `deadline`, so a copy kept for a week is still right.
 
+### Price watch
+
+Needs the `price_watch` plan feature. `money.view` reads the board and a material; `money.overview` also reads a project's budget effect. Read only. Every reply carries `meta.live_feed: false`: these are prices a person wrote down, each with its date. The app never calls one live or a market price, in any language, and a test reads the strings to keep it so.
+
+- The app reads `GET /price-watch` (`data` rows with `current`, `previous`, `change_pct`, `trend`, `count`; `meta.as_of`, `meta.stale_after_days`), `GET /price-watch/materials/{id}` (the row plus every `prices` entry with `source` and `noted_by`), and with `money.overview` `GET /projects/{project}/price-watch` (rows with `boq_rate`, `boq_qty`, `difference`, `above_boq_pct`, `need`, `received`, `remaining`, `impact`, `why`; and a `summary`).
+- The board and each material's list are kept as one value under `price_watch.board`; a project's budget effect under `price_watch.project.<projectId>`, which goes with the project. Both are read through `afterPull`, at most every 10 minutes, and when the screen opens or is pulled. A material's list is read again only when its board row says a price was added or changed.
+- The phone does not ask without `money.view` and the plan feature, nor for the budget without `money.overview`. A copy kept from before a permission was lost is not shown and is deleted on the next sync; a copy read for a contractor login is never shown. Nothing about prices appears for anyone without `money.view`: no tile, no route (it goes Home), no strings.
+- Out of date is worked out on the phone (`priced_on` plus `stale_after_days` against today), so a copy kept for a month does not claim to be fresh. A date is always written as a date, never as "Yesterday".
+- A 403 or 404 is kept as "refused" and the screen says so calmly. A failed read keeps the last copy. Impact is `(latest recorded price - BOQ rate) x quantity still to buy` and is shown in words ("more" or "less"), never as a bare sign. A material with no effect says why (`why`).
+- The way in is a labelled tile on the Material page's top bar, only for `money.view` on a plan that has it. Home has no room for a third line.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

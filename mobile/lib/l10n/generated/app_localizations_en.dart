@@ -2549,6 +2549,195 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portalYourContracts => 'All your contracts';
 
   @override
+  String priceWatchAbove(String diff, String pct) {
+    return '$diff above the BOQ rate ($pct)';
+  }
+
+  @override
+  String get priceWatchBasisNorms => 'from the BOQ norms';
+
+  @override
+  String get priceWatchBasisTyped => 'quantity typed in for this project';
+
+  @override
+  String priceWatchBelow(String diff, String pct) {
+    return '$diff below the BOQ rate ($pct)';
+  }
+
+  @override
+  String get priceWatchBeyond => 'Beyond the margin';
+
+  @override
+  String get priceWatchBoqRate => 'BOQ rate';
+
+  @override
+  String get priceWatchBoqValue => 'BOQ value';
+
+  @override
+  String get priceWatchBudget => 'Budget';
+
+  @override
+  String get priceWatchBudgetNoData =>
+      'Connect to the internet once to load the budget effect for this project.';
+
+  @override
+  String get priceWatchBudgetNote =>
+      'If the rest of each material is bought at its latest recorded price instead of the BOQ rate.';
+
+  @override
+  String get priceWatchBudgetRefused =>
+      'The budget effect is not open to your role.';
+
+  @override
+  String get priceWatchBudgetTitle => 'Effect on the budget';
+
+  @override
+  String priceWatchChecked(String ago) {
+    return 'Checked $ago';
+  }
+
+  @override
+  String priceWatchDown(String pct, String rate, String date) {
+    return 'Down $pct from $rate on $date';
+  }
+
+  @override
+  String get priceWatchEmptyMessage =>
+      'Materials your company watches will show here with their recorded prices.';
+
+  @override
+  String get priceWatchEmptyTitle => 'No materials on the board';
+
+  @override
+  String get priceWatchFresh => 'From prices not out of date';
+
+  @override
+  String get priceWatchGapNoBoqRate => 'No BOQ rate set for this project';
+
+  @override
+  String get priceWatchGapNoQty => 'No quantity to work it out from';
+
+  @override
+  String get priceWatchGapUnit => 'The price unit does not match the BOQ unit';
+
+  @override
+  String get priceWatchHistory => 'Every recorded price';
+
+  @override
+  String get priceWatchLatest => 'Latest';
+
+  @override
+  String priceWatchLess(String amount) {
+    return '$amount less';
+  }
+
+  @override
+  String get priceWatchLevel => 'Same as the BOQ rate';
+
+  @override
+  String get priceWatchLoading => 'Loading recorded prices';
+
+  @override
+  String get priceWatchMaterialMissing => 'This material is not on the board.';
+
+  @override
+  String priceWatchMore(String amount) {
+    return '$amount more';
+  }
+
+  @override
+  String get priceWatchNoDataMessage =>
+      'Connect to the internet once to load the recorded prices. After that they open offline.';
+
+  @override
+  String get priceWatchNoEffect => 'No effect';
+
+  @override
+  String get priceWatchNone => 'No price recorded yet';
+
+  @override
+  String get priceWatchNote =>
+      'Prices your company wrote down, each with the date it was recorded. Nothing here updates by itself.';
+
+  @override
+  String priceWatchNotedBy(String name) {
+    return 'Noted by $name';
+  }
+
+  @override
+  String get priceWatchOnlyOne => 'Only one price recorded';
+
+  @override
+  String priceWatchPerUnit(String unit) {
+    return 'per $unit';
+  }
+
+  @override
+  String get priceWatchProjected => 'BOQ at these prices';
+
+  @override
+  String priceWatchRecordedOn(String date) {
+    return 'Recorded $date';
+  }
+
+  @override
+  String get priceWatchRecordedRate => 'Latest recorded';
+
+  @override
+  String get priceWatchRefusedMessage =>
+      'Recorded prices are not open to your role. Ask your office if you need them.';
+
+  @override
+  String get priceWatchRefusedTitle => 'Not open to your role';
+
+  @override
+  String priceWatchSame(String rate, String date) {
+    return 'Same as $rate on $date';
+  }
+
+  @override
+  String get priceWatchShareBoq => 'Share of the BOQ value';
+
+  @override
+  String get priceWatchShareBudget => 'Share of the budget';
+
+  @override
+  String priceWatchStale(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Older than $days days',
+      one: 'Older than 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String priceWatchStillToBuy(String qty, String unit) {
+    return 'Still to buy $qty $unit';
+  }
+
+  @override
+  String get priceWatchTabBudget => 'Effect on budget';
+
+  @override
+  String get priceWatchTabPrices => 'Prices';
+
+  @override
+  String get priceWatchTile => 'Prices';
+
+  @override
+  String get priceWatchTitle => 'Recorded prices';
+
+  @override
+  String priceWatchUp(String pct, String rate, String date) {
+    return 'Up $pct from $rate on $date';
+  }
+
+  @override
+  String get priceWatchWithin => 'Within the margin';
+
+  @override
   String get progressAdd => 'Add today\'s work';
 
   @override

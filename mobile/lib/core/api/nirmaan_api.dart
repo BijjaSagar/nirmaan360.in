@@ -231,6 +231,19 @@ abstract interface class NirmaanApi {
   /// first, in Laravel's page shape.
   Future<Map<String, dynamic>> siteAlerts(int projectId);
 
+  // Price watch. Read only. These are prices a company recorded, each with its
+  // date: `meta.live_feed` is always false. The board and a material need
+  // `money.view`, a project's budget effect needs `money.overview`.
+
+  /// `GET /price-watch`: `{data: [board rows], meta}`.
+  Future<Map<String, dynamic>> priceBoard();
+
+  /// `GET /price-watch/materials/{id}`: `{data: row with prices, meta}`.
+  Future<Map<String, dynamic>> priceMaterial(int materialId);
+
+  /// `GET /projects/{project}/price-watch`: `{data: rows, summary, meta}`.
+  Future<Map<String, dynamic>> priceProject(int projectId);
+
   // Contractor portal. Read only, and the only calls a contractor login may
   // make besides `me` and sign-out: the server refuses everything else.
 

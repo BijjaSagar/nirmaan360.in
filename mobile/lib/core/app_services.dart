@@ -13,6 +13,7 @@ import '../features/home/data/home_repository.dart';
 import '../features/issues/data/issue_repository.dart';
 import '../features/measurement/data/measurement_repository.dart';
 import '../features/petty_cash/data/petty_cash_repository.dart';
+import '../features/price_watch/data/price_watch_repository.dart';
 import '../features/material_control/data/material_repository.dart';
 import '../features/projects/data/project_image_repository.dart';
 import '../features/projects/data/project_repository.dart';
@@ -42,6 +43,7 @@ class AppServices {
     required this.siteAlerts,
     required this.contractors,
     required this.portal,
+    required this.priceWatch,
     required this.projectImages,
     required this.db,
     required this.api,
@@ -148,6 +150,7 @@ class AppServices {
     final siteAlerts = SiteAlertsRepository(context);
     final contractors = ContractorRepository(context);
     final portal = PortalRepository(context);
+    final priceWatch = PriceWatchRepository(context);
     final projectImages = ProjectImageRepository(context);
     engine.afterPull = (sentSomething) async {
       // Separately, so a failure in one does not leave the other stale.
@@ -156,6 +159,7 @@ class AppServices {
         material.refreshCurrent,
         siteAlerts.refreshCurrent,
         contractors.refreshCurrent,
+        priceWatch.refreshCurrent,
       ]) {
         try {
           await refresh(force: sentSomething);
@@ -171,6 +175,7 @@ class AppServices {
       siteAlerts: siteAlerts,
       contractors: contractors,
       portal: portal,
+      priceWatch: priceWatch,
       projectImages: projectImages,
       db: db,
       api: api,
@@ -214,6 +219,9 @@ class AppServices {
 
   /// The contractor portal: all a contractor login reads.
   final PortalRepository portal;
+
+  /// Recorded material prices, for anyone with `money.view`.
+  final PriceWatchRepository priceWatch;
   final ProjectImageRepository projectImages;
 
   /// Restores the session and starts the triggers. Offline-safe.

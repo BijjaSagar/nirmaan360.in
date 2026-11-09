@@ -4600,6 +4600,306 @@ abstract class AppLocalizations {
   /// **'All your contracts'**
   String get portalYourContracts;
 
+  /// No description provided for @priceWatchAbove.
+  ///
+  /// In en, this message translates to:
+  /// **'{diff} above the BOQ rate ({pct})'**
+  String priceWatchAbove(String diff, String pct);
+
+  /// No description provided for @priceWatchBasisNorms.
+  ///
+  /// In en, this message translates to:
+  /// **'from the BOQ norms'**
+  String get priceWatchBasisNorms;
+
+  /// No description provided for @priceWatchBasisTyped.
+  ///
+  /// In en, this message translates to:
+  /// **'quantity typed in for this project'**
+  String get priceWatchBasisTyped;
+
+  /// No description provided for @priceWatchBelow.
+  ///
+  /// In en, this message translates to:
+  /// **'{diff} below the BOQ rate ({pct})'**
+  String priceWatchBelow(String diff, String pct);
+
+  /// No description provided for @priceWatchBeyond.
+  ///
+  /// In en, this message translates to:
+  /// **'Beyond the margin'**
+  String get priceWatchBeyond;
+
+  /// No description provided for @priceWatchBoqRate.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ rate'**
+  String get priceWatchBoqRate;
+
+  /// No description provided for @priceWatchBoqValue.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ value'**
+  String get priceWatchBoqValue;
+
+  /// No description provided for @priceWatchBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget'**
+  String get priceWatchBudget;
+
+  /// No description provided for @priceWatchBudgetNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load the budget effect for this project.'**
+  String get priceWatchBudgetNoData;
+
+  /// No description provided for @priceWatchBudgetNote.
+  ///
+  /// In en, this message translates to:
+  /// **'If the rest of each material is bought at its latest recorded price instead of the BOQ rate.'**
+  String get priceWatchBudgetNote;
+
+  /// No description provided for @priceWatchBudgetRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The budget effect is not open to your role.'**
+  String get priceWatchBudgetRefused;
+
+  /// No description provided for @priceWatchBudgetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Effect on the budget'**
+  String get priceWatchBudgetTitle;
+
+  /// No description provided for @priceWatchChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {ago}'**
+  String priceWatchChecked(String ago);
+
+  /// No description provided for @priceWatchDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Down {pct} from {rate} on {date}'**
+  String priceWatchDown(String pct, String rate, String date);
+
+  /// No description provided for @priceWatchEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials your company watches will show here with their recorded prices.'**
+  String get priceWatchEmptyMessage;
+
+  /// No description provided for @priceWatchEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No materials on the board'**
+  String get priceWatchEmptyTitle;
+
+  /// No description provided for @priceWatchFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'From prices not out of date'**
+  String get priceWatchFresh;
+
+  /// No description provided for @priceWatchGapNoBoqRate.
+  ///
+  /// In en, this message translates to:
+  /// **'No BOQ rate set for this project'**
+  String get priceWatchGapNoBoqRate;
+
+  /// No description provided for @priceWatchGapNoQty.
+  ///
+  /// In en, this message translates to:
+  /// **'No quantity to work it out from'**
+  String get priceWatchGapNoQty;
+
+  /// No description provided for @priceWatchGapUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'The price unit does not match the BOQ unit'**
+  String get priceWatchGapUnit;
+
+  /// No description provided for @priceWatchHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Every recorded price'**
+  String get priceWatchHistory;
+
+  /// No description provided for @priceWatchLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest'**
+  String get priceWatchLatest;
+
+  /// No description provided for @priceWatchLess.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} less'**
+  String priceWatchLess(String amount);
+
+  /// No description provided for @priceWatchLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as the BOQ rate'**
+  String get priceWatchLevel;
+
+  /// No description provided for @priceWatchLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading recorded prices'**
+  String get priceWatchLoading;
+
+  /// No description provided for @priceWatchMaterialMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This material is not on the board.'**
+  String get priceWatchMaterialMissing;
+
+  /// No description provided for @priceWatchMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} more'**
+  String priceWatchMore(String amount);
+
+  /// No description provided for @priceWatchNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load the recorded prices. After that they open offline.'**
+  String get priceWatchNoDataMessage;
+
+  /// No description provided for @priceWatchNoEffect.
+  ///
+  /// In en, this message translates to:
+  /// **'No effect'**
+  String get priceWatchNoEffect;
+
+  /// No description provided for @priceWatchNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No price recorded yet'**
+  String get priceWatchNone;
+
+  /// No description provided for @priceWatchNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Prices your company wrote down, each with the date it was recorded. Nothing here updates by itself.'**
+  String get priceWatchNote;
+
+  /// No description provided for @priceWatchNotedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Noted by {name}'**
+  String priceWatchNotedBy(String name);
+
+  /// No description provided for @priceWatchOnlyOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one price recorded'**
+  String get priceWatchOnlyOne;
+
+  /// No description provided for @priceWatchPerUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'per {unit}'**
+  String priceWatchPerUnit(String unit);
+
+  /// No description provided for @priceWatchProjected.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ at these prices'**
+  String get priceWatchProjected;
+
+  /// No description provided for @priceWatchRecordedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded {date}'**
+  String priceWatchRecordedOn(String date);
+
+  /// No description provided for @priceWatchRecordedRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest recorded'**
+  String get priceWatchRecordedRate;
+
+  /// No description provided for @priceWatchRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded prices are not open to your role. Ask your office if you need them.'**
+  String get priceWatchRefusedMessage;
+
+  /// No description provided for @priceWatchRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not open to your role'**
+  String get priceWatchRefusedTitle;
+
+  /// No description provided for @priceWatchSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as {rate} on {date}'**
+  String priceWatchSame(String rate, String date);
+
+  /// No description provided for @priceWatchShareBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'Share of the BOQ value'**
+  String get priceWatchShareBoq;
+
+  /// No description provided for @priceWatchShareBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Share of the budget'**
+  String get priceWatchShareBudget;
+
+  /// No description provided for @priceWatchStale.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{Older than 1 day} other{Older than {days} days}}'**
+  String priceWatchStale(int days);
+
+  /// No description provided for @priceWatchStillToBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Still to buy {qty} {unit}'**
+  String priceWatchStillToBuy(String qty, String unit);
+
+  /// No description provided for @priceWatchTabBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Effect on budget'**
+  String get priceWatchTabBudget;
+
+  /// No description provided for @priceWatchTabPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'Prices'**
+  String get priceWatchTabPrices;
+
+  /// No description provided for @priceWatchTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Prices'**
+  String get priceWatchTile;
+
+  /// No description provided for @priceWatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded prices'**
+  String get priceWatchTitle;
+
+  /// No description provided for @priceWatchUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Up {pct} from {rate} on {date}'**
+  String priceWatchUp(String pct, String rate, String date);
+
+  /// No description provided for @priceWatchWithin.
+  ///
+  /// In en, this message translates to:
+  /// **'Within the margin'**
+  String get priceWatchWithin;
+
   /// No description provided for @progressAdd.
   ///
   /// In en, this message translates to:

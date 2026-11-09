@@ -67,6 +67,13 @@ abstract final class Routes {
   static const materialUse = '/material/use';
   static const materialCount = '/material/count';
 
+  /// Recorded material prices, each with its date. Needs `money.view`.
+  static const prices = '/prices';
+  static String priceMaterial(int materialId) => '/prices/$materialId';
+
+  /// True for the price pages, and no other path.
+  static bool isPrices(String path) => path == prices || path.startsWith('$prices/');
+
   /// The contractor portal: where a contractor login lives. A member of
   /// staff never reaches it, and a contractor reaches nothing else but settings.
   static const portal = '/portal';

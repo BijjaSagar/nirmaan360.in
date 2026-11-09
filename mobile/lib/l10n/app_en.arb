@@ -1195,6 +1195,171 @@
   "portalTitle": "Contractor portal",
   "portalWorkComplete": "Work complete",
   "portalYourContracts": "All your contracts",
+  "priceWatchAbove": "{diff} above the BOQ rate ({pct})",
+  "@priceWatchAbove": {
+    "placeholders": {
+      "diff": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchBasisNorms": "from the BOQ norms",
+  "priceWatchBasisTyped": "quantity typed in for this project",
+  "priceWatchBelow": "{diff} below the BOQ rate ({pct})",
+  "@priceWatchBelow": {
+    "placeholders": {
+      "diff": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchBeyond": "Beyond the margin",
+  "priceWatchBoqRate": "BOQ rate",
+  "priceWatchBoqValue": "BOQ value",
+  "priceWatchBudget": "Budget",
+  "priceWatchBudgetNoData": "Connect to the internet once to load the budget effect for this project.",
+  "priceWatchBudgetNote": "If the rest of each material is bought at its latest recorded price instead of the BOQ rate.",
+  "priceWatchBudgetRefused": "The budget effect is not open to your role.",
+  "priceWatchBudgetTitle": "Effect on the budget",
+  "priceWatchChecked": "Checked {ago}",
+  "@priceWatchChecked": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchDown": "Down {pct} from {rate} on {date}",
+  "@priceWatchDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchEmptyMessage": "Materials your company watches will show here with their recorded prices.",
+  "priceWatchEmptyTitle": "No materials on the board",
+  "priceWatchFresh": "From prices not out of date",
+  "priceWatchGapNoBoqRate": "No BOQ rate set for this project",
+  "priceWatchGapNoQty": "No quantity to work it out from",
+  "priceWatchGapUnit": "The price unit does not match the BOQ unit",
+  "priceWatchHistory": "Every recorded price",
+  "priceWatchLatest": "Latest",
+  "priceWatchLess": "{amount} less",
+  "@priceWatchLess": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchLevel": "Same as the BOQ rate",
+  "priceWatchLoading": "Loading recorded prices",
+  "priceWatchMaterialMissing": "This material is not on the board.",
+  "priceWatchMore": "{amount} more",
+  "@priceWatchMore": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchNoDataMessage": "Connect to the internet once to load the recorded prices. After that they open offline.",
+  "priceWatchNoEffect": "No effect",
+  "priceWatchNone": "No price recorded yet",
+  "priceWatchNote": "Prices your company wrote down, each with the date it was recorded. Nothing here updates by itself.",
+  "priceWatchNotedBy": "Noted by {name}",
+  "@priceWatchNotedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchOnlyOne": "Only one price recorded",
+  "priceWatchPerUnit": "per {unit}",
+  "@priceWatchPerUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchProjected": "BOQ at these prices",
+  "priceWatchRecordedOn": "Recorded {date}",
+  "@priceWatchRecordedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchRecordedRate": "Latest recorded",
+  "priceWatchRefusedMessage": "Recorded prices are not open to your role. Ask your office if you need them.",
+  "priceWatchRefusedTitle": "Not open to your role",
+  "priceWatchSame": "Same as {rate} on {date}",
+  "@priceWatchSame": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchShareBoq": "Share of the BOQ value",
+  "priceWatchShareBudget": "Share of the budget",
+  "priceWatchStale": "{days, plural, =1{Older than 1 day} other{Older than {days} days}}",
+  "@priceWatchStale": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "priceWatchStillToBuy": "Still to buy {qty} {unit}",
+  "@priceWatchStillToBuy": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchTabBudget": "Effect on budget",
+  "priceWatchTabPrices": "Prices",
+  "priceWatchTile": "Prices",
+  "priceWatchTitle": "Recorded prices",
+  "priceWatchUp": "Up {pct} from {rate} on {date}",
+  "@priceWatchUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchWithin": "Within the margin",
   "progressAdd": "Add today's work",
   "progressBeforeFinishing": "Before finishing check",
   "progressBehind": "Behind by {percent}",

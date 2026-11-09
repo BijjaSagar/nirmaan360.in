@@ -85,7 +85,19 @@ class _MaterialView extends StatelessWidget {
             children: <Widget>[
               BlocBuilder<MaterialCubit, MaterialState>(
                 buildWhen: (a, b) => a.project?.id != b.project?.id,
-                builder: (context, state) => FieldTopBar(title: l.materialTitle, subtitle: state.project?.code),
+                builder: (context, state) => FieldTopBar(
+                  title: l.materialTitle,
+                  subtitle: state.project?.code,
+                  // Recorded prices are for money.view on a plan that has them. Nobody else sees a way in.
+                  trailing: gate.canSeePrices
+                      ? N360TopTile(
+                          key: const ValueKey<String>('material-prices'),
+                          icon: Icons.sell_outlined,
+                          label: l.priceWatchTile,
+                          onTap: () => context.push(Routes.prices),
+                        )
+                      : null,
+                ),
               ),
               const Expanded(child: _MaterialScroll()),
               if (actions.isNotEmpty)

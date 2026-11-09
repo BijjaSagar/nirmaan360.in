@@ -77,6 +77,10 @@ class GateState extends Equatable {
 
   bool get canManageProjects => can('project.manage');
 
+  /// Recorded material prices are for `money.view` on a plan that has them.
+  /// Nobody else is shown them, or a way to them.
+  bool get canSeePrices => can('money.view') && (user?.features.contains('price_watch') ?? false) && !isContractor;
+
   /// A subcontractor's login: the portal and settings, and nothing else.
   bool get isContractor => user?.isContractor ?? false;
 
@@ -243,6 +247,7 @@ class AppGate extends Cubit<GateState> {
       a.canApprove != b.canApprove ||
       a.canManageProjects != b.canManageProjects ||
       a.isContractor != b.isContractor ||
+      a.canSeePrices != b.canSeePrices ||
       a.ready != b.ready;
 
   /// Exact paths that need a permission. Anything else is open once signed in.
@@ -291,6 +296,7 @@ class AppGate extends Cubit<GateState> {
       if (!(onPurpose && s.canManageProjects)) return Routes.home;
     }
     if (!s.canApprove && path.startsWith(Routes.approvals)) return Routes.home;
+    if (Routes.isPrices(path) && !s.canSeePrices) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;
     final String? needed = _pathPermissions[path];

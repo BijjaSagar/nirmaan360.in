@@ -44,7 +44,6 @@ class PortalContractScreen extends StatelessWidget {
         key: const ValueKey<String>('portal-contract-summary'),
         figures: contract.figures,
         heading: title,
-        subheading: contract.projectName,
         extra: <Widget>[if (when != null) BookRow.words(label: l.portalDeadlineLabel, value: when, ruled: false)],
       ),
       if (detail != null && detail.lines.isNotEmpty) ...<Widget>[

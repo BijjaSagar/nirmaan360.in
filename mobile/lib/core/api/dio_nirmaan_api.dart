@@ -430,6 +430,15 @@ class DioNirmaanApi implements NirmaanApi {
       _call(() => _dio.get('/projects/$projectId/alerts', queryParameters: <String, String>{'status': 'open'}));
 
   @override
+  Future<Map<String, dynamic>> priceBoard() => _call(() => _dio.get('/price-watch'));
+
+  @override
+  Future<Map<String, dynamic>> priceMaterial(int materialId) => _call(() => _dio.get('/price-watch/materials/$materialId'));
+
+  @override
+  Future<Map<String, dynamic>> priceProject(int projectId) => _call(() => _dio.get('/projects/$projectId/price-watch'));
+
+  @override
   Future<Map<String, dynamic>> portalOverview() => _getData('/contractor-portal');
 
   @override

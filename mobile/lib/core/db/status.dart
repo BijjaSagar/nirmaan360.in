@@ -51,6 +51,16 @@ abstract final class MetaKey {
   /// contractor login has no projects, and signing out clears it.
   static const portal = 'portal.snapshot';
 
+  /// The company's price board and each material's recorded prices, as JSON.
+  /// One per phone. It is dropped when the money permission is lost.
+  static const priceWatch = 'price_watch.board';
+
+  /// Prefix of every price watch key, so they can be cleared together.
+  static const priceWatchPrefix = 'price_watch.';
+
+  /// One project's budget effect from the recorded prices, as JSON. Needs `money.overview`.
+  static String priceWatchProject(int projectId) => 'price_watch.project.$projectId';
+
   /// The recent progress entries the server listed for each floor of a project, as JSON.
   static String floorEntries(int projectId) => 'floor_entries.$projectId';
 

@@ -1593,6 +1593,224 @@ class FakeApi implements NirmaanApi {
     return _presentContractor(stored);
   }
 
+  // Price watch ---------------------------------------------------------------
+
+  /// Gives the signed-in user the plan feature and the money permissions of an
+  /// owner, so the recorded prices are open to them.
+  void grantPriceWatch({bool overview = true}) {
+    final features = (user['organization'] as Map)['features'] as List;
+    if (!features.contains('price_watch')) features.add('price_watch');
+    grant('money.view');
+    if (overview) grant('money.overview');
+  }
+
+  Row _recorded(int id, String rate, String on, String unit, {String? source = 'Dealer quote', String? by}) => {
+    'id': id,
+    'rate': rate,
+    'unit': unit,
+    'priced_on': on,
+    'source': source,
+    'source_kind': 'manual',
+    'stale': false,
+    'noted_by': ?by,
+  };
+
+  /// Every recorded price, newest first, by watched material id.
+  late Map<int, List<Row>> priceLists = {
+    1: [
+      _recorded(3, '410.00', '2026-11-08', 'bag', by: 'Anil Kulkarni'),
+      _recorded(2, '392.00', '2026-10-20', 'bag', source: 'Dealer enquiry'),
+      _recorded(1, '385.00', '2026-10-01', 'bag'),
+    ],
+    2: [
+      _recorded(5, '63.00', '2026-09-20', 'kg', source: 'Mill list'),
+      _recorded(4, '61.50', '2026-08-15', 'kg', source: 'Mill list'),
+    ],
+    3: [_recorded(6, '5400.00', '2026-11-05', 'brass', source: 'Local supplier')],
+    4: [],
+  };
+
+  static const Map<int, (String, String, String)> _watched = {
+    1: ('cement', 'Cement', 'bag'),
+    2: ('steel', 'Steel', 'kg'),
+    3: ('sand', 'Sand', 'brass'),
+    4: ('bricks', 'Bricks', 'nos'),
+  };
+
+  /// What the server says is today, for the prices' own `stale` flags.
+  String priceToday = '2026-11-09';
+  int priceStaleDays = 30;
+
+  bool _stale(String on) {
+    final limit = DateTime.parse(on).add(Duration(days: priceStaleDays));
+    return limit.isBefore(DateTime.parse(priceToday));
+  }
+
+  Row _price(Row? price) => price == null ? {} : {...price, 'stale': _stale(price['priced_on'] as String)};
+
+  Row _boardRow(int id) {
+    final (key, name, unit) = _watched[id]!;
+    final prices = priceLists[id] ?? [];
+    final current = prices.isEmpty ? null : prices.first;
+    final previous = prices.length < 2 ? null : prices[1];
+    String? change;
+    if (current != null && previous != null) {
+      final now = Decimal.parse(current['rate'] as String);
+      final before = Decimal.parse(previous['rate'] as String);
+      change = ((now - before) * Decimal.fromInt(100) / before).toDecimal(scaleOnInfinitePrecision: 6).round(scale: 2).toStringAsFixed(2);
+    }
+    return {
+      'id': id,
+      'key': key,
+      'name': name,
+      'unit': unit,
+      'material_id': null,
+      'is_active': true,
+      'current': current == null ? null : _price(current),
+      'previous': previous == null ? null : _price(previous),
+      'change_pct': change,
+      'trend': [
+        for (final p in prices.take(8).toList().reversed) {'rate': p['rate'], 'priced_on': p['priced_on']},
+      ],
+      'count': prices.length,
+    };
+  }
+
+  Map<String, dynamic> get _priceMeta => {'as_of': priceToday, 'stale_after_days': priceStaleDays, 'live_feed': false};
+
+  /// Scripted failures for the three reads, e.g. a 403.
+  ApiFailure? priceBoardFailure;
+  ApiFailure? priceMaterialFailure;
+  ApiFailure? priceProjectFailure;
+
+  /// How many times each read was asked, including the ones refused.
+  int priceBoardCalls = 0;
+  int priceMaterialCalls = 0;
+  int priceProjectCalls = 0;
+
+  void _priceGuard(String permission) {
+    _guard();
+    final can = (user['can'] as Map)[permission] == true;
+    final features = (user['organization'] as Map)['features'] as List;
+    if (!can || !features.contains('price_watch')) {
+      throw const ServerFailure('This action is unauthorized.', statusCode: 403);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> priceBoard() async {
+    priceBoardCalls++;
+    _priceGuard('money.view');
+    final failure = priceBoardFailure;
+    if (failure != null) throw failure;
+    return {'data': [for (final id in _watched.keys) _boardRow(id)], 'meta': _priceMeta};
+  }
+
+  @override
+  Future<Map<String, dynamic>> priceMaterial(int materialId) async {
+    priceMaterialCalls++;
+    _priceGuard('money.view');
+    final failure = priceMaterialFailure;
+    if (failure != null) throw failure;
+    if (!_watched.containsKey(materialId)) throw const ServerFailure('Not found', statusCode: 404);
+    return {
+      'data': {..._boardRow(materialId), 'prices': [for (final p in priceLists[materialId] ?? []) _price(p)]},
+      'meta': _priceMeta,
+    };
+  }
+
+  /// The project rows are cement and steel with a BOQ rate; sand has none; bricks have no price.
+  List<Row> priceProjectRows() => [
+    {
+      ..._boardRow(1),
+      'boq_rate': '380.00',
+      'boq_qty': '1200.000',
+      'difference': '30.00',
+      'above_boq_pct': '7.89',
+      'need': '1200.000',
+      'need_basis': 'typed',
+      'received': '0.000',
+      'remaining': '1200.000',
+      'impact': '36000.00',
+      'stale': false,
+      'why': null,
+    },
+    {
+      ..._boardRow(2),
+      'boq_rate': '65.00',
+      'boq_qty': '8000.000',
+      'difference': '-2.00',
+      'above_boq_pct': '-3.08',
+      'need': '8000.000',
+      'need_basis': 'norms',
+      'received': '1000.000',
+      'remaining': '7000.000',
+      'impact': '-14000.00',
+      'stale': true,
+      'why': null,
+    },
+    {
+      ..._boardRow(3),
+      'boq_rate': null,
+      'boq_qty': null,
+      'difference': null,
+      'above_boq_pct': null,
+      'need': null,
+      'need_basis': null,
+      'received': '0.000',
+      'remaining': null,
+      'impact': null,
+      'stale': false,
+      'why': 'no_boq_rate',
+    },
+    {
+      ..._boardRow(4),
+      'boq_rate': null,
+      'boq_qty': null,
+      'difference': null,
+      'above_boq_pct': null,
+      'need': null,
+      'need_basis': null,
+      'received': '0.000',
+      'remaining': null,
+      'impact': null,
+      'stale': false,
+      'why': 'no_price',
+    },
+  ];
+
+  Row priceSummary = {
+    'impact': '22000.00',
+    'fresh_impact': '36000.00',
+    'impact_pct': '0.14',
+    'fresh_impact_pct': '0.24',
+    'basis': 'budget',
+    'budget': '16000000.00',
+    'ceiling': '16800000.00',
+    'margin_pct': '5.00',
+    'boq': '15254250.00',
+    'projected': '15276250.00',
+    'beyond_margin': false,
+    'materials': 4,
+    'priced': 3,
+    'with_boq_rate': 2,
+    'with_impact': 2,
+    'stale': 1,
+    'rising': 1,
+    'rise_pct': '5.00',
+    'impact_alert_pct': '1.00',
+    'stale_days': 30,
+  };
+
+  @override
+  Future<Map<String, dynamic>> priceProject(int projectId) async {
+    priceProjectCalls++;
+    _priceGuard('money.overview');
+    final failure = priceProjectFailure;
+    if (failure != null) throw failure;
+    return {'data': priceProjectRows(), 'summary': priceSummary, 'meta': _priceMeta};
+  }
+
   // Contractor portal --------------------------------------------------------
 
   /// Turns the signed-in user into a contractor login, as `GET /me` describes

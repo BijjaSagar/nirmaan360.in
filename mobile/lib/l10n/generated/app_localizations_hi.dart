@@ -2507,6 +2507,195 @@ class AppLocalizationsHi extends AppLocalizations {
   String get portalYourContracts => 'आपके सभी ठेके';
 
   @override
+  String priceWatchAbove(String diff, String pct) {
+    return 'BOQ दर से $diff ज़्यादा ($pct)';
+  }
+
+  @override
+  String get priceWatchBasisNorms => 'BOQ मानकों के अनुसार';
+
+  @override
+  String get priceWatchBasisTyped => 'इस प्रोजेक्ट के लिए लिखी गई मात्रा';
+
+  @override
+  String priceWatchBelow(String diff, String pct) {
+    return 'BOQ दर से $diff कम ($pct)';
+  }
+
+  @override
+  String get priceWatchBeyond => 'सीमा से ऊपर';
+
+  @override
+  String get priceWatchBoqRate => 'BOQ दर';
+
+  @override
+  String get priceWatchBoqValue => 'BOQ राशि';
+
+  @override
+  String get priceWatchBudget => 'बजट';
+
+  @override
+  String get priceWatchBudgetNoData =>
+      'इस प्रोजेक्ट के बजट पर असर को लोड करने के लिए एक बार इंटरनेट से जुड़ें।';
+
+  @override
+  String get priceWatchBudgetNote =>
+      'अगर हर सामग्री का बचा हुआ हिस्सा BOQ दर की जगह उसके आख़िरी दर्ज दर पर ख़रीदा जाए।';
+
+  @override
+  String get priceWatchBudgetRefused =>
+      'बजट पर असर आपकी भूमिका के लिए उपलब्ध नहीं है।';
+
+  @override
+  String get priceWatchBudgetTitle => 'बजट पर असर';
+
+  @override
+  String priceWatchChecked(String ago) {
+    return 'जाँचा गया: $ago';
+  }
+
+  @override
+  String priceWatchDown(String pct, String rate, String date) {
+    return '$date को $rate से $pct नीचे';
+  }
+
+  @override
+  String get priceWatchEmptyMessage =>
+      'आपकी कंपनी जिन सामग्रियों पर नज़र रखती है, वे दर्ज दरों के साथ यहाँ दिखेंगी।';
+
+  @override
+  String get priceWatchEmptyTitle => 'बोर्ड पर कोई सामग्री नहीं';
+
+  @override
+  String get priceWatchFresh => 'जो दर पुराने नहीं हुए, उनसे';
+
+  @override
+  String get priceWatchGapNoBoqRate => 'इस प्रोजेक्ट के लिए BOQ दर तय नहीं';
+
+  @override
+  String get priceWatchGapNoQty => 'हिसाब के लिए मात्रा नहीं';
+
+  @override
+  String get priceWatchGapUnit => 'दर की इकाई BOQ की इकाई से मेल नहीं खाती';
+
+  @override
+  String get priceWatchHistory => 'सभी दर्ज दरें';
+
+  @override
+  String get priceWatchLatest => 'सबसे नया';
+
+  @override
+  String priceWatchLess(String amount) {
+    return '$amount कम';
+  }
+
+  @override
+  String get priceWatchLevel => 'BOQ दर के बराबर';
+
+  @override
+  String get priceWatchLoading => 'दर्ज दरें लोड हो रही हैं';
+
+  @override
+  String get priceWatchMaterialMissing => 'यह सामग्री बोर्ड पर नहीं है।';
+
+  @override
+  String priceWatchMore(String amount) {
+    return '$amount ज़्यादा';
+  }
+
+  @override
+  String get priceWatchNoDataMessage =>
+      'दर्ज दरें लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद वे ऑफ़लाइन भी खुलेंगी।';
+
+  @override
+  String get priceWatchNoEffect => 'कोई असर नहीं';
+
+  @override
+  String get priceWatchNone => 'अभी कोई दर दर्ज नहीं';
+
+  @override
+  String get priceWatchNote =>
+      'आपकी कंपनी के लिखे हुए दर, हर एक के साथ उसे दर्ज करने की तारीख़। यहाँ कुछ भी अपने आप नहीं बदलता।';
+
+  @override
+  String priceWatchNotedBy(String name) {
+    return 'दर्ज करने वाले: $name';
+  }
+
+  @override
+  String get priceWatchOnlyOne => 'सिर्फ़ एक दर दर्ज है';
+
+  @override
+  String priceWatchPerUnit(String unit) {
+    return 'प्रति $unit';
+  }
+
+  @override
+  String get priceWatchProjected => 'इन दरों पर BOQ';
+
+  @override
+  String priceWatchRecordedOn(String date) {
+    return '$date को दर्ज';
+  }
+
+  @override
+  String get priceWatchRecordedRate => 'आख़िरी दर्ज';
+
+  @override
+  String get priceWatchRefusedMessage =>
+      'दर्ज दरें आपकी भूमिका के लिए उपलब्ध नहीं हैं। ज़रूरत हो तो ऑफ़िस से पूछें।';
+
+  @override
+  String get priceWatchRefusedTitle => 'आपकी भूमिका के लिए उपलब्ध नहीं';
+
+  @override
+  String priceWatchSame(String rate, String date) {
+    return '$date को $rate के बराबर';
+  }
+
+  @override
+  String get priceWatchShareBoq => 'BOQ राशि का हिस्सा';
+
+  @override
+  String get priceWatchShareBudget => 'बजट का हिस्सा';
+
+  @override
+  String priceWatchStale(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days दिन से पुराना',
+      one: '1 दिन से पुराना',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String priceWatchStillToBuy(String qty, String unit) {
+    return 'अभी ख़रीदना बाक़ी $qty $unit';
+  }
+
+  @override
+  String get priceWatchTabBudget => 'बजट पर असर';
+
+  @override
+  String get priceWatchTabPrices => 'दरें';
+
+  @override
+  String get priceWatchTile => 'दरें';
+
+  @override
+  String get priceWatchTitle => 'दर्ज दरें';
+
+  @override
+  String priceWatchUp(String pct, String rate, String date) {
+    return '$date को $rate से $pct ऊपर';
+  }
+
+  @override
+  String get priceWatchWithin => 'सीमा के भीतर';
+
+  @override
   String get progressAdd => 'आज का काम जोड़ें';
 
   @override
