@@ -25,7 +25,6 @@ class BillingController extends Controller
             'plans' => config('buildos.plans'),
             'payments' => $organization->payments()->where('status', 'paid')->latest('paid_at')->take(12)->get(),
             'gatewayLive' => $this->gateway->isLive(),
-            'gstPct' => config('buildos.subscription_gst_pct'),
         ]);
     }
 

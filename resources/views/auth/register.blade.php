@@ -1,7 +1,7 @@
 @extends('layouts.auth')
-@section('title', __('Start a 30-day trial'))
+@section('title', __('Start a :days-day trial', ['days' => config('buildos.trial_days')]))
 @section('content')
-    <h1 class="text-4xl">{{ __('Start a 30-day trial') }}</h1>
+    <h1 class="text-4xl">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}</h1>
     <p class="mt-1 text-sm text-ink-3">
         @if ($plan === 'free')
             {{ __('Free plan: 1 project and 3 users.') }}

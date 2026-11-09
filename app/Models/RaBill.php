@@ -6,6 +6,7 @@ use App\Models\Concerns\Approvable;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Concerns\Immutable;
+use App\Support\Dec;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -79,6 +80,11 @@ class RaBill extends Model
     public function deductions(): HasMany
     {
         return $this->hasMany(RaBillDeduction::class)->orderBy('sort');
+    }
+
+    public function hasGst(): bool
+    {
+        return Dec::of($this->gst_amount)->isPositive();
     }
 
     public function isCancellable(): bool

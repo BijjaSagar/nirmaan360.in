@@ -31,7 +31,7 @@
                 <div class="grid gap-4 border-t border-rule p-4 sm:grid-cols-6">
                     <x-field :label="__('Retention %')" name="retention_pct"><input id="retention_pct" name="retention_pct" type="number" step="0.01" value="{{ old('retention_pct', 5) }}" class="input num" required></x-field>
                     <x-field :label="__('TDS %')" name="tds_pct"><input id="tds_pct" name="tds_pct" type="number" step="0.01" value="{{ old('tds_pct', 1) }}" class="input num" required></x-field>
-                    <x-field :label="__('GST %')" name="gst_pct"><input id="gst_pct" name="gst_pct" type="number" step="0.01" value="{{ old('gst_pct', 18) }}" class="input num" required></x-field>
+                    <x-field :label="__('GST %')" name="gst_pct" :hint="__('Enter 0 if this contract has no GST.')"><input id="gst_pct" name="gst_pct" type="number" step="0.01" value="{{ old('gst_pct', 18) }}" class="input num" required></x-field>
                     <x-field :label="__('Advance (₹)')" name="advance_amount"><input id="advance_amount" name="advance_amount" type="number" step="0.01" value="{{ old('advance_amount', 0) }}" class="input num" required></x-field>
                     <x-field :label="__('Advance recovery %')" name="advance_recovery_pct"><input id="advance_recovery_pct" name="advance_recovery_pct" type="number" step="0.01" value="{{ old('advance_recovery_pct', 0) }}" class="input num" required></x-field>
                     <x-field :label="__('Deductions on')" name="deduction_basis">

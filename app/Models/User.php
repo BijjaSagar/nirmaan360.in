@@ -25,6 +25,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'is_active' => 'boolean',
+            'is_platform_admin' => 'boolean',
             'password' => 'hashed',
         ];
     }
@@ -53,7 +54,7 @@ class User extends Authenticatable
     /** Staff who run the platform. Separate from company roles, which all grant '*' to owners. */
     public function isPlatformAdmin(): bool
     {
-        return in_array(strtolower($this->email), config('buildos.platform_admins'), true);
+        return (bool) $this->is_platform_admin || in_array(strtolower($this->email), config('buildos.platform_admins'), true);
     }
 
     public function isApprovalOverride(): bool

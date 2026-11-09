@@ -9,8 +9,10 @@
     <p class="eyebrow text-ink-3">{{ __('Payment') }}</p>
     <p class="mt-2 font-display text-3xl font-semibold">{{ __(config("buildos.plans.{$payment->plan}.label")) }} · {{ __(ucfirst($payment->cycle)) }}</p>
     <dl class="mt-4 text-sm">
-        <div class="flex justify-between border-b border-rule py-2"><dt>{{ __('Plan price') }}</dt><dd class="num">{{ inr($payment->base_amount) }}</dd></div>
-        <div class="flex justify-between border-b border-rule py-2"><dt>{{ __('GST') }}</dt><dd class="num">{{ inr($payment->gst_amount) }}</dd></div>
+        @if (\App\Support\Dec::of($payment->gst_amount)->isPositive())
+            <div class="flex justify-between border-b border-rule py-2"><dt>{{ __('Price before GST') }}</dt><dd class="num">{{ inr($payment->base_amount) }}</dd></div>
+            <div class="flex justify-between border-b border-rule py-2"><dt>{{ __('GST') }}</dt><dd class="num">{{ inr($payment->gst_amount) }}</dd></div>
+        @endif
         <div class="flex justify-between py-2 font-semibold"><dt>{{ __('Total') }}</dt><dd class="num">{{ inr($payment->total_amount) }}</dd></div>
     </dl>
     <button id="pay" type="button" class="btn btn-primary mt-4 w-full">{{ __('Pay now') }}</button>

@@ -21,5 +21,5 @@
     @if ($otpEnabled)
         <a href="{{ route('otp.show') }}" class="link mt-4 block text-center text-sm">{{ __('Sign in with mobile OTP') }}</a>
     @endif
-    <p class="mt-6 text-center text-sm text-ink-3">{{ __('New here?') }} <a href="{{ route('register') }}" class="link">{{ __('Start a 30-day trial') }}</a></p>
+    <p class="mt-6 text-center text-sm text-ink-3">{{ __('New here?') }} <a href="{{ route('register') }}" class="link">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}</a></p>
 @endsection

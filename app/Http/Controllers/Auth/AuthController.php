@@ -85,7 +85,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard')->with('success', $isFree ? __('Welcome! Your free plan is ready.') : __('Welcome! Your 30-day trial has started.'));
+        return redirect()->route('dashboard')->with('success', $isFree ? __('Welcome! Your free plan is ready.') : __('Welcome! Your :days-day trial has started.', ['days' => config('buildos.trial_days')]));
     }
 
     public function logout(Request $request): RedirectResponse

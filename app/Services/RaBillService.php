@@ -30,12 +30,13 @@ class RaBillService
         User $user,
         ?WorkOrder $workOrder = null,
         mixed $materialRecovery = 0,
+        bool $withGst = true,
     ): RaBill {
         if ($type === 'subcontractor' && ! $workOrder) {
             throw ValidationException::withMessages(['work_order_id' => __('Choose a work order for a subcontractor bill.')]);
         }
 
-        return DB::transaction(function () use ($project, $type, $from, $to, $user, $workOrder, $materialRecovery) {
+        return DB::transaction(function () use ($project, $type, $from, $to, $user, $workOrder, $materialRecovery, $withGst) {
             $flag = $type === 'client' ? 'billed_client_bill_id' : 'billed_sub_bill_id';
 
             $entries = MeasurementEntry::with('boqItem')
@@ -100,6 +101,11 @@ class RaBillService
 
             $terms = ($workOrder ?? $project)->billingTerms();
             $terms['material_recovery'] = Dec::money($materialRecovery);
+
+            if (! $withGst) {
+                $terms['gst_pct'] = '0.00';
+            }
+
             $terms['advance_balance'] = Dec::money(
                 Dec::of($terms['advance_amount'])->minus(Dec::of(
                     RaBillDeduction::whereIn('ra_bill_id', $priorBills)->where('type', 'advance')->sum('amount')

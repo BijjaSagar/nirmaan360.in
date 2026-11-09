@@ -8,7 +8,7 @@
         ['calendar', 'Plan', 'Projects and sites today. Gantt and WBS next.', false],
         ['helmet', 'Site', 'Daily reports, photos, issues, attendance and petty cash.', true],
         ['ruler', 'Measure', 'Nos × L × B × D, checked level by level.', true],
-        ['bill', 'Bill', 'Client and subcontractor RA bills with GST.', true],
+        ['bill', 'Bill', 'Client and subcontractor RA bills, with or without GST.', true],
         ['rupee', 'Pay', 'Mark bills paid today. Ledger and Tally sync next.', false],
         ['stamp', 'Close', 'Final bill and retention release next.', false],
     ];
@@ -43,7 +43,7 @@
             <h1 class="animate-rise mt-4 text-[clamp(2.75rem,6.1vw,4.75rem)]">{{ __('One BOQ line.') }}<br>{{ __('Tender to final bill.') }}</h1>
             <p class="mt-6 max-w-[34rem] text-[19px] leading-[1.55] text-ink-2">{{ __('Nirmaan360 keeps your BOQ, daily reports, measurement book and RA bills on one record. The quantity your engineer measures on site is the quantity your client is billed.') }}</p>
             <div class="mt-8 flex flex-wrap gap-3">
-                <a href="{{ route('register') }}" class="site-btn site-btn-primary px-6 py-3">{{ __('Start a 30-day trial') }}<x-icon name="arrow" class="size-4" /></a>
+                <a href="{{ route('register') }}" class="site-btn site-btn-primary px-6 py-3">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}<x-icon name="arrow" class="size-4" /></a>
                 <a href="{{ route('pricing') }}" class="site-btn site-btn-outline px-6 py-3">{{ __('See pricing') }}</a>
             </div>
             <p class="mt-4 text-sm text-ink-3">{{ __('No card needed. English, मराठी and हिन्दी.') }}</p>
@@ -105,7 +105,7 @@
     <div class="h-24 text-black/10 [&>svg]:h-full [&>svg]:w-full">@include('public.partials.skyline')</div>
 </section>
 
-{{-- What is different, in the language of the trade --}}
+@if (site_on('strip'))
 <section class="bg-[#12181c] text-white">
     <div class="site-wrap grid gap-x-8 gap-y-6 py-9 sm:grid-cols-2 lg:grid-cols-4">
         @foreach ([['ruler', 'Measurement book', 'Nos × L × B × D with deductions'], ['bill', 'RA billing', 'Previous, this bill, cumulative'], ['language', 'Your language', 'English, Marathi and Hindi'], ['lock', 'Locked once approved', 'Corrections only by reversal']] as [$icon, $title, $text])
@@ -117,7 +117,9 @@
     </div>
 </section>
 
-{{-- How it fits together --}}
+@endif
+
+@if (site_on('stages'))
 <section id="product" class="scroll-mt-20">
     <div class="site-wrap py-20 lg:py-24">
         <div class="max-w-2xl">
@@ -143,7 +145,9 @@
     </div>
 </section>
 
-{{-- Measurement book --}}
+@endif
+
+@if (site_on('measurement'))
 <section class="bg-[#eaf1f6]">
     <div class="site-wrap grid items-center gap-12 py-20 lg:grid-cols-2 lg:gap-16 lg:py-24">
         <div class="relative">
@@ -177,7 +181,9 @@
     </div>
 </section>
 
-{{-- Billing --}}
+@endif
+
+@if (site_on('billing'))
 <section>
     <div class="site-wrap grid items-center gap-12 py-20 lg:grid-cols-[1.1fr_1fr] lg:gap-20 lg:py-24">
         <div>
@@ -202,7 +208,9 @@
     </div>
 </section>
 
-{{-- Field app --}}
+@endif
+
+@if (site_on('field_app'))
 <section class="overflow-hidden bg-neel-deep text-white">
     <div class="site-wrap grid items-center gap-12 py-20 lg:grid-cols-2 lg:py-0">
         <div class="lg:py-24">
@@ -240,7 +248,9 @@
     </div>
 </section>
 
-{{-- By role --}}
+@endif
+
+@if (site_on('roles'))
 <section class="bg-[#f6f2ea]" x-data="{ role: 'engineer' }">
     <div class="site-wrap py-20 lg:py-24">
         <h2 class="max-w-2xl text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('Everyone on the job works from the same numbers.') }}</h2>
@@ -266,7 +276,10 @@
     </div>
 </section>
 
+@endif
+
 {{-- AI: clearly labelled as early access --}}
+@if (site_on('ai'))
 <section>
     <div class="site-wrap grid gap-12 py-20 lg:grid-cols-[1fr_1.15fr] lg:gap-16 lg:py-24">
         <div>
@@ -290,7 +303,9 @@
     </div>
 </section>
 
-{{-- Pricing preview --}}
+@endif
+
+@if (site_on('pricing'))
 <section class="bg-[#f6f2ea]">
     <div class="site-wrap py-20 lg:py-24">
         <div class="flex flex-wrap items-end justify-between gap-5">
@@ -303,42 +318,45 @@
                 <div class="rounded-lg bg-white p-7 {{ $key === 'contractor' ? 'ring-2 ring-laterite' : '' }}">
                     <h3 class="text-[22px]">{{ __($plan['label']) }}</h3>
                     <p class="mt-1 text-[15px] text-ink-2">{{ __($plan['tagline']) }}</p>
-                    <p class="mt-5"><span class="text-[34px] font-extrabold tracking-tight">₹{{ \App\Support\Dec::indian($plan['monthly'], 0) }}</span> <span class="text-ink-3">{{ $key === 'free' ? __('forever') : __('/month + GST') }}</span></p>
+                    <p class="mt-5"><span class="text-[34px] font-extrabold tracking-tight">₹{{ \App\Support\Dec::indian($plan['monthly'], 0) }}</span> <span class="text-ink-3">{{ $key === 'free' ? __('forever') : __('/month').' · '.plan_gst_note() }}</span></p>
                     <p class="mt-3 text-[15px] font-medium">{{ $plan['max_projects'] ? trans_choice(':count project|:count projects', $plan['max_projects']) : __('Unlimited projects') }}, {{ $plan['max_users'] ? __(':count users', ['count' => $plan['max_users']]) : __('unlimited users') }}</p>
-                    <a href="{{ route('register', ['plan' => $key]) }}" class="site-btn {{ $key === 'contractor' ? 'site-btn-primary' : 'site-btn-outline' }} mt-6 w-full">{{ $key === 'free' ? __('Start free') : __('Start a 30-day trial') }}</a>
+                    <a href="{{ route('register', ['plan' => $key]) }}" class="site-btn {{ $key === 'contractor' ? 'site-btn-primary' : 'site-btn-outline' }} mt-6 w-full">{{ $key === 'free' ? __('Start free') : __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}</a>
                 </div>
             @endforeach
         </div>
     </div>
 </section>
 
-{{-- FAQ --}}
+@endif
+
+@if (site_on('faq'))
 <section>
     <div class="site-wrap grid gap-10 py-20 lg:grid-cols-[1fr_1.6fr] lg:py-24">
         <h2 class="text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('Questions contractors ask us') }}</h2>
         <div class="faq divide-y divide-black/10 border-y border-black/10">
             @foreach ([
-                ['Do I need a card to start?', 'No. You get 30 days on the plan you pick, then you move to the free plan unless you decide to buy.'],
+                ['Do I need a card to start?', 'No. You get :days days on the plan you pick, then you move to the free plan unless you decide to buy.'],
                 ['Can I bring in my existing BOQ?', 'Yes. Import a CSV with section, code, description, unit, quantity and rate. Excel import is on the way.'],
                 ['What if an approved measurement is wrong?', 'Approved records stay locked. You create a reversal entry, it goes through approval, and then you record the right measurement.'],
                 ['Does it work in Marathi and Hindi?', 'Yes, you can switch language at any time. The main screens are translated and we are adding the rest.'],
                 ['Is there a mobile app?', 'The Android and iPhone app is in testing. Today the full product works in the browser on your phone.'],
                 ['Can my client approve a bill?', 'Yes. Add the client as an approval level and send a signed link. They do not need an account.'],
             ] as [$question, $answer])
-                <details><summary>{{ __($question) }}<x-icon name="plus" class="faq-plus size-5 text-ink-3 transition-transform" /></summary><p class="pb-5 text-[16.5px] leading-relaxed text-ink-2">{{ __($answer) }}</p></details>
+                <details><summary>{{ __($question) }}<x-icon name="plus" class="faq-plus size-5 text-ink-3 transition-transform" /></summary><p class="pb-5 text-[16.5px] leading-relaxed text-ink-2">{{ __($answer, ['days' => config('buildos.trial_days')]) }}</p></details>
             @endforeach
         </div>
     </div>
 </section>
 
-{{-- Close --}}
+@endif
+
 <section class="bg-laterite text-white">
     <div class="site-wrap flex flex-wrap items-center justify-between gap-6 py-14">
         <div>
             <h2 class="text-[clamp(1.75rem,3.4vw,2.5rem)]">{{ __('Put your next RA bill on Nirmaan360.') }}</h2>
             <p class="mt-2 text-lg text-white/85">{{ __('Set up a project and BOQ in an afternoon.') }}</p>
         </div>
-        <a href="{{ route('register') }}" class="site-btn site-btn-light px-6 py-3">{{ __('Start a 30-day trial') }}<x-icon name="arrow" class="size-4" /></a>
+        <a href="{{ route('register') }}" class="site-btn site-btn-light px-6 py-3">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}<x-icon name="arrow" class="size-4" /></a>
     </div>
 </section>
 @endsection

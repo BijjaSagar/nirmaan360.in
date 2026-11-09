@@ -23,6 +23,19 @@ class RazorpayGateway
         return config('services.razorpay.key_secret');
     }
 
+    /** Asks Razorpay whether the saved keys work, without creating anything. */
+    public function keysWork(): bool
+    {
+        if (! $this->isLive()) {
+            return false;
+        }
+
+        return Http::withBasicAuth($this->keyId(), $this->keySecret())
+            ->timeout(10)
+            ->get('https://api.razorpay.com/v1/orders', ['count' => 1])
+            ->successful();
+    }
+
     /** @return array{id:string} */
     public function createOrder(string $paise, string $receipt, array $notes = []): array
     {

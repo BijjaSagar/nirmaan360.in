@@ -5,3 +5,13 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=khand:500,600,700|mukta:400,500,600,700,800|dm-mono:400,500" rel="stylesheet">
 @vite(['resources/css/app.css', 'resources/js/app.js'])
+@php
+    $brandColors = array_filter([
+        'laterite' => site_setting('color_primary'),
+        'laterite-dark' => site_setting('color_primary_dark'),
+        'haldi' => site_setting('color_accent'),
+    ]);
+@endphp
+@if ($brandColors)
+    <style>:root{ @foreach ($brandColors as $name => $value)--color-{{ $name }}:{{ $value }};@endforeach }</style>
+@endif

@@ -11,6 +11,15 @@
     <link rel="canonical" href="{{ url()->current() }}">
 </head>
 <body class="site font-sans text-ink antialiased">
+@if (site_setting('announcement'))
+    <div class="bg-neel-deep px-5 py-2 text-center text-sm text-white">
+        @if (site_setting('announcement_link'))
+            <a href="{{ site_setting('announcement_link') }}" class="underline underline-offset-2">{{ site_setting('announcement') }}</a>
+        @else
+            {{ site_setting('announcement') }}
+        @endif
+    </div>
+@endif
 <header class="sticky top-0 z-40 border-b border-black/8 bg-white/95 backdrop-blur" x-data="{ open: false }">
     <div class="site-wrap flex h-[68px] items-center justify-between gap-6">
         <a href="{{ route('home') }}" aria-label="{{ config('buildos.brand') }}"><x-brand tone="dark" /></a>
@@ -59,6 +68,18 @@
         <div>
             <x-brand />
             <p class="mt-4 max-w-xs text-[15px] leading-relaxed">{{ __('Site-to-bill software for Indian contractors, builders and consultants.') }}</p>
+            <ul class="mt-4 space-y-1.5 text-[15px]">
+                @if (site_setting('contact_email'))<li class="flex items-center gap-2"><x-icon name="mail" class="size-4" /><a href="mailto:{{ site_setting('contact_email') }}" class="hover:text-white">{{ site_setting('contact_email') }}</a></li>@endif
+                @if (site_setting('contact_phone'))<li class="flex items-center gap-2"><x-icon name="call" class="size-4" /><a href="tel:{{ preg_replace('/[^0-9+]/', '', site_setting('contact_phone')) }}" class="hover:text-white">{{ site_setting('contact_phone') }}</a></li>@endif
+                @if (site_setting('contact_address'))<li class="flex items-start gap-2"><x-icon name="pin" class="mt-1 size-4" /><span>{{ site_setting('contact_address') }}</span></li>@endif
+            </ul>
+            <div class="mt-4 flex gap-3">
+                @foreach (['facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'youtube' => 'YouTube', 'x' => 'X'] as $network => $label)
+                    @if (site_setting('social_'.$network))
+                        <a href="{{ site_setting('social_'.$network) }}" target="_blank" rel="noopener" aria-label="{{ $label }}" class="hover:text-white"><x-icon :name="$network" /></a>
+                    @endif
+                @endforeach
+            </div>
         </div>
         <div>
             <p class="text-sm font-semibold text-white">{{ __('Product') }}</p>

@@ -29,7 +29,15 @@
         'menu' => '<path d="M4 7h16M4 12h16M4 17h16"/>',
         'calc' => '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/>',
         'link' => '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
-        'layers' => '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+        'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',
+        'call' => '<path d="M6 3h3l1.5 5-2 1.5a12 12 0 0 0 6 6l1.5-2 5 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z"/>',
+        'pin' => '<path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+        'facebook' => '<path d="M14.5 21v-8h3l.5-3.5h-3.5V7.2c0-1 .4-1.7 1.8-1.7H18V2.4c-.6-.1-1.6-.2-2.6-.2-2.6 0-4.4 1.6-4.4 4.5v2.8H8V13h3v8"/>',
+        'instagram' => '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="4"/><path d="M17.2 6.8h.01"/>',
+        'linkedin' => '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M8 10.5V17M8 7.2h.01M12 17v-6.5M12 13.5c0-1.8 1.2-3 2.8-3s2.7 1.1 2.7 3V17"/>',
+        'youtube' => '<rect x="2.5" y="5.5" width="19" height="13" rx="3.5"/><path d="m10.5 9.2 4.5 2.8-4.5 2.8z"/>',
+        'x' => '<path d="m4 4 16 16M20 4 4 20"/>',
+        'layers' =>'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
     ];
 @endphp
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" {{ $attributes->merge(['class' => 'size-5 shrink-0']) }}>{!! $icons[$name] ?? '' !!}</svg>

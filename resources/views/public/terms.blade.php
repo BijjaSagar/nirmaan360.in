@@ -3,6 +3,9 @@
 @section('content')
 <article class="site-wrap max-w-3xl py-16 text-[17px] leading-relaxed text-ink-2 [&_h2]:mt-9 [&_h2]:text-[23px] [&_h2]:text-ink [&_p]:mt-3">
     <h1 class="text-[clamp(2.25rem,4.5vw,3.25rem)] text-ink">Terms of service</h1>
+    @if (filled(site_setting('terms_text')))
+        {!! \Illuminate\Support\Str::markdown(site_setting('terms_text'), ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
+    @else
     <p>By creating an account on Nirmaan360 you agree to these terms on behalf of yourself and your company.</p>
 
     <h2>Your account</h2>
@@ -12,7 +15,7 @@
     <p>Your project records belong to you. You give us permission to store and process them only to provide the service.</p>
 
     <h2>Plans and payment</h2>
-    <p>Paid plans are prepaid monthly or yearly and are charged in Indian rupees plus GST through Razorpay. Plans do not renew automatically. If a paid period ends and is not renewed within 3 days, your company moves to the free plan and your data stays in place. Trials end after 30 days and move to the free plan in the same way.</p>
+    <p>Paid plans are prepaid monthly or yearly and are charged in Indian rupees {{ ['included' => 'including GST', 'none' => ''][config('buildos.subscription_gst_mode')] ?? 'plus GST' }} through Razorpay. Plans do not renew automatically. If a paid period ends and is not renewed within {{ config('buildos.payment_grace_days') }} days, your company moves to the free plan and your data stays in place. Trials end after {{ config('buildos.trial_days') }} days and move to the free plan in the same way.</p>
 
     <h2>Check your figures</h2>
     <p>Nirmaan360 helps you prepare measurements, bills and calculations. You remain responsible for checking them against your contracts, drawings, codes and tax rules before you rely on them.</p>
@@ -28,5 +31,6 @@
 
     <h2>Governing law</h2>
     <p>These terms are governed by the laws of India.</p>
+    @endif
 </article>
 @endsection

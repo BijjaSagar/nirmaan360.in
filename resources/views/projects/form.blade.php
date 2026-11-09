@@ -60,7 +60,7 @@
                 <x-field :label="__('TDS %')" name="tds_pct">
                     <input id="tds_pct" name="tds_pct" type="number" step="0.01" value="{{ old('tds_pct', $project->tds_pct ?? 2) }}" class="input num" required>
                 </x-field>
-                <x-field :label="__('GST %')" name="gst_pct">
+                <x-field :label="__('GST %')" name="gst_pct" :hint="__('Enter 0 if this contract has no GST.')">
                     <input id="gst_pct" name="gst_pct" type="number" step="0.01" value="{{ old('gst_pct', $project->gst_pct ?? 18) }}" class="input num" required>
                 </x-field>
                 <x-field :label="__('Mobilisation advance (₹)')" name="advance_amount">

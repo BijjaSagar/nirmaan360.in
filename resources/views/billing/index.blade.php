@@ -43,7 +43,7 @@
                     <label class="flex cursor-pointer items-center justify-between gap-3 rounded-[3px] border border-rule p-3" :class="cycle === 'monthly' && 'border-neel'"><span class="flex items-center gap-2"><input type="radio" value="monthly" x-model="cycle"> {{ __('Monthly') }}</span><span class="num">{{ inr($plan['monthly']) }}</span></label>
                     <label class="flex cursor-pointer items-center justify-between gap-3 rounded-[3px] border border-rule p-3" :class="cycle === 'yearly' && 'border-neel'"><span class="flex items-center gap-2"><input type="radio" value="yearly" x-model="cycle"> {{ __('Yearly') }} <span class="text-xs font-semibold text-moss">{{ __('2 months free') }}</span></span><span class="num">{{ inr($plan['yearly']) }}</span></label>
                 </div>
-                <p class="mt-2 text-xs text-ink-3">{{ __('Plus :gst% GST', ['gst' => $gstPct]) }}</p>
+                <p class="mt-2 text-xs text-ink-3">{{ plan_gst_note() }}</p>
                 <button class="btn btn-primary mt-4" @disabled(! $gatewayLive)>{{ $current === $key ? __('Renew') : __('Choose :plan', ['plan' => __($plan['label'])]) }}</button>
             </form>
         @endforeach

@@ -30,6 +30,9 @@ return [
 
     'subscription_gst_pct' => 18,
 
+    // plus: GST is added to the plan price. included: the plan price already has GST in it. none: no GST.
+    'subscription_gst_mode' => 'plus',
+
     // Comma-separated emails that can open the platform admin screen.
     'platform_admins' => array_values(array_filter(array_map(
         fn ($email) => strtolower(trim($email)),

@@ -55,6 +55,39 @@ class RaBillServiceTest extends TestCase
         $this->assertSame('RA-'.$project->code.'-001', $bill->number);
     }
 
+    public function test_bill_can_leave_out_gst_without_changing_the_contract(): void
+    {
+        [$project, $item, $engineer, $owner] = $this->setUpProject();
+        $this->approveEntry($this->draftEntry($project, $item, $engineer), $engineer, $owner);
+
+        $bill = app(RaBillService::class)->generate($project, 'client', '2026-11-01', '2026-11-30', $owner, withGst: false);
+
+        $this->assertSame('250000.00', $bill->gross_amount);
+        $this->assertSame('42500.00', $bill->deduction_total);
+        $this->assertSame('0.00', $bill->gst_amount);
+        $this->assertSame('207500.00', $bill->net_payable);
+        $this->assertFalse($bill->hasGst());
+        $this->assertSame('18.00', $project->fresh()->gst_pct);
+    }
+
+    public function test_user_picks_with_or_without_gst_on_the_bill_form(): void
+    {
+        $this->withoutVite();
+        [$project, $item, $engineer, $owner] = $this->setUpProject();
+        $this->approveEntry($this->draftEntry($project, $item, $engineer), $engineer, $owner);
+        $this->actingAs($owner);
+        $form = ['type' => 'client', 'period_from' => '2026-11-01', 'period_to' => '2026-11-30'];
+
+        $this->get(route('ra-bills.create', $project))->assertOk()->assertSee('With GST')->assertSee('Without GST');
+        $this->post(route('ra-bills.store', $project), [...$form, 'gst' => 'perhaps'])->assertSessionHasErrors('gst');
+        $this->post(route('ra-bills.store', $project), [...$form, 'gst' => 'without'])->assertSessionHasNoErrors();
+
+        $bill = RaBill::latest('id')->firstOrFail();
+        $this->assertSame('0.00', $bill->gst_amount);
+        $this->get(route('ra-bills.show', $bill))->assertOk()->assertSee('Not charged');
+        $this->get(route('ra-bills.pdf', $bill))->assertOk();
+    }
+
     public function test_next_bill_carries_previous_and_cumulative_figures(): void
     {
         [$project, $item, $engineer, $owner] = $this->setUpProject();

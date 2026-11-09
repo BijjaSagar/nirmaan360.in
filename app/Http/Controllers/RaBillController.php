@@ -44,6 +44,7 @@ class RaBillController extends Controller
             'period_to' => ['required', 'date', 'after_or_equal:period_from'],
             'work_order_id' => ['nullable', 'required_if:type,subcontractor', Rule::exists('work_orders', 'id')->where('project_id', $project->id)],
             'material_recovery' => ['nullable', 'numeric', 'min:0'],
+            'gst' => ['nullable', Rule::in(['with', 'without'])],
         ]);
 
         $bill = $this->service->generate(
@@ -54,6 +55,7 @@ class RaBillController extends Controller
             $request->user(),
             $data['type'] === 'subcontractor' ? WorkOrder::findOrFail($data['work_order_id']) : null,
             $data['material_recovery'] ?? 0,
+            ($data['gst'] ?? 'with') === 'with',
         );
 
         return redirect()->route('ra-bills.show', $bill)->with('success', __('RA bill generated as draft.'));

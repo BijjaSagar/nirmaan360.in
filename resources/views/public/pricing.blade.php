@@ -1,6 +1,6 @@
 @extends('layouts.public')
 @section('title', __('Pricing'))
-@section('description', __('Simple plans for Indian contractors. Start free on one site, or try Contractor or Business for 30 days with no card.'))
+@section('description', __('Simple plans for Indian contractors. Start free on one site, or try Contractor or Business for :days days with no card.', ['days' => config('buildos.trial_days')]))
 @section('content')
 @php
     $order = ['free', 'contractor', 'business', 'enterprise'];
@@ -54,7 +54,7 @@
                             @else
                                 <p x-show="!yearly"><span class="text-[34px] font-extrabold tracking-tight">₹{{ \App\Support\Dec::indian($plan['monthly'], 0) }}</span> <span class="text-ink-3">{{ __('/month') }}</span></p>
                                 <p x-show="yearly" x-cloak><span class="text-[34px] font-extrabold tracking-tight">₹{{ \App\Support\Dec::indian($plan['yearly'], 0) }}</span> <span class="text-ink-3">{{ __('/year') }}</span></p>
-                                <p class="text-sm text-ink-3">{{ __('Plus :gst% GST', ['gst' => $gstPct]) }}</p>
+                                <p class="text-sm text-ink-3">{{ plan_gst_note() }}</p>
                             @endif
                         </div>
                         <div class="mt-auto pt-5">
@@ -63,7 +63,7 @@
                             @elseif ($key === 'free')
                                 <a href="{{ route('register', ['plan' => 'free']) }}" class="site-btn site-btn-outline w-full">{{ __('Start free') }}</a>
                             @else
-                                <a href="{{ route('register', ['plan' => $key]) }}" class="site-btn {{ $featured ? 'site-btn-primary' : 'site-btn-outline' }} w-full">{{ __('Start a 30-day trial') }}</a>
+                                <a href="{{ route('register', ['plan' => $key]) }}" class="site-btn {{ $featured ? 'site-btn-primary' : 'site-btn-outline' }} w-full">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}</a>
                             @endif
                         </div>
                     </div>

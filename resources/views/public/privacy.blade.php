@@ -3,6 +3,9 @@
 @section('content')
 <article class="site-wrap max-w-3xl py-16 text-[17px] leading-relaxed text-ink-2 [&_h2]:mt-9 [&_h2]:text-[23px] [&_h2]:text-ink [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5">
     <h1 class="text-[clamp(2.25rem,4.5vw,3.25rem)] text-ink">Privacy policy</h1>
+    @if (filled(site_setting('privacy_text')))
+        {!! \Illuminate\Support\Str::markdown(site_setting('privacy_text'), ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
+    @else
     <p>This policy explains what Nirmaan360 collects when you use nirmaan360.in and our apps, and what we do with it.</p>
 
     <h2>What we collect</h2>
@@ -30,5 +33,6 @@
 
     <h2>Changes</h2>
     <p>If this policy changes in a way that matters, we will tell you in the product before it takes effect.</p>
+    @endif
 </article>
 @endsection

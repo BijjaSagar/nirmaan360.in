@@ -27,10 +27,34 @@ class BillingService
             throw ValidationException::withMessages(['plan' => __('This plan cannot be bought online.')]);
         }
 
-        $base = Dec::money($price);
-        $gst = Dec::percentOf($base, config('buildos.subscription_gst_pct'));
+        $price = Dec::money($price);
+        $pct = config('buildos.subscription_gst_pct');
 
-        return ['base' => $base, 'gst' => $gst, 'total' => Dec::money(Dec::of($base)->plus(Dec::of($gst)))];
+        return match (config('buildos.subscription_gst_mode')) {
+            'none' => ['base' => $price, 'gst' => '0.00', 'total' => $price],
+            'included' => $this->splitIncludedGst($price, $pct),
+            default => $this->addGst($price, $pct),
+        };
+    }
+
+    /** @return array{base:string,gst:string,total:string} */
+    private function addGst(string $price, mixed $pct): array
+    {
+        $gst = Dec::percentOf($price, $pct);
+
+        return ['base' => $price, 'gst' => $gst, 'total' => Dec::money(Dec::of($price)->plus(Dec::of($gst)))];
+    }
+
+    /**
+     * GST is the remainder, so the two parts always add back to the price.
+     *
+     * @return array{base:string,gst:string,total:string}
+     */
+    private function splitIncludedGst(string $price, mixed $pct): array
+    {
+        $base = Dec::beforePercent($price, $pct);
+
+        return ['base' => $base, 'gst' => Dec::money(Dec::of($price)->minus(Dec::of($base))), 'total' => $price];
     }
 
     public function startCheckout(Organization $organization, User $user, string $plan, string $cycle): BillingPayment

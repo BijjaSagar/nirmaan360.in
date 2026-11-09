@@ -65,7 +65,7 @@
                             <dd class="num whitespace-nowrap text-laterite">−{{ inr($deduction->amount) }}</dd>
                         </div>
                     @endforeach
-                    <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('GST') }} <span class="num text-xs text-ink-3">{{ (float) ($bill->terms['gst_pct'] ?? 0) }}%</span></dt><dd class="num">+{{ inr($bill->gst_amount) }}</dd></div>
+                    <div class="flex justify-between border-b border-rule px-4 py-2"><dt>{{ __('GST') }} @if ($bill->hasGst())<span class="num text-xs text-ink-3">{{ (float) ($bill->terms['gst_pct'] ?? 0) }}%</span>@endif</dt><dd class="num">{{ $bill->hasGst() ? '+'.inr($bill->gst_amount) : __('Not charged') }}</dd></div>
                     <div class="flex items-baseline justify-between bg-paper-2/60 px-4 py-3"><dt class="font-display text-lg font-semibold whitespace-nowrap">{{ __('Net payable') }}</dt><dd class="num text-lg font-medium whitespace-nowrap">{{ inr($bill->net_payable) }}</dd></div>
                 </dl>
             </section>

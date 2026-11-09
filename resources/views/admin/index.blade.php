@@ -2,6 +2,7 @@
 @section('title', __('Platform admin'))
 @section('content')
     <x-page-header :title="__('Platform admin')" :subtitle="__('Every company on Nirmaan360')" />
+    @include('admin._tabs')
 
     <section class="card overflow-x-auto">
         <div class="card-head"><h2 class="card-title">{{ __('Companies') }}</h2><span class="num text-sm">{{ $organizations->total() }}</span></div>

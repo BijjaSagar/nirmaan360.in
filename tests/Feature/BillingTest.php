@@ -92,6 +92,20 @@ class BillingTest extends TestCase
             ->assertSessionHasErrors('plan');
     }
 
+    public function test_price_can_already_include_gst_and_parts_add_back(): void
+    {
+        config(['buildos.subscription_gst_mode' => 'included']);
+
+        $this->assertSame(['base' => '2541.53', 'gst' => '457.47', 'total' => '2999.00'], app(BillingService::class)->quote('contractor', 'monthly'));
+    }
+
+    public function test_plan_can_be_sold_without_gst(): void
+    {
+        config(['buildos.subscription_gst_mode' => 'none']);
+
+        $this->assertSame(['base' => '2999.00', 'gst' => '0.00', 'total' => '2999.00'], app(BillingService::class)->quote('contractor', 'monthly'));
+    }
+
     public function test_quote_adds_gst_exactly(): void
     {
         $this->assertSame(['base' => '2999.00', 'gst' => '539.82', 'total' => '3538.82'], app(BillingService::class)->quote('contractor', 'monthly'));

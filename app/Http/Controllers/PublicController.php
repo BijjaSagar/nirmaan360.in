@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\ContactRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PublicController extends Controller
 {
@@ -26,7 +28,6 @@ class PublicController extends Controller
     {
         return view('public.pricing', [
             'plans' => config('buildos.plans'),
-            'gstPct' => config('buildos.subscription_gst_pct'),
             'trialDays' => config('buildos.trial_days'),
         ]);
     }
@@ -60,6 +61,14 @@ class PublicController extends Controller
         ]));
 
         return back()->with('success', __('Thanks. We have your message and will get back to you.'));
+    }
+
+    public function logo(): StreamedResponse
+    {
+        $path = site_setting('logo_path');
+        abort_unless($path && Storage::exists($path), 404);
+
+        return Storage::response($path, null, ['Cache-Control' => 'public, max-age=86400']);
     }
 
     public function privacy(): View
