@@ -14,6 +14,7 @@
                 @if ($approval->approvable?->deviation)
                     <x-stamp status="deviation" class="mt-1" />
                 @endif
+                @includeWhen($approval->doc_type === 'contractor' && $approval->approvable, 'modules.contractor_control._approval-ratio', ['payment' => $approval->approvable])
                 @include('approvals._act', ['approval' => $approval])
             </div>
         @empty
