@@ -89,6 +89,7 @@ class MoneyVisibilityTest extends TestCase
         'material_control.challans.show' => ['challan_bill'],
         'project-setup.permits.index' => ['permit_fee'],
         'project-setup.history' => ['revision_value'],
+        'auto-boq.show' => ['library_rate'],
         'alerts.index' => ['alert_money'],
         'api/v1/contractor-payments/{payment}' => ['payment'],
         'api/v1/projects/{project}/alerts' => ['alert_money'],
