@@ -12,6 +12,8 @@ class RateLibraryItem extends Model
 {
     use Auditable, BelongsToOrganization, SoftDeletes;
 
+    public const COMPANY_WIDE = true;
+
     /** The optional rate analysis parts. */
     public const PARTS = ['material_rate', 'labour_rate', 'plant_rate', 'overhead_rate', 'profit_rate'];
 

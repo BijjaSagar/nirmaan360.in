@@ -51,8 +51,9 @@ class TranslationsAndMenuTest extends ReportsTestCase
 
         array_push($texts, ...array_values(ReportPeriod::LABELS), ...array_values(ScheduleService::DAYS));
 
-        foreach (Modules::nav('company', $this->org) as $item) {
-            array_push($texts, $item['label'], $item['group']);
+        // Other modules translate their own menu items.
+        foreach (config('modules.reports.nav', []) as $item) {
+            array_push($texts, $item['label'], $item['group'] ?? $item['label']);
         }
 
         // The single letters L, B and D are the usual dimension marks and stay as they are.
