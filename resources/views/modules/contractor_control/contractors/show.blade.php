@@ -3,6 +3,9 @@
 @section('content')
     @php($shortBy = \App\Support\Dec::of($summary['short_by'])->isPositive())
     <x-page-header :title="$party->name" :subtitle="__('Contractor ledger')">
+        @can('contractor_portal.manage')
+            <a href="{{ route('contractor-portal.access.show', $party) }}" class="btn btn-ghost">{{ __('Contractor login') }}</a>
+        @endcan
         <a href="{{ route('contractor-control.contractors.pdf', $party) }}" class="btn btn-ghost">{{ __('Download PDF') }}</a>
     </x-page-header>
 

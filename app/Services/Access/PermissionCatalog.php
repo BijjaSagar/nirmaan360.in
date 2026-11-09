@@ -40,9 +40,15 @@ final class PermissionCatalog
     public function all(): array
     {
         $found = [];
+        $portalOnly = [];
 
         foreach (config('buildos.roles', []) as $role) {
-            array_push($found, ...($role['permissions'] ?? []));
+            // What a portal role holds, such as the contractor login's view of the portal, is never built into a team role.
+            if ($role['portal'] ?? false) {
+                array_push($portalOnly, ...($role['permissions'] ?? []));
+            } else {
+                array_push($found, ...($role['permissions'] ?? []));
+            }
         }
 
         foreach (config('modules', []) as $module) {
@@ -64,7 +70,10 @@ final class PermissionCatalog
             }
         }
 
-        $permissions = array_values(array_unique(array_filter($found, fn ($permission) => preg_match(self::SHAPE, $permission) === 1)));
+        $permissions = array_values(array_unique(array_filter(
+            $found,
+            fn ($permission) => preg_match(self::SHAPE, $permission) === 1 && ! in_array($permission, $portalOnly, true),
+        )));
         sort($permissions);
 
         return $permissions;

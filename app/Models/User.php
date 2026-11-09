@@ -28,6 +28,9 @@ class User extends Authenticatable
     /** These reach across the whole company, so someone limited to chosen projects never holds them. */
     public const COMPANY_WIDE_PERMISSIONS = ['user.*', 'settings.*', 'billing.*', 'audit.*'];
 
+    /** A subcontractor's own login: it reaches the contractor portal and nothing else, and never counts as a team seat. */
+    public const CONTRACTOR_ROLE = 'contractor';
+
     protected function casts(): array
     {
         return [
@@ -55,6 +58,18 @@ class User extends Authenticatable
     public function assignedProjects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class, 'user_project_access')->withTimestamps();
+    }
+
+    /** Whether this is a contractor login. ContractorPortalService::partyFor() says whether its link still leads to a subcontractor. */
+    public function isContractor(): bool
+    {
+        return $this->custom_role_id === null && $this->role === self::CONTRACTOR_ROLE;
+    }
+
+    /** The subcontractor a contractor login belongs to, within the signed-in company. */
+    public function contractorParty(): BelongsTo
+    {
+        return $this->belongsTo(Party::class, 'contractor_party_id');
     }
 
     public function hasPermission(string $permission): bool
