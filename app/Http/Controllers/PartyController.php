@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Party;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,9 +21,14 @@ class PartyController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    /** The project form adds a client from a popup and needs the new row back. */
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
-        Party::create($this->validated($request));
+        $party = Party::create($this->validated($request));
+
+        if ($request->expectsJson()) {
+            return response()->json(['id' => $party->id, 'name' => $party->name], 201);
+        }
 
         return back()->with('success', __('Contact added.'));
     }
