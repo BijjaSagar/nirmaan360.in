@@ -22,9 +22,12 @@ class TeamAccessService
         $options = [];
 
         foreach (config('buildos.roles') as $key => $role) {
-            if ($this->catalog->coversAll($held, $role['permissions'])) {
-                $options[$key] = __($role['label'] ?? $key);
+            // A portal role, such as a contractor login, is handed out from the record it belongs to, never from the team screen.
+            if (($role['portal'] ?? false) || ! $this->catalog->coversAll($held, $role['permissions'])) {
+                continue;
             }
+
+            $options[$key] = __($role['label'] ?? $key);
         }
 
         $customRoles = CustomRole::withoutGlobalScopes()->where('organization_id', $actor->organization_id)->orderBy('name')->get();
@@ -42,7 +45,7 @@ class TeamAccessService
      * What a role key means inside one company. Null when it means nothing there,
      * which is how another company's custom role is refused.
      *
-     * @return array{key: string, role: string, custom_role_id: ?int, permissions: list<string>, label: string}|null
+     * @return array{key: string, role: string, custom_role_id: ?int, permissions: list<string>, label: string, portal: bool, managed_by: ?string}|null
      */
     public function describeRole(string $key, int $organizationId): ?array
     {
@@ -58,6 +61,8 @@ class TeamAccessService
                 'custom_role_id' => $role->id,
                 'permissions' => $role->permissions,
                 'label' => $role->name,
+                'portal' => false,
+                'managed_by' => null,
             ] : null;
         }
 
@@ -69,26 +74,50 @@ class TeamAccessService
             'custom_role_id' => null,
             'permissions' => $role['permissions'],
             'label' => $role['label'] ?? $key,
+            'portal' => (bool) ($role['portal'] ?? false),
+            'managed_by' => $role['managed_by'] ?? null,
         ] : null;
     }
 
+    /** A team role needs every permission it grants; a portal role needs the one permission that hands it out. */
     public function canAssign(User $actor, string $key): bool
     {
         $role = $this->describeRole($key, $actor->organization_id);
 
-        return $role !== null && $this->catalog->coversAll($actor->grantedPermissions(), $role['permissions']);
+        if ($role === null) {
+            return false;
+        }
+
+        if ($role['portal']) {
+            return $role['managed_by'] !== null && $actor->hasPermission($role['managed_by']);
+        }
+
+        return $this->catalog->coversAll($actor->grantedPermissions(), $role['permissions']);
     }
 
-    /** Nobody may act on a person who holds more than they do. */
+    /** Whether this person may send, and still stands behind, an invitation for this role. */
+    public function canInvite(User $actor, string $key): bool
+    {
+        $role = $this->describeRole($key, $actor->organization_id);
+
+        if ($role === null) {
+            return false;
+        }
+
+        return $role['portal'] ? $this->canAssign($actor, $key) : ($actor->hasPermission('user.manage') && $this->canAssign($actor, $key));
+    }
+
+    /** Nobody may act on a person who holds more than they do. Contractor logins are not team members and are managed from the contractor's page. */
     public function canManage(User $actor, User $target): bool
     {
         return $actor->organization_id === $target->organization_id
+            && ! $target->isContractor()
             && $this->catalog->coversAll($actor->grantedPermissions(), $target->grantedPermissions());
     }
 
     public function assertCanManage(User $actor, User $target): void
     {
-        abort_unless($actor->organization_id === $target->organization_id, 404);
+        abort_unless($actor->organization_id === $target->organization_id && ! $target->isContractor(), 404);
         abort_unless($this->canManage($actor, $target), 403, __('This person has more access than you do.'));
     }
 
@@ -105,6 +134,10 @@ class TeamAccessService
 
         if ($role === null) {
             throw ValidationException::withMessages(['role' => __('Choose a valid role.')]);
+        }
+
+        if ($role['portal']) {
+            throw ValidationException::withMessages(['role' => __('A contractor login is given from the contractor\'s page, not from the team screen.')]);
         }
 
         if ($actor->is($target)) {

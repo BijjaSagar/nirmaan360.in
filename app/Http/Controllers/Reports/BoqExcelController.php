@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Services\Reports\BoqExcelService;
+use App\Services\Reports\BoqPdfImport;
+use App\Services\Reports\BoqPdfReader;
 use App\Services\Reports\Download;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
@@ -12,13 +14,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
-/** Excel BOQ import and export, next to the CSV in BoqController. */
+/** Excel BOQ import and export, next to the CSV in BoqController. The same import form takes a PDF, which goes to a preview first. */
 class BoqExcelController extends Controller
 {
     /** Problems shown after an import. The rest are counted, so a huge broken file does not make a huge page. */
     private const SHOWN_ERRORS = 200;
 
-    public function __construct(private BoqExcelService $service) {}
+    public function __construct(private BoqExcelService $service, private BoqPdfImport $pdf) {}
 
     public function index(Project $project): View
     {
@@ -41,6 +43,10 @@ class BoqExcelController extends Controller
 
     public function import(Request $request, Project $project): RedirectResponse
     {
+        if (strtolower((string) $request->file('file')?->getClientOriginalExtension()) === 'pdf') {
+            return $this->importPdf($request, $project);
+        }
+
         $request->validate(['file' => ['required', 'file', 'extensions:xlsx', 'max:5120']]);
 
         $result = $this->service->import($project, $request->file('file')->getRealPath());
@@ -55,5 +61,27 @@ class BoqExcelController extends Controller
             'errors' => array_slice($result->errors, 0, self::SHOWN_ERRORS),
             'more' => max(0, count($result->errors) - self::SHOWN_ERRORS),
         ]);
+    }
+
+    /** A PDF is read and shown first. Nothing is written until the preview is confirmed. */
+    private function importPdf(Request $request, Project $project): RedirectResponse
+    {
+        $request->validate(['file' => ['required', 'file', 'extensions:pdf', 'max:'.(BoqPdfReader::MAX_BYTES / 1024)]]);
+
+        $file = $request->file('file');
+        $staged = $this->pdf->stage($project, $request->user(), $file->getRealPath(), $file->getClientOriginalName());
+
+        if (isset($staged['error'])) {
+            return redirect()->route('boq.excel.index', $project)->with('boq_import', [
+                'errors' => [['row' => 0, 'field' => null, 'message' => $staged['error']]],
+                'more' => 0,
+                'pdf' => true,
+                'scanned' => $staged['scanned'],
+            ]);
+        }
+
+        $request->session()->put(BoqPdfImport::SESSION, $staged['token']);
+
+        return redirect()->route('boq.pdf.preview', $project);
     }
 }

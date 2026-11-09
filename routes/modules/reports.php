@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Reports\BoqExcelController;
+use App\Http\Controllers\Reports\BoqPdfImportController;
 use App\Http\Controllers\Reports\DprShareController;
 use App\Http\Controllers\Reports\MeasurementSheetController;
 use App\Http\Controllers\Reports\RateLibraryController;
@@ -16,6 +17,11 @@ Route::middleware('feature:reports')->group(function () {
     Route::get('/projects/{project}/boq/export.xlsx', [BoqExcelController::class, 'export'])->middleware('can:boq.view')->name('boq.excel.export');
     Route::get('/boq-template.xlsx', [BoqExcelController::class, 'template'])->middleware('can:boq.view')->name('boq.excel.template');
     Route::post('/projects/{project}/boq/import-excel', [BoqExcelController::class, 'import'])->middleware(['can:boq.manage', 'throttle:20,1'])->name('boq.excel.import');
+
+    // A BOQ read from a PDF is shown first and written only on confirmation. The upload goes through boq.excel.import.
+    Route::get('/projects/{project}/boq/import-pdf/preview', [BoqPdfImportController::class, 'preview'])->middleware('can:boq.manage')->name('boq.pdf.preview');
+    Route::post('/projects/{project}/boq/import-pdf/confirm', [BoqPdfImportController::class, 'confirm'])->middleware(['can:boq.manage', 'throttle:20,1'])->name('boq.pdf.confirm');
+    Route::post('/projects/{project}/boq/import-pdf/discard', [BoqPdfImportController::class, 'discard'])->middleware(['can:boq.manage', 'throttle:20,1'])->name('boq.pdf.discard');
 
     // Company rate library.
     Route::get('/rate-library', [RateLibraryController::class, 'index'])->middleware('can:rate.view')->name('ratelib.index');

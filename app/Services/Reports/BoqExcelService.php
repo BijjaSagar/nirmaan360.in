@@ -39,8 +39,8 @@ class BoqExcelService
     /** Read when the sheet has them. A sheet without them still imports, and leaves them as they are. */
     public const OPTIONAL = ['category', 'details'];
 
-    /** Header text people commonly use, after lower-casing and dropping punctuation. */
-    private const ALIASES = [
+    /** Header text people commonly use, after lower-casing and dropping punctuation. The PDF reader looks for the same words. */
+    public const ALIASES = [
         'section' => ['section', 'chapter', 'section name', 'group'],
         'code' => ['code', 'item code', 'item no', 'item number', 'sr no', 'sl no', 's no'],
         'description' => ['description', 'item description', 'description of item', 'description of items', 'description of work', 'particulars'],
@@ -158,10 +158,11 @@ class BoqExcelService
     /**
      * @param  array<int, array<int, mixed>>  $grid  Row => column => saved value.
      * @param  array<int, array<int, true>>  $missingValue  Formula cells that have no saved value.
+     * @param  string|null  $reason  What the BOQ history shows for this import. Excel by default; the PDF import names itself.
      */
-    public function importGrid(Project $project, array $grid, array $missingValue = []): BoqImportResult
+    public function importGrid(Project $project, array $grid, array $missingValue = [], ?string $reason = null, string $source = 'excel_import'): BoqImportResult
     {
-        return DB::transaction(function () use ($project, $grid, $missingValue) {
+        return DB::transaction(function () use ($project, $grid, $missingValue, $reason, $source) {
             // The same lock BoqService::create takes, so an import and a hand-added line cannot race for sort order.
             $project = Project::lockForUpdate()->findOrFail($project->id);
 
@@ -175,7 +176,7 @@ class BoqExcelService
             $sort = (int) $project->boqItems()->max('sort');
             $created = $updated = $unchanged = 0;
 
-            BoqRevisions::with(__('Imported from an Excel file'), 'excel_import', function () use ($rows, $project, $existing, &$sort, &$created, &$updated, &$unchanged) {
+            BoqRevisions::with($reason ?? __('Imported from an Excel file'), $source, function () use ($rows, $project, $existing, &$sort, &$created, &$updated, &$unchanged) {
                 foreach ($rows as $row) {
                     $values = [
                         'boq_section_id' => $this->boq->sectionId($project, $row['section']),
@@ -221,22 +222,29 @@ class BoqExcelService
             return [[], [['row' => 0, 'field' => null, 'message' => $fileError]], []];
         }
 
-        return $this->checkGrid($project, $grid, $missingValue);
+        return array_slice($this->checkGrid($project, $grid, $missingValue), 0, 3);
     }
 
-    /** @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>, 2: list<array{row:int,message:string}>} */
-    private function checkGrid(Project $project, array $grid, array $missingValue): array
+    /**
+     * Check a grid without writing anything: the clean rows, the errors, anything worth a second look,
+     * and facts about the file, such as the total written in an estimate. The PDF preview shows these.
+     *
+     * @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>, 2: list<array{row:int,message:string}>, 3: array{estimate: bool, file_total: ?string, grand_total: ?string, lines_total: ?string}}
+     */
+    public function checkGrid(Project $project, array $grid, array $missingValue = []): array
     {
         [$headerRow, $columns] = $this->findHeader($grid);
+        $facts = ['estimate' => false, 'file_total' => null, 'grand_total' => null, 'lines_total' => null];
 
         if ($headerRow === null) {
-            return [[], [['row' => 0, 'field' => null, 'message' => __('Could not find the heading row. The sheet needs these columns: :columns', ['columns' => implode(', ', self::REQUIRED)])]], []];
+            return [[], [['row' => 0, 'field' => null, 'message' => __('Could not find the heading row. The sheet needs these columns: :columns', ['columns' => implode(', ', self::REQUIRED)])]], [], $facts];
         }
 
         $notes = [];
 
         if (EstimateSheet::applies($columns)) {
-            [$grid, $columns, $notes] = (new EstimateSheet)->standardise($grid, $columns, $headerRow);
+            [$grid, $columns, $notes, $estimate] = (new EstimateSheet)->standardise($grid, $columns, $headerRow);
+            $facts = ['estimate' => true, ...$estimate];
             $missingValue = [];
         }
 
@@ -347,14 +355,14 @@ class BoqExcelService
                 continue;
             }
 
-            $rows[] = [...$text, 'qty' => $numbers['qty'], 'rate' => $numbers['rate'], ...$optional];
+            $rows[] = [...$text, 'qty' => $numbers['qty'], 'rate' => $numbers['rate'], ...$optional, 'row' => $number];
         }
 
         if ($errors === [] && $rows === []) {
             $errors[] = ['row' => 0, 'field' => null, 'message' => __('The file has no rows.')];
         }
 
-        return [$rows, $errors, $notes];
+        return [$rows, $errors, $notes, $facts];
     }
 
     /** @return Collection<string, BoqItem> The lowest id wins when a code repeats. */

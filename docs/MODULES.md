@@ -71,3 +71,7 @@ The `site_alerts` module runs other modules' checks and shows their cards withou
 | `spend_sources` | `App\Services\SiteAlerts\Contracts\SpendSource` | `spent(Project)` is money already gone from your records, counted once, added into spend against budget. |
 
 A `Finding` with a rupee figure must set `needs` to `money.view` or `money.overview`; it is then hidden from, and never sent to, anyone without that permission. Its `notify` names the permission of the people told when it opens, or is null when your module has already told them itself. A card shows money only when `$viewer->can('money.overview')`. Work percentages come from `App\Services\SiteControl\WorkProgress`.
+
+## Contractor logins
+
+A role marked `'portal' => true` in `config/buildos.php` (today only `contractor`) is an outside login, not a team member. `User::isContractor()` names it, `App\Http\Middleware\ContractorPortalGate` turns it away from every signed-in route outside `contractor-portal.*` and `api/v1/contractor-portal/*`, the team screens never offer or edit it, and it takes no seat on the plan. It is handed out from the contractor's page by whoever holds the role's `managed_by` permission, through the ordinary invitation flow with `contractor_party_id` set. A new module needs nothing for this: the gate refuses a contractor before the module's routes run. `tests/Feature/ContractorPortal/ContractorPortalBoundaryTest` walks every route to prove it.

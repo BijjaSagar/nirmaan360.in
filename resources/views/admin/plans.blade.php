@@ -20,6 +20,9 @@
                         @endif
                         <x-field :label="__('Max users')" :name="'plans.'.$key.'.max_users'" :hint="__('Leave blank for unlimited.')"><input name="plans[{{ $key }}][max_users]" type="number" min="1" value="{{ old("plans.{$key}.max_users", $plan['max_users']) }}" class="input num"></x-field>
                         <x-field :label="__('Max projects')" :name="'plans.'.$key.'.max_projects'" :hint="__('Leave blank for unlimited.')"><input name="plans[{{ $key }}][max_projects]" type="number" min="1" value="{{ old("plans.{$key}.max_projects", $plan['max_projects']) }}" class="input num"></x-field>
+                        @if (array_key_exists('max_devices', $plan))
+                            <x-field :label="__('Max phones')" :name="'plans.'.$key.'.max_devices'" :hint="__('Phones that can hold an offline licence at the same time. Leave blank for unlimited.')"><input name="plans[{{ $key }}][max_devices]" type="number" min="1" max="1000" value="{{ old("plans.{$key}.max_devices", $plan['max_devices']) }}" class="input num"></x-field>
+                        @endif
                     </div>
                     <fieldset class="mt-3">
                         <legend class="label">{{ __('Included modules') }}</legend>
