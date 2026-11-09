@@ -5,18 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\BoqItem;
 use App\Models\Party;
 use App\Models\Project;
+use App\Services\ProjectImageService;
 use App\Services\ProjectService;
 use App\Services\SiteControl\WorkProgress;
 use App\Support\Dec;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProjectController extends Controller
 {
-    public function __construct(private ProjectService $service) {}
+    public function __construct(private ProjectService $service, private ProjectImageService $images) {}
 
     public function index(): View
     {
@@ -33,6 +37,7 @@ class ProjectController extends Controller
         $this->service->assertWithinPlan($request->user()->organization);
 
         $project = $this->service->create($this->validated($request), $request->user());
+        $this->images->save($project, $request->file('image'), false);
 
         return redirect()->route('projects.show', $project)->with('success', __('Project created.'));
     }
@@ -76,8 +81,18 @@ class ProjectController extends Controller
         $project->update([...$this->validated($request, $project), 'status' => $request->validate([
             'status' => ['required', Rule::in(config('buildos.project_statuses'))],
         ])['status']]);
+        $this->images->save($project, $request->file('image'), $request->boolean('remove_image'));
 
         return redirect()->route('projects.show', $project)->with('success', __('Project updated.'));
+    }
+
+    /** Project photos are private: they are read through here, after the company and project checks on the model. */
+    public function image(Project $project): StreamedResponse
+    {
+        abort_unless($project->image_path !== null && Storage::exists($project->image_path), 404);
+
+        // The address changes with the photo, so it can be kept. "private" keeps it out of shared caches.
+        return Storage::response($project->image_path, null, ['Cache-Control' => 'private, max-age=604800']);
     }
 
     public function storeSite(Request $request, Project $project): RedirectResponse
@@ -100,8 +115,8 @@ class ProjectController extends Controller
 
     private function validated(Request $request, ?Project $project = null): array
     {
-        $data = $request->validate($this->service->rules($request->user(), $project));
+        $data = $request->validate([...$this->service->rules($request->user(), $project), ...$this->images->rules()]);
 
-        return [...$data, 'deduction_order' => explode(',', $data['deduction_order'])];
+        return [...Arr::except($data, ['image', 'remove_image']), 'deduction_order' => explode(',', $data['deduction_order'])];
     }
 }

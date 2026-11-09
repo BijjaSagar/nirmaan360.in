@@ -66,7 +66,7 @@ class SetupApiTest extends ApiTestCase
             ->assertJsonPath('data.status', 'active')
             ->assertJsonPath('data.measurement_tolerance_pct', '5.00');
 
-        $this->assertSame(['id', 'code', 'name', 'location', 'status', 'start_date', 'end_date', 'measurement_tolerance_pct', 'updated_at'], array_keys($response->json('data')));
+        $this->assertSame(['id', 'code', 'name', 'location', 'status', 'start_date', 'end_date', 'measurement_tolerance_pct', 'image_url', 'updated_at'], array_keys($response->json('data')));
 
         $project = Project::sole();
         $this->assertSame('0.00', $project->contract_value);

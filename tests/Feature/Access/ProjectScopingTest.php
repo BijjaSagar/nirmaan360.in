@@ -87,6 +87,8 @@ class ProjectScopingTest extends TestCase
         ]);
         $issue = Issue::create(['organization_id' => $project->organization_id, 'project_id' => $project->id, 'title' => $word.' crack', 'status' => 'open', 'priority' => 'high']);
         $dpr = Dpr::create(['organization_id' => $project->organization_id, 'project_id' => $project->id, 'report_date' => now()->toDateString(), 'summary' => $word.' pour', 'status' => 'DRAFT', 'created_by' => $this->owner->id]);
+        Storage::put('projects/'.$word.'.jpg', 'x');
+        $project->forceFill(['image_path' => 'projects/'.$word.'.jpg'])->save();
         Storage::put('dpr/'.$word.'.jpg', 'x');
         $photo = DprPhoto::create(['organization_id' => $project->organization_id, 'dpr_id' => $dpr->id, 'path' => 'dpr/'.$word.'.jpg']);
         $wallet = PettyCashWallet::create(['organization_id' => $project->organization_id, 'project_id' => $project->id, 'user_id' => $this->owner->id, 'name' => $word.' wallet']);

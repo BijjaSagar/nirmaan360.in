@@ -202,5 +202,10 @@
     "item": "आइटम",
     "items": "आइटम",
     "permissions": "अनुमतियाँ",
-    "Supervision and overheads": "पर्यवेक्षण और ओवरहेड"
+    "Supervision and overheads": "पर्यवेक्षण और ओवरहेड",
+    "Project photo": "प्रोजेक्ट की फ़ोटो",
+    "Optional. JPG, PNG or WebP, up to 8 MB. It shows on the project list and in the app.": "वैकल्पिक। JPG, PNG या WebP, 8 MB तक। यह प्रोजेक्ट सूची और ऐप में दिखती है।",
+    "Remove this photo": "यह फ़ोटो हटाएँ",
+    "Photo of :project": ":project की फ़ोटो",
+    "The photo could not be saved. Please try again.": "फ़ोटो सेव नहीं हो सकी। कृपया फिर से कोशिश करें।"
 }

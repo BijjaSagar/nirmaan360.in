@@ -17,6 +17,7 @@ final class ProjectPresenter
             'start_date' => $project->start_date?->toDateString(),
             'end_date' => $project->end_date?->toDateString(),
             'measurement_tolerance_pct' => $project->measurement_tolerance_pct,
+            'image_url' => $project->image_path === null ? null : url('/api/v1/projects/'.$project->id.'/image?v='.$project->imageVersion()),
             'updated_at' => $project->updated_at?->toIso8601String(),
         ];
     }

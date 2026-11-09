@@ -27,8 +27,8 @@
                     $percent = $boq > 0 ? min(100, $approved / $boq * 100) : 0;
                 @endphp
                 <a href="{{ route('projects.show', $project_row) }}" class="block border-b border-rule px-4 py-3 last:border-b-0 hover:bg-paper/70">
-                    <div class="flex items-baseline justify-between gap-3">
-                        <p class="truncate font-semibold">{{ $project_row->name }}</p>
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex min-w-0 items-center gap-2.5"><x-project-thumb :project="$project_row" size="h-8 w-8" /><p class="truncate font-semibold">{{ $project_row->name }}</p></div>
                         <p class="num shrink-0 text-xs text-ink-2">{{ number_format($percent, 1) }}%</p>
                     </div>
                     <div class="mt-1.5 h-1.5 bg-paper-2"><div class="h-full bg-laterite" style="width: {{ $percent }}%"></div></div>

@@ -69,7 +69,7 @@
     @endif
 
     <div @if ($canAddClient) x-data="clientPopup()" @endif>
-    <form method="POST" action="{{ $project->exists ? route('projects.update', $project) : route('projects.store') }}" class="max-w-3xl space-y-5" @if ($canAddClient) :inert="open" @endif>
+    <form method="POST" action="{{ $project->exists ? route('projects.update', $project) : route('projects.store') }}" enctype="multipart/form-data" class="max-w-3xl space-y-5" @if ($canAddClient) :inert="open" @endif>
         @csrf
         @if ($project->exists) @method('PATCH') @endif
 
@@ -81,6 +81,15 @@
                 </x-field>
                 <x-field :label="__('Project name')" name="name">
                     <input id="name" name="name" value="{{ old('name', $project->name) }}" class="input" required>
+                </x-field>
+                <x-field :label="__('Project photo')" name="image" :hint="__('Optional. JPG, PNG or WebP, up to 8 MB. It shows on the project list and in the app.')" class="sm:col-span-2">
+                    <div class="flex items-center gap-3">
+                        @if ($project->image_path)<x-project-thumb :project="$project" size="h-14 w-14" />@endif
+                        <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" class="input min-w-0">
+                    </div>
+                    @if ($project->image_path)
+                        <label class="mt-2 inline-flex items-center gap-2 text-sm"><input type="checkbox" name="remove_image" value="1"> {{ __('Remove this photo') }}</label>
+                    @endif
                 </x-field>
                 <x-field :label="__('Client')" name="client_id">
                     <div class="flex gap-2">

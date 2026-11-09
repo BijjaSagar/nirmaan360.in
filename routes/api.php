@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\PettyCashApiController;
 use App\Http\Controllers\Api\ProjectApiController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\WorkerApiController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RazorpayWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/me', [AuthApiController::class, 'me']);
 
         Route::get('/projects', [ProjectApiController::class, 'index'])->middleware('can:project.view');
+        Route::get('/projects/{project}/image', [ProjectController::class, 'image'])->middleware('can:project.view');
         Route::post('/projects', [ProjectApiController::class, 'store'])->middleware('can:project.manage');
         Route::get('/projects/{project}/boq', [ProjectApiController::class, 'boq'])->middleware('can:boq.view');
         Route::post('/projects/{project}/boq-items', [ProjectApiController::class, 'storeBoqItem'])->middleware('can:boq.manage');

@@ -15,6 +15,12 @@ class Project extends Model
 
     protected $guarded = [];
 
+    /** Changes with the photo, so a browser or phone never keeps showing an old one. */
+    public function imageVersion(): ?string
+    {
+        return $this->image_path === null ? null : substr(md5($this->image_path), 0, 8);
+    }
+
     protected function casts(): array
     {
         return [

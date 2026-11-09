@@ -15,7 +15,7 @@
                 @foreach ($projects as $row)
                     <tr>
                         <td class="num text-xs">{{ $row->code }}</td>
-                        <td><a href="{{ route('projects.show', $row) }}" class="link">{{ $row->name }}</a></td>
+                        <td><a href="{{ route('projects.show', $row) }}" class="link inline-flex items-center gap-2.5"><x-project-thumb :project="$row" /><span>{{ $row->name }}</span></a></td>
                         <td>{{ $row->client?->name ?? '—' }}</td>
                         <td>{{ $row->location ?? '—' }}</td>
                         @can('money.view')<td class="r">{{ inr($row->contract_value) }}</td>@endcan

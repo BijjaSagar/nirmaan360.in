@@ -64,7 +64,7 @@ class SyncPullTest extends ApiTestCase
         $body = $this->pull()->json();
 
         $this->assertSame(['id', 'name', 'role'], array_keys($body['users'][0]));
-        $this->assertSame(['id', 'code', 'name', 'location', 'status', 'start_date', 'end_date', 'measurement_tolerance_pct', 'updated_at'], array_keys($body['projects'][0]));
+        $this->assertSame(['id', 'code', 'name', 'location', 'status', 'start_date', 'end_date', 'measurement_tolerance_pct', 'image_url', 'updated_at'], array_keys($body['projects'][0]));
         $this->assertSame(['id', 'project_id', 'name', 'address', 'updated_at'], array_keys($body['sites'][0]));
         $this->assertSame(['id', 'project_id', 'section', 'code', 'description', 'unit', 'qty', 'rate', 'sort', 'measured_qty', 'approved_qty', 'balance_qty', 'updated_at'], array_keys($body['boq_items'][0]));
         $this->assertSame(['id', 'name', 'phone', 'trade', 'type', 'is_active', 'updated_at'], array_keys($body['workers'][0]));
