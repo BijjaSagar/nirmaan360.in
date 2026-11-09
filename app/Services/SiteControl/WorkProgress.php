@@ -119,7 +119,7 @@ class WorkProgress
     }
 
     /** @return array<int, string> */
-    private function doneByItem(Project $project): array
+    public function doneByItem(Project $project): array
     {
         return ProgressEntry::where('project_id', $project->id)
             ->selectRaw('boq_item_id, SUM(qty_done) as done')
