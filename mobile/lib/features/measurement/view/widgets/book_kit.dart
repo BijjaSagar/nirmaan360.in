@@ -21,11 +21,14 @@ class LedgerBackKey extends StatelessWidget {
 /// The top of a page: the app's one [N360TopBar]. Back shows only when the
 /// screen gives it somewhere to go, so a root tab keeps a plain title.
 class BookTitleBar extends StatelessWidget {
-  const BookTitleBar({super.key, required this.title, this.eyebrow, this.onBack, this.trailing});
+  const BookTitleBar({super.key, required this.title, this.eyebrow, this.onBack, this.leading, this.trailing});
 
   final String title;
   final String? eyebrow;
   final VoidCallback? onBack;
+
+  /// What sits on the left of a root tab, where there is no way back.
+  final Widget? leading;
   final Widget? trailing;
 
   @override
@@ -36,6 +39,7 @@ class BookTitleBar extends StatelessWidget {
       subtitle: eyebrow,
       onBack: onBack,
       showBack: onBack != null,
+      leading: leading,
       trailing: trailing,
     );
   }

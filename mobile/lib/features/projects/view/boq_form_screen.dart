@@ -84,6 +84,7 @@ class _BoqFormViewState extends State<_BoqFormView> {
           child: Scaffold(
             body: LedgerPaper(
               child: SafeArea(
+                top: false,
                 bottom: false,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,

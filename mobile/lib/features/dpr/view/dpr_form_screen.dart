@@ -267,6 +267,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
     return Scaffold(
       body: LedgerPaper(
         child: SafeArea(
+          top: false,
           bottom: false,
           child: Column(
             children: <Widget>[

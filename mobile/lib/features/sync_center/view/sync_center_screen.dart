@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../app/app_format.dart';
-import '../../../app/shell/offline_slot.dart';
 import '../../../app/shell/sync_status_cubit.dart';
+import '../../../app/widgets/brand_mark.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -203,21 +203,20 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            const _OutboxBar(),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) => SingleChildScrollView(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+                      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.md),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisAlignment: allSent ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                        mainAxisAlignment: allSent ? MainAxisAlignment.spaceEvenly : MainAxisAlignment.start,
                         children: <Widget>[
-                          const OfflineSlot(online: _OutboxTitle()),
                           if (allSent) Center(child: tray) else tray,
-                          if (extras.isNotEmpty) Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: extras)
-                          else if (allSent) const SizedBox(height: N360Space.xxl),
+                          if (extras.isNotEmpty) Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: extras),
                         ],
                       ),
                     ),
@@ -233,20 +232,31 @@ class _SyncCenterViewState extends State<_SyncCenterView> {
   }
 }
 
-class _OutboxTitle extends StatelessWidget {
-  const _OutboxTitle();
+/// The tab's bar, with the offline banner under it when there is no network.
+class _OutboxBar extends StatelessWidget {
+  const _OutboxBar();
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(t.shellOutboxTitle, style: N360Type.fit(N360Type.title, t.shellOutboxTitle)),
+    final bool online = context.select((SyncStatusCubit s) => s.state.online);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        N360TopBar(
+          backLabel: t.commonBack,
+          showBack: false,
+          title: t.shellOutboxTitle,
+          leading: const BrandMark(size: 28),
+        ),
+        if (!online) OfflineBanner(label: t.shellOfflineLabel, detail: t.shellOfflineDetail),
+      ],
     );
   }
 }
 
-/// The page before its first read: the title in place, then the shape of the
+/// The page before its first read: the bar in place, then the shape of the
 /// tray card and three slips with one slow sheen across them.
 class _OutboxLoading extends StatelessWidget {
   const _OutboxLoading({required this.label});
@@ -255,17 +265,22 @@ class _OutboxLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const OfflineSlot(online: _OutboxTitle()),
-          LedgerSkeleton(figure: true, lines: 1, semanticsLabel: label),
-          const SizedBox(height: N360Space.cardGap),
-          LedgerSkeletonList(semanticsLabel: label),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const _OutboxBar(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              LedgerSkeleton(figure: true, lines: 1, semanticsLabel: label),
+              const SizedBox(height: N360Space.cardGap),
+              LedgerSkeletonList(semanticsLabel: label),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -515,8 +530,7 @@ class _SyncNowBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final bool busy = context.select((SyncStatusCubit s) => s.state.isSyncing);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+    return N360ActionBar(
       child: GloveButton(
         label: busy ? t.syncInProgress : t.syncNow,
         onPressed: onPressed,

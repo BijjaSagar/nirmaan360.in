@@ -135,23 +135,19 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
         final bool busy = state.submitting || state.created != null;
         final Map<String, String> errors = state.fieldErrors;
         return Scaffold(
-          body: SafeArea(
-            child: Column(
+          // A form is one continuous white sheet, from the bar to the action bar.
+          backgroundColor: N360Colors.sheet,
+          body: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                PageHeader(title: t.shellProjectFormTitle),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const ClampingScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        PageHeader(title: t.shellProjectFormTitle),
-                        const SizedBox(height: N360Space.md),
-                        StaggeredRise(
+                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.lg, N360Space.gutter, N360Space.md),
+                    child: StaggeredRise(
                           index: 0,
-                          child: LedgerCard(
-                            child: Column(
+                          child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: <Widget>[
                                 GloveTextField(
@@ -212,35 +208,21 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      if (message != null) ...<Widget>[
-                        ErrorSlip(title: message.title, message: message.body),
-                        const SizedBox(height: N360Space.sm),
-                      ],
-                      GloveButton(
-                        label: busy ? t.shellProjectCreating : t.shellProjectCreate,
-                        onPressed: _submit,
-                        loading: busy,
-                        large: true,
-                        fullWidth: true,
-                        icon: Icons.add_home_work_outlined,
-                      ),
-                    ],
+                N360ActionBar(
+                  above: message == null ? null : ErrorSlip(title: message.title, message: message.body),
+                  child: GloveButton(
+                    label: busy ? t.shellProjectCreating : t.shellProjectCreate,
+                    onPressed: _submit,
+                    loading: busy,
+                    large: true,
+                    fullWidth: true,
+                    icon: Icons.add_home_work_outlined,
                   ),
                 ),
               ],
             ),
-          ),
         );
       },
     );

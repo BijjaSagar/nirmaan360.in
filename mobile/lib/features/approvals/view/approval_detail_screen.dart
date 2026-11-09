@@ -93,11 +93,13 @@ class _DetailView extends StatelessWidget {
             backgroundColor: Colors.transparent,
             body: LedgerPaper(
               child: SafeArea(
+                top: false,
+                bottom: false,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    if (!state.online) OfflineBanner(label: l.approvalsOffline, detail: l.approvalsOfflineDetail),
                     BookTitleBar(title: docTypeWord(l, row.docType), onBack: () => _leave(context)),
+                    if (!state.online) OfflineBanner(label: l.approvalsOffline, detail: l.approvalsOfflineDetail),
                     Expanded(
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(N360Space.gutter, 6, N360Space.gutter, N360Space.lg),
@@ -309,22 +311,20 @@ class _ActionBar extends StatelessWidget {
     // Once the server has accepted, the stamp's overlay holds the taps. The
     // buttons keep their look so the page does not change under the stamp.
     final bool enabled = state.actionsEnabled || state.finished;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (!state.online) ...<Widget>[
-            Row(
+    return N360ActionBar(
+      above: !state.online
+          ? Row(
               children: <Widget>[
                 const Icon(Icons.cloud_off, size: N360IconSize.md, color: N360Colors.ink2),
                 const SizedBox(width: 6),
                 Expanded(child: Text(l.approvalsNeedsNetwork, style: N360Type.bodyStrong.copyWith(height: 1.3))),
               ],
-            ),
-            const SizedBox(height: N360Space.sm),
-          ],
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
           Row(
             children: <Widget>[
               Expanded(

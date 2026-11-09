@@ -1,3 +1,7 @@
+import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../motion.dart';
@@ -64,6 +68,20 @@ class _N360PageRoute<T> extends PageRoute<T> {
     return Semantics(scopesRoute: true, explicitChildNodes: true, child: _page.child);
   }
 
+  /// Whether a left-edge swipe may start to pop this route now, as Cupertino
+  /// decides it: not the first route, not a sheet, nothing else animating.
+  bool get _swipeEnabled {
+    if (isFirst || willHandlePopInternally || fullscreenDialog) return false;
+    if (animation!.status != AnimationStatus.completed) return false;
+    if (secondaryAnimation!.status != AnimationStatus.dismissed) return false;
+    if (popGestureInProgress) return false;
+    return true;
+  }
+
+  /// Whether a `PopScope` on the page is holding the pop back, as it does
+  /// while a form holds typed work.
+  bool get _popHeld => popDisposition == RoutePopDisposition.doNotPop;
+
   @override
   Widget buildTransitions(
     BuildContext context,
@@ -71,7 +89,214 @@ class _N360PageRoute<T> extends PageRoute<T> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    return n360PageTransition(context, animation, secondaryAnimation, child, vertical: fullscreenDialog);
+    final bool cupertino = switch (Theme.of(context).platform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => true,
+      _ => false,
+    };
+    Widget page = child;
+    if (cupertino && !fullscreenDialog) {
+      page = _BackSwipeDetector(
+        canSwipe: () => _swipeEnabled && !_popHeld,
+        canAskToLeave: () => _swipeEnabled && _popHeld,
+        onStart: () => _BackSwipe(
+          navigator: navigator!,
+          controller: controller!,
+          isCurrent: () => isCurrent,
+          isActive: () => isActive,
+        ),
+        // A page holding typed work gets the same question a Back tap or the
+        // Android back button would put to it, instead of a silent nothing.
+        onAskToLeave: () => navigator!.maybePop(),
+        child: child,
+      );
+    }
+    return n360PageTransition(
+      context,
+      animation,
+      secondaryAnimation,
+      page,
+      vertical: fullscreenDialog,
+      linear: popGestureInProgress,
+    );
+  }
+}
+
+/// Width of the strip along the leading edge that starts a back swipe, as on
+/// Cupertino.
+const double _kBackSwipeWidth = 20;
+
+/// Swipes faster than this, in screen widths per second, decide by direction.
+const double _kMinFlingVelocity = 1;
+
+/// Longest the page takes to finish going, or to come back, after a release.
+const int _kMaxDroppedSwipeForwardMs = 800;
+const int _kMaxBackMs = 300;
+
+/// Listens along the leading edge of a page for the iOS back swipe and drives
+/// the route's own animation with the finger, so the page tracks it. Android
+/// keeps the system back and never builds this.
+class _BackSwipeDetector extends StatefulWidget {
+  const _BackSwipeDetector({
+    required this.canSwipe,
+    required this.canAskToLeave,
+    required this.onStart,
+    required this.onAskToLeave,
+    required this.child,
+  });
+
+  /// Whether a swipe may pop the route right now.
+  final ValueGetter<bool> canSwipe;
+
+  /// Whether the route could pop but a `PopScope` is holding it. The page
+  /// stays put and, on a committed swipe, is asked to leave as Back would ask.
+  final ValueGetter<bool> canAskToLeave;
+  final ValueGetter<_BackSwipe> onStart;
+  final VoidCallback onAskToLeave;
+  final Widget child;
+
+  @override
+  State<_BackSwipeDetector> createState() => _BackSwipeDetectorState();
+}
+
+class _BackSwipeDetectorState extends State<_BackSwipeDetector> {
+  _BackSwipe? _swipe;
+  bool _asking = false;
+  double _askTravel = 0;
+  late final HorizontalDragGestureRecognizer _recognizer = HorizontalDragGestureRecognizer(debugOwner: this)
+    ..dragStartBehavior = DragStartBehavior.down
+    ..onStart = _onStart
+    ..onUpdate = _onUpdate
+    ..onEnd = _onEnd
+    ..onCancel = _onCancel;
+
+  @override
+  void dispose() {
+    _recognizer.dispose();
+    super.dispose();
+  }
+
+  void _pointerDown(PointerDownEvent event) {
+    if (widget.canSwipe() || widget.canAskToLeave()) _recognizer.addPointer(event);
+  }
+
+  double _toLogical(double value) =>
+      Directionality.of(context) == TextDirection.rtl ? -value : value;
+
+  void _onStart(DragStartDetails details) {
+    if (widget.canSwipe()) {
+      _swipe = widget.onStart();
+    } else if (widget.canAskToLeave()) {
+      _asking = true;
+      _askTravel = 0;
+    }
+  }
+
+  void _onUpdate(DragUpdateDetails details) {
+    final double width = context.size!.width;
+    if (_swipe != null) {
+      _swipe!.dragUpdate(_toLogical(details.primaryDelta! / width));
+    } else if (_asking) {
+      _askTravel += _toLogical(details.primaryDelta!);
+    }
+  }
+
+  void _onEnd(DragEndDetails details) {
+    final double width = context.size!.width;
+    if (_swipe != null) {
+      _swipe!.dragEnd(_toLogical(details.velocity.pixelsPerSecond.dx / width));
+      _swipe = null;
+    } else if (_asking) {
+      _asking = false;
+      final double velocity = _toLogical(details.velocity.pixelsPerSecond.dx / width);
+      if (_askTravel > width / 3 || velocity >= _kMinFlingVelocity) widget.onAskToLeave();
+    }
+  }
+
+  void _onCancel() {
+    _swipe?.dragEnd(0);
+    _swipe = null;
+    _asking = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double strip = math.max(_kBackSwipeWidth, MediaQuery.paddingOf(context).left);
+    return Stack(
+      fit: StackFit.passthrough,
+      children: <Widget>[
+        widget.child,
+        PositionedDirectional(
+          start: 0,
+          width: strip,
+          top: 0,
+          bottom: 0,
+          child: Listener(onPointerDown: _pointerDown, behavior: HitTestBehavior.translucent),
+        ),
+      ],
+    );
+  }
+}
+
+/// One back swipe in flight: it owns the route's animation from the moment the
+/// finger lands until the page has either gone or settled back.
+class _BackSwipe {
+  _BackSwipe({
+    required this.navigator,
+    required this.controller,
+    required this.isCurrent,
+    required this.isActive,
+  }) {
+    navigator.didStartUserGesture();
+  }
+
+  final NavigatorState navigator;
+  final AnimationController controller;
+  final ValueGetter<bool> isCurrent;
+  final ValueGetter<bool> isActive;
+
+  /// [delta] is a fraction of the page width, positive towards the trailing edge.
+  void dragUpdate(double delta) {
+    controller.value -= delta;
+  }
+
+  /// [velocity] is in page widths per second, positive towards the trailing edge.
+  void dragEnd(double velocity) {
+    const Curve curve = Curves.fastLinearToSlowEaseIn;
+    final bool current = isCurrent();
+    final bool stay;
+    if (!current) {
+      // Something popped the route under the finger; follow what it did.
+      stay = isActive();
+    } else if (velocity.abs() >= _kMinFlingVelocity) {
+      stay = velocity <= 0;
+    } else {
+      stay = controller.value > 0.5;
+    }
+
+    if (stay) {
+      final int ms = math.min(
+        lerpDouble(_kMaxDroppedSwipeForwardMs, 0, controller.value)!.floor(),
+        _kMaxBackMs,
+      );
+      controller.animateTo(1, duration: Duration(milliseconds: ms), curve: curve);
+    } else {
+      if (current) navigator.pop();
+      if (controller.isAnimating) {
+        final int ms = lerpDouble(0, _kMaxDroppedSwipeForwardMs, controller.value)!.floor();
+        controller.animateBack(0, duration: Duration(milliseconds: ms), curve: curve);
+      }
+    }
+
+    if (controller.isAnimating) {
+      late final AnimationStatusListener done;
+      done = (AnimationStatus status) {
+        navigator.didStopUserGesture();
+        controller.removeStatusListener(done);
+      };
+      controller.addStatusListener(done);
+    } else {
+      navigator.didStopUserGesture();
+    }
   }
 }
 
@@ -89,6 +314,7 @@ Widget n360PageTransition(
   Animation<double> secondaryAnimation,
   Widget child, {
   bool vertical = false,
+  bool linear = false,
 }) {
   if (context.motion.reduced) return child;
   final bool hasRoot = LedgerPaper.hasRoot(context);
@@ -111,10 +337,12 @@ Widget n360PageTransition(
       ),
     );
   }
+  // While a finger drags the page the curve comes off, so the page sits
+  // exactly under the finger.
   return SlideTransition(
-    position: animation.drive(_slideIn),
+    position: animation.drive(linear ? _slideInLinear : _slideIn),
     child: SlideTransition(
-      position: secondaryAnimation.drive(_slideOut),
+      position: secondaryAnimation.drive(linear ? _slideOutLinear : _slideOut),
       child: CustomPaint(
         foregroundPainter: _SeamPainter(animation: animation, secondary: secondaryAnimation),
         child: page,
@@ -123,10 +351,10 @@ Widget n360PageTransition(
   );
 }
 
-final Animatable<Offset> _slideIn = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-    .chain(CurveTween(curve: N360Curves.rise));
-final Animatable<Offset> _slideOut = Tween<Offset>(begin: Offset.zero, end: const Offset(-_drift, 0))
-    .chain(CurveTween(curve: N360Curves.rise));
+final Animatable<Offset> _slideInLinear = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero);
+final Animatable<Offset> _slideOutLinear = Tween<Offset>(begin: Offset.zero, end: const Offset(-_drift, 0));
+final Animatable<Offset> _slideIn = _slideInLinear.chain(CurveTween(curve: N360Curves.rise));
+final Animatable<Offset> _slideOut = _slideOutLinear.chain(CurveTween(curve: N360Curves.rise));
 final Animatable<Offset> _riseIn = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
     .chain(CurveTween(curve: N360Curves.settle));
 

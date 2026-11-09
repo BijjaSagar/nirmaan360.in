@@ -11,9 +11,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
+import 'package:nirmaan360/core/design/design.dart';
 import 'package:nirmaan360/core/money/money.dart';
 import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
-import 'package:nirmaan360/features/measurement/view/widgets/book_kit.dart';
 import 'package:nirmaan360/features/measurement/view/widgets/form_parts.dart';
 
 import '../../../core/design/test_helpers.dart';
@@ -197,8 +197,8 @@ void main() {
       expect(tester.takeException(), isNull);
       await shot(tester, '${locale}_form_2_typed');
 
-      // Backing out with figures typed.
-      await tester.tap(find.byType(LedgerBackKey));
+      // Backing out with figures typed. The way back is the bar's own tile.
+      await tester.tap(find.byType(N360BackTile));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       expect(tester.takeException(), isNull);

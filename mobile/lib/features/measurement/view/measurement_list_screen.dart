@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
+import '../../../app/widgets/brand_mark.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
@@ -54,21 +55,23 @@ class _BookView extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: LedgerPaper(
         child: SafeArea(
+          top: false,
+          bottom: false,
           child: BlocBuilder<MeasurementListCubit, MeasurementListState>(
             builder: (context, state) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   BookTitleBar(
                     eyebrow: state.projectName,
                     title: l.measurementBookTitle,
                     onBack: canGoBack ? () => context.pop() : null,
+                    leading: canGoBack ? null : const BrandMark(size: 28),
                   ),
+                  if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   _Filters(state: state),
                   Expanded(child: _body(context, l, state, _days(state.visible))),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+                  N360ActionBar(
                     child: GloveButton(
                       key: const ValueKey<String>('measurement-add'),
                       label: l.measurementAddEntry,

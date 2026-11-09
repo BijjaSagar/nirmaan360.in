@@ -69,10 +69,12 @@ class _AttendanceView extends StatelessWidget {
       child: Scaffold(
         body: LedgerPaper(
           child: SafeArea(
+            top: false,
             bottom: false,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                const _Header(),
                 const Expanded(child: _MusterScroll()),
                 const _BottomActions(),
               ],
@@ -100,7 +102,7 @@ class _MusterScroll extends StatelessWidget {
       builder: (context, hasMuster) {
         return CustomScrollView(
           slivers: <Widget>[
-            const SliverToBoxAdapter(child: _Header()),
+            const SliverToBoxAdapter(child: _DayRow()),
             if (hasMuster)
               SliverPersistentHeader(
                 pinned: true,
@@ -167,22 +169,32 @@ class _Header extends StatelessWidget {
         ).format(DateTime.parse(state.date));
         final String? projectCode = state.project?.code;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            FieldTopBar(
-              title: state.isToday
-                  ? l.attendanceTodayTitle
-                  : l.attendanceDateTitle(date),
-              subtitle: projectCode == null
-                  ? l.attendanceEyebrow
-                  : '${l.attendanceEyebrow} · $projectCode',
-            ),
-            if (state.project != null) ...<Widget>[
-              const DayStrip(),
-              const SizedBox(height: N360Space.xs),
-            ],
-          ],
+        return FieldTopBar(
+          title: state.isToday
+              ? l.attendanceTodayTitle
+              : l.attendanceDateTitle(date),
+          subtitle: projectCode == null
+              ? l.attendanceEyebrow
+              : '${l.attendanceEyebrow} · $projectCode',
+        );
+      },
+    );
+  }
+}
+
+/// The strip of days under the bar, once there is a project to mark.
+class _DayRow extends StatelessWidget {
+  const _DayRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocSelector<AttendanceCubit, AttendanceState, bool>(
+      selector: (state) => state.project != null,
+      builder: (context, hasProject) {
+        if (!hasProject) return const SizedBox.shrink();
+        return const Padding(
+          padding: EdgeInsets.only(top: N360Space.xs, bottom: N360Space.xs),
+          child: DayStrip(),
         );
       },
     );

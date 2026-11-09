@@ -60,33 +60,39 @@ class _HomeView extends StatelessWidget {
           final bool quiet = state.returned.isNotEmpty || setupPending;
           final List<_TileSpec> tiles = _tilesFor(context, state, allowEmphasis: !quiet);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),
-            child: StaggeredRise(
-              index: 0,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  _HomeHeader(project: project),
-                  const SizedBox(height: N360Space.md),
-                  if (state.returned.isNotEmpty) ...<Widget>[
-                    LedgerList(
-                      children: <Widget>[for (final item in state.returned) _ReturnedRow(item: item)],
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _HomeBar(project: project),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
+                  child: StaggeredRise(
+                    index: 0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        if (state.returned.isNotEmpty) ...<Widget>[
+                          LedgerList(
+                            children: <Widget>[for (final item in state.returned) _ReturnedRow(item: item)],
+                          ),
+                          const SizedBox(height: N360Space.cardGap),
+                        ],
+                        if (setupPending) ...<Widget>[
+                          _SetupCard(steps: steps),
+                          const SizedBox(height: N360Space.cardGap),
+                        ],
+                        if (showProgress) ...<Widget>[
+                          _ProgressCard(project: project, progress: state.progress),
+                          const SizedBox(height: N360Space.cardGap),
+                        ],
+                        _TileGrid(tiles: tiles),
+                      ],
                     ),
-                    const SizedBox(height: N360Space.cardGap),
-                  ],
-                  if (setupPending) ...<Widget>[
-                    _SetupCard(steps: steps),
-                    const SizedBox(height: N360Space.cardGap),
-                  ],
-                  if (showProgress) ...<Widget>[
-                    _ProgressCard(project: project, progress: state.progress),
-                    const SizedBox(height: N360Space.cardGap),
-                  ],
-                  _TileGrid(tiles: tiles),
-                ],
+                  ),
+                ),
               ),
-            ),
+            ],
           );
         },
       ),
@@ -189,16 +195,18 @@ class _HomeView extends StatelessWidget {
   }
 }
 
-/// The site is the header. Beside it, how the sending is going, and settings.
-/// Tapping the site name opens the picker when there is a choice to make.
-class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.project});
+/// The site is the bar's title. Beside it, how the sending is going, and
+/// settings. Tapping the site name opens the picker when there is a choice to
+/// make.
+class _HomeBar extends StatelessWidget {
+  const _HomeBar({required this.project});
 
   final ProjectRow project;
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final N360BarTone tone = N360Chrome.topBar;
     // An owner with one project still needs the picker, to add a second.
     final bool canSwitch =
         context.select((AppGate gate) => !gate.state.onlyOneProject || gate.state.canManageProjects);
@@ -213,7 +221,7 @@ class _HomeHeader extends StatelessWidget {
           project.name,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: N360Type.fit(N360Type.title, project.name),
+          style: N360Type.fit(N360Type.title, project.name).copyWith(color: tone.ink, height: 1.2),
         ),
         Row(
           children: <Widget>[
@@ -222,43 +230,49 @@ class _HomeHeader extends StatelessWidget {
                 detail,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.fit(N360Type.caption, detail),
+                style: N360Type.fit(N360Type.caption, detail).copyWith(color: tone.inkSoft),
               ),
             ),
-            if (canSwitch) const Icon(Icons.expand_more, size: N360IconSize.sm, color: N360Colors.ink2),
+            if (canSwitch) Icon(Icons.expand_more, size: N360IconSize.sm, color: tone.inkSoft),
           ],
         ),
       ],
     );
 
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: canSwitch
-              ? Semantics(
-                  container: true,
-                  button: true,
-                  label: '${project.name}. ${t.shellSwitchProject}',
-                  onTap: () => context.push(Routes.projectsSwitch),
-                  child: ExcludeSemantics(
-                    child: PressRow(
-                      onTap: () => context.push(Routes.projectsSwitch),
-                      child: Align(alignment: Alignment.centerLeft, child: name),
-                    ),
+    return N360TopBar(
+      backLabel: t.commonBack,
+      showBack: false,
+      centerTitle: false,
+      titleWidget: SizedBox(
+        width: double.infinity,
+        child: canSwitch
+            ? Semantics(
+                container: true,
+                button: true,
+                label: '${project.name}. ${t.shellSwitchProject}',
+                onTap: () => context.push(Routes.projectsSwitch),
+                child: ExcludeSemantics(
+                  child: PressRow(
+                    onTap: () => context.push(Routes.projectsSwitch),
+                    child: Align(alignment: Alignment.centerLeft, child: name),
                   ),
-                )
-              : name,
-        ),
-        const SizedBox(width: N360Space.sm),
-        const _SyncTag(),
-        const SizedBox(width: N360Space.xs),
-        // The gear carries its word, as every header tile does.
-        N360TopTile(
-          icon: Icons.settings_outlined,
-          label: t.shellSettings,
-          onTap: () => context.push(Routes.settings),
-        ),
-      ],
+                ),
+              )
+            : name,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const _SyncTag(),
+          const SizedBox(width: N360Space.xs),
+          // The gear carries its word, as every header tile does.
+          N360TopTile(
+            icon: Icons.settings_outlined,
+            label: t.shellSettings,
+            onTap: () => context.push(Routes.settings),
+          ),
+        ],
+      ),
     );
   }
 }

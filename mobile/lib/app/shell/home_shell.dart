@@ -8,9 +8,7 @@ import '../../core/app_services.dart';
 import '../../core/design/design.dart';
 import '../../core/sync/sync_status.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../app_format.dart';
 import '../app_gate.dart';
-import 'offline_slot.dart';
 import 'sync_status_cubit.dart';
 
 class _ShellTab {
@@ -21,10 +19,6 @@ class _ShellTab {
   final String label;
   final String? badge;
 }
-
-/// Tabs whose pages keep their own place for the offline banner. The others
-/// get a slot at the top from the shell.
-const Set<int> _tabsWithOwnSlot = <int>{0, 3};
 
 const int _approvalsBranch = 2;
 
@@ -96,7 +90,10 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
       _ShellTab(3, Icons.inbox_outlined, t.shellTabOutbox, badge: unsent > 0 ? '$unsent' : null),
     ];
     final int current = tabs.indexWhere((tab) => tab.branch == shell.currentIndex);
-    final double safeTop = MediaQuery.paddingOf(context).top;
+    // Each tab paints its own top bar, status-bar area included, so the shell
+    // passes the inset straight through. The sync rule draws along the bar's
+    // lower edge, where the eye already rests.
+    final double barBottom = MediaQuery.paddingOf(context).top + N360TopBar.height;
 
     return PopScope(
       canPop: shell.currentIndex == 0,
@@ -106,30 +103,17 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
       child: Scaffold(
         body: Stack(
           children: <Widget>[
-            Column(
-              children: <Widget>[
-                SizedBox(height: safeTop),
-                if (!_tabsWithOwnSlot.contains(shell.currentIndex))
-                  _DateSlot(approvals: shell.currentIndex == _approvalsBranch),
-                Expanded(
-                  child: MediaQuery.removePadding(
-                    context: context,
-                    removeTop: true,
-                    child: RepaintBoundary(
-                      child: AnimatedBuilder(
-                        animation: _shift,
-                        child: shell,
-                        builder: (context, child) {
-                          final double remaining = 1 - N360Curves.rise.transform(_shift.value);
-                          return Transform.translate(offset: Offset(_from * remaining, 0), child: child);
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _shift,
+                child: shell,
+                builder: (context, child) {
+                  final double remaining = 1 - N360Curves.rise.transform(_shift.value);
+                  return Transform.translate(offset: Offset(_from * remaining, 0), child: child);
+                },
+              ),
             ),
-            Positioned(top: safeTop, left: 0, right: 0, child: const _SyncRule()),
+            Positioned(top: barBottom - _SyncRule.height, left: 0, right: 0, child: const _SyncRule()),
           ],
         ),
         bottomNavigationBar: N360BottomBar(
@@ -148,6 +132,9 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
 class _SyncRule extends StatelessWidget {
   const _SyncRule();
 
+  /// The rule's thickness, so it can sit on the bar's lower edge.
+  static const double height = 4;
+
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
@@ -158,28 +145,9 @@ class _SyncRule extends StatelessWidget {
         final progress = status.progress;
         final double? value =
             progress != null && progress.total > 0 ? progress.done / progress.total : null;
-        return ProgressRule(value: value, semanticsLabel: t.shellSyncingLabel);
+        return ProgressRule(value: value, height: height, semanticsLabel: t.shellSyncingLabel);
       },
     );
   }
 }
 
-/// Today's date, in the slot the offline banner takes over.
-class _DateSlot extends StatelessWidget {
-  const _DateSlot({required this.approvals});
-
-  final bool approvals;
-
-  @override
-  Widget build(BuildContext context) {
-    final String locale = Localizations.localeOf(context).languageCode;
-    final String date = AppFormat.weekdayDate(context.read<AppServices>().context.today, locale);
-    return OfflineSlot(
-      offlineLabel: approvals ? AppLocalizations.of(context).shellOfflineApprovals : null,
-      online: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
-        child: Align(alignment: Alignment.centerLeft, child: SectionLabel(date)),
-      ),
-    );
-  }
-}

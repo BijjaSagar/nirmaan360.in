@@ -96,6 +96,7 @@ class _WalletFormViewState extends State<_WalletFormView> {
             child: Scaffold(
               body: LedgerPaper(
                 child: SafeArea(
+                  top: false,
                   bottom: false,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

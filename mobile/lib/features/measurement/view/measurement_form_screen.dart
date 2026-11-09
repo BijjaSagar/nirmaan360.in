@@ -188,6 +188,7 @@ class _FormView extends StatelessWidget {
             resizeToAvoidBottomInset: false,
             body: LedgerPaper(
               child: SafeArea(
+                top: false,
                 bottom: false,
                 child: LayoutBuilder(
                   builder: (context, constraints) {

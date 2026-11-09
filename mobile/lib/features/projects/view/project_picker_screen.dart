@@ -6,6 +6,7 @@ import '../../../app/app_gate.dart';
 import '../../../app/routes.dart';
 import '../../../app/shell/sync_status_cubit.dart';
 import '../../../app/widgets/back_header.dart';
+import '../../../app/widgets/brand_mark.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
@@ -38,26 +39,26 @@ class ProjectPickerScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            if (syncing) ProgressRule(semanticsLabel: t.shellPickerLoading),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, 0),
-              child: PageHeader(
-                title: welcome ? t.shellSignInWelcome : t.shellPickerTitle,
-                showBack: canGoBack,
-                // With nothing to go back to, settings is the way to sign out
-                // of the wrong account; otherwise Home already offers it.
-                trailing: canGoBack
-                    ? null
-                    : N360TopTile(
-                        icon: Icons.settings_outlined,
-                        label: t.shellSettings,
-                        onTap: () => context.push(Routes.settings),
-                      ),
-              ),
+            PageHeader(
+              title: welcome ? t.shellSignInWelcome : t.shellPickerTitle,
+              showBack: canGoBack,
+              leading: canGoBack ? null : const BrandMark(size: 28),
+              // With nothing to go back to, settings is the way to sign out
+              // of the wrong account; otherwise Home already offers it.
+              trailing: canGoBack
+                  ? null
+                  : N360TopTile(
+                      icon: Icons.settings_outlined,
+                      label: t.shellSettings,
+                      onTap: () => context.push(Routes.settings),
+                    ),
             ),
+            if (syncing) ProgressRule(semanticsLabel: t.shellPickerLoading),
             Expanded(
               child: projects.isEmpty
                   ? (welcome ? const _FirstProject() : _EmptyProjects(syncing: syncing))
@@ -84,8 +85,7 @@ class ProjectPickerScreen extends StatelessWidget {
                           ),
                         ),
                         if (canCreate)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+                          N360ActionBar(
                             child: GloveButton(
                               label: t.shellProjectFormTitle,
                               icon: Icons.add,
@@ -154,29 +154,28 @@ class _FirstProject extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
-          child: LedgerCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(t.shellPickerFirstTitle, style: N360Type.fit(N360Type.title, t.shellPickerFirstTitle)),
-                const SizedBox(height: N360Space.xxs),
-                Text(
-                  t.shellPickerFirstBody,
-                  style: N360Type.fit(N360Type.body, t.shellPickerFirstBody).copyWith(color: N360Colors.ink2),
-                ),
-                const SizedBox(height: N360Space.md),
-                GloveButton(
-                  label: t.shellPickerFirstButton,
-                  icon: Icons.add_home_work_outlined,
-                  large: true,
-                  fullWidth: true,
-                  onPressed: () => context.push(Routes.projectForm),
-                ),
-              ],
-            ),
+        // The invitation ends the page as an action bar does: white to the
+        // edge of the glass, with the words above the one button.
+        N360ActionBar(
+          above: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(t.shellPickerFirstTitle, style: N360Type.fit(N360Type.title, t.shellPickerFirstTitle)),
+              const SizedBox(height: N360Space.xxs),
+              Text(
+                t.shellPickerFirstBody,
+                style: N360Type.fit(N360Type.body, t.shellPickerFirstBody).copyWith(color: N360Colors.ink2),
+              ),
+              const SizedBox(height: N360Space.xs),
+            ],
+          ),
+          child: GloveButton(
+            label: t.shellPickerFirstButton,
+            icon: Icons.add_home_work_outlined,
+            large: true,
+            fullWidth: true,
+            onPressed: () => context.push(Routes.projectForm),
           ),
         ),
       ],

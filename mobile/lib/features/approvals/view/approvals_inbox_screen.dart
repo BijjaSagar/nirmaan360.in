@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routes.dart';
+import '../../../app/widgets/brand_mark.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -70,18 +71,19 @@ class _InboxView extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: LedgerPaper(
         child: SafeArea(
+          top: false,
+          bottom: false,
           child: BlocBuilder<ApprovalsInboxCubit, ApprovalsInboxState>(
             builder: (context, state) {
               final ApprovalsInboxCubit cubit = context.read<ApprovalsInboxCubit>();
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
+                  BookTitleBar(title: l.approvalsTitle, leading: const BrandMark(size: 28)),
                   if (!state.online) OfflineBanner(label: l.approvalsOffline, detail: l.approvalsOfflineDetail),
-                  BookTitleBar(title: l.approvalsTitle),
                   if (state.failure != null && state.online) _FailureLine(failure: state.failure!, l: l),
                   Expanded(child: _list(context, l, state, cubit, _groups(l, state))),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+                  N360ActionBar(
                     child: GloveButton(
                       key: const ValueKey<String>('approvals-refresh'),
                       label: state.refreshing ? l.approvalsRefreshing : l.approvalsRefresh,

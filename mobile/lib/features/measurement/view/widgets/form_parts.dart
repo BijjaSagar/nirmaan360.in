@@ -27,25 +27,24 @@ class LineHeader extends StatelessWidget {
               '${l.measurementBoqQty} ${formatQty(chosen.item.qty)} ${chosen.item.unit}, '
               '${l.measurementBalance} ${formatQty(chosen.previewBalance)} ${chosen.item.unit}';
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          LedgerBackKey(onTap: onBack),
-          const SizedBox(width: N360Space.sm),
-          Expanded(
-            child: chosen == null
-                ? _NoLine(l: l, onTap: onChange, spoken: spoken)
-                : PressTarget(
-                    onTap: onChange,
-                    haptic: N360Haptics.select,
-                    semanticsLabel: spoken,
-                    builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth * 0.4), child: child),
-                    child: _ChosenLine(line: chosen, l: l, compact: compact),
-                  ),
-          ),
-        ],
+    // The chosen line is this page's title, so it rides in the one top bar
+    // beside Back, with the whole width the bar can give it.
+    return N360TopBar(
+      backLabel: l.commonBack,
+      onBack: onBack,
+      centerTitle: false,
+      reserveTrailing: false,
+      titleWidget: SizedBox(
+        width: double.infinity,
+        child: chosen == null
+            ? _NoLine(l: l, onTap: onChange, spoken: spoken)
+            : PressTarget(
+                onTap: onChange,
+                haptic: N360Haptics.select,
+                semanticsLabel: spoken,
+                builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth * 0.4), child: child),
+                child: _ChosenLine(line: chosen, l: l, compact: compact),
+              ),
       ),
     );
   }
@@ -101,6 +100,12 @@ class _ChosenLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final String eyebrow = '${l.measurementItem} ${line.item.code} · ${line.item.unit}';
     final bool overdrawn = line.previewBalance.isNegative;
+    // On the bar, so it takes the bar's colours: ink on the white bar, white
+    // on the brand bar. The small orange cut is for the white bar only.
+    final N360BarTone tone = N360TopBar.toneOf(context);
+    final Color accent = tone == N360BarTone.paper ? N360Colors.laterite : tone.ink;
+    final TextStyle caption = N360Type.caption.copyWith(color: tone.inkSoft);
+    final TextStyle figure = N360Type.figureSmall.copyWith(color: tone.ink);
 
     return Row(
       children: <Widget>[
@@ -109,32 +114,32 @@ class _ChosenLine extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(eyebrow, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
+              Text(eyebrow, maxLines: 1, overflow: TextOverflow.ellipsis, style: caption),
               Text(
                 line.item.description,
                 maxLines: compact ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.heading,
+                style: N360Type.heading.copyWith(color: tone.ink),
               ),
               Row(
                 children: <Widget>[
-                  Text('${l.measurementBoqQty} ', style: N360Type.caption),
+                  Text('${l.measurementBoqQty} ', style: caption),
                   Flexible(
                     child: Text(
                       formatQty(line.item.qty),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: N360Type.figureSmall,
+                      style: figure,
                     ),
                   ),
                   const SizedBox(width: N360Space.sm),
-                  Text('${l.measurementBalance} ', style: N360Type.caption),
+                  Text('${l.measurementBalance} ', style: caption),
                   Flexible(
                     child: Text(
                       formatQty(line.previewBalance),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: N360Type.figureSmall.copyWith(color: overdrawn ? N360Colors.laterite : N360Colors.ink),
+                      style: figure.copyWith(color: overdrawn ? accent : tone.ink),
                     ),
                   ),
                 ],
@@ -142,8 +147,8 @@ class _ChosenLine extends StatelessWidget {
             ],
           ),
         ),
-        Text(l.measurementChange, style: N360Type.label.copyWith(color: N360Colors.laterite)),
-        const Icon(Icons.expand_more, size: N360IconSize.sm, color: N360Colors.laterite),
+        Text(l.measurementChange, style: N360Type.label.copyWith(color: accent)),
+        Icon(Icons.expand_more, size: N360IconSize.sm, color: accent),
       ],
     );
   }

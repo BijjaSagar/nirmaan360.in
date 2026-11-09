@@ -83,11 +83,13 @@ class _DetailView extends StatelessWidget {
           backgroundColor: Colors.transparent,
           body: LedgerPaper(
             child: SafeArea(
+              top: false,
+              bottom: false,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   BookTitleBar(title: l.measurementDetailTitle, onBack: () => _leave(context)),
+                  if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(N360Space.gutter, 6, N360Space.gutter, N360Space.lg),
@@ -540,8 +542,7 @@ class _Actions extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final String? status = state.entry?.record.status;
     if (status == DocStatus.rejected) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.md),
+      return N360ActionBar(
         child: GloveButton(
           key: const ValueKey<String>('measurement-new'),
           label: l.measurementAddEntry,
@@ -553,8 +554,7 @@ class _Actions extends StatelessWidget {
       );
     }
     if (!state.canChange) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+    return N360ActionBar(
       child: Row(
         children: <Widget>[
           Expanded(

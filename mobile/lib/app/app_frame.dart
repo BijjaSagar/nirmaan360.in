@@ -4,14 +4,16 @@ import 'package:flutter/services.dart';
 import '../core/design/design.dart';
 import '../l10n/generated/app_localizations.dart';
 
-const SystemUiOverlayStyle _chrome = SystemUiOverlayStyle(
-  statusBarColor: Colors.transparent,
-  statusBarIconBrightness: Brightness.dark,
-  statusBarBrightness: Brightness.light,
-  // The bottom bar is white and sits on the system bar, so the two read as one.
-  systemNavigationBarColor: N360Colors.sheet,
-  systemNavigationBarIconBrightness: Brightness.dark,
-);
+/// The system bars, matched to the top bar's tone: dark status icons over a
+/// white bar, light ones over the brand bar. The bottom bar is white and sits
+/// on the system bar, so the two read as one.
+SystemUiOverlayStyle _chromeFor(N360BarTone tone) => SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: tone.lightStatusIcons ? Brightness.light : Brightness.dark,
+      statusBarBrightness: tone.lightStatusIcons ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: N360Colors.sheet,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    );
 
 /// The `MaterialApp` every screen lives in.
 ///
@@ -46,7 +48,7 @@ class N360AppFrame extends StatelessWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: _chrome,
+        value: _chromeFor(N360Chrome.topBar),
         child: N360TextScaling(child: LedgerPaper.root(child: child!)),
       ),
     );

@@ -81,8 +81,11 @@ class _IssueFormViewState extends State<_IssueFormView> {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     return Scaffold(
+      // A form is one continuous white sheet, from the bar to the action bar.
+      backgroundColor: N360Colors.sheet,
       body: LedgerPaper(
         child: SafeArea(
+          top: false,
           bottom: false,
           child: BlocBuilder<IssueFormCubit, IssueFormState>(
             builder: (context, state) {
@@ -99,7 +102,7 @@ class _IssueFormViewState extends State<_IssueFormView> {
                       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.fromLTRB(
                         N360Space.gutter,
-                        N360Space.xs,
+                        N360Space.lg,
                         N360Space.gutter,
                         N360Space.sm,
                       ),

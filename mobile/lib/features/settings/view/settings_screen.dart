@@ -68,16 +68,14 @@ class SettingsScreen extends StatelessWidget {
         Localizations.localeOf(context).languageCode;
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
+      body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            PageHeader(title: t.shellSettings),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),
+                padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
                 children: <Widget>[
-                  PageHeader(title: t.shellSettings),
-                  const SizedBox(height: N360Space.md),
                   StaggeredRise(
                     index: 0,
                     child: Column(
@@ -110,8 +108,7 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.md),
+            N360ActionBar(
               child: GloveButton(
                 label: t.shellSignOut,
                 kind: GloveButtonKind.danger,
@@ -122,7 +119,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }

@@ -32,7 +32,7 @@ import 'polish_harness.dart' show Phone;
 const String _dir = String.fromEnvironment('N360_REVIEW_DIR');
 
 const List<(String, Locale)> _locales = <(String, Locale)>[('en', Locale('en')), ('mr', Locale('mr'))];
-const List<Phone> _phones = <Phone>[Phone.android, Phone.iphone];
+const List<Phone> _phones = <Phone>[Phone.android, Phone.iphone, Phone.large];
 
 /// A site with a BOQ, a wallet, workers and one report, as an engineer's
 /// phone would hold after the first pull.

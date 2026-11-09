@@ -68,6 +68,7 @@ class _IssueDetailView extends StatelessWidget {
       child: Scaffold(
         body: LedgerPaper(
           child: SafeArea(
+            top: false,
             bottom: false,
             child: BlocBuilder<IssueDetailCubit, IssueDetailState>(
               builder: (context, state) {
@@ -84,12 +85,19 @@ class _IssueDetailView extends StatelessWidget {
                       ],
                     );
                   case IssueDetailLoad.missing:
-                    return ListView(
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         FieldTopBar(title: l.issuesTitle),
-                        EmptyLedger(
-                          title: l.issuesDetailMissingTitle,
-                          message: l.issuesDetailMissingMessage,
+                        Expanded(
+                          child: ListView(
+                            children: <Widget>[
+                              EmptyLedger(
+                                title: l.issuesDetailMissingTitle,
+                                message: l.issuesDetailMissingMessage,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     );

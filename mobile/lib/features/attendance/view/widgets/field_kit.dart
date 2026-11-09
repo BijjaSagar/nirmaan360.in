@@ -40,28 +40,15 @@ class FieldTopBar extends StatelessWidget {
   }
 }
 
-/// Holds a screen's main action: the button sits directly on the page, in the
-/// thumb zone. There is no panel behind it.
+/// Holds a screen's main action: the design system's [N360ActionBar], a white
+/// bar with a hairline above it that the page ends in.
 class FieldActionBar extends StatelessWidget {
   const FieldActionBar({super.key, required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          N360Space.gutter,
-          N360Space.sm,
-          N360Space.gutter,
-          N360Space.md,
-        ),
-        child: child,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => N360ActionBar(child: child);
 }
 
 /// One white card around a lazily built group of rows. A single painted card

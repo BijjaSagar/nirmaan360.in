@@ -34,10 +34,12 @@ class _BoqView extends StatelessWidget {
     return Scaffold(
       body: LedgerPaper(
         child: SafeArea(
+          top: false,
           bottom: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              const _BoqBar(),
               Expanded(child: _BoqScroll(canManage: canManage)),
               if (canManage)
                 FieldActionBar(
@@ -53,6 +55,20 @@ class _BoqView extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The bar, named for the project once it is known.
+class _BoqBar extends StatelessWidget {
+  const _BoqBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return BlocSelector<BoqCubit, BoqState, String?>(
+      selector: (state) => state.project?.name,
+      builder: (context, name) => FieldTopBar(title: l.boqTitle, subtitle: name),
     );
   }
 }
@@ -83,9 +99,6 @@ class _BoqScroll extends StatelessWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             slivers: <Widget>[
-              SliverToBoxAdapter(
-                child: FieldTopBar(title: l.boqTitle, subtitle: state.project?.name),
-              ),
               // With no lines there is nothing to search, so the box stays away.
               if (state.all.isNotEmpty)
                 SliverToBoxAdapter(

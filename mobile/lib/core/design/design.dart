@@ -6,6 +6,7 @@
 /// book for anything that moves.
 library;
 
+export 'controls/action_bar.dart';
 export 'controls/action_tile.dart';
 export 'controls/bottom_bar.dart';
 export 'controls/dimension_tile.dart';

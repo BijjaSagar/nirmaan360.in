@@ -43,6 +43,7 @@ class _DprDetailBody extends StatelessWidget {
         return Scaffold(
           body: LedgerPaper(
             child: SafeArea(
+              top: false,
               bottom: false,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

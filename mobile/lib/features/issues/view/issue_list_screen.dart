@@ -33,10 +33,12 @@ class _IssueListView extends StatelessWidget {
     return Scaffold(
       body: LedgerPaper(
         child: SafeArea(
+          top: false,
           bottom: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              const _Header(),
               const Expanded(child: _IssueScroll()),
               FieldActionBar(
                 child: GloveButton(
@@ -87,7 +89,6 @@ class _IssueScroll extends StatelessWidget {
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: <Widget>[
-          const SliverToBoxAdapter(child: _Header()),
           const SliverToBoxAdapter(child: _FilterStrip()),
           BlocBuilder<IssueListCubit, IssueListState>(
             buildWhen: (a, b) =>

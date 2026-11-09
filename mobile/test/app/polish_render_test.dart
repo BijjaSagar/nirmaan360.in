@@ -21,7 +21,7 @@ import 'shell_test_helpers.dart' show seedProgress, seedReturned, seedToday;
 const String _dir = String.fromEnvironment('N360_POLISH_DIR');
 
 const List<String> _locales = <String>['en', 'mr'];
-const List<Phone> _phones = <Phone>[Phone.android, Phone.iphone];
+const List<Phone> _phones = <Phone>[Phone.android, Phone.iphone, Phone.large];
 
 /// Signed in as someone who can set up a site, with nothing on the server yet.
 Future<TestApp> _owner() => TestApp.create(

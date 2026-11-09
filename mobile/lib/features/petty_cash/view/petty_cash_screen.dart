@@ -34,6 +34,7 @@ class _PettyCashView extends StatelessWidget {
     return Scaffold(
       body: LedgerPaper(
         child: SafeArea(
+          top: false,
           bottom: false,
           child: BlocBuilder<PettyCashCubit, PettyCashState>(
             builder: (context, state) {
@@ -44,6 +45,10 @@ class _PettyCashView extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
+                  FieldTopBar(
+                    title: l.pettyCashTitle,
+                    subtitle: state.project?.code ?? l.pettyCashEyebrow,
+                  ),
                   Expanded(
                     child: _Scroll(state: state, canManage: canManage),
                   ),
@@ -102,12 +107,7 @@ class _Scroll extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     return CustomScrollView(
       slivers: <Widget>[
-        SliverToBoxAdapter(
-          child: FieldTopBar(
-            title: l.pettyCashTitle,
-            subtitle: state.project?.code ?? l.pettyCashEyebrow,
-          ),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: N360Space.xs)),
         switch (state.load) {
           PettyCashLoad.loading => SliverToBoxAdapter(
             child: _WalletSkeleton(label: l.pettyCashLoading),

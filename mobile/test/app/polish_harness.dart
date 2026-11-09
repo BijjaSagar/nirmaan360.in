@@ -126,6 +126,9 @@ class Phone {
   /// A six-inch iPhone with the island and the home indicator.
   static const Phone iphone = Phone('390', Size(390, 844), safeTop: 59, safeBottom: 34);
 
+  /// The largest iPhone: the same bars, a taller and wider page.
+  static const Phone large = Phone('430', Size(430, 932), safeTop: 59, safeBottom: 34);
+
   final String name;
   final Size size;
   final double safeTop;

@@ -61,6 +61,7 @@ class _TopUpView extends StatelessWidget {
           child: Scaffold(
             body: LedgerPaper(
               child: SafeArea(
+                top: false,
                 bottom: false,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,

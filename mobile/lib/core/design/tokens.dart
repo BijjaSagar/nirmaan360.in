@@ -115,6 +115,73 @@ abstract final class N360Colors {
   static const Color shadow = Color(0xFFB9875B);
 }
 
+/// The two ways the top bar can be painted. The owner chooses one; the app
+/// reads the choice from [N360Chrome.topBar].
+enum N360BarTone {
+  /// White with a hairline under it. Ink text, white tiles with hairlines,
+  /// dark status-bar icons.
+  paper(
+    fill: N360Colors.sheet,
+    edge: N360Colors.rule,
+    ink: N360Colors.ink,
+    inkSoft: N360Colors.inkLabel,
+    tileFill: N360Colors.sheet,
+    tileEdge: N360Colors.rule,
+    tileInk: N360Colors.ink,
+    lightStatusIcons: false,
+  ),
+
+  /// The brand colour, with white text and icons. Tiles are a darker cut of
+  /// the same orange so they read as part of the bar. Light status-bar icons.
+  brand(
+    fill: N360Colors.primary,
+    edge: N360Colors.primary,
+    ink: N360Colors.onPrimary,
+    inkSoft: N360Colors.onPrimary,
+    tileFill: N360Colors.lateriteDark,
+    tileEdge: N360Colors.lateriteDark,
+    tileInk: N360Colors.onPrimary,
+    lightStatusIcons: true,
+  );
+
+  const N360BarTone({
+    required this.fill,
+    required this.edge,
+    required this.ink,
+    required this.inkSoft,
+    required this.tileFill,
+    required this.tileEdge,
+    required this.tileInk,
+    required this.lightStatusIcons,
+  });
+
+  final Color fill;
+
+  /// The hairline along the bar's lower edge.
+  final Color edge;
+
+  /// Title text and icons on the bar.
+  final Color ink;
+
+  /// The line under the title. On the brand bar it is white too: a tint
+  /// would fall under 4.5:1.
+  final Color inkSoft;
+  final Color tileFill;
+  final Color tileEdge;
+  final Color tileInk;
+
+  /// Whether the status bar above the bar needs light icons.
+  final bool lightStatusIcons;
+}
+
+/// The one switch for the app's chrome. Every top bar, every tile on it and
+/// the status-bar icon brightness read [topBar]; change it here and the whole
+/// app follows. It is a plain field so the owner's two options can be rendered
+/// side by side from one build.
+abstract final class N360Chrome {
+  static N360BarTone topBar = N360BarTone.paper;
+}
+
 /// Static "gradients". The design is flat; these exist so screens that painted
 /// a gradient still compile and now get the flat primary and the flat page.
 abstract final class N360Gradients {
