@@ -5,12 +5,16 @@ namespace App\Services;
 use App\Models\Issue;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\Notify\WorkflowNotifier;
 use App\Support\Idempotent;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
 
 class IssueService
 {
+    public function __construct(private WorkflowNotifier $workflow) {}
+
     /** One rule set for the web form, the REST API and offline sync. */
     public function rules(Project $project, User $user): array
     {
@@ -43,7 +47,7 @@ class IssueService
             return $existing;
         }
 
-        return Idempotent::create(
+        $issue = Idempotent::create(
             fn () => Issue::create([
                 ...$data,
                 'organization_id' => $project->organization_id,
@@ -53,6 +57,13 @@ class IssueService
             ]),
             fn () => $this->findByClientUuid($project->organization_id, (string) $uuid),
         );
+
+        // A concurrent retry gets the first caller's row back and must not notify again.
+        if ($issue->wasRecentlyCreated) {
+            $this->workflow->issueRaised($issue);
+        }
+
+        return $issue;
     }
 
     /** Without a client stamp, this edit's updated_at is what later sync writes compare against. */
@@ -67,6 +78,7 @@ class IssueService
         }
 
         $issue->update($changes);
+        $this->workflow->issueChanged($issue, Auth::id());
 
         return $issue;
     }
