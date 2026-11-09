@@ -2623,7 +2623,7 @@ abstract class AppLocalizations {
   /// No description provided for @measurementPreviewNote.
   ///
   /// In en, this message translates to:
-  /// **'Figures on this phone are a preview. The server\'s figures are final.'**
+  /// **'Figures on this phone are a preview. The office\'s figures are final.'**
   String get measurementPreviewNote;
 
   /// No description provided for @measurementPreviewTag.
@@ -3429,6 +3429,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not set'**
   String get shellProgressNoEnd;
+
+  /// No description provided for @shellProgressNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No approved work yet'**
+  String get shellProgressNothingYet;
 
   /// No description provided for @shellProgressSemantics.
   ///

@@ -130,9 +130,9 @@
     "hi": "यह एंट्री BOQ मात्रा और छूट से ज़्यादा है, इसलिए प्रोजेक्ट मैनेजर की मंज़ूरी लगेगी।"
   },
   "measurementPreviewNote": {
-    "en": "Figures on this phone are a preview. The server's figures are final.",
-    "mr": "या फोनवरचे आकडे अंदाजी आहेत. सर्व्हरवरचे आकडे अंतिम असतात.",
-    "hi": "इस फ़ोन के आँकड़े अनुमानित हैं। सर्वर के आँकड़े ही अंतिम हैं।"
+    "en": "Figures on this phone are a preview. The office's figures are final.",
+    "mr": "या फोनवरचे आकडे अंदाजी आहेत. ऑफिसचे आकडे अंतिम असतात.",
+    "hi": "इस फ़ोन के आँकड़े अनुमानित हैं। ऑफ़िस के आँकड़े ही अंतिम हैं।"
   },
   "measurementOffline": {
     "en": "No network.",

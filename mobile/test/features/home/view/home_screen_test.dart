@@ -42,6 +42,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the daily report tile stays white while something returned needs fixing', (tester) async {
+    final app = await TestApp.create();
+    addTearDown(app.dispose);
+    await seedReturned(app);
+    await seedToday(app);
+    await pumpShellApp(tester, app);
+
+    expect(find.byType(RubberStamp), findsWidgets);
+    expect(tester.widget<StatTile>(tile(en.shellTileDaily)).emphasized, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the daily report tile stays white while the site is still being set up', (tester) async {
+    final app = await TestApp.create(seed: false, api: FakeApi()..grant('boq.manage'));
+    addTearDown(app.dispose);
+    app.api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+    await app.sync();
+    await pumpShellApp(tester, app);
+
+    expect(find.text(en.shellSetupTitle), findsOneWidget);
+    expect(tester.widget<StatTile>(tile(en.shellTileDaily)).emphasized, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('tiles follow permission, and approvals are counted on the bar too', (tester) async {
     final app = await TestApp.create(seed: false, signedIn: false);
     addTearDown(app.dispose);
@@ -160,6 +184,23 @@ void main() {
 
       // 33.333 × 10.10 ÷ (100 × 10.10 + 1 × 999.99) = 16.749…%
       expect(rolling('16.75'), findsOneWidget);
+    });
+
+    testWidgets('with a BOQ but nothing approved it shows a plain zero and says why', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      app.api
+        ..addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B')
+        ..addBoqItem(id: 1, projectId: 1, code: '1.1', qty: '100.000', rate: '10.10');
+      await app.sync();
+
+      await pumpShellApp(tester, app);
+
+      expect(rolling('0'), findsOneWidget);
+      expect(rolling('0.00'), findsNothing);
+      expect(find.text(en.shellProgressNothingYet), findsOneWidget);
+      expect(find.byType(HatchedProgressBar), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('with no BOQ it says so calmly instead of showing a zero', (tester) async {

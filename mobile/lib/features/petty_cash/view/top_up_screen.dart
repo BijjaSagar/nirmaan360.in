@@ -124,29 +124,31 @@ class _AmountStep extends StatelessWidget {
           ),
         ],
         Expanded(
-          child: SingleChildScrollView(
-            // Reversed, so the figure sits on the keypad that fills it.
-            reverse: true,
-            padding: const EdgeInsets.fromLTRB(
-              N360Space.gutter,
-              N360Space.xs,
-              N360Space.gutter,
-              N360Space.md,
-            ),
-            child: PettyAmountCard(
-              label: l.pettyCashAmount,
-              typed: state.amountText,
-              footer: state.problem == TopUpProblem.amountRequired
-                  ? FieldInlineError(l.pettyCashAmountRequired)
-                  : balance == null
-                  ? null
-                  : Text(
-                      '${l.pettyCashBalance}: ${balance.inr()}',
-                      style: N360Type.fit(
-                        N360Type.body,
-                        l.pettyCashBalance,
-                      ).copyWith(color: N360Colors.ink2),
-                    ),
+          // The figure sits in the middle of the room above the keypad, as an
+          // amount does on a payment app, so the page has no empty end.
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                N360Space.gutter,
+                N360Space.xs,
+                N360Space.gutter,
+                N360Space.md,
+              ),
+              child: PettyAmountCard(
+                label: l.pettyCashAmount,
+                typed: state.amountText,
+                footer: state.problem == TopUpProblem.amountRequired
+                    ? FieldInlineError(l.pettyCashAmountRequired)
+                    : balance == null
+                    ? null
+                    : Text(
+                        '${l.pettyCashBalance}: ${balance.inr()}',
+                        style: N360Type.fit(
+                          N360Type.body,
+                          l.pettyCashBalance,
+                        ).copyWith(color: N360Colors.ink2),
+                      ),
+              ),
             ),
           ),
         ),

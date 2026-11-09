@@ -54,7 +54,11 @@ class _HomeView extends StatelessWidget {
           // what to do about it. The empty progress card would only repeat it.
           final bool boqStepOpen = steps.any((step) => step.isBoq && !step.done);
           final bool showProgress = state.progress != null || !boqStepOpen;
-          final List<_TileSpec> tiles = _tilesFor(context, state);
+          // The page has one filled surface at most. A returned document or a
+          // site still being set up already says what to do next, so the
+          // daily report tile stays white until those are dealt with.
+          final bool quiet = state.returned.isNotEmpty || setupPending;
+          final List<_TileSpec> tiles = _tilesFor(context, state, allowEmphasis: !quiet);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),
@@ -117,8 +121,9 @@ class _HomeView extends StatelessWidget {
     }
   }
 
-  /// Today's figures, in the order a day on site runs.
-  List<_TileSpec> _tilesFor(BuildContext context, HomeState state) {
+  /// Today's figures, in the order a day on site runs. With [allowEmphasis]
+  /// the one thing still owed today may take the colour.
+  List<_TileSpec> _tilesFor(BuildContext context, HomeState state, {required bool allowEmphasis}) {
     final t = AppLocalizations.of(context);
     final CurrentUser? user = context.select((AppGate gate) => gate.state.user);
     bool can(String permission) => user?.can(permission) ?? false;
@@ -135,8 +140,9 @@ class _HomeView extends StatelessWidget {
           value: report.word,
           caption: t.shellCaptionToday,
           icon: report.icon,
-          // The one thing still owed today gets the colour.
-          emphasized: data?.dprState == DprDayState.notStarted && can('dpr.create'),
+          // The one thing still owed today gets the colour, when nothing on
+          // the page is more urgent.
+          emphasized: allowEmphasis && data?.dprState == DprDayState.notStarted && can('dpr.create'),
           onTap: () => _openReport(context, data, can('dpr.create')),
         ),
       if (can('attendance.view'))
@@ -246,9 +252,10 @@ class _HomeHeader extends StatelessWidget {
         const SizedBox(width: N360Space.sm),
         const _SyncTag(),
         const SizedBox(width: N360Space.xs),
-        IconTile(
+        // The gear carries its word, as every header tile does.
+        N360TopTile(
           icon: Icons.settings_outlined,
-          semanticLabel: t.shellSettings,
+          label: t.shellSettings,
           onTap: () => context.push(Routes.settings),
         ),
       ],
@@ -576,13 +583,21 @@ class _ProgressCard extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: RollingNumber(
-              value: data.percent,
+              // Before anything is approved the figure is a plain 0: two
+              // decimals of nothing read like a broken spreadsheet cell.
+              value: data.isZero ? '0' : data.percent,
               suffix: '%',
               style: N360Type.figureHero,
               animateEntry: true,
               semanticsLabel: t.shellProgressSemantics(data.percent),
             ),
           ),
+          if (data.isZero) ...<Widget>[
+            Text(
+              t.shellProgressNothingYet,
+              style: N360Type.fit(N360Type.body, t.shellProgressNothingYet).copyWith(color: N360Colors.ink2),
+            ),
+          ],
           const SizedBox(height: N360Space.sm),
           _DatesRow(endDate: project.endDate, today: today, locale: locale),
         ],

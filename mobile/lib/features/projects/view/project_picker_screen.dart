@@ -51,9 +51,9 @@ class ProjectPickerScreen extends StatelessWidget {
                 // of the wrong account; otherwise Home already offers it.
                 trailing: canGoBack
                     ? null
-                    : IconTile(
+                    : N360TopTile(
                         icon: Icons.settings_outlined,
-                        semanticLabel: t.shellSettings,
+                        label: t.shellSettings,
                         onTap: () => context.push(Routes.settings),
                       ),
               ),

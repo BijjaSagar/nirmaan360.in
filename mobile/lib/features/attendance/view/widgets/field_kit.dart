@@ -10,9 +10,8 @@ import '../../../../l10n/generated/app_localizations.dart';
 /// Every visible thing here is sized for the eye (a 44dp tile, 18 and 14 point
 /// type) and every tappable thing carries a 56dp target around it.
 
-/// The top of a screen: a labelled back tile, a centred title, and an optional
-/// tile on the right. The back tile keeps its word, so nothing depends on
-/// recognising the arrow.
+/// The top of a screen. One header for the whole app: the design system's
+/// [N360TopBar], with the translated word under the back arrow.
 class FieldTopBar extends StatelessWidget {
   const FieldTopBar({
     super.key,
@@ -29,117 +28,14 @@ class FieldTopBar extends StatelessWidget {
   final VoidCallback? onBack;
   final Widget? trailing;
 
-  /// Room each side keeps, so the title stays centred whichever side is empty.
-  static const double _sideWidth = N360Size.tap + N360Space.sm;
-
   @override
   Widget build(BuildContext context) {
-    final NavigatorState navigator = Navigator.of(context);
-    final VoidCallback? back =
-        onBack ?? (navigator.canPop() ? () => navigator.maybePop() : null);
-    final String? sub = subtitle;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        N360Space.gutter,
-        N360Space.xs,
-        N360Space.gutter,
-        N360Space.sm,
-      ),
-      child: Row(
-        children: <Widget>[
-          SizedBox(
-            width: _sideWidth,
-            child: back == null ? null : _BackTile(onTap: back),
-          ),
-          const SizedBox(width: N360Space.xs),
-          Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: N360Size.tap),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      title,
-                      maxLines: 2,
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.fit(N360Type.title, title),
-                    ),
-                  ),
-                  if (sub != null)
-                    Text(
-                      sub,
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
-                      style: N360Type.fit(N360Type.caption, sub),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: N360Space.xs),
-          SizedBox(width: _sideWidth, child: trailing),
-        ],
-      ),
-    );
-  }
-}
-
-class _BackTile extends StatelessWidget {
-  const _BackTile({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    return PressTarget(
-      onTap: onTap,
-      semanticsLabel: l.commonBack,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(
-            Icons.chevron_left,
-            size: N360IconSize.xl,
-            color: N360Colors.ink,
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              l.commonBack,
-              maxLines: 1,
-              style: N360Type.fit(N360Type.label, l.commonBack),
-            ),
-          ),
-        ],
-      ),
-      // The tile is light; the 56dp target around it is the press surface. It
-      // grows with a larger text size rather than clip its word.
-      builder: (context, depth, child) => Center(
-        child: Transform.scale(
-          scale: pressedScale(depth),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: N360Colors.sheet,
-              borderRadius: N360Radius.md,
-              border: Border.all(color: N360Colors.rule),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: N360Size.barTile,
-                minHeight: N360Size.barTile,
-              ),
-              child: Center(widthFactor: 1, heightFactor: 1, child: child),
-            ),
-          ),
-        ),
-      ),
+    return N360TopBar(
+      backLabel: AppLocalizations.of(context).commonBack,
+      title: title,
+      subtitle: subtitle,
+      onBack: onBack,
+      trailing: trailing,
     );
   }
 }

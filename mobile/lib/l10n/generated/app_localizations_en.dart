@@ -1426,7 +1426,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get measurementPreviewNote =>
-      'Figures on this phone are a preview. The server\'s figures are final.';
+      'Figures on this phone are a preview. The office\'s figures are final.';
 
   @override
   String get measurementPreviewTag => 'preview';
@@ -1874,6 +1874,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellProgressNoEnd => 'Not set';
+
+  @override
+  String get shellProgressNothingYet => 'No approved work yet';
 
   @override
   String shellProgressSemantics(String percent) {

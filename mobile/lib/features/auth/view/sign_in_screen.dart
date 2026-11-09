@@ -58,31 +58,50 @@ class _SignInViewState extends State<_SignInView> {
 
   void _submit() {
     FocusScope.of(context).unfocus();
-    context.read<SignInCubit>().submit(email: _email.text, password: _password.text);
+    context.read<SignInCubit>().submit(
+      email: _email.text,
+      password: _password.text,
+    );
   }
 
   void _setLanguage(String code) {
     context.read<AppServices>().auth.setLocale(code);
   }
 
-  ({String title, String body})? _problemText(SignInState state, AppLocalizations t) {
+  ({String title, String body})? _problemText(
+    SignInState state,
+    AppLocalizations t,
+  ) {
     return switch (state.problem) {
       null => null,
-      SignInProblem.wrongCredentials => (title: t.shellSignInWrongTitle, body: t.shellSignInWrongBody),
-      SignInProblem.noNetwork => (title: t.shellSignInNetworkTitle, body: t.shellSignInNetworkBody),
-      SignInProblem.serverDown => (title: t.shellSignInServerTitle, body: t.shellSignInServerBody),
-      SignInProblem.tooManyTries => (title: t.shellSignInTooManyTitle, body: t.shellSignInTooManyBody),
+      SignInProblem.wrongCredentials => (
+        title: t.shellSignInWrongTitle,
+        body: t.shellSignInWrongBody,
+      ),
+      SignInProblem.noNetwork => (
+        title: t.shellSignInNetworkTitle,
+        body: t.shellSignInNetworkBody,
+      ),
+      SignInProblem.serverDown => (
+        title: t.shellSignInServerTitle,
+        body: t.shellSignInServerBody,
+      ),
+      SignInProblem.tooManyTries => (
+        title: t.shellSignInTooManyTitle,
+        body: t.shellSignInTooManyBody,
+      ),
       SignInProblem.otherUsersWork => (
-          title: t.shellSignInOtherUserTitle,
-          body: t.shellSignInOtherUserBody(state.otherUserCount),
-        ),
+        title: t.shellSignInOtherUserTitle,
+        body: t.shellSignInOtherUserBody(state.otherUserCount),
+      ),
     };
   }
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final String locale = context.select((AppGate gate) => gate.state.localeCode) ??
+    final String locale =
+        context.select((AppGate gate) => gate.state.localeCode) ??
         Localizations.localeOf(context).languageCode;
     final bool expired = context.select((AppGate gate) => gate.state.isExpired);
 
@@ -90,11 +109,13 @@ class _SignInViewState extends State<_SignInView> {
     // not change, so opening the keyboard reflows nothing and the fields stay
     // where they are until the focused one needs scrolling into view.
     final MediaQueryData media = MediaQuery.of(context);
-    final double usable = media.size.height - media.padding.top - media.viewPadding.bottom;
+    final double usable =
+        media.size.height - media.padding.top - media.viewPadding.bottom;
     final double room = usable - _fixedHeight - (expired ? 110 : 0);
 
     return BlocConsumer<SignInCubit, SignInState>(
-      listenWhen: (previous, next) => previous.problem != next.problem && next.problem != null,
+      listenWhen: (previous, next) =>
+          previous.problem != next.problem && next.problem != null,
       listener: (context, state) {
         N360Haptics.warning();
         setState(() => _shakeTick++);
@@ -105,18 +126,20 @@ class _SignInViewState extends State<_SignInView> {
           body: SafeArea(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),
+              padding: const EdgeInsets.fromLTRB(
+                N360Space.gutter,
+                N360Space.sm,
+                N360Space.gutter,
+                N360Space.lg,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   LanguageSwitch(current: locale, onChanged: _setLanguage),
                   const SizedBox(height: N360Space.lg),
-                  Row(
-                    children: <Widget>[
-                      const ExcludeSemantics(child: BrandMark()),
-                      const SizedBox(width: N360Space.md),
-                      Expanded(child: Text(t.appName, style: N360Type.fit(N360Type.title, t.appName))),
-                    ],
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: BrandLockup(),
                   ),
                   _Graphic(room: room),
                   StaggeredRise(
@@ -127,7 +150,13 @@ class _SignInViewState extends State<_SignInView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          Text(t.shellSignInWelcome, style: N360Type.fit(N360Type.display, t.shellSignInWelcome)),
+                          Text(
+                            t.shellSignInWelcome,
+                            style: N360Type.fit(
+                              N360Type.display,
+                              t.shellSignInWelcome,
+                            ),
+                          ),
                           if (expired) ...<Widget>[
                             const SizedBox(height: N360Space.sm),
                             PaperToast(
@@ -144,7 +173,9 @@ class _SignInViewState extends State<_SignInView> {
                             textInputAction: TextInputAction.next,
                             textCapitalization: TextCapitalization.none,
                             enabled: !state.submitting,
-                            errorText: state.emailMissing ? t.shellSignInEmailRequired : null,
+                            errorText: state.emailMissing
+                                ? t.shellSignInEmailRequired
+                                : null,
                             onSubmitted: (_) => _passwordFocus.requestFocus(),
                           ),
                           const SizedBox(height: N360Space.sm),
@@ -156,25 +187,34 @@ class _SignInViewState extends State<_SignInView> {
                             textInputAction: TextInputAction.done,
                             textCapitalization: TextCapitalization.none,
                             enabled: !state.submitting,
-                            errorText: state.passwordMissing ? t.shellSignInPasswordRequired : null,
+                            errorText: state.passwordMissing
+                                ? t.shellSignInPasswordRequired
+                                : null,
                             onSubmitted: (_) => _submit(),
                             suffix: _ShowPassword(
                               shown: _showPassword,
                               showLabel: t.shellSignInShow,
                               hideLabel: t.shellSignInHide,
-                              onToggle: () => setState(() => _showPassword = !_showPassword),
+                              onToggle: () => setState(
+                                () => _showPassword = !_showPassword,
+                              ),
                             ),
                           ),
                           if (problem != null) ...<Widget>[
                             const SizedBox(height: N360Space.md),
                             _Shake(
                               tick: _shakeTick,
-                              child: ErrorSlip(title: problem.title, message: problem.body),
+                              child: ErrorSlip(
+                                title: problem.title,
+                                message: problem.body,
+                              ),
                             ),
                           ],
                           const SizedBox(height: N360Space.lg),
                           GloveButton(
-                            label: state.submitting ? t.shellSignInBusy : t.shellSignInButton,
+                            label: state.submitting
+                                ? t.shellSignInBusy
+                                : t.shellSignInButton,
                             onPressed: _submit,
                             loading: state.submitting,
                             large: true,
@@ -214,11 +254,16 @@ class _Graphic extends StatelessWidget {
     return SizedBox(
       height: room,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: N360Space.xl, vertical: N360Space.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: N360Space.xl,
+          vertical: N360Space.sm,
+        ),
         child: Center(
           child: SizedBox(
             height: height - N360Space.lg,
-            child: const ExcludeSemantics(child: BuildingProgressArt(fraction: 0.62)),
+            child: const ExcludeSemantics(
+              child: BuildingProgressArt(fraction: 0.62),
+            ),
           ),
         ),
       ),
@@ -254,7 +299,10 @@ class _ShowPassword extends StatelessWidget {
           onTapDown: (_) => N360Haptics.select(),
           onTap: onToggle,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 72, minHeight: N360Size.tap),
+            constraints: const BoxConstraints(
+              minWidth: 72,
+              minHeight: N360Size.tap,
+            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: N360Space.sm),
               child: Row(
@@ -262,7 +310,9 @@ class _ShowPassword extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Icon(
-                    shown ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    shown
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                     size: N360IconSize.button,
                     color: N360Colors.ink2,
                   ),
@@ -296,7 +346,9 @@ class _ShakeState extends State<_Shake> with SingleTickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _controller.duration = context.motion.of(N360Durations.stamp);
-    if (!context.motion.reduced && !_controller.isAnimating && _controller.value == 0) {
+    if (!context.motion.reduced &&
+        !_controller.isAnimating &&
+        _controller.value == 0) {
       _controller.forward();
     }
   }

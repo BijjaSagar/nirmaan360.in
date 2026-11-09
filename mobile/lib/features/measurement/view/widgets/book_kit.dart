@@ -6,49 +6,20 @@ import '../../../../core/design/design.dart';
 import '../../../../core/sync/record_sync.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
-/// The way back: an arrow with its word under it, on a soft tile, because an
-/// icon alone means little to someone who reads little.
+/// The way back: the design system's [N360BackTile], an arrow with its word
+/// under it, because an icon alone means little to someone who reads little.
 class LedgerBackKey extends StatelessWidget {
   const LedgerBackKey({super.key, required this.onTap});
 
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final String label = AppLocalizations.of(context).commonBack;
-    return PressTarget(
-      onTap: onTap,
-      haptic: N360Haptics.tap,
-      semanticsLabel: label,
-      builder: (context, depth, child) => Transform.scale(scale: pressedScale(depth), child: child),
-      child: SizedBox.square(
-        dimension: N360Size.tap,
-        child: Center(
-          child: SizedBox.square(
-            dimension: N360Size.tile,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: N360Colors.sheet,
-                borderRadius: N360Radius.md,
-                border: Border.all(color: N360Colors.rule),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Icon(Icons.arrow_back, size: N360IconSize.md, color: N360Colors.ink),
-                  Text(label, maxLines: 1, style: N360Type.caption.copyWith(height: 1.15)),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      N360BackTile(label: AppLocalizations.of(context).commonBack, onTap: onTap);
 }
 
-/// The top of a page: the way back, a centred title, and room for one more
-/// thing. The title stays centred whether or not there is a way back.
+/// The top of a page: the app's one [N360TopBar]. Back shows only when the
+/// screen gives it somewhere to go, so a root tab keeps a plain title.
 class BookTitleBar extends StatelessWidget {
   const BookTitleBar({super.key, required this.title, this.eyebrow, this.onBack, this.trailing});
 
@@ -59,39 +30,13 @@ class BookTitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final VoidCallback? back = onBack;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.xs),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: N360Size.tap),
-        child: Row(
-          children: <Widget>[
-            SizedBox(
-              width: N360Size.tap,
-              child: back == null ? null : LedgerBackKey(onTap: back),
-            ),
-            const SizedBox(width: N360Space.xs),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: N360Type.title,
-                  ),
-                  if (eyebrow != null)
-                    Text(eyebrow!, maxLines: 1, overflow: TextOverflow.ellipsis, style: N360Type.caption),
-                ],
-              ),
-            ),
-            const SizedBox(width: N360Space.xs),
-            SizedBox(width: trailing == null ? N360Size.tap : null, child: trailing),
-          ],
-        ),
-      ),
+    return N360TopBar(
+      backLabel: AppLocalizations.of(context).commonBack,
+      title: title,
+      subtitle: eyebrow,
+      onBack: onBack,
+      showBack: onBack != null,
+      trailing: trailing,
     );
   }
 }

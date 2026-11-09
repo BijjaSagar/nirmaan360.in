@@ -375,9 +375,9 @@ class _FiguresStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Expanded(
-          // Figures sit just above the keypad, within reach of the thumb.
-          child: Align(
-            alignment: Alignment.bottomCenter,
+          // The line and its figures sit in the middle of the room above the
+          // keypad, as an amount does on a payment app: no empty end.
+          child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                 N360Space.gutter,

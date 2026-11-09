@@ -1385,7 +1385,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get measurementPreviewNote =>
-      'इस फ़ोन के आँकड़े अनुमानित हैं। सर्वर के आँकड़े ही अंतिम हैं।';
+      'इस फ़ोन के आँकड़े अनुमानित हैं। ऑफ़िस के आँकड़े ही अंतिम हैं।';
 
   @override
   String get measurementPreviewTag => 'अनुमानित';
@@ -1828,6 +1828,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shellProgressNoEnd => 'तय नहीं';
+
+  @override
+  String get shellProgressNothingYet => 'अभी कोई मंज़ूर काम नहीं';
 
   @override
   String shellProgressSemantics(String percent) {

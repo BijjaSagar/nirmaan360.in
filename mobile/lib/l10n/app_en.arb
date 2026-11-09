@@ -639,7 +639,7 @@
   "measurementOffline": "No network.",
   "measurementOfflineDetail": "Entries stay on this phone and go when network returns.",
   "measurementOtherDate": "Other date",
-  "measurementPreviewNote": "Figures on this phone are a preview. The server's figures are final.",
+  "measurementPreviewNote": "Figures on this phone are a preview. The office's figures are final.",
   "measurementPreviewTag": "preview",
   "measurementProblemFuture": "The date cannot be in the future.",
   "measurementProblemLocked": "This entry has already been sent for approval.",
@@ -830,6 +830,7 @@
   "shellProgressEmptyTitle": "No BOQ yet",
   "shellProgressEnd": "End",
   "shellProgressNoEnd": "Not set",
+  "shellProgressNothingYet": "No approved work yet",
   "shellProgressSemantics": "{percent} percent complete",
   "@shellProgressSemantics": {
     "placeholders": {

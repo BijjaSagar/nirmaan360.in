@@ -117,41 +117,42 @@ class _AmountStep extends StatelessWidget {
       children: <Widget>[
         if (state.wallets.length > 1) _WalletChoice(state: state),
         Expanded(
-          // The figure sits right on the keypad that fills it, so the eye
-          // stays beside the thumb.
-          child: SingleChildScrollView(
-            reverse: true,
-            padding: const EdgeInsets.fromLTRB(
-              N360Space.gutter,
-              N360Space.xs,
-              N360Space.gutter,
-              N360Space.md,
-            ),
-            child: PettyAmountCard(
-              label: l.pettyCashAmount,
-              typed: state.amountText,
-              color: over ? N360Colors.stampRed : N360Colors.ink,
-              footer: over
-                  ? _OverBalanceNote(balance: limit!)
-                  : state.problem == ExpenseProblem.amountRequired
-                  ? _Warn(text: l.pettyCashAmountRequired)
-                  : state.balanceAfter != null
-                  ? Text(
-                      l.pettyCashBalanceAfter(state.balanceAfter!.inr()),
-                      style: N360Type.fit(
-                        N360Type.body,
+          // The figure sits in the middle of the room above the keypad, as an
+          // amount does on a payment app, so the page has no empty end.
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                N360Space.gutter,
+                N360Space.xs,
+                N360Space.gutter,
+                N360Space.md,
+              ),
+              child: PettyAmountCard(
+                label: l.pettyCashAmount,
+                typed: state.amountText,
+                color: over ? N360Colors.stampRed : N360Colors.ink,
+                footer: over
+                    ? _OverBalanceNote(balance: limit!)
+                    : state.problem == ExpenseProblem.amountRequired
+                    ? _Warn(text: l.pettyCashAmountRequired)
+                    : state.balanceAfter != null
+                    ? Text(
                         l.pettyCashBalanceAfter(state.balanceAfter!.inr()),
-                      ).copyWith(color: N360Colors.ink2),
-                    )
-                  : limit != null
-                  ? Text(
-                      '${l.pettyCashBalance}: ${limit.inr()}',
-                      style: N360Type.fit(
-                        N360Type.body,
-                        l.pettyCashBalance,
-                      ).copyWith(color: N360Colors.ink2),
-                    )
-                  : null,
+                        style: N360Type.fit(
+                          N360Type.body,
+                          l.pettyCashBalanceAfter(state.balanceAfter!.inr()),
+                        ).copyWith(color: N360Colors.ink2),
+                      )
+                    : limit != null
+                    ? Text(
+                        '${l.pettyCashBalance}: ${limit.inr()}',
+                        style: N360Type.fit(
+                          N360Type.body,
+                          l.pettyCashBalance,
+                        ).copyWith(color: N360Colors.ink2),
+                      )
+                    : null,
+              ),
             ),
           ),
         ),

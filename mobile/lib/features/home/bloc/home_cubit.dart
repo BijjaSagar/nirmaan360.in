@@ -52,6 +52,10 @@ class HomeProgress extends Equatable {
   /// For drawing only: figures shown to people come from [percent].
   final double fraction;
 
+  /// True while nothing has been approved yet. Decided on the exact figure,
+  /// never on [fraction].
+  bool get isZero => Decimal.tryParse(percent) == Decimal.zero;
+
   @override
   List<Object?> get props => <Object?>[percent, fraction];
 }

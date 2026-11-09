@@ -16,6 +16,7 @@ export 'controls/glove_text_field.dart';
 export 'controls/hajiri_segment.dart';
 export 'controls/n360_chip.dart';
 export 'controls/picto_choice.dart';
+export 'controls/top_bar.dart';
 export 'feedback/feedback.dart';
 export 'haptics.dart';
 export 'internal/press_target.dart';

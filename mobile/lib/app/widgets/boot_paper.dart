@@ -14,7 +14,7 @@ class BootPaper extends StatelessWidget {
       textDirection: TextDirection.ltr,
       child: ColoredBox(
         color: N360Colors.paper,
-        child: Center(child: BrandMark(size: 96, launch: true)),
+        child: Center(child: BrandMark(size: 92)),
       ),
     );
   }

@@ -300,6 +300,11 @@
     "mr": "उशीर, दिवस",
     "hi": "देरी, दिन"
   },
+  "shellProgressNothingYet": {
+    "en": "No approved work yet",
+    "mr": "अजून मंजूर काम नाही",
+    "hi": "अभी कोई मंज़ूर काम नहीं"
+  },
   "shellProgressEmptyTitle": {
     "en": "No BOQ yet",
     "mr": "अजून BOQ नाही",

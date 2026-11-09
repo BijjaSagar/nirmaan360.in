@@ -40,7 +40,8 @@ class DprTapPad extends StatelessWidget {
   }
 }
 
-/// The header: a labelled way back, a centred title, and status on the right.
+/// The header: the app's one [N360TopBar], whose Back leaves through
+/// [dprGoBack] so a half-typed report is never lost by accident.
 class DprTopBar extends StatelessWidget {
   const DprTopBar({super.key, this.title, this.subtitle, this.trailing});
 
@@ -50,68 +51,12 @@ class DprTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.xs),
-      child: Row(
-        children: <Widget>[
-          DprTapPad(
-            onTap: () => dprGoBack(context),
-            semanticsLabel: l.commonBack,
-            child: Center(
-              widthFactor: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: N360Colors.sheet,
-                  borderRadius: N360Radius.sm,
-                  border: Border.all(color: N360Colors.rule),
-                ),
-                child: SizedBox(
-                  height: N360Size.tile,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: N360Space.tile),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Icon(Icons.arrow_back, size: N360IconSize.md, color: N360Colors.ink),
-                        const SizedBox(width: N360Space.xs),
-                        Text(l.commonBack, style: N360Type.label.copyWith(color: N360Colors.ink)),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: N360Space.sm),
-          Expanded(
-            child: title == null
-                ? const SizedBox.shrink()
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        title!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: N360Type.heading,
-                      ),
-                      if (subtitle != null)
-                        Text(
-                          subtitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: N360Type.caption,
-                        ),
-                    ],
-                  ),
-          ),
-          const SizedBox(width: N360Space.sm),
-          trailing ?? const SizedBox(width: N360Size.tap),
-        ],
-      ),
+    return N360TopBar(
+      backLabel: AppLocalizations.of(context).commonBack,
+      title: title,
+      subtitle: subtitle,
+      onBack: () => dprGoBack(context),
+      trailing: trailing,
     );
   }
 }

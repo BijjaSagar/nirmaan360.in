@@ -104,6 +104,19 @@ final List<_Scene> _scenes = <_Scene>[
     location: Routes.home,
   ),
   (
+    name: 'home_zero',
+    app: () async {
+      final app = await TestApp.create(seed: false);
+      app.api
+        ..addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B')
+        ..addBoqItem(id: 1, projectId: 1, code: '2.1', qty: '620.000', rate: '7450.00')
+        ..addWorker2(id: 1, name: 'Ramesh Pawar');
+      await app.sync();
+      return app;
+    },
+    location: Routes.home,
+  ),
+  (
     name: 'home_noboq',
     app: () async {
       final app = await TestApp.create(seed: false);

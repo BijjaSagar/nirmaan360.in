@@ -264,27 +264,29 @@ class _AmountStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Expanded(
-          child: SingleChildScrollView(
-            // Reversed, so the figure sits on the keypad that fills it.
-            reverse: true,
-            padding: const EdgeInsets.fromLTRB(
-              N360Space.gutter,
-              N360Space.xs,
-              N360Space.gutter,
-              N360Space.md,
-            ),
-            child: PettyAmountCard(
-              label: l.pettyCashOpeningAmount,
-              typed: state.amountText,
-              footer: failed
-                  ? FieldInlineError(l.pettyCashWalletFailed)
-                  : Text(
-                      l.pettyCashOpeningHelper,
-                      style: N360Type.fit(
-                        N360Type.body,
+          // The figure sits in the middle of the room above the keypad, as an
+          // amount does on a payment app, so the page has no empty end.
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                N360Space.gutter,
+                N360Space.xs,
+                N360Space.gutter,
+                N360Space.md,
+              ),
+              child: PettyAmountCard(
+                label: l.pettyCashOpeningAmount,
+                typed: state.amountText,
+                footer: failed
+                    ? FieldInlineError(l.pettyCashWalletFailed)
+                    : Text(
                         l.pettyCashOpeningHelper,
-                      ).copyWith(color: N360Colors.ink2),
-                    ),
+                        style: N360Type.fit(
+                          N360Type.body,
+                          l.pettyCashOpeningHelper,
+                        ).copyWith(color: N360Colors.ink2),
+                      ),
+              ),
             ),
           ),
         ),
