@@ -243,12 +243,22 @@ abstract interface class NirmaanApi {
 
   Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body);
 
-  /// [path] is the photos endpoint of the entry or the stage cell.
+  /// [path] is the photos endpoint of the entry, the stage cell or the issue.
+  /// [fileField] is the multipart name the endpoint reads the file from, and
+  /// [fields] any further text fields it needs, such as the `kind` of a photo.
   Future<Map<String, dynamic>> uploadFieldPhoto(
     String path, {
     required String filePath,
     required String clientUuid,
     String? caption,
     String? takenAt,
+    String fileField = 'photo',
+    Map<String, String> fields = const <String, String>{},
   });
+
+  /// The `data` rows of a photo list, such as `/issues/{id}/photos`.
+  Future<List<Map<String, dynamic>>> fieldPhotoList(String path);
+
+  /// The file behind a photo, such as `/issue-photos/{id}`.
+  Future<Uint8List> fieldPhotoBytes(String path);
 }

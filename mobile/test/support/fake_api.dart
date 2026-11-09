@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show base64Decode;
 import 'dart:math' show max;
 import 'dart:typed_data';
 
@@ -1571,6 +1572,27 @@ class FakeApi implements NirmaanApi {
   Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body) async =>
       _storeProgress(stagePosts, body);
 
+  /// Photos and attachments stored by `client_uuid`: a repeat must not add a second.
+  final Map<String, Row> photoPosts = {};
+
+  /// Rows the server already holds for a list path such as `/issues/5/photos`,
+  /// before anything is uploaded from the phone.
+  final Map<String, List<Row>> fieldPhotoRows = {};
+
+  /// The multipart field and extra fields of each upload, in request order.
+  final List<(String, Map<String, String>)> fieldPhotoForms = [];
+
+  /// Paths whose bytes were asked for.
+  final List<String> fieldPhotoByteReads = [];
+
+  /// The next photo list read fails with this.
+  ApiFailure? failNextPhotoList;
+
+  /// What a photo's bytes are: a one pixel PNG, so an image widget can decode it.
+  static final Uint8List tinyPng = base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  );
+
   @override
   Future<Map<String, dynamic>> uploadFieldPhoto(
     String path, {
@@ -1578,10 +1600,46 @@ class FakeApi implements NirmaanApi {
     required String clientUuid,
     String? caption,
     String? takenAt,
+    String fileField = 'photo',
+    Map<String, String> fields = const <String, String>{},
   }) async {
     _guard();
     fieldPhotos.add((path, clientUuid));
-    return {'id': _progressSerial++, 'client_uuid': clientUuid};
+    fieldPhotoForms.add((fileField, fields));
+    final match = RegExp(r'^/(issues|measurements)/(\d+)/').firstMatch(path);
+    final parentKey = match == null ? null : (match.group(1) == 'issues' ? 'issue_id' : 'measurement_entry_id');
+    return _storeProgress(photoPosts, {
+      'client_uuid': clientUuid,
+      'kind': fields['kind'],
+      'caption': caption,
+      'taken_at': takenAt,
+      'parent_path': path,
+      'file_field': fileField,
+      if (match != null) parentKey!: int.parse(match.group(2)!),
+      'is_image': true,
+    });
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fieldPhotoList(String path) async {
+    _guard();
+    final failure = failNextPhotoList;
+    if (failure != null) {
+      failNextPhotoList = null;
+      throw failure;
+    }
+    return [
+      ...?fieldPhotoRows[path],
+      for (final row in photoPosts.values)
+        if (row['parent_path'] == path) row,
+    ];
+  }
+
+  @override
+  Future<Uint8List> fieldPhotoBytes(String path) async {
+    _guard();
+    fieldPhotoByteReads.add(path);
+    return tinyPng;
   }
 
   /// Server time as a wire timestamp, advancing one second per call. Use it

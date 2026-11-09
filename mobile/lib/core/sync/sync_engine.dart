@@ -15,6 +15,7 @@ import 'clock.dart';
 import 'connectivity.dart';
 import 'ids.dart';
 import 'pull_applier.dart';
+import 'record_photos.dart';
 import 'sync_status.dart';
 
 /// Pushes the outbox and pulls server changes.
@@ -66,6 +67,7 @@ class SyncEngine {
   final AttachmentStore _attachments;
   final SessionController? _session;
   final OutboxDao _outbox;
+  late final RecordPhotos _photos = RecordPhotos(db: _db, api: _api, attachments: _attachments, clock: _clock);
   final String _instanceId;
 
   late final StreamSubscription<bool> _connectivitySub;
@@ -460,6 +462,7 @@ class SyncEngine {
       case OutboxType.materialChallan:
       case OutboxType.materialUse:
       case OutboxType.stockCount:
+      case OutboxType.issuePhoto:
         return null;
     }
   }
@@ -589,6 +592,7 @@ class SyncEngine {
       case OutboxType.materialChallan:
       case OutboxType.materialUse:
       case OutboxType.stockCount:
+      case OutboxType.issuePhoto:
         break;
     }
   }
@@ -640,6 +644,16 @@ class SyncEngine {
         );
       } else if (e.statusCode == 404) {
         await _markNotFound(row);
+      } else if (e.statusCode == 409) {
+        // The record was approved or sent for review while this waited. The
+        // server's words are all that tell the two apart.
+        final inReview = e.message.toLowerCase().contains('review');
+        await _outbox.markAttention(
+          row.id,
+          resultStatus: 'conflict',
+          code: inReview ? AttentionCode.inReview : AttentionCode.approved,
+          reason: e.message,
+        );
       } else {
         await _outbox.releaseSending([row.id]);
         rethrow;
@@ -654,9 +668,13 @@ class SyncEngine {
 
     _online = true;
     final serverId = (stored['id'] as num?)?.toInt();
+    final PhotoOwner? owner = PhotoOwner.forType(row.type);
     await _db.transaction(() async {
       if (!await _outbox.markDone(row.id, 'created', _clock.now())) return;
       if (serverId != null) await _outbox.setParentId(row.recordUuid, serverId);
+      // The photo joins the record's list in the same moment its row is
+      // finished, so a screen never sees it twice or not at all.
+      if (owner != null) await _photos.remember(owner, row.projectId, stored, localRelativePath: relativePath);
     });
     _sentThisRun++;
     _notifyProgress();
@@ -669,12 +687,18 @@ class SyncEngine {
     final data = (jsonDecode(row.payload) as Map).cast<String, dynamic>();
     final body = <String, dynamic>{...data, 'client_uuid': row.wireUuid};
 
-    Future<Map<String, dynamic>> photo(String path) async => _api.uploadFieldPhoto(
+    Future<Map<String, dynamic>> photo(
+      String path, {
+      String fileField = 'photo',
+      Map<String, String> fields = const <String, String>{},
+    }) async => _api.uploadFieldPhoto(
       path,
       filePath: await _attachments.absolutePath(row.filePath!),
       clientUuid: row.wireUuid,
       caption: data['caption'] as String?,
       takenAt: data['taken_at'] as String?,
+      fileField: fileField,
+      fields: fields,
     );
 
     switch (row.type) {
@@ -689,6 +713,11 @@ class SyncEngine {
         return photo('/progress/entries/${_parentId(data)}/photos');
       case OutboxType.stagePhoto:
         return photo('/stage-cells/${_parentId(data)}/photos');
+      case OutboxType.issuePhoto:
+        return photo(
+          PhotoOwner.issue.listPath(await _recordId(OutboxType.issue, row)),
+          fields: <String, String>{'kind': data['kind'] as String? ?? IssuePhotoKind.before},
+        );
       case OutboxType.materialChallan:
         final file = row.filePath;
         return _api.postMaterialChallan(
@@ -710,6 +739,15 @@ class SyncEngine {
   int _parentId(Map<String, dynamic> data) {
     final id = data['parent_id'];
     if (id is num) return id.toInt();
+    throw const ServerFailure('The parent record was not found.', statusCode: 404);
+  }
+
+  /// The server id of the record a photo belongs to, read now: it may have
+  /// arrived after the photo was queued, when the record's own row was sent.
+  Future<int> _recordId(OutboxType recordType, OutboxRow row) async {
+    final String? uuid = row.parentUuid;
+    final int? id = uuid == null ? null : await _serverIdFor(recordType, uuid);
+    if (id != null) return id;
     throw const ServerFailure('The parent record was not found.', statusCode: 404);
   }
 

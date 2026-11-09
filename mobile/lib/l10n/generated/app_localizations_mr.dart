@@ -1158,6 +1158,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesFormLocationHint => 'उदा. ग्रिड C, तिसरा मजला';
 
   @override
+  String get issuesFormPhotos => 'समस्येचे फोटो (ऐच्छिक)';
+
+  @override
   String get issuesFormPriority => 'किती तातडीचे आहे?';
 
   @override
@@ -1192,6 +1195,34 @@ class AppLocalizationsMr extends AppLocalizations {
   String issuesOverdue(int days) {
     return '$days दिवस उशीर';
   }
+
+  @override
+  String get issuesPhotoAddAfter => 'नंतरचा फोटो जोडा';
+
+  @override
+  String get issuesPhotoAddBefore => 'आधीचा फोटो जोडा';
+
+  @override
+  String get issuesPhotoFailed => 'फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get issuesPhotoSavedOffline =>
+      'फोटो फोनवर जतन झाला. नेटवर्क आल्यावर पाठवला जाईल.';
+
+  @override
+  String get issuesPhotoSavedOnline => 'फोटो जतन झाला. आता पाठवत आहे.';
+
+  @override
+  String get issuesPhotosAfter => 'नंतर';
+
+  @override
+  String get issuesPhotosBefore => 'आधी';
+
+  @override
+  String get issuesPhotosNone => 'अजून फोटो नाहीत';
+
+  @override
+  String get issuesPhotosTitle => 'फोटो';
 
   @override
   String get issuesRaise => 'समस्या नोंदवा';
@@ -1940,6 +1971,24 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get pettyCashWalletOfflineDetail => 'पाकीट फक्त ऑनलाइन तयार होते.';
+
+  @override
+  String get photosClose => 'बंद करा';
+
+  @override
+  String get photosDocument => 'PDF, वेबसाइटवर';
+
+  @override
+  String get photosNeedNetwork => 'नेटवर्क हवे';
+
+  @override
+  String get photosNotSent => 'पाठवला नाही';
+
+  @override
+  String get photosOpen => 'फोटो उघडा';
+
+  @override
+  String get photosWaiting => 'पाठवायचा बाकी';
 
   @override
   String get progressAdd => 'आजचे काम नोंदवा';
@@ -2744,6 +2793,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeIssue => 'समस्या';
+
+  @override
+  String get syncTypeIssuePhoto => 'समस्येचा फोटो';
 
   @override
   String get syncTypeIssueStatus => 'समस्येची स्थिती';

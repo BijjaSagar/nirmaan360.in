@@ -1181,6 +1181,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesFormLocationHint => 'e.g. Grid C, third floor';
 
   @override
+  String get issuesFormPhotos => 'Photos of the problem (optional)';
+
+  @override
   String get issuesFormPriority => 'How urgent is it?';
 
   @override
@@ -1221,6 +1224,34 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return 'Overdue by $days $_temp0';
   }
+
+  @override
+  String get issuesPhotoAddAfter => 'Add after photo';
+
+  @override
+  String get issuesPhotoAddBefore => 'Add before photo';
+
+  @override
+  String get issuesPhotoFailed => 'Could not add the photo. Try again.';
+
+  @override
+  String get issuesPhotoSavedOffline =>
+      'Photo saved on phone. Sends when network returns.';
+
+  @override
+  String get issuesPhotoSavedOnline => 'Photo saved. Sending now.';
+
+  @override
+  String get issuesPhotosAfter => 'After';
+
+  @override
+  String get issuesPhotosBefore => 'Before';
+
+  @override
+  String get issuesPhotosNone => 'No photos yet';
+
+  @override
+  String get issuesPhotosTitle => 'Photos';
 
   @override
   String get issuesRaise => 'Raise issue';
@@ -1970,6 +2001,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pettyCashWalletOfflineDetail =>
       'A wallet can be created only online.';
+
+  @override
+  String get photosClose => 'Close';
+
+  @override
+  String get photosDocument => 'PDF, on the website';
+
+  @override
+  String get photosNeedNetwork => 'Needs network';
+
+  @override
+  String get photosNotSent => 'Not sent';
+
+  @override
+  String get photosOpen => 'Open photo';
+
+  @override
+  String get photosWaiting => 'Waiting to send';
 
   @override
   String get progressAdd => 'Add today\'s work';
@@ -2790,6 +2839,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeIssue => 'Issue';
+
+  @override
+  String get syncTypeIssuePhoto => 'Issue photo';
 
   @override
   String get syncTypeIssueStatus => 'Issue status';

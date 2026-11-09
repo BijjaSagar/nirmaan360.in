@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../app/widgets/record_photos.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -30,7 +31,23 @@ class _IssueDetailView extends StatelessWidget {
   void _onProblem(BuildContext context, IssueDetailState state) {
     final AppLocalizations l = AppLocalizations.of(context);
     N360Haptics.warning();
-    showPaperToast(context, l.issuesStatusFailed, kind: PaperToastKind.error);
+    showPaperToast(
+      context,
+      state.problem == IssueDetailProblem.photoFailed ? l.issuesPhotoFailed : l.issuesStatusFailed,
+      kind: PaperToastKind.error,
+    );
+  }
+
+  void _onPhotoSaved(BuildContext context, IssueDetailState state) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    N360Haptics.success();
+    showPaperToast(
+      context,
+      state.photoSavedWhileOffline ? l.issuesPhotoSavedOffline : l.issuesPhotoSavedOnline,
+      kind: state.photoSavedWhileOffline ? PaperToastKind.info : PaperToastKind.success,
+      icon: state.photoSavedWhileOffline ? Icons.phone_android : null,
+      duration: const Duration(seconds: 3),
+    );
   }
 
   void _onSaved(BuildContext context, IssueDetailState state) {
@@ -63,6 +80,10 @@ class _IssueDetailView extends StatelessWidget {
         BlocListener<IssueDetailCubit, IssueDetailState>(
           listenWhen: (a, b) => a.savedId != b.savedId,
           listener: _onSaved,
+        ),
+        BlocListener<IssueDetailCubit, IssueDetailState>(
+          listenWhen: (a, b) => a.photoSavedId != b.photoSavedId,
+          listener: _onPhotoSaved,
         ),
       ],
       child: Scaffold(
@@ -240,11 +261,64 @@ class _Body extends StatelessWidget {
                   ),
                 ),
               ),
+              if (state.canAddPhotos || state.photos.isNotEmpty) ...<Widget>[
+                const SizedBox(height: N360Space.cardGap),
+                StaggeredRise(index: 2, child: _PhotosCard(state: state)),
+              ],
             ],
           ),
         ),
         _StatusActions(status: issue.status, savingStatus: state.savingStatus),
       ],
+    );
+  }
+}
+
+/// Before and after photos: the server's and those still on the phone.
+class _PhotosCard extends StatelessWidget {
+  const _PhotosCard({required this.state});
+
+  final IssueDetailState state;
+
+  Future<void> _add(BuildContext context, String kind) async {
+    final AppServices services = context.read<AppServices>();
+    final IssueDetailCubit cubit = context.read<IssueDetailCubit>();
+    final String? path = await services.photos.capture();
+    if (path != null) await cubit.addPhoto(kind, path);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final AppServices services = context.read<AppServices>();
+    final bool canAdd = state.canAddPhotos;
+
+    Widget group(String kind, String title, String addLabel) {
+      final photos = state.photos.where((photo) => photo.photoKind == kind).toList();
+      return RecordPhotoGroup(
+        key: ValueKey<String>('issue-photos-$kind'),
+        title: title,
+        photos: photos,
+        loadBytes: services.issues.photoBytes,
+        localPath: services.context.photos.absolutePath,
+        emptyLabel: l.issuesPhotosNone,
+        addLabel: addLabel,
+        onAdd: canAdd && photos.length < RecordPhotos.maxPerKind ? () => _add(context, kind) : null,
+      );
+    }
+
+    return LedgerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SectionLabel(l.issuesPhotosTitle),
+          const SizedBox(height: N360Space.sm),
+          group(IssuePhotoKind.before, l.issuesPhotosBefore, l.issuesPhotoAddBefore),
+          const SizedBox(height: N360Space.lg),
+          group(IssuePhotoKind.after, l.issuesPhotosAfter, l.issuesPhotoAddAfter),
+        ],
+      ),
     );
   }
 }

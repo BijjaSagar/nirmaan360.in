@@ -7,6 +7,7 @@ import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show ProjectRow, UserRow;
 import '../../../core/sync/clock.dart' show dateString;
 import '../../../core/sync/failures.dart';
+import '../../../core/sync/record_photos.dart' show RecordPhotos;
 
 enum DueChoice { none, today, threeDays, week }
 
@@ -20,6 +21,7 @@ class IssueFormState {
     this.assignedTo,
     this.due = DueChoice.none,
     this.users = const [],
+    this.photos = const [],
     this.submitting = false,
     this.problem,
     this.savedUuid,
@@ -30,6 +32,9 @@ class IssueFormState {
   final int? assignedTo;
   final DueChoice due;
   final List<UserRow> users;
+
+  /// Paths of the photos taken for this issue. They are copied in on Save.
+  final List<String> photos;
   final bool submitting;
   final IssueFormProblem? problem;
 
@@ -42,6 +47,7 @@ class IssueFormState {
     bool clearAssignee = false,
     DueChoice? due,
     List<UserRow>? users,
+    List<String>? photos,
     bool? submitting,
     IssueFormProblem? problem,
     bool clearProblem = false,
@@ -53,6 +59,7 @@ class IssueFormState {
       assignedTo: clearAssignee ? null : (assignedTo ?? this.assignedTo),
       due: due ?? this.due,
       users: users ?? this.users,
+      photos: photos ?? this.photos,
       submitting: submitting ?? this.submitting,
       problem: clearProblem ? null : (problem ?? this.problem),
       savedUuid: savedUuid ?? this.savedUuid,
@@ -92,6 +99,13 @@ class IssueFormCubit extends Cubit<IssueFormState> {
   );
 
   void setDue(DueChoice due) => emit(state.copyWith(due: due));
+
+  void addPhoto(String path) {
+    if (state.photos.length >= RecordPhotos.maxPerKind || state.photos.contains(path)) return;
+    emit(state.copyWith(photos: [...state.photos, path]));
+  }
+
+  void removePhoto(String path) => emit(state.copyWith(photos: [for (final p in state.photos) if (p != path) p]));
 
   void clearTitleProblem() {
     if (state.problem == IssueFormProblem.titleRequired) {
@@ -137,6 +151,7 @@ class IssueFormCubit extends Cubit<IssueFormState> {
         locationNote: cleanLocation.isEmpty ? null : cleanLocation,
         assignedTo: state.assignedTo,
         dueDate: _dueDate(),
+        photoPaths: state.photos,
       );
       emit(state.copyWith(submitting: false, savedUuid: uuid));
       return true;

@@ -317,6 +317,55 @@ void main() {
       expect(form.files.single.key, 'file');
     });
 
+    test('a field photo names its own file field and carries its extra fields', () async {
+      final temp = await Directory.systemTemp.createTemp('n360');
+      addTearDown(() => temp.delete(recursive: true));
+      final file = File('${temp.path}/photo.jpg')..writeAsBytesSync([1, 2]);
+      answer((_) => json({'data': {'id': 9, 'issue_id': 5, 'kind': 'before'}}, status: 201));
+
+      final reply = await api.uploadFieldPhoto(
+        '/issues/5/photos',
+        filePath: file.path,
+        clientUuid: 'u1',
+        fields: {'kind': 'before'},
+      );
+
+      final request = adapter.requests.single;
+      final form = request.data as FormData;
+      expect(request.uri.path, '/api/v1/issues/5/photos');
+      expect(reply['id'], 9);
+      expect(form.fields.map((e) => '${e.key}=${e.value}'), containsAll(['kind=before', 'client_uuid=u1']));
+      expect(form.files.single.key, 'photo');
+    });
+
+    test('an attachment is sent under the field the endpoint reads', () async {
+      final temp = await Directory.systemTemp.createTemp('n360');
+      addTearDown(() => temp.delete(recursive: true));
+      final file = File('${temp.path}/photo.jpg')..writeAsBytesSync([1, 2]);
+      answer((_) => json({'data': {'id': 9}}, status: 201));
+
+      await api.uploadFieldPhoto(
+        '/measurements/5/attachments',
+        filePath: file.path,
+        clientUuid: 'u1',
+        fileField: 'file',
+        fields: {'kind': 'photo'},
+      );
+
+      expect((adapter.requests.single.data as FormData).files.single.key, 'file');
+    });
+
+    test('a photo list unwraps data and a photo comes back as bytes', () async {
+      answer((_) => json({'data': [{'id': 7, 'kind': 'after'}]}));
+      final rows = await api.fieldPhotoList('/issues/5/photos');
+      expect(rows.single['kind'], 'after');
+      expect(adapter.requests.single.uri.path, '/api/v1/issues/5/photos');
+
+      answer((_) => ResponseBody.fromBytes([1, 2, 3], 200));
+      expect(await api.fieldPhotoBytes('/issue-photos/7'), [1, 2, 3]);
+      expect(adapter.requests.single.uri.path, '/api/v1/issue-photos/7');
+    });
+
     test('approvals reads data and waiting_count', () async {
       answer(
         (_) => json({

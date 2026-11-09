@@ -278,5 +278,55 @@
         "type": "String"
       }
     }
+  },
+  "issuesPhotosTitle": {
+    "en": "Photos",
+    "mr": "फोटो",
+    "hi": "फ़ोटो"
+  },
+  "issuesPhotosBefore": {
+    "en": "Before",
+    "mr": "आधी",
+    "hi": "पहले"
+  },
+  "issuesPhotosAfter": {
+    "en": "After",
+    "mr": "नंतर",
+    "hi": "बाद में"
+  },
+  "issuesPhotosNone": {
+    "en": "No photos yet",
+    "mr": "अजून फोटो नाहीत",
+    "hi": "अभी कोई फ़ोटो नहीं"
+  },
+  "issuesPhotoAddBefore": {
+    "en": "Add before photo",
+    "mr": "आधीचा फोटो जोडा",
+    "hi": "पहले की फ़ोटो जोड़ें"
+  },
+  "issuesPhotoAddAfter": {
+    "en": "Add after photo",
+    "mr": "नंतरचा फोटो जोडा",
+    "hi": "बाद की फ़ोटो जोड़ें"
+  },
+  "issuesPhotoSavedOffline": {
+    "en": "Photo saved on phone. Sends when network returns.",
+    "mr": "फोटो फोनवर जतन झाला. नेटवर्क आल्यावर पाठवला जाईल.",
+    "hi": "फ़ोटो फ़ोन पर सेव हुई। नेटवर्क आने पर भेजी जाएगी।"
+  },
+  "issuesPhotoSavedOnline": {
+    "en": "Photo saved. Sending now.",
+    "mr": "फोटो जतन झाला. आता पाठवत आहे.",
+    "hi": "फ़ोटो सेव हुई। अभी भेज रहे हैं।"
+  },
+  "issuesPhotoFailed": {
+    "en": "Could not add the photo. Try again.",
+    "mr": "फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "फ़ोटो जोड़ी नहीं जा सकी। फिर से कोशिश करें।"
+  },
+  "issuesFormPhotos": {
+    "en": "Photos of the problem (optional)",
+    "mr": "समस्येचे फोटो (ऐच्छिक)",
+    "hi": "समस्या की फ़ोटो (वैकल्पिक)"
   }
 }

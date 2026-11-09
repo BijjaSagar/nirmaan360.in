@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show UserRow;
+import '../../../core/sync/record_photos.dart' show RecordPhotos;
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
+import '../../site_progress/view/widgets/progress_widgets.dart' show ProgressPhotoRow;
 import '../bloc/issue_form_cubit.dart';
 import 'widgets/issue_widgets.dart';
 
@@ -171,6 +173,19 @@ class _IssueFormViewState extends State<_IssueFormView> {
                           child: _LabelledBlock(
                             label: l.issuesFormDue,
                             child: _DueChips(value: state.due, onChanged: cubit.setDue),
+                          ),
+                        ),
+                        const SizedBox(height: N360Space.lg),
+                        StaggeredRise(
+                          index: 5,
+                          child: _LabelledBlock(
+                            label: l.issuesFormPhotos,
+                            child: ProgressPhotoRow(
+                              photos: state.photos,
+                              onAdd: cubit.addPhoto,
+                              onRemove: cubit.removePhoto,
+                              max: RecordPhotos.maxPerKind,
+                            ),
                           ),
                         ),
                       ],

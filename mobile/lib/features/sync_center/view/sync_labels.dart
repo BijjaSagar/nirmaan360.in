@@ -25,6 +25,7 @@ extension SyncLabels on AppLocalizations {
         OutboxType.materialChallan => materialReceived,
         OutboxType.materialUse => materialUsed,
         OutboxType.stockCount => materialCount,
+        OutboxType.issuePhoto => syncTypeIssuePhoto,
       };
 
   String syncReasonFor(OutboxItem item) => switch (item.attentionCode) {
@@ -60,4 +61,5 @@ IconData syncTypeIcon(OutboxType type) => switch (type) {
       OutboxType.materialChallan => Icons.local_shipping_outlined,
       OutboxType.materialUse => Icons.construction,
       OutboxType.stockCount => Icons.fact_check_outlined,
+      OutboxType.issuePhoto => Icons.photo_camera_outlined,
     };

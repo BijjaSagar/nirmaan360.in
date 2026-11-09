@@ -2194,6 +2194,12 @@ abstract class AppLocalizations {
   /// **'e.g. Grid C, third floor'**
   String get issuesFormLocationHint;
 
+  /// No description provided for @issuesFormPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos of the problem (optional)'**
+  String get issuesFormPhotos;
+
   /// No description provided for @issuesFormPriority.
   ///
   /// In en, this message translates to:
@@ -2259,6 +2265,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Overdue by {days} {days, plural, =1{day} other{days}}'**
   String issuesOverdue(int days);
+
+  /// No description provided for @issuesPhotoAddAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Add after photo'**
+  String get issuesPhotoAddAfter;
+
+  /// No description provided for @issuesPhotoAddBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Add before photo'**
+  String get issuesPhotoAddBefore;
+
+  /// No description provided for @issuesPhotoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add the photo. Try again.'**
+  String get issuesPhotoFailed;
+
+  /// No description provided for @issuesPhotoSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved on phone. Sends when network returns.'**
+  String get issuesPhotoSavedOffline;
+
+  /// No description provided for @issuesPhotoSavedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved. Sending now.'**
+  String get issuesPhotoSavedOnline;
+
+  /// No description provided for @issuesPhotosAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get issuesPhotosAfter;
+
+  /// No description provided for @issuesPhotosBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get issuesPhotosBefore;
+
+  /// No description provided for @issuesPhotosNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos yet'**
+  String get issuesPhotosNone;
+
+  /// No description provided for @issuesPhotosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get issuesPhotosTitle;
 
   /// No description provided for @issuesRaise.
   ///
@@ -3627,6 +3687,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A wallet can be created only online.'**
   String get pettyCashWalletOfflineDetail;
+
+  /// No description provided for @photosClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get photosClose;
+
+  /// No description provided for @photosDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF, on the website'**
+  String get photosDocument;
+
+  /// No description provided for @photosNeedNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs network'**
+  String get photosNeedNetwork;
+
+  /// No description provided for @photosNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get photosNotSent;
+
+  /// No description provided for @photosOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open photo'**
+  String get photosOpen;
+
+  /// No description provided for @photosWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to send'**
+  String get photosWaiting;
 
   /// No description provided for @progressAdd.
   ///
@@ -5097,6 +5193,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Issue'**
   String get syncTypeIssue;
+
+  /// No description provided for @syncTypeIssuePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue photo'**
+  String get syncTypeIssuePhoto;
 
   /// No description provided for @syncTypeIssueStatus.
   ///

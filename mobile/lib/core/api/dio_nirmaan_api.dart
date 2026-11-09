@@ -343,14 +343,17 @@ class DioNirmaanApi implements NirmaanApi {
     required String clientUuid,
     String? caption,
     String? takenAt,
+    String fileField = 'photo',
+    Map<String, String> fields = const <String, String>{},
   }) async {
     final body = await _call(() async {
       // A FormData cannot be reused, so build it fresh inside the attempt.
       final form = FormData.fromMap({
+        ...fields,
         'client_uuid': clientUuid,
         'caption': ?caption,
         'taken_at': ?takenAt,
-        'photo': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+        fileField: await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
       });
       return _dio.post(
         path,
@@ -360,6 +363,12 @@ class DioNirmaanApi implements NirmaanApi {
     });
     return (body['data'] as Map).cast<String, dynamic>();
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> fieldPhotoList(String path) => _getRows(path);
+
+  @override
+  Future<Uint8List> fieldPhotoBytes(String path) => _bytes(path);
 
   @override
   Future<Map<String, dynamic>> materialCheck(int projectId) =>

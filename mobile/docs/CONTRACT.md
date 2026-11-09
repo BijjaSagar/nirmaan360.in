@@ -230,6 +230,16 @@ Needs the `site_control` plan feature, and `progress.view` and `progress.create`
 - Screens lay rows waiting to send over the last answer, so quantities and stages are right before they reach the server. A newer change to a stage replaces one still waiting.
 - 422 and 403 go to the Sync Center. 404 says the project is gone when the project has left the phone.
 
+### Photos on issues
+
+Needs the `site` plan feature. `issue.view` reads and `issue.manage` adds. The kind is `before` or `after`.
+
+- The raise-issue form takes up to 10 before photos. The issue detail shows the server's photos from `GET /issues/{issue}/photos` (`id, issue_id, kind, caption, taken_at`) and the pictures from `GET /issue-photos/{id}`, and adds a before or an after photo. Removing a photo stays on the website.
+- A photo is an outbox row of type `issue_photo`, posted on its own to `POST /issues/{issue}/photos` as multipart `photo` with `kind`, `client_uuid` and `taken_at`, not through `/sync/push`. A repeat returns the first row.
+- The issue goes through `/sync/push`, so a photo takes the issue's server id at the moment it is sent: it reads `issues.server_id` for the photo's `parent_uuid`, and nothing is copied into the photo row. A photo for an issue the server has never seen shares its group, so it waits behind the issue. A photo for an issue the server already holds is its own group, so a failed status change cannot hold it back.
+- The server's lists are kept per project under `record_photos.<projectId>` and each picture seen or sent is kept as a file, so photos open with no network. A sent photo joins the list in the same transaction that finishes its outbox row. The key goes when the project does.
+- 422, 403 and 404 go to the Sync Center. A 409 (a record locked while the photo waited) goes there too, as `approved` or `in_review`.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

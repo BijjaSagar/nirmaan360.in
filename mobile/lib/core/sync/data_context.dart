@@ -9,6 +9,7 @@ import 'attachment_store.dart';
 import 'clock.dart';
 import 'connectivity.dart';
 import 'ids.dart';
+import 'record_photos.dart';
 import 'sync_engine.dart';
 
 /// What every repository needs, gathered in one place.
@@ -31,6 +32,9 @@ class DataContext {
   final ConnectivityMonitor connectivity;
   final SessionController session;
   final SyncEngine sync;
+
+  /// Photos on issues: the server's lists, the files and the queue.
+  late final RecordPhotos photos = RecordPhotos(db: db, api: api, attachments: attachments, clock: clock);
 
   int? get currentUserId => session.user?.id;
 

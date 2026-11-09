@@ -12,5 +12,11 @@
   "statusReturned": { "en": "Returned", "mr": "परत पाठवले", "hi": "वापस भेजा" },
   "statusRejected": { "en": "Rejected", "mr": "नाकारले", "hi": "अस्वीकृत" },
   "statusQueued": { "en": "On phone", "mr": "फोनवर", "hi": "फ़ोन पर" },
-  "statusSynced": { "en": "Sent", "mr": "पाठवले", "hi": "भेजा गया" }
+  "statusSynced": { "en": "Sent", "mr": "पाठवले", "hi": "भेजा गया" },
+  "photosWaiting": {"en": "Waiting to send", "mr": "पाठवायचा बाकी", "hi": "भेजना बाकी"},
+  "photosNotSent": {"en": "Not sent", "mr": "पाठवला नाही", "hi": "भेजा नहीं गया"},
+  "photosNeedNetwork": {"en": "Needs network", "mr": "नेटवर्क हवे", "hi": "नेटवर्क चाहिए"},
+  "photosOpen": {"en": "Open photo", "mr": "फोटो उघडा", "hi": "फ़ोटो खोलें"},
+  "photosClose": {"en": "Close", "mr": "बंद करा", "hi": "बंद करें"},
+  "photosDocument": {"en": "PDF, on the website", "mr": "PDF, वेबसाइटवर", "hi": "PDF, वेबसाइट पर"}
 }

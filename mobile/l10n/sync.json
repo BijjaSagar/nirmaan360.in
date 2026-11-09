@@ -38,5 +38,6 @@
   "syncTypeProgressResolve": { "en": "Pending item resolved", "mr": "बाकी काम पूर्ण", "hi": "बाकी काम पूरा" },
   "syncTypeProgressPhoto": { "en": "Progress photo", "mr": "प्रगतीचा फोटो", "hi": "प्रगति की फ़ोटो" },
   "syncTypeStage": { "en": "Stage update", "mr": "टप्प्याची नोंद", "hi": "चरण की जानकारी" },
-  "syncTypeStagePhoto": { "en": "Stage photo", "mr": "टप्प्याचा फोटो", "hi": "चरण की फ़ोटो" }
+  "syncTypeStagePhoto": { "en": "Stage photo", "mr": "टप्प्याचा फोटो", "hi": "चरण की फ़ोटो" },
+  "syncTypeIssuePhoto": { "en": "Issue photo", "mr": "समस्येचा फोटो", "hi": "समस्या की फ़ोटो" }
 }

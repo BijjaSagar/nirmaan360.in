@@ -216,6 +216,7 @@ class SyncRepository {
       case OutboxType.materialChallan:
       case OutboxType.materialUse:
       case OutboxType.stockCount:
+      case OutboxType.issuePhoto:
         break;
     }
   }

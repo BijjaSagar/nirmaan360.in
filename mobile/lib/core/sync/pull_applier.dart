@@ -550,6 +550,7 @@ class PullApplier {
       await _db.deleteMeta(MetaKey.progressOverview(id));
       await _db.deleteMeta(MetaKey.progressLastPick(id));
       await _db.deleteMeta(MetaKey.materialOverview(id));
+      await _db.deleteMeta(MetaKey.recordPhotos(id));
     }
     for (final id in ids('boq_items')) {
       await (_db.delete(_db.boqItems)..where((t) => t.id.equals(id))).go();

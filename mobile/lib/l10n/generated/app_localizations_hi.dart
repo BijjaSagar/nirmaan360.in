@@ -1147,6 +1147,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get issuesFormLocationHint => 'जैसे: ग्रिड C, तीसरी मंज़िल';
 
   @override
+  String get issuesFormPhotos => 'समस्या की फ़ोटो (वैकल्पिक)';
+
+  @override
   String get issuesFormPriority => 'कितना ज़रूरी है?';
 
   @override
@@ -1181,6 +1184,34 @@ class AppLocalizationsHi extends AppLocalizations {
   String issuesOverdue(int days) {
     return '$days दिन की देरी';
   }
+
+  @override
+  String get issuesPhotoAddAfter => 'बाद की फ़ोटो जोड़ें';
+
+  @override
+  String get issuesPhotoAddBefore => 'पहले की फ़ोटो जोड़ें';
+
+  @override
+  String get issuesPhotoFailed => 'फ़ोटो जोड़ी नहीं जा सकी। फिर से कोशिश करें।';
+
+  @override
+  String get issuesPhotoSavedOffline =>
+      'फ़ोटो फ़ोन पर सेव हुई। नेटवर्क आने पर भेजी जाएगी।';
+
+  @override
+  String get issuesPhotoSavedOnline => 'फ़ोटो सेव हुई। अभी भेज रहे हैं।';
+
+  @override
+  String get issuesPhotosAfter => 'बाद में';
+
+  @override
+  String get issuesPhotosBefore => 'पहले';
+
+  @override
+  String get issuesPhotosNone => 'अभी कोई फ़ोटो नहीं';
+
+  @override
+  String get issuesPhotosTitle => 'फ़ोटो';
 
   @override
   String get issuesRaise => 'समस्या दर्ज करें';
@@ -1931,6 +1962,24 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pettyCashWalletOfflineDetail => 'वॉलेट सिर्फ़ ऑनलाइन बनता है।';
+
+  @override
+  String get photosClose => 'बंद करें';
+
+  @override
+  String get photosDocument => 'PDF, वेबसाइट पर';
+
+  @override
+  String get photosNeedNetwork => 'नेटवर्क चाहिए';
+
+  @override
+  String get photosNotSent => 'भेजा नहीं गया';
+
+  @override
+  String get photosOpen => 'फ़ोटो खोलें';
+
+  @override
+  String get photosWaiting => 'भेजना बाकी';
 
   @override
   String get progressAdd => 'आज का काम जोड़ें';
@@ -2737,6 +2786,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get syncTypeIssue => 'समस्या';
+
+  @override
+  String get syncTypeIssuePhoto => 'समस्या की फ़ोटो';
 
   @override
   String get syncTypeIssueStatus => 'समस्या की स्थिति';
