@@ -99,6 +99,7 @@ class ProgressEntryService
     {
         return WorkOrderItem::with('workOrder.party')
             ->whereHas('workOrder', fn ($query) => $query->where('project_id', $project->id)->where('status', 'ACTIVE'))
+            ->orderBy('work_order_id')
             ->get()
             ->groupBy('boq_item_id')
             ->filter(fn ($lines) => $lines->pluck('work_order_id')->unique()->count() > 1)

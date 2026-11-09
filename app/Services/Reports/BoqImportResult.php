@@ -7,12 +7,14 @@ final class BoqImportResult
 {
     /**
      * @param  list<array{row:int,field:?string,message:string}>  $errors  Row 0 is a problem with the file as a whole.
+     * @param  list<array{row:int,message:string}>  $notes  What was read in a way worth a second look. Row 0 is the file as a whole.
      */
     public function __construct(
         public readonly array $errors = [],
         public readonly int $created = 0,
         public readonly int $updated = 0,
         public readonly int $unchanged = 0,
+        public readonly array $notes = [],
     ) {}
 
     public function ok(): bool

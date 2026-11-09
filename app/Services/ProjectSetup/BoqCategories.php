@@ -21,8 +21,12 @@ final class BoqCategories
         'plumbing' => 'Plumbing',
         'electrical' => 'Electrical',
         'finishing' => 'Painting and finishing',
+        'overhead' => 'Supervision and overheads',
         'other' => 'Other',
     ];
+
+    /** Not work anyone can measure on site, so it stays out of the percentage of work done. */
+    public const OVERHEAD = 'overhead';
 
     /** The two heads where the most money is lost, so the budget screen watches them closely. */
     public const WATCHED = ['rcc', 'brick_work'];

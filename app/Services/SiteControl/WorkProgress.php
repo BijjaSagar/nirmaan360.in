@@ -38,7 +38,7 @@ class WorkProgress
         $total = BigDecimal::zero();
         $earned = BigDecimal::zero();
 
-        foreach (BoqItem::where('project_id', $project->id)->get(['id', 'qty', 'rate']) as $item) {
+        foreach (BoqItem::where('project_id', $project->id)->siteWork()->get(['id', 'qty', 'rate']) as $item) {
             $qty = Dec::of($item->qty);
             $rate = Dec::of($item->rate);
             $total = $total->plus($qty->multipliedBy($rate));

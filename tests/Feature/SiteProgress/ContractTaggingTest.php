@@ -110,6 +110,18 @@ class ContractTaggingTest extends TestCase
         $this->assertNull($entry->work_order_id);
     }
 
+    public function test_the_app_is_told_whose_work_a_shared_line_can_be(): void
+    {
+        $first = $this->contract();
+        $second = $this->contract();
+        $alone = $this->makeBoqItem($this->project, '20.000', '100.00');
+
+        $rows = collect($this->getJson('/api/v1/projects/'.$this->project->id.'/progress/items')->assertOk()->json('data'))->keyBy('id');
+
+        $this->assertSame([$first->id, $second->id], array_column($rows[$this->item->id]['work_orders'], 'id'));
+        $this->assertSame([], $rows[$alone->id]['work_orders']);
+    }
+
     public function test_the_form_lists_contractors_only_for_shared_lines(): void
     {
         $this->withoutVite();

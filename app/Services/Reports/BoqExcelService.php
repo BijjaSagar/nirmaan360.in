@@ -43,12 +43,14 @@ class BoqExcelService
     private const ALIASES = [
         'section' => ['section', 'chapter', 'section name', 'group'],
         'code' => ['code', 'item code', 'item no', 'item number', 'sr no', 'sl no', 's no'],
-        'description' => ['description', 'item description', 'description of item', 'particulars'],
+        'description' => ['description', 'item description', 'description of item', 'description of items', 'description of work', 'particulars'],
         'unit' => ['unit', 'units', 'uom'],
         'qty' => ['qty', 'quantity', 'boq qty', 'boq quantity'],
         'rate' => ['rate', 'unit rate', 'rate inr', 'rate rs', 'rate in inr'],
         'category' => ['category', 'work category', 'type of work', 'head of work'],
         'details' => ['details', 'detail', 'item details', 'specification', 'specifications'],
+        'amount' => ['amount', 'amount in rs', 'amount rs', 'amount in inr', 'total amount'],
+        'remark' => ['remark', 'remarks'],
     ];
 
     /** Sheets bigger than this when unpacked are refused. A small file can unpack to a huge one. */
@@ -144,11 +146,26 @@ class BoqExcelService
     /** Check the file against the project and, only if it is clean, add and update BOQ lines. */
     public function import(Project $project, string $path): BoqImportResult
     {
-        return DB::transaction(function () use ($project, $path) {
+        [$grid, $missingValue, $fileError] = $this->read($path);
+
+        if ($fileError !== null) {
+            return new BoqImportResult([['row' => 0, 'field' => null, 'message' => $fileError]]);
+        }
+
+        return $this->importGrid($project, $grid, $missingValue);
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $grid  Row => column => saved value.
+     * @param  array<int, array<int, true>>  $missingValue  Formula cells that have no saved value.
+     */
+    public function importGrid(Project $project, array $grid, array $missingValue = []): BoqImportResult
+    {
+        return DB::transaction(function () use ($project, $grid, $missingValue) {
             // The same lock BoqService::create takes, so an import and a hand-added line cannot race for sort order.
             $project = Project::lockForUpdate()->findOrFail($project->id);
 
-            [$rows, $errors] = $this->check($project, $path);
+            [$rows, $errors, $notes] = $this->checkGrid($project, $grid, $missingValue);
 
             if ($errors !== []) {
                 return new BoqImportResult($errors);
@@ -187,28 +204,43 @@ class BoqExcelService
                 }
             }, batch: true);
 
-            return new BoqImportResult([], $created, $updated, $unchanged);
+            return new BoqImportResult([], $created, $updated, $unchanged, $notes);
         });
     }
 
     /**
-     * Read the file and list every problem. Returns the clean rows and the errors.
+     * Read the file and list every problem. Returns the clean rows, the errors and anything worth a second look.
      *
-     * @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>}
+     * @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>, 2: list<array{row:int,message:string}>}
      */
     public function check(Project $project, string $path): array
     {
         [$grid, $missingValue, $fileError] = $this->read($path);
 
         if ($fileError !== null) {
-            return [[], [['row' => 0, 'field' => null, 'message' => $fileError]]];
+            return [[], [['row' => 0, 'field' => null, 'message' => $fileError]], []];
         }
 
+        return $this->checkGrid($project, $grid, $missingValue);
+    }
+
+    /** @return array{0: list<array<string,string>>, 1: list<array{row:int,field:?string,message:string}>, 2: list<array{row:int,message:string}>} */
+    private function checkGrid(Project $project, array $grid, array $missingValue): array
+    {
         [$headerRow, $columns] = $this->findHeader($grid);
 
         if ($headerRow === null) {
-            return [[], [['row' => 0, 'field' => null, 'message' => __('Could not find the heading row. The sheet needs these columns: :columns', ['columns' => implode(', ', self::REQUIRED)])]]];
+            return [[], [['row' => 0, 'field' => null, 'message' => __('Could not find the heading row. The sheet needs these columns: :columns', ['columns' => implode(', ', self::REQUIRED)])]], []];
         }
+
+        $notes = [];
+
+        if (EstimateSheet::applies($columns)) {
+            [$grid, $columns, $notes] = (new EstimateSheet)->standardise($grid, $columns, $headerRow);
+            $missingValue = [];
+        }
+
+        unset($columns['amount'], $columns['remark']);
 
         $existing = $this->existingByCode($project);
         $approved = MeasurementEntry::withoutGlobalScope(OrganizationScope::class)
@@ -322,7 +354,7 @@ class BoqExcelService
             $errors[] = ['row' => 0, 'field' => null, 'message' => __('The file has no rows.')];
         }
 
-        return [$rows, $errors];
+        return [$rows, $errors, $notes];
     }
 
     /** @return Collection<string, BoqItem> The lowest id wins when a code repeats. */

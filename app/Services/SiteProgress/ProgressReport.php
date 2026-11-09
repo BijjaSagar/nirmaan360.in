@@ -33,11 +33,12 @@ class ProgressReport
     {
         $done = $this->doneByItem($project);
         $sections = BoqSection::where('project_id', $project->id)->pluck('name', 'id');
+        $shared = $this->entries->sharedLines($project);
 
         // The columns are named so that the rate is never loaded for a screen that shows quantities.
-        return BoqItem::where('project_id', $project->id)->orderBy('sort')->orderBy('id')
+        return BoqItem::where('project_id', $project->id)->siteWork()->orderBy('sort')->orderBy('id')
             ->get(['id', 'boq_section_id', 'code', 'description', 'unit', 'qty', 'sort'])
-            ->map(function (BoqItem $item) use ($done, $sections) {
+            ->map(function (BoqItem $item) use ($done, $sections, $shared) {
                 $doneQty = Dec::of($done[$item->id] ?? 0);
                 $balance = Dec::of($item->qty)->minus($doneQty);
 
@@ -51,6 +52,7 @@ class ProgressReport
                     'done_qty' => Dec::qty($doneQty),
                     'balance_qty' => Dec::qty($balance->isNegative() ? 0 : $balance),
                     'percent' => $this->progress->percent($doneQty, $item->qty),
+                    'work_orders' => $shared[$item->id] ?? [],
                 ];
             });
     }

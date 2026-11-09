@@ -83,7 +83,7 @@ class SiteProgressApiTest extends SiteProgressTestCase
 
         $row = $this->getJson($this->url('progress/items'))->assertOk()->json('data.0');
 
-        $this->assertEqualsCanonicalizing(['id', 'section', 'code', 'description', 'unit', 'qty', 'done_qty', 'balance_qty', 'percent'], array_keys($row));
+        $this->assertEqualsCanonicalizing(['id', 'section', 'code', 'description', 'unit', 'qty', 'done_qty', 'balance_qty', 'percent', 'work_orders'], array_keys($row));
         $this->assertSame('100.000', $row['qty']);
         $this->assertSame('20.00', $row['percent']);
     }

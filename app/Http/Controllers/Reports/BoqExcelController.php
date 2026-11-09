@@ -48,7 +48,7 @@ class BoqExcelController extends Controller
         if ($result->ok()) {
             return redirect()->route('boq.excel.index', $project)
                 ->with('success', __(':count BOQ rows imported.', ['count' => $result->rows()]))
-                ->with('boq_import', ['created' => $result->created, 'updated' => $result->updated, 'unchanged' => $result->unchanged, 'errors' => []]);
+                ->with('boq_import', ['created' => $result->created, 'updated' => $result->updated, 'unchanged' => $result->unchanged, 'errors' => [], 'notes' => $result->notes]);
         }
 
         return redirect()->route('boq.excel.index', $project)->with('boq_import', [

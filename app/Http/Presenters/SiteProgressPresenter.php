@@ -91,6 +91,8 @@ final class SiteProgressPresenter
             'done_qty' => $item['done_qty'],
             'balance_qty' => $item['balance_qty'],
             'percent' => $item['percent'],
+            // More than one contractor here means the entry must say whose work it is, as work_order_id.
+            'work_orders' => $item['work_orders'],
         ];
     }
 

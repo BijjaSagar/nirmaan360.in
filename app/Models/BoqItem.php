@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Concerns\RecordsBoqRevisions;
+use App\Services\ProjectSetup\BoqCategories;
 use App\Support\Dec;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,12 @@ class BoqItem extends Model
     protected function casts(): array
     {
         return ['qty' => 'decimal:3', 'rate' => 'decimal:2'];
+    }
+
+    /** Lines with work on site to measure. Overheads such as supervision are left out. */
+    public function scopeSiteWork(Builder $query): void
+    {
+        $query->where(fn (Builder $inner) => $inner->whereNull('category')->orWhere('category', '!=', BoqCategories::OVERHEAD));
     }
 
     public function project(): BelongsTo
