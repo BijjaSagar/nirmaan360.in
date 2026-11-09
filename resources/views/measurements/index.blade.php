@@ -2,6 +2,7 @@
 @section('title', __('Measurement book'))
 @section('content')
     <x-page-header :title="__('Measurement book')" :subtitle="$project->name">
+        @include('modules.reports._measurement-sheet', ['project' => $project])
         @can('measurement.create')<a href="{{ route('measurements.create', $project) }}" class="btn btn-primary">{{ __('New entry') }}</a>@endcan
     </x-page-header>
 

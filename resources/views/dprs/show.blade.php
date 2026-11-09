@@ -3,6 +3,7 @@
 @section('content')
     <x-page-header :title="__('DPR').' · '.$dpr->report_date->format('d M Y')" :subtitle="$project->name.($dpr->site ? ' · '.$dpr->site->name : '').' · '.($dpr->creator?->name ?? '')">
         <x-stamp :status="$dpr->status" />
+        @include('modules.reports._dpr-actions', ['dpr' => $dpr])
         @if ($dpr->isEditable())
             @can('dpr.create')
                 <form method="POST" action="{{ route('dprs.submit', $dpr) }}">@csrf<button class="btn btn-primary">{{ __('Submit for approval') }}</button></form>
