@@ -1356,6 +1356,133 @@ class FakeApi implements NirmaanApi {
     'pending_entries': <Row>[],
   };
 
+  // Material control -------------------------------------------------------
+
+  Row materialCheckBody = {
+    'rows': [
+      {
+        'material_id': 5,
+        'material': 'Cement',
+        'unit': 'bag',
+        'estimate': '100.000',
+        'received': '200.000',
+        'used': '120.000',
+        'should_be_in_stock': '80.000',
+        'stock_on_site': '75.000',
+        'unaccounted': '5.000',
+        'short_delivered': '0.000',
+        'last_counted': '2026-11-01',
+        'wastage_pct': '2.00',
+        'flags': [
+          {'type': 'unaccounted', 'message': '5 bag unaccounted: received, but neither used nor in stock. Where did it go?', 'open': true},
+        ],
+      },
+    ],
+    'open_flags': 1,
+  };
+  List<Row> materialChallanRows = [
+    {'id': 1, 'material_id': 5, 'qty': '200.000', 'unit_id': null, 'supplier': 'Gupta Traders', 'challan_no': 'C-1', 'challan_date': '2026-11-01'},
+  ];
+  List<Row> materialUseRows = [
+    {
+      'id': 2,
+      'issue_date': '2026-11-02',
+      'items': [
+        {'material_id': 5, 'qty': '120.000', 'unit_id': null, 'activity': 'Slab 1'},
+      ],
+    },
+  ];
+  List<Row> materialCountRows = [
+    {'id': 3, 'material_id': 5, 'physical_qty': '75.000', 'variance_qty': '-5.000', 'unit_id': null, 'check_date': '2026-11-03'},
+  ];
+  List<Row> materialSupplierRows = [
+    {'party_id': 8, 'name': 'Gupta Traders', 'warn': true, 'warning': 'Delivered short 3 times.'},
+    {'party_id': 9, 'name': 'Shree Traders', 'warn': false, 'warning': null},
+  ];
+  Row procurementSnapshotBody = {
+    'stores': [
+      {'id': 1, 'name': 'Site store'},
+    ],
+    'units': [
+      {'id': 10, 'code': 'bag'},
+      {'id': 11, 'code': 'MT'},
+    ],
+    'materials': [
+      {
+        'id': 5,
+        'code': 'CEM',
+        'name': 'Cement',
+        'base_unit_id': 10,
+        'conversions': [
+          {'unit_id': 11, 'factor': '20.000000'},
+        ],
+      },
+      {'id': 6, 'code': 'SND', 'name': 'Sand', 'base_unit_id': 11, 'conversions': <Row>[]},
+    ],
+  };
+  ApiFailure? snapshotFailure;
+  final Map<String, Row> challanPosts = {};
+  final Map<String, Row> materialUsePosts = {};
+  final Map<String, Row> stockCountPosts = {};
+  final List<String?> challanFiles = [];
+
+  @override
+  Future<Map<String, dynamic>> materialCheck(int projectId) async {
+    _guard();
+    return materialCheckBody;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> materialChallans(int projectId) async {
+    _guard();
+    return materialChallanRows;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> materialConsumption(int projectId) async {
+    _guard();
+    return materialUseRows;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> materialStockChecks(int projectId) async {
+    _guard();
+    return materialCountRows;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> materialSuppliers() async {
+    _guard();
+    return materialSupplierRows;
+  }
+
+  @override
+  Future<Map<String, dynamic>> procurementSnapshot(int projectId) async {
+    _guard();
+    final failure = snapshotFailure;
+    if (failure != null) throw failure;
+    return procurementSnapshotBody;
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMaterialChallan(
+    int projectId,
+    Map<String, dynamic> body, {
+    String? filePath,
+  }) async {
+    final row = _storeProgress(challanPosts, body);
+    challanFiles.add(filePath);
+    return row;
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMaterialUse(int projectId, Map<String, dynamic> body) async =>
+      _storeProgress(materialUsePosts, body);
+
+  @override
+  Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body) async =>
+      _storeProgress(stockCountPosts, body);
+
   /// Everything posted, by `client_uuid`: a repeat must not add a second.
   final Map<String, Row> progressPosts = {};
   final Map<String, Row> stagePosts = {};

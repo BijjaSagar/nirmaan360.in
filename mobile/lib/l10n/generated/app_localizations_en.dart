@@ -1260,6 +1260,189 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesUnassigned => 'Not assigned';
 
   @override
+  String get materialAdd => 'Add entry';
+
+  @override
+  String get materialBoqForWork => 'BOQ for work done';
+
+  @override
+  String get materialChallanNo => 'Challan no. (optional)';
+
+  @override
+  String get materialChallanPhoto => 'Photo of challan';
+
+  @override
+  String get materialChoose => 'Choose material';
+
+  @override
+  String get materialCount => 'Count stock';
+
+  @override
+  String get materialCountHint =>
+      'Stock is corrected to what you counted. Any missing quantity shows as unaccounted.';
+
+  @override
+  String materialDifference(String qty) {
+    return 'Difference $qty';
+  }
+
+  @override
+  String get materialEmptyMessage =>
+      'Entries for material received and used will show here.';
+
+  @override
+  String get materialEmptyTitle => 'Nothing to check yet';
+
+  @override
+  String get materialExtraRequired => 'Say what the extra work was';
+
+  @override
+  String get materialExtraWhat => 'What was the extra work?';
+
+  @override
+  String get materialFlagsTitle => 'Questions to answer';
+
+  @override
+  String get materialInStock => 'In stock';
+
+  @override
+  String get materialLastCounted => 'Last counted';
+
+  @override
+  String get materialLoading => 'Loading material';
+
+  @override
+  String get materialName => 'Material';
+
+  @override
+  String get materialNoCountsTitle => 'No counts yet';
+
+  @override
+  String get materialNoDataMessage =>
+      'Connect to the internet once to load this project\'s material. After that it works offline.';
+
+  @override
+  String get materialNoDeliveriesTitle => 'No challans yet';
+
+  @override
+  String get materialNoUseTitle => 'No material used yet';
+
+  @override
+  String get materialOnBoq => 'BOQ work';
+
+  @override
+  String get materialOnExtra => 'Extra work';
+
+  @override
+  String get materialOnSite => 'Stock on site';
+
+  @override
+  String get materialOverStock =>
+      'This is more than the stock shown here. The server may refuse it.';
+
+  @override
+  String get materialQtyCounted => 'Counted quantity';
+
+  @override
+  String get materialQtyOnChallan => 'Quantity written on challan (optional)';
+
+  @override
+  String get materialQtyOnChallanHint =>
+      'If less arrived than the challan says, enter the challan figure.';
+
+  @override
+  String get materialQtyReceived => 'Quantity received';
+
+  @override
+  String get materialQtyRequired => 'Enter the quantity';
+
+  @override
+  String get materialQtyUsed => 'Quantity used';
+
+  @override
+  String get materialReasonOnWeb => 'Write the reason on the website.';
+
+  @override
+  String get materialReceived => 'Material received';
+
+  @override
+  String get materialReceivedShort => 'Received';
+
+  @override
+  String get materialSearch => 'Search material';
+
+  @override
+  String get materialSearchNone => 'Nothing matches';
+
+  @override
+  String get materialShort => 'Short delivered';
+
+  @override
+  String get materialShouldBe => 'Should be in stock';
+
+  @override
+  String get materialStage => 'Stage (optional)';
+
+  @override
+  String get materialStageHint => 'Such as slab 3';
+
+  @override
+  String get materialStore => 'Store';
+
+  @override
+  String get materialSupplier => 'Supplier';
+
+  @override
+  String get materialSupplierChoose => 'Choose supplier';
+
+  @override
+  String get materialSupplierFromList => 'Choose from list';
+
+  @override
+  String get materialSupplierName => 'Supplier name';
+
+  @override
+  String get materialSupplierNew => 'New supplier';
+
+  @override
+  String get materialSupplierRequired => 'Say who supplied it';
+
+  @override
+  String get materialSupplierSearch => 'Search supplier';
+
+  @override
+  String get materialTabCounts => 'Counts';
+
+  @override
+  String get materialTabDeliveries => 'Challans';
+
+  @override
+  String get materialTabStock => 'Stock';
+
+  @override
+  String get materialTabUsed => 'Used';
+
+  @override
+  String get materialTitle => 'Material';
+
+  @override
+  String materialToAnswer(int count) {
+    return '$count to answer';
+  }
+
+  @override
+  String get materialUnaccounted => 'Unaccounted';
+
+  @override
+  String get materialUsed => 'Material used';
+
+  @override
+  String get materialUsedShort => 'Used';
+
+  @override
+  String get materialVehicleNo => 'Vehicle no. (optional)';
+
+  @override
   String get measurementAdd => 'Add';
 
   @override
@@ -2041,6 +2224,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellCaptionOpen => 'open';
 
   @override
+  String get shellCaptionToAnswer => 'to answer';
+
+  @override
   String get shellCaptionToday => 'today';
 
   @override
@@ -2426,6 +2612,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellTileIssues => 'Issues';
+
+  @override
+  String get shellTileMaterial => 'Material';
 
   @override
   String get shellTileMeasure => 'Measure';

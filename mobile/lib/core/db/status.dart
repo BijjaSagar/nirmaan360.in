@@ -38,6 +38,9 @@ abstract final class MetaKey {
   /// The last site progress this phone read for a project, as JSON.
   static String progressOverview(int projectId) => 'progress.overview.$projectId';
 
+  /// The last material check this phone read for a project, as JSON.
+  static String materialOverview(int projectId) => 'material.overview.$projectId';
+
   /// The floor and item last used on the progress form.
   static String progressLastPick(int projectId) => 'progress.last_pick.$projectId';
 }

@@ -2326,6 +2326,354 @@ abstract class AppLocalizations {
   /// **'Not assigned'**
   String get issuesUnassigned;
 
+  /// No description provided for @materialAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add entry'**
+  String get materialAdd;
+
+  /// No description provided for @materialBoqForWork.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ for work done'**
+  String get materialBoqForWork;
+
+  /// No description provided for @materialChallanNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Challan no. (optional)'**
+  String get materialChallanNo;
+
+  /// No description provided for @materialChallanPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of challan'**
+  String get materialChallanPhoto;
+
+  /// No description provided for @materialChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose material'**
+  String get materialChoose;
+
+  /// No description provided for @materialCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Count stock'**
+  String get materialCount;
+
+  /// No description provided for @materialCountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock is corrected to what you counted. Any missing quantity shows as unaccounted.'**
+  String get materialCountHint;
+
+  /// No description provided for @materialDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference {qty}'**
+  String materialDifference(String qty);
+
+  /// No description provided for @materialEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries for material received and used will show here.'**
+  String get materialEmptyMessage;
+
+  /// No description provided for @materialEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to check yet'**
+  String get materialEmptyTitle;
+
+  /// No description provided for @materialExtraRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Say what the extra work was'**
+  String get materialExtraRequired;
+
+  /// No description provided for @materialExtraWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'What was the extra work?'**
+  String get materialExtraWhat;
+
+  /// No description provided for @materialFlagsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions to answer'**
+  String get materialFlagsTitle;
+
+  /// No description provided for @materialInStock.
+  ///
+  /// In en, this message translates to:
+  /// **'In stock'**
+  String get materialInStock;
+
+  /// No description provided for @materialLastCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Last counted'**
+  String get materialLastCounted;
+
+  /// No description provided for @materialLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading material'**
+  String get materialLoading;
+
+  /// No description provided for @materialName.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get materialName;
+
+  /// No description provided for @materialNoCountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No counts yet'**
+  String get materialNoCountsTitle;
+
+  /// No description provided for @materialNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load this project\'s material. After that it works offline.'**
+  String get materialNoDataMessage;
+
+  /// No description provided for @materialNoDeliveriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No challans yet'**
+  String get materialNoDeliveriesTitle;
+
+  /// No description provided for @materialNoUseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No material used yet'**
+  String get materialNoUseTitle;
+
+  /// No description provided for @materialOnBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ work'**
+  String get materialOnBoq;
+
+  /// No description provided for @materialOnExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra work'**
+  String get materialOnExtra;
+
+  /// No description provided for @materialOnSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock on site'**
+  String get materialOnSite;
+
+  /// No description provided for @materialOverStock.
+  ///
+  /// In en, this message translates to:
+  /// **'This is more than the stock shown here. The server may refuse it.'**
+  String get materialOverStock;
+
+  /// No description provided for @materialQtyCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted quantity'**
+  String get materialQtyCounted;
+
+  /// No description provided for @materialQtyOnChallan.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity written on challan (optional)'**
+  String get materialQtyOnChallan;
+
+  /// No description provided for @materialQtyOnChallanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If less arrived than the challan says, enter the challan figure.'**
+  String get materialQtyOnChallanHint;
+
+  /// No description provided for @materialQtyReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity received'**
+  String get materialQtyReceived;
+
+  /// No description provided for @materialQtyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the quantity'**
+  String get materialQtyRequired;
+
+  /// No description provided for @materialQtyUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity used'**
+  String get materialQtyUsed;
+
+  /// No description provided for @materialReasonOnWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the reason on the website.'**
+  String get materialReasonOnWeb;
+
+  /// No description provided for @materialReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Material received'**
+  String get materialReceived;
+
+  /// No description provided for @materialReceivedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get materialReceivedShort;
+
+  /// No description provided for @materialSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search material'**
+  String get materialSearch;
+
+  /// No description provided for @materialSearchNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches'**
+  String get materialSearchNone;
+
+  /// No description provided for @materialShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Short delivered'**
+  String get materialShort;
+
+  /// No description provided for @materialShouldBe.
+  ///
+  /// In en, this message translates to:
+  /// **'Should be in stock'**
+  String get materialShouldBe;
+
+  /// No description provided for @materialStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage (optional)'**
+  String get materialStage;
+
+  /// No description provided for @materialStageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Such as slab 3'**
+  String get materialStageHint;
+
+  /// No description provided for @materialStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get materialStore;
+
+  /// No description provided for @materialSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier'**
+  String get materialSupplier;
+
+  /// No description provided for @materialSupplierChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose supplier'**
+  String get materialSupplierChoose;
+
+  /// No description provided for @materialSupplierFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from list'**
+  String get materialSupplierFromList;
+
+  /// No description provided for @materialSupplierName.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier name'**
+  String get materialSupplierName;
+
+  /// No description provided for @materialSupplierNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New supplier'**
+  String get materialSupplierNew;
+
+  /// No description provided for @materialSupplierRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Say who supplied it'**
+  String get materialSupplierRequired;
+
+  /// No description provided for @materialSupplierSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search supplier'**
+  String get materialSupplierSearch;
+
+  /// No description provided for @materialTabCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts'**
+  String get materialTabCounts;
+
+  /// No description provided for @materialTabDeliveries.
+  ///
+  /// In en, this message translates to:
+  /// **'Challans'**
+  String get materialTabDeliveries;
+
+  /// No description provided for @materialTabStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock'**
+  String get materialTabStock;
+
+  /// No description provided for @materialTabUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get materialTabUsed;
+
+  /// No description provided for @materialTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get materialTitle;
+
+  /// No description provided for @materialToAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} to answer'**
+  String materialToAnswer(int count);
+
+  /// No description provided for @materialUnaccounted.
+  ///
+  /// In en, this message translates to:
+  /// **'Unaccounted'**
+  String get materialUnaccounted;
+
+  /// No description provided for @materialUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Material used'**
+  String get materialUsed;
+
+  /// No description provided for @materialUsedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get materialUsedShort;
+
+  /// No description provided for @materialVehicleNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle no. (optional)'**
+  String get materialVehicleNo;
+
   /// No description provided for @measurementAdd.
   ///
   /// In en, this message translates to:
@@ -3742,6 +4090,12 @@ abstract class AppLocalizations {
   /// **'open'**
   String get shellCaptionOpen;
 
+  /// No description provided for @shellCaptionToAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'to answer'**
+  String get shellCaptionToAnswer;
+
   /// No description provided for @shellCaptionToday.
   ///
   /// In en, this message translates to:
@@ -4437,6 +4791,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Issues'**
   String get shellTileIssues;
+
+  /// No description provided for @shellTileMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material'**
+  String get shellTileMaterial;
 
   /// No description provided for @shellTileMeasure.
   ///

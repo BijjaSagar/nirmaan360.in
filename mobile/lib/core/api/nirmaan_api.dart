@@ -218,6 +218,28 @@ abstract interface class NirmaanApi {
   /// Returns the stored cell.
   Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body);
 
+  // Material control. Reads fill a cache; writes come from the outbox.
+
+  Future<Map<String, dynamic>> materialCheck(int projectId);
+
+  Future<List<Map<String, dynamic>>> materialChallans(int projectId);
+
+  Future<List<Map<String, dynamic>>> materialConsumption(int projectId);
+
+  Future<List<Map<String, dynamic>>> materialStockChecks(int projectId);
+
+  Future<List<Map<String, dynamic>>> materialSuppliers();
+
+  /// Materials, units and stores, from purchasing.
+  Future<Map<String, dynamic>> procurementSnapshot(int projectId);
+
+  /// [filePath] is the challan photo, sent with the fields in one request.
+  Future<Map<String, dynamic>> postMaterialChallan(int projectId, Map<String, dynamic> body, {String? filePath});
+
+  Future<Map<String, dynamic>> postMaterialUse(int projectId, Map<String, dynamic> body);
+
+  Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body);
+
   /// [path] is the photos endpoint of the entry or the stage cell.
   Future<Map<String, dynamic>> uploadFieldPhoto(
     String path, {

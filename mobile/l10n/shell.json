@@ -360,6 +360,16 @@
     "mr": "हजेरी",
     "hi": "हाज़िरी"
   },
+  "shellTileMaterial": {
+    "en": "Material",
+    "mr": "मटेरियल",
+    "hi": "मटेरियल"
+  },
+  "shellCaptionToAnswer": {
+    "en": "to answer",
+    "mr": "उत्तरे बाकी",
+    "hi": "जवाब बाकी"
+  },
   "shellTileProgress": {
     "en": "Progress",
     "mr": "प्रगती",

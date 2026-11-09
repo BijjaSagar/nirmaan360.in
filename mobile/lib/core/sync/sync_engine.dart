@@ -457,6 +457,9 @@ class SyncEngine {
       case OutboxType.progressPhoto:
       case OutboxType.stageCell:
       case OutboxType.stagePhoto:
+      case OutboxType.materialChallan:
+      case OutboxType.materialUse:
+      case OutboxType.stockCount:
         return null;
     }
   }
@@ -583,13 +586,16 @@ class SyncEngine {
       case OutboxType.progressPhoto:
       case OutboxType.stageCell:
       case OutboxType.stagePhoto:
+      case OutboxType.materialChallan:
+      case OutboxType.materialUse:
+      case OutboxType.stockCount:
         break;
     }
   }
 
   // Direct posts --------------------------------------------------------------
 
-  /// Sends one site progress row to its own endpoint.
+  /// Sends one site progress or material row to its own endpoint.
   ///
   /// A row whose answer is lost is sent again with the same `client_uuid`, and
   /// the server returns the first copy.
@@ -683,6 +689,17 @@ class SyncEngine {
         return photo('/progress/entries/${_parentId(data)}/photos');
       case OutboxType.stagePhoto:
         return photo('/stage-cells/${_parentId(data)}/photos');
+      case OutboxType.materialChallan:
+        final file = row.filePath;
+        return _api.postMaterialChallan(
+          row.projectId,
+          body,
+          filePath: file == null ? null : await _attachments.absolutePath(file),
+        );
+      case OutboxType.materialUse:
+        return _api.postMaterialUse(row.projectId, body);
+      case OutboxType.stockCount:
+        return _api.postStockCount(row.projectId, body);
       default:
         throw StateError('${row.type} is not a direct row.');
     }

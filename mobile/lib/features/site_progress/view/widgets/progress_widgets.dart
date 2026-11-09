@@ -89,13 +89,23 @@ class ProgressBarTile extends StatelessWidget {
 
 /// Photos waiting to be saved with an entry, and the button to take one.
 class ProgressPhotoRow extends StatelessWidget {
-  const ProgressPhotoRow({super.key, required this.photos, required this.onAdd, required this.onRemove});
+  const ProgressPhotoRow({
+    super.key,
+    required this.photos,
+    required this.onAdd,
+    required this.onRemove,
+    this.max = 3,
+    this.label,
+  });
 
   final List<String> photos;
   final ValueChanged<String> onAdd;
   final ValueChanged<String> onRemove;
 
-  static const int _max = 3;
+  final int max;
+
+  /// The button's words. Defaults to "Add photo".
+  final String? label;
   static const double _thumb = 72;
 
   Future<void> _take(BuildContext context) async {
@@ -144,9 +154,9 @@ class ProgressPhotoRow extends StatelessWidget {
           ),
           const SizedBox(height: N360Space.xs),
         ],
-        if (photos.length < _max)
+        if (photos.length < max)
           GloveButton(
-            label: l.progressFormPhoto,
+            label: label ?? l.progressFormPhoto,
             icon: Icons.photo_camera_outlined,
             kind: GloveButtonKind.secondary,
             fullWidth: true,

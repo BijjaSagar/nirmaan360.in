@@ -205,6 +205,16 @@ Add `project.manage` and `boq.manage` to the `can` list. Add nullable `client_uu
 
 Site roles do not have `money.view`. For them the server leaves rates and bill figures as null and drops any wage they send. The app shows quantities only, skips the wage step, hides the progress card weighted by rates, and offers no approval on a bill sent without figures.
 
+### Material control
+
+Needs the `site_control` plan feature, and `material_control.view`, `.challan`, `.consume` and `.count` in the `can` list.
+
+- The app reads `GET /projects/{project}/material-control/check`, `/challans`, `/consumption`, `/stock-checks`, `GET /material-control/suppliers`, and the material, unit and store lists from `GET /projects/{project}/procurement/snapshot`. It keeps the last answer per project, on the same schedule as site progress.
+- A delivery, a use and a count are outbox rows posted to `POST /projects/{project}/material-control/challans`, `/consumption` and `/stock-checks` with a `client_uuid`. A repeat returns the first row and moves no stock. A challan photo goes with the fields as multipart field `photo`.
+- Screens lay rows waiting to send over the last answer, converting to the base unit with the material's factors.
+- A use above the stock is a 422 on `stock` and goes to the Sync Center. The form warns first but does not block, because the phone's figure may be out of date.
+- Answering a flag needs a written reason on the website. The API has no route for it.
+
 ### Site progress and stages
 
 Needs the `site_control` plan feature, and `progress.view` and `progress.create` in the `can` list. The API sends quantities and percentages only, never a rate or an amount.

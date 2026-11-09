@@ -50,4 +50,11 @@ abstract final class Routes {
   static String progressFloor(int id) => '/progress/floor/$id';
   static String progressBeforeFinishing(int floorId) => '/progress/floor/$floorId/before-finishing';
   static String progressStage(int floorId, String trade) => '/progress/stage/$floorId/$trade';
+
+  static const material = '/material';
+
+  /// Optional query: `material`.
+  static const materialReceive = '/material/receive';
+  static const materialUse = '/material/use';
+  static const materialCount = '/material/count';
 }

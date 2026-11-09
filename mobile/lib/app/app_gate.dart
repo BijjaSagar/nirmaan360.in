@@ -250,6 +250,10 @@ class AppGate extends Cubit<GateState> {
     Routes.topUp: 'petty_cash.manage',
     Routes.progress: 'progress.view',
     Routes.progressForm: 'progress.create',
+    Routes.material: 'material_control.view',
+    Routes.materialReceive: 'material_control.challan',
+    Routes.materialUse: 'material_control.consume',
+    Routes.materialCount: 'material_control.count',
   };
 
   /// The location for [uri], or null to stay.

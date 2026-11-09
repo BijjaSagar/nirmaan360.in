@@ -207,12 +207,15 @@ class SyncRepository {
               ),
             );
       // Nothing on the phone besides the outbox row: the screens lay unsent
-      // site progress over the server's copy, so removing the row is enough.
+      // site work over the server's copy, so removing the row is enough.
       case OutboxType.progressEntry:
       case OutboxType.progressResolve:
       case OutboxType.progressPhoto:
       case OutboxType.stageCell:
       case OutboxType.stagePhoto:
+      case OutboxType.materialChallan:
+      case OutboxType.materialUse:
+      case OutboxType.stockCount:
         break;
     }
   }

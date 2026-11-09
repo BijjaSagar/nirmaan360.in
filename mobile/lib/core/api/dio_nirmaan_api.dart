@@ -351,6 +351,63 @@ class DioNirmaanApi implements NirmaanApi {
     return (body['data'] as Map).cast<String, dynamic>();
   }
 
+  @override
+  Future<Map<String, dynamic>> materialCheck(int projectId) =>
+      _getData('/projects/$projectId/material-control/check');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialChallans(int projectId) =>
+      _getRows('/projects/$projectId/material-control/challans');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialConsumption(int projectId) =>
+      _getRows('/projects/$projectId/material-control/consumption');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialStockChecks(int projectId) =>
+      _getRows('/projects/$projectId/material-control/stock-checks');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialSuppliers() => _getRows('/material-control/suppliers');
+
+  @override
+  Future<Map<String, dynamic>> procurementSnapshot(int projectId) async {
+    final body = await _call(() => _dio.get('/projects/$projectId/procurement/snapshot'));
+    return ((body['data'] ?? body) as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMaterialChallan(
+    int projectId,
+    Map<String, dynamic> body, {
+    String? filePath,
+  }) async {
+    final path = '/projects/$projectId/material-control/challans';
+    if (filePath == null) return _postData(path, body);
+    final reply = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        for (final entry in body.entries)
+          if (entry.value != null) entry.key: entry.value,
+        'photo': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (reply['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMaterialUse(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-control/consumption', body);
+
+  @override
+  Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-control/stock-checks', body);
+
   Future<Uint8List> _bytes(String path) async {
     try {
       final response = await _dio.get<List<int>>(

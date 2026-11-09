@@ -24,6 +24,9 @@ import '../features/site_progress/view/floor_progress_screen.dart';
 import '../features/site_progress/view/progress_form_screen.dart';
 import '../features/site_progress/view/progress_screen.dart';
 import '../features/site_progress/view/stage_row_screen.dart';
+import '../features/material_control/bloc/material_form_cubit.dart';
+import '../features/material_control/view/material_form_screen.dart';
+import '../features/material_control/view/material_screen.dart';
 import '../features/projects/view/boq_form_screen.dart';
 import '../features/projects/view/boq_screen.dart';
 import '../features/projects/view/project_form_screen.dart';
@@ -125,6 +128,21 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         ],
       ),
       _route(Routes.attendance, (_) => const AttendanceScreen()),
+      _route(
+        Routes.material,
+        (_) => const MaterialScreen(),
+        routes: <RouteBase>[
+          for (final (path, kind) in <(String, MaterialFormKind)>[
+            ('receive', MaterialFormKind.receive),
+            ('use', MaterialFormKind.use),
+            ('count', MaterialFormKind.count),
+          ])
+            _route(
+              path,
+              (s) => MaterialFormScreen(kind: kind, materialId: int.tryParse(s.uri.queryParameters['material'] ?? '')),
+            ),
+        ],
+      ),
       _route(
         Routes.progress,
         (_) => const ProgressScreen(),

@@ -1232,6 +1232,189 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesUnassigned => 'कोणाकडेही नाही';
 
   @override
+  String get materialAdd => 'नोंद करा';
+
+  @override
+  String get materialBoqForWork => 'झालेल्या कामासाठी BOQ';
+
+  @override
+  String get materialChallanNo => 'चलन क्रमांक (ऐच्छिक)';
+
+  @override
+  String get materialChallanPhoto => 'चलनाचा फोटो';
+
+  @override
+  String get materialChoose => 'मटेरियल निवडा';
+
+  @override
+  String get materialCount => 'स्टॉक मोजा';
+
+  @override
+  String get materialCountHint =>
+      'तुम्ही मोजलेल्या प्रमाणानुसार स्टॉक दुरुस्त होतो. कमी प्रमाण हिशोब नसलेले म्हणून दिसते.';
+
+  @override
+  String materialDifference(String qty) {
+    return 'फरक $qty';
+  }
+
+  @override
+  String get materialEmptyMessage =>
+      'आलेल्या आणि वापरलेल्या मटेरियलच्या नोंदी इथे दिसतील.';
+
+  @override
+  String get materialEmptyTitle => 'अजून तपासण्यासारखे काही नाही';
+
+  @override
+  String get materialExtraRequired => 'जादा काम कोणते ते लिहा';
+
+  @override
+  String get materialExtraWhat => 'जादा काम कोणते होते?';
+
+  @override
+  String get materialFlagsTitle => 'उत्तर द्यायचे प्रश्न';
+
+  @override
+  String get materialInStock => 'स्टॉकमध्ये';
+
+  @override
+  String get materialLastCounted => 'शेवटची मोजणी';
+
+  @override
+  String get materialLoading => 'मटेरियल लोड होत आहे';
+
+  @override
+  String get materialName => 'मटेरियल';
+
+  @override
+  String get materialNoCountsTitle => 'अजून मोजणी नाही';
+
+  @override
+  String get materialNoDataMessage =>
+      'या प्रकल्पाचे मटेरियल लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर ऑफलाइनही चालेल.';
+
+  @override
+  String get materialNoDeliveriesTitle => 'अजून चलन नाही';
+
+  @override
+  String get materialNoUseTitle => 'अजून मटेरियल वापरले नाही';
+
+  @override
+  String get materialOnBoq => 'BOQ काम';
+
+  @override
+  String get materialOnExtra => 'जादा काम';
+
+  @override
+  String get materialOnSite => 'साइटवरील स्टॉक';
+
+  @override
+  String get materialOverStock =>
+      'हे इथे दाखवलेल्या स्टॉकपेक्षा जास्त आहे. सर्व्हर ते नाकारू शकतो.';
+
+  @override
+  String get materialQtyCounted => 'मोजलेले प्रमाण';
+
+  @override
+  String get materialQtyOnChallan => 'चलनावर लिहिलेले प्रमाण (ऐच्छिक)';
+
+  @override
+  String get materialQtyOnChallanHint =>
+      'चलनापेक्षा कमी आले असल्यास चलनावरील आकडा लिहा.';
+
+  @override
+  String get materialQtyReceived => 'आलेले प्रमाण';
+
+  @override
+  String get materialQtyRequired => 'प्रमाण लिहा';
+
+  @override
+  String get materialQtyUsed => 'वापरलेले प्रमाण';
+
+  @override
+  String get materialReasonOnWeb => 'कारण वेबसाइटवर लिहा.';
+
+  @override
+  String get materialReceived => 'मटेरियल आले';
+
+  @override
+  String get materialReceivedShort => 'आले';
+
+  @override
+  String get materialSearch => 'मटेरियल शोधा';
+
+  @override
+  String get materialSearchNone => 'काहीही जुळले नाही';
+
+  @override
+  String get materialShort => 'कमी आलेले';
+
+  @override
+  String get materialShouldBe => 'स्टॉकमध्ये असायला हवे';
+
+  @override
+  String get materialStage => 'टप्पा (ऐच्छिक)';
+
+  @override
+  String get materialStageHint => 'उदा. स्लॅब 3';
+
+  @override
+  String get materialStore => 'स्टोअर';
+
+  @override
+  String get materialSupplier => 'पुरवठादार';
+
+  @override
+  String get materialSupplierChoose => 'पुरवठादार निवडा';
+
+  @override
+  String get materialSupplierFromList => 'यादीतून निवडा';
+
+  @override
+  String get materialSupplierName => 'पुरवठादाराचे नाव';
+
+  @override
+  String get materialSupplierNew => 'नवीन पुरवठादार';
+
+  @override
+  String get materialSupplierRequired => 'कोणी पुरवले ते लिहा';
+
+  @override
+  String get materialSupplierSearch => 'पुरवठादार शोधा';
+
+  @override
+  String get materialTabCounts => 'मोजणी';
+
+  @override
+  String get materialTabDeliveries => 'चलन';
+
+  @override
+  String get materialTabStock => 'स्टॉक';
+
+  @override
+  String get materialTabUsed => 'वापर';
+
+  @override
+  String get materialTitle => 'मटेरियल';
+
+  @override
+  String materialToAnswer(int count) {
+    return '$count उत्तरे बाकी';
+  }
+
+  @override
+  String get materialUnaccounted => 'हिशोब नसलेले';
+
+  @override
+  String get materialUsed => 'मटेरियल वापरले';
+
+  @override
+  String get materialUsedShort => 'वापरले';
+
+  @override
+  String get materialVehicleNo => 'गाडी क्रमांक (ऐच्छिक)';
+
+  @override
   String get measurementAdd => 'जोडा';
 
   @override
@@ -2009,6 +2192,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get shellCaptionOpen => 'उघड्या';
 
   @override
+  String get shellCaptionToAnswer => 'उत्तरे बाकी';
+
+  @override
   String get shellCaptionToday => 'आज';
 
   @override
@@ -2380,6 +2566,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get shellTileIssues => 'समस्या';
+
+  @override
+  String get shellTileMaterial => 'मटेरियल';
 
   @override
   String get shellTileMeasure => 'मोजमाप';

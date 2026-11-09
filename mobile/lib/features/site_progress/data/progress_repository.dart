@@ -98,6 +98,9 @@ class ProgressRepository {
     if (user == null || !user.can('progress.view') || !user.features.contains('site_control')) return;
     final int? projectId = int.tryParse(await _db.readMeta(MetaKey.selectedProject) ?? '');
     if (projectId == null) return;
+    // A project taken away is not read again. It would only be refused.
+    final known = await (_db.select(_db.projects)..where((t) => t.id.equals(projectId))).getSingleOrNull();
+    if (known == null) return;
     if (!force) {
       final DateTime? last = DateTime.tryParse(((await _readRaw(projectId))['fetched_at'] as String?) ?? '');
       if (last != null && _ctx.clock.now().difference(last) < _freshFor) return;

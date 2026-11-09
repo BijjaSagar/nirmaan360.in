@@ -67,6 +67,7 @@ class HomeState extends Equatable {
     this.approvalsCount = 0,
     this.openIssues = 0,
     this.siteWorkPercent,
+    this.materialFlags,
     this.progress,
     this.setup,
   });
@@ -81,6 +82,9 @@ class HomeState extends Equatable {
 
   /// Whole-project work done, from the last site progress on this phone.
   final String? siteWorkPercent;
+
+  /// Material questions still to answer, from the last check on this phone.
+  final int? materialFlags;
   final HomeProgress? progress;
 
   /// What the project still needs set up. Null until first read.
@@ -92,6 +96,7 @@ class HomeState extends Equatable {
     int? approvalsCount,
     int? openIssues,
     String? siteWorkPercent,
+    int? materialFlags,
     HomeProgress? Function()? progress,
     ProjectSetup? setup,
   }) {
@@ -101,6 +106,7 @@ class HomeState extends Equatable {
       approvalsCount: approvalsCount ?? this.approvalsCount,
       openIssues: openIssues ?? this.openIssues,
       siteWorkPercent: siteWorkPercent ?? this.siteWorkPercent,
+      materialFlags: materialFlags ?? this.materialFlags,
       progress: progress == null ? this.progress : progress(),
       setup: setup ?? this.setup,
     );
@@ -113,6 +119,7 @@ class HomeState extends Equatable {
         approvalsCount,
         openIssues,
         siteWorkPercent,
+        materialFlags,
         progress,
         setup?.boqCount,
         setup?.workerCount,
@@ -150,6 +157,9 @@ class HomeCubit extends Cubit<HomeState> {
       _services.progress.watchCached(projectId).listen((overview) {
         final String? percent = overview?.summary.workPercent;
         if (percent != null && !isClosed) emit(state.copyWith(siteWorkPercent: percent));
+      }),
+      _services.material.watchCached(projectId).listen((overview) {
+        if (overview != null && !isClosed) emit(state.copyWith(materialFlags: overview.openFlags));
       }),
       _services.syncCenter.watchOutbox().listen((items) {
         _queued = items;

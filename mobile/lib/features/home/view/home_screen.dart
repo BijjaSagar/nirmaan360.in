@@ -161,6 +161,14 @@ class _HomeView extends StatelessWidget {
           icon: Icons.stacked_bar_chart,
           onTap: () => context.push(Routes.progress),
         ),
+      if (can('material_control.view') && (user?.features.contains('site_control') ?? false))
+        _TileSpec(
+          title: t.shellTileMaterial,
+          value: '${state.materialFlags ?? 0}',
+          caption: t.shellCaptionToAnswer,
+          icon: Icons.inventory_2_outlined,
+          onTap: () => context.push(Routes.material),
+        ),
       if (can('attendance.view'))
         _TileSpec(
           title: t.shellTileAttendance,

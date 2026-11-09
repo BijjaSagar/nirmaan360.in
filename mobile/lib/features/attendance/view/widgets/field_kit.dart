@@ -390,3 +390,168 @@ class FieldInlineError extends StatelessWidget {
     );
   }
 }
+
+/// A label over a field, with a problem under it when there is one.
+class FieldBlock extends StatelessWidget {
+  const FieldBlock({super.key, required this.label, required this.child, this.error});
+
+  final String label;
+  final Widget child;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(label, style: N360Type.fit(N360Type.label, label)),
+        const SizedBox(height: N360Space.xs),
+        child,
+        if (error != null)
+          Text(error!, style: N360Type.fit(N360Type.caption, error!).copyWith(color: N360Colors.laterite)),
+      ],
+    );
+  }
+}
+
+/// A choice shown like a text field, with a chevron, that opens a list.
+class FieldPickerTile extends StatelessWidget {
+  const FieldPickerTile({
+    super.key,
+    required this.icon,
+    required this.text,
+    required this.semanticsLabel,
+    required this.onTap,
+    this.muted = false,
+  });
+
+  final IconData icon;
+  final String text;
+  final String semanticsLabel;
+  final VoidCallback onTap;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return PressTarget(
+      onTap: onTap,
+      haptic: N360Haptics.select,
+      semanticsLabel: '$semanticsLabel: $text',
+      builder: (context, depth, child) => Transform.scale(
+        scale: pressedScale(depth),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: N360Colors.sheet,
+            borderRadius: N360Radius.md,
+            border: Border.all(color: N360Colors.ruleStrong),
+          ),
+          child: child,
+        ),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: N360Size.tap),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.sm),
+          child: Row(
+            children: <Widget>[
+              Icon(icon, size: N360IconSize.lg, color: N360Colors.ink2),
+              const SizedBox(width: N360Space.md),
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: N360Type.fit(N360Type.bodyLarge, text).copyWith(
+                    color: muted ? N360Colors.inkLabel : N360Colors.ink,
+                  ),
+                ),
+              ),
+              const Icon(Icons.expand_more, size: N360IconSize.lg, color: N360Colors.ink2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One line in [showFieldSearchPicker].
+class FieldPickOption {
+  const FieldPickOption({required this.id, required this.title, this.subtitle});
+
+  final int id;
+  final String title;
+  final String? subtitle;
+}
+
+/// A searchable list in a sheet. Returns the id chosen, or null if dismissed.
+Future<int?> showFieldSearchPicker(
+  BuildContext context, {
+  required List<FieldPickOption> options,
+  required String searchLabel,
+  required String emptyTitle,
+}) {
+  return showLedgerSheet<int>(
+    context,
+    isScrollControlled: true,
+    builder: (context) => _FieldSearchSheet(options: options, searchLabel: searchLabel, emptyTitle: emptyTitle),
+  );
+}
+
+class _FieldSearchSheet extends StatefulWidget {
+  const _FieldSearchSheet({required this.options, required this.searchLabel, required this.emptyTitle});
+
+  final List<FieldPickOption> options;
+  final String searchLabel;
+  final String emptyTitle;
+
+  @override
+  State<_FieldSearchSheet> createState() => _FieldSearchSheetState();
+}
+
+class _FieldSearchSheetState extends State<_FieldSearchSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final String query = _query.trim().toLowerCase();
+    final List<FieldPickOption> shown = query.isEmpty
+        ? widget.options
+        : widget.options.where((option) => option.title.toLowerCase().contains(query)).toList();
+    return SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.sm),
+            child: GloveTextField(
+              label: widget.searchLabel,
+              prefixIcon: Icons.search,
+              onChanged: (value) => setState(() => _query = value),
+            ),
+          ),
+          Expanded(
+            child: shown.isEmpty
+                ? EmptyLedger(title: widget.emptyTitle, message: widget.searchLabel)
+                : ListView.builder(
+                    padding: EdgeInsets.only(bottom: N360Space.lg + MediaQuery.viewInsetsOf(context).bottom),
+                    itemCount: shown.length,
+                    itemBuilder: (context, index) {
+                      final FieldPickOption option = shown[index];
+                      return LedgerListTile(
+                        key: ValueKey<String>('field-pick-${option.id}'),
+                        title: option.title,
+                        subtitle: option.subtitle,
+                        trailing: const SizedBox.shrink(),
+                        onTap: () => Navigator.of(context).pop(option.id),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}

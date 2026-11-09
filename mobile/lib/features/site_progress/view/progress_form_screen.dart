@@ -116,9 +116,9 @@ class _ProgressFormViewState extends State<_ProgressFormView> {
                               N360Space.sm,
                             ),
                             children: <Widget>[
-                              _Block(
+                              FieldBlock(
                                 label: l.progressFormFloor,
-                                child: _PickerField(
+                                child: FieldPickerTile(
                                   key: const ValueKey<String>('progress-form-floor'),
                                   icon: Icons.layers_outlined,
                                   text: state.floor?.label ?? l.progressFormFloorNone,
@@ -127,12 +127,12 @@ class _ProgressFormViewState extends State<_ProgressFormView> {
                                 ),
                               ),
                               const SizedBox(height: N360Space.lg),
-                              _Block(
+                              FieldBlock(
                                 label: l.progressFormItem,
                                 error: state.problem == ProgressFormProblem.itemRequired
                                     ? l.progressFormItemChoose
                                     : null,
-                                child: _PickerField(
+                                child: FieldPickerTile(
                                   key: const ValueKey<String>('progress-form-item'),
                                   icon: Icons.format_list_numbered,
                                   text: item == null ? l.progressFormItemChoose : '${item.code} · ${item.description}',
@@ -164,7 +164,7 @@ class _ProgressFormViewState extends State<_ProgressFormView> {
                               ),
                               const SizedBox(height: N360Space.lg),
                               if (state.asksContractor && item != null) ...<Widget>[
-                                _Block(
+                                FieldBlock(
                                   label: l.progressFormWhose,
                                   error: state.problem == ProgressFormProblem.contractorRequired
                                       ? l.progressFormWhoseRequired
@@ -201,7 +201,7 @@ class _ProgressFormViewState extends State<_ProgressFormView> {
                                 onChanged: (_) => cubit.clearProblem(),
                               ),
                               const SizedBox(height: N360Space.lg),
-                              _Block(
+                              FieldBlock(
                                 label: l.progressFormDate,
                                 child: Wrap(
                                   spacing: N360Space.sm,
@@ -295,89 +295,6 @@ class _QtyField extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _Block extends StatelessWidget {
-  const _Block({required this.label, required this.child, this.error});
-
-  final String label;
-  final Widget child;
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Text(label, style: N360Type.fit(N360Type.label, label)),
-        const SizedBox(height: N360Space.xs),
-        child,
-        if (error != null)
-          Text(error!, style: N360Type.fit(N360Type.caption, error!).copyWith(color: N360Colors.laterite)),
-      ],
-    );
-  }
-}
-
-class _PickerField extends StatelessWidget {
-  const _PickerField({
-    super.key,
-    required this.icon,
-    required this.text,
-    required this.semanticsLabel,
-    required this.onTap,
-    this.muted = false,
-  });
-
-  final IconData icon;
-  final String text;
-  final String semanticsLabel;
-  final VoidCallback onTap;
-  final bool muted;
-
-  @override
-  Widget build(BuildContext context) {
-    return PressTarget(
-      onTap: onTap,
-      haptic: N360Haptics.select,
-      semanticsLabel: '$semanticsLabel: $text',
-      builder: (context, depth, child) => Transform.scale(
-        scale: pressedScale(depth),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: N360Colors.sheet,
-            borderRadius: N360Radius.md,
-            border: Border.all(color: N360Colors.ruleStrong),
-          ),
-          child: child,
-        ),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: N360Size.tap),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.sm),
-          child: Row(
-            children: <Widget>[
-              Icon(icon, size: N360IconSize.lg, color: N360Colors.ink2),
-              const SizedBox(width: N360Space.md),
-              Expanded(
-                child: Text(
-                  text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: N360Type.fit(N360Type.bodyLarge, text).copyWith(
-                    color: muted ? N360Colors.inkLabel : N360Colors.ink,
-                  ),
-                ),
-              ),
-              const Icon(Icons.expand_more, size: N360IconSize.lg, color: N360Colors.ink2),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
