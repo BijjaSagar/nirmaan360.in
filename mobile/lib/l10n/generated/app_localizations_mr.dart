@@ -432,11 +432,6 @@ class AppLocalizationsMr extends AppLocalizations {
   String get attendanceSheetWageHelper => 'माहीत नसेल तर रिकामे ठेवा.';
 
   @override
-  String attendanceSheetWageNotSaved(String name) {
-    return '$name जोडले. मजुरी सध्या वेबसाइटवर भरा.';
-  }
-
-  @override
   String get attendanceTitle => 'हजेरी';
 
   @override

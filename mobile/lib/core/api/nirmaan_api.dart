@@ -153,6 +153,7 @@ abstract interface class NirmaanApi {
     required String trade,
     String? phone,
     String type,
+    String? dailyWage,
   });
 
   Future<Uint8List> dprPhotoBytes(int photoId);

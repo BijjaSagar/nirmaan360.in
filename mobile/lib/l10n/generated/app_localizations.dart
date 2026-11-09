@@ -820,12 +820,6 @@ abstract class AppLocalizations {
   /// **'Leave blank if you do not know it.'**
   String get attendanceSheetWageHelper;
 
-  /// No description provided for @attendanceSheetWageNotSaved.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} added. Set the wage on the website for now.'**
-  String attendanceSheetWageNotSaved(String name);
-
   /// No description provided for @attendanceTitle.
   ///
   /// In en, this message translates to:

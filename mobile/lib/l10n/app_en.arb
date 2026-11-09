@@ -200,14 +200,6 @@
     }
   },
   "attendanceSheetWageHelper": "Leave blank if you do not know it.",
-  "attendanceSheetWageNotSaved": "{name} added. Set the wage on the website for now.",
-  "@attendanceSheetWageNotSaved": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "attendanceTitle": "Attendance",
   "attendanceTodayTitle": "Today's attendance",
   "commonBack": "Back",

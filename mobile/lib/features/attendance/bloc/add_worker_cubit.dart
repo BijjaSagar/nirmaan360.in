@@ -20,7 +20,6 @@ class AddWorkerState {
     this.problem,
     this.done = false,
     this.addedName = '',
-    this.wageNotSaved = false,
   });
 
   /// 0 for name and trade, 1 for the wage keypad.
@@ -37,7 +36,6 @@ class AddWorkerState {
   final String addedName;
 
   /// A wage was typed but the data layer has no way to send it yet.
-  final bool wageNotSaved;
 
   AddWorkerState copyWith({
     int? step,
@@ -50,7 +48,6 @@ class AddWorkerState {
     bool clearProblem = false,
     bool? done,
     String? addedName,
-    bool? wageNotSaved,
   }) {
     return AddWorkerState(
       step: step ?? this.step,
@@ -62,16 +59,11 @@ class AddWorkerState {
       problem: clearProblem ? null : (problem ?? this.problem),
       done: done ?? this.done,
       addedName: addedName ?? this.addedName,
-      wageNotSaved: wageNotSaved ?? this.wageNotSaved,
     );
   }
 }
 
 /// Add worker is online only, by design.
-///
-/// The data layer's `addWorker` does not take a daily wage, although the server
-/// accepts one. The wage keypad still collects it, and [AddWorkerState.wageNotSaved]
-/// makes the sheet say so instead of quietly losing the figure.
 class AddWorkerCubit extends Cubit<AddWorkerState> {
   AddWorkerCubit(this._services)
     : super(AddWorkerState(online: _services.connectivity.isOnline)) {
@@ -119,18 +111,20 @@ class AddWorkerCubit extends Cubit<AddWorkerState> {
 
     emit(state.copyWith(submitting: true, clearProblem: true));
     try {
-      await _services.attendance.addWorker(name: name, trade: trade);
-      final Money? wage = Money.tryParse(state.wageText);
+      await _services.attendance.addWorker(
+        name: name,
+        trade: trade,
+        dailyWage: Money.tryParse(state.wageText),
+      );
+      emit(state.copyWith(submitting: false, done: true, addedName: name));
+    } on OfflineFailure {
       emit(
         state.copyWith(
           submitting: false,
-          done: true,
-          addedName: name,
-          wageNotSaved: wage != null && !wage.isZero,
+          online: false,
+          problem: AddWorkerProblem.offline,
         ),
       );
-    } on OfflineFailure {
-      emit(state.copyWith(submitting: false, online: false, problem: AddWorkerProblem.offline));
     } on ValidationFailure {
       emit(state.copyWith(submitting: false, problem: AddWorkerProblem.failed));
     } on RecordLocked {

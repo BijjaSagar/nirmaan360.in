@@ -120,7 +120,6 @@
   "attendanceSheetWage": "दैनिक मज़दूरी",
   "attendanceSheetWageFor": "{name} की दैनिक मज़दूरी",
   "attendanceSheetWageHelper": "पता न हो तो खाली छोड़ दें।",
-  "attendanceSheetWageNotSaved": "{name} जोड़े गए। मज़दूरी अभी वेबसाइट पर भरें।",
   "attendanceTitle": "हाज़िरी",
   "attendanceTodayTitle": "आज की हाज़िरी",
   "commonBack": "वापस",

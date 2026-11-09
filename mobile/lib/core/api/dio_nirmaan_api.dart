@@ -186,6 +186,7 @@ class DioNirmaanApi implements NirmaanApi {
     required String trade,
     String? phone,
     String type = 'own',
+    String? dailyWage,
   }) async {
     final body = await _call(
       () => _dio.post(
@@ -196,6 +197,7 @@ class DioNirmaanApi implements NirmaanApi {
           'trade': trade,
           'phone': phone,
           'type': type,
+          'daily_wage': ?dailyWage,
         },
       ),
     );

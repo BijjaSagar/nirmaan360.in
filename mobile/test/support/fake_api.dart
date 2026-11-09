@@ -1004,6 +1004,7 @@ class FakeApi implements NirmaanApi {
     required String trade,
     String? phone,
     String type = 'own',
+    String? dailyWage,
   }) async {
     _guard();
     final existing = _workersByUuid[clientUuid];
@@ -1014,6 +1015,7 @@ class FakeApi implements NirmaanApi {
       'phone': phone,
       'trade': trade,
       'type': type,
+      'daily_wage': dailyWage ?? '0.00',
       'is_active': true,
       'updated_at': _stampNow(),
     };

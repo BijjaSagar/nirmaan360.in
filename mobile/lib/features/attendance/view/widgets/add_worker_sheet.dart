@@ -36,11 +36,9 @@ class _AddWorkerSheet extends StatelessWidget {
     Navigator.of(context).pop();
     showPaperToast(
       parentContext,
-      state.wageNotSaved
-          ? l.attendanceSheetWageNotSaved(state.addedName)
-          : l.attendanceSheetDone(state.addedName),
-      kind: state.wageNotSaved ? PaperToastKind.warning : PaperToastKind.success,
-      icon: state.wageNotSaved ? Icons.warning_amber : Icons.person_add_alt_1,
+      l.attendanceSheetDone(state.addedName),
+      kind: PaperToastKind.success,
+      icon: Icons.person_add_alt_1,
       duration: const Duration(seconds: 4),
     );
   }

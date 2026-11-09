@@ -432,11 +432,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceSheetWageHelper => 'Leave blank if you do not know it.';
 
   @override
-  String attendanceSheetWageNotSaved(String name) {
-    return '$name added. Set the wage on the website for now.';
-  }
-
-  @override
   String get attendanceTitle => 'Attendance';
 
   @override

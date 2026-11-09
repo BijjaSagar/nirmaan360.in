@@ -120,7 +120,6 @@
   "attendanceSheetWage": "दैनिक मजुरी",
   "attendanceSheetWageFor": "{name} यांची दैनिक मजुरी",
   "attendanceSheetWageHelper": "माहीत नसेल तर रिकामे ठेवा.",
-  "attendanceSheetWageNotSaved": "{name} जोडले. मजुरी सध्या वेबसाइटवर भरा.",
   "attendanceTitle": "हजेरी",
   "attendanceTodayTitle": "आजची हजेरी",
   "commonBack": "मागे",

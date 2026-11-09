@@ -150,7 +150,7 @@ void main() {
     expect(cubit.state.done, isFalse);
   });
 
-  test('add worker online creates the worker and is honest about the wage', () async {
+  test('add worker online creates the worker and sends the wage', () async {
     final cubit = AddWorkerCubit(app.services);
     addTearDown(cubit.close);
 
@@ -161,7 +161,8 @@ void main() {
     await cubit.save();
 
     expect(cubit.state.done, isTrue);
-    expect(cubit.state.wageNotSaved, isTrue);
-    expect(app.api.workers.where((w) => w['name'] == 'New Mason'), hasLength(1));
+    final added = app.api.workers.where((w) => w['name'] == 'New Mason');
+    expect(added, hasLength(1));
+    expect(added.single['daily_wage'], '650.00');
   });
 }

@@ -246,6 +246,7 @@ class AttendanceRepository {
     required String trade,
     String? phone,
     String type = 'own',
+    Money? dailyWage,
   }) async {
     if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
 
@@ -262,6 +263,7 @@ class AttendanceRepository {
       trade: trade,
       phone: phone,
       type: type,
+      dailyWage: dailyWage?.toWire(),
     );
 
     await _db.deleteMeta(actionKey);

@@ -221,15 +221,5 @@
         "type": "String"
       }
     }
-  },
-  "attendanceSheetWageNotSaved": {
-    "en": "{name} added. Set the wage on the website for now.",
-    "mr": "{name} जोडले. मजुरी सध्या वेबसाइटवर भरा.",
-    "hi": "{name} जोड़े गए। मज़दूरी अभी वेबसाइट पर भरें।",
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
   }
 }
