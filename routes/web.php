@@ -200,6 +200,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::patch('/team/{user}', [TeamController::class, 'update'])->name('team.update');
     });
 
+    // Each module adds its own screens in routes/modules/<name>.php. See docs/MODULES.md.
+    foreach (glob(base_path('routes/modules/*.php')) ?: [] as $moduleRoutes) {
+        require $moduleRoutes;
+    }
+
     Route::middleware('can:settings.manage')->group(function () {
         Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
         Route::patch('/settings/organization', [SettingsController::class, 'updateOrganization'])->name('settings.organization');

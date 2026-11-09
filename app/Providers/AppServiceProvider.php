@@ -6,6 +6,7 @@ use App\Models\Approval;
 use App\Models\User;
 use App\Services\ApprovalService;
 use App\Support\DynamicTranslator;
+use App\Support\Modules;
 use App\Support\PlatformSettings;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -36,6 +37,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Every ability is a module.action permission string from config/buildos.php.
+        Modules::registerTranslations();
+        Modules::apply();
+
         Gate::before(fn (User $user, string $ability) => $user->hasPermission($ability) ? true : null);
 
         View::composer('layouts.app', function ($view) {

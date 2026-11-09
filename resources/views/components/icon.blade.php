@@ -44,5 +44,6 @@
         'chevron' => '<path d="m6 9 6 6 6-6"/>',
         'layers' =>'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
     ];
+    $icons = [...$icons, ...\App\Support\Modules::icons()];
 @endphp
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" {{ $attributes->merge(['class' => 'size-5 shrink-0']) }}>{!! $icons[$name] ?? '' !!}</svg>

@@ -74,9 +74,24 @@
                                 <a href="{{ route('ra-bills.index', $project) }}" class="{{ $nav('ra-bills.*') }}"><span class="nav-no">09</span>{{ __('RA bills') }}</a>
                             @endcan
                         @endif
+                        @foreach (\App\Support\Modules::nav('project', $organization) as $item)
+                            @if (! $item['can'] || auth()->user()->can($item['can']))
+                                <a href="{{ route($item['route'], $project) }}" class="{{ $nav($item['active']) }}"><span class="nav-no">{{ str_pad((string) ($loop->iteration + 9), 2, '0', STR_PAD_LEFT) }}</span>{{ __($item['label']) }}</a>
+                            @endif
+                        @endforeach
                     </div>
                 </div>
             @endif
+
+            @php $moduleGroups = collect(\App\Support\Modules::nav('company', $organization))->filter(fn ($item) => ! $item['can'] || auth()->user()->can($item['can']))->groupBy('group'); @endphp
+            @foreach ($moduleGroups as $group => $items)
+                <div class="space-y-0.5">
+                    @if ($group)<p class="eyebrow px-2.5 pb-1 text-[10px] text-paper/45">{{ __($group) }}</p>@endif
+                    @foreach ($items as $item)
+                        <a href="{{ route($item['route']) }}" class="{{ $nav($item['active']) }}">{{ __($item['label']) }}</a>
+                    @endforeach
+                </div>
+            @endforeach
 
             <div class="space-y-0.5">
                 <p class="eyebrow px-2.5 pb-1 text-[10px] text-paper/45">{{ __('Company') }}</p>
