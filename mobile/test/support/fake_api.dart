@@ -1270,6 +1270,179 @@ class FakeApi implements NirmaanApi {
     return Uint8List.fromList(const [4, 5, 6]);
   }
 
+  // Site progress ------------------------------------------------------------
+
+  Map<String, dynamic> progressSummaryBody = {'work_percent': '40.00', 'time_percent': '55.00', 'lag': '15.00', 'status': 'behind', 'open_pending': 1};
+  List<Row> progressFloorRows = [
+    {
+      'id': 11,
+      'name': 'First floor',
+      'parent_id': null,
+      'percent': '50.00',
+      'targets': 2,
+      'pending': 1,
+      'mep_pending': 0,
+      'children': [
+        {'id': 21, 'name': 'Flat 101', 'parent_id': 11, 'percent': '25.00', 'targets': 1, 'pending': 0, 'mep_pending': 0, 'children': <Row>[]},
+      ],
+    },
+  ];
+  List<Row> progressItemRows = [
+    {'id': 1, 'section': 'RCC', 'code': '2.1', 'description': 'RCC slab', 'unit': 'cum', 'qty': '100.000', 'done_qty': '40.000', 'balance_qty': '60.000', 'percent': '40.00'},
+  ];
+  List<Row> progressPendingRows = [
+    {'id': 70, 'item_code': '2.1', 'item_description': 'RCC slab', 'floor_name': 'First floor', 'remark': 'Shuttering left', 'work_date': '2026-11-08', 'entered_by_name': 'Amit'},
+  ];
+  Map<String, dynamic> stageMatrixBody = {
+    'trades': [
+      {
+        'key': 'plumbing',
+        'label': 'Plumbing',
+        'stages': [
+          {'key': 'core_cutting', 'no': 1, 'label': 'Core cutting', 'hint': null, 'optional': false},
+          {'key': 'drainage', 'no': 2, 'label': 'Drainage line', 'hint': null, 'optional': true},
+        ],
+      },
+    ],
+    'statuses': [
+      {'key': 'not_started', 'label': 'Not started'},
+      {'key': 'in_progress', 'label': 'In progress'},
+      {'key': 'done', 'label': 'Done'},
+      {'key': 'pending', 'label': 'Pending'},
+      {'key': 'na', 'label': 'Not applicable'},
+    ],
+    'rows': [
+      {
+        'id': 11,
+        'name': 'First floor',
+        'label': 'First floor',
+        'parent_id': null,
+        'level': 0,
+        'cells': {
+          'plumbing': {
+            'core_cutting': {'id': 5, 'status': 'done', 'remark': null},
+            'drainage': {'id': null, 'status': 'not_started', 'remark': null},
+          },
+        },
+      },
+      {
+        'id': 21,
+        'name': 'Flat 101',
+        'label': 'First floor › Flat 101',
+        'parent_id': 11,
+        'level': 1,
+        'cells': {
+          'plumbing': {
+            'core_cutting': {'id': null, 'status': 'pending', 'remark': 'Sleeve missing'},
+            'drainage': {'id': null, 'status': 'na', 'remark': null},
+          },
+        },
+      },
+    ],
+  };
+  Row floorProgressBody = {
+    'id': 11,
+    'name': 'First floor',
+    'parent_id': null,
+    'percent': '50.00',
+    'targets': 2,
+    'pending': 1,
+    'mep_pending': 0,
+    'children': <Row>[],
+    'lines': [
+      {'boq_item_id': 1, 'code': '2.1', 'description': 'RCC slab', 'unit': 'cum', 'planned_qty': '50.000', 'done_qty': '25.000', 'balance_qty': '25.000', 'percent': '50.00'},
+    ],
+    'pending_entries': <Row>[],
+  };
+
+  /// Everything posted, by `client_uuid`: a repeat must not add a second.
+  final Map<String, Row> progressPosts = {};
+  final Map<String, Row> stagePosts = {};
+  final Map<String, Row> resolvePosts = {};
+  final List<(String, String)> fieldPhotos = [];
+  ApiFailure? failNextProgressPost;
+
+  /// The next post is stored, then its reply is lost.
+  bool loseNextProgressReply = false;
+  var _progressSerial = 900;
+
+  Map<String, dynamic> _storeProgress(Map<String, Row> store, Map<String, dynamic> body) {
+    _guard();
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    final uuid = body['client_uuid'] as String;
+    final row = store.putIfAbsent(uuid, () => {...body, 'id': _progressSerial++});
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return row;
+  }
+
+  @override
+  Future<Map<String, dynamic>> progressSummary(int projectId) async {
+    _guard();
+    return progressSummaryBody;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> progressFloors(int projectId) async {
+    _guard();
+    return progressFloorRows;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> progressItems(int projectId) async {
+    _guard();
+    return progressItemRows;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> progressPending(int projectId) async {
+    _guard();
+    return progressPendingRows;
+  }
+
+  @override
+  Future<Map<String, dynamic>> stageMatrix(int projectId) async {
+    _guard();
+    return stageMatrixBody;
+  }
+
+  @override
+  Future<Map<String, dynamic>> floorProgress(int floorId) async {
+    _guard();
+    return floorProgressBody;
+  }
+
+  @override
+  Future<Map<String, dynamic>> postProgressEntry(int projectId, Map<String, dynamic> body) async =>
+      _storeProgress(progressPosts, body);
+
+  @override
+  Future<Map<String, dynamic>> resolveProgress(int entryId, Map<String, dynamic> body) async =>
+      _storeProgress(resolvePosts, {...body, 'entry_id': entryId});
+
+  @override
+  Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body) async =>
+      _storeProgress(stagePosts, body);
+
+  @override
+  Future<Map<String, dynamic>> uploadFieldPhoto(
+    String path, {
+    required String filePath,
+    required String clientUuid,
+    String? caption,
+    String? takenAt,
+  }) async {
+    _guard();
+    fieldPhotos.add((path, clientUuid));
+    return {'id': _progressSerial++, 'client_uuid': clientUuid};
+  }
+
   /// Server time as a wire timestamp, advancing one second per call. Use it
   /// for rows a test adds by hand, so a delta pull picks them up.
   String stampNow() => _stampNow();

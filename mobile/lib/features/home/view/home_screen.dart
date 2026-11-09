@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../site_progress/data/progress_models.dart' show percentText;
 import '../../../app/app_format.dart';
 import '../../../app/app_gate.dart';
 import '../../../app/routes.dart';
@@ -150,6 +151,14 @@ class _HomeView extends StatelessWidget {
           // the page is more urgent.
           emphasized: allowEmphasis && data?.dprState == DprDayState.notStarted && can('dpr.create'),
           onTap: () => _openReport(context, data, can('dpr.create')),
+        ),
+      if (can('progress.view') && (user?.features.contains('site_control') ?? false))
+        _TileSpec(
+          title: t.shellTileProgress,
+          value: percentText(state.siteWorkPercent),
+          caption: t.shellCaptionWorkDone,
+          icon: Icons.stacked_bar_chart,
+          onTap: () => context.push(Routes.progress),
         ),
       if (can('attendance.view'))
         _TileSpec(

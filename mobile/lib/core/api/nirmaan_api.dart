@@ -194,4 +194,36 @@ abstract interface class NirmaanApi {
   Future<Uint8List> dprPhotoBytes(int photoId);
 
   Future<Uint8List> pettyBillBytes(int entryId);
+
+  // Site progress. Reads fill a cache on the phone. Writes are replayed from
+  // the outbox with their `client_uuid`, so a retry cannot record work twice.
+
+  Future<Map<String, dynamic>> progressSummary(int projectId);
+
+  Future<List<Map<String, dynamic>>> progressFloors(int projectId);
+
+  Future<List<Map<String, dynamic>>> progressItems(int projectId);
+
+  Future<List<Map<String, dynamic>>> progressPending(int projectId);
+
+  Future<Map<String, dynamic>> stageMatrix(int projectId);
+
+  Future<Map<String, dynamic>> floorProgress(int floorId);
+
+  /// Returns the stored entry.
+  Future<Map<String, dynamic>> postProgressEntry(int projectId, Map<String, dynamic> body);
+
+  Future<Map<String, dynamic>> resolveProgress(int entryId, Map<String, dynamic> body);
+
+  /// Returns the stored cell.
+  Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body);
+
+  /// [path] is the photos endpoint of the entry or the stage cell.
+  Future<Map<String, dynamic>> uploadFieldPhoto(
+    String path, {
+    required String filePath,
+    required String clientUuid,
+    String? caption,
+    String? takenAt,
+  });
 }

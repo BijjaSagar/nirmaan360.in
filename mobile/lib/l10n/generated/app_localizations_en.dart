@@ -1789,6 +1789,246 @@ class AppLocalizationsEn extends AppLocalizations {
       'A wallet can be created only online.';
 
   @override
+  String get progressAdd => 'Add today\'s work';
+
+  @override
+  String get progressBeforeFinishing => 'Before finishing check';
+
+  @override
+  String progressBehind(String percent) {
+    return 'Behind by $percent';
+  }
+
+  @override
+  String get progressFinishingHint =>
+      'Read this before plaster, POP or paint starts.';
+
+  @override
+  String get progressFinishingPending => 'Pending work';
+
+  @override
+  String get progressFinishingUnfinished => 'Not finished yet';
+
+  @override
+  String get progressFloorBalance => 'Balance';
+
+  @override
+  String get progressFloorDone => 'Done';
+
+  @override
+  String get progressFloorFlats => 'Flats';
+
+  @override
+  String get progressFloorLines => 'Work on this floor';
+
+  @override
+  String get progressFloorNoLines =>
+      'No quantities planned for this floor yet.';
+
+  @override
+  String get progressFloorOffline =>
+      'Connect to the internet once to see this floor.';
+
+  @override
+  String get progressFloorPendingHeading => 'Pending here';
+
+  @override
+  String get progressFloorPlanned => 'Planned';
+
+  @override
+  String get progressFloorStages => 'Plumbing and electrical stages';
+
+  @override
+  String get progressFloorTitle => 'Floor progress';
+
+  @override
+  String progressFormBalance(String qty) {
+    return 'Balance $qty';
+  }
+
+  @override
+  String get progressFormDate => 'Date';
+
+  @override
+  String get progressFormFloor => 'Floor or flat';
+
+  @override
+  String get progressFormFloorNone => 'Whole project';
+
+  @override
+  String get progressFormItem => 'BOQ item';
+
+  @override
+  String get progressFormItemChoose => 'Choose an item';
+
+  @override
+  String get progressFormItemNone => 'No item matches';
+
+  @override
+  String get progressFormItemSearch => 'Search by code or name';
+
+  @override
+  String get progressFormKindPending => 'Only pending';
+
+  @override
+  String get progressFormKindWork => 'Work done';
+
+  @override
+  String get progressFormOverBalance =>
+      'This is more than the BOQ balance. You can still save it.';
+
+  @override
+  String get progressFormPendingRemark => 'What is pending?';
+
+  @override
+  String get progressFormPhoto => 'Add photo';
+
+  @override
+  String get progressFormQty => 'Quantity done';
+
+  @override
+  String get progressFormQtyRequired => 'Enter the quantity done';
+
+  @override
+  String get progressFormRemark => 'Remark (optional)';
+
+  @override
+  String get progressFormRemarkRequired => 'Say what is pending';
+
+  @override
+  String get progressFormRemovePhoto => 'Remove photo';
+
+  @override
+  String get progressFormSave => 'Save work';
+
+  @override
+  String get progressFormTitle => 'Add work';
+
+  @override
+  String get progressFormToday => 'Today';
+
+  @override
+  String get progressFormYesterday => 'Yesterday';
+
+  @override
+  String get progressLoading => 'Loading progress';
+
+  @override
+  String get progressNoDataMessage =>
+      'Connect to the internet once to load this project\'s progress. After that it works offline.';
+
+  @override
+  String get progressNoDataTitle => 'Not loaded yet';
+
+  @override
+  String get progressNoFloorsMessage =>
+      'Ask your office to add floors and flats on the website.';
+
+  @override
+  String get progressNoFloorsTitle => 'No floors added yet';
+
+  @override
+  String get progressNoPendingMessage =>
+      'Items marked pending on site will show here.';
+
+  @override
+  String get progressNoPendingTitle => 'Nothing pending';
+
+  @override
+  String get progressNoProjectMessage => 'Choose a project first.';
+
+  @override
+  String get progressNoProjectTitle => 'No project selected';
+
+  @override
+  String get progressNotSent => 'Not sent yet';
+
+  @override
+  String get progressOnTrack => 'On track';
+
+  @override
+  String progressPendingCount(int count) {
+    return '$count pending';
+  }
+
+  @override
+  String get progressReadyMessage =>
+      'All plumbing and electrical stages are done here.';
+
+  @override
+  String get progressReadyTitle => 'Ready for finishing';
+
+  @override
+  String get progressRefreshFailed =>
+      'Could not refresh. Showing what this phone has.';
+
+  @override
+  String get progressResolveRemark => 'Remark (optional)';
+
+  @override
+  String get progressResolveSave => 'Resolve';
+
+  @override
+  String get progressResolveTitle => 'Mark as resolved';
+
+  @override
+  String get progressResolveWait =>
+      'This entry has not reached the office yet. Try again after it is sent.';
+
+  @override
+  String get progressResolved => 'Marked as resolved';
+
+  @override
+  String get progressSaveFailed => 'Could not save. Please try again.';
+
+  @override
+  String get progressSavedOffline =>
+      'Saved on this phone. It will send when you are online.';
+
+  @override
+  String get progressSavedOnline => 'Saved. Sending now.';
+
+  @override
+  String get progressStageEarlierPending => 'An earlier stage is still pending';
+
+  @override
+  String get progressStageNote => 'Note (optional)';
+
+  @override
+  String get progressStageSave => 'Save';
+
+  @override
+  String get progressStageSaved => 'Stage saved';
+
+  @override
+  String get progressStageStatus => 'Status';
+
+  @override
+  String progressStagesDone(int done, int total) {
+    return '$done of $total done';
+  }
+
+  @override
+  String get progressTabFloors => 'Floors';
+
+  @override
+  String get progressTabPending => 'Pending';
+
+  @override
+  String get progressTabStages => 'Stages';
+
+  @override
+  String progressTimeUsed(String percent) {
+    return 'Time used $percent';
+  }
+
+  @override
+  String get progressTitle => 'Site progress';
+
+  @override
+  String get progressWorkDone => 'Work done';
+
+  @override
   String get shellCaptionMarked => 'marked';
 
   @override
@@ -1796,6 +2036,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellCaptionToday => 'today';
+
+  @override
+  String get shellCaptionWorkDone => 'work done';
 
   @override
   String get shellDiscardBody =>
@@ -2185,6 +2428,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellTilePetty => 'Petty cash';
 
   @override
+  String get shellTileProgress => 'Progress';
+
+  @override
   String shellTimeDays(int count) {
     return '$count days ago';
   }
@@ -2364,4 +2610,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypePettyCash => 'Petty cash entry';
+
+  @override
+  String get syncTypeProgress => 'Site progress';
+
+  @override
+  String get syncTypeProgressPhoto => 'Progress photo';
+
+  @override
+  String get syncTypeProgressResolve => 'Pending item resolved';
+
+  @override
+  String get syncTypeStage => 'Stage update';
+
+  @override
+  String get syncTypeStagePhoto => 'Stage photo';
 }

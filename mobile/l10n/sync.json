@@ -33,5 +33,10 @@
   "syncTypeIssueStatus": { "en": "Issue status", "mr": "समस्येची स्थिती", "hi": "समस्या की स्थिति" },
   "syncTypeAttendance": { "en": "Attendance", "mr": "हजेरी", "hi": "हाज़िरी" },
   "syncTypePettyCash": { "en": "Petty cash entry", "mr": "किरकोळ रोख नोंद", "hi": "फुटकर नकद प्रविष्टि" },
-  "syncTypePettyBill": { "en": "Bill photo", "mr": "बिलाचा फोटो", "hi": "बिल की फ़ोटो" }
+  "syncTypePettyBill": { "en": "Bill photo", "mr": "बिलाचा फोटो", "hi": "बिल की फ़ोटो" },
+  "syncTypeProgress": { "en": "Site progress", "mr": "साइट प्रगती", "hi": "साइट प्रगति" },
+  "syncTypeProgressResolve": { "en": "Pending item resolved", "mr": "बाकी काम पूर्ण", "hi": "बाकी काम पूरा" },
+  "syncTypeProgressPhoto": { "en": "Progress photo", "mr": "प्रगतीचा फोटो", "hi": "प्रगति की फ़ोटो" },
+  "syncTypeStage": { "en": "Stage update", "mr": "टप्प्याची नोंद", "hi": "चरण की जानकारी" },
+  "syncTypeStagePhoto": { "en": "Stage photo", "mr": "टप्प्याचा फोटो", "hi": "चरण की फ़ोटो" }
 }

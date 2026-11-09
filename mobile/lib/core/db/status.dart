@@ -34,4 +34,10 @@ abstract final class MetaKey {
   static const sessionUser = 'session.user';
   static const selectedProject = 'selected_project';
   static const locale = 'locale';
+
+  /// The last site progress this phone read for a project, as JSON.
+  static String progressOverview(int projectId) => 'progress.overview.$projectId';
+
+  /// The floor and item last used on the progress form.
+  static String progressLastPick(int projectId) => 'progress.last_pick.$projectId';
 }

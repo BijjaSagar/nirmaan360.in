@@ -53,6 +53,10 @@ class SyncEngine {
   /// Uploads answered with 404 this many times stop retrying and ask a person.
   final int parentMissingAttempts;
 
+  /// Runs after a successful pull. Failures here never fail the sync. The
+  /// argument is true when this run sent something.
+  Future<void> Function(bool sentSomething)? afterPull;
+
   /// Used when a 429 has no usable `Retry-After`: the limit's one-minute window.
   static const _defaultRateLimitWait = Duration(seconds: 60);
 
@@ -165,6 +169,12 @@ class SyncEngine {
 
       await _pull();
       _online = true;
+
+      try {
+        await afterPull?.call(_sentThisRun > 0);
+      } on Object catch (e) {
+        debugPrint('After-pull step failed: $e');
+      }
 
       final now = _clock.now();
       await _db.writeMeta(
@@ -287,12 +297,17 @@ class SyncEngine {
       if (heads.isEmpty) return;
 
       final batch = heads
-          .where((r) => !r.type.isFile)
+          .where((r) => !r.type.isFile && !r.type.isDirect)
           .take(batchSize)
           .toList();
       if (batch.isNotEmpty) {
         _setPhase(SyncPhase.pushing, _currentProgress());
         await _sendBatch(batch, deferredGroups);
+      }
+
+      for (final row in heads.where((r) => r.type.isDirect)) {
+        _setPhase(SyncPhase.pushing, _currentProgress(label: row.title));
+        await _sendDirect(row);
       }
 
       final files = heads.where((r) => r.type.isFile).toList();
@@ -437,6 +452,11 @@ class SyncEngine {
         return row?.serverId;
       case OutboxType.dprPhoto:
       case OutboxType.pettyBill:
+      case OutboxType.progressEntry:
+      case OutboxType.progressResolve:
+      case OutboxType.progressPhoto:
+      case OutboxType.stageCell:
+      case OutboxType.stagePhoto:
         return null;
     }
   }
@@ -558,8 +578,136 @@ class SyncEngine {
             );
       case OutboxType.dprPhoto:
       case OutboxType.pettyBill:
+      case OutboxType.progressEntry:
+      case OutboxType.progressResolve:
+      case OutboxType.progressPhoto:
+      case OutboxType.stageCell:
+      case OutboxType.stagePhoto:
         break;
     }
+  }
+
+  // Direct posts --------------------------------------------------------------
+
+  /// Sends one site progress row to its own endpoint.
+  ///
+  /// A row whose answer is lost is sent again with the same `client_uuid`, and
+  /// the server returns the first copy.
+  Future<void> _sendDirect(OutboxRow row) async {
+    final relativePath = row.filePath;
+    if (relativePath != null && !await _attachments.exists(relativePath)) {
+      await _outbox.markSending([row.id], _clock.now());
+      await _outbox.markAttention(
+        row.id,
+        resultStatus: 'error',
+        code: AttentionCode.fileMissing,
+        reason: 'The photo file is missing from this phone.',
+      );
+      _sentThisRun++;
+      _notifyProgress();
+      return;
+    }
+
+    await _outbox.markSending([row.id], _clock.now());
+
+    final Map<String, dynamic> stored;
+    try {
+      stored = await _postDirect(row);
+    } on ValidationFailure catch (e) {
+      await _outbox.markAttention(
+        row.id,
+        resultStatus: 'error',
+        code: AttentionCode.validation,
+        reason: _validationReason(e.errors, e.message),
+        errors: e.errors,
+      );
+      _sentThisRun++;
+      _notifyProgress();
+      return;
+    } on ServerFailure catch (e) {
+      if (e.statusCode == 403) {
+        await _outbox.markAttention(
+          row.id,
+          resultStatus: 'forbidden',
+          code: AttentionCode.forbidden,
+          reason: 'You do not have permission to do this.',
+        );
+      } else if (e.statusCode == 404) {
+        await _markNotFound(row);
+      } else {
+        await _outbox.releaseSending([row.id]);
+        rethrow;
+      }
+      _sentThisRun++;
+      _notifyProgress();
+      return;
+    } catch (_) {
+      await _outbox.releaseSending([row.id]);
+      rethrow;
+    }
+
+    _online = true;
+    final serverId = (stored['id'] as num?)?.toInt();
+    await _db.transaction(() async {
+      if (!await _outbox.markDone(row.id, 'created', _clock.now())) return;
+      if (serverId != null) await _outbox.setParentId(row.recordUuid, serverId);
+    });
+    _sentThisRun++;
+    _notifyProgress();
+
+    // Only now, with the upload confirmed and recorded, is the file removed.
+    if (relativePath != null) await _attachments.delete(relativePath);
+  }
+
+  Future<Map<String, dynamic>> _postDirect(OutboxRow row) async {
+    final data = (jsonDecode(row.payload) as Map).cast<String, dynamic>();
+    final body = <String, dynamic>{...data, 'client_uuid': row.wireUuid};
+
+    Future<Map<String, dynamic>> photo(String path) async => _api.uploadFieldPhoto(
+      path,
+      filePath: await _attachments.absolutePath(row.filePath!),
+      clientUuid: row.wireUuid,
+      caption: data['caption'] as String?,
+      takenAt: data['taken_at'] as String?,
+    );
+
+    switch (row.type) {
+      case OutboxType.progressEntry:
+        return _api.postProgressEntry(row.projectId, body);
+      case OutboxType.progressResolve:
+        final entryId = (data['entry_id'] as num).toInt();
+        return _api.resolveProgress(entryId, {'remark': data['remark'], 'client_uuid': row.wireUuid});
+      case OutboxType.stageCell:
+        return _api.postStageCell(row.projectId, body);
+      case OutboxType.progressPhoto:
+        return photo('/progress/entries/${_parentId(data)}/photos');
+      case OutboxType.stagePhoto:
+        return photo('/stage-cells/${_parentId(data)}/photos');
+      default:
+        throw StateError('${row.type} is not a direct row.');
+    }
+  }
+
+  /// Set when the parent row was accepted, which the group order guarantees
+  /// comes first. Without it the server has nothing to attach the file to.
+  int _parentId(Map<String, dynamic> data) {
+    final id = data['parent_id'];
+    if (id is num) return id.toInt();
+    throw const ServerFailure('The parent record was not found.', statusCode: 404);
+  }
+
+  Future<void> _markNotFound(OutboxRow row) async {
+    final project = await (_db.select(_db.projects)
+          ..where((t) => t.id.equals(row.projectId)))
+        .getSingleOrNull();
+    await _outbox.markAttention(
+      row.id,
+      resultStatus: 'error',
+      code: project == null ? AttentionCode.projectGone : AttentionCode.parentMissing,
+      reason: project == null
+          ? 'You no longer have access to this project.'
+          : 'The record this belongs to was not found on the server.',
+    );
   }
 
   // Uploads -------------------------------------------------------------------

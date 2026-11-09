@@ -1750,6 +1750,245 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pettyCashWalletOfflineDetail => 'वॉलेट सिर्फ़ ऑनलाइन बनता है।';
 
   @override
+  String get progressAdd => 'आज का काम जोड़ें';
+
+  @override
+  String get progressBeforeFinishing => 'फ़िनिशिंग से पहले की जाँच';
+
+  @override
+  String progressBehind(String percent) {
+    return '$percent पीछे';
+  }
+
+  @override
+  String get progressFinishingHint =>
+      'प्लास्टर, POP या पेंट शुरू करने से पहले यह पढ़ें।';
+
+  @override
+  String get progressFinishingPending => 'बाकी काम';
+
+  @override
+  String get progressFinishingUnfinished => 'अभी पूरा नहीं';
+
+  @override
+  String get progressFloorBalance => 'बाकी';
+
+  @override
+  String get progressFloorDone => 'पूरा';
+
+  @override
+  String get progressFloorFlats => 'फ़्लैट';
+
+  @override
+  String get progressFloorLines => 'इस मंज़िल का काम';
+
+  @override
+  String get progressFloorNoLines => 'इस मंज़िल के लिए अभी मात्रा तय नहीं है।';
+
+  @override
+  String get progressFloorOffline =>
+      'यह मंज़िल देखने के लिए एक बार इंटरनेट से जुड़ें।';
+
+  @override
+  String get progressFloorPendingHeading => 'यहाँ बाकी';
+
+  @override
+  String get progressFloorPlanned => 'योजना';
+
+  @override
+  String get progressFloorStages => 'प्लंबिंग और इलेक्ट्रिकल चरण';
+
+  @override
+  String get progressFloorTitle => 'मंज़िल की प्रगति';
+
+  @override
+  String progressFormBalance(String qty) {
+    return 'बाकी $qty';
+  }
+
+  @override
+  String get progressFormDate => 'तारीख';
+
+  @override
+  String get progressFormFloor => 'मंज़िल या फ़्लैट';
+
+  @override
+  String get progressFormFloorNone => 'पूरा प्रोजेक्ट';
+
+  @override
+  String get progressFormItem => 'BOQ आइटम';
+
+  @override
+  String get progressFormItemChoose => 'आइटम चुनें';
+
+  @override
+  String get progressFormItemNone => 'कोई आइटम नहीं मिला';
+
+  @override
+  String get progressFormItemSearch => 'कोड या नाम से खोजें';
+
+  @override
+  String get progressFormKindPending => 'सिर्फ़ बाकी';
+
+  @override
+  String get progressFormKindWork => 'काम हुआ';
+
+  @override
+  String get progressFormOverBalance =>
+      'यह BOQ के बाकी से ज़्यादा है। फिर भी सेव कर सकते हैं।';
+
+  @override
+  String get progressFormPendingRemark => 'क्या बाकी है?';
+
+  @override
+  String get progressFormPhoto => 'फ़ोटो जोड़ें';
+
+  @override
+  String get progressFormQty => 'हुई मात्रा';
+
+  @override
+  String get progressFormQtyRequired => 'हुई मात्रा लिखें';
+
+  @override
+  String get progressFormRemark => 'टिप्पणी (वैकल्पिक)';
+
+  @override
+  String get progressFormRemarkRequired => 'क्या बाकी है लिखें';
+
+  @override
+  String get progressFormRemovePhoto => 'फ़ोटो हटाएँ';
+
+  @override
+  String get progressFormSave => 'काम सेव करें';
+
+  @override
+  String get progressFormTitle => 'काम जोड़ें';
+
+  @override
+  String get progressFormToday => 'आज';
+
+  @override
+  String get progressFormYesterday => 'कल';
+
+  @override
+  String get progressLoading => 'प्रगति लोड हो रही है';
+
+  @override
+  String get progressNoDataMessage =>
+      'इस प्रोजेक्ट की प्रगति लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद ऑफ़लाइन भी चलेगा।';
+
+  @override
+  String get progressNoDataTitle => 'अभी लोड नहीं हुआ';
+
+  @override
+  String get progressNoFloorsMessage =>
+      'ऑफ़िस से वेबसाइट पर मंज़िलें और फ़्लैट जोड़ने को कहें।';
+
+  @override
+  String get progressNoFloorsTitle => 'अभी मंज़िलें नहीं जोड़ी गईं';
+
+  @override
+  String get progressNoPendingMessage =>
+      'साइट पर बाकी लिखा गया काम यहाँ दिखेगा।';
+
+  @override
+  String get progressNoPendingTitle => 'कुछ बाकी नहीं';
+
+  @override
+  String get progressNoProjectMessage => 'पहले प्रोजेक्ट चुनें।';
+
+  @override
+  String get progressNoProjectTitle => 'प्रोजेक्ट नहीं चुना गया';
+
+  @override
+  String get progressNotSent => 'अभी भेजा नहीं';
+
+  @override
+  String get progressOnTrack => 'समय पर';
+
+  @override
+  String progressPendingCount(int count) {
+    return '$count बाकी';
+  }
+
+  @override
+  String get progressReadyMessage =>
+      'यहाँ के सभी प्लंबिंग और इलेक्ट्रिकल चरण पूरे हैं।';
+
+  @override
+  String get progressReadyTitle => 'फ़िनिशिंग के लिए तैयार';
+
+  @override
+  String get progressRefreshFailed =>
+      'ताज़ा जानकारी नहीं मिली। फ़ोन पर जो है वही दिखा रहे हैं।';
+
+  @override
+  String get progressResolveRemark => 'टिप्पणी (वैकल्पिक)';
+
+  @override
+  String get progressResolveSave => 'पूरा करें';
+
+  @override
+  String get progressResolveTitle => 'पूरा हुआ लिखें';
+
+  @override
+  String get progressResolveWait =>
+      'यह एंट्री अभी ऑफ़िस नहीं पहुँची। भेजे जाने के बाद फिर कोशिश करें।';
+
+  @override
+  String get progressResolved => 'पूरा लिख दिया';
+
+  @override
+  String get progressSaveFailed => 'सेव नहीं हुआ। फिर से कोशिश करें।';
+
+  @override
+  String get progressSavedOffline =>
+      'इस फ़ोन पर सेव हो गया। इंटरनेट आने पर भेज दिया जाएगा।';
+
+  @override
+  String get progressSavedOnline => 'सेव हो गया। भेज रहे हैं।';
+
+  @override
+  String get progressStageEarlierPending => 'पिछला चरण अभी बाकी है';
+
+  @override
+  String get progressStageNote => 'टिप्पणी (वैकल्पिक)';
+
+  @override
+  String get progressStageSave => 'सेव करें';
+
+  @override
+  String get progressStageSaved => 'चरण सेव हो गया';
+
+  @override
+  String get progressStageStatus => 'स्थिति';
+
+  @override
+  String progressStagesDone(int done, int total) {
+    return '$total में से $done पूरे';
+  }
+
+  @override
+  String get progressTabFloors => 'मंज़िलें';
+
+  @override
+  String get progressTabPending => 'बाकी';
+
+  @override
+  String get progressTabStages => 'चरण';
+
+  @override
+  String progressTimeUsed(String percent) {
+    return 'बीता समय $percent';
+  }
+
+  @override
+  String get progressTitle => 'साइट प्रगति';
+
+  @override
+  String get progressWorkDone => 'हुआ काम';
+
+  @override
   String get shellCaptionMarked => 'दर्ज';
 
   @override
@@ -1757,6 +1996,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shellCaptionToday => 'आज';
+
+  @override
+  String get shellCaptionWorkDone => 'हुआ काम';
 
   @override
   String get shellDiscardBody =>
@@ -2133,6 +2375,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shellTilePetty => 'फुटकर नकद';
 
   @override
+  String get shellTileProgress => 'प्रगति';
+
+  @override
   String shellTimeDays(int count) {
     return '$count दिन पहले';
   }
@@ -2312,4 +2557,19 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get syncTypePettyCash => 'फुटकर नकद प्रविष्टि';
+
+  @override
+  String get syncTypeProgress => 'साइट प्रगति';
+
+  @override
+  String get syncTypeProgressPhoto => 'प्रगति की फ़ोटो';
+
+  @override
+  String get syncTypeProgressResolve => 'बाकी काम पूरा';
+
+  @override
+  String get syncTypeStage => 'चरण की जानकारी';
+
+  @override
+  String get syncTypeStagePhoto => 'चरण की फ़ोटो';
 }

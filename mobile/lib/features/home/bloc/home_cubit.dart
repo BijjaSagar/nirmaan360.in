@@ -66,6 +66,7 @@ class HomeState extends Equatable {
     this.returned = const <ReturnedItem>[],
     this.approvalsCount = 0,
     this.openIssues = 0,
+    this.siteWorkPercent,
     this.progress,
     this.setup,
   });
@@ -77,6 +78,9 @@ class HomeState extends Equatable {
 
   /// Open or in progress.
   final int openIssues;
+
+  /// Whole-project work done, from the last site progress on this phone.
+  final String? siteWorkPercent;
   final HomeProgress? progress;
 
   /// What the project still needs set up. Null until first read.
@@ -87,6 +91,7 @@ class HomeState extends Equatable {
     List<ReturnedItem>? returned,
     int? approvalsCount,
     int? openIssues,
+    String? siteWorkPercent,
     HomeProgress? Function()? progress,
     ProjectSetup? setup,
   }) {
@@ -95,6 +100,7 @@ class HomeState extends Equatable {
       returned: returned ?? this.returned,
       approvalsCount: approvalsCount ?? this.approvalsCount,
       openIssues: openIssues ?? this.openIssues,
+      siteWorkPercent: siteWorkPercent ?? this.siteWorkPercent,
       progress: progress == null ? this.progress : progress(),
       setup: setup ?? this.setup,
     );
@@ -106,6 +112,7 @@ class HomeState extends Equatable {
         returned,
         approvalsCount,
         openIssues,
+        siteWorkPercent,
         progress,
         setup?.boqCount,
         setup?.workerCount,
@@ -139,6 +146,10 @@ class HomeCubit extends Cubit<HomeState> {
             .where((r) => r.record.status == 'open' || r.record.status == 'in_progress')
             .length;
         if (!isClosed) emit(state.copyWith(openIssues: open));
+      }),
+      _services.progress.watchCached(projectId).listen((overview) {
+        final String? percent = overview?.summary.workPercent;
+        if (percent != null && !isClosed) emit(state.copyWith(siteWorkPercent: percent));
       }),
       _services.syncCenter.watchOutbox().listen((items) {
         _queued = items;

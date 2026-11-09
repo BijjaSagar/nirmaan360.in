@@ -14,7 +14,12 @@ enum OutboxType {
   issueStatus('issue_status'),
   attendance('attendance'),
   pettyCash('petty_cash'),
-  pettyBill('petty_bill');
+  pettyBill('petty_bill'),
+  progressEntry('progress_entry'),
+  progressResolve('progress_resolve'),
+  progressPhoto('progress_photo'),
+  stageCell('stage_cell'),
+  stagePhoto('stage_photo');
 
   const OutboxType(this.wire);
 
@@ -22,6 +27,17 @@ enum OutboxType {
 
   /// File uploads go through `/sync/upload`, one at a time.
   bool get isFile => this == OutboxType.dprPhoto || this == OutboxType.pettyBill;
+
+  /// Site progress has its own endpoints. Each row is posted on its own, with
+  /// the same `client_uuid` on every attempt.
+  bool get isDirect => switch (this) {
+    OutboxType.progressEntry ||
+    OutboxType.progressResolve ||
+    OutboxType.progressPhoto ||
+    OutboxType.stageCell ||
+    OutboxType.stagePhoto => true,
+    _ => false,
+  };
 }
 
 /// One row per user action waiting to reach the server.

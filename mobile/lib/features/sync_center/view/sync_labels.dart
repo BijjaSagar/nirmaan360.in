@@ -17,6 +17,11 @@ extension SyncLabels on AppLocalizations {
         OutboxType.attendance => syncTypeAttendance,
         OutboxType.pettyCash => syncTypePettyCash,
         OutboxType.pettyBill => syncTypePettyBill,
+        OutboxType.progressEntry => syncTypeProgress,
+        OutboxType.progressResolve => syncTypeProgressResolve,
+        OutboxType.progressPhoto => syncTypeProgressPhoto,
+        OutboxType.stageCell => syncTypeStage,
+        OutboxType.stagePhoto => syncTypeStagePhoto,
       };
 
   String syncReasonFor(OutboxItem item) => switch (item.attentionCode) {
@@ -44,4 +49,9 @@ IconData syncTypeIcon(OutboxType type) => switch (type) {
       OutboxType.attendance => Icons.groups,
       OutboxType.pettyCash => Icons.account_balance_wallet,
       OutboxType.pettyBill => Icons.receipt_long,
+      OutboxType.progressEntry => Icons.stacked_bar_chart,
+      OutboxType.progressResolve => Icons.task_alt,
+      OutboxType.progressPhoto => Icons.photo_camera_outlined,
+      OutboxType.stageCell => Icons.plumbing,
+      OutboxType.stagePhoto => Icons.photo_camera_outlined,
     };

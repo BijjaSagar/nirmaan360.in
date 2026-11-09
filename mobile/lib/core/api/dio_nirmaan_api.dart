@@ -277,6 +277,80 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Uint8List> pettyBillBytes(int entryId) =>
       _bytes('/petty-entries/$entryId/bill');
 
+  Future<Map<String, dynamic>> _getData(String path) async {
+    final body = await _call(() => _dio.get(path));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  Future<List<Map<String, dynamic>>> _getRows(String path) async {
+    final body = await _call(() => _dio.get(path));
+    return (body['data'] as List).map((row) => (row as Map).cast<String, dynamic>()).toList();
+  }
+
+  Future<Map<String, dynamic>> _postData(String path, Map<String, dynamic> data) async {
+    final body = await _call(() => _dio.post(path, data: data));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> progressSummary(int projectId) =>
+      _getData('/projects/$projectId/progress/summary');
+
+  @override
+  Future<List<Map<String, dynamic>>> progressFloors(int projectId) =>
+      _getRows('/projects/$projectId/floors');
+
+  @override
+  Future<List<Map<String, dynamic>>> progressItems(int projectId) =>
+      _getRows('/projects/$projectId/progress/items');
+
+  @override
+  Future<List<Map<String, dynamic>>> progressPending(int projectId) =>
+      _getRows('/projects/$projectId/progress/pending');
+
+  @override
+  Future<Map<String, dynamic>> stageMatrix(int projectId) => _getData('/projects/$projectId/stages');
+
+  @override
+  Future<Map<String, dynamic>> floorProgress(int floorId) => _getData('/floors/$floorId/progress');
+
+  @override
+  Future<Map<String, dynamic>> postProgressEntry(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/progress/entries', body);
+
+  @override
+  Future<Map<String, dynamic>> resolveProgress(int entryId, Map<String, dynamic> body) =>
+      _postData('/progress/entries/$entryId/resolve', body);
+
+  @override
+  Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/stages/cells', body);
+
+  @override
+  Future<Map<String, dynamic>> uploadFieldPhoto(
+    String path, {
+    required String filePath,
+    required String clientUuid,
+    String? caption,
+    String? takenAt,
+  }) async {
+    final body = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        'client_uuid': clientUuid,
+        'caption': ?caption,
+        'taken_at': ?takenAt,
+        'photo': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
   Future<Uint8List> _bytes(String path) async {
     try {
       final response = await _dio.get<List<int>>(

@@ -248,6 +248,8 @@ class AppGate extends Cubit<GateState> {
     Routes.boqForm: 'boq.manage',
     Routes.walletForm: 'petty_cash.manage',
     Routes.topUp: 'petty_cash.manage',
+    Routes.progress: 'progress.view',
+    Routes.progressForm: 'progress.create',
   };
 
   /// The location for [uri], or null to stay.

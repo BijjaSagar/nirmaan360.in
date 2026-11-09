@@ -360,6 +360,16 @@
     "mr": "हजेरी",
     "hi": "हाज़िरी"
   },
+  "shellTileProgress": {
+    "en": "Progress",
+    "mr": "प्रगती",
+    "hi": "प्रगति"
+  },
+  "shellCaptionWorkDone": {
+    "en": "work done",
+    "mr": "झालेले काम",
+    "hi": "हुआ काम"
+  },
   "shellTileIssues": {
     "en": "Issues",
     "mr": "समस्या",

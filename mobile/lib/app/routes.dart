@@ -42,4 +42,12 @@ abstract final class Routes {
   static const expenseForm = '/petty-cash/form';
   static const walletForm = '/petty-cash/wallet';
   static const topUp = '/petty-cash/top-up';
+
+  static const progress = '/progress';
+
+  /// Today's work. Optional query: `floor`.
+  static const progressForm = '/progress/form';
+  static String progressFloor(int id) => '/progress/floor/$id';
+  static String progressBeforeFinishing(int floorId) => '/progress/floor/$floorId/before-finishing';
+  static String progressStage(int floorId, String trade) => '/progress/stage/$floorId/$trade';
 }

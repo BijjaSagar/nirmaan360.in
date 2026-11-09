@@ -113,7 +113,9 @@ class SyncRepository {
       OutboxType.dpr ||
       OutboxType.measurement ||
       OutboxType.issue ||
-      OutboxType.pettyCash => true,
+      OutboxType.pettyCash ||
+      OutboxType.progressEntry ||
+      OutboxType.stageCell => true,
       _ => false,
     };
 
@@ -204,6 +206,14 @@ class SyncRepository {
                 billRelativePath: Value(null),
               ),
             );
+      // Nothing on the phone besides the outbox row: the screens lay unsent
+      // site progress over the server's copy, so removing the row is enough.
+      case OutboxType.progressEntry:
+      case OutboxType.progressResolve:
+      case OutboxType.progressPhoto:
+      case OutboxType.stageCell:
+      case OutboxType.stagePhoto:
+        break;
     }
   }
 

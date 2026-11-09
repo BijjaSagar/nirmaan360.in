@@ -798,9 +798,121 @@
   "pettyCashWalletNameRequired": "Write a name for the wallet.",
   "pettyCashWalletOffline": "No network.",
   "pettyCashWalletOfflineDetail": "A wallet can be created only online.",
+  "progressAdd": "Add today's work",
+  "progressBeforeFinishing": "Before finishing check",
+  "progressBehind": "Behind by {percent}",
+  "@progressBehind": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "progressFinishingHint": "Read this before plaster, POP or paint starts.",
+  "progressFinishingPending": "Pending work",
+  "progressFinishingUnfinished": "Not finished yet",
+  "progressFloorBalance": "Balance",
+  "progressFloorDone": "Done",
+  "progressFloorFlats": "Flats",
+  "progressFloorLines": "Work on this floor",
+  "progressFloorNoLines": "No quantities planned for this floor yet.",
+  "progressFloorOffline": "Connect to the internet once to see this floor.",
+  "progressFloorPendingHeading": "Pending here",
+  "progressFloorPlanned": "Planned",
+  "progressFloorStages": "Plumbing and electrical stages",
+  "progressFloorTitle": "Floor progress",
+  "progressFormBalance": "Balance {qty}",
+  "@progressFormBalance": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "progressFormDate": "Date",
+  "progressFormFloor": "Floor or flat",
+  "progressFormFloorNone": "Whole project",
+  "progressFormItem": "BOQ item",
+  "progressFormItemChoose": "Choose an item",
+  "progressFormItemNone": "No item matches",
+  "progressFormItemSearch": "Search by code or name",
+  "progressFormKindPending": "Only pending",
+  "progressFormKindWork": "Work done",
+  "progressFormOverBalance": "This is more than the BOQ balance. You can still save it.",
+  "progressFormPendingRemark": "What is pending?",
+  "progressFormPhoto": "Add photo",
+  "progressFormQty": "Quantity done",
+  "progressFormQtyRequired": "Enter the quantity done",
+  "progressFormRemark": "Remark (optional)",
+  "progressFormRemarkRequired": "Say what is pending",
+  "progressFormRemovePhoto": "Remove photo",
+  "progressFormSave": "Save work",
+  "progressFormTitle": "Add work",
+  "progressFormToday": "Today",
+  "progressFormYesterday": "Yesterday",
+  "progressLoading": "Loading progress",
+  "progressNoDataMessage": "Connect to the internet once to load this project's progress. After that it works offline.",
+  "progressNoDataTitle": "Not loaded yet",
+  "progressNoFloorsMessage": "Ask your office to add floors and flats on the website.",
+  "progressNoFloorsTitle": "No floors added yet",
+  "progressNoPendingMessage": "Items marked pending on site will show here.",
+  "progressNoPendingTitle": "Nothing pending",
+  "progressNoProjectMessage": "Choose a project first.",
+  "progressNoProjectTitle": "No project selected",
+  "progressNotSent": "Not sent yet",
+  "progressOnTrack": "On track",
+  "progressPendingCount": "{count} pending",
+  "@progressPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressReadyMessage": "All plumbing and electrical stages are done here.",
+  "progressReadyTitle": "Ready for finishing",
+  "progressRefreshFailed": "Could not refresh. Showing what this phone has.",
+  "progressResolveRemark": "Remark (optional)",
+  "progressResolveSave": "Resolve",
+  "progressResolveTitle": "Mark as resolved",
+  "progressResolveWait": "This entry has not reached the office yet. Try again after it is sent.",
+  "progressResolved": "Marked as resolved",
+  "progressSaveFailed": "Could not save. Please try again.",
+  "progressSavedOffline": "Saved on this phone. It will send when you are online.",
+  "progressSavedOnline": "Saved. Sending now.",
+  "progressStageEarlierPending": "An earlier stage is still pending",
+  "progressStageNote": "Note (optional)",
+  "progressStageSave": "Save",
+  "progressStageSaved": "Stage saved",
+  "progressStageStatus": "Status",
+  "progressStagesDone": "{done} of {total} done",
+  "@progressStagesDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "progressTabFloors": "Floors",
+  "progressTabPending": "Pending",
+  "progressTabStages": "Stages",
+  "progressTimeUsed": "Time used {percent}",
+  "@progressTimeUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "progressTitle": "Site progress",
+  "progressWorkDone": "Work done",
   "shellCaptionMarked": "marked",
   "shellCaptionOpen": "open",
   "shellCaptionToday": "today",
+  "shellCaptionWorkDone": "work done",
   "shellDiscardBody": "It has not reached the server. It will be removed from this phone.",
   "shellDiscardConfirm": "Yes, throw away",
   "shellDiscardKeep": "Keep it",
@@ -982,6 +1094,7 @@
   "shellTileIssues": "Issues",
   "shellTileMeasure": "Measure",
   "shellTilePetty": "Petty cash",
+  "shellTileProgress": "Progress",
   "shellTimeDays": "{count} days ago",
   "@shellTimeDays": {
     "placeholders": {
@@ -1095,5 +1208,10 @@
   "syncTypeMeasurement": "Measurement",
   "syncTypeMeasurementSubmit": "Measurement submission",
   "syncTypePettyBill": "Bill photo",
-  "syncTypePettyCash": "Petty cash entry"
+  "syncTypePettyCash": "Petty cash entry",
+  "syncTypeProgress": "Site progress",
+  "syncTypeProgressPhoto": "Progress photo",
+  "syncTypeProgressResolve": "Pending item resolved",
+  "syncTypeStage": "Stage update",
+  "syncTypeStagePhoto": "Stage photo"
 }

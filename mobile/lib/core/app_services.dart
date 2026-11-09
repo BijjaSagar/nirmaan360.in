@@ -9,6 +9,7 @@ import '../features/issues/data/issue_repository.dart';
 import '../features/measurement/data/measurement_repository.dart';
 import '../features/petty_cash/data/petty_cash_repository.dart';
 import '../features/projects/data/project_repository.dart';
+import '../features/site_progress/data/progress_repository.dart';
 import '../features/sync_center/data/sync_repository.dart';
 import 'api/dio_nirmaan_api.dart';
 import 'api/nirmaan_api.dart';
@@ -28,6 +29,7 @@ import 'sync/sync_scheduler.dart';
 /// Call [start] once at app start-up. Nothing there needs the network.
 class AppServices {
   AppServices._({
+    required this.progress,
     required this.db,
     required this.api,
     required this.session,
@@ -128,7 +130,10 @@ class AppServices {
       session: session,
       sync: engine,
     );
+    final progress = ProgressRepository(context);
+    engine.afterPull = (sentSomething) => progress.refreshCurrent(force: sentSomething);
     return AppServices._(
+      progress: progress,
       db: db,
       api: api,
       session: session,
@@ -164,6 +169,7 @@ class AppServices {
   final PettyCashRepository pettyCash;
   final ApprovalRepository approvals;
   final SyncRepository syncCenter;
+  final ProgressRepository progress;
 
   /// Restores the session and starts the triggers. Offline-safe.
   ///

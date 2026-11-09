@@ -3280,6 +3280,444 @@ abstract class AppLocalizations {
   /// **'A wallet can be created only online.'**
   String get pettyCashWalletOfflineDetail;
 
+  /// No description provided for @progressAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add today\'s work'**
+  String get progressAdd;
+
+  /// No description provided for @progressBeforeFinishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Before finishing check'**
+  String get progressBeforeFinishing;
+
+  /// No description provided for @progressBehind.
+  ///
+  /// In en, this message translates to:
+  /// **'Behind by {percent}'**
+  String progressBehind(String percent);
+
+  /// No description provided for @progressFinishingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Read this before plaster, POP or paint starts.'**
+  String get progressFinishingHint;
+
+  /// No description provided for @progressFinishingPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending work'**
+  String get progressFinishingPending;
+
+  /// No description provided for @progressFinishingUnfinished.
+  ///
+  /// In en, this message translates to:
+  /// **'Not finished yet'**
+  String get progressFinishingUnfinished;
+
+  /// No description provided for @progressFloorBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get progressFloorBalance;
+
+  /// No description provided for @progressFloorDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get progressFloorDone;
+
+  /// No description provided for @progressFloorFlats.
+  ///
+  /// In en, this message translates to:
+  /// **'Flats'**
+  String get progressFloorFlats;
+
+  /// No description provided for @progressFloorLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Work on this floor'**
+  String get progressFloorLines;
+
+  /// No description provided for @progressFloorNoLines.
+  ///
+  /// In en, this message translates to:
+  /// **'No quantities planned for this floor yet.'**
+  String get progressFloorNoLines;
+
+  /// No description provided for @progressFloorOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to see this floor.'**
+  String get progressFloorOffline;
+
+  /// No description provided for @progressFloorPendingHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending here'**
+  String get progressFloorPendingHeading;
+
+  /// No description provided for @progressFloorPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get progressFloorPlanned;
+
+  /// No description provided for @progressFloorStages.
+  ///
+  /// In en, this message translates to:
+  /// **'Plumbing and electrical stages'**
+  String get progressFloorStages;
+
+  /// No description provided for @progressFloorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor progress'**
+  String get progressFloorTitle;
+
+  /// No description provided for @progressFormBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance {qty}'**
+  String progressFormBalance(String qty);
+
+  /// No description provided for @progressFormDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get progressFormDate;
+
+  /// No description provided for @progressFormFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor or flat'**
+  String get progressFormFloor;
+
+  /// No description provided for @progressFormFloorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole project'**
+  String get progressFormFloorNone;
+
+  /// No description provided for @progressFormItem.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ item'**
+  String get progressFormItem;
+
+  /// No description provided for @progressFormItemChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an item'**
+  String get progressFormItemChoose;
+
+  /// No description provided for @progressFormItemNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No item matches'**
+  String get progressFormItemNone;
+
+  /// No description provided for @progressFormItemSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by code or name'**
+  String get progressFormItemSearch;
+
+  /// No description provided for @progressFormKindPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Only pending'**
+  String get progressFormKindPending;
+
+  /// No description provided for @progressFormKindWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done'**
+  String get progressFormKindWork;
+
+  /// No description provided for @progressFormOverBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'This is more than the BOQ balance. You can still save it.'**
+  String get progressFormOverBalance;
+
+  /// No description provided for @progressFormPendingRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'What is pending?'**
+  String get progressFormPendingRemark;
+
+  /// No description provided for @progressFormPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get progressFormPhoto;
+
+  /// No description provided for @progressFormQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity done'**
+  String get progressFormQty;
+
+  /// No description provided for @progressFormQtyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the quantity done'**
+  String get progressFormQtyRequired;
+
+  /// No description provided for @progressFormRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'Remark (optional)'**
+  String get progressFormRemark;
+
+  /// No description provided for @progressFormRemarkRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Say what is pending'**
+  String get progressFormRemarkRequired;
+
+  /// No description provided for @progressFormRemovePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get progressFormRemovePhoto;
+
+  /// No description provided for @progressFormSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save work'**
+  String get progressFormSave;
+
+  /// No description provided for @progressFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add work'**
+  String get progressFormTitle;
+
+  /// No description provided for @progressFormToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get progressFormToday;
+
+  /// No description provided for @progressFormYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get progressFormYesterday;
+
+  /// No description provided for @progressLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading progress'**
+  String get progressLoading;
+
+  /// No description provided for @progressNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load this project\'s progress. After that it works offline.'**
+  String get progressNoDataMessage;
+
+  /// No description provided for @progressNoDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not loaded yet'**
+  String get progressNoDataTitle;
+
+  /// No description provided for @progressNoFloorsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your office to add floors and flats on the website.'**
+  String get progressNoFloorsMessage;
+
+  /// No description provided for @progressNoFloorsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No floors added yet'**
+  String get progressNoFloorsTitle;
+
+  /// No description provided for @progressNoPendingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Items marked pending on site will show here.'**
+  String get progressNoPendingMessage;
+
+  /// No description provided for @progressNoPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing pending'**
+  String get progressNoPendingTitle;
+
+  /// No description provided for @progressNoProjectMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a project first.'**
+  String get progressNoProjectMessage;
+
+  /// No description provided for @progressNoProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No project selected'**
+  String get progressNoProjectTitle;
+
+  /// No description provided for @progressNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent yet'**
+  String get progressNotSent;
+
+  /// No description provided for @progressOnTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'On track'**
+  String get progressOnTrack;
+
+  /// No description provided for @progressPendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} pending'**
+  String progressPendingCount(int count);
+
+  /// No description provided for @progressReadyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'All plumbing and electrical stages are done here.'**
+  String get progressReadyMessage;
+
+  /// No description provided for @progressReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready for finishing'**
+  String get progressReadyTitle;
+
+  /// No description provided for @progressRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh. Showing what this phone has.'**
+  String get progressRefreshFailed;
+
+  /// No description provided for @progressResolveRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'Remark (optional)'**
+  String get progressResolveRemark;
+
+  /// No description provided for @progressResolveSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve'**
+  String get progressResolveSave;
+
+  /// No description provided for @progressResolveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as resolved'**
+  String get progressResolveTitle;
+
+  /// No description provided for @progressResolveWait.
+  ///
+  /// In en, this message translates to:
+  /// **'This entry has not reached the office yet. Try again after it is sent.'**
+  String get progressResolveWait;
+
+  /// No description provided for @progressResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as resolved'**
+  String get progressResolved;
+
+  /// No description provided for @progressSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Please try again.'**
+  String get progressSaveFailed;
+
+  /// No description provided for @progressSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. It will send when you are online.'**
+  String get progressSavedOffline;
+
+  /// No description provided for @progressSavedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. Sending now.'**
+  String get progressSavedOnline;
+
+  /// No description provided for @progressStageEarlierPending.
+  ///
+  /// In en, this message translates to:
+  /// **'An earlier stage is still pending'**
+  String get progressStageEarlierPending;
+
+  /// No description provided for @progressStageNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get progressStageNote;
+
+  /// No description provided for @progressStageSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get progressStageSave;
+
+  /// No description provided for @progressStageSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage saved'**
+  String get progressStageSaved;
+
+  /// No description provided for @progressStageStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get progressStageStatus;
+
+  /// No description provided for @progressStagesDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} done'**
+  String progressStagesDone(int done, int total);
+
+  /// No description provided for @progressTabFloors.
+  ///
+  /// In en, this message translates to:
+  /// **'Floors'**
+  String get progressTabFloors;
+
+  /// No description provided for @progressTabPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get progressTabPending;
+
+  /// No description provided for @progressTabStages.
+  ///
+  /// In en, this message translates to:
+  /// **'Stages'**
+  String get progressTabStages;
+
+  /// No description provided for @progressTimeUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Time used {percent}'**
+  String progressTimeUsed(String percent);
+
+  /// No description provided for @progressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Site progress'**
+  String get progressTitle;
+
+  /// No description provided for @progressWorkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done'**
+  String get progressWorkDone;
+
   /// No description provided for @shellCaptionMarked.
   ///
   /// In en, this message translates to:
@@ -3297,6 +3735,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'today'**
   String get shellCaptionToday;
+
+  /// No description provided for @shellCaptionWorkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'work done'**
+  String get shellCaptionWorkDone;
 
   /// No description provided for @shellDiscardBody.
   ///
@@ -3994,6 +4438,12 @@ abstract class AppLocalizations {
   /// **'Petty cash'**
   String get shellTilePetty;
 
+  /// No description provided for @shellTileProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get shellTileProgress;
+
   /// No description provided for @shellTimeDays.
   ///
   /// In en, this message translates to:
@@ -4305,6 +4755,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Petty cash entry'**
   String get syncTypePettyCash;
+
+  /// No description provided for @syncTypeProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Site progress'**
+  String get syncTypeProgress;
+
+  /// No description provided for @syncTypeProgressPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress photo'**
+  String get syncTypeProgressPhoto;
+
+  /// No description provided for @syncTypeProgressResolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending item resolved'**
+  String get syncTypeProgressResolve;
+
+  /// No description provided for @syncTypeStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage update'**
+  String get syncTypeStage;
+
+  /// No description provided for @syncTypeStagePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage photo'**
+  String get syncTypeStagePhoto;
 }
 
 class _AppLocalizationsDelegate

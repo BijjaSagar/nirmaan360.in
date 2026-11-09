@@ -20,6 +20,10 @@ import '../features/petty_cash/view/expense_form_screen.dart';
 import '../features/petty_cash/view/petty_cash_screen.dart';
 import '../features/petty_cash/view/top_up_screen.dart';
 import '../features/petty_cash/view/wallet_form_screen.dart';
+import '../features/site_progress/view/floor_progress_screen.dart';
+import '../features/site_progress/view/progress_form_screen.dart';
+import '../features/site_progress/view/progress_screen.dart';
+import '../features/site_progress/view/stage_row_screen.dart';
 import '../features/projects/view/boq_form_screen.dart';
 import '../features/projects/view/boq_screen.dart';
 import '../features/projects/view/project_form_screen.dart';
@@ -121,6 +125,24 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         ],
       ),
       _route(Routes.attendance, (_) => const AttendanceScreen()),
+      _route(
+        Routes.progress,
+        (_) => const ProgressScreen(),
+        routes: <RouteBase>[
+          _route('form', (s) => ProgressFormScreen(floorId: int.tryParse(s.uri.queryParameters['floor'] ?? ''))),
+          _route(
+            'floor/:id',
+            (s) => FloorProgressScreen(floorId: int.parse(s.pathParameters['id']!)),
+            routes: <RouteBase>[
+              _route('before-finishing', (s) => BeforeFinishingScreen(floorId: int.parse(s.pathParameters['id']!))),
+            ],
+          ),
+          _route(
+            'stage/:id/:trade',
+            (s) => StageRowScreen(floorId: int.parse(s.pathParameters['id']!), tradeKey: s.pathParameters['trade']!),
+          ),
+        ],
+      ),
       _route(
         Routes.issues,
         (_) => const IssueListScreen(),
