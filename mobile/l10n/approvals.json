@@ -1,0 +1,442 @@
+{
+  "approvalsTitle": {
+    "en": "Approvals",
+    "mr": "मंजुरी",
+    "hi": "मंज़ूरियाँ"
+  },
+  "approvalsEyebrow": {
+    "en": "{count, plural, =0{Nothing waiting} =1{1 waiting for you} other{{count} waiting for you}}",
+    "mr": "{count, plural, =0{काहीही बाकी नाही} other{{count} तुमच्याकडे बाकी}}",
+    "hi": "{count, plural, =0{कुछ बाकी नहीं} other{{count} आपके पास बाकी}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalsOpen": {
+    "en": "Open",
+    "mr": "उघडा",
+    "hi": "खोलें"
+  },
+  "approvalsDocMeasurement": {
+    "en": "Measurement",
+    "mr": "मोजमाप",
+    "hi": "माप"
+  },
+  "approvalsDocDpr": {
+    "en": "Daily report",
+    "mr": "दैनिक अहवाल",
+    "hi": "दैनिक रिपोर्ट"
+  },
+  "approvalsDocBill": {
+    "en": "RA bill",
+    "mr": "RA बिल",
+    "hi": "RA बिल"
+  },
+  "approvalsWorkers": {
+    "en": "workers",
+    "mr": "कामगार",
+    "hi": "मज़दूर"
+  },
+  "approvalsDeviation": {
+    "en": "Deviation",
+    "mr": "तफावत",
+    "hi": "विचलन"
+  },
+  "approvalsDeviationBody": {
+    "en": "Goes over the BOQ quantity plus tolerance. Project manager must approve.",
+    "mr": "BOQ प्रमाण आणि सवलतीपेक्षा जास्त. प्रकल्प व्यवस्थापकाची मंजुरी आवश्यक.",
+    "hi": "BOQ मात्रा और छूट से ज़्यादा। प्रोजेक्ट मैनेजर की मंज़ूरी ज़रूरी।"
+  },
+  "approvalsWaitingOn": {
+    "en": "Waiting on {role}",
+    "mr": "{role} यांच्याकडे बाकी",
+    "hi": "{role} के पास बाकी",
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsJustNow": {
+    "en": "just now",
+    "mr": "आत्ताच",
+    "hi": "अभी"
+  },
+  "approvalsMinutesAgo": {
+    "en": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+    "mr": "{count, plural, =1{1 मिनिटापूर्वी} other{{count} मिनिटांपूर्वी}}",
+    "hi": "{count} मिनट पहले",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalsHoursAgo": {
+    "en": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+    "mr": "{count, plural, =1{1 तासापूर्वी} other{{count} तासांपूर्वी}}",
+    "hi": "{count, plural, =1{1 घंटा पहले} other{{count} घंटे पहले}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalsDaysAgo": {
+    "en": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+    "mr": "{count, plural, =1{1 दिवसापूर्वी} other{{count} दिवसांपूर्वी}}",
+    "hi": "{count} दिन पहले",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalsOffline": {
+    "en": "No network.",
+    "mr": "नेटवर्क नाही.",
+    "hi": "नेटवर्क नहीं है।"
+  },
+  "approvalsOfflineDetail": {
+    "en": "You can read these, but approvals need network.",
+    "mr": "वाचता येईल, पण मंजुरीसाठी नेटवर्क लागते.",
+    "hi": "पढ़ सकते हैं, पर मंज़ूरी के लिए नेटवर्क चाहिए।"
+  },
+  "approvalsNeedsNetwork": {
+    "en": "Approve and Send back need network. Nothing is queued.",
+    "mr": "मंजूर किंवा परत पाठवण्यासाठी नेटवर्क लागते. काहीही रांगेत ठेवले जात नाही.",
+    "hi": "मंज़ूर करने या वापस भेजने के लिए नेटवर्क चाहिए। कुछ भी कतार में नहीं रखा जाता।"
+  },
+  "approvalsRefresh": {
+    "en": "Refresh",
+    "mr": "ताजे करा",
+    "hi": "ताज़ा करें"
+  },
+  "approvalsRefreshing": {
+    "en": "Refreshing",
+    "mr": "ताजे करत आहे",
+    "hi": "ताज़ा हो रहा है"
+  },
+  "approvalsCouldNotRefreshOffline": {
+    "en": "Could not reach the server. Showing what was last fetched.",
+    "mr": "सर्व्हरशी संपर्क झाला नाही. शेवटची माहिती दाखवत आहे.",
+    "hi": "सर्वर से संपर्क नहीं हुआ। पिछली जानकारी दिखा रहे हैं।"
+  },
+  "approvalsCouldNotRefresh": {
+    "en": "Could not refresh. Please try again.",
+    "mr": "ताजे करता आले नाही. पुन्हा प्रयत्न करा.",
+    "hi": "ताज़ा नहीं हो सका। फिर से कोशिश करें।"
+  },
+  "approvalsSessionExpired": {
+    "en": "Please sign in again.",
+    "mr": "कृपया पुन्हा साइन इन करा.",
+    "hi": "कृपया फिर से साइन इन करें।"
+  },
+  "approvalsEmptyTitle": {
+    "en": "Nothing waiting",
+    "mr": "काहीही बाकी नाही",
+    "hi": "कुछ बाकी नहीं"
+  },
+  "approvalsEmptyBody": {
+    "en": "New approvals will appear here.",
+    "mr": "नवीन मंजुरी इथे दिसतील.",
+    "hi": "नई मंज़ूरियाँ यहाँ दिखेंगी।"
+  },
+  "approvalsApprove": {
+    "en": "Approve",
+    "mr": "मंजूर करा",
+    "hi": "मंज़ूर करें"
+  },
+  "approvalsSendBack": {
+    "en": "Send back",
+    "mr": "परत पाठवा",
+    "hi": "वापस भेजें"
+  },
+  "approvalsSendBackTitle": {
+    "en": "Why send it back?",
+    "mr": "परत का पाठवत आहात?",
+    "hi": "वापस क्यों भेज रहे हैं?"
+  },
+  "approvalsSendBackHelp": {
+    "en": "Tell them what to fix. Pick one or write your own.",
+    "mr": "काय दुरुस्त करायचे ते सांगा. एक निवडा किंवा स्वतः लिहा.",
+    "hi": "क्या ठीक करना है, बताएँ। एक चुनें या खुद लिखें।"
+  },
+  "approvalsRemarkLabel": {
+    "en": "Remark",
+    "mr": "शेरा",
+    "hi": "टिप्पणी"
+  },
+  "approvalsRemarkHint": {
+    "en": "What needs fixing",
+    "mr": "काय दुरुस्त करायचे",
+    "hi": "क्या ठीक करना है"
+  },
+  "approvalsRemarks": {
+    "en": "Remarks",
+    "mr": "शेरा",
+    "hi": "टिप्पणी"
+  },
+  "approvalsReasonDimensions": {
+    "en": "Check the dimensions",
+    "mr": "मापे तपासा",
+    "hi": "माप जाँचें"
+  },
+  "approvalsReasonWrongItem": {
+    "en": "Wrong BOQ line",
+    "mr": "BOQ ओळ चुकली आहे",
+    "hi": "BOQ लाइन गलत है"
+  },
+  "approvalsReasonQuantityHigh": {
+    "en": "Quantity looks too high",
+    "mr": "प्रमाण जास्त वाटते",
+    "hi": "मात्रा ज़्यादा लग रही है"
+  },
+  "approvalsReasonLocation": {
+    "en": "Write the location clearly",
+    "mr": "ठिकाण स्पष्ट लिहा",
+    "hi": "स्थान साफ़ लिखें"
+  },
+  "approvalsReasonManpower": {
+    "en": "Manpower count is wrong",
+    "mr": "मनुष्यबळाची संख्या चुकली आहे",
+    "hi": "मज़दूर संख्या गलत है"
+  },
+  "approvalsReasonWorkDetail": {
+    "en": "Add more work detail",
+    "mr": "कामाचा अधिक तपशील लिहा",
+    "hi": "काम का और विवरण लिखें"
+  },
+  "approvalsReasonPhotos": {
+    "en": "Add photos",
+    "mr": "फोटो जोडा",
+    "hi": "फ़ोटो जोड़ें"
+  },
+  "approvalsReasonAmounts": {
+    "en": "Amounts do not match",
+    "mr": "रकमा जुळत नाहीत",
+    "hi": "राशि मेल नहीं खाती"
+  },
+  "approvalsReasonPeriod": {
+    "en": "Billing period is wrong",
+    "mr": "बिलाचा कालावधी चुकला आहे",
+    "hi": "बिल की अवधि गलत है"
+  },
+  "approvalsReasonDeductions": {
+    "en": "Check the deductions",
+    "mr": "वजावटी तपासा",
+    "hi": "कटौतियाँ जाँचें"
+  },
+  "approvalsSentBackToast": {
+    "en": "Sent back with your remark.",
+    "mr": "तुमच्या शेऱ्यासह परत पाठवले.",
+    "hi": "आपकी टिप्पणी के साथ वापस भेजा।"
+  },
+  "approvalsGoneTitle": {
+    "en": "No longer waiting",
+    "mr": "आता बाकी नाही",
+    "hi": "अब बाकी नहीं"
+  },
+  "approvalsGoneBody": {
+    "en": "Someone has already decided this one.",
+    "mr": "यावर आधीच निर्णय झाला आहे.",
+    "hi": "इस पर पहले ही फ़ैसला हो चुका है।"
+  },
+  "approvalsBackToInbox": {
+    "en": "Back to approvals",
+    "mr": "मंजुरीकडे परत",
+    "hi": "मंज़ूरियों पर वापस"
+  },
+  "approvalsFailOfflineTitle": {
+    "en": "No network",
+    "mr": "नेटवर्क नाही",
+    "hi": "नेटवर्क नहीं है"
+  },
+  "approvalsFailOfflineBody": {
+    "en": "Your decision was not sent. Nothing was queued. Try again when connected.",
+    "mr": "तुमचा निर्णय गेला नाही. काहीही रांगेत नाही. नेटवर्क आल्यावर पुन्हा करा.",
+    "hi": "आपका फ़ैसला नहीं गया। कुछ भी कतार में नहीं है। नेटवर्क आने पर फिर करें।"
+  },
+  "approvalsFailRaceTitle": {
+    "en": "Already decided",
+    "mr": "आधीच निर्णय झाला",
+    "hi": "पहले ही फ़ैसला हो गया"
+  },
+  "approvalsFailRaceBody": {
+    "en": "Someone else acted on this first. Refresh to see what is waiting now.",
+    "mr": "दुसऱ्या कोणीतरी आधी निर्णय घेतला. आता काय बाकी आहे ते पाहण्यासाठी ताजे करा.",
+    "hi": "किसी और ने पहले फ़ैसला कर लिया। अभी क्या बाकी है देखने के लिए ताज़ा करें।"
+  },
+  "approvalsFailSessionTitle": {
+    "en": "Please sign in again",
+    "mr": "कृपया पुन्हा साइन इन करा",
+    "hi": "कृपया फिर से साइन इन करें"
+  },
+  "approvalsFailSessionBody": {
+    "en": "Your session has ended. Your decision was not sent.",
+    "mr": "तुमचे सत्र संपले आहे. तुमचा निर्णय गेला नाही.",
+    "hi": "आपका सत्र समाप्त हो गया। आपका फ़ैसला नहीं गया।"
+  },
+  "approvalsFailRejectedTitle": {
+    "en": "The server refused this",
+    "mr": "सर्व्हरने हे स्वीकारले नाही",
+    "hi": "सर्वर ने इसे नहीं लिया"
+  },
+  "approvalsFailServerTitle": {
+    "en": "Could not send",
+    "mr": "पाठवता आले नाही",
+    "hi": "भेजा नहीं जा सका"
+  },
+  "approvalsFailServerBody": {
+    "en": "Something went wrong on the server. Your decision was not recorded. Try again.",
+    "mr": "सर्व्हरवर अडचण आली. तुमचा निर्णय नोंदला गेला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "सर्वर पर दिक्कत आई। आपका फ़ैसला दर्ज नहीं हुआ। फिर से कोशिश करें।"
+  },
+  "approvalsChainTitle": {
+    "en": "Approval trail",
+    "mr": "मंजुरीची नोंद",
+    "hi": "मंज़ूरी का रिकॉर्ड"
+  },
+  "approvalsChainWaiting": {
+    "en": "Waiting now",
+    "mr": "आता बाकी",
+    "hi": "अभी बाकी"
+  },
+  "approvalsChainNext": {
+    "en": "After that",
+    "mr": "त्यानंतर",
+    "hi": "उसके बाद"
+  },
+  "approvalsActionSubmitted": {
+    "en": "Submitted",
+    "mr": "पाठवले",
+    "hi": "भेजा"
+  },
+  "approvalsActionApproved": {
+    "en": "Approved",
+    "mr": "मंजूर केले",
+    "hi": "मंज़ूर किया"
+  },
+  "approvalsActionReturned": {
+    "en": "Sent back",
+    "mr": "परत पाठवले",
+    "hi": "वापस भेजा"
+  },
+  "approvalsActionRejected": {
+    "en": "Rejected",
+    "mr": "नाकारले",
+    "hi": "अस्वीकार किया"
+  },
+  "approvalsRoleEngineer": {
+    "en": "Site engineer",
+    "mr": "साइट अभियंता",
+    "hi": "साइट इंजीनियर"
+  },
+  "approvalsRoleQs": {
+    "en": "Estimator / QS",
+    "mr": "एस्टिमेटर / QS",
+    "hi": "एस्टिमेटर / QS"
+  },
+  "approvalsRolePm": {
+    "en": "Project manager",
+    "mr": "प्रकल्प व्यवस्थापक",
+    "hi": "प्रोजेक्ट मैनेजर"
+  },
+  "approvalsRoleAccounts": {
+    "en": "Accounts",
+    "mr": "लेखा",
+    "hi": "लेखा"
+  },
+  "approvalsRoleOwner": {
+    "en": "Owner",
+    "mr": "मालक",
+    "hi": "मालिक"
+  },
+  "approvalsRoleAdmin": {
+    "en": "Admin",
+    "mr": "अॅडमिन",
+    "hi": "एडमिन"
+  },
+  "approvalsRoleClient": {
+    "en": "Client",
+    "mr": "क्लायंट",
+    "hi": "क्लाइंट"
+  },
+  "approvalsWeather": {
+    "en": "Weather",
+    "mr": "हवामान",
+    "hi": "मौसम"
+  },
+  "approvalsSummary": {
+    "en": "Summary of work",
+    "mr": "कामाचा सारांश",
+    "hi": "काम का सारांश"
+  },
+  "approvalsHindrances": {
+    "en": "Hindrances",
+    "mr": "अडथळे",
+    "hi": "रुकावटें"
+  },
+  "approvalsManpower": {
+    "en": "Manpower",
+    "mr": "मनुष्यबळ",
+    "hi": "मज़दूर संख्या"
+  },
+  "approvalsTotal": {
+    "en": "Total",
+    "mr": "एकूण",
+    "hi": "कुल"
+  },
+  "approvalsWorkDone": {
+    "en": "Work done",
+    "mr": "झालेले काम",
+    "hi": "किया गया काम"
+  },
+  "approvalsPhotos": {
+    "en": "Photos",
+    "mr": "फोटो",
+    "hi": "फ़ोटो"
+  },
+  "approvalsBillNumber": {
+    "en": "Bill number",
+    "mr": "बिल क्रमांक",
+    "hi": "बिल नंबर"
+  },
+  "approvalsParty": {
+    "en": "Party",
+    "mr": "पक्षकार",
+    "hi": "पार्टी"
+  },
+  "approvalsBillType": {
+    "en": "Type",
+    "mr": "प्रकार",
+    "hi": "प्रकार"
+  },
+  "approvalsPeriod": {
+    "en": "Period",
+    "mr": "कालावधी",
+    "hi": "अवधि"
+  },
+  "approvalsGross": {
+    "en": "Gross value of work",
+    "mr": "कामाचे एकूण मूल्य",
+    "hi": "काम का कुल मूल्य"
+  },
+  "approvalsDeductions": {
+    "en": "Deductions",
+    "mr": "वजावटी",
+    "hi": "कटौतियाँ"
+  },
+  "approvalsGst": {
+    "en": "GST",
+    "mr": "GST",
+    "hi": "GST"
+  },
+  "approvalsNetPayable": {
+    "en": "Net payable",
+    "mr": "देय रक्कम",
+    "hi": "देय राशि"
+  }
+}

@@ -106,6 +106,738 @@ abstract class AppLocalizations {
   /// **'Nirmaan360'**
   String get appName;
 
+  /// No description provided for @approvalsActionApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get approvalsActionApproved;
+
+  /// No description provided for @approvalsActionRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get approvalsActionRejected;
+
+  /// No description provided for @approvalsActionReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent back'**
+  String get approvalsActionReturned;
+
+  /// No description provided for @approvalsActionSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get approvalsActionSubmitted;
+
+  /// No description provided for @approvalsApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approvalsApprove;
+
+  /// No description provided for @approvalsBackToInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to approvals'**
+  String get approvalsBackToInbox;
+
+  /// No description provided for @approvalsBillNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill number'**
+  String get approvalsBillNumber;
+
+  /// No description provided for @approvalsBillType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get approvalsBillType;
+
+  /// No description provided for @approvalsChainNext.
+  ///
+  /// In en, this message translates to:
+  /// **'After that'**
+  String get approvalsChainNext;
+
+  /// No description provided for @approvalsChainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval trail'**
+  String get approvalsChainTitle;
+
+  /// No description provided for @approvalsChainWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting now'**
+  String get approvalsChainWaiting;
+
+  /// No description provided for @approvalsCouldNotRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh. Please try again.'**
+  String get approvalsCouldNotRefresh;
+
+  /// No description provided for @approvalsCouldNotRefreshOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the server. Showing what was last fetched.'**
+  String get approvalsCouldNotRefreshOffline;
+
+  /// No description provided for @approvalsDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String approvalsDaysAgo(int count);
+
+  /// No description provided for @approvalsDeductions.
+  ///
+  /// In en, this message translates to:
+  /// **'Deductions'**
+  String get approvalsDeductions;
+
+  /// No description provided for @approvalsDeviation.
+  ///
+  /// In en, this message translates to:
+  /// **'Deviation'**
+  String get approvalsDeviation;
+
+  /// No description provided for @approvalsDeviationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes over the BOQ quantity plus tolerance. Project manager must approve.'**
+  String get approvalsDeviationBody;
+
+  /// No description provided for @approvalsDocBill.
+  ///
+  /// In en, this message translates to:
+  /// **'RA bill'**
+  String get approvalsDocBill;
+
+  /// No description provided for @approvalsDocDpr.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily report'**
+  String get approvalsDocDpr;
+
+  /// No description provided for @approvalsDocMeasurement.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement'**
+  String get approvalsDocMeasurement;
+
+  /// No description provided for @approvalsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'New approvals will appear here.'**
+  String get approvalsEmptyBody;
+
+  /// No description provided for @approvalsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing waiting'**
+  String get approvalsEmptyTitle;
+
+  /// No description provided for @approvalsEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing waiting} =1{1 waiting for you} other{{count} waiting for you}}'**
+  String approvalsEyebrow(int count);
+
+  /// No description provided for @approvalsFailOfflineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your decision was not sent. Nothing was queued. Try again when connected.'**
+  String get approvalsFailOfflineBody;
+
+  /// No description provided for @approvalsFailOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No network'**
+  String get approvalsFailOfflineTitle;
+
+  /// No description provided for @approvalsFailRaceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone else acted on this first. Refresh to see what is waiting now.'**
+  String get approvalsFailRaceBody;
+
+  /// No description provided for @approvalsFailRaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Already decided'**
+  String get approvalsFailRaceTitle;
+
+  /// No description provided for @approvalsFailRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The server refused this'**
+  String get approvalsFailRejectedTitle;
+
+  /// No description provided for @approvalsFailServerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong on the server. Your decision was not recorded. Try again.'**
+  String get approvalsFailServerBody;
+
+  /// No description provided for @approvalsFailServerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send'**
+  String get approvalsFailServerTitle;
+
+  /// No description provided for @approvalsFailSessionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has ended. Your decision was not sent.'**
+  String get approvalsFailSessionBody;
+
+  /// No description provided for @approvalsFailSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again'**
+  String get approvalsFailSessionTitle;
+
+  /// No description provided for @approvalsGoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone has already decided this one.'**
+  String get approvalsGoneBody;
+
+  /// No description provided for @approvalsGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer waiting'**
+  String get approvalsGoneTitle;
+
+  /// No description provided for @approvalsGross.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross value of work'**
+  String get approvalsGross;
+
+  /// No description provided for @approvalsGst.
+  ///
+  /// In en, this message translates to:
+  /// **'GST'**
+  String get approvalsGst;
+
+  /// No description provided for @approvalsHindrances.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindrances'**
+  String get approvalsHindrances;
+
+  /// No description provided for @approvalsHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String approvalsHoursAgo(int count);
+
+  /// No description provided for @approvalsJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get approvalsJustNow;
+
+  /// No description provided for @approvalsManpower.
+  ///
+  /// In en, this message translates to:
+  /// **'Manpower'**
+  String get approvalsManpower;
+
+  /// No description provided for @approvalsMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String approvalsMinutesAgo(int count);
+
+  /// No description provided for @approvalsNeedsNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve and Send back need network. Nothing is queued.'**
+  String get approvalsNeedsNetwork;
+
+  /// No description provided for @approvalsNetPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'Net payable'**
+  String get approvalsNetPayable;
+
+  /// No description provided for @approvalsOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No network.'**
+  String get approvalsOffline;
+
+  /// No description provided for @approvalsOfflineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'You can read these, but approvals need network.'**
+  String get approvalsOfflineDetail;
+
+  /// No description provided for @approvalsOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get approvalsOpen;
+
+  /// No description provided for @approvalsParty.
+  ///
+  /// In en, this message translates to:
+  /// **'Party'**
+  String get approvalsParty;
+
+  /// No description provided for @approvalsPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get approvalsPeriod;
+
+  /// No description provided for @approvalsPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get approvalsPhotos;
+
+  /// No description provided for @approvalsReasonAmounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Amounts do not match'**
+  String get approvalsReasonAmounts;
+
+  /// No description provided for @approvalsReasonDeductions.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the deductions'**
+  String get approvalsReasonDeductions;
+
+  /// No description provided for @approvalsReasonDimensions.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the dimensions'**
+  String get approvalsReasonDimensions;
+
+  /// No description provided for @approvalsReasonLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the location clearly'**
+  String get approvalsReasonLocation;
+
+  /// No description provided for @approvalsReasonManpower.
+  ///
+  /// In en, this message translates to:
+  /// **'Manpower count is wrong'**
+  String get approvalsReasonManpower;
+
+  /// No description provided for @approvalsReasonPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing period is wrong'**
+  String get approvalsReasonPeriod;
+
+  /// No description provided for @approvalsReasonPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photos'**
+  String get approvalsReasonPhotos;
+
+  /// No description provided for @approvalsReasonQuantityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity looks too high'**
+  String get approvalsReasonQuantityHigh;
+
+  /// No description provided for @approvalsReasonWorkDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more work detail'**
+  String get approvalsReasonWorkDetail;
+
+  /// No description provided for @approvalsReasonWrongItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong BOQ line'**
+  String get approvalsReasonWrongItem;
+
+  /// No description provided for @approvalsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get approvalsRefresh;
+
+  /// No description provided for @approvalsRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing'**
+  String get approvalsRefreshing;
+
+  /// No description provided for @approvalsRemarkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What needs fixing'**
+  String get approvalsRemarkHint;
+
+  /// No description provided for @approvalsRemarkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remark'**
+  String get approvalsRemarkLabel;
+
+  /// No description provided for @approvalsRemarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Remarks'**
+  String get approvalsRemarks;
+
+  /// No description provided for @approvalsRoleAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Accounts'**
+  String get approvalsRoleAccounts;
+
+  /// No description provided for @approvalsRoleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get approvalsRoleAdmin;
+
+  /// No description provided for @approvalsRoleClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client'**
+  String get approvalsRoleClient;
+
+  /// No description provided for @approvalsRoleEngineer.
+  ///
+  /// In en, this message translates to:
+  /// **'Site engineer'**
+  String get approvalsRoleEngineer;
+
+  /// No description provided for @approvalsRoleOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get approvalsRoleOwner;
+
+  /// No description provided for @approvalsRolePm.
+  ///
+  /// In en, this message translates to:
+  /// **'Project manager'**
+  String get approvalsRolePm;
+
+  /// No description provided for @approvalsRoleQs.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimator / QS'**
+  String get approvalsRoleQs;
+
+  /// No description provided for @approvalsSendBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Send back'**
+  String get approvalsSendBack;
+
+  /// No description provided for @approvalsSendBackHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell them what to fix. Pick one or write your own.'**
+  String get approvalsSendBackHelp;
+
+  /// No description provided for @approvalsSendBackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why send it back?'**
+  String get approvalsSendBackTitle;
+
+  /// No description provided for @approvalsSentBackToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent back with your remark.'**
+  String get approvalsSentBackToast;
+
+  /// No description provided for @approvalsSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again.'**
+  String get approvalsSessionExpired;
+
+  /// No description provided for @approvalsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary of work'**
+  String get approvalsSummary;
+
+  /// No description provided for @approvalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get approvalsTitle;
+
+  /// No description provided for @approvalsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get approvalsTotal;
+
+  /// No description provided for @approvalsWaitingOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on {role}'**
+  String approvalsWaitingOn(String role);
+
+  /// No description provided for @approvalsWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get approvalsWeather;
+
+  /// No description provided for @approvalsWorkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done'**
+  String get approvalsWorkDone;
+
+  /// No description provided for @approvalsWorkers.
+  ///
+  /// In en, this message translates to:
+  /// **'workers'**
+  String get approvalsWorkers;
+
+  /// No description provided for @attendanceAddWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'Add worker'**
+  String get attendanceAddWorker;
+
+  /// No description provided for @attendanceAllMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone is marked'**
+  String get attendanceAllMarked;
+
+  /// No description provided for @attendanceAllPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'All present ({count})'**
+  String attendanceAllPresent(int count);
+
+  /// No description provided for @attendanceAllPresentDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} marked present'**
+  String attendanceAllPresentDone(int count);
+
+  /// No description provided for @attendanceAllPresentHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Fills unmarked workers only. Absent stays absent.'**
+  String get attendanceAllPresentHelper;
+
+  /// No description provided for @attendanceDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance for {date}'**
+  String attendanceDateTitle(String date);
+
+  /// No description provided for @attendanceDayToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get attendanceDayToday;
+
+  /// No description provided for @attendanceDayYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get attendanceDayYesterday;
+
+  /// No description provided for @attendanceEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Muster roll'**
+  String get attendanceEyebrow;
+
+  /// No description provided for @attendanceGroupProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{marked} of {total}'**
+  String attendanceGroupProgress(int marked, int total);
+
+  /// No description provided for @attendanceHoursUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get attendanceHoursUnit;
+
+  /// No description provided for @attendanceLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get attendanceLeft;
+
+  /// No description provided for @attendanceLoadFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your marks are safe on this phone. Try again.'**
+  String get attendanceLoadFailedMessage;
+
+  /// No description provided for @attendanceLoadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the muster'**
+  String get attendanceLoadFailedTitle;
+
+  /// No description provided for @attendanceNoProjectMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a project first, then mark the muster here.'**
+  String get attendanceNoProjectMessage;
+
+  /// No description provided for @attendanceNoProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No project chosen'**
+  String get attendanceNoProjectTitle;
+
+  /// No description provided for @attendanceNoWorkersMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your workers here, or ask the office to add them.'**
+  String get attendanceNoWorkersMessage;
+
+  /// No description provided for @attendanceNoWorkersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No workers on the muster'**
+  String get attendanceNoWorkersTitle;
+
+  /// No description provided for @attendanceOtHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Overtime hours'**
+  String get attendanceOtHours;
+
+  /// No description provided for @attendanceOtLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Half hour less'**
+  String get attendanceOtLess;
+
+  /// No description provided for @attendanceOtMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Half hour more'**
+  String get attendanceOtMore;
+
+  /// No description provided for @attendanceSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That mark was not saved. Tap it again.'**
+  String get attendanceSaveFailed;
+
+  /// No description provided for @attendanceSheetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} added to the muster'**
+  String attendanceSheetDone(String name);
+
+  /// No description provided for @attendanceSheetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The worker could not be added. Try again.'**
+  String get attendanceSheetFailed;
+
+  /// No description provided for @attendanceSheetName.
+  ///
+  /// In en, this message translates to:
+  /// **'Worker\'s name'**
+  String get attendanceSheetName;
+
+  /// No description provided for @attendanceSheetNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'As on the muster'**
+  String get attendanceSheetNameHint;
+
+  /// No description provided for @attendanceSheetNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the worker\'s name.'**
+  String get attendanceSheetNameRequired;
+
+  /// No description provided for @attendanceSheetOfflineError.
+  ///
+  /// In en, this message translates to:
+  /// **'No network. Try again when the phone is back online.'**
+  String get attendanceSheetOfflineError;
+
+  /// No description provided for @attendanceSheetOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance still works without network. Add this worker when the phone is back online.'**
+  String get attendanceSheetOfflineMessage;
+
+  /// No description provided for @attendanceSheetOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding a worker needs network'**
+  String get attendanceSheetOfflineTitle;
+
+  /// No description provided for @attendanceSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New worker'**
+  String get attendanceSheetTitle;
+
+  /// No description provided for @attendanceSheetTrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Trade'**
+  String get attendanceSheetTrade;
+
+  /// No description provided for @attendanceSheetTradeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the trade.'**
+  String get attendanceSheetTradeRequired;
+
+  /// No description provided for @attendanceSheetWage.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily wage'**
+  String get attendanceSheetWage;
+
+  /// No description provided for @attendanceSheetWageFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily wage for {name}'**
+  String attendanceSheetWageFor(String name);
+
+  /// No description provided for @attendanceSheetWageHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank if you do not know it.'**
+  String get attendanceSheetWageHelper;
+
+  /// No description provided for @attendanceSheetWageNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} added. Set the wage on the website for now.'**
+  String attendanceSheetWageNotSaved(String name);
+
+  /// No description provided for @attendanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get attendanceTitle;
+
+  /// No description provided for @attendanceTodayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s attendance'**
+  String get attendanceTodayTitle;
+
   /// No description provided for @commonBack.
   ///
   /// In en, this message translates to:
@@ -375,6 +1107,2022 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Windy'**
   String get designWeatherWindy;
+
+  /// No description provided for @dprAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get dprAdd;
+
+  /// No description provided for @dprAddNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Add hindrances or notes'**
+  String get dprAddNotes;
+
+  /// No description provided for @dprAddWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Add work'**
+  String get dprAddWork;
+
+  /// No description provided for @dprAddedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get dprAddedTag;
+
+  /// No description provided for @dprApproverRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'Approver\'s remark'**
+  String get dprApproverRemark;
+
+  /// No description provided for @dprAttentionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This report could not be sent. Open Outbox to fix it.'**
+  String get dprAttentionBody;
+
+  /// No description provided for @dprBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get dprBalance;
+
+  /// No description provided for @dprBoqEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No BOQ items found.'**
+  String get dprBoqEmpty;
+
+  /// No description provided for @dprBoqNotSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ not on this phone yet. Connect to the network once.'**
+  String get dprBoqNotSynced;
+
+  /// No description provided for @dprCameraFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the camera. Allow camera in phone settings.'**
+  String get dprCameraFailed;
+
+  /// No description provided for @dprChooseAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Other item'**
+  String get dprChooseAnother;
+
+  /// No description provided for @dprCorrectAndSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct and send again'**
+  String get dprCorrectAndSend;
+
+  /// No description provided for @dprEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get dprEdit;
+
+  /// No description provided for @dprEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your first report starts this book.'**
+  String get dprEmptyMessage;
+
+  /// No description provided for @dprEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports yet'**
+  String get dprEmptyTitle;
+
+  /// No description provided for @dprFilledFromYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled from yesterday'**
+  String get dprFilledFromYesterday;
+
+  /// No description provided for @dprFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily report'**
+  String get dprFormTitle;
+
+  /// No description provided for @dprFutureDate.
+  ///
+  /// In en, this message translates to:
+  /// **'The report date cannot be in the future.'**
+  String get dprFutureDate;
+
+  /// No description provided for @dprHindrances.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindrances'**
+  String get dprHindrances;
+
+  /// No description provided for @dprHindrancesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Material late, rain, power cut'**
+  String get dprHindrancesHint;
+
+  /// No description provided for @dprListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reports'**
+  String get dprListTitle;
+
+  /// No description provided for @dprLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This report has gone for approval and cannot be changed now.'**
+  String get dprLocked;
+
+  /// No description provided for @dprMoreRows.
+  ///
+  /// In en, this message translates to:
+  /// **'and {count} more'**
+  String dprMoreRows(int count);
+
+  /// No description provided for @dprMoreTrades.
+  ///
+  /// In en, this message translates to:
+  /// **'More trades ({count})'**
+  String dprMoreTrades(int count);
+
+  /// No description provided for @dprNeedWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose today\'s weather.'**
+  String get dprNeedWeather;
+
+  /// No description provided for @dprNeedWorkers.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the workers who came. If the site was closed, write why under Hindrances.'**
+  String get dprNeedWorkers;
+
+  /// No description provided for @dprNoProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a project first'**
+  String get dprNoProject;
+
+  /// No description provided for @dprNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved'**
+  String get dprNotSaved;
+
+  /// No description provided for @dprNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get dprNotes;
+
+  /// No description provided for @dprNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Anything else from today'**
+  String get dprNotesHint;
+
+  /// No description provided for @dprNothingRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded'**
+  String get dprNothingRecorded;
+
+  /// No description provided for @dprOpenToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Open today\'s report'**
+  String get dprOpenToday;
+
+  /// No description provided for @dprOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get dprOptional;
+
+  /// No description provided for @dprOverBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'More than the BOQ balance. Check the figure.'**
+  String get dprOverBalance;
+
+  /// No description provided for @dprPhotoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not add this photo. Try again.'**
+  String get dprPhotoFailed;
+
+  /// No description provided for @dprPhotoMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get dprPhotoMissing;
+
+  /// No description provided for @dprPhotosCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 photo} other{{count} photos}}'**
+  String dprPhotosCount(int count);
+
+  /// No description provided for @dprPhotosFull.
+  ///
+  /// In en, this message translates to:
+  /// **'A report can hold 10 photos.'**
+  String get dprPhotosFull;
+
+  /// No description provided for @dprQtyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty'**
+  String get dprQtyShort;
+
+  /// No description provided for @dprQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get dprQuantity;
+
+  /// No description provided for @dprRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get dprRemove;
+
+  /// No description provided for @dprReturnedNoRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'Please correct and send again.'**
+  String get dprReturnedNoRemark;
+
+  /// No description provided for @dprReturnedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent back for correction'**
+  String get dprReturnedTitle;
+
+  /// No description provided for @dprReviewOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No network now. The report stays on this phone and goes by itself when network returns.'**
+  String get dprReviewOffline;
+
+  /// No description provided for @dprReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check and send'**
+  String get dprReviewTitle;
+
+  /// No description provided for @dprRowsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 work item} other{{count} work items}}'**
+  String dprRowsCount(int count);
+
+  /// No description provided for @dprSameAsYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as yesterday ({count})'**
+  String dprSameAsYesterday(int count);
+
+  /// No description provided for @dprSavedOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone'**
+  String get dprSavedOnPhone;
+
+  /// No description provided for @dprSavedSendingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone, sending now'**
+  String get dprSavedSendingNow;
+
+  /// No description provided for @dprSavedWillSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone, will send when network returns'**
+  String get dprSavedWillSend;
+
+  /// No description provided for @dprSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving on phone'**
+  String get dprSaving;
+
+  /// No description provided for @dprSearchBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'Search BOQ'**
+  String get dprSearchBoq;
+
+  /// No description provided for @dprSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Code or description'**
+  String get dprSearchHint;
+
+  /// No description provided for @dprSectionNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindrances and notes'**
+  String get dprSectionNotes;
+
+  /// No description provided for @dprSectionPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get dprSectionPhotos;
+
+  /// No description provided for @dprSectionWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather'**
+  String get dprSectionWeather;
+
+  /// No description provided for @dprSectionWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done'**
+  String get dprSectionWork;
+
+  /// No description provided for @dprSectionWorkers.
+  ///
+  /// In en, this message translates to:
+  /// **'Workers'**
+  String get dprSectionWorkers;
+
+  /// No description provided for @dprSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get dprSend;
+
+  /// No description provided for @dprSendAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Send again'**
+  String get dprSendAgain;
+
+  /// No description provided for @dprSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this report. Try again.'**
+  String get dprSendFailed;
+
+  /// No description provided for @dprSendReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get dprSendReport;
+
+  /// No description provided for @dprSyncAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get dprSyncAttention;
+
+  /// No description provided for @dprSyncPhoneOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only on this phone'**
+  String get dprSyncPhoneOnly;
+
+  /// No description provided for @dprSyncSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get dprSyncSending;
+
+  /// No description provided for @dprSyncWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to send'**
+  String get dprSyncWaiting;
+
+  /// No description provided for @dprTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get dprTakePhoto;
+
+  /// No description provided for @dprTotalWorkers.
+  ///
+  /// In en, this message translates to:
+  /// **'Total workers'**
+  String get dprTotalWorkers;
+
+  /// No description provided for @dprWorkersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 worker} other{{count} workers}}'**
+  String dprWorkersCount(int count);
+
+  /// No description provided for @dprWorkersWord.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{worker} other{workers}}'**
+  String dprWorkersWord(int count);
+
+  /// No description provided for @dprWriteToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Write today\'s report'**
+  String get dprWriteToday;
+
+  /// No description provided for @dprYesterdayTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get dprYesterdayTag;
+
+  /// No description provided for @issuesActionClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close issue'**
+  String get issuesActionClose;
+
+  /// No description provided for @issuesActionReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get issuesActionReopen;
+
+  /// No description provided for @issuesActionResolve.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark resolved'**
+  String get issuesActionResolve;
+
+  /// No description provided for @issuesActionStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start work'**
+  String get issuesActionStart;
+
+  /// No description provided for @issuesAssignedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned'**
+  String get issuesAssignedUnknown;
+
+  /// No description provided for @issuesAssigneeSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign to'**
+  String get issuesAssigneeSheetTitle;
+
+  /// No description provided for @issuesDetailAssignee.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to'**
+  String get issuesDetailAssignee;
+
+  /// No description provided for @issuesDetailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get issuesDetailDescription;
+
+  /// No description provided for @issuesDetailDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get issuesDetailDue;
+
+  /// No description provided for @issuesDetailLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get issuesDetailLocation;
+
+  /// No description provided for @issuesDetailMissingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been removed. Go back to the list.'**
+  String get issuesDetailMissingMessage;
+
+  /// No description provided for @issuesDetailMissingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This issue is not on this phone'**
+  String get issuesDetailMissingTitle;
+
+  /// No description provided for @issuesDetailPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get issuesDetailPriority;
+
+  /// No description provided for @issuesDetailRaisedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Raised by'**
+  String get issuesDetailRaisedBy;
+
+  /// No description provided for @issuesDetailResolvedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved on'**
+  String get issuesDetailResolvedOn;
+
+  /// No description provided for @issuesDueOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String issuesDueOn(String date);
+
+  /// No description provided for @issuesDueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Due today'**
+  String get issuesDueToday;
+
+  /// No description provided for @issuesEmptyFilterMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No issues with this status.'**
+  String get issuesEmptyFilterMessage;
+
+  /// No description provided for @issuesEmptyFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here'**
+  String get issuesEmptyFilterTitle;
+
+  /// No description provided for @issuesEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'If something is wrong on site, raise it here so it gets fixed.'**
+  String get issuesEmptyMessage;
+
+  /// No description provided for @issuesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No issues on this site'**
+  String get issuesEmptyTitle;
+
+  /// No description provided for @issuesEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Site issues'**
+  String get issuesEyebrow;
+
+  /// No description provided for @issuesFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get issuesFilterAll;
+
+  /// No description provided for @issuesFormAssignee.
+  ///
+  /// In en, this message translates to:
+  /// **'Who will fix it?'**
+  String get issuesFormAssignee;
+
+  /// No description provided for @issuesFormDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix by'**
+  String get issuesFormDue;
+
+  /// No description provided for @issuesFormDueThree.
+  ///
+  /// In en, this message translates to:
+  /// **'3 days'**
+  String get issuesFormDueThree;
+
+  /// No description provided for @issuesFormDueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get issuesFormDueToday;
+
+  /// No description provided for @issuesFormDueWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'1 week'**
+  String get issuesFormDueWeek;
+
+  /// No description provided for @issuesFormEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'New issue'**
+  String get issuesFormEyebrow;
+
+  /// No description provided for @issuesFormLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Where on site?'**
+  String get issuesFormLocation;
+
+  /// No description provided for @issuesFormLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid C, third floor'**
+  String get issuesFormLocationHint;
+
+  /// No description provided for @issuesFormNoDue.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get issuesFormNoDue;
+
+  /// No description provided for @issuesFormPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'How urgent is it?'**
+  String get issuesFormPriority;
+
+  /// No description provided for @issuesFormSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save issue'**
+  String get issuesFormSave;
+
+  /// No description provided for @issuesFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise an issue'**
+  String get issuesFormTitle;
+
+  /// No description provided for @issuesFormWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'What is wrong?'**
+  String get issuesFormWhat;
+
+  /// No description provided for @issuesFormWhatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Crack in column C3'**
+  String get issuesFormWhatHint;
+
+  /// No description provided for @issuesFormWhatRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write what is wrong.'**
+  String get issuesFormWhatRequired;
+
+  /// No description provided for @issuesNoDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No due date'**
+  String get issuesNoDueDate;
+
+  /// No description provided for @issuesNoProjectMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a project first, then raise issues here.'**
+  String get issuesNoProjectMessage;
+
+  /// No description provided for @issuesNoProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No project chosen'**
+  String get issuesNoProjectTitle;
+
+  /// No description provided for @issuesOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue by {days} {days, plural, =1{day} other{days}}'**
+  String issuesOverdue(int days);
+
+  /// No description provided for @issuesRaise.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise issue'**
+  String get issuesRaise;
+
+  /// No description provided for @issuesSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the issue. Try again.'**
+  String get issuesSaveFailed;
+
+  /// No description provided for @issuesSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone. Sends when network returns.'**
+  String get issuesSavedOffline;
+
+  /// No description provided for @issuesSavedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved. Sending now.'**
+  String get issuesSavedOnline;
+
+  /// No description provided for @issuesStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not change the status. Try again.'**
+  String get issuesStatusFailed;
+
+  /// No description provided for @issuesSyncAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get issuesSyncAttention;
+
+  /// No description provided for @issuesSyncSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get issuesSyncSending;
+
+  /// No description provided for @issuesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Issues'**
+  String get issuesTitle;
+
+  /// No description provided for @issuesUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned'**
+  String get issuesUnassigned;
+
+  /// No description provided for @measurementAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get measurementAdd;
+
+  /// No description provided for @measurementAddEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Add measurement'**
+  String get measurementAddEntry;
+
+  /// No description provided for @measurementAllLines.
+  ///
+  /// In en, this message translates to:
+  /// **'All lines'**
+  String get measurementAllLines;
+
+  /// No description provided for @measurementApprovedLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Corrections are made on the web as a reversal entry.'**
+  String get measurementApprovedLockedBody;
+
+  /// No description provided for @measurementApprovedLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved and locked'**
+  String get measurementApprovedLockedTitle;
+
+  /// No description provided for @measurementApproverSaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Approver\'s remark'**
+  String get measurementApproverSaid;
+
+  /// No description provided for @measurementAttentionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The server refused this entry. It is safe on your phone.'**
+  String get measurementAttentionBody;
+
+  /// No description provided for @measurementAttentionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send'**
+  String get measurementAttentionTitle;
+
+  /// No description provided for @measurementBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get measurementBalance;
+
+  /// No description provided for @measurementBalanceAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance after this'**
+  String get measurementBalanceAfter;
+
+  /// No description provided for @measurementBookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement book'**
+  String get measurementBookTitle;
+
+  /// No description provided for @measurementBoqQty.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ'**
+  String get measurementBoqQty;
+
+  /// No description provided for @measurementBreadth.
+  ///
+  /// In en, this message translates to:
+  /// **'Breadth'**
+  String get measurementBreadth;
+
+  /// No description provided for @measurementBreadthShort.
+  ///
+  /// In en, this message translates to:
+  /// **'× B'**
+  String get measurementBreadthShort;
+
+  /// No description provided for @measurementChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get measurementChange;
+
+  /// No description provided for @measurementChangeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Change BOQ line'**
+  String get measurementChangeLine;
+
+  /// No description provided for @measurementChooseLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose BOQ line'**
+  String get measurementChooseLine;
+
+  /// No description provided for @measurementClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get measurementClose;
+
+  /// No description provided for @measurementDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured on'**
+  String get measurementDateLabel;
+
+  /// No description provided for @measurementDeduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Deduct'**
+  String get measurementDeduct;
+
+  /// No description provided for @measurementDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get measurementDelete;
+
+  /// No description provided for @measurementDepth.
+  ///
+  /// In en, this message translates to:
+  /// **'Depth'**
+  String get measurementDepth;
+
+  /// No description provided for @measurementDepthShort.
+  ///
+  /// In en, this message translates to:
+  /// **'× D'**
+  String get measurementDepthShort;
+
+  /// No description provided for @measurementDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What was measured'**
+  String get measurementDescriptionHint;
+
+  /// No description provided for @measurementDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get measurementDescriptionLabel;
+
+  /// No description provided for @measurementDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement'**
+  String get measurementDetailTitle;
+
+  /// No description provided for @measurementDetailsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get measurementDetailsShort;
+
+  /// No description provided for @measurementDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Location, note and date'**
+  String get measurementDetailsTitle;
+
+  /// No description provided for @measurementDeviation.
+  ///
+  /// In en, this message translates to:
+  /// **'Deviation'**
+  String get measurementDeviation;
+
+  /// No description provided for @measurementDeviationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Over BOQ + {percent}%. It will need PM approval.'**
+  String measurementDeviationBody(String percent);
+
+  /// No description provided for @measurementDeviationDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'This entry goes over the BOQ quantity plus tolerance, so the project manager must approve it.'**
+  String get measurementDeviationDetail;
+
+  /// No description provided for @measurementEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get measurementEdit;
+
+  /// No description provided for @measurementEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your first entry starts this book.'**
+  String get measurementEmptyBody;
+
+  /// No description provided for @measurementEmptyFilteredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries have this status.'**
+  String get measurementEmptyFilteredBody;
+
+  /// No description provided for @measurementEmptyFilteredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here'**
+  String get measurementEmptyFilteredTitle;
+
+  /// No description provided for @measurementEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No measurements yet'**
+  String get measurementEmptyTitle;
+
+  /// No description provided for @measurementFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get measurementFilterAll;
+
+  /// No description provided for @measurementFormulaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Nos to begin'**
+  String get measurementFormulaHint;
+
+  /// No description provided for @measurementGoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been deleted on the web.'**
+  String get measurementGoneBody;
+
+  /// No description provided for @measurementGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry not found'**
+  String get measurementGoneTitle;
+
+  /// No description provided for @measurementItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Item'**
+  String get measurementItem;
+
+  /// No description provided for @measurementLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Length'**
+  String get measurementLength;
+
+  /// No description provided for @measurementLengthShort.
+  ///
+  /// In en, this message translates to:
+  /// **'× L'**
+  String get measurementLengthShort;
+
+  /// No description provided for @measurementLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid, floor, footing'**
+  String get measurementLocationHint;
+
+  /// No description provided for @measurementLocationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get measurementLocationLabel;
+
+  /// No description provided for @measurementLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It has been approved or is under review.'**
+  String get measurementLockedBody;
+
+  /// No description provided for @measurementLockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This entry cannot be changed'**
+  String get measurementLockedTitle;
+
+  /// No description provided for @measurementNet.
+  ///
+  /// In en, this message translates to:
+  /// **'net'**
+  String get measurementNet;
+
+  /// No description provided for @measurementNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get measurementNext;
+
+  /// No description provided for @measurementNoBoqBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the network once so the BOQ comes to this phone.'**
+  String get measurementNoBoqBody;
+
+  /// No description provided for @measurementNoBoqTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No BOQ lines yet'**
+  String get measurementNoBoqTitle;
+
+  /// No description provided for @measurementNoMatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches'**
+  String get measurementNoMatchTitle;
+
+  /// No description provided for @measurementNos.
+  ///
+  /// In en, this message translates to:
+  /// **'Nos'**
+  String get measurementNos;
+
+  /// No description provided for @measurementOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No network.'**
+  String get measurementOffline;
+
+  /// No description provided for @measurementOfflineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries stay on this phone and go when network returns.'**
+  String get measurementOfflineDetail;
+
+  /// No description provided for @measurementOtherDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Other date'**
+  String get measurementOtherDate;
+
+  /// No description provided for @measurementPreviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Figures on this phone are a preview. The server\'s figures are final.'**
+  String get measurementPreviewNote;
+
+  /// No description provided for @measurementPreviewTag.
+  ///
+  /// In en, this message translates to:
+  /// **'preview'**
+  String get measurementPreviewTag;
+
+  /// No description provided for @measurementProblemFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'The date cannot be in the future.'**
+  String get measurementProblemFuture;
+
+  /// No description provided for @measurementProblemLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This entry has already been sent for approval.'**
+  String get measurementProblemLocked;
+
+  /// No description provided for @measurementProblemNoLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the BOQ line first.'**
+  String get measurementProblemNoLine;
+
+  /// No description provided for @measurementProblemNos.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter Nos. It is required.'**
+  String get measurementProblemNos;
+
+  /// No description provided for @measurementProblemPositive.
+  ///
+  /// In en, this message translates to:
+  /// **'This figure must be more than zero.'**
+  String get measurementProblemPositive;
+
+  /// No description provided for @measurementProblemTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This figure is too large.'**
+  String get measurementProblemTooLarge;
+
+  /// No description provided for @measurementProblemUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Please try again.'**
+  String get measurementProblemUnknown;
+
+  /// No description provided for @measurementQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get measurementQuantity;
+
+  /// No description provided for @measurementRecentLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get measurementRecentLines;
+
+  /// No description provided for @measurementRowCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 entry} other{{count} entries}}'**
+  String measurementRowCount(int count);
+
+  /// No description provided for @measurementSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone. It will go when network returns.'**
+  String get measurementSavedOffline;
+
+  /// No description provided for @measurementSavedOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone.'**
+  String get measurementSavedOnPhone;
+
+  /// No description provided for @measurementSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 2.1 or slab'**
+  String get measurementSearchHint;
+
+  /// No description provided for @measurementSearchLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Search code or description'**
+  String get measurementSearchLines;
+
+  /// No description provided for @measurementSendAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Send again'**
+  String get measurementSendAgain;
+
+  /// No description provided for @measurementSendCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Send {count} rows'**
+  String measurementSendCount(int count);
+
+  /// No description provided for @measurementSendForApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Send for approval'**
+  String get measurementSendForApproval;
+
+  /// No description provided for @measurementSendsWhenOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent yet. It will go for approval when network returns.'**
+  String get measurementSendsWhenOnline;
+
+  /// No description provided for @measurementStampSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get measurementStampSent;
+
+  /// No description provided for @measurementSubmitWaitingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to go for approval'**
+  String get measurementSubmitWaitingTitle;
+
+  /// No description provided for @measurementSyncAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a look'**
+  String get measurementSyncAttention;
+
+  /// No description provided for @measurementSyncSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get measurementSyncSending;
+
+  /// No description provided for @measurementTally.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 row saved on phone} other{{count} rows saved on phone}}'**
+  String measurementTally(int count);
+
+  /// No description provided for @measurementYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get measurementYesterday;
+
+  /// No description provided for @pettyCashAddExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Add expense'**
+  String get pettyCashAddExpense;
+
+  /// No description provided for @pettyCashAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get pettyCashAmount;
+
+  /// No description provided for @pettyCashAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount above zero.'**
+  String get pettyCashAmountRequired;
+
+  /// No description provided for @pettyCashBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get pettyCashBalance;
+
+  /// No description provided for @pettyCashBalanceAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance after this: {amount}'**
+  String pettyCashBalanceAfter(String amount);
+
+  /// No description provided for @pettyCashBillAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill photo added'**
+  String get pettyCashBillAdded;
+
+  /// No description provided for @pettyCashBillFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the camera. Try again.'**
+  String get pettyCashBillFailed;
+
+  /// No description provided for @pettyCashBillLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill'**
+  String get pettyCashBillLabel;
+
+  /// No description provided for @pettyCashBillRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Take again'**
+  String get pettyCashBillRetake;
+
+  /// No description provided for @pettyCashCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'What was it for?'**
+  String get pettyCashCategory;
+
+  /// No description provided for @pettyCashCategoryRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what it was for.'**
+  String get pettyCashCategoryRequired;
+
+  /// No description provided for @pettyCashDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get pettyCashDate;
+
+  /// No description provided for @pettyCashDayToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get pettyCashDayToday;
+
+  /// No description provided for @pettyCashDayYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get pettyCashDayYesterday;
+
+  /// No description provided for @pettyCashEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries'**
+  String get pettyCashEntries;
+
+  /// No description provided for @pettyCashEntriesEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses you add will show here.'**
+  String get pettyCashEntriesEmptyMessage;
+
+  /// No description provided for @pettyCashEntriesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No entries yet'**
+  String get pettyCashEntriesEmptyTitle;
+
+  /// No description provided for @pettyCashEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash book'**
+  String get pettyCashEyebrow;
+
+  /// No description provided for @pettyCashFormEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'New expense'**
+  String get pettyCashFormEyebrow;
+
+  /// No description provided for @pettyCashFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an expense'**
+  String get pettyCashFormTitle;
+
+  /// No description provided for @pettyCashLoadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open petty cash'**
+  String get pettyCashLoadFailedTitle;
+
+  /// No description provided for @pettyCashNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get pettyCashNext;
+
+  /// No description provided for @pettyCashNoProjectMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a project first, then record expenses here.'**
+  String get pettyCashNoProjectMessage;
+
+  /// No description provided for @pettyCashNoProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No project chosen'**
+  String get pettyCashNoProjectTitle;
+
+  /// No description provided for @pettyCashNoWalletMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your project manager or the accounts office to open one for you.'**
+  String get pettyCashNoWalletMessage;
+
+  /// No description provided for @pettyCashNoWalletTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no wallet on this project'**
+  String get pettyCashNoWalletTitle;
+
+  /// No description provided for @pettyCashNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get pettyCashNote;
+
+  /// No description provided for @pettyCashNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Diesel for the mixer'**
+  String get pettyCashNoteHint;
+
+  /// No description provided for @pettyCashOverBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'More than the wallet balance of {balance}. Ask the office for a top-up.'**
+  String pettyCashOverBalance(String balance);
+
+  /// No description provided for @pettyCashPhotoBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of bill'**
+  String get pettyCashPhotoBill;
+
+  /// No description provided for @pettyCashProvisional.
+  ///
+  /// In en, this message translates to:
+  /// **'Provisional'**
+  String get pettyCashProvisional;
+
+  /// No description provided for @pettyCashProvisionalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} on this phone is not sent yet. The final balance comes after sync.'**
+  String pettyCashProvisionalNote(String amount);
+
+  /// No description provided for @pettyCashSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save expense'**
+  String get pettyCashSave;
+
+  /// No description provided for @pettyCashSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the expense. Try again.'**
+  String get pettyCashSaveFailed;
+
+  /// No description provided for @pettyCashSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone. It will send when network returns.'**
+  String get pettyCashSavedOffline;
+
+  /// No description provided for @pettyCashSavedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on phone. Sending now.'**
+  String get pettyCashSavedOnline;
+
+  /// No description provided for @pettyCashSyncAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get pettyCashSyncAttention;
+
+  /// No description provided for @pettyCashSyncSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get pettyCashSyncSending;
+
+  /// No description provided for @pettyCashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Petty cash'**
+  String get pettyCashTitle;
+
+  /// No description provided for @pettyCashTopup.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-up'**
+  String get pettyCashTopup;
+
+  /// No description provided for @pettyCashWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get pettyCashWallet;
+
+  /// No description provided for @shellDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It has not reached the server. It will be removed from this phone.'**
+  String get shellDiscardBody;
+
+  /// No description provided for @shellDiscardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, throw away'**
+  String get shellDiscardConfirm;
+
+  /// No description provided for @shellDiscardKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it'**
+  String get shellDiscardKeep;
+
+  /// No description provided for @shellDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Throw away this entry?'**
+  String get shellDiscardTitle;
+
+  /// No description provided for @shellOfflineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries wait on phone.'**
+  String get shellOfflineDetail;
+
+  /// No description provided for @shellOfflineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get shellOfflineLabel;
+
+  /// No description provided for @shellOutboxAllSentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is left on this phone.'**
+  String get shellOutboxAllSentBody;
+
+  /// No description provided for @shellOutboxAllSentStamp.
+  ///
+  /// In en, this message translates to:
+  /// **'All sent'**
+  String get shellOutboxAllSentStamp;
+
+  /// No description provided for @shellOutboxAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 needs your attention} other{{count} need your attention}}'**
+  String shellOutboxAttention(int count);
+
+  /// No description provided for @shellOutboxLogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not applied'**
+  String get shellOutboxLogTitle;
+
+  /// No description provided for @shellOutboxNeverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced yet'**
+  String get shellOutboxNeverSynced;
+
+  /// No description provided for @shellOutboxServerError.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is having trouble. Your work is safe and will send later.'**
+  String get shellOutboxServerError;
+
+  /// No description provided for @shellOutboxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbox'**
+  String get shellOutboxTitle;
+
+  /// No description provided for @shellOutboxTrayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'on phone'**
+  String get shellOutboxTrayLabel;
+
+  /// No description provided for @shellOutboxWaitingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'waiting to send'**
+  String get shellOutboxWaitingLabel;
+
+  /// No description provided for @shellPickerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get shellPickerCurrent;
+
+  /// No description provided for @shellPickerEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your office to add you to a project, then try again.'**
+  String get shellPickerEmptyBody;
+
+  /// No description provided for @shellPickerEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No projects yet'**
+  String get shellPickerEmptyTitle;
+
+  /// No description provided for @shellPickerEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Your projects'**
+  String get shellPickerEyebrow;
+
+  /// No description provided for @shellPickerLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting your projects…'**
+  String get shellPickerLoading;
+
+  /// No description provided for @shellPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which site today?'**
+  String get shellPickerTitle;
+
+  /// No description provided for @shellPillAllSent.
+  ///
+  /// In en, this message translates to:
+  /// **'All sent'**
+  String get shellPillAllSent;
+
+  /// No description provided for @shellPillAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'needs a look'**
+  String get shellPillAttention;
+
+  /// No description provided for @shellPillSending.
+  ///
+  /// In en, this message translates to:
+  /// **'sending'**
+  String get shellPillSending;
+
+  /// No description provided for @shellPillWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'waiting'**
+  String get shellPillWaiting;
+
+  /// No description provided for @shellReportAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a look'**
+  String get shellReportAttention;
+
+  /// No description provided for @shellReportNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get shellReportNotStarted;
+
+  /// No description provided for @shellReportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get shellReportSaved;
+
+  /// No description provided for @shellReturnedDpr.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily report · {date}'**
+  String shellReturnedDpr(String date);
+
+  /// No description provided for @shellReturnedFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix'**
+  String get shellReturnedFix;
+
+  /// No description provided for @shellReturnedMeasurement.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement {code} · {qty} {unit}'**
+  String shellReturnedMeasurement(String code, String qty, String unit);
+
+  /// No description provided for @shellReturnedNoRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'No remark given'**
+  String get shellReturnedNoRemark;
+
+  /// No description provided for @shellReturnedRemarkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remark'**
+  String get shellReturnedRemarkLabel;
+
+  /// No description provided for @shellReturnedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Returned to you'**
+  String get shellReturnedTitle;
+
+  /// No description provided for @shellSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get shellSettings;
+
+  /// No description provided for @shellSettingsLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get shellSettingsLanguage;
+
+  /// No description provided for @shellSettingsSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as'**
+  String get shellSettingsSignedIn;
+
+  /// No description provided for @shellSettingsVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get shellSettingsVersion;
+
+  /// No description provided for @shellSignInBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in…'**
+  String get shellSignInBusy;
+
+  /// No description provided for @shellSignInButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get shellSignInButton;
+
+  /// No description provided for @shellSignInEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get shellSignInEmail;
+
+  /// No description provided for @shellSignInEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get shellSignInEmailRequired;
+
+  /// No description provided for @shellSignInExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'You were signed out. Nothing is lost: your work is safe on this phone. Sign in to send it.'**
+  String get shellSignInExpired;
+
+  /// No description provided for @shellSignInHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get shellSignInHide;
+
+  /// No description provided for @shellSignInNetworkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your signal and try again.'**
+  String get shellSignInNetworkBody;
+
+  /// No description provided for @shellSignInNetworkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No network'**
+  String get shellSignInNetworkTitle;
+
+  /// No description provided for @shellSignInOtherUserBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has {count} unsent entries from another person. They must sign in and send them first.'**
+  String shellSignInOtherUserBody(int count);
+
+  /// No description provided for @shellSignInOtherUserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone else\'s work is waiting'**
+  String get shellSignInOtherUserTitle;
+
+  /// No description provided for @shellSignInPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get shellSignInPassword;
+
+  /// No description provided for @shellSignInPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get shellSignInPasswordRequired;
+
+  /// No description provided for @shellSignInServerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It is not your phone. Try again in a few minutes.'**
+  String get shellSignInServerBody;
+
+  /// No description provided for @shellSignInServerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Server is not responding'**
+  String get shellSignInServerTitle;
+
+  /// No description provided for @shellSignInShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get shellSignInShow;
+
+  /// No description provided for @shellSignInTooManyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait a minute and try again.'**
+  String get shellSignInTooManyBody;
+
+  /// No description provided for @shellSignInTooManyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many tries'**
+  String get shellSignInTooManyTitle;
+
+  /// No description provided for @shellSignInWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get shellSignInWelcome;
+
+  /// No description provided for @shellSignInWrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check both and try again.'**
+  String get shellSignInWrongBody;
+
+  /// No description provided for @shellSignInWrongTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong email or password'**
+  String get shellSignInWrongTitle;
+
+  /// No description provided for @shellSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get shellSignOut;
+
+  /// No description provided for @shellSignOutConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You will need network to sign in again.'**
+  String get shellSignOutConfirmBody;
+
+  /// No description provided for @shellSignOutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out of this phone?'**
+  String get shellSignOutConfirmTitle;
+
+  /// No description provided for @shellSignOutDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out and lose them'**
+  String get shellSignOutDiscard;
+
+  /// No description provided for @shellSignOutHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Press and hold to lose them'**
+  String get shellSignOutHold;
+
+  /// No description provided for @shellSignOutSendFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Send them first'**
+  String get shellSignOutSendFirst;
+
+  /// No description provided for @shellSignOutUnsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If you sign out now they are deleted from this phone and cannot be brought back. Send them first.'**
+  String get shellSignOutUnsentBody;
+
+  /// No description provided for @shellSignOutUnsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 entry not sent} other{{count} entries not sent}}'**
+  String shellSignOutUnsentTitle(int count);
+
+  /// No description provided for @shellSlipSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get shellSlipSending;
+
+  /// No description provided for @shellSlipWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get shellSlipWaiting;
+
+  /// No description provided for @shellSwitchProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch project'**
+  String get shellSwitchProject;
+
+  /// No description provided for @shellSyncingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending and updating'**
+  String get shellSyncingLabel;
+
+  /// No description provided for @shellTabApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get shellTabApprovals;
+
+  /// No description provided for @shellTabHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get shellTabHome;
+
+  /// No description provided for @shellTabMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure'**
+  String get shellTabMeasure;
+
+  /// No description provided for @shellTabOutbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Outbox'**
+  String get shellTabOutbox;
+
+  /// No description provided for @shellTileApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get shellTileApprovals;
+
+  /// No description provided for @shellTileAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get shellTileAttendance;
+
+  /// No description provided for @shellTileDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily report'**
+  String get shellTileDaily;
+
+  /// No description provided for @shellTileIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'Issues'**
+  String get shellTileIssues;
+
+  /// No description provided for @shellTileMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure'**
+  String get shellTileMeasure;
+
+  /// No description provided for @shellTilePetty.
+  ///
+  /// In en, this message translates to:
+  /// **'Petty cash'**
+  String get shellTilePetty;
+
+  /// No description provided for @shellTimeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String shellTimeDays(int count);
+
+  /// No description provided for @shellTimeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hr ago'**
+  String shellTimeHours(int count);
+
+  /// No description provided for @shellTimeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get shellTimeJustNow;
+
+  /// No description provided for @shellTimeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String shellTimeMinutes(int count);
+
+  /// No description provided for @shellTimeYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'yesterday'**
+  String get shellTimeYesterday;
+
+  /// No description provided for @shellTodayAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get shellTodayAttendance;
+
+  /// No description provided for @shellTodayExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get shellTodayExpenses;
+
+  /// No description provided for @shellTodayMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured'**
+  String get shellTodayMeasured;
+
+  /// No description provided for @shellTodayReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get shellTodayReport;
+
+  /// No description provided for @shellTodaySemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: {value}'**
+  String shellTodaySemantics(String label, String value);
 
   /// No description provided for @statusApproved.
   ///

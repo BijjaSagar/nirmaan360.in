@@ -1,0 +1,235 @@
+{
+  "attendanceTitle": {
+    "en": "Attendance",
+    "mr": "हजेरी",
+    "hi": "हाज़िरी"
+  },
+  "attendanceEyebrow": {
+    "en": "Muster roll",
+    "mr": "हजेरी पत्रक",
+    "hi": "हाज़िरी रजिस्टर"
+  },
+  "attendanceTodayTitle": {
+    "en": "Today's attendance",
+    "mr": "आजची हजेरी",
+    "hi": "आज की हाज़िरी"
+  },
+  "attendanceDateTitle": {
+    "en": "Attendance for {date}",
+    "mr": "{date} ची हजेरी",
+    "hi": "{date} की हाज़िरी",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceDayToday": {
+    "en": "Today",
+    "mr": "आज",
+    "hi": "आज"
+  },
+  "attendanceDayYesterday": {
+    "en": "Yesterday",
+    "mr": "काल",
+    "hi": "कल"
+  },
+  "attendanceLeft": {
+    "en": "Left",
+    "mr": "बाकी",
+    "hi": "बाकी"
+  },
+  "attendanceAllPresent": {
+    "en": "All present ({count})",
+    "mr": "सर्व हजर ({count})",
+    "hi": "सभी उपस्थित ({count})",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceAllMarked": {
+    "en": "Everyone is marked",
+    "mr": "सर्वांची हजेरी झाली",
+    "hi": "सबकी हाज़िरी हो गई"
+  },
+  "attendanceAllPresentHelper": {
+    "en": "Fills unmarked workers only. Absent stays absent.",
+    "mr": "फक्त राहिलेल्यांना हजर लावते. गैरहजर बदलत नाहीत.",
+    "hi": "सिर्फ़ बचे लोगों को उपस्थित करता है। अनुपस्थित नहीं बदलते।"
+  },
+  "attendanceAllPresentDone": {
+    "en": "{count} marked present",
+    "mr": "{count} जण हजर नोंदवले",
+    "hi": "{count} लोग उपस्थित दर्ज",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceOtHours": {
+    "en": "Overtime hours",
+    "mr": "ओव्हरटाइम तास",
+    "hi": "ओवरटाइम घंटे"
+  },
+  "attendanceHoursUnit": {
+    "en": "h",
+    "mr": "तास",
+    "hi": "घं."
+  },
+  "attendanceOtLess": {
+    "en": "Half hour less",
+    "mr": "अर्धा तास कमी",
+    "hi": "आधा घंटा कम"
+  },
+  "attendanceOtMore": {
+    "en": "Half hour more",
+    "mr": "अर्धा तास जास्त",
+    "hi": "आधा घंटा ज़्यादा"
+  },
+  "attendanceGroupProgress": {
+    "en": "{marked} of {total}",
+    "mr": "{total} पैकी {marked}",
+    "hi": "{total} में से {marked}",
+    "placeholders": {
+      "marked": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceAddWorker": {
+    "en": "Add worker",
+    "mr": "कामगार जोडा",
+    "hi": "कामगार जोड़ें"
+  },
+  "attendanceNoProjectTitle": {
+    "en": "No project chosen",
+    "mr": "प्रकल्प निवडलेला नाही",
+    "hi": "कोई प्रोजेक्ट नहीं चुना"
+  },
+  "attendanceNoProjectMessage": {
+    "en": "Choose a project first, then mark the muster here.",
+    "mr": "आधी प्रकल्प निवडा, मग इथे हजेरी लावा.",
+    "hi": "पहले प्रोजेक्ट चुनें, फिर यहाँ हाज़िरी लगाएँ।"
+  },
+  "attendanceNoWorkersTitle": {
+    "en": "No workers on the muster",
+    "mr": "हजेरीत एकही कामगार नाही",
+    "hi": "हाज़िरी में कोई कामगार नहीं"
+  },
+  "attendanceNoWorkersMessage": {
+    "en": "Add your workers here, or ask the office to add them.",
+    "mr": "तुमचे कामगार इथे जोडा किंवा ऑफिसला जोडायला सांगा.",
+    "hi": "अपने कामगार यहाँ जोड़ें या ऑफ़िस से जुड़वाएँ।"
+  },
+  "attendanceLoadFailedTitle": {
+    "en": "Could not open the muster",
+    "mr": "हजेरी उघडता आली नाही",
+    "hi": "हाज़िरी नहीं खुली"
+  },
+  "attendanceLoadFailedMessage": {
+    "en": "Your marks are safe on this phone. Try again.",
+    "mr": "तुमच्या नोंदी या फोनवर सुरक्षित आहेत. पुन्हा प्रयत्न करा.",
+    "hi": "आपकी प्रविष्टियाँ इस फ़ोन पर सुरक्षित हैं। फिर से कोशिश करें।"
+  },
+  "attendanceSaveFailed": {
+    "en": "That mark was not saved. Tap it again.",
+    "mr": "ती नोंद जतन झाली नाही. पुन्हा टॅप करा.",
+    "hi": "वह प्रविष्टि सेव नहीं हुई। फिर से टैप करें।"
+  },
+  "attendanceSheetTitle": {
+    "en": "New worker",
+    "mr": "नवीन कामगार",
+    "hi": "नया कामगार"
+  },
+  "attendanceSheetName": {
+    "en": "Worker's name",
+    "mr": "कामगाराचे नाव",
+    "hi": "कामगार का नाम"
+  },
+  "attendanceSheetNameHint": {
+    "en": "As on the muster",
+    "mr": "हजेरीत आहे तसे",
+    "hi": "जैसा हाज़िरी में है"
+  },
+  "attendanceSheetTrade": {
+    "en": "Trade",
+    "mr": "कामाचा प्रकार",
+    "hi": "काम का प्रकार"
+  },
+  "attendanceSheetNameRequired": {
+    "en": "Write the worker's name.",
+    "mr": "कामगाराचे नाव लिहा.",
+    "hi": "कामगार का नाम लिखें।"
+  },
+  "attendanceSheetTradeRequired": {
+    "en": "Choose the trade.",
+    "mr": "कामाचा प्रकार निवडा.",
+    "hi": "काम का प्रकार चुनें।"
+  },
+  "attendanceSheetWage": {
+    "en": "Daily wage",
+    "mr": "दैनिक मजुरी",
+    "hi": "दैनिक मज़दूरी"
+  },
+  "attendanceSheetWageFor": {
+    "en": "Daily wage for {name}",
+    "mr": "{name} यांची दैनिक मजुरी",
+    "hi": "{name} की दैनिक मज़दूरी",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceSheetWageHelper": {
+    "en": "Leave blank if you do not know it.",
+    "mr": "माहीत नसेल तर रिकामे ठेवा.",
+    "hi": "पता न हो तो खाली छोड़ दें।"
+  },
+  "attendanceSheetOfflineTitle": {
+    "en": "Adding a worker needs network",
+    "mr": "कामगार जोडायला नेटवर्क हवे",
+    "hi": "कामगार जोड़ने के लिए नेटवर्क चाहिए"
+  },
+  "attendanceSheetOfflineMessage": {
+    "en": "Attendance still works without network. Add this worker when the phone is back online.",
+    "mr": "हजेरी नेटवर्कशिवायही चालते. फोन ऑनलाइन आल्यावर हा कामगार जोडा.",
+    "hi": "हाज़िरी बिना नेटवर्क के भी चलती है। फ़ोन ऑनलाइन आने पर यह कामगार जोड़ें।"
+  },
+  "attendanceSheetOfflineError": {
+    "en": "No network. Try again when the phone is back online.",
+    "mr": "नेटवर्क नाही. फोन ऑनलाइन आल्यावर पुन्हा प्रयत्न करा.",
+    "hi": "नेटवर्क नहीं है। फ़ोन ऑनलाइन आने पर फिर से कोशिश करें।"
+  },
+  "attendanceSheetFailed": {
+    "en": "The worker could not be added. Try again.",
+    "mr": "कामगार जोडता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "कामगार नहीं जुड़ा। फिर से कोशिश करें।"
+  },
+  "attendanceSheetDone": {
+    "en": "{name} added to the muster",
+    "mr": "{name} हजेरीत जोडले",
+    "hi": "{name} हाज़िरी में जोड़े गए",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceSheetWageNotSaved": {
+    "en": "{name} added. Set the wage on the website for now.",
+    "mr": "{name} जोडले. मजुरी सध्या वेबसाइटवर भरा.",
+    "hi": "{name} जोड़े गए। मज़दूरी अभी वेबसाइट पर भरें।",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+}

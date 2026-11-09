@@ -1,0 +1,172 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../../../core/design/design.dart';
+import '../../../../core/design/internal/press_target.dart';
+import '../../../../l10n/generated/app_localizations.dart';
+
+/// Asks why the document is going back. Returns the remark, or null when the
+/// user changes their mind. A remark is required: the sender must know what to fix.
+Future<String?> showSendBackSheet(BuildContext context, {required String docType}) {
+  return showModalBottomSheet<String>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    useSafeArea: true,
+    sheetAnimationStyle: context.motion.reduced ? AnimationStyle.noAnimation : null,
+    builder: (_) => _SendBackSheet(docType: docType),
+  );
+}
+
+class _SendBackSheet extends StatefulWidget {
+  const _SendBackSheet({required this.docType});
+
+  final String docType;
+
+  @override
+  State<_SendBackSheet> createState() => _SendBackSheetState();
+}
+
+class _SendBackSheetState extends State<_SendBackSheet> {
+  final TextEditingController _remark = TextEditingController();
+  String? _chosen;
+
+  static const int _limit = 500;
+
+  @override
+  void initState() {
+    super.initState();
+    _remark.addListener(_changed);
+  }
+
+  void _changed() {
+    if (_chosen != null && _remark.text != _chosen) _chosen = null;
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _remark.dispose();
+    super.dispose();
+  }
+
+  List<String> _reasons(AppLocalizations l) => switch (widget.docType) {
+    'measurement' => <String>[
+      l.approvalsReasonDimensions,
+      l.approvalsReasonWrongItem,
+      l.approvalsReasonQuantityHigh,
+      l.approvalsReasonLocation,
+    ],
+    'dpr' => <String>[l.approvalsReasonManpower, l.approvalsReasonWorkDetail, l.approvalsReasonPhotos],
+    'ra_bill' => <String>[l.approvalsReasonAmounts, l.approvalsReasonPeriod, l.approvalsReasonDeductions],
+    _ => <String>[l.approvalsReasonDimensions, l.approvalsReasonAmounts],
+  };
+
+  void _choose(String reason) {
+    _chosen = reason;
+    _remark.value = TextEditingValue(
+      text: reason,
+      selection: TextSelection.collapsed(offset: reason.length),
+    );
+  }
+
+  void _send() {
+    final String remark = _remark.text.trim();
+    if (remark.isNotEmpty) Navigator.of(context).pop(remark);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MediaQueryData media = MediaQuery.of(context);
+    final List<String> reasons = _reasons(l);
+    final bool ready = _remark.text.trim().isNotEmpty;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(l.approvalsSendBackTitle, style: N360Type.title),
+            const SizedBox(height: N360Space.xs),
+            Text(l.approvalsSendBackHelp, style: N360Type.body),
+            const SizedBox(height: N360Space.md),
+            for (final String reason in reasons) ...<Widget>[
+              _ReasonChip(label: reason, selected: _chosen == reason, onTap: () => _choose(reason)),
+              const SizedBox(height: N360Space.sm),
+            ],
+            const SizedBox(height: N360Space.xs),
+            GloveTextField(
+              label: l.approvalsRemarkLabel,
+              hint: l.approvalsRemarkHint,
+              controller: _remark,
+              minLines: 2,
+              maxLines: 3,
+              inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(_limit)],
+            ),
+            const SizedBox(height: N360Space.md),
+            GloveButton(
+              key: const ValueKey<String>('approval-send-back-confirm'),
+              label: l.approvalsSendBack,
+              icon: Icons.reply,
+              large: true,
+              fullWidth: true,
+              onPressed: ready ? _send : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReasonChip extends StatelessWidget {
+  const _ReasonChip({required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color ink = selected ? N360Colors.sheet : N360Colors.ink;
+    return PressTarget(
+      onTap: onTap,
+      haptic: N360Haptics.select,
+      semanticsLabel: label,
+      selected: selected,
+      builder: (context, depth, child) => CustomPaint(
+        painter: SheetEdgePainter(
+          sink: depth * (N360Size.edge - 1),
+          fill: selected ? N360Colors.ink : N360Colors.sheet,
+          edge: selected ? N360Colors.inkEdge : N360Colors.paperEdge,
+          border: selected ? N360Colors.ink : N360Colors.ruleStrong,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: N360Size.edge),
+          child: Transform.translate(offset: Offset(0, depth * (N360Size.edge - 1)), child: child),
+        ),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: N360Size.tap - N360Size.edge),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm),
+            child: Row(
+              children: <Widget>[
+                if (selected) ...<Widget>[Icon(Icons.check, size: 20, color: ink), const SizedBox(width: N360Space.sm)],
+                Expanded(
+                  child: Text(label, style: N360Type.bodyStrong.copyWith(color: ink, height: 1.3)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

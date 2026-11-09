@@ -12,6 +12,437 @@ class AppLocalizationsMr extends AppLocalizations {
   String get appName => 'निर्माण360';
 
   @override
+  String get approvalsActionApproved => 'मंजूर केले';
+
+  @override
+  String get approvalsActionRejected => 'नाकारले';
+
+  @override
+  String get approvalsActionReturned => 'परत पाठवले';
+
+  @override
+  String get approvalsActionSubmitted => 'पाठवले';
+
+  @override
+  String get approvalsApprove => 'मंजूर करा';
+
+  @override
+  String get approvalsBackToInbox => 'मंजुरीकडे परत';
+
+  @override
+  String get approvalsBillNumber => 'बिल क्रमांक';
+
+  @override
+  String get approvalsBillType => 'प्रकार';
+
+  @override
+  String get approvalsChainNext => 'त्यानंतर';
+
+  @override
+  String get approvalsChainTitle => 'मंजुरीची नोंद';
+
+  @override
+  String get approvalsChainWaiting => 'आता बाकी';
+
+  @override
+  String get approvalsCouldNotRefresh =>
+      'ताजे करता आले नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get approvalsCouldNotRefreshOffline =>
+      'सर्व्हरशी संपर्क झाला नाही. शेवटची माहिती दाखवत आहे.';
+
+  @override
+  String approvalsDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दिवसांपूर्वी',
+      one: '1 दिवसापूर्वी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get approvalsDeductions => 'वजावटी';
+
+  @override
+  String get approvalsDeviation => 'तफावत';
+
+  @override
+  String get approvalsDeviationBody =>
+      'BOQ प्रमाण आणि सवलतीपेक्षा जास्त. प्रकल्प व्यवस्थापकाची मंजुरी आवश्यक.';
+
+  @override
+  String get approvalsDocBill => 'RA बिल';
+
+  @override
+  String get approvalsDocDpr => 'दैनिक अहवाल';
+
+  @override
+  String get approvalsDocMeasurement => 'मोजमाप';
+
+  @override
+  String get approvalsEmptyBody => 'नवीन मंजुरी इथे दिसतील.';
+
+  @override
+  String get approvalsEmptyTitle => 'काहीही बाकी नाही';
+
+  @override
+  String approvalsEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count तुमच्याकडे बाकी',
+      zero: 'काहीही बाकी नाही',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get approvalsFailOfflineBody =>
+      'तुमचा निर्णय गेला नाही. काहीही रांगेत नाही. नेटवर्क आल्यावर पुन्हा करा.';
+
+  @override
+  String get approvalsFailOfflineTitle => 'नेटवर्क नाही';
+
+  @override
+  String get approvalsFailRaceBody =>
+      'दुसऱ्या कोणीतरी आधी निर्णय घेतला. आता काय बाकी आहे ते पाहण्यासाठी ताजे करा.';
+
+  @override
+  String get approvalsFailRaceTitle => 'आधीच निर्णय झाला';
+
+  @override
+  String get approvalsFailRejectedTitle => 'सर्व्हरने हे स्वीकारले नाही';
+
+  @override
+  String get approvalsFailServerBody =>
+      'सर्व्हरवर अडचण आली. तुमचा निर्णय नोंदला गेला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get approvalsFailServerTitle => 'पाठवता आले नाही';
+
+  @override
+  String get approvalsFailSessionBody =>
+      'तुमचे सत्र संपले आहे. तुमचा निर्णय गेला नाही.';
+
+  @override
+  String get approvalsFailSessionTitle => 'कृपया पुन्हा साइन इन करा';
+
+  @override
+  String get approvalsGoneBody => 'यावर आधीच निर्णय झाला आहे.';
+
+  @override
+  String get approvalsGoneTitle => 'आता बाकी नाही';
+
+  @override
+  String get approvalsGross => 'कामाचे एकूण मूल्य';
+
+  @override
+  String get approvalsGst => 'GST';
+
+  @override
+  String get approvalsHindrances => 'अडथळे';
+
+  @override
+  String approvalsHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count तासांपूर्वी',
+      one: '1 तासापूर्वी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get approvalsJustNow => 'आत्ताच';
+
+  @override
+  String get approvalsManpower => 'मनुष्यबळ';
+
+  @override
+  String approvalsMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count मिनिटांपूर्वी',
+      one: '1 मिनिटापूर्वी',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get approvalsNeedsNetwork =>
+      'मंजूर किंवा परत पाठवण्यासाठी नेटवर्क लागते. काहीही रांगेत ठेवले जात नाही.';
+
+  @override
+  String get approvalsNetPayable => 'देय रक्कम';
+
+  @override
+  String get approvalsOffline => 'नेटवर्क नाही.';
+
+  @override
+  String get approvalsOfflineDetail =>
+      'वाचता येईल, पण मंजुरीसाठी नेटवर्क लागते.';
+
+  @override
+  String get approvalsOpen => 'उघडा';
+
+  @override
+  String get approvalsParty => 'पक्षकार';
+
+  @override
+  String get approvalsPeriod => 'कालावधी';
+
+  @override
+  String get approvalsPhotos => 'फोटो';
+
+  @override
+  String get approvalsReasonAmounts => 'रकमा जुळत नाहीत';
+
+  @override
+  String get approvalsReasonDeductions => 'वजावटी तपासा';
+
+  @override
+  String get approvalsReasonDimensions => 'मापे तपासा';
+
+  @override
+  String get approvalsReasonLocation => 'ठिकाण स्पष्ट लिहा';
+
+  @override
+  String get approvalsReasonManpower => 'मनुष्यबळाची संख्या चुकली आहे';
+
+  @override
+  String get approvalsReasonPeriod => 'बिलाचा कालावधी चुकला आहे';
+
+  @override
+  String get approvalsReasonPhotos => 'फोटो जोडा';
+
+  @override
+  String get approvalsReasonQuantityHigh => 'प्रमाण जास्त वाटते';
+
+  @override
+  String get approvalsReasonWorkDetail => 'कामाचा अधिक तपशील लिहा';
+
+  @override
+  String get approvalsReasonWrongItem => 'BOQ ओळ चुकली आहे';
+
+  @override
+  String get approvalsRefresh => 'ताजे करा';
+
+  @override
+  String get approvalsRefreshing => 'ताजे करत आहे';
+
+  @override
+  String get approvalsRemarkHint => 'काय दुरुस्त करायचे';
+
+  @override
+  String get approvalsRemarkLabel => 'शेरा';
+
+  @override
+  String get approvalsRemarks => 'शेरा';
+
+  @override
+  String get approvalsRoleAccounts => 'लेखा';
+
+  @override
+  String get approvalsRoleAdmin => 'अॅडमिन';
+
+  @override
+  String get approvalsRoleClient => 'क्लायंट';
+
+  @override
+  String get approvalsRoleEngineer => 'साइट अभियंता';
+
+  @override
+  String get approvalsRoleOwner => 'मालक';
+
+  @override
+  String get approvalsRolePm => 'प्रकल्प व्यवस्थापक';
+
+  @override
+  String get approvalsRoleQs => 'एस्टिमेटर / QS';
+
+  @override
+  String get approvalsSendBack => 'परत पाठवा';
+
+  @override
+  String get approvalsSendBackHelp =>
+      'काय दुरुस्त करायचे ते सांगा. एक निवडा किंवा स्वतः लिहा.';
+
+  @override
+  String get approvalsSendBackTitle => 'परत का पाठवत आहात?';
+
+  @override
+  String get approvalsSentBackToast => 'तुमच्या शेऱ्यासह परत पाठवले.';
+
+  @override
+  String get approvalsSessionExpired => 'कृपया पुन्हा साइन इन करा.';
+
+  @override
+  String get approvalsSummary => 'कामाचा सारांश';
+
+  @override
+  String get approvalsTitle => 'मंजुरी';
+
+  @override
+  String get approvalsTotal => 'एकूण';
+
+  @override
+  String approvalsWaitingOn(String role) {
+    return '$role यांच्याकडे बाकी';
+  }
+
+  @override
+  String get approvalsWeather => 'हवामान';
+
+  @override
+  String get approvalsWorkDone => 'झालेले काम';
+
+  @override
+  String get approvalsWorkers => 'कामगार';
+
+  @override
+  String get attendanceAddWorker => 'कामगार जोडा';
+
+  @override
+  String get attendanceAllMarked => 'सर्वांची हजेरी झाली';
+
+  @override
+  String attendanceAllPresent(int count) {
+    return 'सर्व हजर ($count)';
+  }
+
+  @override
+  String attendanceAllPresentDone(int count) {
+    return '$count जण हजर नोंदवले';
+  }
+
+  @override
+  String get attendanceAllPresentHelper =>
+      'फक्त राहिलेल्यांना हजर लावते. गैरहजर बदलत नाहीत.';
+
+  @override
+  String attendanceDateTitle(String date) {
+    return '$date ची हजेरी';
+  }
+
+  @override
+  String get attendanceDayToday => 'आज';
+
+  @override
+  String get attendanceDayYesterday => 'काल';
+
+  @override
+  String get attendanceEyebrow => 'हजेरी पत्रक';
+
+  @override
+  String attendanceGroupProgress(int marked, int total) {
+    return '$total पैकी $marked';
+  }
+
+  @override
+  String get attendanceHoursUnit => 'तास';
+
+  @override
+  String get attendanceLeft => 'बाकी';
+
+  @override
+  String get attendanceLoadFailedMessage =>
+      'तुमच्या नोंदी या फोनवर सुरक्षित आहेत. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get attendanceLoadFailedTitle => 'हजेरी उघडता आली नाही';
+
+  @override
+  String get attendanceNoProjectMessage =>
+      'आधी प्रकल्प निवडा, मग इथे हजेरी लावा.';
+
+  @override
+  String get attendanceNoProjectTitle => 'प्रकल्प निवडलेला नाही';
+
+  @override
+  String get attendanceNoWorkersMessage =>
+      'तुमचे कामगार इथे जोडा किंवा ऑफिसला जोडायला सांगा.';
+
+  @override
+  String get attendanceNoWorkersTitle => 'हजेरीत एकही कामगार नाही';
+
+  @override
+  String get attendanceOtHours => 'ओव्हरटाइम तास';
+
+  @override
+  String get attendanceOtLess => 'अर्धा तास कमी';
+
+  @override
+  String get attendanceOtMore => 'अर्धा तास जास्त';
+
+  @override
+  String get attendanceSaveFailed => 'ती नोंद जतन झाली नाही. पुन्हा टॅप करा.';
+
+  @override
+  String attendanceSheetDone(String name) {
+    return '$name हजेरीत जोडले';
+  }
+
+  @override
+  String get attendanceSheetFailed =>
+      'कामगार जोडता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get attendanceSheetName => 'कामगाराचे नाव';
+
+  @override
+  String get attendanceSheetNameHint => 'हजेरीत आहे तसे';
+
+  @override
+  String get attendanceSheetNameRequired => 'कामगाराचे नाव लिहा.';
+
+  @override
+  String get attendanceSheetOfflineError =>
+      'नेटवर्क नाही. फोन ऑनलाइन आल्यावर पुन्हा प्रयत्न करा.';
+
+  @override
+  String get attendanceSheetOfflineMessage =>
+      'हजेरी नेटवर्कशिवायही चालते. फोन ऑनलाइन आल्यावर हा कामगार जोडा.';
+
+  @override
+  String get attendanceSheetOfflineTitle => 'कामगार जोडायला नेटवर्क हवे';
+
+  @override
+  String get attendanceSheetTitle => 'नवीन कामगार';
+
+  @override
+  String get attendanceSheetTrade => 'कामाचा प्रकार';
+
+  @override
+  String get attendanceSheetTradeRequired => 'कामाचा प्रकार निवडा.';
+
+  @override
+  String get attendanceSheetWage => 'दैनिक मजुरी';
+
+  @override
+  String attendanceSheetWageFor(String name) {
+    return '$name यांची दैनिक मजुरी';
+  }
+
+  @override
+  String get attendanceSheetWageHelper => 'माहीत नसेल तर रिकामे ठेवा.';
+
+  @override
+  String attendanceSheetWageNotSaved(String name) {
+    return '$name जोडले. मजुरी सध्या वेबसाइटवर भरा.';
+  }
+
+  @override
+  String get attendanceTitle => 'हजेरी';
+
+  @override
+  String get attendanceTodayTitle => 'आजची हजेरी';
+
+  @override
   String get commonBack => 'मागे';
 
   @override
@@ -145,6 +576,1111 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get designWeatherWindy => 'वारा';
+
+  @override
+  String get dprAdd => 'जोडा';
+
+  @override
+  String get dprAddNotes => 'अडथळे किंवा टीप लिहा';
+
+  @override
+  String get dprAddWork => 'काम जोडा';
+
+  @override
+  String get dprAddedTag => 'जोडले';
+
+  @override
+  String get dprApproverRemark => 'मंजुरी देणाऱ्याचा शेरा';
+
+  @override
+  String get dprAttentionBody =>
+      'हा अहवाल पाठवता आला नाही. दुरुस्तीसाठी आउटबॉक्स उघडा.';
+
+  @override
+  String get dprBalance => 'शिल्लक';
+
+  @override
+  String get dprBoqEmpty => 'BOQ आयटम सापडले नाहीत.';
+
+  @override
+  String get dprBoqNotSynced =>
+      'BOQ अजून या फोनवर आलेला नाही. एकदा नेटवर्कला जोडा.';
+
+  @override
+  String get dprCameraFailed =>
+      'कॅमेरा उघडला नाही. फोनच्या सेटिंगमध्ये कॅमेऱ्याला परवानगी द्या.';
+
+  @override
+  String get dprChooseAnother => 'दुसरा आयटम';
+
+  @override
+  String get dprCorrectAndSend => 'दुरुस्त करून पुन्हा पाठवा';
+
+  @override
+  String get dprEdit => 'बदला';
+
+  @override
+  String get dprEmptyMessage => 'तुमचा पहिला अहवाल या वहीची सुरुवात करेल.';
+
+  @override
+  String get dprEmptyTitle => 'अजून अहवाल नाहीत';
+
+  @override
+  String get dprFilledFromYesterday => 'कालच्या नोंदीवरून भरले';
+
+  @override
+  String get dprFormTitle => 'दैनिक अहवाल';
+
+  @override
+  String get dprFutureDate => 'अहवालाची तारीख भविष्यातील असू शकत नाही.';
+
+  @override
+  String get dprHindrances => 'अडथळे';
+
+  @override
+  String get dprHindrancesHint => 'साहित्य उशिरा, पाऊस, वीज गेली';
+
+  @override
+  String get dprListTitle => 'दैनिक अहवाल';
+
+  @override
+  String get dprLocked => 'हा अहवाल मंजुरीसाठी गेला आहे, आता बदलता येणार नाही.';
+
+  @override
+  String dprMoreRows(int count) {
+    return 'आणखी $count';
+  }
+
+  @override
+  String dprMoreTrades(int count) {
+    return 'आणखी कामाचे प्रकार ($count)';
+  }
+
+  @override
+  String get dprNeedWeather => 'आजचे हवामान निवडा.';
+
+  @override
+  String get dprNeedWorkers =>
+      'आलेल्या कामगारांची संख्या भरा. साइट बंद असेल तर अडथळ्यांमध्ये कारण लिहा.';
+
+  @override
+  String get dprNoProject => 'आधी प्रकल्प निवडा';
+
+  @override
+  String get dprNotSaved => 'जतन झाले नाही';
+
+  @override
+  String get dprNotes => 'टीप';
+
+  @override
+  String get dprNotesHint => 'आजचे आणखी काही';
+
+  @override
+  String get dprNothingRecorded => 'काहीही नोंदवलेले नाही';
+
+  @override
+  String get dprOpenToday => 'आजचा अहवाल उघडा';
+
+  @override
+  String get dprOptional => 'ऐच्छिक';
+
+  @override
+  String get dprOverBalance => 'BOQ शिलकीपेक्षा जास्त आहे. आकडा तपासा.';
+
+  @override
+  String get dprPhotoFailed => 'हा फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get dprPhotoMissing => 'उपलब्ध नाही';
+
+  @override
+  String dprPhotosCount(int count) {
+    return '$count फोटो';
+  }
+
+  @override
+  String get dprPhotosFull => 'एका अहवालात 10 फोटोपर्यंत ठेवता येतात.';
+
+  @override
+  String get dprQtyShort => 'प्रमाण';
+
+  @override
+  String get dprQuantity => 'प्रमाण';
+
+  @override
+  String get dprRemove => 'काढा';
+
+  @override
+  String get dprReturnedNoRemark => 'कृपया दुरुस्त करून पुन्हा पाठवा.';
+
+  @override
+  String get dprReturnedTitle => 'दुरुस्तीसाठी परत पाठवले';
+
+  @override
+  String get dprReviewOffline =>
+      'आत्ता नेटवर्क नाही. अहवाल या फोनवर राहील आणि नेटवर्क आल्यावर आपोआप जाईल.';
+
+  @override
+  String get dprReviewTitle => 'तपासा आणि पाठवा';
+
+  @override
+  String dprRowsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count कामे',
+      one: '1 काम',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dprSameAsYesterday(int count) {
+    return 'कालच्यासारखेच ($count)';
+  }
+
+  @override
+  String get dprSavedOnPhone => 'फोनवर जतन झाले';
+
+  @override
+  String get dprSavedSendingNow => 'फोनवर जतन झाले, आता पाठवत आहे';
+
+  @override
+  String get dprSavedWillSend => 'फोनवर जतन झाले, नेटवर्क आल्यावर पाठवले जाईल';
+
+  @override
+  String get dprSaving => 'फोनवर जतन होत आहे';
+
+  @override
+  String get dprSearchBoq => 'BOQ शोधा';
+
+  @override
+  String get dprSearchHint => 'कोड किंवा वर्णन';
+
+  @override
+  String get dprSectionNotes => 'अडथळे आणि टीप';
+
+  @override
+  String get dprSectionPhotos => 'फोटो';
+
+  @override
+  String get dprSectionWeather => 'हवामान';
+
+  @override
+  String get dprSectionWork => 'झालेले काम';
+
+  @override
+  String get dprSectionWorkers => 'कामगार';
+
+  @override
+  String get dprSend => 'पाठवा';
+
+  @override
+  String get dprSendAgain => 'पुन्हा पाठवा';
+
+  @override
+  String get dprSendFailed => 'अहवाल जतन करता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get dprSendReport => 'अहवाल पाठवा';
+
+  @override
+  String get dprSyncAttention => 'लक्ष द्या';
+
+  @override
+  String get dprSyncPhoneOnly => 'फक्त या फोनवर';
+
+  @override
+  String get dprSyncSending => 'पाठवत आहे';
+
+  @override
+  String get dprSyncWaiting => 'पाठवायचे बाकी';
+
+  @override
+  String get dprTakePhoto => 'फोटो काढा';
+
+  @override
+  String get dprTotalWorkers => 'एकूण कामगार';
+
+  @override
+  String dprWorkersCount(int count) {
+    return '$count कामगार';
+  }
+
+  @override
+  String dprWorkersWord(int count) {
+    return 'कामगार';
+  }
+
+  @override
+  String get dprWriteToday => 'आजचा अहवाल लिहा';
+
+  @override
+  String get dprYesterdayTag => 'काल';
+
+  @override
+  String get issuesActionClose => 'समस्या बंद करा';
+
+  @override
+  String get issuesActionReopen => 'पुन्हा उघडा';
+
+  @override
+  String get issuesActionResolve => 'सोडवले म्हणून नोंदवा';
+
+  @override
+  String get issuesActionStart => 'काम सुरू करा';
+
+  @override
+  String get issuesAssignedUnknown => 'सोपवलेले';
+
+  @override
+  String get issuesAssigneeSheetTitle => 'कोणाकडे सोपवायचे';
+
+  @override
+  String get issuesDetailAssignee => 'सोपवले';
+
+  @override
+  String get issuesDetailDescription => 'तपशील';
+
+  @override
+  String get issuesDetailDue => 'अंतिम तारीख';
+
+  @override
+  String get issuesDetailLocation => 'ठिकाण';
+
+  @override
+  String get issuesDetailMissingMessage =>
+      'ती काढली गेली असावी. यादीकडे परत जा.';
+
+  @override
+  String get issuesDetailMissingTitle => 'ही समस्या या फोनवर नाही';
+
+  @override
+  String get issuesDetailPriority => 'प्राधान्य';
+
+  @override
+  String get issuesDetailRaisedBy => 'नोंदवणारे';
+
+  @override
+  String get issuesDetailResolvedOn => 'सोडवल्याची तारीख';
+
+  @override
+  String issuesDueOn(String date) {
+    return 'मुदत $date';
+  }
+
+  @override
+  String get issuesDueToday => 'आजच मुदत';
+
+  @override
+  String get issuesEmptyFilterMessage => 'या स्थितीत एकही समस्या नाही.';
+
+  @override
+  String get issuesEmptyFilterTitle => 'इथे काही नाही';
+
+  @override
+  String get issuesEmptyMessage =>
+      'साइटवर काही बिघडले असेल तर इथे नोंदवा, म्हणजे ते दुरुस्त होईल.';
+
+  @override
+  String get issuesEmptyTitle => 'या साइटवर एकही समस्या नाही';
+
+  @override
+  String get issuesEyebrow => 'साइटवरील समस्या';
+
+  @override
+  String get issuesFilterAll => 'सर्व';
+
+  @override
+  String get issuesFormAssignee => 'कोण दुरुस्त करेल?';
+
+  @override
+  String get issuesFormDue => 'कधीपर्यंत दुरुस्त करायचे?';
+
+  @override
+  String get issuesFormDueThree => '3 दिवस';
+
+  @override
+  String get issuesFormDueToday => 'आज';
+
+  @override
+  String get issuesFormDueWeek => '1 आठवडा';
+
+  @override
+  String get issuesFormEyebrow => 'नवीन समस्या';
+
+  @override
+  String get issuesFormLocation => 'साइटवर कुठे?';
+
+  @override
+  String get issuesFormLocationHint => 'ग्रिड C, तिसरा मजला';
+
+  @override
+  String get issuesFormNoDue => 'तारीख नाही';
+
+  @override
+  String get issuesFormPriority => 'किती तातडीचे आहे?';
+
+  @override
+  String get issuesFormSave => 'समस्या जतन करा';
+
+  @override
+  String get issuesFormTitle => 'समस्या नोंदवा';
+
+  @override
+  String get issuesFormWhat => 'काय बिघडले आहे?';
+
+  @override
+  String get issuesFormWhatHint => 'कॉलम C3 ला भेग';
+
+  @override
+  String get issuesFormWhatRequired => 'काय बिघडले ते लिहा.';
+
+  @override
+  String get issuesNoDueDate => 'मुदत नाही';
+
+  @override
+  String get issuesNoProjectMessage =>
+      'आधी प्रकल्प निवडा, मग इथे समस्या नोंदवा.';
+
+  @override
+  String get issuesNoProjectTitle => 'प्रकल्प निवडलेला नाही';
+
+  @override
+  String issuesOverdue(int days) {
+    return '$days दिवस उशीर';
+  }
+
+  @override
+  String get issuesRaise => 'समस्या नोंदवा';
+
+  @override
+  String get issuesSaveFailed =>
+      'समस्या जतन करता आली नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get issuesSavedOffline =>
+      'फोनवर जतन झाले. नेटवर्क आल्यावर पाठवले जाईल.';
+
+  @override
+  String get issuesSavedOnline => 'जतन झाले. आता पाठवत आहे.';
+
+  @override
+  String get issuesStatusFailed => 'स्थिती बदलता आली नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get issuesSyncAttention => 'लक्ष द्या';
+
+  @override
+  String get issuesSyncSending => 'पाठवत आहे';
+
+  @override
+  String get issuesTitle => 'समस्या';
+
+  @override
+  String get issuesUnassigned => 'कोणाकडेही नाही';
+
+  @override
+  String get measurementAdd => 'जोडा';
+
+  @override
+  String get measurementAddEntry => 'मोजमाप जोडा';
+
+  @override
+  String get measurementAllLines => 'सर्व ओळी';
+
+  @override
+  String get measurementApprovedLockedBody =>
+      'दुरुस्ती वेबवर उलट नोंद करून होते.';
+
+  @override
+  String get measurementApprovedLockedTitle => 'मंजूर आणि बंद';
+
+  @override
+  String get measurementApproverSaid => 'मंजूर करणाऱ्याचा शेरा';
+
+  @override
+  String get measurementAttentionBody =>
+      'सर्व्हरने ही नोंद स्वीकारली नाही. ती फोनवर सुरक्षित आहे.';
+
+  @override
+  String get measurementAttentionTitle => 'पाठवता आले नाही';
+
+  @override
+  String get measurementBalance => 'शिल्लक';
+
+  @override
+  String get measurementBalanceAfter => 'यानंतर शिल्लक';
+
+  @override
+  String get measurementBookTitle => 'मोजमाप पुस्तिका';
+
+  @override
+  String get measurementBoqQty => 'BOQ';
+
+  @override
+  String get measurementBreadth => 'रुंदी';
+
+  @override
+  String get measurementBreadthShort => 'रुंदी';
+
+  @override
+  String get measurementChange => 'बदला';
+
+  @override
+  String get measurementChangeLine => 'BOQ ओळ बदला';
+
+  @override
+  String get measurementChooseLine => 'BOQ ओळ निवडा';
+
+  @override
+  String get measurementClose => 'बंद करा';
+
+  @override
+  String get measurementDateLabel => 'मोजमापाची तारीख';
+
+  @override
+  String get measurementDeduct => 'वजा करा';
+
+  @override
+  String get measurementDelete => 'खोडा';
+
+  @override
+  String get measurementDepth => 'खोली';
+
+  @override
+  String get measurementDepthShort => 'खोली';
+
+  @override
+  String get measurementDescriptionHint => 'काय मोजले ते लिहा';
+
+  @override
+  String get measurementDescriptionLabel => 'वर्णन';
+
+  @override
+  String get measurementDetailTitle => 'मोजमाप';
+
+  @override
+  String get measurementDetailsShort => 'तपशील';
+
+  @override
+  String get measurementDetailsTitle => 'ठिकाण, टीप आणि तारीख';
+
+  @override
+  String get measurementDeviation => 'तफावत';
+
+  @override
+  String measurementDeviationBody(String percent) {
+    return 'BOQ + $percent% पेक्षा जास्त. प्रकल्प व्यवस्थापकाची मंजुरी लागेल.';
+  }
+
+  @override
+  String get measurementDeviationDetail =>
+      'ही नोंद BOQ प्रमाण आणि सवलतीपेक्षा जास्त आहे, त्यामुळे प्रकल्प व्यवस्थापकाची मंजुरी लागेल.';
+
+  @override
+  String get measurementEdit => 'बदला';
+
+  @override
+  String get measurementEmptyBody => 'तुमची पहिली नोंद ही पुस्तिका सुरू करेल.';
+
+  @override
+  String get measurementEmptyFilteredBody => 'या स्थितीच्या नोंदी नाहीत.';
+
+  @override
+  String get measurementEmptyFilteredTitle => 'इथे काही नाही';
+
+  @override
+  String get measurementEmptyTitle => 'अजून मोजमाप नाही';
+
+  @override
+  String get measurementFilterAll => 'सर्व';
+
+  @override
+  String get measurementFormulaHint => 'सुरुवातीला नग भरा';
+
+  @override
+  String get measurementGoneBody => 'ती वेबवर काढली असावी.';
+
+  @override
+  String get measurementGoneTitle => 'नोंद सापडली नाही';
+
+  @override
+  String get measurementItem => 'बाब';
+
+  @override
+  String get measurementLength => 'लांबी';
+
+  @override
+  String get measurementLengthShort => 'लांबी';
+
+  @override
+  String get measurementLocationHint => 'ग्रिड, मजला, फूटिंग';
+
+  @override
+  String get measurementLocationLabel => 'ठिकाण';
+
+  @override
+  String get measurementLockedBody => 'ती मंजूर झाली आहे किंवा तपासणीत आहे.';
+
+  @override
+  String get measurementLockedTitle => 'ही नोंद बदलता येणार नाही';
+
+  @override
+  String get measurementNet => 'निव्वळ';
+
+  @override
+  String get measurementNext => 'पुढे';
+
+  @override
+  String get measurementNoBoqBody =>
+      'एकदा नेटवर्कला जोडा, म्हणजे BOQ या फोनवर येईल.';
+
+  @override
+  String get measurementNoBoqTitle => 'BOQ ओळी अजून नाहीत';
+
+  @override
+  String get measurementNoMatchTitle => 'काहीही जुळत नाही';
+
+  @override
+  String get measurementNos => 'नग';
+
+  @override
+  String get measurementOffline => 'नेटवर्क नाही.';
+
+  @override
+  String get measurementOfflineDetail =>
+      'नोंदी फोनवरच राहतील, नेटवर्क आले की जातील.';
+
+  @override
+  String get measurementOtherDate => 'दुसरी तारीख';
+
+  @override
+  String get measurementPreviewNote =>
+      'या फोनवरचे आकडे अंदाजी आहेत. सर्व्हरवरचे आकडे अंतिम असतात.';
+
+  @override
+  String get measurementPreviewTag => 'अंदाजे';
+
+  @override
+  String get measurementProblemFuture => 'तारीख भविष्यातील असू शकत नाही.';
+
+  @override
+  String get measurementProblemLocked => 'ही नोंद आधीच मंजुरीसाठी गेली आहे.';
+
+  @override
+  String get measurementProblemNoLine => 'आधी BOQ ओळ निवडा.';
+
+  @override
+  String get measurementProblemNos => 'नग भरा. ते आवश्यक आहे.';
+
+  @override
+  String get measurementProblemPositive => 'हा आकडा शून्यापेक्षा जास्त हवा.';
+
+  @override
+  String get measurementProblemTooLarge => 'हा आकडा खूप मोठा आहे.';
+
+  @override
+  String get measurementProblemUnknown => 'जतन झाले नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get measurementQuantity => 'प्रमाण';
+
+  @override
+  String get measurementRecentLines => 'अलीकडचे';
+
+  @override
+  String measurementRowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count नोंदी',
+      one: '1 नोंद',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get measurementSavedOffline => 'फोनवर जतन केले. नेटवर्क आले की जाईल.';
+
+  @override
+  String get measurementSavedOnPhone => 'फोनवर जतन केले.';
+
+  @override
+  String get measurementSearchHint => 'उदा. 2.1 किंवा स्लॅब';
+
+  @override
+  String get measurementSearchLines => 'कोड किंवा वर्णन शोधा';
+
+  @override
+  String get measurementSendAgain => 'पुन्हा पाठवा';
+
+  @override
+  String measurementSendCount(int count) {
+    return '$count ओळी पाठवा';
+  }
+
+  @override
+  String get measurementSendForApproval => 'मंजुरीसाठी पाठवा';
+
+  @override
+  String get measurementSendsWhenOnline =>
+      'अजून गेले नाही. नेटवर्क आले की मंजुरीसाठी जाईल.';
+
+  @override
+  String get measurementStampSent => 'पाठवले';
+
+  @override
+  String get measurementSubmitWaitingTitle =>
+      'मंजुरीसाठी जाण्याच्या प्रतीक्षेत';
+
+  @override
+  String get measurementSyncAttention => 'पाहणे गरजेचे';
+
+  @override
+  String get measurementSyncSending => 'जात आहे';
+
+  @override
+  String measurementTally(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ओळी फोनवर जतन',
+      one: '1 ओळ फोनवर जतन',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get measurementYesterday => 'काल';
+
+  @override
+  String get pettyCashAddExpense => 'खर्च जोडा';
+
+  @override
+  String get pettyCashAmount => 'रक्कम';
+
+  @override
+  String get pettyCashAmountRequired => 'शून्यापेक्षा जास्त रक्कम टाका.';
+
+  @override
+  String get pettyCashBalance => 'शिल्लक';
+
+  @override
+  String pettyCashBalanceAfter(String amount) {
+    return 'यानंतर शिल्लक: $amount';
+  }
+
+  @override
+  String get pettyCashBillAdded => 'बिलाचा फोटो जोडला';
+
+  @override
+  String get pettyCashBillFailed =>
+      'कॅमेरा उघडता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get pettyCashBillLabel => 'बिल';
+
+  @override
+  String get pettyCashBillRetake => 'पुन्हा काढा';
+
+  @override
+  String get pettyCashCategory => 'कशासाठी?';
+
+  @override
+  String get pettyCashCategoryRequired => 'कशासाठी ते निवडा.';
+
+  @override
+  String get pettyCashDate => 'तारीख';
+
+  @override
+  String get pettyCashDayToday => 'आज';
+
+  @override
+  String get pettyCashDayYesterday => 'काल';
+
+  @override
+  String get pettyCashEntries => 'नोंदी';
+
+  @override
+  String get pettyCashEntriesEmptyMessage => 'तुम्ही जोडलेले खर्च इथे दिसतील.';
+
+  @override
+  String get pettyCashEntriesEmptyTitle => 'अजून एकही नोंद नाही';
+
+  @override
+  String get pettyCashEyebrow => 'रोख वही';
+
+  @override
+  String get pettyCashFormEyebrow => 'नवीन खर्च';
+
+  @override
+  String get pettyCashFormTitle => 'खर्च जोडा';
+
+  @override
+  String get pettyCashLoadFailedTitle => 'किरकोळ रोख उघडता आले नाही';
+
+  @override
+  String get pettyCashNext => 'पुढे';
+
+  @override
+  String get pettyCashNoProjectMessage =>
+      'आधी प्रकल्प निवडा, मग इथे खर्च नोंदवा.';
+
+  @override
+  String get pettyCashNoProjectTitle => 'प्रकल्प निवडलेला नाही';
+
+  @override
+  String get pettyCashNoWalletMessage =>
+      'तुमच्यासाठी पाकीट उघडायला प्रकल्प व्यवस्थापक किंवा अकाउंट्स ऑफिसला सांगा.';
+
+  @override
+  String get pettyCashNoWalletTitle => 'या प्रकल्पावर तुमचे पाकीट नाही';
+
+  @override
+  String get pettyCashNote => 'टीप (ऐच्छिक)';
+
+  @override
+  String get pettyCashNoteHint => 'मिक्सरसाठी डिझेल';
+
+  @override
+  String pettyCashOverBalance(String balance) {
+    return 'ही रक्कम पाकिटातील $balance पेक्षा जास्त आहे. ऑफिसकडे रक्कम जमा करायला सांगा.';
+  }
+
+  @override
+  String get pettyCashPhotoBill => 'बिलाचा फोटो';
+
+  @override
+  String get pettyCashProvisional => 'तात्पुरती';
+
+  @override
+  String pettyCashProvisionalNote(String amount) {
+    return '$amount अजून पाठवलेले नाहीत. सिंक झाल्यावर अंतिम शिल्लक कळेल.';
+  }
+
+  @override
+  String get pettyCashSave => 'खर्च जतन करा';
+
+  @override
+  String get pettyCashSaveFailed =>
+      'खर्च जतन करता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get pettyCashSavedOffline =>
+      'फोनवर जतन झाले. नेटवर्क आल्यावर पाठवले जाईल.';
+
+  @override
+  String get pettyCashSavedOnline => 'फोनवर जतन झाले. आता पाठवत आहे.';
+
+  @override
+  String get pettyCashSyncAttention => 'लक्ष द्या';
+
+  @override
+  String get pettyCashSyncSending => 'पाठवत आहे';
+
+  @override
+  String get pettyCashTitle => 'किरकोळ रोख';
+
+  @override
+  String get pettyCashTopup => 'रक्कम जमा';
+
+  @override
+  String get pettyCashWallet => 'पाकीट';
+
+  @override
+  String get shellDiscardBody =>
+      'ती सर्व्हरवर पोहोचलेली नाही. ती या फोनवरून काढली जाईल.';
+
+  @override
+  String get shellDiscardConfirm => 'होय, काढून टाका';
+
+  @override
+  String get shellDiscardKeep => 'राहू द्या';
+
+  @override
+  String get shellDiscardTitle => 'ही नोंद काढून टाकायची?';
+
+  @override
+  String get shellOfflineDetail => 'नोंदी फोनवर राहतील.';
+
+  @override
+  String get shellOfflineLabel => 'ऑफलाइन';
+
+  @override
+  String get shellOutboxAllSentBody => 'या फोनवर काही बाकी नाही.';
+
+  @override
+  String get shellOutboxAllSentStamp => 'सर्व पाठवले';
+
+  @override
+  String shellOutboxAttention(int count) {
+    return '$count नोंदींकडे लक्ष द्या';
+  }
+
+  @override
+  String get shellOutboxLogTitle => 'लागू झाले नाही';
+
+  @override
+  String get shellOutboxNeverSynced => 'अजून सिंक झालेले नाही';
+
+  @override
+  String get shellOutboxServerError =>
+      'सर्व्हरला अडचण आहे. तुमचे काम सुरक्षित आहे, नंतर पाठवले जाईल.';
+
+  @override
+  String get shellOutboxTitle => 'आउटबॉक्स';
+
+  @override
+  String get shellOutboxTrayLabel => 'फोनवर';
+
+  @override
+  String get shellOutboxWaitingLabel => 'पाठवायचे बाकी';
+
+  @override
+  String get shellPickerCurrent => 'चालू';
+
+  @override
+  String get shellPickerEmptyBody =>
+      'कार्यालयाला तुम्हाला प्रकल्पात जोडायला सांगा, मग पुन्हा प्रयत्न करा.';
+
+  @override
+  String get shellPickerEmptyTitle => 'अजून प्रकल्प नाहीत';
+
+  @override
+  String get shellPickerEyebrow => 'तुमचे प्रकल्प';
+
+  @override
+  String get shellPickerLoading => 'तुमचे प्रकल्प आणत आहे…';
+
+  @override
+  String get shellPickerTitle => 'आज कोणती साइट?';
+
+  @override
+  String get shellPillAllSent => 'सर्व पाठवले';
+
+  @override
+  String get shellPillAttention => 'तपासा';
+
+  @override
+  String get shellPillSending => 'पाठवत आहे';
+
+  @override
+  String get shellPillWaiting => 'बाकी';
+
+  @override
+  String get shellReportAttention => 'तपासा';
+
+  @override
+  String get shellReportNotStarted => 'सुरू नाही';
+
+  @override
+  String get shellReportSaved => 'जतन झाला';
+
+  @override
+  String shellReturnedDpr(String date) {
+    return 'दैनिक अहवाल · $date';
+  }
+
+  @override
+  String get shellReturnedFix => 'दुरुस्त करा';
+
+  @override
+  String shellReturnedMeasurement(String code, String qty, String unit) {
+    return 'मोजमाप $code · $qty $unit';
+  }
+
+  @override
+  String get shellReturnedNoRemark => 'शेरा दिलेला नाही';
+
+  @override
+  String get shellReturnedRemarkLabel => 'शेरा';
+
+  @override
+  String get shellReturnedTitle => 'तुम्हाला परत पाठवलेले';
+
+  @override
+  String get shellSettings => 'सेटिंग्ज';
+
+  @override
+  String get shellSettingsLanguage => 'भाषा';
+
+  @override
+  String get shellSettingsSignedIn => 'साइन इन केलेले';
+
+  @override
+  String get shellSettingsVersion => 'ॲप आवृत्ती';
+
+  @override
+  String get shellSignInBusy => 'साइन इन होत आहे…';
+
+  @override
+  String get shellSignInButton => 'साइन इन करा';
+
+  @override
+  String get shellSignInEmail => 'ईमेल';
+
+  @override
+  String get shellSignInEmailRequired => 'तुमचा ईमेल लिहा';
+
+  @override
+  String get shellSignInExpired =>
+      'तुम्हाला साइन आउट केले आहे. काहीही गेलेले नाही: तुमचे काम या फोनवर सुरक्षित आहे. ते पाठवण्यासाठी पुन्हा साइन इन करा.';
+
+  @override
+  String get shellSignInHide => 'लपवा';
+
+  @override
+  String get shellSignInNetworkBody => 'सिग्नल तपासून पुन्हा प्रयत्न करा.';
+
+  @override
+  String get shellSignInNetworkTitle => 'नेटवर्क नाही';
+
+  @override
+  String shellSignInOtherUserBody(int count) {
+    return 'या फोनवर दुसऱ्या व्यक्तीच्या $count नोंदी पाठवायच्या बाकी आहेत. त्यांनी आधी साइन इन करून त्या पाठवाव्यात.';
+  }
+
+  @override
+  String get shellSignInOtherUserTitle => 'दुसऱ्या व्यक्तीचे काम बाकी आहे';
+
+  @override
+  String get shellSignInPassword => 'पासवर्ड';
+
+  @override
+  String get shellSignInPasswordRequired => 'तुमचा पासवर्ड लिहा';
+
+  @override
+  String get shellSignInServerBody =>
+      'तुमच्या फोनचा दोष नाही. थोड्या वेळाने पुन्हा प्रयत्न करा.';
+
+  @override
+  String get shellSignInServerTitle => 'सर्व्हर प्रतिसाद देत नाही';
+
+  @override
+  String get shellSignInShow => 'दाखवा';
+
+  @override
+  String get shellSignInTooManyBody => 'एक मिनिट थांबून पुन्हा प्रयत्न करा.';
+
+  @override
+  String get shellSignInTooManyTitle => 'खूप वेळा प्रयत्न झाले';
+
+  @override
+  String get shellSignInWelcome => 'नमस्कार';
+
+  @override
+  String get shellSignInWrongBody => 'दोन्ही तपासून पुन्हा प्रयत्न करा.';
+
+  @override
+  String get shellSignInWrongTitle => 'ईमेल किंवा पासवर्ड चुकीचा आहे';
+
+  @override
+  String get shellSignOut => 'साइन आउट';
+
+  @override
+  String get shellSignOutConfirmBody => 'पुन्हा साइन इन करायला नेटवर्क लागेल.';
+
+  @override
+  String get shellSignOutConfirmTitle => 'या फोनवरून साइन आउट करायचे?';
+
+  @override
+  String get shellSignOutDiscard => 'साइन आउट करून गमवा';
+
+  @override
+  String get shellSignOutHold => 'नोंदी गमावण्यासाठी दाबून ठेवा';
+
+  @override
+  String get shellSignOutSendFirst => 'आधी पाठवा';
+
+  @override
+  String get shellSignOutUnsentBody =>
+      'आता साइन आउट केल्यास त्या या फोनवरून कायमच्या जातील. आधी त्या पाठवा.';
+
+  @override
+  String shellSignOutUnsentTitle(int count) {
+    return '$count नोंदी पाठवलेल्या नाहीत';
+  }
+
+  @override
+  String get shellSlipSending => 'पाठवत आहे';
+
+  @override
+  String get shellSlipWaiting => 'बाकी';
+
+  @override
+  String get shellSwitchProject => 'प्रकल्प बदला';
+
+  @override
+  String get shellSyncingLabel => 'पाठवत आणि अद्ययावत करत आहे';
+
+  @override
+  String get shellTabApprovals => 'मंजुरी';
+
+  @override
+  String get shellTabHome => 'मुख्य';
+
+  @override
+  String get shellTabMeasure => 'मोजमाप';
+
+  @override
+  String get shellTabOutbox => 'आउटबॉक्स';
+
+  @override
+  String get shellTileApprovals => 'मंजुरी';
+
+  @override
+  String get shellTileAttendance => 'हजेरी';
+
+  @override
+  String get shellTileDaily => 'दैनिक अहवाल';
+
+  @override
+  String get shellTileIssues => 'समस्या';
+
+  @override
+  String get shellTileMeasure => 'मोजमाप';
+
+  @override
+  String get shellTilePetty => 'किरकोळ रोख';
+
+  @override
+  String shellTimeDays(int count) {
+    return '$count दिवसांपूर्वी';
+  }
+
+  @override
+  String shellTimeHours(int count) {
+    return '$count तासांपूर्वी';
+  }
+
+  @override
+  String get shellTimeJustNow => 'आत्ताच';
+
+  @override
+  String shellTimeMinutes(int count) {
+    return '$count मिनिटांपूर्वी';
+  }
+
+  @override
+  String get shellTimeYesterday => 'काल';
+
+  @override
+  String get shellTodayAttendance => 'हजेरी';
+
+  @override
+  String get shellTodayExpenses => 'खर्च';
+
+  @override
+  String get shellTodayMeasured => 'मोजमाप';
+
+  @override
+  String get shellTodayReport => 'अहवाल';
+
+  @override
+  String shellTodaySemantics(String label, String value) {
+    return '$label: $value';
+  }
 
   @override
   String get statusApproved => 'मंजूर';
