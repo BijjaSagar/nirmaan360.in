@@ -4,9 +4,16 @@
 @section('content')
 @php
     $order = ['free', 'contractor', 'business', 'enterprise'];
+    // The offline plan keeps everything on one phone, so it sits apart from the online cards and last in the table.
+    $offlineKey = \App\Services\OfflinePlan\OfflinePlanPolicy::plan();
+    $offline = $plans[$offlineKey] ?? null;
+    $columns = $offline ? [...$order, $offlineKey] : $order;
     $rows = [
         ['Projects', fn ($p) => $p['max_projects'] ?? __('Unlimited')],
         ['Users', fn ($p) => $p['max_users'] ?? __('Unlimited')],
+        ['Phones that can sign in', fn ($p) => $p['max_devices'] ?? __('Unlimited')],
+        ['Where your data lives', fn ($p) => $p['key'] === $offlineKey ? __('On the phone only') : __('On our servers')],
+        ['Server backup and web dashboard', fn ($p) => $p['key'] !== $offlineKey],
         ['Daily reports and issues', fn ($p) => in_array('site', $p['features'])],
         ['Measurement book and approvals', fn ($p) => in_array('measurement', $p['features'])],
         ['Attendance and workers', fn ($p) => in_array('labour', $p['features'])],
@@ -69,23 +76,57 @@
         </div>
     </section>
 
+    @if ($offline)
+        <section>
+            <div class="site-wrap pt-3">
+                <div class="site-card grid gap-8 p-6 lg:grid-cols-[1.3fr_1fr] lg:p-9">
+                    <div>
+                        <div class="flex items-start justify-between gap-2">
+                            <x-icon name="offline" class="size-10" />
+                            <span class="tag-soon">{{ __('No server') }}</span>
+                        </div>
+                        <h2 class="mt-5 text-[28px]">{{ __($offline['label']) }}</h2>
+                        <p class="mt-1 text-[15px] leading-snug text-ink-2">{{ __($offline['tagline']) }}</p>
+                        <ul class="mt-5 space-y-2 text-[15.5px] leading-snug text-ink-2">
+                            <li>· {{ __('Everything stays on one phone. Nothing is sent to our servers, so there is no server backup.') }}</li>
+                            <li>· {{ __('No team and no web dashboard: one person, one phone.') }}</li>
+                            <li>· {{ __('A lost or broken phone means lost data, unless you exported a backup from the app.') }}</li>
+                            <li>· {{ __('Move to an online plan whenever you like and the phone uploads what it holds.') }}</li>
+                        </ul>
+                    </div>
+                    <div class="flex flex-col border-t border-rule pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+                        <div class="min-h-[76px]">
+                            <p x-show="!yearly" class="leading-none"><span class="font-serif text-[38px]">₹{{ \App\Support\Dec::indian($offline['monthly'], 0) }}</span> <span class="text-[15px] text-ink-3">{{ __('/month') }}</span></p>
+                            <p x-show="yearly" x-cloak class="leading-none"><span class="font-serif text-[38px]">₹{{ \App\Support\Dec::indian($offline['yearly'], 0) }}</span> <span class="text-[15px] text-ink-3">{{ __('/year') }}</span></p>
+                            <p class="mt-1.5 text-[13.5px] text-ink-3">{{ plan_gst_note() }}</p>
+                        </div>
+                        <p class="mt-3 text-[15px] text-ink-2">{{ isset($offline['max_devices']) ? trans_choice('The app runs on :count phone at a time.|The app runs on up to :count phones at a time.', $offline['max_devices']) : __('No limit on phones.') }} {{ __('The phone keeps a signed licence, so it works for months with no internet.') }}</p>
+                        <div class="mt-auto pt-5">
+                            <a href="{{ route('register', ['plan' => $offlineKey]) }}" class="site-btn site-btn-outline w-full">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    @endif
+
     <section>
         <div class="site-wrap py-16 lg:py-24">
             <h2 class="text-center text-[clamp(2rem,3.6vw,2.75rem)]">{{ __('What is in each plan') }}</h2>
             <div class="relative mt-9 overflow-x-auto">
-                <table class="w-full min-w-[720px] text-[15.5px]">
+                <table class="w-full min-w-[860px] text-[15.5px]">
                     <thead>
                         <tr class="border-b border-ink/60 text-left">
                             <th class="py-3 pr-4 font-medium"><span class="sr-only">{{ __('Feature') }}</span></th>
-                            @foreach ($order as $key)<th class="px-3 py-3 text-center font-serif text-[19px] font-medium">{{ __($plans[$key]['label']) }}</th>@endforeach
+                            @foreach ($columns as $key)<th class="px-3 py-3 text-center font-serif text-[19px] font-medium">{{ __($plans[$key]['label']) }}</th>@endforeach
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($rows as [$label, $value])
                             <tr class="border-b border-rule">
                                 <td class="py-3.5 pr-4">{{ __($label) }}</td>
-                                @foreach ($order as $key)
-                                    @php $cell = $value($plans[$key]); @endphp
+                                @foreach ($columns as $key)
+                                    @php $cell = $value([...$plans[$key], 'key' => $key]); @endphp
                                     <td class="px-3 py-3.5 text-center">
                                         @if ($cell === true)
                                             <x-icon name="check" class="mx-auto size-5" /><span class="sr-only">{{ __('Included') }}</span>
@@ -114,6 +155,8 @@
                     ['Does it charge me automatically?', 'No. You pay for a month or a year at a time. Nothing renews until you pay again.'],
                     ['What if a paid period runs out?', 'You get :days extra days to renew. After that the company moves to the free plan until you pay.'],
                     ['Can I change plans?', 'Yes, from Billing inside the app. A new plan starts on the day you pay for it.'],
+                    ['Is the Offline plan backed up?', 'No. On the Offline plan nothing leaves the phone, so there is no copy on our servers and no web dashboard. Export a backup from the app from time to time. If the phone is lost, the data is lost with it.'],
+                    ['Can I move from Offline to an online plan later?', 'Yes. Buy an online plan from Billing, and the next time the phone has internet it uploads what it holds. Moving the other way keeps whatever is already on the server; nothing is deleted.'],
                 ] as [$question, $answer])
                     <details><summary>{{ __($question) }}<x-icon name="plus" class="faq-plus size-5 text-ink-3 transition-transform" /></summary><p class="pb-5 text-[16px] leading-relaxed text-ink-2">{{ __($answer, ['days' => config('buildos.payment_grace_days')]) }}</p></details>
                 @endforeach

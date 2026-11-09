@@ -44,14 +44,14 @@ class AuthController extends Controller
         $plan = $request->query('plan');
 
         return view('auth.register', [
-            'plan' => in_array($plan, ['free', 'contractor', 'business'], true) ? $plan : 'contractor',
+            'plan' => in_array($plan, $this->selfServePlans(), true) ? $plan : 'contractor',
         ]);
     }
 
     public function register(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'plan' => ['nullable', Rule::in(['free', 'contractor', 'business'])],
+            'plan' => ['nullable', Rule::in($this->selfServePlans())],
             'company' => ['required', 'string', 'max:120'],
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
@@ -86,6 +86,17 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return redirect()->route('dashboard')->with('success', $isFree ? __('Welcome! Your free plan is ready.') : __('Welcome! Your :days-day trial has started.', ['days' => config('buildos.trial_days')]));
+    }
+
+    /**
+     * Plans a company can start by itself: anything with a price, free included.
+     * Enterprise has none and is priced by conversation.
+     *
+     * @return list<string>
+     */
+    private function selfServePlans(): array
+    {
+        return array_keys(array_filter(config('buildos.plans'), fn (array $plan) => $plan['monthly'] !== null));
     }
 
     public function logout(Request $request): RedirectResponse
