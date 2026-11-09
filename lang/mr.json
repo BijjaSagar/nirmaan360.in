@@ -218,5 +218,12 @@
     "Price before GST": "GST पूर्वीची किंमत",
     "/month": "/महिना",
     "Enter 0 if this contract has no GST.": "या करारात GST नसेल तर 0 टाका.",
-    "Client and subcontractor RA bills, with or without GST.": "क्लायंट आणि उपठेकेदारांचे RA बिल, GST सह किंवा शिवाय."
+    "Client and subcontractor RA bills, with or without GST.": "क्लायंट आणि उपठेकेदारांचे RA बिल, GST सह किंवा शिवाय.",
+    "Add client": "क्लायंट जोडा",
+    "Contact person": "संपर्क व्यक्ती",
+    "GSTIN": "GSTIN",
+    "Address": "पत्ता",
+    "Client": "क्लायंट",
+    "Close": "बंद करा",
+    "Could not save. Check your connection and try again.": "सेव्ह झाले नाही. इंटरनेट तपासून पुन्हा प्रयत्न करा."
 }
