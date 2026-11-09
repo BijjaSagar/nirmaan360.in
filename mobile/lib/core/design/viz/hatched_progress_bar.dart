@@ -6,7 +6,7 @@ import '../typography.dart';
 
 /// Progress as a gold fill and a diagonally hatched remainder, with a marker
 /// labelled for "today". The marker's label is painted from the first frame;
-/// only the fill runs in.
+/// only the fill runs in, once, over [N360Durations.fill].
 ///
 /// [fraction] is a layout value: compute it from `Decimal` before passing it.
 class HatchedProgressBar extends StatelessWidget {
@@ -14,7 +14,7 @@ class HatchedProgressBar extends StatelessWidget {
     super.key,
     required this.fraction,
     this.markerLabel,
-    this.height = 44,
+    this.height = 32,
     this.semanticLabel,
   });
 
@@ -23,6 +23,8 @@ class HatchedProgressBar extends StatelessWidget {
 
   /// Text beside the marker, such as "Today". Null shows no text.
   final String? markerLabel;
+
+  /// The bar itself. 32 for the hero card, 20 for a row.
   final double height;
 
   /// Spoken instead of the percent, such as "70 percent complete".
@@ -32,8 +34,8 @@ class HatchedProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final double target = fraction.clamp(0.0, 1.0);
     final motion = context.motion;
-    final TextScaler scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
-    final double headroom = markerLabel == null ? 8 : 26 * scaler.scale(1);
+    final TextScaler scaler = N360TextScale.of(context);
+    final double headroom = markerLabel == null ? 8 : 22 * scaler.scale(1);
 
     return Semantics(
       container: true,
@@ -42,7 +44,7 @@ class HatchedProgressBar extends StatelessWidget {
         child: RepaintBoundary(
           child: TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: motion.reduced ? target : 0, end: target),
-            duration: motion.reduced ? Duration.zero : const Duration(milliseconds: 620),
+            duration: motion.fill,
             curve: N360Curves.rise,
             builder: (context, value, _) => CustomPaint(
               size: Size(double.infinity, height + headroom),
@@ -76,14 +78,14 @@ class _HatchedBarPainter extends CustomPainter {
   final double headroom;
   final TextScaler scaler;
 
-  static const double _stripeStep = 11;
-  static const double _stripeWidth = 4.5;
+  static const double _stripeStep = 10;
+  static const double _stripeWidth = 4;
 
   @override
   void paint(Canvas canvas, Size size) {
     final Rect bar = Rect.fromLTWH(0, headroom, size.width, barHeight);
     final double splitX = size.width * fraction;
-    final RRect shape = RRect.fromRectAndRadius(bar, const Radius.circular(12));
+    final RRect shape = RRect.fromRectAndRadius(bar, Radius.circular(barHeight * 0.3));
 
     canvas.drawRRect(shape, Paint()..color = N360Colors.paper2);
 
@@ -100,7 +102,7 @@ class _HatchedBarPainter extends CustomPainter {
     // The remainder: orange hatching on the pale track.
     final Rect rest = Rect.fromLTRB(splitX, bar.top, size.width, bar.bottom);
     if (rest.width > 0) {
-      _stripes(canvas, rest, Paint()..color = N360Colors.orange.withValues(alpha: 0.72));
+      _stripes(canvas, rest, Paint()..color = N360Colors.orange.withValues(alpha: 0.68));
     }
     canvas.restore();
 
@@ -130,25 +132,25 @@ class _HatchedBarPainter extends CustomPainter {
     final double px = x.clamp(1.0, size.width - 1.0);
     final Paint line = Paint()
       ..color = N360Colors.orange
-      ..strokeWidth = 2;
-    final double dotY = label == null ? bar.top - 4 : bar.top - 7;
+      ..strokeWidth = 1.5;
+    final double dotY = label == null ? bar.top - 4 : bar.top - 6;
     canvas.drawLine(Offset(px, dotY), Offset(px, bar.bottom), line);
-    canvas.drawCircle(Offset(px, dotY), 4, Paint()..color = N360Colors.orange);
-    canvas.drawCircle(Offset(px, dotY), 1.6, Paint()..color = N360Colors.sheet);
+    canvas.drawCircle(Offset(px, dotY), 3.5, Paint()..color = N360Colors.orange);
+    canvas.drawCircle(Offset(px, dotY), 1.4, Paint()..color = N360Colors.sheet);
 
     final String? text = label;
     if (text == null || text.isEmpty) return;
     final TextPainter painter = TextPainter(
       text: TextSpan(
         text: text,
-        style: N360Type.caption.copyWith(color: N360Colors.ink2, fontSize: 13, height: 1.3),
+        style: N360Type.fit(N360Type.caption, text).copyWith(color: N360Colors.ink2, height: 1.2),
       ),
       textDirection: TextDirection.ltr,
       textScaler: scaler,
       maxLines: 1,
     )..layout(maxWidth: size.width);
     final double textX = (px - painter.width / 2).clamp(0.0, size.width - painter.width);
-    painter.paint(canvas, Offset(textX, dotY - 8 - painter.height));
+    painter.paint(canvas, Offset(textX, dotY - 6 - painter.height));
     painter.dispose();
   }
 

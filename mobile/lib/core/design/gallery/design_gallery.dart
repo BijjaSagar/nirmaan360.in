@@ -17,6 +17,7 @@ enum GallerySection {
   muster,
   choices,
   outbox,
+  loading,
   moments,
   type,
 }
@@ -44,6 +45,7 @@ class DesignGallery extends StatelessWidget {
         GallerySection.muster => _MusterPage(_c),
         GallerySection.choices => _ChoicesPage(_c),
         GallerySection.outbox => _OutboxPage(_c),
+        GallerySection.loading => _LoadingPage(_c),
         GallerySection.moments => _MomentsPage(_c),
         GallerySection.type => _TypePage(_c),
       };
@@ -149,7 +151,7 @@ class _ProgressPage extends StatelessWidget {
                     IconTile(icon: Icons.calendar_month_outlined, semanticLabel: c.t('Dates', 'तारखा'), onTap: () {}),
                   ],
                 ),
-                Text('70.50%', style: N360Type.figureHero),
+                const RollingNumber(value: '70.50', suffix: '%', style: N360Type.figureHero, animateEntry: true),
                 const SizedBox(height: N360Space.xs),
                 Row(
                   children: <Widget>[
@@ -200,8 +202,8 @@ class _Caption extends StatelessWidget {
       crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(label, style: N360Type.caption),
-        Text(value, style: N360Type.heading.copyWith(fontSize: 15, height: 1.3)),
+        Text(label, style: N360Type.fit(N360Type.caption, label)),
+        Text(value, style: N360Type.fit(N360Type.label, value)),
       ],
     );
   }
@@ -269,7 +271,7 @@ class _PlanPage extends StatelessWidget {
                   children: <Widget>[
                     IconTile(icon: Icons.calendar_month_outlined, semanticLabel: c.t('Date', 'तारीख')),
                     const SizedBox(width: N360Space.md),
-                    Expanded(child: Text('28.10.2026', style: N360Type.heading.copyWith(fontSize: 19))),
+                    Expanded(child: Text('28.10.2026', style: N360Type.heading)),
                     IconTile(icon: Icons.north_east, semanticLabel: c.t('Open', 'उघडा'), onTap: () {}),
                   ],
                 ),
@@ -373,6 +375,14 @@ class _ArtPage extends StatelessWidget {
         ),
         SizedBox(height: N360Space.sm),
         Center(child: SizedBox(width: 150, child: BuildingProgressArt(fraction: 0.62))),
+        SizedBox(height: N360Space.md),
+        Row(
+          children: <Widget>[
+            Expanded(child: LoopingArt.craneHoist(semanticLabel: 'Crane hoisting a beam')),
+            SizedBox(width: N360Space.sm),
+            Expanded(child: LoopingArt.allSent(semanticLabel: 'All sent')),
+          ],
+        ),
       ],
     );
   }
@@ -769,7 +779,7 @@ class _MusterPage extends StatelessWidget {
               for (final (name, trade, value, icon) in workers) ...<Widget>[
                 Row(
                   children: <Widget>[
-                    Icon(icon, size: 22, color: N360Colors.inkLabel),
+                    Icon(icon, size: N360IconSize.md, color: N360Colors.inkLabel),
                     const SizedBox(width: N360Space.sm),
                     Expanded(
                       child: Text.rich(
@@ -896,6 +906,38 @@ class _OutboxPage extends StatelessWidget {
   }
 }
 
+class _LoadingPage extends StatelessWidget {
+  const _LoadingPage(this.c);
+
+  final _Copy c;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Page(
+      eyebrow: c.t('Loading', 'लोड होत आहे'),
+      title: c.t('Still paper, no spinner', 'शांत कागद, चक्र नाही'),
+      children: <Widget>[
+        LedgerSkeleton(figure: true, lines: 2, semanticsLabel: c.t('Loading', 'लोड होत आहे')),
+        const SizedBox(height: N360Space.cardGap),
+        Row(
+          children: <Widget>[
+            Expanded(child: LedgerSkeleton(figure: true, lines: 1, semanticsLabel: c.t('Loading', 'लोड होत आहे'))),
+            const SizedBox(width: N360Space.cardGap),
+            Expanded(child: LedgerSkeleton(figure: true, lines: 1, semanticsLabel: c.t('Loading', 'लोड होत आहे'))),
+          ],
+        ),
+        const SizedBox(height: N360Space.md),
+        SectionLabel(c.t('A list on its way', 'यादी येत आहे')),
+        const SizedBox(height: N360Space.xs),
+        LedgerCard(
+          padding: const EdgeInsets.all(N360Space.sm),
+          child: LedgerSkeletonList(rows: 3, semanticsLabel: c.t('Loading', 'लोड होत आहे')),
+        ),
+      ],
+    );
+  }
+}
+
 class _MomentsPage extends StatelessWidget {
   const _MomentsPage(this.c);
 
@@ -946,7 +988,7 @@ class _TypePage extends StatelessWidget {
           style: N360Type.body,
         ),
         const SizedBox(height: N360Space.md),
-        Text('₹1,23,456.50', style: N360Type.figureHero.copyWith(fontSize: 36)),
+        Text('₹1,23,456.50', style: N360Type.figureHero),
         Text('620.000 cum', style: N360Type.figureLarge),
         Text('2 × 10.000 × 5.000', style: N360Type.figure),
         const SizedBox(height: N360Space.md),

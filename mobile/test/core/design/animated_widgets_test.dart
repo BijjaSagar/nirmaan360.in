@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -265,6 +266,204 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('animateEntry counts up once from zeros, is painted throughout, and then rests', (tester) async {
+      expect(RollingNumber.zeroed('70.50'), '00.00');
+      expect(RollingNumber.zeroed('1,23,456.50'), '0,00,000.00');
+
+      await pumpDesign(
+        tester,
+        const RollingNumber(value: '70.50', suffix: '%', style: N360Type.figureHero, animateEntry: true),
+      );
+      expect(tester.hasRunningAnimations, isTrue, reason: 'the count-up starts at t = 0');
+      expect(await inkedPixels(tester, find.byType(RollingNumber)), greaterThan(50), reason: 'digits at frame 0');
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(await inkedPixels(tester, find.byType(RollingNumber)), greaterThan(50), reason: 'digits mid-roll');
+      await tester.pump(N360Durations.count);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(await inkedPixels(tester, find.byType(RollingNumber)), greaterThan(50));
+    });
+
+    testWidgets('animateEntry with reduced motion shows the final figure at once', (tester) async {
+      await pumpDesign(
+        tester,
+        const RollingMoney(value: '1,23,456.50', style: N360Type.figureHero, animateEntry: true),
+        disableAnimations: true,
+      );
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(await inkedPixels(tester, find.byType(RollingNumber)), greaterThan(50));
+    });
+
+    testWidgets('a zero value has nothing to count and does not animate', (tester) async {
+      await pumpDesign(tester, const RollingNumber(value: '0.00', animateEntry: true));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+  });
+
+  group('LedgerSkeleton', () {
+    testWidgets('reduced motion: still bars, no ticking, spoken once', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpDesign(
+        tester,
+        const SizedBox(width: 300, child: LedgerSkeleton(figure: true, lines: 2, semanticsLabel: 'Loading')),
+        disableAnimations: true,
+      );
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(find.bySemanticsLabel('Loading'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      handle.dispose();
+    });
+
+    testWidgets('animated: one sheen repeats inside a RepaintBoundary', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: LedgerSkeleton()));
+      expect(tester.hasRunningAnimations, isTrue);
+      expect(find.descendant(of: find.byType(LedgerSkeleton), matching: find.byType(RepaintBoundary)), findsOneWidget);
+      await tester.pump(N360Durations.sheen);
+      expect(tester.hasRunningAnimations, isTrue, reason: 'it keeps going until the content lands');
+      expect(tester.takeException(), isNull);
+      await pumpDesign(tester, const SizedBox.shrink());
+    });
+
+    testWidgets('a list of them stacks with no overflow', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: LedgerSkeletonList(rows: 4)), disableAnimations: true);
+      expect(find.byType(LedgerSkeleton), findsNWidgets(4));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('LoopingArt', () {
+    testWidgets('reduced motion: the still drawing, no image decode', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpDesign(
+        tester,
+        const SizedBox(width: 200, child: LoopingArt.craneHoist(semanticLabel: 'Crane')),
+        disableAnimations: true,
+      );
+      expect(find.byType(Image), findsNothing);
+      expect(find.byType(BuildingProgressArt), findsOneWidget);
+      expect(find.bySemanticsLabel('Crane'), findsOneWidget);
+      expect(tester.hasRunningAnimations, isFalse);
+      handle.dispose();
+    });
+
+    testWidgets('animated: asks for the file decoded at its laid-out width and shows the still until it lands', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 200, child: LoopingArt.allSent(semanticLabel: 'All sent')));
+      final Image image = tester.widget<Image>(find.byType(Image));
+      expect(image.image, isA<ResizeImage>());
+      expect((image.image as ResizeImage).width, (200 * 3).round(), reason: '200dp at 3x');
+      expect(image.gaplessPlayback, isTrue);
+      expect(find.byType(BuildingProgressArt), findsOneWidget, reason: 'the still is the first frame');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('EmptyLedger carries the crane loop, or the still when asked', (tester) async {
+      await pumpDesign(tester, const EmptyLedger(title: 'Nothing yet'), disableAnimations: true);
+      expect(find.byType(LoopingArt), findsOneWidget);
+      expect(find.byType(BuildingProgressArt), findsOneWidget);
+
+      await pumpDesign(tester, const EmptyLedger(title: 'Nothing yet', animated: false), disableAnimations: true);
+      expect(find.byType(LoopingArt), findsNothing);
+      expect(find.byType(BuildingProgressArt), findsOneWidget);
+    });
+  });
+
+  group('showLedgerSheet', () {
+    testWidgets('rises with the drag handle and comes back with a value', (tester) async {
+      await pumpDesign(tester, const SizedBox.shrink());
+      final BuildContext context = tester.element(find.byType(Scaffold));
+      final Future<int?> result = showLedgerSheet<int>(
+        context,
+        builder: (context) => SizedBox(
+          height: 200,
+          child: Center(child: GloveButton(label: 'Pick', onPressed: () => Navigator.of(context).pop(7))),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Pick'), findsOneWidget);
+      expectTextOpaque(tester, 'Pick');
+      await tester.pump(N360Durations.sheet);
+      await tester.tap(find.text('Pick'));
+      await tester.pump();
+      await pumpMs(tester, 400);
+      expect(await result, 7);
+      expect(find.text('Pick'), findsNothing);
+    });
+
+    testWidgets('reduced motion: it is simply there', (tester) async {
+      await pumpDesign(tester, const SizedBox.shrink(), disableAnimations: true);
+      final BuildContext context = tester.element(find.byType(Scaffold));
+      showLedgerSheet<void>(context, builder: (context) => const SizedBox(height: 120, child: Text('Sheet')));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Sheet'), findsOneWidget);
+    });
+  });
+
+  group('LedgerRefresh', () {
+    testWidgets('pulling runs onRefresh and shows the rule only while working', (tester) async {
+      var refreshes = 0;
+      final Completer<void> work = Completer<void>();
+      await pumpDesign(
+        tester,
+        SizedBox(
+          width: 360,
+          height: 600,
+          child: LedgerRefresh(
+            semanticsLabel: 'Refreshing',
+            onRefresh: () {
+              refreshes++;
+              return work.future;
+            },
+            child: ListView(children: const <Widget>[SizedBox(height: 700, child: Text('List'))]),
+          ),
+        ),
+      );
+      expect(find.byType(ProgressRule), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      await tester.fling(find.text('List'), const Offset(0, 300), 1000);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(refreshes, 1);
+      expect(find.byType(ProgressRule), findsOneWidget);
+      work.complete();
+      await tester.pump();
+      await pumpMs(tester, 600);
+      expect(find.byType(ProgressRule), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('SyncPill moment', () {
+    testWidgets('the tick lands with the stamp curve when the state turns synced', (tester) async {
+      final ValueNotifier<SyncVisualState> state = ValueNotifier(SyncVisualState.pending);
+      addTearDown(state.dispose);
+      await pumpDesign(
+        tester,
+        ValueListenableBuilder<SyncVisualState>(
+          valueListenable: state,
+          builder: (_, value, _) => SyncPill(state: value, label: 'status'),
+        ),
+      );
+      // At rest the only Transform over the icon is the pill's own press sink, at scale 1.
+      final Transform before = tester.widget<Transform>(
+        find.ancestor(of: find.byIcon(Icons.schedule), matching: find.byType(Transform)).first,
+      );
+      expect(before.transform.getMaxScaleOnAxis(), closeTo(1, 0.001));
+      state.value = SyncVisualState.synced;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      final Transform t = tester.widget<Transform>(
+        find.ancestor(of: find.byIcon(Icons.cloud_done), matching: find.byType(Transform)).first,
+      );
+      expect(t.transform.getMaxScaleOnAxis(), greaterThan(1.05));
+      await tester.pump(const Duration(seconds: 1));
+      final Transform rest = tester.widget<Transform>(
+        find.ancestor(of: find.byIcon(Icons.cloud_done), matching: find.byType(Transform)).first,
+      );
+      expect(rest.transform.getMaxScaleOnAxis(), closeTo(1, 0.001));
+    });
   });
 
   group('StaggeredRise', () {
@@ -316,9 +515,68 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('First'), findsOneWidget);
       expect(find.text('Second'), findsOneWidget);
+      expect(find.byType(FadeTransition), findsNothing);
       await pumpMs(tester, 500);
       expect(find.text('First'), findsNothing);
       expect(find.text('Second'), findsOneWidget);
+    });
+
+    testWidgets('the page beneath drifts back a little, and the incoming page carries paper while moving', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(app(second: false));
+      final double restingX = tester.getCenter(find.text('First')).dx;
+      await tester.pumpWidget(app(second: true));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 160));
+      final double first = tester.getCenter(find.text('First')).dx;
+      expect(first, lessThan(restingX - 20), reason: 'the old page has moved left');
+      expect(first, greaterThan(restingX - 360 * 0.4), reason: 'but only part of the way');
+      final double second = tester.getCenter(find.text('Second')).dx;
+      expect(second, greaterThan(first));
+      // The moving page paints its own paper, so nothing from beneath shows through.
+      final Finder backing = find.ancestor(of: find.text('Second'), matching: find.byType(CustomPaint));
+      expect(backing, findsWidgets);
+      await pumpMs(tester, 500);
+      expect(tester.getCenter(find.text('Second')).dx, closeTo(restingX, 0.5));
+    });
+
+    testWidgets('a fullscreenDialog page rises from the bottom', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      Widget sheetApp({required bool second}) => MediaQuery(
+            data: const MediaQueryData(size: Size(360, 800)),
+            child: MaterialApp(
+              theme: buildN360Theme(),
+              builder: (context, child) => LedgerPaper.root(child: child),
+              home: Navigator(
+                pages: <Page<void>>[
+                  const N360Page<void>(key: ValueKey<String>('a'), child: Scaffold(body: Center(child: Text('A')))),
+                  if (second)
+                    const N360Page<void>(
+                      key: ValueKey<String>('b'),
+                      fullscreenDialog: true,
+                      child: Scaffold(body: Center(child: Text('B'))),
+                    ),
+                ],
+                onDidRemovePage: (_) {},
+              ),
+            ),
+          );
+      await tester.pumpWidget(sheetApp(second: false));
+      final Rect aBefore = tester.getRect(find.text('A'));
+      await tester.pumpWidget(sheetApp(second: true));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      final Rect b = tester.getRect(find.text('B'));
+      expect(b.top, greaterThan(400), reason: 'B is still below the middle on its way up');
+      expect(tester.getRect(find.text('A')), aBefore, reason: 'the page beneath a sheet stays still');
+      await pumpMs(tester, 600);
+      expect(tester.getRect(find.text('B')).top, lessThan(420));
     });
 
     testWidgets('reduced motion gives the route a zero transition', (tester) async {

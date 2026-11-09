@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
@@ -11,12 +12,22 @@ import '../motion.dart';
 /// floors above it are a bare frame under a tower crane.
 ///
 /// The frame and crane are there from the first frame; the finished floors rise
-/// on entry through `context.motion`. After that it repaints only when
-/// [fraction] changes, and it sits in a `RepaintBoundary`.
+/// on entry over [N360Durations.build] through `context.motion`. After that it
+/// repaints only when [fraction] changes, and it sits in a `RepaintBoundary`.
+///
+/// [hoist] and [glow] exist for the looping illustrations rendered by
+/// `tool/build_animations.py`; a screen leaves them at their defaults.
 ///
 /// [fraction] is a layout value: compute it from `Decimal` before passing it.
 class BuildingProgressArt extends StatelessWidget {
-  const BuildingProgressArt({super.key, required this.fraction, this.semanticLabel, this.animateEntry = true});
+  const BuildingProgressArt({
+    super.key,
+    required this.fraction,
+    this.semanticLabel,
+    this.animateEntry = true,
+    this.hoist = 1,
+    this.glow = -1,
+  });
 
   /// How much is built, 0 to 1.
   final double fraction;
@@ -26,6 +37,14 @@ class BuildingProgressArt extends StatelessWidget {
 
   /// Set false to show the final state at once, as an empty state does.
   final bool animateEntry;
+
+  /// Where the beam on the crane's hook is: 0 at the ground, 1 at the working
+  /// floor. Screens leave it at 1.
+  final double hoist;
+
+  /// Below 0 the windows are lit as drawn. From 0 to 1 a band of light moves
+  /// through them, for the "all sent" loop.
+  final double glow;
 
   /// Width over height of the drawing.
   static const double aspectRatio = 1.13;
@@ -45,11 +64,11 @@ class BuildingProgressArt extends StatelessWidget {
             aspectRatio: aspectRatio,
             child: TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: still ? target : 0, end: target),
-              duration: motion.reduced ? Duration.zero : const Duration(milliseconds: 1150),
+              duration: motion.build,
               curve: N360Curves.rise,
               builder: (context, value, _) => CustomPaint(
                 size: Size.infinite,
-                painter: BuildingArtPainter(fraction: value),
+                painter: BuildingArtPainter(fraction: value, hoist: hoist, glow: glow),
               ),
             ),
           ),
@@ -101,9 +120,15 @@ abstract final class _Art {
 /// World units: one bay is 1, one floor is [_floor]. X runs down to the right on
 /// screen, Y runs down to the left, Z is up.
 class BuildingArtPainter extends CustomPainter {
-  const BuildingArtPainter({required this.fraction});
+  const BuildingArtPainter({required this.fraction, this.hoist = 1, this.glow = -1});
 
   final double fraction;
+
+  /// Beam height on the hook, 0 at the ground to 1 at the working floor.
+  final double hoist;
+
+  /// Below 0: windows lit as drawn. 0 to 1: a band of light sweeps the windows.
+  final double glow;
 
   static const int _bayX = 7;
   static const int _bayY = 4;
@@ -329,7 +354,16 @@ class BuildingArtPainter extends CustomPainter {
     final double a0 = along + 0.2;
     final double a1 = along + 0.8;
     final int seed = (k * 3 + along * 7).round();
-    final bool lit = seed % 5 == 1;
+    bool lit = seed % 5 == 1;
+    if (glow >= 0) {
+      // A band of light travelling up and across the finished building: windows
+      // are ordered floor by floor, left face then right, and the band covers
+      // a little over half of them at any moment, so the loop never jumps.
+      final double floorIndex = (k / _floor).roundToDouble();
+      final double order = floorIndex * (_bayX + _bayY) + (isLeft ? along : _bayX + along);
+      const double total = _floors * (_bayX + _bayY) * 1.0;
+      lit = lit || ((order / total - glow) % 1.0) < 0.55;
+    }
     final Color frame = isLeft ? _Art.windowLeft : _Art.windowRight;
 
     void quad(double a, double b, double z0, double z1, Color color) {
@@ -640,16 +674,23 @@ class BuildingArtPainter extends CustomPainter {
     canvas.drawLine(peak, cjTop, stay);
 
     // Trolley, cable and a beam on the hook, hanging over the working floor.
+    // With [hoist] under 1 the beam is still on its way up from the ground and
+    // swings a little, as a load on a long cable does.
     const double trolleyS = 5.9;
     final Offset trolley = along(trolleyS, _jibZ + 0.08);
-    final double hookZ = math.max(built.floor() * _floor + 1.5, _floor * 1.6);
-    final Offset hook = cam.at(_mastX + dirX * trolleyS, _mastY + dirY * trolleyS, math.min(hookZ, _jibZ - 0.9));
+    final double hookTop = math.min(math.max(built.floor() * _floor + 1.5, _floor * 1.6), _jibZ - 0.9);
+    final double lift = hoist.clamp(0.0, 1.0);
+    final double hookZ = lerpDouble(0.55, hookTop, lift)!;
+    final double sway = 0.09 * math.sin(lift * math.pi);
+    final double hx = _mastX + dirX * trolleyS + sway;
+    final double hy = _mastY + dirY * trolleyS + sway;
+    final Offset hook = cam.at(hx, hy, hookZ);
     canvas.drawRect(Rect.fromCenter(center: trolley, width: 0.5 * cam.u, height: 0.14 * cam.u), Paint()..color = _Art.craneDark);
     canvas.drawLine(trolley, hook, stay);
 
     final double beamHalf = 0.75;
-    final Offset b0 = cam.at(_mastX + dirX * trolleyS - beamHalf, _mastY + dirY * trolleyS, math.min(hookZ, _jibZ - 0.9) - 0.1);
-    final Offset b1 = cam.at(_mastX + dirX * trolleyS + beamHalf, _mastY + dirY * trolleyS, math.min(hookZ, _jibZ - 0.9) - 0.1);
+    final Offset b0 = cam.at(hx - beamHalf, hy, hookZ - 0.1);
+    final Offset b1 = cam.at(hx + beamHalf, hy, hookZ - 0.1);
     final double t = 0.13 * cam.u;
     canvas.drawPath(
       Path()..addPolygon(<Offset>[b0, b1, b1 + Offset(0, t), b0 + Offset(0, t)], true),
@@ -662,7 +703,8 @@ class BuildingArtPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(BuildingArtPainter oldDelegate) => oldDelegate.fraction != fraction;
+  bool shouldRepaint(BuildingArtPainter oldDelegate) =>
+      oldDelegate.fraction != fraction || oldDelegate.hoist != hoist || oldDelegate.glow != glow;
 }
 
 class _Camera {

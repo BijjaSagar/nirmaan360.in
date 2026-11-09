@@ -7,7 +7,8 @@ import '../tokens.dart';
 import '../typography.dart';
 
 /// An on-screen numeric keypad, because a phone's own keyboard cannot be used
-/// with gloves. Keys are 64dp and the next-field key sits under the thumb.
+/// with gloves. Keys are [N360Size.key] tall and the next-field key sits under
+/// the thumb.
 ///
 /// The keypad owns the input rules and hands back the new string, so it never
 /// touches `double`: feed [value] straight into your `Qty` or `Money`.
@@ -151,7 +152,7 @@ class _DigitKey extends StatelessWidget {
       haptic: N360Haptics.tap,
       minHeight: N360Size.key,
       semanticsLabel: digit,
-      child: Text(digit, style: N360Type.figureLarge.copyWith(height: 1.1)),
+      child: Text(digit, style: N360Type.figureLarge.copyWith(height: 1.1, letterSpacing: 0)),
       builder: (context, depth, child) {
         return Transform.scale(
           scale: pressedScale(depth),
@@ -197,11 +198,11 @@ class _ActionKey extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Icon(icon, size: 28, color: ink),
-          const SizedBox(height: 4),
+          Icon(icon, size: N360IconSize.xl, color: ink),
+          const SizedBox(height: 3),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(label, style: N360Type.label.copyWith(color: ink, fontSize: 16, height: 1.25)),
+            child: Text(label, style: N360Type.fit(N360Type.label, label).copyWith(color: ink, height: 1.25)),
           ),
         ],
       ),

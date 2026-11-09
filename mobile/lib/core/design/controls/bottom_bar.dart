@@ -20,7 +20,10 @@ class N360BarItem {
 }
 
 /// Bottom navigation: a floating rounded bar in the thumb's arc. A gold tile
-/// slides to the chosen item. Every icon keeps its word underneath.
+/// slides to the chosen item and settles. Every icon keeps its word underneath.
+///
+/// Each item is a full [N360Size.tap] target; the painted tile behind the
+/// active one is [N360Size.barTile] high, so the bar looks light.
 class N360BottomBar extends StatelessWidget {
   const N360BottomBar({
     super.key,
@@ -33,15 +36,15 @@ class N360BottomBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const double _inset = 6;
+  static const double _inset = 4;
 
   @override
   Widget build(BuildContext context) {
     final double safe = MediaQuery.paddingOf(context).bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(N360Space.gutter - 4, N360Space.sm, N360Space.gutter - 4, N360Space.sm + safe),
+      padding: EdgeInsets.fromLTRB(N360Space.md, N360Space.sm, N360Space.md, N360Space.sm + safe),
       child: CustomPaint(
-        painter: const SoftSurfacePainter(radius: 26, edge: N360Colors.cardEdge, shadow: true),
+        painter: const SoftSurfacePainter(radius: N360Radius.card, edge: N360Colors.cardEdge, shadow: true),
         child: Padding(
           padding: const EdgeInsets.all(_inset),
           child: SizedBox(
@@ -87,28 +90,30 @@ class _SlidingTile extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double cell = constraints.maxWidth / count;
-        return TweenAnimationBuilder<double>(
-          tween: Tween<double>(end: index.toDouble()),
-          duration: context.motion.quick + context.motion.quick,
-          curve: N360Curves.rise,
-          builder: (context, value, child) => Transform.translate(
-            offset: Offset(value * cell, 0),
-            child: child,
-          ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: SizedBox(
-              width: cell,
-              height: double.infinity,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 3),
-                child: CustomPaint(
-                  painter: SoftSurfacePainter(
-                    radius: N360Radius.tile,
-                    gradient: N360Gradients.gold,
-                    edge: Color(0x55FFFFFF),
+        return RepaintBoundary(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: index.toDouble()),
+            duration: context.motion.bar,
+            curve: N360Curves.settle,
+            builder: (context, value, child) => Transform.translate(
+              offset: Offset(value * cell, 0),
+              child: child,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                width: cell,
+                height: N360Size.barTile,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 3),
+                  child: CustomPaint(
+                    painter: SoftSurfacePainter(
+                      radius: N360Radius.tile,
+                      gradient: N360Gradients.gold,
+                      edge: Color(0x55FFFFFF),
+                    ),
+                    child: SizedBox.expand(),
                   ),
-                  child: SizedBox.expand(),
                 ),
               ),
             ),
@@ -138,31 +143,31 @@ class _BarItem extends StatelessWidget {
       semanticsLabel: badge == null ? item.label : '${item.label}, $badge',
       selected: selected,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 6, 4, 4),
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Stack(
               clipBehavior: Clip.none,
               children: <Widget>[
-                Icon(item.icon, size: 25, color: ink),
+                Icon(item.icon, size: N360IconSize.bar, color: ink),
                 if (badge != null)
                   Positioned(
                     top: -6,
-                    right: -14,
+                    right: -12,
                     child: N360Badge(text: badge),
                   ),
               ],
             ),
+            const SizedBox(height: 2),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 item.label,
                 maxLines: 1,
-                style: N360Type.caption.copyWith(
+                style: N360Type.fit(N360Type.caption, item.label).copyWith(
                   color: ink,
-                  fontSize: 13,
-                  height: 1.3,
+                  height: 1.25,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),

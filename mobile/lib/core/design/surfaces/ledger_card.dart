@@ -6,12 +6,13 @@ import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// A large white card with a thin light edge and one soft warm shadow.
+/// A white card with a thin light edge and one soft warm shadow. Padding is
+/// [N360Space.card] on every side unless the screen says otherwise.
 class LedgerCard extends StatelessWidget {
   const LedgerCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(N360Space.lg),
+    this.padding = const EdgeInsets.all(N360Space.card),
     this.onTap,
     this.semanticsLabel,
     this.flat = false,
@@ -135,7 +136,7 @@ class LedgerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle figureStyle = valueStyle ??
-        (total ? N360Type.figureLarge.copyWith(fontSize: 20) : N360Type.figure);
+        (total ? N360Type.figureLarge.copyWith(fontSize: 18, letterSpacing: 0) : N360Type.figure);
     final Widget row = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
@@ -144,8 +145,8 @@ class LedgerRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(label, style: total ? N360Type.bodyStrong : N360Type.body),
-              if (hint != null) Text(hint!, style: N360Type.caption),
+              Text(label, style: N360Type.fit(total ? N360Type.bodyStrong : N360Type.body, label)),
+              if (hint != null) Text(hint!, style: N360Type.fit(N360Type.caption, hint!)),
             ],
           ),
         ),
@@ -162,7 +163,7 @@ class LedgerRow extends StatelessWidget {
       return DecoratedBox(
         decoration: const BoxDecoration(color: N360Colors.goldTint, borderRadius: N360Radius.sm),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 52),
+          constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: N360Space.md, vertical: N360Space.sm),
             child: row,
@@ -176,9 +177,9 @@ class LedgerRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 48),
+          constraints: const BoxConstraints(minHeight: 44),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: N360Space.sm),
+            padding: const EdgeInsets.symmetric(vertical: N360Space.sm - 1),
             child: row,
           ),
         ),
@@ -310,7 +311,7 @@ class SheetHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 if (eyebrow != null) SectionLabel(eyebrow!),
-                Text(title, style: N360Type.title),
+                Text(title, style: N360Type.fit(N360Type.title, title)),
               ],
             ),
           ),

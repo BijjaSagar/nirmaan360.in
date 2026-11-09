@@ -101,25 +101,27 @@ class _PictoTile extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  static const double _minHeight = 64;
+
   @override
   Widget build(BuildContext context) {
     const Color ink = N360Colors.ink;
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
-      minHeight: 76,
+      minHeight: _minHeight,
       semanticsLabel: label,
       selected: selected,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Icon(icon, size: 30, color: ink),
+          Icon(icon, size: N360IconSize.xl, color: ink),
           const SizedBox(height: 3),
           _WholeWordLabel(
             label: label,
             maxWidth: labelWidth,
-            style: N360Type.label.copyWith(color: ink, height: 1.28),
+            style: N360Type.fit(N360Type.label, label).copyWith(color: ink, height: 1.28),
           ),
         ],
       ),
@@ -135,9 +137,9 @@ class _PictoTile extends StatelessWidget {
                   )
                 : const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.rule),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 76),
+              constraints: const BoxConstraints(minHeight: _minHeight),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: N360Space.xs, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: N360Space.xs, vertical: N360Space.sm),
                 child: Center(child: child),
               ),
             ),

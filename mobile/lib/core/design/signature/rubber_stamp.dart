@@ -14,11 +14,12 @@ import '../typography.dart';
 
 enum StampKind { draft, inReview, approved, returned, rejected, queued, synced }
 
+/// Stamp lettering. [small] is 12, the floor for any text in the app.
 enum StampSize {
-  small(fontSize: 11, stroke: 1.2, gap: 1, hPad: 7, vPad: 1.5, tilt: 3),
-  medium(fontSize: 14.5, stroke: 1.6, gap: 1.4, hPad: 10, vPad: 2.5, tilt: 6),
-  large(fontSize: 21, stroke: 2.2, gap: 1.8, hPad: 14, vPad: 4.5, tilt: 10),
-  hero(fontSize: 34, stroke: 3.4, gap: 2.6, hPad: 20, vPad: 7, tilt: 18);
+  small(fontSize: 12, stroke: 1.1, gap: 1, hPad: 6, vPad: 1, tilt: 3),
+  medium(fontSize: 13, stroke: 1.5, gap: 1.3, hPad: 9, vPad: 2, tilt: 5),
+  large(fontSize: 18, stroke: 2, gap: 1.6, hPad: 12, vPad: 4, tilt: 9),
+  hero(fontSize: 30, stroke: 3, gap: 2.4, hPad: 18, vPad: 6, tilt: 16);
 
   const StampSize({
     required this.fontSize,
@@ -179,7 +180,7 @@ class _StampFace extends StatelessWidget {
       color: ink,
     );
 
-    final TextScaler scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
+    final TextScaler scaler = N360TextScale.of(context);
 
     return Semantics(
       container: true,
@@ -475,8 +476,8 @@ class _ThudSlip extends StatelessWidget {
     return CustomPaint(
       painter: const SoftSurfacePainter(edge: N360Colors.cardEdge),
       child: SizedBox(
-        width: 300,
-        height: 208,
+        width: 280,
+        height: 176,
         child: Padding(
           padding: const EdgeInsets.all(N360Space.lg),
           child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: child)),

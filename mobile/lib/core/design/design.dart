@@ -1,4 +1,9 @@
 /// The Nirmaan360 design system. Import this one file.
+///
+/// Sizes come from `tokens.dart` (`N360Space`, `N360Size`, `N360IconSize`,
+/// `N360Radius`), type from `typography.dart` (`N360Type`, `N360TextScale`),
+/// and the motion language from `motion.dart`, whose doc comment is the rule
+/// book for anything that moves.
 library;
 
 export 'controls/action_tile.dart';
@@ -25,12 +30,14 @@ export 'signature/staggered_rise.dart';
 export 'signature/sync_pill.dart';
 export 'surfaces/ledger_card.dart';
 export 'surfaces/ledger_paper.dart' hide paperJolt;
+export 'surfaces/ledger_sheet.dart';
 export 'theme.dart';
 export 'tokens.dart';
 export 'typography.dart';
 export 'viz/building_progress_art.dart';
 export 'viz/hatched_progress_bar.dart';
 export 'viz/icon_tile.dart';
+export 'viz/looping_art.dart';
 export 'viz/square_percent.dart';
 export 'viz/stat_tile.dart';
 export 'viz/tick_gauge.dart';

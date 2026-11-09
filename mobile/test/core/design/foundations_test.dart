@@ -120,6 +120,98 @@ void main() {
       expect(N360Type.stampText('Approved'), 'APPROVED');
       expect(N360Type.stampText('मंजूर'), 'मंजूर');
     });
+
+    test('the scale sits at the reference proportion and nothing is under 12', () {
+      expect(N360Type.body.fontSize, 14);
+      expect(N360Type.label.fontSize, 13);
+      expect(N360Type.caption.fontSize, 12);
+      expect(N360Type.heading.fontSize, 15);
+      expect(N360Type.title.fontSize, inInclusiveRange(17, 18));
+      expect(N360Type.button.fontSize, 15);
+      expect(N360Type.figureHero.fontSize, inInclusiveRange(30, 36));
+      expect(N360Type.figureLarge.fontSize, inInclusiveRange(20, 24));
+      for (final style in <TextStyle>[
+        N360Type.displayLarge,
+        N360Type.display,
+        N360Type.title,
+        N360Type.heading,
+        N360Type.button,
+        N360Type.bodyLarge,
+        N360Type.body,
+        N360Type.bodyStrong,
+        N360Type.label,
+        N360Type.caption,
+        N360Type.figureSmall,
+        N360Type.figure,
+        N360Type.figureLarge,
+        N360Type.figureHero,
+        N360Type.eyebrowFor('Item'),
+        N360Type.eyebrowFor('बाब'),
+      ]) {
+        expect(style.fontSize, greaterThanOrEqualTo(N360Type.minimumSize), reason: '$style');
+      }
+      for (final size in StampSize.values) {
+        expect(size.fontSize, greaterThanOrEqualTo(N360Type.minimumSize), reason: '$size');
+      }
+    });
+
+    test('Devanagari gets one more point at small sizes and a 1.4 line; Latin is untouched', () {
+      expect(N360Type.fit(N360Type.caption, 'Today').fontSize, 12);
+      expect(N360Type.fit(N360Type.caption, 'आज').fontSize, 13);
+      expect(N360Type.fit(N360Type.body, 'आज').fontSize, 15);
+      expect(N360Type.fit(N360Type.heading, 'आज').fontSize, 16);
+      expect(N360Type.fit(N360Type.heading, 'आज').height, greaterThanOrEqualTo(1.4));
+      expect(N360Type.fit(N360Type.title, 'आज').fontSize, 18, reason: 'larger sizes are left alone');
+      expect(N360Type.fit(N360Type.figureHero, '70.50%'), N360Type.figureHero);
+      expect(N360Type.forDevanagari(N360Type.label).fontSize, 14);
+    });
+
+    test('icons are quiet: 14 to 24, with 18 to 22 for everything on a screen', () {
+      expect(N360IconSize.xs, 14);
+      expect(N360IconSize.md, 18);
+      expect(N360IconSize.tile, inInclusiveRange(18, 22));
+      expect(N360IconSize.button, inInclusiveRange(18, 22));
+      expect(N360IconSize.bar, inInclusiveRange(18, 22));
+      expect(N360IconSize.xxl, lessThanOrEqualTo(24));
+    });
+
+    test('visible sizes are separate from hit areas, and the hit area never drops under 56', () {
+      expect(N360Size.tap, 56);
+      expect(N360Size.tile, inInclusiveRange(40, 46));
+      expect(N360Size.tile, lessThan(N360Size.tap));
+      expect(N360Size.barTile, lessThan(N360Size.bar));
+      expect(N360Size.bar, greaterThanOrEqualTo(N360Size.tap));
+      expect(N360Size.key, greaterThanOrEqualTo(N360Size.tap));
+      expect(N360Space.card, inInclusiveRange(14, 16));
+    });
+
+    testWidgets('N360TextScaling clamps the system text size at the root', (tester) async {
+      late TextScaler seen;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: N360TextScaling(
+            child: Builder(
+              builder: (context) {
+                seen = MediaQuery.textScalerOf(context);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      );
+      expect(seen.scale(10), closeTo(10 * N360TextScale.max, 0.001));
+    });
+
+    test('the theme can be fitted for Devanagari', () {
+      final ThemeData en = buildN360Theme();
+      final ThemeData mr = buildN360Theme(devanagari: true);
+      expect(en.textTheme.bodyMedium!.fontSize, 14);
+      expect(mr.textTheme.bodyMedium!.fontSize, 15);
+      expect(mr.textTheme.bodySmall!.fontSize, 13);
+      expect(mr.textTheme.titleLarge!.fontSize, 18);
+      expect(en.iconTheme.size, N360IconSize.lg);
+    });
   });
 
   group('motion', () {
@@ -160,6 +252,53 @@ void main() {
       expect(N360Curves.stamp.transform(0.5), greaterThan(1));
       expect(N360Curves.stamp.transform(1), 1);
       expect(N360Curves.rise.transform(1), 1);
+    });
+
+    test('settle overshoots only a little and exits ease in', () {
+      var peak = 0.0;
+      for (var i = 0; i <= 100; i++) {
+        peak = peak > N360Curves.settle.transform(i / 100) ? peak : N360Curves.settle.transform(i / 100);
+      }
+      expect(peak, greaterThan(1));
+      expect(peak, lessThan(1.06));
+      expect(N360Curves.settle.transform(1), 1);
+      expect(N360Curves.exit.transform(0.5), lessThan(0.5));
+    });
+
+    test('the entry choreography is over within about a second, and the thud outlasts every other moment', () {
+      for (final d in <Duration>[
+        N360Durations.page,
+        N360Durations.rise + N360Durations.riseStep * 10,
+        N360Durations.fill,
+        N360Durations.count,
+      ]) {
+        expect(d, lessThanOrEqualTo(const Duration(milliseconds: 800)));
+      }
+      expect(N360Durations.build, lessThanOrEqualTo(const Duration(milliseconds: 1200)));
+      for (final moment in <Duration>[N360Durations.stamp, N360Durations.tick, N360Durations.toast, N360Durations.sheet]) {
+        expect(N360Durations.thud, greaterThan(moment));
+      }
+      expect(N360Durations.press, lessThan(N360Durations.release));
+    });
+
+    testWidgets('every new duration resolves to zero under reduced motion', (tester) async {
+      late N360Motion reduced;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Builder(
+            builder: (context) {
+              reduced = context.motion;
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      for (final d in <Duration>[reduced.fill, reduced.count, reduced.build, reduced.sheet, reduced.bar]) {
+        expect(d, Duration.zero);
+      }
+      expect(pressedScale(0), 1);
+      expect(pressedScale(1), lessThan(1));
     });
   });
 

@@ -122,6 +122,11 @@ abstract final class N360Gradients {
 }
 
 /// Spacing scale, in logical pixels. Everything sits on a 4dp beat.
+///
+/// The rhythm is tight on purpose: the reference design gets its calm from
+/// small type with air around it, not from big gaps between big things.
+/// Inside a card use [card] padding and [sm] between lines; between cards
+/// use [md]; between sections use [lg].
 abstract final class N360Space {
   static const double xxs = 2;
   static const double xs = 4;
@@ -131,6 +136,15 @@ abstract final class N360Space {
   static const double xl = 24;
   static const double xxl = 32;
   static const double xxxl = 48;
+
+  /// Padding inside a white card.
+  static const double card = 14;
+
+  /// Padding inside a small tile or chip.
+  static const double tile = 10;
+
+  /// The gap between two cards stacked or side by side.
+  static const double cardGap = 10;
 
   /// Horizontal screen gutter.
   static const double gutter = 16;
@@ -142,10 +156,10 @@ abstract final class N360Space {
 
 /// Corners: soft rounded tiles and large cards.
 abstract final class N360Radius {
-  static const double small = 12;
-  static const double medium = 16;
-  static const double tile = 18;
-  static const double card = 24;
+  static const double small = 10;
+  static const double medium = 14;
+  static const double tile = 16;
+  static const double card = 22;
 
   static const BorderRadius sm = BorderRadius.all(Radius.circular(small));
   static const BorderRadius md = BorderRadius.all(Radius.circular(medium));
@@ -153,18 +167,68 @@ abstract final class N360Radius {
   static const BorderRadius cardRadius = BorderRadius.all(Radius.circular(card));
 }
 
-/// Hit target sizes, sized for gloved thumbs.
+/// Sizes. Hit areas are sized for gloved thumbs; visible things are sized for
+/// the eye. The two are deliberately separate: a 44dp tile sits inside a 56dp
+/// target, so a control can look light and still be easy to hit.
 abstract final class N360Size {
+  /// The least any tappable thing accepts, on both axes. Never go under this.
   static const double tap = 56;
+
+  /// For the one main action on a screen.
   static const double tapLarge = 64;
 
-  /// Height of a numeric keypad key.
-  static const double key = 64;
+  /// Height of a numeric keypad key. A key is pressed hundreds of times a day,
+  /// so it stays a little taller than the minimum.
+  static const double key = 60;
 
-  /// Minimum height of one item in the bottom bar.
-  static const double bar = 64;
+  /// Height of one item in the bottom bar. The painted tile is [barTile].
+  static const double bar = 56;
+
+  /// The painted tile behind the active bottom-bar item.
+  static const double barTile = 48;
+
+  /// The visible side of a rounded-square icon tile.
+  static const double tile = 44;
+
+  /// A smaller icon tile, for the corner of a stat card or a list row.
+  static const double tileSmall = 36;
+
+  /// The visible height of a compact control that still carries a [tap] target
+  /// around it, such as a sync tag or a date chip.
+  static const double control = 40;
 
   /// Space a screen leaves under a tile for its soft lower lip.
   static const double edge = 3;
   static const double hairline = 1;
+}
+
+/// Icon sizes. Icons are quiet in this design: a glyph sits beside its word at
+/// text height, and only the keypad and the hero moments go above 22.
+abstract final class N360IconSize {
+  /// Inline with a caption.
+  static const double xs = 14;
+
+  /// Inline with a label, or a status mark on a slip.
+  static const double sm = 16;
+
+  /// Inline with body text, and the default for a button.
+  static const double md = 18;
+
+  /// In a [N360Size.tile] or [N360Size.tileSmall] tile, and in the bottom bar.
+  static const double lg = 20;
+
+  /// Bottom bar and stepper keys.
+  static const double xl = 22;
+
+  /// Keypad action keys and the few hero marks.
+  static const double xxl = 24;
+
+  /// Inside an icon tile.
+  static const double tile = lg;
+
+  /// In a button beside its label.
+  static const double button = md;
+
+  /// In the bottom bar, above its word.
+  static const double bar = xl;
 }

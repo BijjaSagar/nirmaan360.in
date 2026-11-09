@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import '../tokens.dart';
 
+export '../motion.dart' show pressedScale;
+
 /// Draws a card's one soft warm shadow with no blur filter.
 ///
 /// Thin rings stepping outward with falling alpha read as a soft shadow on a
@@ -10,10 +12,10 @@ import '../tokens.dart';
 void paintSoftShadow(
   Canvas canvas,
   RRect shape, {
-  double spread = 22,
-  double drop = 12,
+  double spread = 18,
+  double drop = 10,
   double strength = 1,
-  int steps = 11,
+  int steps = 10,
 }) {
   final Paint paint = Paint();
   var inner = shape;
@@ -28,7 +30,7 @@ void paintSoftShadow(
       shape.bottom + grow + drop * t,
       Radius.circular(shape.tlRadiusX + grow),
     );
-    paint.color = N360Colors.shadow.withValues(alpha: 0.15 * strength * falloff * falloff);
+    paint.color = N360Colors.shadow.withValues(alpha: 0.14 * strength * falloff * falloff);
     canvas.drawDRRect(outer, inner, paint);
     inner = outer;
   }
@@ -93,6 +95,3 @@ class SoftSurfacePainter extends CustomPainter {
       oldDelegate.shadow != shadow ||
       oldDelegate.shadowStrength != shadowStrength;
 }
-
-/// The shrink a soft tile makes under the thumb.
-double pressedScale(double depth) => 1 - 0.035 * depth;

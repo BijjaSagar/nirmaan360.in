@@ -8,6 +8,10 @@ import '../motion.dart';
 import '../tokens.dart';
 import '../typography.dart';
 import '../viz/building_progress_art.dart';
+import '../viz/looping_art.dart';
+
+export 'ledger_refresh.dart';
+export 'loading_skeleton.dart';
 
 enum PaperToastKind { info, success, warning, error }
 
@@ -35,23 +39,23 @@ class PaperToast extends StatelessWidget {
       label: message,
       child: ExcludeSemantics(
         child: CustomPaint(
-          painter: const SoftSurfacePainter(radius: 20, edge: N360Colors.cardEdge, shadow: true),
+          painter: const SoftSurfacePainter(radius: N360Radius.tile + 2, edge: N360Colors.cardEdge, shadow: true),
           child: Padding(
-            padding: const EdgeInsets.all(N360Space.sm + 2),
+            padding: const EdgeInsets.all(N360Space.tile),
             child: Row(
               children: <Widget>[
                 DecoratedBox(
                   decoration: BoxDecoration(
                     color: look.wash,
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    borderRadius: const BorderRadius.all(Radius.circular(N360Radius.small)),
                   ),
                   child: SizedBox.square(
-                    dimension: 42,
-                    child: Icon(icon ?? look.icon, size: 23, color: look.ink),
+                    dimension: N360Size.tileSmall,
+                    child: Icon(icon ?? look.icon, size: N360IconSize.md, color: look.ink),
                   ),
                 ),
                 const SizedBox(width: N360Space.md),
-                Expanded(child: Text(message, style: N360Type.bodyStrong)),
+                Expanded(child: Text(message, style: N360Type.fit(N360Type.bodyStrong, message))),
                 const SizedBox(width: N360Space.xs),
               ],
             ),
@@ -172,14 +176,14 @@ class OfflineBanner extends StatelessWidget {
           child: CustomPaint(
             painter: const SoftSurfacePainter(radius: N360Radius.medium, fill: N360Colors.goldTint),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: N360Space.sm + 2, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: N360Space.sm + 2, vertical: 6),
               child: Row(
                 children: <Widget>[
                   const SizedBox.square(
-                    dimension: 34,
+                    dimension: 30,
                     child: CustomPaint(
-                      painter: SoftSurfacePainter(radius: 10, gradient: N360Gradients.gold),
-                      child: Icon(Icons.cloud_off, size: 19, color: N360Colors.ink),
+                      painter: SoftSurfacePainter(radius: N360Radius.small - 1, gradient: N360Gradients.gold),
+                      child: Icon(Icons.cloud_off, size: N360IconSize.sm, color: N360Colors.ink),
                     ),
                   ),
                   const SizedBox(width: N360Space.sm + 2),
@@ -187,9 +191,9 @@ class OfflineBanner extends StatelessWidget {
                     child: Text.rich(
                       TextSpan(
                         text: label,
-                        style: N360Type.bodyStrong,
+                        style: N360Type.fit(N360Type.bodyStrong, label),
                         children: <InlineSpan>[
-                          if (detail != null) TextSpan(text: '  $detail', style: N360Type.body),
+                          if (detail != null) TextSpan(text: '  $detail', style: N360Type.fit(N360Type.body, detail!)),
                         ],
                       ),
                     ),
@@ -221,7 +225,7 @@ class ErrorSlip extends StatelessWidget {
       child: CustomPaint(
         painter: const SoftSurfacePainter(edge: N360Colors.cardEdge, shadow: true),
         child: Padding(
-          padding: const EdgeInsets.all(N360Space.lg),
+          padding: const EdgeInsets.all(N360Space.card),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -232,20 +236,20 @@ class ErrorSlip extends StatelessWidget {
                   const DecoratedBox(
                     decoration: BoxDecoration(
                       color: Color(0xFFFBE9E6),
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                      borderRadius: BorderRadius.all(Radius.circular(N360Radius.small)),
                     ),
                     child: SizedBox.square(
-                      dimension: 42,
-                      child: Icon(Icons.error_outline, size: 24, color: N360Colors.stampRed),
+                      dimension: N360Size.tileSmall,
+                      child: Icon(Icons.error_outline, size: N360IconSize.md, color: N360Colors.stampRed),
                     ),
                   ),
                   const SizedBox(width: N360Space.md),
-                  Expanded(child: Text(title, style: N360Type.heading)),
+                  Expanded(child: Text(title, style: N360Type.fit(N360Type.heading, title))),
                 ],
               ),
               if (message != null) ...<Widget>[
                 const SizedBox(height: N360Space.sm),
-                Text(message!, style: N360Type.body),
+                Text(message!, style: N360Type.fit(N360Type.body, message!)),
               ],
               if (actionLabel != null && onAction != null) ...<Widget>[
                 const SizedBox(height: N360Space.md),
@@ -267,9 +271,22 @@ class ErrorSlip extends StatelessWidget {
   }
 }
 
-/// A warm empty state: the site waiting for its first floor.
+/// A warm empty state: the site waiting for its first entry, with the crane
+/// quietly hoisting a beam.
+///
+/// The picture is [LoopingArt.craneHoist] unless [animated] is false or an
+/// [art] of your own is given; with reduced motion it is the still drawing.
+/// Empty states sit on their own, never inside a list, so the loop is the one
+/// moving thing on the screen.
 class EmptyLedger extends StatelessWidget {
-  const EmptyLedger({super.key, required this.title, this.message, this.action});
+  const EmptyLedger({
+    super.key,
+    required this.title,
+    this.message,
+    this.action,
+    this.art,
+    this.animated = true,
+  });
 
   final String title;
   final String? message;
@@ -277,8 +294,21 @@ class EmptyLedger extends StatelessWidget {
   /// Usually a [GloveButton] that starts the first entry.
   final Widget? action;
 
+  /// Replaces the default picture. Pass a [LoopingArt] or a
+  /// [BuildingProgressArt]; it is laid out at [artWidth].
+  final Widget? art;
+
+  /// False shows the still drawing even when motion is allowed.
+  final bool animated;
+
+  static const double artWidth = 176;
+
   @override
   Widget build(BuildContext context) {
+    final Widget picture = art ??
+        (animated
+            ? LoopingArt.craneHoist(semanticLabel: title)
+            : const BuildingProgressArt(fraction: 0, animateEntry: false));
     return Semantics(
       container: true,
       label: action != null ? null : (message == null ? title : '$title. $message'),
@@ -289,20 +319,17 @@ class EmptyLedger extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const ExcludeSemantics(
-                child: SizedBox(
-                  width: 200,
-                  child: BuildingProgressArt(fraction: 0, animateEntry: false),
-                ),
+              ExcludeSemantics(
+                child: SizedBox(width: artWidth, child: picture),
               ),
               const SizedBox(height: N360Space.md),
-              Text(title, textAlign: TextAlign.center, style: N360Type.title),
+              Text(title, textAlign: TextAlign.center, style: N360Type.fit(N360Type.title, title)),
               if (message != null) ...<Widget>[
                 const SizedBox(height: N360Space.xs),
                 Text(
                   message!,
                   textAlign: TextAlign.center,
-                  style: N360Type.body.copyWith(color: N360Colors.ink2),
+                  style: N360Type.fit(N360Type.body, message!).copyWith(color: N360Colors.ink2),
                 ),
               ],
               if (action != null) ...<Widget>[

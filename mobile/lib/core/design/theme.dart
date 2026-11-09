@@ -6,7 +6,15 @@ import 'typography.dart';
 
 /// The app's `ThemeData`, so even plain Material widgets land on the ledger:
 /// warm page, soft rounded corners, no tint, ripple in faint ink.
-ThemeData buildN360Theme() {
+///
+/// Pass [devanagari] when the app locale is Marathi or Hindi: every text role
+/// in the theme is then fitted for the script (see [N360Type.forDevanagari]),
+/// so a plain `Text` with no explicit style reads as large as its English
+/// counterpart. Screens that pass `N360Type.*` styles directly should wrap them
+/// in [N360Type.fit] for the same effect.
+ThemeData buildN360Theme({bool devanagari = false}) {
+  TextStyle t(TextStyle style) => devanagari ? N360Type.forDevanagari(style) : style;
+
   const ColorScheme scheme = ColorScheme(
     brightness: Brightness.light,
     primary: N360Colors.haldi,
@@ -48,7 +56,8 @@ ThemeData buildN360Theme() {
     overlayColor: WidgetStateProperty.all(N360Colors.ink.withValues(alpha: 0.07)),
     shape: WidgetStateProperty.all(const RoundedRectangleBorder(borderRadius: N360Radius.tileRadius)),
     minimumSize: WidgetStateProperty.all(const Size(64, N360Size.tap)),
-    textStyle: WidgetStateProperty.all(N360Type.button),
+    padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: N360Space.lg, vertical: N360Space.sm)),
+    textStyle: WidgetStateProperty.all(t(N360Type.button)),
     elevation: WidgetStateProperty.all(0),
     shadowColor: WidgetStateProperty.all(const Color(0x00000000)),
     tapTargetSize: MaterialTapTargetSize.padded,
@@ -83,35 +92,35 @@ ThemeData buildN360Theme() {
         TargetPlatform.fuchsia: N360PageTransitionsBuilder(),
       },
     ),
-    textTheme: const TextTheme(
-      displayLarge: N360Type.displayLarge,
-      displayMedium: N360Type.display,
-      displaySmall: N360Type.title,
-      headlineLarge: N360Type.display,
-      headlineMedium: N360Type.title,
-      headlineSmall: N360Type.heading,
-      titleLarge: N360Type.title,
-      titleMedium: N360Type.heading,
-      titleSmall: N360Type.bodyStrong,
-      bodyLarge: N360Type.bodyLarge,
-      bodyMedium: N360Type.body,
-      bodySmall: N360Type.caption,
-      labelLarge: N360Type.button,
-      labelMedium: N360Type.label,
-      labelSmall: N360Type.caption,
+    textTheme: TextTheme(
+      displayLarge: t(N360Type.displayLarge),
+      displayMedium: t(N360Type.display),
+      displaySmall: t(N360Type.title),
+      headlineLarge: t(N360Type.display),
+      headlineMedium: t(N360Type.title),
+      headlineSmall: t(N360Type.heading),
+      titleLarge: t(N360Type.title),
+      titleMedium: t(N360Type.heading),
+      titleSmall: t(N360Type.bodyStrong),
+      bodyLarge: t(N360Type.bodyLarge),
+      bodyMedium: t(N360Type.body),
+      bodySmall: t(N360Type.caption),
+      labelLarge: t(N360Type.button),
+      labelMedium: t(N360Type.label),
+      labelSmall: t(N360Type.caption),
     ),
-    iconTheme: const IconThemeData(color: N360Colors.ink, size: 26),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0x00000000),
+    iconTheme: const IconThemeData(color: N360Colors.ink, size: N360IconSize.lg),
+    appBarTheme: AppBarTheme(
+      backgroundColor: const Color(0x00000000),
       foregroundColor: N360Colors.ink,
       elevation: 0,
       scrolledUnderElevation: 0,
-      surfaceTintColor: Color(0x00000000),
-      shadowColor: Color(0x00000000),
+      surfaceTintColor: const Color(0x00000000),
+      shadowColor: const Color(0x00000000),
       centerTitle: false,
-      toolbarHeight: N360Size.tapLarge,
-      titleTextStyle: N360Type.title,
-      iconTheme: IconThemeData(color: N360Colors.ink, size: 28),
+      toolbarHeight: N360Size.tap,
+      titleTextStyle: t(N360Type.title),
+      iconTheme: const IconThemeData(color: N360Colors.ink, size: N360IconSize.xl),
     ),
     dividerTheme: const DividerThemeData(color: N360Colors.rule, thickness: 1, space: 1),
     cardTheme: const CardThemeData(
@@ -124,16 +133,16 @@ ThemeData buildN360Theme() {
         side: BorderSide(color: N360Colors.cardEdge),
       ),
     ),
-    dialogTheme: const DialogThemeData(
+    dialogTheme: DialogThemeData(
       backgroundColor: N360Colors.sheet,
       elevation: 0,
-      surfaceTintColor: Color(0x00000000),
-      shape: RoundedRectangleBorder(
+      surfaceTintColor: const Color(0x00000000),
+      shape: const RoundedRectangleBorder(
         borderRadius: N360Radius.cardRadius,
         side: BorderSide(color: N360Colors.cardEdge),
       ),
-      titleTextStyle: N360Type.title,
-      contentTextStyle: N360Type.body,
+      titleTextStyle: t(N360Type.title),
+      contentTextStyle: t(N360Type.body),
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: N360Colors.sheet,
@@ -141,39 +150,42 @@ ThemeData buildN360Theme() {
       elevation: 0,
       modalElevation: 0,
       surfaceTintColor: Color(0x00000000),
+      dragHandleColor: N360Colors.rule,
+      dragHandleSize: Size(36, 4),
+      showDragHandle: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(N360Radius.card)),
         side: BorderSide(color: N360Colors.cardEdge),
       ),
     ),
-    snackBarTheme: const SnackBarThemeData(
+    snackBarTheme: SnackBarThemeData(
       backgroundColor: N360Colors.ink,
-      contentTextStyle: TextStyle(fontFamily: N360Type.mukta, fontSize: 16, color: N360Colors.paper),
+      contentTextStyle: t(N360Type.body).copyWith(color: N360Colors.paper),
       elevation: 0,
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: N360Radius.md),
+      shape: const RoundedRectangleBorder(borderRadius: N360Radius.md),
     ),
-    inputDecorationTheme: const InputDecorationTheme(
+    inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: N360Colors.sheet,
-      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-      hintStyle: N360Type.bodyLarge,
-      labelStyle: N360Type.label,
+      contentPadding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.card),
+      hintStyle: t(N360Type.bodyLarge).copyWith(color: N360Colors.inkLabel),
+      labelStyle: t(N360Type.label),
       floatingLabelBehavior: FloatingLabelBehavior.always,
-      errorStyle: TextStyle(fontFamily: N360Type.mukta, fontSize: 14, color: N360Colors.stampRed),
+      errorStyle: t(N360Type.caption).copyWith(color: N360Colors.stampRed),
       border: resting,
       enabledBorder: resting,
-      focusedBorder: OutlineInputBorder(
+      focusedBorder: const OutlineInputBorder(
         borderRadius: N360Radius.md,
-        borderSide: BorderSide(color: N360Colors.laterite, width: 2.25),
+        borderSide: BorderSide(color: N360Colors.laterite, width: 2),
       ),
-      errorBorder: OutlineInputBorder(
+      errorBorder: const OutlineInputBorder(
+        borderRadius: N360Radius.md,
+        borderSide: BorderSide(color: N360Colors.stampRed, width: 1.5),
+      ),
+      focusedErrorBorder: const OutlineInputBorder(
         borderRadius: N360Radius.md,
         borderSide: BorderSide(color: N360Colors.stampRed, width: 2),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: N360Radius.md,
-        borderSide: BorderSide(color: N360Colors.stampRed, width: 2.25),
       ),
     ),
     textSelectionTheme: TextSelectionThemeData(
@@ -185,6 +197,7 @@ ThemeData buildN360Theme() {
       color: N360Colors.haldi,
       linearTrackColor: N360Colors.rule,
       circularTrackColor: N360Colors.rule,
+      strokeWidth: 2.5,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: pressed.copyWith(
@@ -211,6 +224,7 @@ ThemeData buildN360Theme() {
       style: ButtonStyle(
         overlayColor: WidgetStateProperty.all(N360Colors.ink.withValues(alpha: 0.08)),
         minimumSize: WidgetStateProperty.all(const Size.square(N360Size.tap)),
+        iconSize: WidgetStateProperty.all(N360IconSize.xl),
       ),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -229,7 +243,7 @@ ThemeData buildN360Theme() {
       }),
       checkColor: WidgetStateProperty.all(N360Colors.sheet),
       side: const BorderSide(color: N360Colors.ruleStrong, width: 1.5),
-      shape: const RoundedRectangleBorder(borderRadius: N360Radius.sm),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(6))),
     ),
     radioTheme: RadioThemeData(
       fillColor: WidgetStateProperty.resolveWith((states) {
@@ -244,43 +258,43 @@ ThemeData buildN360Theme() {
         return states.contains(WidgetState.selected) ? N360Colors.moss : N360Colors.rule;
       }),
     ),
-    listTileTheme: const ListTileThemeData(
-      minVerticalPadding: N360Space.md,
+    listTileTheme: ListTileThemeData(
+      minVerticalPadding: N360Space.sm + 2,
       minTileHeight: N360Size.tap,
       iconColor: N360Colors.ink2,
       textColor: N360Colors.ink,
-      titleTextStyle: N360Type.bodyLarge,
-      subtitleTextStyle: N360Type.caption,
+      titleTextStyle: t(N360Type.bodyStrong),
+      subtitleTextStyle: t(N360Type.caption),
     ),
-    chipTheme: const ChipThemeData(
+    chipTheme: ChipThemeData(
       backgroundColor: N360Colors.sheet,
       selectedColor: N360Colors.haldi,
-      labelStyle: N360Type.label,
-      side: BorderSide(color: N360Colors.ruleStrong),
-      shape: RoundedRectangleBorder(borderRadius: N360Radius.sm),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      labelStyle: t(N360Type.label),
+      side: const BorderSide(color: N360Colors.ruleStrong),
+      shape: const RoundedRectangleBorder(borderRadius: N360Radius.sm),
+      padding: const EdgeInsets.symmetric(horizontal: N360Space.tile, vertical: 6),
     ),
-    tabBarTheme: const TabBarThemeData(
+    tabBarTheme: TabBarThemeData(
       labelColor: N360Colors.ink,
       unselectedLabelColor: N360Colors.inkLabel,
       indicatorColor: N360Colors.haldi,
       dividerColor: N360Colors.rule,
-      labelStyle: N360Type.bodyStrong,
-      unselectedLabelStyle: N360Type.body,
+      labelStyle: t(N360Type.bodyStrong),
+      unselectedLabelStyle: t(N360Type.body),
     ),
-    popupMenuTheme: const PopupMenuThemeData(
+    popupMenuTheme: PopupMenuThemeData(
       color: N360Colors.sheet,
       elevation: 0,
-      surfaceTintColor: Color(0x00000000),
-      shape: RoundedRectangleBorder(
+      surfaceTintColor: const Color(0x00000000),
+      shape: const RoundedRectangleBorder(
         borderRadius: N360Radius.md,
         side: BorderSide(color: N360Colors.cardEdge),
       ),
-      textStyle: N360Type.bodyLarge,
+      textStyle: t(N360Type.body),
     ),
     tooltipTheme: TooltipThemeData(
       decoration: const BoxDecoration(color: N360Colors.ink, borderRadius: N360Radius.sm),
-      textStyle: N360Type.caption.copyWith(color: N360Colors.paper),
+      textStyle: t(N360Type.caption).copyWith(color: N360Colors.paper),
     ),
     scrollbarTheme: ScrollbarThemeData(
       thumbColor: WidgetStateProperty.all(N360Colors.ink3),

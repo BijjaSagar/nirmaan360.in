@@ -112,26 +112,47 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('SquarePercent shows its label and is 56dp', (tester) async {
-      await pumpDesign(tester, const SquarePercent(fraction: 0.9, label: '90%'));
+    testWidgets('SquarePercent shows its label, is a 44dp tile, and fills on entry', (tester) async {
+      await pumpDesign(tester, const SquarePercent(fraction: 0.9, label: '90%'), disableAnimations: true);
       expect(find.text('90%'), findsOneWidget);
-      expect(tester.getSize(find.byType(SquarePercent)), const Size.square(56));
+      expect(tester.getSize(find.byType(SquarePercent)), const Size.square(N360Size.tile));
+      expect(tester.hasRunningAnimations, isFalse);
+
+      await pumpDesign(tester, const SquarePercent(fraction: 0.9, label: '90%'));
+      expect(tester.hasRunningAnimations, isTrue, reason: 'the gold line draws round once');
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.hasRunningAnimations, isFalse);
     });
 
-    testWidgets('IconTile is 56dp, named, tappable, and shows a badge', (tester) async {
+    testWidgets('IconTile paints a 44dp tile inside a 56dp target, named, tappable, with a badge', (tester) async {
       final SemanticsHandle handle = tester.ensureSemantics();
       var taps = 0;
       await pumpDesign(tester, IconTile(icon: Icons.home, semanticLabel: 'Home', badge: '3', onTap: () => taps++));
       expect(tester.getSize(find.byType(IconTile)), const Size.square(N360Size.tap));
+      final Size painted = tester.getSize(find.descendant(of: find.byType(IconTile), matching: find.byType(CustomPaint)).first);
+      expect(painted, const Size.square(N360Size.tile));
       expect(find.text('3'), findsOneWidget);
       expect(find.bySemanticsLabel('Home, 3'), findsOneWidget);
       await tester.tap(find.byType(IconTile));
       await tester.pump(const Duration(milliseconds: 200));
       expect(taps, 1);
       handle.dispose();
+
+      await pumpDesign(tester, const IconTile(icon: Icons.home, semanticLabel: 'Home'));
+      expect(tester.getSize(find.byType(IconTile)), const Size.square(N360Size.tile),
+          reason: 'a decorative tile takes only its visible size');
     });
 
-    testWidgets('StatTile is at least 96dp and keeps the value as text', (tester) async {
+    testWidgets('TickGauge lights up once on entry and is still with reduced motion', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: TickGauge(fraction: 0.5)), disableAnimations: true);
+      expect(tester.hasRunningAnimations, isFalse);
+      await pumpDesign(tester, const SizedBox(width: 300, child: TickGauge(fraction: 0.5)));
+      expect(tester.hasRunningAnimations, isTrue);
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('StatTile is at least its minimum height and keeps the value as text', (tester) async {
       var taps = 0;
       await pumpDesign(
         tester,
@@ -140,7 +161,8 @@ void main() {
           child: StatTile(title: 'Finishing work', value: '67%', caption: '25 Nov', onTap: () => taps++),
         ),
       );
-      expect(tester.getSize(find.byType(StatTile)).height, greaterThanOrEqualTo(96));
+      expect(tester.getSize(find.byType(StatTile)).height, greaterThanOrEqualTo(StatTile.minHeight));
+      expect(tester.getSize(find.byType(StatTile)).height, greaterThanOrEqualTo(N360Size.tap));
       expect(find.text('67%'), findsOneWidget);
       await tester.tap(find.text('67%'));
       await tester.pump(const Duration(milliseconds: 200));

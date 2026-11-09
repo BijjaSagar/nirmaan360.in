@@ -13,6 +13,8 @@ enum GloveButtonKind { primary, secondary, ghost, danger }
 
 /// A button made for a gloved thumb. The primary is a gold gradient with dark
 /// ink on it, and every button squeezes under the thumb. The words are required.
+///
+/// The face is the full [N360Size.tap] tall: a primary action earns its height.
 class GloveButton extends StatelessWidget {
   const GloveButton({
     super.key,
@@ -50,7 +52,7 @@ class GloveButton extends StatelessWidget {
         maxLines: 2,
         textAlign: TextAlign.center,
         overflow: TextOverflow.ellipsis,
-        style: N360Type.button.copyWith(color: look.text),
+        style: N360Type.fit(N360Type.button, label).copyWith(color: look.text),
       ),
     );
 
@@ -60,10 +62,10 @@ class GloveButton extends StatelessWidget {
       children: <Widget>[
         if (loading) ...<Widget>[
           _BusyMark(color: look.text),
-          const SizedBox(width: N360Space.sm + 2),
+          const SizedBox(width: N360Space.sm),
         ] else if (icon != null) ...<Widget>[
-          Icon(icon, size: 23, color: look.text),
-          const SizedBox(width: N360Space.sm + 2),
+          Icon(icon, size: N360IconSize.button, color: look.text),
+          const SizedBox(width: N360Space.sm),
         ],
         text,
       ],
@@ -88,7 +90,7 @@ class GloveButton extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: height),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: N360Space.lg + 2, vertical: N360Space.sm),
+                    padding: const EdgeInsets.symmetric(horizontal: N360Space.lg, vertical: N360Space.sm),
                     child: Center(widthFactor: 1, child: child),
                   ),
                 ),
@@ -176,7 +178,7 @@ class _BusyMarkState extends State<_BusyMark> with SingleTickerProviderStateMixi
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: SizedBox.square(
-        dimension: 21,
+        dimension: N360IconSize.md,
         child: RotationTransition(
           turns: _spin,
           child: CustomPaint(painter: _ArcPainter(color: widget.color)),
@@ -194,7 +196,7 @@ class _ArcPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawArc(
-      (Offset.zero & size).deflate(2),
+      (Offset.zero & size).deflate(1.5),
       0,
       math.pi * 1.45,
       false,
@@ -202,7 +204,7 @@ class _ArcPainter extends CustomPainter {
         ..color = color
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
-        ..strokeWidth = 3,
+        ..strokeWidth = 2.5,
     );
   }
 

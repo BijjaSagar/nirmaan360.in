@@ -10,7 +10,7 @@ import '../signature/rolling_number.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// Big minus and plus around a rolling figure, for headcounts and similar.
+/// Minus and plus around a rolling figure, for headcounts and similar.
 ///
 /// A tap steps once, on release, so a thumb brushing it while scrolling changes
 /// nothing. Holding repeats, faster the longer it is held, and the step grows
@@ -40,6 +40,9 @@ class GloveStepper extends StatefulWidget {
   /// Spoken only, so translate if you can.
   final String decreaseLabel;
   final String increaseLabel;
+
+  /// Width of each key. Height is [N360Size.tap].
+  static const double keyWidth = 64;
 
   @override
   State<GloveStepper> createState() => _GloveStepperState();
@@ -85,10 +88,10 @@ class _GloveStepperState extends State<GloveStepper> {
               Row(
                 children: <Widget>[
                   if (widget.icon != null) ...<Widget>[
-                    Icon(widget.icon, size: 22, color: N360Colors.ink2),
+                    Icon(widget.icon, size: N360IconSize.md, color: N360Colors.ink2),
                     const SizedBox(width: N360Space.sm),
                   ],
-                  Expanded(child: Text(widget.label!, style: N360Type.label)),
+                  Expanded(child: Text(widget.label!, style: N360Type.fit(N360Type.label, widget.label!))),
                 ],
               ),
               const SizedBox(height: N360Space.xs),
@@ -104,9 +107,9 @@ class _GloveStepperState extends State<GloveStepper> {
                 ),
                 Expanded(
                   child: SizedBox(
-                    height: N360Size.tapLarge,
+                    height: N360Size.tap,
                     child: Center(
-                      child: RollingNumber(value: '$_value', style: N360Type.figureLarge.copyWith(fontSize: 34)),
+                      child: RollingNumber(value: '$_value', style: N360Type.figureLarge.copyWith(fontSize: 26)),
                     ),
                   ),
                 ),
@@ -228,15 +231,15 @@ class _StepKeyState extends State<_StepKey> with SingleTickerProviderStateMixin 
       onTapUp: on ? (_) => _up() : null,
       onTapCancel: on ? _cancel : null,
       child: SizedBox(
-        width: 76,
-        height: N360Size.tapLarge,
+        width: GloveStepper.keyWidth,
+        height: N360Size.tap,
         child: AnimatedBuilder(
           animation: _depth,
           builder: (context, child) => Transform.scale(
             scale: pressedScale(_depth.value),
             child: CustomPaint(
               painter: surface,
-              child: Center(child: Icon(widget.icon, size: 32, color: ink)),
+              child: Center(child: Icon(widget.icon, size: N360IconSize.xxl, color: ink)),
             ),
           ),
         ),

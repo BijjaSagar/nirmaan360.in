@@ -73,6 +73,9 @@ flutter:
   uses-material-design: true
   generate: true
 
+  assets:
+    - assets/animations/
+
   # Bundled so every screen renders correctly with no network. All three are OFL.
   fonts:
     - family: Mukta

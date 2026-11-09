@@ -31,11 +31,14 @@ class DimensionTile extends StatelessWidget {
   /// Shown when [value] is empty.
   final String placeholder;
 
+  static const double _minHeight = 60;
+
   @override
   Widget build(BuildContext context) {
     final bool empty = value.isEmpty;
     final TextStyle numberStyle = N360Type.figureLarge.copyWith(
-      fontSize: 17.5,
+      fontSize: 17,
+      letterSpacing: 0,
       color: empty ? N360Colors.inkLabel : N360Colors.ink,
     );
 
@@ -61,10 +64,10 @@ class DimensionTile extends StatelessWidget {
                 ),
               ),
             ),
-            if (unit != null) Text(unit!, style: N360Type.caption.copyWith(fontSize: 13)),
+            if (unit != null) Text(unit!, style: N360Type.caption),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1),
         number,
       ],
     );
@@ -72,7 +75,7 @@ class DimensionTile extends StatelessWidget {
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
-      minHeight: 72,
+      minHeight: _minHeight,
       semanticsLabel: '$label ${empty ? placeholder : value}${unit == null ? '' : ' $unit'}',
       selected: active,
       child: contents,
@@ -85,14 +88,14 @@ class DimensionTile extends StatelessWidget {
                     radius: N360Radius.medium,
                     fill: N360Colors.goldTint,
                     edge: N360Colors.orange,
-                    edgeWidth: 2,
+                    edgeWidth: 1.5,
                   )
                 : const SoftSurfacePainter(radius: N360Radius.medium, edge: N360Colors.rule),
             foregroundPainter: active ? const _ActiveBarPainter() : null,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 72),
+              constraints: const BoxConstraints(minHeight: _minHeight),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(N360Space.sm, N360Space.sm, N360Space.xs + 3, N360Space.md),
+                padding: const EdgeInsets.fromLTRB(N360Space.sm, 6, 6, N360Space.sm + 2),
                 child: child,
               ),
             ),
@@ -108,10 +111,10 @@ class _ActiveBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const double inset = 10;
-    final Rect bar = Rect.fromLTWH(inset, size.height - 8.5, size.width - inset * 2, 3);
+    const double inset = 8;
+    final Rect bar = Rect.fromLTWH(inset, size.height - 6.5, size.width - inset * 2, 2.5);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(bar, const Radius.circular(1.5)),
+      RRect.fromRectAndRadius(bar, const Radius.circular(1.25)),
       Paint()..shader = N360Gradients.gold.createShader(bar),
     );
   }

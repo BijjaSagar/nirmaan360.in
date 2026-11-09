@@ -17,7 +17,7 @@ enum HajiriValue {
   final String letter;
 }
 
-/// Attendance for one worker: four big segments, one tap, colour and letter at
+/// Attendance for one worker: four segments, one tap, colour and letter at
 /// once. Written as a single painter with no child widgets or animation, so a
 /// muster roll of a hundred workers is one paint call each.
 class HajiriSegment extends StatefulWidget {
@@ -26,7 +26,7 @@ class HajiriSegment extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.labels = HajiriLabels.english,
-    this.height = 60,
+    this.height = N360Size.tap,
     this.semanticsLabel,
   });
 
@@ -36,6 +36,8 @@ class HajiriSegment extends StatefulWidget {
 
   /// Spoken only. Pass translated words.
   final HajiriLabels labels;
+
+  /// Never under [N360Size.tap]: each segment is a target in its own right.
   final double height;
 
   /// Whose attendance this is, read before each segment.
@@ -99,12 +101,13 @@ class _HajiriSegmentState extends State<HajiriSegment> {
   @override
   Widget build(BuildContext context) {
     final TextScaler scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.2);
+    final double height = widget.height < N360Size.tap ? N360Size.tap : widget.height;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapUp: _handleTap,
       child: RepaintBoundary(
         child: CustomPaint(
-          size: Size(double.infinity, widget.height),
+          size: Size(double.infinity, height),
           painter: _HajiriPainter(
             value: _value,
             scaler: scaler,
@@ -151,7 +154,7 @@ class _HajiriPainter extends CustomPainter {
           text: text,
           style: TextStyle(
             fontFamily: N360Type.poppins,
-            fontSize: 21,
+            fontSize: 17,
             fontWeight: FontWeight.w600,
             height: 1.1,
             color: color,

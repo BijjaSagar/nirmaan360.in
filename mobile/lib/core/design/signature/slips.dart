@@ -139,24 +139,29 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
       children: <Widget>[
         if (widget.icon != null) ...<Widget>[
           SizedBox.square(
-            dimension: 44,
+            dimension: N360Size.tileSmall,
             child: CustomPaint(
-              painter: const SoftSurfacePainter(radius: 14),
-              child: Center(child: Icon(widget.icon, size: 24, color: N360Colors.ink2)),
+              painter: const SoftSurfacePainter(radius: N360Radius.small + 2),
+              child: Center(child: Icon(widget.icon, size: N360IconSize.md, color: N360Colors.ink2)),
             ),
           ),
-          const SizedBox(width: N360Space.md),
+          const SizedBox(width: N360Space.tile),
         ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(widget.title, style: N360Type.bodyStrong, maxLines: 2, overflow: TextOverflow.ellipsis),
+              Text(
+                widget.title,
+                style: N360Type.fit(N360Type.bodyStrong, widget.title),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               if (widget.subtitle != null)
                 Text(
                   widget.subtitle!,
-                  style: N360Type.caption,
+                  style: N360Type.fit(N360Type.caption, widget.subtitle!),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -186,15 +191,15 @@ class _OutboxSlipState extends State<OutboxSlip> with SingleTickerProviderStateM
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               N360Space.md,
-              N360Space.sm + 1,
+              N360Space.sm,
               N360Space.md,
-              N360Space.sm + 1,
+              N360Space.sm,
             ),
             child: child,
           ),
         ),
       ),
-      child: ConstrainedBox(constraints: const BoxConstraints(minHeight: 48), child: body),
+      child: ConstrainedBox(constraints: const BoxConstraints(minHeight: 44), child: body),
     );
     if (tappable) return slip;
     return Semantics(container: true, label: spoken, child: ExcludeSemantics(child: slip));
@@ -216,7 +221,7 @@ class _SlipPainter extends CustomPainter {
     canvas.drawRRect(face, Paint()..color = N360Colors.paper);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 14, 3.5, size.height - 28),
+        Rect.fromLTWH(0, 12, 3, size.height - 24),
         const Radius.circular(2),
       ),
       Paint()..color = band,
@@ -237,12 +242,12 @@ class _StatusMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle text = N360Type.caption.copyWith(fontWeight: FontWeight.w600);
+    final TextStyle text = N360Type.fit(N360Type.caption, label).copyWith(fontWeight: FontWeight.w600);
     return switch (status) {
       SlipStatus.waiting => Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(Icons.schedule, size: 18, color: N360Colors.inkLabel),
+            const Icon(Icons.schedule, size: N360IconSize.sm, color: N360Colors.inkLabel),
             const SizedBox(width: 4),
             Text(label, style: text),
           ],
@@ -258,7 +263,7 @@ class _StatusMark extends StatelessWidget {
       SlipStatus.attention => Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(Icons.error_outline, size: 18, color: N360Colors.stampRed),
+            const Icon(Icons.error_outline, size: N360IconSize.sm, color: N360Colors.stampRed),
             const SizedBox(width: 4),
             Text(label, style: text.copyWith(color: N360Colors.stampRed)),
           ],
@@ -288,7 +293,7 @@ class _TickStamp extends StatelessWidget {
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: tick,
-        child: const CustomPaint(size: Size.square(34), painter: _TickPainter()),
+        child: const CustomPaint(size: Size.square(28), painter: _TickPainter()),
         builder: (context, child) {
           final double local = landAt <= 0 ? 1 : (tick.value / landAt).clamp(0.0, 1.0);
           final double v = N360Curves.stamp.transform(local);
@@ -310,7 +315,7 @@ class _TickPainter extends CustomPainter {
     canvas.translate(c.dx, c.dy);
     canvas.rotate(-7 * math.pi / 180);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromCircle(center: Offset.zero, radius: r - 1), const Radius.circular(11)),
+      RRect.fromRectAndRadius(Rect.fromCircle(center: Offset.zero, radius: r - 1), const Radius.circular(9)),
       Paint()..color = N360Colors.moss,
     );
     final Path check = Path()
@@ -324,7 +329,7 @@ class _TickPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = 3.4,
+        ..strokeWidth = 3,
     );
     canvas.restore();
   }
@@ -365,7 +370,7 @@ class _SlipSpinnerState extends State<_SlipSpinner> with SingleTickerProviderSta
     return RepaintBoundary(
       child: RotationTransition(
         turns: _spin,
-        child: const Icon(Icons.sync, size: 18, color: N360Colors.laterite),
+        child: const Icon(Icons.sync, size: N360IconSize.sm, color: N360Colors.laterite),
       ),
     );
   }
@@ -629,23 +634,23 @@ class _TrayLip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 44,
+      height: N360Size.control,
       child: Row(
         children: <Widget>[
           const SizedBox(width: 4),
-          const Icon(Icons.inbox_outlined, size: 20, color: N360Colors.inkLabel),
+          const Icon(Icons.inbox_outlined, size: N360IconSize.md, color: N360Colors.inkLabel),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               label ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: N360Type.label,
+              style: N360Type.fit(N360Type.label, label ?? ''),
             ),
           ),
           RollingNumber(
             value: '$count',
-            style: N360Type.heading.copyWith(fontSize: 18, color: N360Colors.ink),
+            style: N360Type.heading.copyWith(fontSize: 16, color: N360Colors.ink),
           ),
           const SizedBox(width: 6),
         ],

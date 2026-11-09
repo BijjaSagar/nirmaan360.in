@@ -15,6 +15,12 @@ import '../typography.dart';
 /// units column when a digit is added or removed, and every width glides between
 /// the old and new sizes instead of jumping.
 ///
+/// With [animateEntry] the figure counts up once when it first appears, from a
+/// figure of the same shape with every digit at zero, over
+/// [N360Durations.count]. Use it for the one hero figure on a screen and
+/// nowhere else; a stat card simply shows its value. Digits are painted from
+/// frame 0 either way, and reduced motion shows the final figure at once.
+///
 /// Screen readers get the full value once, as a single label. There is no `Text`
 /// widget inside, so a widget test should read [value] or find by semantics.
 class RollingNumber extends StatefulWidget {
@@ -27,6 +33,7 @@ class RollingNumber extends StatefulWidget {
     this.prefixStyle,
     this.suffixStyle,
     this.semanticsLabel,
+    this.animateEntry = false,
   });
 
   final String value;
@@ -38,6 +45,12 @@ class RollingNumber extends StatefulWidget {
 
   /// Overrides the spoken value. Defaults to prefix, value and suffix.
   final String? semanticsLabel;
+
+  /// Count up from zero once, on first build. For hero figures only.
+  final bool animateEntry;
+
+  /// [value] with every digit set to zero: where a count-up starts.
+  static String zeroed(String value) => value.replaceAll(RegExp('[0-9]'), '0');
 
   @override
   State<RollingNumber> createState() => _RollingNumberState();
@@ -55,7 +68,15 @@ class _RollingNumberState extends State<RollingNumber> with SingleTickerProvider
     _glyphs = _resolveGlyphs();
     if (!_ready) {
       _ready = true;
-      _figure = _Figure.still(widget.value, _glyphs);
+      final motion = context.motion;
+      final String start = RollingNumber.zeroed(widget.value);
+      if (widget.animateEntry && !motion.reduced && start != widget.value) {
+        _figure = _Figure.still(start, _glyphs).retargeted(widget.value, 1, _glyphs);
+        _roll.duration = motion.count;
+        _roll.forward(from: 0);
+      } else {
+        _figure = _Figure.still(widget.value, _glyphs);
+      }
     } else {
       _figure = _figure.remeasured(_glyphs);
     }
@@ -133,12 +154,22 @@ class _RollingNumberState extends State<RollingNumber> with SingleTickerProvider
 
 /// Quantity with an optional unit, for already formatted figures.
 class RollingQty extends StatelessWidget {
-  const RollingQty({super.key, required this.value, this.unit, this.style, this.unitStyle});
+  const RollingQty({
+    super.key,
+    required this.value,
+    this.unit,
+    this.style,
+    this.unitStyle,
+    this.animateEntry = false,
+  });
 
   final String value;
   final String? unit;
   final TextStyle? style;
   final TextStyle? unitStyle;
+
+  /// Count up from zero once, on first build. For hero figures only.
+  final bool animateEntry;
 
   @override
   Widget build(BuildContext context) {
@@ -146,11 +177,13 @@ class RollingQty extends StatelessWidget {
     return RollingNumber(
       value: value,
       style: style,
+      animateEntry: animateEntry,
       suffix: unit == null ? '' : ' $unit',
       suffixStyle: unitStyle ??
           resolved.copyWith(
-            fontSize: (resolved.fontSize ?? 18) * 0.62,
+            fontSize: (resolved.fontSize ?? 16) * 0.62,
             fontWeight: FontWeight.w400,
+            letterSpacing: 0,
           ),
     );
   }
@@ -159,16 +192,25 @@ class RollingQty extends StatelessWidget {
 /// Rupees, for already formatted figures such as `1,23,456.00`. A leading rupee
 /// sign in [value] is moved into the static prefix so it does not roll.
 class RollingMoney extends StatelessWidget {
-  const RollingMoney({super.key, required this.value, this.style, this.symbol = '₹'});
+  const RollingMoney({
+    super.key,
+    required this.value,
+    this.style,
+    this.symbol = '₹',
+    this.animateEntry = false,
+  });
 
   final String value;
   final TextStyle? style;
   final String symbol;
 
+  /// Count up from zero once, on first build. For hero figures only.
+  final bool animateEntry;
+
   @override
   Widget build(BuildContext context) {
     final String figure = value.startsWith(symbol) ? value.substring(symbol.length).trimLeft() : value;
-    return RollingNumber(value: figure, style: style, prefix: symbol);
+    return RollingNumber(value: figure, style: style, prefix: symbol, animateEntry: animateEntry);
   }
 }
 
