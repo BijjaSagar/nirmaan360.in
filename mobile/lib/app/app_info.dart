@@ -4,7 +4,7 @@
 /// the pubspec and fails when one changes without the other.
 abstract final class AppInfo {
   static const String version = '1.0.0';
-  static const String buildNumber = '10';
+  static const String buildNumber = '11';
 
   static String get label => '$version ($buildNumber)';
 }
