@@ -141,6 +141,15 @@ return [
                 'measurement.view', 'work_order.view', 'ra_bill.view',
             ],
         ],
+        // A subcontractor's own login. It reaches the contractor portal and nothing else: ContractorPortalGate
+        // turns it away from every other screen and endpoint. "portal" keeps it off the team screens, and
+        // "managed_by" names the permission that hands it out, from the contractor's page.
+        'contractor' => [
+            'label' => 'Contractor',
+            'portal' => true,
+            'managed_by' => 'contractor_portal.manage',
+            'permissions' => ['contractor_portal.view'],
+        ],
     ],
 
     // Roles that can be used as an approval level. "client" signs off through a signed link.

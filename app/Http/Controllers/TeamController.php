@@ -22,7 +22,8 @@ class TeamController extends Controller
         $actor = $request->user();
 
         return view('team.index', [
-            'users' => User::where('organization_id', $actor->organization_id)->with('customRole')->withCount('assignedProjects')->orderBy('name')->get(),
+            // Contractor logins are not team members: they are managed from each contractor's page.
+            'users' => User::where('organization_id', $actor->organization_id)->whereNot('role', User::CONTRACTOR_ROLE)->with('customRole')->withCount('assignedProjects')->orderBy('name')->get(),
             'invitations' => TeamInvitation::pending()->latest('id')->get(),
             'roleOptions' => $this->access->roleOptions($actor),
             'projects' => $this->projects(),

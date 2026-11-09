@@ -18,7 +18,8 @@ class CustomRoleController extends Controller
     {
         return view('modules.access.roles', [
             'roles' => CustomRole::withCount('users')->orderBy('name')->get(),
-            'builtIn' => config('buildos.roles'),
+            // Portal roles, such as the contractor login, are not team roles and are given elsewhere.
+            'builtIn' => array_filter(config('buildos.roles'), fn (array $role) => ! ($role['portal'] ?? false)),
         ]);
     }
 

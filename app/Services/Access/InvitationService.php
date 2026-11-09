@@ -5,6 +5,7 @@ namespace App\Services\Access;
 use App\Exceptions\InvitationClosedException;
 use App\Models\AuditLog;
 use App\Models\Organization;
+use App\Models\Party;
 use App\Models\Project;
 use App\Models\TeamInvitation;
 use App\Models\User;
@@ -26,7 +27,10 @@ class InvitationService
 
     public function __construct(private TeamAccessService $access) {}
 
-    /** Pending invitations hold a seat, so a company cannot invite past its plan limit. */
+    /**
+     * Pending invitations hold a seat, so a company cannot invite past its plan limit.
+     * Contractor logins and their invitations never take a seat: they reach only the contractor portal.
+     */
     public function hasSeat(Organization $organization, ?TeamInvitation $except = null): bool
     {
         $max = $organization->planConfig()['max_users'];
@@ -35,20 +39,24 @@ class InvitationService
             return true;
         }
 
-        $users = User::where('organization_id', $organization->id)->count();
+        $users = User::where('organization_id', $organization->id)->whereNot('role', User::CONTRACTOR_ROLE)->count();
         $pending = TeamInvitation::withoutGlobalScopes()
             ->where('organization_id', $organization->id)
             ->pending()
+            ->whereNot('role_key', User::CONTRACTOR_ROLE)
             ->when($except, fn ($query) => $query->whereKeyNot($except->id))
             ->count();
 
         return $users + $pending < $max;
     }
 
-    /** @return array{invitation: TeamInvitation, link: string, emailed: bool} */
+    /**
+     * @param  array{email: string, phone?: ?string, role: string, limited: bool, project_ids?: list<int|string>, contractor_party_id?: ?int}  $data
+     * @return array{invitation: TeamInvitation, link: string, emailed: bool}
+     */
     public function invite(User $actor, array $data): array
     {
-        abort_unless($this->access->canAssign($actor, $data['role']), 403, __('You cannot give a role with more access than you have.'));
+        abort_unless($this->access->canInvite($actor, $data['role']), 403, __('You cannot give a role with more access than you have.'));
 
         $email = Str::lower(trim($data['email']));
 
@@ -57,14 +65,15 @@ class InvitationService
         }
 
         $token = Str::random(64);
+        $portal = $this->isPortalRole($data['role'], $actor->organization_id);
 
-        $invitation = DB::transaction(function () use ($actor, $data, $email, $token) {
+        $invitation = DB::transaction(function () use ($actor, $data, $email, $token, $portal) {
             $organization = Organization::lockForUpdate()->findOrFail($actor->organization_id);
 
             // A second invitation to the same person replaces the first, so it cannot hold two seats.
             TeamInvitation::where('organization_id', $organization->id)->where('email', $email)->pending()->update(['revoked_at' => now()]);
 
-            abort_unless($this->hasSeat($organization), 403, __('Your plan user limit has been reached. Upgrade to add more.'));
+            abort_unless($portal || $this->hasSeat($organization), 403, __('Your plan user limit has been reached. Upgrade to add more.'));
 
             $invitation = TeamInvitation::create([
                 'organization_id' => $organization->id,
@@ -73,6 +82,7 @@ class InvitationService
                 'role_key' => $data['role'],
                 'limited_to_projects' => $data['limited'],
                 'project_ids' => $data['limited'] ? array_map('intval', $data['project_ids']) : null,
+                'contractor_party_id' => $portal ? ($data['contractor_party_id'] ?? null) : null,
                 'token_hash' => $this->hash($token),
                 'invited_by' => $actor->id,
                 'expires_at' => now()->addDays(self::VALID_DAYS),
@@ -101,7 +111,7 @@ class InvitationService
                 throw ValidationException::withMessages(['invitation' => __('This invitation has already been used or cancelled.')]);
             }
 
-            abort_unless($this->hasSeat($organization, $invitation), 403, __('Your plan user limit has been reached. Upgrade to add more.'));
+            abort_unless($this->isPortalRole($invitation->role_key, $organization->id) || $this->hasSeat($organization, $invitation), 403, __('Your plan user limit has been reached. Upgrade to add more.'));
 
             $invitation->forceFill(['token_hash' => $this->hash($token), 'expires_at' => now()->addDays(self::VALID_DAYS)])->save();
             AuditLog::record('invitation.reissued', $invitation, null, ['email' => $invitation->email]);
@@ -156,8 +166,9 @@ class InvitationService
             }
 
             $organization = Organization::lockForUpdate()->findOrFail($invitation->organization_id);
+            $role = $this->access->describeRole($invitation->role_key, $organization->id);
 
-            if (! $organization->canAddUser()) {
+            if ($role !== null && ! $role['portal'] && ! $organization->canAddUser()) {
                 throw new InvitationClosedException(__('This company has reached its plan user limit. Ask them to upgrade and send a new invitation.'));
             }
 
@@ -165,10 +176,16 @@ class InvitationService
                 throw new InvitationClosedException(__('This email already has an account. Please sign in.'));
             }
 
-            $role = $this->access->describeRole($invitation->role_key, $organization->id);
             $inviter = User::find($invitation->invited_by);
 
-            if ($role === null || ! $inviter?->is_active || ! $inviter->hasPermission('user.manage') || ! $this->access->canAssign($inviter, $role['key'])) {
+            if ($role === null || ! $inviter?->is_active || ! $this->access->canInvite($inviter, $role['key'])) {
+                throw new InvitationClosedException(__('This invitation is no longer valid. Please ask for a new one.'));
+            }
+
+            // A contractor login is tied to one subcontractor, who must still be in the company's contacts.
+            $party = $role['portal'] ? $this->liveSubcontractor($invitation, $organization->id) : null;
+
+            if ($role['portal'] && $party === null) {
                 throw new InvitationClosedException(__('This invitation is no longer valid. Please ask for a new one.'));
             }
 
@@ -180,6 +197,7 @@ class InvitationService
                 'phone' => $this->freePhone($invitation->phone),
                 'role' => $role['role'],
                 'custom_role_id' => $role['custom_role_id'],
+                'contractor_party_id' => $party?->id,
                 'password' => $data['password'],
             ])->save();
 
@@ -231,6 +249,25 @@ class InvitationService
     private function freePhone(?string $phone): ?string
     {
         return $phone !== null && ! User::where('phone', $phone)->exists() ? $phone : null;
+    }
+
+    private function isPortalRole(string $roleKey, int $organizationId): bool
+    {
+        return $this->access->describeRole($roleKey, $organizationId)['portal'] ?? false;
+    }
+
+    /** The subcontractor named on a contractor invitation, if it is still in this company's contacts. */
+    private function liveSubcontractor(TeamInvitation $invitation, int $organizationId): ?Party
+    {
+        if ($invitation->contractor_party_id === null) {
+            return null;
+        }
+
+        return Party::withoutGlobalScopes()
+            ->where('organization_id', $organizationId)
+            ->where('type', 'subcontractor')
+            ->whereNull('deleted_at')
+            ->find($invitation->contractor_party_id);
     }
 
     /** @return list<int> Projects chosen on the invitation that still exist in this company. */

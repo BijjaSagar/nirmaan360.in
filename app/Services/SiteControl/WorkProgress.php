@@ -91,11 +91,26 @@ class WorkProgress
      */
     public function workOrderLinePercents(WorkOrder $workOrder): array
     {
+        return array_map(fn (array $figures) => $figures['percent'], $this->workOrderLineFigures($workOrder));
+    }
+
+    /**
+     * Quantity done on each line of a contract, capped at the line's own quantity and attributed
+     * the same way as workOrderPercent, together with that line's percent.
+     *
+     * @return array<int, array{done: string, percent: string}> Work order item id => figures
+     */
+    public function workOrderLineFigures(WorkOrder $workOrder): array
+    {
         $items = WorkOrderItem::where('work_order_id', $workOrder->id)->get(['id', 'boq_item_id', 'qty']);
         $done = $this->doneOnContracts(collect([$workOrder]), collect([$workOrder->id => $items]))[$workOrder->id];
 
         return $items
-            ->mapWithKeys(fn ($item) => [$item->id => $this->percent($this->capped($done[$item->boq_item_id], Dec::of($item->qty)), $item->qty)])
+            ->mapWithKeys(function ($item) use ($done) {
+                $capped = $this->capped($done[$item->boq_item_id], Dec::of($item->qty));
+
+                return [$item->id => ['done' => Dec::qty($capped), 'percent' => $this->percent($capped, $item->qty)]];
+            })
             ->all();
     }
 
