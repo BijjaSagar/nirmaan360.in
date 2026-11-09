@@ -100,6 +100,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Projects
     Route::middleware('can:project.view')->group(function () {
         Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+        Route::get('/projects/{project}/image', [ProjectController::class, 'image'])->name('projects.image');
     });
     Route::middleware('can:project.manage')->group(function () {
         Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');

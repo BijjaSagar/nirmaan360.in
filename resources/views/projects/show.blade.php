@@ -6,6 +6,10 @@
         @can('project.manage')<a href="{{ route('projects.edit', $project) }}" class="btn btn-ghost">{{ __('Edit') }}</a>@endcan
     </x-page-header>
 
+    @if ($project->image_path)
+        <img src="{{ route('projects.image', [$project, 'v' => $project->imageVersion()]) }}" alt="{{ __('Photo of :project', ['project' => $project->name]) }}" class="mb-4 h-48 w-full rounded-lg object-cover sm:h-64">
+    @endif
+
     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         @if ($seesMoney)
             <x-stat :label="__('Contract value')" :value="inr($project->contract_value)" />
