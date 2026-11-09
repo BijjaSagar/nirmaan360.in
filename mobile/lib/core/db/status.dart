@@ -41,6 +41,10 @@ abstract final class MetaKey {
   /// The last material check this phone read for a project, as JSON.
   static String materialOverview(int projectId) => 'material.overview.$projectId';
 
+  /// The address of the photo kept on this phone for a project.
+  static const projectImagePrefix = 'project.image.';
+  static String projectImage(int projectId) => '$projectImagePrefix$projectId';
+
   /// The floor and item last used on the progress form.
   static String progressLastPick(int projectId) => 'progress.last_pick.$projectId';
 }

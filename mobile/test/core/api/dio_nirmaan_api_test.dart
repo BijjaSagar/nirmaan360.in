@@ -87,6 +87,16 @@ void main() {
     expect(request.headers['Accept'], 'application/json');
   });
 
+  test('a project photo is only ever asked of our own server', () async {
+    answer((_) => ResponseBody.fromBytes(const <int>[1, 2, 3], 200));
+    final bytes = await api.projectImageBytes('https://elsewhere.example/api/v1/projects/12/image?v=ab12cd34');
+
+    final request = adapter.requests.single;
+    expect(request.uri.toString(), 'https://example.test/api/v1/projects/12/image?v=ab12cd34');
+    expect(request.headers['Authorization'], 'Bearer secret-token');
+    expect(bytes, <int>[1, 2, 3]);
+  });
+
   test('encodes the + in since', () async {
     answer((_) => json({'server_time': 'x'}));
     await api.pull(since: '2026-11-09T14:27:54+05:30');

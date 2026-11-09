@@ -277,6 +277,16 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Uint8List> pettyBillBytes(int entryId) =>
       _bytes('/petty-entries/$entryId/bill');
 
+  /// The token goes only to our own API: the path is taken from the address
+  /// and asked of the configured server, wherever the address points.
+  @override
+  Future<Uint8List> projectImageBytes(String imageUrl) {
+    final Uri uri = Uri.parse(imageUrl);
+    final int at = uri.path.indexOf('/projects/');
+    if (at < 0) throw const ServerFailure('Not a project photo.', statusCode: 404);
+    return _bytes('${uri.path.substring(at)}${uri.hasQuery ? '?${uri.query}' : ''}');
+  }
+
   Future<Map<String, dynamic>> _getData(String path) async {
     final body = await _call(() => _dio.get(path));
     return (body['data'] as Map).cast<String, dynamic>();

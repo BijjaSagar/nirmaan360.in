@@ -16,6 +16,9 @@ class Projects extends Table {
   TextColumn get measurementTolerancePct =>
       text().withDefault(const Constant('5.00'))();
   DateTimeColumn get updatedAt => dateTime().nullable()();
+
+  /// Where the project's photo is. Needs the sign-in token. Null when none.
+  TextColumn get imageUrl => text().nullable()();
 }
 
 @DataClassName('SiteRow')

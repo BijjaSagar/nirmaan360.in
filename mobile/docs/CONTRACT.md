@@ -201,6 +201,10 @@ Add `project.manage` and `boq.manage` to the `can` list. Add nullable `client_uu
 - The plan project limit is a 422 with `errors.plan`, using the web's message.
 - A wallet top-up is an ordinary `petty_cash` push item with `type: topup`, so it works offline.
 
+### Project photo
+
+`image_url` is on each project in `GET /projects` and the `projects` rows of the pull, null when there is no photo. It needs the same bearer token, so the app asks for the same path on its own configured server rather than fetching the address as given. The `v=` value changes with the photo. The photo is kept on the phone for offline use, and the first letter of the name shows when there is none. Setting a photo stays on the website.
+
 ### Who may see money
 
 Site roles do not have `money.view`. For them the server leaves rates and bill figures as null and drops any wage they send. The app shows quantities only, skips the wage step, hides the progress card weighted by rates, and offers no approval on a bill sent without figures.

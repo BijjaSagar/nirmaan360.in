@@ -134,6 +134,7 @@ class PullApplier {
       _str(j['measurement_tolerance_pct']) ?? '5.00',
     ),
     updatedAt: Value(parseServerTime(j['updated_at'])),
+    imageUrl: Value(j['image_url'] as String?),
   );
 
   SitesCompanion _siteCompanion(Json j) => SitesCompanion(

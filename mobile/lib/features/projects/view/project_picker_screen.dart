@@ -11,6 +11,7 @@ import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import 'widgets/project_photo.dart';
 
 /// Pick the site you are on. Only ever shown with two or more projects, or
 /// while the first pull is still bringing them in: one white list of sites,
@@ -122,7 +123,7 @@ class _ProjectRow extends StatelessWidget {
     final String? location = project.location?.trim().isEmpty ?? true ? null : project.location;
     final String detail = <String>[project.code, ?location].join(' · ');
     return LedgerListTile(
-      leading: const Icon(Icons.apartment_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+      leading: ProjectPhoto(project: project),
       title: project.name,
       subtitle: detail,
       status: isCurrent ? StatusPill(kind: StampKind.synced, label: currentLabel) : null,

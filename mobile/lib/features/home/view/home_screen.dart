@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../projects/view/widgets/project_photo.dart';
 import '../../site_progress/data/progress_models.dart' show percentText;
 import '../../../app/app_format.dart';
 import '../../../app/app_gate.dart';
@@ -231,28 +232,37 @@ class _HomeBar extends StatelessWidget {
     final String? location = project.location?.trim().isEmpty ?? true ? null : project.location;
     final String detail = <String>[project.code, ?location].join(' · ');
 
-    final Widget name = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final Widget name = Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(
-          project.name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: N360Type.fit(N360Type.title, project.name).copyWith(color: tone.ink, height: 1.2),
-        ),
-        Row(
-          children: <Widget>[
-            Flexible(
-              child: Text(
-                detail,
-                maxLines: 1,
+        ProjectPhoto(project: project, size: 44),
+        const SizedBox(width: N360Space.sm),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                project.name,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: N360Type.fit(N360Type.caption, detail).copyWith(color: tone.inkSoft),
+                style: N360Type.fit(N360Type.title, project.name).copyWith(color: tone.ink, height: 1.2),
               ),
-            ),
-            if (canSwitch) Icon(Icons.expand_more, size: N360IconSize.sm, color: tone.inkSoft),
-          ],
+              Row(
+                children: <Widget>[
+                  Flexible(
+                    child: Text(
+                      detail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: N360Type.fit(N360Type.caption, detail).copyWith(color: tone.inkSoft),
+                    ),
+                  ),
+                  if (canSwitch) Icon(Icons.expand_more, size: N360IconSize.sm, color: tone.inkSoft),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );

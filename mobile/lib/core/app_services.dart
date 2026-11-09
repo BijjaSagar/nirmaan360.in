@@ -12,6 +12,7 @@ import '../features/issues/data/issue_repository.dart';
 import '../features/measurement/data/measurement_repository.dart';
 import '../features/petty_cash/data/petty_cash_repository.dart';
 import '../features/material_control/data/material_repository.dart';
+import '../features/projects/data/project_image_repository.dart';
 import '../features/projects/data/project_repository.dart';
 import '../features/site_progress/data/progress_repository.dart';
 import '../features/sync_center/data/sync_repository.dart';
@@ -35,6 +36,7 @@ class AppServices {
   AppServices._({
     required this.progress,
     required this.material,
+    required this.projectImages,
     required this.db,
     required this.api,
     required this.session,
@@ -137,6 +139,7 @@ class AppServices {
     );
     final progress = ProgressRepository(context);
     final material = MaterialRepository(context);
+    final projectImages = ProjectImageRepository(context);
     engine.afterPull = (sentSomething) async {
       // Separately, so a failure in one does not leave the other stale.
       for (final refresh in <Future<void> Function({bool force})>[progress.refreshCurrent, material.refreshCurrent]) {
@@ -146,10 +149,12 @@ class AppServices {
           debugPrint('After-pull refresh failed: $e');
         }
       }
+      await projectImages.sweepRemoved();
     };
     return AppServices._(
       progress: progress,
       material: material,
+      projectImages: projectImages,
       db: db,
       api: api,
       session: session,
@@ -187,6 +192,7 @@ class AppServices {
   final SyncRepository syncCenter;
   final ProgressRepository progress;
   final MaterialRepository material;
+  final ProjectImageRepository projectImages;
 
   /// Restores the session and starts the triggers. Offline-safe.
   ///

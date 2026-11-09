@@ -1356,6 +1356,19 @@ class FakeApi implements NirmaanApi {
     'pending_entries': <Row>[],
   };
 
+  /// Photos by address. An address not here answers 404.
+  final Map<String, Uint8List> projectImages = {};
+  final List<String> projectImageCalls = [];
+
+  @override
+  Future<Uint8List> projectImageBytes(String imageUrl) async {
+    _guard();
+    projectImageCalls.add(imageUrl);
+    final bytes = projectImages[imageUrl];
+    if (bytes == null) throw const ServerFailure('Not found.', statusCode: 404);
+    return bytes;
+  }
+
   // Material control -------------------------------------------------------
 
   Row materialCheckBody = {

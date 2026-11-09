@@ -195,6 +195,9 @@ abstract interface class NirmaanApi {
 
   Future<Uint8List> pettyBillBytes(int entryId);
 
+  /// A project's photo. [imageUrl] is the address the server gave for it.
+  Future<Uint8List> projectImageBytes(String imageUrl);
+
   // Site progress. Reads fill a cache on the phone. Writes are replayed from
   // the outbox with their `client_uuid`, so a retry cannot record work twice.
 
