@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 import 'signature/page_transitions.dart';
@@ -85,8 +86,8 @@ ThemeData buildN360Theme({bool devanagari = false}) {
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: N360PageTransitionsBuilder(),
-        TargetPlatform.iOS: N360PageTransitionsBuilder(),
-        TargetPlatform.macOS: N360PageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         TargetPlatform.windows: N360PageTransitionsBuilder(),
         TargetPlatform.linux: N360PageTransitionsBuilder(),
         TargetPlatform.fuchsia: N360PageTransitionsBuilder(),

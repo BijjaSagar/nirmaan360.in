@@ -67,7 +67,7 @@ void main() {
     expect(tester.getTopLeft(find.text('Second')).dx, rest);
   }, variant: ios);
 
-  testWidgets('on iOS a page whose PopScope holds the pop stays put and is asked, as Back would ask',
+  testWidgets('on iOS a page whose PopScope holds the pop cannot be swiped away',
       (tester) async {
     var asked = 0;
     await pumpStack(
@@ -93,7 +93,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Form'), findsOneWidget);
-    expect(asked, 1, reason: 'the form gets the same question a Back tap would put to it');
+    expect(asked, 0, reason: 'the gesture is off, so the form stays open with its work');
   }, variant: ios);
 
   testWidgets('on Android the edge strip is not there; the system back is', (tester) async {
