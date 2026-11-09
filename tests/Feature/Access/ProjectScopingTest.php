@@ -4,11 +4,14 @@ namespace Tests\Feature\Access;
 
 use App\Models\Approval;
 use App\Models\Attendance;
+use App\Models\BillNote;
 use App\Models\BoqItem;
 use App\Models\CustomRole;
 use App\Models\Dpr;
 use App\Models\DprPhoto;
 use App\Models\Issue;
+use App\Models\IssuePhoto;
+use App\Models\MeasurementAttachment;
 use App\Models\MeasurementEntry;
 use App\Models\Organization;
 use App\Models\Party;
@@ -101,6 +104,16 @@ class ProjectScopingTest extends TestCase
 
         $bill = app(RaBillService::class)->generate($project, 'client', '2026-01-01', '2026-12-31', $this->owner);
 
+        Storage::put('issues/'.$word.'.jpg', 'x');
+        $issuePhoto = IssuePhoto::create(['organization_id' => $project->organization_id, 'issue_id' => $issue->id, 'kind' => 'before', 'path' => 'issues/'.$word.'.jpg']);
+        Storage::put('measurements/'.$word.'.jpg', 'x');
+        $attachment = MeasurementAttachment::create(['organization_id' => $project->organization_id, 'measurement_entry_id' => $measurement->id, 'kind' => 'photo', 'path' => 'measurements/'.$word.'.jpg']);
+        $note = BillNote::create([
+            'organization_id' => $project->organization_id, 'project_id' => $project->id, 'ra_bill_id' => $bill->id,
+            'kind' => 'credit', 'number' => 'CN-'.$word, 'note_date' => now()->toDateString(), 'reason' => 'Rate correction',
+            'taxable_amount' => '100.00', 'total_amount' => '100.00', 'net_effect' => '-100.00',
+        ]);
+
         Auth::forgetUser();
         $this->app['auth']->forgetGuards();
 
@@ -109,6 +122,7 @@ class ProjectScopingTest extends TestCase
             'issue' => $issue->id, 'wallet' => $wallet->id, 'entry' => $entry->id,
             'measurement' => $measurement->id, 'workOrder' => $workOrder->id, 'bill' => $bill->id,
             'approval' => $approval->id,
+            'issuePhoto' => $issuePhoto->id, 'attachment' => $attachment->id, 'note' => $note->id,
         ];
     }
 

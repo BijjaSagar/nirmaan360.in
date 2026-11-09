@@ -13,6 +13,8 @@ class IssuePhoto extends Model
 
     public const KINDS = ['before', 'after'];
 
+    public const PROJECT_VIA = 'issue';
+
     protected $guarded = [];
 
     // A new photo must reach devices on the next pull, which watches issues.updated_at.

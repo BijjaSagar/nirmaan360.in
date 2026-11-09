@@ -24,14 +24,14 @@ class IssuePhotoController extends Controller
         return back()->with('success', __('Photo added.'));
     }
 
-    public function show(IssuePhoto $photo): StreamedResponse
+    public function show(IssuePhoto $issuePhoto): StreamedResponse
     {
-        return PrivateFile::response($photo->path);
+        return PrivateFile::response($issuePhoto->path);
     }
 
-    public function destroy(IssuePhoto $photo): RedirectResponse
+    public function destroy(IssuePhoto $issuePhoto): RedirectResponse
     {
-        $this->service->remove($photo);
+        $this->service->remove($issuePhoto);
 
         return back()->with('success', __('Photo removed.'));
     }

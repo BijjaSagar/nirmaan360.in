@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('feature:site')->group(function () {
     Route::post('/issues/{issue}/photos', [IssuePhotoController::class, 'store'])->middleware('can:issue.manage')->name('issue-photos.store');
-    Route::get('/issue-photos/{photo}', [IssuePhotoController::class, 'show'])->middleware('can:issue.view')->name('issue-photos.show');
-    Route::delete('/issue-photos/{photo}', [IssuePhotoController::class, 'destroy'])->middleware('can:issue.manage')->name('issue-photos.destroy');
+    Route::get('/issue-photos/{issuePhoto}', [IssuePhotoController::class, 'show'])->middleware('can:issue.view')->name('issue-photos.show');
+    Route::delete('/issue-photos/{issuePhoto}', [IssuePhotoController::class, 'destroy'])->middleware('can:issue.manage')->name('issue-photos.destroy');
 });
 
 Route::middleware('feature:measurement')->group(function () {

@@ -27,22 +27,22 @@ class IssuePhotoApiController extends Controller
     {
         $data = $request->validate($this->service->rules());
 
-        $photo = $this->service->add($issue, $request->file('photo'), [
+        $issuePhoto = $this->service->add($issue, $request->file('photo'), [
             ...$data,
             'taken_at' => ClientTime::parse($data['taken_at'] ?? null),
         ], $request->user());
 
-        return response()->json(['data' => IssuePresenter::photo($photo)], $photo->wasRecentlyCreated ? 201 : 200);
+        return response()->json(['data' => IssuePresenter::photo($issuePhoto)], $issuePhoto->wasRecentlyCreated ? 201 : 200);
     }
 
-    public function show(IssuePhoto $photo): StreamedResponse
+    public function show(IssuePhoto $issuePhoto): StreamedResponse
     {
-        return PrivateFile::response($photo->path);
+        return PrivateFile::response($issuePhoto->path);
     }
 
-    public function destroy(IssuePhoto $photo): Response
+    public function destroy(IssuePhoto $issuePhoto): Response
     {
-        $this->service->remove($photo);
+        $this->service->remove($issuePhoto);
 
         return response()->noContent();
     }

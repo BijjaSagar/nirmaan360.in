@@ -15,6 +15,8 @@ class MeasurementAttachment extends Model
 
     public const KINDS = ['photo', 'sketch'];
 
+    public const PROJECT_VIA = 'entry';
+
     protected $guarded = [];
 
     // A new attachment must reach devices on the next pull, which watches measurement_entries.updated_at.
