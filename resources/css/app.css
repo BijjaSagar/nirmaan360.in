@@ -10,6 +10,7 @@
     --font-sans: 'Mukta', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Khand', 'Mukta', ui-sans-serif, sans-serif;
     --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-serif: 'Newsreader', 'Noto Serif Devanagari', Georgia, serif;
 
     --color-paper: #f5f1e8;
     --color-paper-2: #ebe5d7;
@@ -24,6 +25,9 @@
     --color-neel: #1b4a66;
     --color-neel-deep: #0f2c3d;
     --color-moss: #3b6a4c;
+    --color-sand: #f0eee6;
+    --color-oat: #e6e0d2;
+    --color-sage: #cfdbd3;
 
     --animate-rise: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
     --animate-stamp: stamp 0.45s cubic-bezier(0.3, 1.5, 0.5, 1) both;
@@ -176,61 +180,154 @@
         @apply font-semibold text-neel underline-offset-2 hover:underline;
     }
 
-    /* Public website: a separate, roomier voice from the dense office app. */
+    /* Public website: warm paper, serif headlines and thin line work. The office app stays dense. */
     .site {
-        background: #fff;
+        --font-sans: 'Instrument Sans', 'Mukta', ui-sans-serif, system-ui, sans-serif;
+        --font-display: var(--font-serif);
+        --color-paper: #faf9f5;
+        --color-paper-2: #f0eee6;
+        --color-sheet: #fff;
+        --color-ink: #141413;
+        --color-ink-2: #4d4c48;
+        --color-ink-3: #6e6d67;
+        --color-rule: #e8e6dc;
+        --color-laterite: #b8512e;
+        --color-laterite-dark: #9a4225;
+        --color-haldi: #d9b48c;
+        --color-moss: #56693f;
+        --color-neel: #141413;
+
+        background: var(--color-paper);
     }
 
     .site h1,
-    .site h2,
-    .site h3,
-    .site h4 {
-        font-family: var(--font-sans);
-        font-weight: 700;
-        letter-spacing: -0.018em;
-        line-height: 1.14;
+    .site h2 {
+        font-family: var(--font-display);
+        font-weight: 400;
+        letter-spacing: -0.012em;
+        line-height: 1.1;
     }
 
-    .site h1 {
-        font-weight: 800;
-        letter-spacing: -0.028em;
-        line-height: 1.04;
+    .site h3,
+    .site h4 {
+        font-family: var(--font-display);
+        font-weight: 500;
+        letter-spacing: -0.004em;
+        line-height: 1.22;
+    }
+
+    html[lang='hi'] .site :is(h1, h2, h3, h4),
+    html[lang='mr'] .site :is(h1, h2, h3, h4) {
+        letter-spacing: 0;
+        line-height: 1.34;
+    }
+
+    .site svg[stroke-width='1.6'] {
+        stroke-width: 1.35;
     }
 
     .site-wrap {
         @apply mx-auto max-w-[1180px] px-5 sm:px-8;
     }
 
+    .site-panel {
+        @apply mx-3 rounded-[20px] sm:mx-5 lg:rounded-[28px];
+    }
+
+    .site-panel + .site-panel {
+        @apply mt-3 sm:mt-5;
+    }
+
+    .site-card {
+        @apply rounded-2xl border border-rule bg-white;
+    }
+
     .site-btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5 text-[15px] font-semibold whitespace-nowrap transition-colors;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-[18px] py-2.5 text-[15px] font-medium whitespace-nowrap transition-colors;
     }
 
     .site-btn-primary {
-        @apply bg-laterite text-white hover:bg-laterite-dark;
+        background: var(--site-cta, var(--color-ink));
+        color: #faf9f5;
+    }
+
+    .site-btn-primary:hover {
+        background: var(--site-cta-hover, #3d3d3a);
     }
 
     .site-btn-outline {
-        @apply border border-ink/20 bg-white text-ink hover:border-ink/50;
+        @apply border border-rule bg-white text-ink hover:border-ink/40;
     }
 
     .site-btn-light {
-        @apply bg-white text-ink hover:bg-paper;
+        @apply bg-paper text-ink hover:bg-white;
+    }
+
+    /* The sign-in and calculator pages reuse the app's form parts. */
+    .site .btn {
+        @apply rounded-lg px-4 py-2 text-[15px] font-medium;
+    }
+
+    .site .btn-primary {
+        background: var(--site-cta, var(--color-ink));
+        border-color: var(--site-cta, var(--color-ink));
+        color: #faf9f5;
+    }
+
+    .site .btn-primary:hover {
+        background: var(--site-cta-hover, #3d3d3a);
+        border-color: var(--site-cta-hover, #3d3d3a);
+    }
+
+    .site .input {
+        @apply rounded-lg bg-white px-3 py-2 text-[15px];
+    }
+
+    .site .label {
+        @apply font-medium;
+    }
+
+    .site .card {
+        @apply rounded-2xl;
+    }
+
+    .site .card-head {
+        @apply px-5 py-3.5;
+    }
+
+    .site .card-title {
+        @apply text-[20px] font-medium;
+    }
+
+    .site .link {
+        @apply font-medium underline underline-offset-4;
+    }
+
+    .site .locale-link {
+        @apply rounded-md px-2;
+    }
+
+    .site .eyebrow {
+        font-family: var(--font-sans);
+        font-size: 15px;
+        letter-spacing: 0;
+        text-transform: none;
     }
 
     .tag-live {
-        @apply inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-moss;
+        @apply inline-flex items-center gap-1 rounded-full bg-moss/10 px-2.5 py-0.5 text-[12.5px] font-medium text-moss;
     }
 
     .tag-soon {
-        @apply inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#8a6208];
+        @apply inline-flex items-center gap-1.5 rounded-full bg-sand px-2.5 py-0.5 text-[12.5px] font-medium text-[#6f5316];
     }
 
     .mock {
-        @apply overflow-hidden rounded-lg border border-black/10 bg-white text-ink shadow-[0_24px_60px_-28px_rgb(15_44_61/0.45)];
+        @apply overflow-hidden rounded-xl border border-rule bg-white text-ink shadow-[0_1px_2px_rgb(20_20_19/0.04),0_20px_44px_-26px_rgb(20_20_19/0.25)];
     }
 
     .faq summary {
-        @apply flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-[17px] font-semibold;
+        @apply flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[17px] font-medium;
     }
 
     .faq summary::-webkit-details-marker {

@@ -75,15 +75,15 @@
     }
 </script>
 
-<section class="graph-paper bg-neel-deep text-paper">
-    <div class="mx-auto max-w-7xl px-5 pt-10 pb-14">
+<section class="site-panel mt-3 bg-ink text-paper">
+    <div class="site-wrap py-14 lg:py-20">
         <p class="eyebrow text-haldi">{{ __('Free tools') }}</p>
-        <h1 class="mt-3 text-[clamp(3rem,7vw,5.5rem)] leading-[0.92]">{{ __('Site calculators') }}</h1>
+        <h1 class="mt-3 text-[clamp(3rem,7vw,5.5rem)] leading-[1.02]">{{ __('Site calculators') }}</h1>
         <p class="mt-3 max-w-2xl text-lg text-paper/75">{{ __('Quick material estimates in metric units. No sign-up needed.') }}</p>
     </div>
 </section>
 
-<section class="mx-auto max-w-7xl px-5 py-10" x-data="calculators()">
+<section class="site-wrap py-10" x-data="calculators()">
     <div class="flex flex-wrap gap-1.5" role="tablist">
         <template x-for="(label, key) in tabs" :key="key">
             <button type="button" role="tab" class="btn" :aria-selected="tab === key" :class="tab === key ? 'btn-ink' : 'btn-ghost'" @click="tab = key" x-text="label"></button>
@@ -206,8 +206,8 @@
         </div>
     </div>
 
-    <div class="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-[3px] border border-ink/70 bg-sheet px-5 py-4">
-        <p class="font-display text-2xl font-semibold">{{ __('Track these quantities against your BOQ.') }}</p>
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-3 site-card px-6 py-5">
+        <p class="font-serif text-[26px]">{{ __('Track these quantities against your BOQ.') }}</p>
         <a href="{{ route('register') }}" class="btn btn-primary">{{ __('Start a :days-day trial', ['days' => config('buildos.trial_days')]) }}</a>
     </div>
 </section>

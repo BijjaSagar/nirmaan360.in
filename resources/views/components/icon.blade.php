@@ -37,6 +37,10 @@
         'linkedin' => '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M8 10.5V17M8 7.2h.01M12 17v-6.5M12 13.5c0-1.8 1.2-3 2.8-3s2.7 1.1 2.7 3V17"/>',
         'youtube' => '<rect x="2.5" y="5.5" width="19" height="13" rx="3.5"/><path d="m10.5 9.2 4.5 2.8-4.5 2.8z"/>',
         'x' => '<path d="m4 4 16 16M20 4 4 20"/>',
+        'plan-free' => '<path d="M4 20h16"/><path d="M6 20v-8l6-4.5 6 4.5v8"/><path d="M10.5 20v-5h3v5"/>',
+        'plan-contractor' => '<path d="M3 20h18"/><path d="M6 20V9h8v11"/><path d="M14 20v-7h4v7"/><path d="M8.5 12h3M8.5 15h3"/>',
+        'plan-business' => '<path d="M3 21h18"/><path d="M8 21V8h8v13"/><path d="M10.5 11h3M10.5 14h3M10.5 17h3"/><path d="M12 8V3M12 3 8 5M12 3h7M18 3v3"/>',
+        'plan-enterprise' => '<path d="M2 21h20"/><path d="M4 21v-8h5v8"/><path d="M9 21V6h6v15"/><path d="M15 21V10h5v11"/><path d="M11.5 9h1M11.5 12h1M11.5 15h1"/>',
         'layers' =>'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
     ];
 @endphp

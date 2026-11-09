@@ -18,43 +18,40 @@
     ];
 @endphp
 <div x-data="{ yearly: false }">
-    <section class="bg-[#f6f2ea]">
-        <div class="site-wrap pt-16 pb-24 lg:pt-20">
-            <div class="flex flex-wrap items-end justify-between gap-6">
-                <div class="max-w-2xl">
-                    <h1 class="text-[clamp(2.5rem,5vw,3.75rem)]">{{ __('Pay for the sites you run, not for every login.') }}</h1>
-                    <p class="mt-4 text-lg text-ink-2">{{ __('Every paid plan starts with a :days-day trial. No card needed.', ['days' => $trialDays]) }}</p>
-                </div>
-                <div class="inline-flex rounded-md bg-white p-1 text-[15px] font-semibold" role="group" aria-label="{{ __('Billing period') }}">
-                    <button type="button" @click="yearly = false" :class="!yearly ? 'bg-ink text-white' : 'text-ink-2'" class="rounded px-4 py-1.5">{{ __('Monthly') }}</button>
-                    <button type="button" @click="yearly = true" :class="yearly ? 'bg-ink text-white' : 'text-ink-2'" class="rounded px-4 py-1.5">{{ __('Yearly') }} <span :class="yearly ? 'text-haldi' : 'text-moss'">{{ __('2 months free') }}</span></button>
-                </div>
+    <section>
+        <div class="site-wrap pt-14 pb-10 text-center lg:pt-24 lg:pb-12">
+            <h1 class="mx-auto max-w-3xl text-[clamp(2.6rem,5.8vw,4.5rem)]">{{ __('Pay for the sites you run, not for every login.') }}</h1>
+            <p class="mt-5 text-[18px] text-ink-2">{{ __('Every paid plan starts with a :days-day trial. No card needed.', ['days' => $trialDays]) }}</p>
+            <div class="mt-7 inline-flex rounded-full bg-sand p-1 text-[15px]" role="group" aria-label="{{ __('Billing period') }}">
+                <button type="button" @click="yearly = false" :class="!yearly ? 'bg-white text-ink shadow-sm' : 'text-ink-2'" class="rounded-full px-5 py-1.5">{{ __('Monthly') }}</button>
+                <button type="button" @click="yearly = true" :class="yearly ? 'bg-white text-ink shadow-sm' : 'text-ink-2'" class="rounded-full px-5 py-1.5">{{ __('Yearly') }} <span class="text-laterite">{{ __('2 months free') }}</span></button>
             </div>
         </div>
     </section>
 
     <section>
-        <div class="site-wrap -mt-14">
-            <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div class="site-wrap">
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 @foreach ($order as $key)
                     @php $plan = $plans[$key]; $featured = $key === 'contractor'; @endphp
-                    <div class="flex flex-col rounded-lg border bg-white p-6 shadow-sm {{ $featured ? 'border-laterite ring-1 ring-laterite' : 'border-black/10' }}">
-                        <div class="flex items-center justify-between gap-2">
-                            <h2 class="text-[21px]">{{ __($plan['label']) }}</h2>
-                            @if ($featured)<span class="text-[12.5px] font-semibold text-laterite">{{ __('Most contractors') }}</span>@endif
+                    <div class="site-card flex flex-col p-6 {{ $featured ? 'border-ink/60' : '' }}">
+                        <div class="flex items-start justify-between gap-2">
+                            <x-icon :name="'plan-'.$key" class="size-10" />
+                            @if ($featured)<span class="tag-soon">{{ __('Most contractors') }}</span>@endif
                         </div>
+                        <h2 class="mt-5 text-[28px]">{{ __($plan['label']) }}</h2>
                         <p class="mt-1 min-h-11 text-[15px] leading-snug text-ink-2">{{ __($plan['tagline']) }}</p>
-                        <div class="mt-4 min-h-[76px]">
+                        <div class="mt-5 min-h-[76px]">
                             @if ($plan['monthly'] === null)
-                                <p class="text-[30px] font-extrabold tracking-tight">{{ __('Custom') }}</p>
-                                <p class="text-sm text-ink-3">{{ __('Priced for your setup') }}</p>
+                                <p class="font-serif text-[38px] leading-none">{{ __('Custom') }}</p>
+                                <p class="mt-1.5 text-[13.5px] text-ink-3">{{ __('Priced for your setup') }}</p>
                             @elseif ($plan['monthly'] === 0)
-                                <p class="text-[34px] font-extrabold tracking-tight">₹0</p>
-                                <p class="text-sm text-ink-3">{{ __('Free forever') }}</p>
+                                <p class="font-serif text-[38px] leading-none">₹0</p>
+                                <p class="mt-1.5 text-[13.5px] text-ink-3">{{ __('Free forever') }}</p>
                             @else
-                                <p x-show="!yearly"><span class="text-[34px] font-extrabold tracking-tight">₹{{ \App\Support\Dec::indian($plan['monthly'], 0) }}</span> <span class="text-ink-3">{{ __('/month') }}</span></p>
-                                <p x-show="yearly" x-cloak><span class="text-[34px] font-extrabold tracking-tight">₹{{ \App\Support\Dec::indian($plan['yearly'], 0) }}</span> <span class="text-ink-3">{{ __('/year') }}</span></p>
-                                <p class="text-sm text-ink-3">{{ plan_gst_note() }}</p>
+                                <p x-show="!yearly" class="leading-none"><span class="font-serif text-[38px]">₹{{ \App\Support\Dec::indian($plan['monthly'], 0) }}</span> <span class="text-[15px] text-ink-3">{{ __('/month') }}</span></p>
+                                <p x-show="yearly" x-cloak class="leading-none"><span class="font-serif text-[38px]">₹{{ \App\Support\Dec::indian($plan['yearly'], 0) }}</span> <span class="text-[15px] text-ink-3">{{ __('/year') }}</span></p>
+                                <p class="mt-1.5 text-[13.5px] text-ink-3">{{ plan_gst_note() }}</p>
                             @endif
                         </div>
                         <div class="mt-auto pt-5">
@@ -73,25 +70,25 @@
     </section>
 
     <section>
-        <div class="site-wrap py-16 lg:py-20">
-            <h2 class="text-[clamp(1.75rem,3vw,2.25rem)]">{{ __('What is in each plan') }}</h2>
-            <div class="mt-7 overflow-x-auto">
+        <div class="site-wrap py-16 lg:py-24">
+            <h2 class="text-center text-[clamp(2rem,3.6vw,2.75rem)]">{{ __('What is in each plan') }}</h2>
+            <div class="relative mt-9 overflow-x-auto">
                 <table class="w-full min-w-[720px] text-[15.5px]">
                     <thead>
-                        <tr class="border-b-2 border-ink text-left">
-                            <th class="py-3 pr-4 font-semibold"><span class="sr-only">{{ __('Feature') }}</span></th>
-                            @foreach ($order as $key)<th class="px-3 py-3 text-center font-semibold">{{ __($plans[$key]['label']) }}</th>@endforeach
+                        <tr class="border-b border-ink/60 text-left">
+                            <th class="py-3 pr-4 font-medium"><span class="sr-only">{{ __('Feature') }}</span></th>
+                            @foreach ($order as $key)<th class="px-3 py-3 text-center font-serif text-[19px] font-medium">{{ __($plans[$key]['label']) }}</th>@endforeach
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($rows as [$label, $value])
-                            <tr class="border-b border-black/8">
-                                <td class="py-3 pr-4">{{ __($label) }}</td>
+                            <tr class="border-b border-rule">
+                                <td class="py-3.5 pr-4">{{ __($label) }}</td>
                                 @foreach ($order as $key)
                                     @php $cell = $value($plans[$key]); @endphp
-                                    <td class="px-3 py-3 text-center">
+                                    <td class="px-3 py-3.5 text-center">
                                         @if ($cell === true)
-                                            <x-icon name="check" class="mx-auto size-5 text-moss" /><span class="sr-only">{{ __('Included') }}</span>
+                                            <x-icon name="check" class="mx-auto size-5" /><span class="sr-only">{{ __('Included') }}</span>
                                         @elseif ($cell === false)
                                             <span class="text-ink-3/60" aria-label="{{ __('Not included') }}">–</span>
                                         @else
@@ -104,21 +101,21 @@
                     </tbody>
                 </table>
             </div>
-            <p class="mt-5 text-[15px] text-ink-3">{{ __('AI agents are in early access and are not part of these plans yet. Prices are in Indian rupees.') }}</p>
+            <p class="mt-5 text-center text-[15px] text-ink-3">{{ __('AI agents are in early access and are not part of these plans yet. Prices are in Indian rupees.') }}</p>
         </div>
     </section>
 
-    <section class="bg-[#eaf1f6]">
+    <section class="site-panel mb-3 bg-sand sm:mb-5">
         <div class="site-wrap grid gap-10 py-16 lg:grid-cols-[1fr_1.6fr] lg:py-20">
-            <h2 class="text-[clamp(1.75rem,3vw,2.25rem)]">{{ __('About billing') }}</h2>
-            <div class="faq divide-y divide-black/10 border-y border-black/10">
+            <h2 class="text-[clamp(2rem,3.6vw,2.75rem)]">{{ __('About billing') }}</h2>
+            <div class="faq divide-y divide-ink/10 border-y border-ink/10">
                 @foreach ([
                     ['What happens after the trial?', 'Your company moves to the free plan and your data stays. Work orders and RA bills unlock again when you buy a plan.'],
                     ['Does it charge me automatically?', 'No. You pay for a month or a year at a time. Nothing renews until you pay again.'],
-                    ['What if a paid period runs out?', 'You get 3 extra days to renew. After that the company moves to the free plan until you pay.'],
+                    ['What if a paid period runs out?', 'You get :days extra days to renew. After that the company moves to the free plan until you pay.'],
                     ['Can I change plans?', 'Yes, from Billing inside the app. A new plan starts on the day you pay for it.'],
                 ] as [$question, $answer])
-                    <details><summary>{{ __($question) }}<x-icon name="plus" class="faq-plus size-5 text-ink-3 transition-transform" /></summary><p class="pb-5 text-[16.5px] leading-relaxed text-ink-2">{{ __($answer) }}</p></details>
+                    <details><summary>{{ __($question) }}<x-icon name="plus" class="faq-plus size-5 text-ink-3 transition-transform" /></summary><p class="pb-5 text-[16px] leading-relaxed text-ink-2">{{ __($answer, ['days' => config('buildos.payment_grace_days')]) }}</p></details>
                 @endforeach
             </div>
         </div>
