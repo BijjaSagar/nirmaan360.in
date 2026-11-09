@@ -11,6 +11,8 @@ class MaterialReturnItem extends Model
 {
     use BelongsToOrganization, StockAppendOnly;
 
+    public const PROJECT_VIA = 'materialReturn';
+
     protected $guarded = [];
 
     protected function casts(): array

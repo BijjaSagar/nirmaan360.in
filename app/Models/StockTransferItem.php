@@ -11,6 +11,8 @@ class StockTransferItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'transfer';
+
     protected $guarded = [];
 
     protected function casts(): array

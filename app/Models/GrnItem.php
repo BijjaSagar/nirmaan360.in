@@ -11,6 +11,8 @@ class GrnItem extends Model
 {
     use BelongsToOrganization, StockAppendOnly;
 
+    public const PROJECT_VIA = 'grn';
+
     protected $guarded = [];
 
     protected function casts(): array

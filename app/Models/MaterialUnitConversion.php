@@ -11,6 +11,8 @@ class MaterialUnitConversion extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $guarded = [];
 
     protected function casts(): array

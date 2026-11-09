@@ -10,6 +10,8 @@ class PurchaseOrderItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'purchaseOrder';
+
     protected $guarded = [];
 
     protected function casts(): array

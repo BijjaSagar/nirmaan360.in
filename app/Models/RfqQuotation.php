@@ -12,6 +12,8 @@ class RfqQuotation extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const PROJECT_VIA = 'rfq';
+
     protected $guarded = [];
 
     protected function casts(): array

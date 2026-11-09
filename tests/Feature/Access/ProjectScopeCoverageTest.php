@@ -34,6 +34,7 @@ class ProjectScopeCoverageTest extends TestCase
 
             $covered = defined($class.'::PROJECT_VIA')
                 || defined($class.'::PROJECT_VIA_MORPH')
+                || defined($class.'::PROJECT_VIA_ANY')
                 || defined($class.'::COMPANY_WIDE')
                 || in_array(class_basename($class), self::COMPANY_WIDE, true)
                 || Schema::hasColumn((new $class)->getTable(), 'project_id');

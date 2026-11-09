@@ -34,6 +34,12 @@ class ProjectAccessScope implements Scope
             $builder->whereIn($model->qualifyColumn('id'), $user->assignedProjectIds());
         } elseif (defined($model::class.'::PROJECT_VIA')) {
             $builder->whereHas($model::PROJECT_VIA);
+        } elseif (defined($model::class.'::PROJECT_VIA_ANY')) {
+            $builder->where(function ($query) use ($model) {
+                foreach ($model::PROJECT_VIA_ANY as $relation) {
+                    $query->orWhereHas($relation);
+                }
+            });
         } elseif (defined($model::class.'::PROJECT_VIA_MORPH')) {
             $builder->whereHasMorph($model::PROJECT_VIA_MORPH, '*');
         } elseif ($this->hasProjectColumn($model)) {

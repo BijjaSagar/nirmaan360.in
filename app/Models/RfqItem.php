@@ -10,6 +10,8 @@ class RfqItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'rfq';
+
     protected $guarded = [];
 
     protected function casts(): array

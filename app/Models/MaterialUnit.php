@@ -10,5 +10,7 @@ class MaterialUnit extends Model
 {
     use Auditable, BelongsToOrganization;
 
+    public const COMPANY_WIDE = true;
+
     protected $guarded = [];
 }

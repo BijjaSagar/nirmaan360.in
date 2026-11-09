@@ -10,6 +10,8 @@ class RfqQuotationItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'quotation';
+
     protected $guarded = [];
 
     protected function casts(): array

@@ -10,6 +10,8 @@ class IndentItem extends Model
 {
     use BelongsToOrganization;
 
+    public const PROJECT_VIA = 'indent';
+
     protected $guarded = [];
 
     protected function casts(): array
