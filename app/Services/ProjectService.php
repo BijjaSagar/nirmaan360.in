@@ -6,6 +6,7 @@ use App\Exceptions\PlanLimitReachedException;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -100,7 +101,7 @@ class ProjectService
     /** Trashed rows count: the unique key still holds their client_uuid. */
     public function findByClientUuid(int $organizationId, string $uuid): ?Project
     {
-        return Project::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
+        return ClientUuidRepeat::reachable(Project::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first());
     }
 
     /** Up to four initials of the name, numbered when already taken. Trashed projects still hold their codes. */

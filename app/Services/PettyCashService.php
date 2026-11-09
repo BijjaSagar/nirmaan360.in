@@ -6,6 +6,7 @@ use App\Models\PettyCashEntry;
 use App\Models\PettyCashWallet;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use App\Support\Idempotent;
 use Illuminate\Http\UploadedFile;
@@ -97,11 +98,11 @@ class PettyCashService
 
     private function findWallet(int $organizationId, string $uuid): ?PettyCashWallet
     {
-        return PettyCashWallet::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
+        return ClientUuidRepeat::reachable(PettyCashWallet::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first());
     }
 
     public function findByClientUuid(int $organizationId, string $uuid): ?PettyCashEntry
     {
-        return PettyCashEntry::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
+        return ClientUuidRepeat::reachable(PettyCashEntry::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first());
     }
 }

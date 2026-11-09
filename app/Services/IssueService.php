@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Issue;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\ClientUuidRepeat;
 use App\Support\Idempotent;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
@@ -74,7 +75,7 @@ class IssueService
     /** Trashed rows count: the unique key still holds their client_uuid. */
     private function findByClientUuid(int $organizationId, string $uuid): ?Issue
     {
-        return Issue::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
+        return ClientUuidRepeat::reachable(Issue::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first());
     }
 
     private function sameOrganizationUser(User $user): Exists

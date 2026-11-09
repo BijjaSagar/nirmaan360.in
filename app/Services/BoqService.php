@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\BoqItem;
 use App\Models\BoqSection;
 use App\Models\Project;
+use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use Illuminate\Support\Facades\DB;
 
@@ -82,6 +83,6 @@ class BoqService
     /** Trashed rows count: the unique key still holds their client_uuid. */
     private function findByClientUuid(int $organizationId, string $uuid): ?BoqItem
     {
-        return BoqItem::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first();
+        return ClientUuidRepeat::reachable(BoqItem::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first());
     }
 }
