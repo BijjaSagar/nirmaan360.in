@@ -10,7 +10,12 @@
         <x-field :label="__('Password')" name="password">
             <input id="password" name="password" type="password" class="input" required autocomplete="current-password">
         </x-field>
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="remember" value="1"> {{ __('Keep me signed in') }}</label>
+        <div class="flex items-center justify-between gap-3">
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="remember" value="1"> {{ __('Keep me signed in') }}</label>
+            @if (\App\Http\Controllers\Auth\PasswordResetController::available())
+                <a href="{{ route('password.request') }}" class="link text-sm">{{ __('Forgot password?') }}</a>
+            @endif
+        </div>
         <button class="btn btn-primary w-full">{{ __('Sign in') }}</button>
     </form>
     @if ($otpEnabled)

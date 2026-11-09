@@ -176,6 +176,71 @@
         @apply font-semibold text-neel underline-offset-2 hover:underline;
     }
 
+    /* Public website: a separate, roomier voice from the dense office app. */
+    .site {
+        background: #fff;
+    }
+
+    .site h1,
+    .site h2,
+    .site h3,
+    .site h4 {
+        font-family: var(--font-sans);
+        font-weight: 700;
+        letter-spacing: -0.018em;
+        line-height: 1.14;
+    }
+
+    .site h1 {
+        font-weight: 800;
+        letter-spacing: -0.028em;
+        line-height: 1.04;
+    }
+
+    .site-wrap {
+        @apply mx-auto max-w-[1180px] px-5 sm:px-8;
+    }
+
+    .site-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5 text-[15px] font-semibold whitespace-nowrap transition-colors;
+    }
+
+    .site-btn-primary {
+        @apply bg-laterite text-white hover:bg-laterite-dark;
+    }
+
+    .site-btn-outline {
+        @apply border border-ink/20 bg-white text-ink hover:border-ink/50;
+    }
+
+    .site-btn-light {
+        @apply bg-white text-ink hover:bg-paper;
+    }
+
+    .tag-live {
+        @apply inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-moss;
+    }
+
+    .tag-soon {
+        @apply inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#8a6208];
+    }
+
+    .mock {
+        @apply overflow-hidden rounded-lg border border-black/10 bg-white text-ink shadow-[0_24px_60px_-28px_rgb(15_44_61/0.45)];
+    }
+
+    .faq summary {
+        @apply flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-[17px] font-semibold;
+    }
+
+    .faq summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .faq details[open] .faq-plus {
+        transform: rotate(45deg);
+    }
+
     .result-list > div > div {
         @apply flex justify-between gap-4 border-b border-rule px-5 py-3;
     }

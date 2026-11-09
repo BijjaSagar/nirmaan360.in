@@ -1,0 +1,35 @@
+@props(['name'])
+@php
+    $icons = [
+        'helmet' => '<path d="M3 17h18"/><path d="M5 17v-3a7 7 0 0 1 14 0v3"/><path d="M10 7.5V12M14 7.5V12"/><path d="M3 17c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2"/>',
+        'crane' => '<path d="M8 21V4M4 21h8M8 4 4 8M8 4h13M8 8l5-4M17 4v5"/><path d="M15.5 9h3v3h-3z"/>',
+        'ruler' => '<path d="M3 16.5 16.5 3 21 7.5 7.5 21z"/><path d="m7 12.5 2 2M10 9.5l2 2M13 6.5l2 2"/>',
+        'clipboard' => '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2H9zM9 11h6M9 15h4"/>',
+        'bill' => '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+        'rupee' => '<path d="M7 5h10M7 9h10M9 5c5 0 6 8 0 8H7l7 7"/>',
+        'users' => '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.6c1.8.9 3 2.9 3 5.4"/>',
+        'camera' => '<path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+        'offline' => '<path d="m3 3 18 18"/><path d="M8.5 5.5A6 6 0 0 1 17.5 10a4 4 0 0 1 3 5.5M6 8.5A6 6 0 0 0 4.5 11 4.5 4.5 0 0 0 7 19h10"/>',
+        'shield' => '<path d="m12 3 7.5 3v5.5c0 4.6-3.2 8-7.5 9.5-4.3-1.5-7.5-4.9-7.5-9.5V6z"/><path d="m8.7 12 2.3 2.3 4.4-4.6"/>',
+        'stamp' => '<path d="M9.5 12.5c0-2-1.7-2.7-1.7-5.2a4.2 4.2 0 0 1 8.4 0c0 2.5-1.7 3.2-1.7 5.2"/><path d="M5 17a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2H5zM5 21.5h14"/>',
+        'language' => '<path d="M4 5h10M9 3v2M11.5 5c-.6 3.6-3 6.5-6.5 8M6 8.5c1.3 2 3.6 3.7 6 4.5"/><path d="m13 21 4-9 4 9M14.5 18h5"/>',
+        'phone' => '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>',
+        'chart' => '<path d="M4 4v16h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+        'message' => '<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-4.5 3.5V17H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 10h8M8 13h5"/>',
+        'scan' => '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 9h8M8 12h8M8 15h5"/>',
+        'drawing' => '<path d="M4 4h16v16H4z"/><path d="M4 10h6v10M14 4v6h6M14 14h6"/>',
+        'wallet' => '<path d="M4 7a2 2 0 0 1 2-2h12v3"/><path d="M4 7v10a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H6a2 2 0 0 1-2-1z"/><path d="M16 13.5h.01"/>',
+        'flag' => '<path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/>',
+        'file' => '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+        'calendar' => '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
+        'lock' => '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+        'arrow' => '<path d="M5 12h14M13 6l6 6-6 6"/>',
+        'check' => '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+        'plus' => '<path d="M12 5v14M5 12h14"/>',
+        'menu' => '<path d="M4 7h16M4 12h16M4 17h16"/>',
+        'calc' => '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 7h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/>',
+        'link' => '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+        'layers' => '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+    ];
+@endphp
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" {{ $attributes->merge(['class' => 'size-5 shrink-0']) }}>{!! $icons[$name] ?? '' !!}</svg>

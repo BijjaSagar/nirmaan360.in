@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -38,14 +39,19 @@ class AuthController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
-    public function showRegister(): View
+    public function showRegister(Request $request): View
     {
-        return view('auth.register');
+        $plan = $request->query('plan');
+
+        return view('auth.register', [
+            'plan' => in_array($plan, ['free', 'contractor', 'business'], true) ? $plan : 'contractor',
+        ]);
     }
 
     public function register(Request $request): RedirectResponse
     {
         $data = $request->validate([
+            'plan' => ['nullable', Rule::in(['free', 'contractor', 'business'])],
             'company' => ['required', 'string', 'max:120'],
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
@@ -53,13 +59,16 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        $user = DB::transaction(function () use ($data) {
+        $plan = $data['plan'] ?? 'contractor';
+        $isFree = $plan === 'free';
+
+        $user = DB::transaction(function () use ($data, $plan, $isFree) {
             $organization = Organization::create([
                 'name' => $data['company'],
                 'slug' => Str::slug($data['company']).'-'.Str::lower(Str::random(6)),
-                'plan' => 'contractor',
-                'plan_status' => 'trial',
-                'trial_ends_at' => now()->addDays(config('buildos.trial_days')),
+                'plan' => $plan,
+                'plan_status' => $isFree ? 'active' : 'trial',
+                'trial_ends_at' => $isFree ? null : now()->addDays(config('buildos.trial_days')),
             ]);
             $organization->seedDefaults();
 
@@ -76,7 +85,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard')->with('success', __('Welcome! Your 30-day trial has started.'));
+        return redirect()->route('dashboard')->with('success', $isFree ? __('Welcome! Your free plan is ready.') : __('Welcome! Your 30-day trial has started.'));
     }
 
     public function logout(Request $request): RedirectResponse

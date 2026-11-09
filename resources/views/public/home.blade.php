@@ -3,212 +3,342 @@
 @section('content')
 @php
     $stages = [
-        ['Tender', 'Contacts today. Tender pipeline next.', false],
-        ['BOQ', 'Build it or import a CSV. Every later figure hangs off these lines.', true],
-        ['Plan', 'Projects and sites today. Gantt and WBS next.', false],
-        ['Site', 'Daily reports, photos, issues, attendance and petty cash.', true],
-        ['Measure', 'Nos × L × B × D, checked level by level.', true],
-        ['Bill', 'Client and subcontractor RA bills with GST.', true],
-        ['Pay', 'Mark bills paid today. Ledger and Tally sync next.', false],
-        ['Close', 'Final bill and retention release next.', false],
+        ['file', 'Tender', 'Clients and subcontractors today. Tender pipeline next.', false],
+        ['layers', 'BOQ', 'Build it or import a CSV. Every later figure hangs off these lines.', true],
+        ['calendar', 'Plan', 'Projects and sites today. Gantt and WBS next.', false],
+        ['helmet', 'Site', 'Daily reports, photos, issues, attendance and petty cash.', true],
+        ['ruler', 'Measure', 'Nos × L × B × D, checked level by level.', true],
+        ['bill', 'Bill', 'Client and subcontractor RA bills with GST.', true],
+        ['rupee', 'Pay', 'Mark bills paid today. Ledger and Tally sync next.', false],
+        ['stamp', 'Close', 'Final bill and retention release next.', false],
     ];
-    $schedule = [
-        ['1.1', 'BOQ and item ledger', 'CSV import and export. Executed, measured, approved, billed and balance on every line.', true],
-        ['1.2', 'Daily progress reports', 'Manpower, machinery, work done against BOQ items, site photos and approval.', true],
-        ['1.3', 'Issues and snags', 'Priority, assignee, due date and status.', true],
-        ['1.4', 'Labour attendance', 'Daily hajiri for own and contractor labour: present, half day, overtime.', true],
-        ['1.5', 'Petty cash', 'A wallet for each person, top-ups, and expenses with a bill photo.', true],
-        ['1.6', 'Measurement book', 'Deductions, multi-level approval, deviation flags, and correction only by reversal.', true],
-        ['1.7', 'Work orders and RA bills', 'Previous, this bill and cumulative. Retention, advance, TDS and GST. PDF download.', true],
-        ['1.8', 'Client sign-off', 'Send a signed link. The client approves or returns the bill without an account.', true],
-        ['2.1', 'Materials and procurement', 'Indent, RFQ, PO, GRN and site stock.', false],
-        ['2.2', 'Tally sync and GST reports', 'Vouchers, ledgers and GSTR-1 data.', false],
-        ['2.3', 'WhatsApp site reporting', 'Send a DPR by text, voice or photo in Marathi, Hindi or English.', false],
-        ['2.4', 'Offline field app', 'Android app that keeps working without a network. The sync API is ready.', false],
-        ['2.5', 'AI takeoff and drawing review', 'Quantities from PDF drawings, with a person accepting every figure.', false],
+    $ledger = [
+        ['1.1', 'Earthwork in excavation', '1,850.000', '1,620.000', 88],
+        ['2.1', 'RCC M25, slabs and beams', '620.000', '410.000', 66],
+        ['2.2', 'TMT steel Fe500D', '96.000', '58.500', 61],
+        ['2.3', 'AAC block masonry', '410.000', '120.000', 29],
     ];
-    $ledger = [['BOQ', '100.000'], ['Executed', '68.000'], ['Measured', '63.000'], ['Approved', '50.000'], ['Billed', '50.000'], ['Balance', '37.000']];
+    $roles = [
+        'engineer' => ['helmet', 'Site engineer', 'Log the day before leaving site.', ['Manpower, machinery and work done against BOQ items', 'Site photos on the daily report', 'Hajiri for own and contractor labour', 'Measurements with the quantity worked out for you']],
+        'qs' => ['ruler', 'Estimator / QS', 'Stop re-typing the same quantities.', ['BOQ with CSV import and export', 'Check or return measurements with a remark', 'Deviation flagged once work passes the BOQ tolerance', 'RA bills built from approved work only']],
+        'pm' => ['clipboard', 'Project manager', 'See what is stuck, and with whom.', ['One inbox for everything waiting on you', 'Issues with priority, owner and due date', 'BOQ line ledger: executed, approved, billed, balance', 'Work orders with item rates for subcontractors']],
+        'owner' => ['chart', 'Owner', 'Know where the project stands without calling site.', ['Contract value, billed amount and open issues', 'Progress on every active project', 'Full audit log of who changed what', 'Roles and approval chains set by you']],
+        'accounts' => ['rupee', 'Accounts', 'Bills that add up the first time.', ['Retention, advance recovery, TDS and GST applied in your contract order', 'Petty cash wallets with bill photos', 'Bill PDFs for clients and subcontractors', 'Signed link for client sign-off']],
+    ];
+    $agents = [
+        ['message', 'Site Reporter', 'Turns a WhatsApp voice note in Marathi, Hindi or English into a draft DPR.'],
+        ['scan', 'Bills and Challan', 'Reads a challan photo and matches it against the PO and GRN.'],
+        ['chart', 'Project Brain', 'Answers "how much steel went to Tower B this month?" with links to the records.'],
+        ['drawing', 'Takeoff', 'Measures areas and lengths from PDF drawings and shows what it could not read.'],
+        ['bill', 'Measurement and Billing', 'Drafts RA bills at month end and flags deviations and extra items.'],
+        ['users', 'Owner\'s Copilot', 'A morning brief on cash, billing due, delays and stock-outs.'],
+    ];
 @endphp
 
-<section class="graph-paper overflow-hidden bg-neel-deep text-paper">
-    <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 pt-12 pb-24 lg:grid-cols-[1.12fr_1fr] lg:pt-16 lg:pb-32">
-        <div>
-            <p class="eyebrow animate-rise text-haldi">{{ __('Sheet 01 · Site to bill') }}</p>
-            <h1 class="animate-rise mt-4 text-[clamp(3.5rem,8.6vw,7.25rem)] leading-[0.9] [animation-delay:80ms]">
-                {{ __('One BOQ line.') }}<br><span class="text-haldi">{{ __('Tender to final bill.') }}</span>
-            </h1>
-            <p lang="hi" class="animate-rise mt-5 font-display text-[26px] font-medium text-paper/90 [animation-delay:160ms]">निर्माण का पूरा हिसाब, एक जगह।</p>
-            <p class="animate-rise mt-4 max-w-xl text-lg leading-relaxed text-paper/75 [animation-delay:220ms]">{{ __('Nirmaan360 keeps your BOQ, daily reports, measurement book and RA bills on one record. The quantity your engineer measures on site is the quantity your client is billed.') }}</p>
-            <div class="animate-rise mt-7 flex flex-wrap gap-3 [animation-delay:300ms]">
-                <a href="{{ route('register') }}" class="btn btn-primary px-5 py-2.5 text-base">{{ __('Start a 30-day trial') }}</a>
-                <a href="{{ route('calculators') }}" class="btn border-paper/40 px-5 py-2.5 text-base text-paper hover:bg-white/10">{{ __('Try the free calculators') }}</a>
+{{-- Hero: white, with the product doing the talking --}}
+<section class="relative overflow-hidden">
+    <div class="site-wrap grid items-center gap-14 pt-14 pb-20 lg:grid-cols-[1fr_1.18fr] lg:gap-10 lg:pt-20 lg:pb-28">
+        <div class="relative z-10">
+            <p class="text-[15px] font-semibold text-laterite">{{ __('For contractors, builders and consultants in India') }}</p>
+            <h1 class="animate-rise mt-4 text-[clamp(2.75rem,6.1vw,4.75rem)]">{{ __('One BOQ line.') }}<br>{{ __('Tender to final bill.') }}</h1>
+            <p class="mt-6 max-w-[34rem] text-[19px] leading-[1.55] text-ink-2">{{ __('Nirmaan360 keeps your BOQ, daily reports, measurement book and RA bills on one record. The quantity your engineer measures on site is the quantity your client is billed.') }}</p>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="{{ route('register') }}" class="site-btn site-btn-primary px-6 py-3">{{ __('Start a 30-day trial') }}<x-icon name="arrow" class="size-4" /></a>
+                <a href="{{ route('pricing') }}" class="site-btn site-btn-outline px-6 py-3">{{ __('See pricing') }}</a>
             </div>
+            <p class="mt-4 text-sm text-ink-3">{{ __('No card needed. English, मराठी and हिन्दी.') }}</p>
         </div>
 
-        <div class="animate-rise relative [animation-delay:260ms] lg:rotate-[1.4deg]">
-            <div class="rounded-[3px] bg-sheet text-ink shadow-[0_30px_70px_-20px_rgb(0_0_0/0.7)]">
-                <div class="flex items-end justify-between border-b-2 border-ink px-5 py-3">
-                    <div>
-                        <p class="eyebrow text-ink-3">{{ __('Measurement book') }}</p>
-                        <p class="font-display text-[26px] font-semibold">{{ __('Slab, Tower B, Level 4') }}</p>
+        <div class="relative">
+            <div class="mock lg:mr-[-7rem]">
+                <div class="flex items-center gap-3 border-b border-black/8 bg-stone-50 px-4 py-2.5">
+                    <span class="truncate rounded border border-black/8 bg-white px-3 py-0.5 text-[12px] text-ink-3">nirmaan360.in/projects/kalyani-tower-b/boq</span>
+                </div>
+                <div class="flex">
+                    <div class="hidden w-12 flex-col items-center gap-4 bg-neel-deep py-4 text-white/55 sm:flex">
+                        <x-icon name="chart" class="size-[18px] text-white" /><x-icon name="layers" class="size-[18px]" /><x-icon name="helmet" class="size-[18px]" /><x-icon name="ruler" class="size-[18px]" /><x-icon name="bill" class="size-[18px]" /><x-icon name="users" class="size-[18px]" />
                     </div>
-                    <p class="num text-xs text-ink-3">{{ __('Sample entry') }}</p>
+                    <div class="min-w-0 flex-1 p-4 sm:p-5">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[12px] text-ink-3">{{ __('Baner, Pune') }}</p>
+                                <p class="text-[17px] font-bold">Kalyani Tower B</p>
+                            </div>
+                            <span class="tag-live"><x-icon name="check" class="size-3.5" />{{ __('On track') }}</span>
+                        </div>
+                        <div class="mt-4 grid grid-cols-3 gap-2.5">
+                            @foreach ([['Contract value', '₹4.85 Cr'], ['Approved work', '₹1.32 Cr'], ['Waiting on you', '3']] as [$label, $value])
+                                <div class="rounded-md bg-stone-50 px-3 py-2.5">
+                                    <p class="truncate text-[11.5px] text-ink-3">{{ __($label) }}</p>
+                                    <p class="num mt-0.5 text-[15px] font-medium sm:text-[17px]">{{ $value }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="mt-4 space-y-3 md:pl-32">
+                            @foreach ($ledger as [$code, $name, $boq, $approved, $percent])
+                                <div>
+                                    <div class="flex items-baseline justify-between gap-3 text-[13px]">
+                                        <p class="min-w-0 truncate"><span class="num text-[11.5px] text-ink-3">{{ $code }}</span> <span class="font-medium">{{ __($name) }}</span></p>
+                                        <p class="num shrink-0 text-[11.5px] text-ink-2">{{ $approved }} / {{ $boq }}</p>
+                                    </div>
+                                    <div class="mt-1 h-1.5 rounded-full bg-stone-100"><div class="h-full rounded-full bg-neel" style="width: {{ $percent }}%"></div></div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mock absolute -bottom-12 -left-8 hidden w-[218px] rounded-[20px] border-4 border-[#12181c] p-3.5 md:block">
+                <p class="text-[12px] font-bold">{{ __('New measurement') }}</p>
+                <p class="mt-0.5 truncate text-[11px] text-ink-3">{{ __('Level 4, panel S1') }}</p>
+                <div class="mt-2.5 grid grid-cols-4 gap-1 text-center">
+                    @foreach ([['Nos', '2'], ['L', '10.0'], ['B', '5.0'], ['D', '0.5']] as [$label, $value])
+                        <div class="rounded bg-stone-50 py-1.5"><p class="text-[9.5px] text-ink-3">{{ $label }}</p><p class="num text-[12px]">{{ $value }}</p></div>
+                    @endforeach
+                </div>
+                <div class="mt-2.5 flex items-baseline justify-between"><span class="text-[11px] text-ink-3">{{ __('Quantity') }}</span><span class="num text-[17px] font-medium">50.000 cum</span></div>
+                <div class="mt-2.5 rounded-md bg-laterite py-1.5 text-center text-[12px] font-semibold text-white">{{ __('Send for approval') }}</div>
+            </div>
+            <p class="mt-3 text-right text-xs text-ink-3 lg:mr-[-7rem]">{{ __('Sample project data') }}</p>
+        </div>
+    </div>
+    <div class="h-24 text-black/10 [&>svg]:h-full [&>svg]:w-full">@include('public.partials.skyline')</div>
+</section>
+
+{{-- What is different, in the language of the trade --}}
+<section class="bg-[#12181c] text-white">
+    <div class="site-wrap grid gap-x-8 gap-y-6 py-9 sm:grid-cols-2 lg:grid-cols-4">
+        @foreach ([['ruler', 'Measurement book', 'Nos × L × B × D with deductions'], ['bill', 'RA billing', 'Previous, this bill, cumulative'], ['language', 'Your language', 'English, Marathi and Hindi'], ['lock', 'Locked once approved', 'Corrections only by reversal']] as [$icon, $title, $text])
+            <div class="flex items-start gap-3">
+                <x-icon :name="$icon" class="mt-0.5 size-6 text-haldi" />
+                <div><p class="font-semibold">{{ __($title) }}</p><p class="text-[14.5px] text-white/60">{{ __($text) }}</p></div>
+            </div>
+        @endforeach
+    </div>
+</section>
+
+{{-- How it fits together --}}
+<section id="product" class="scroll-mt-20">
+    <div class="site-wrap py-20 lg:py-24">
+        <div class="max-w-2xl">
+            <h2 class="text-[clamp(2rem,4vw,3rem)]">{{ __('Eight stages. One record.') }}</h2>
+            <p class="mt-4 text-lg leading-relaxed text-ink-2">{{ __('A BOQ line is quantified, executed, measured, approved and billed in one place, so nobody has to re-key a figure or argue over which sheet is right.') }}</p>
+        </div>
+        <ol class="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach ($stages as $index => [$icon, $stage, $note, $live])
+                <li class="border-t-2 {{ $live ? 'border-laterite' : 'border-stone-200' }} pt-4">
+                    <div class="flex items-center justify-between">
+                        <x-icon :name="$icon" class="size-7 {{ $live ? 'text-laterite' : 'text-ink-3' }}" />
+                        @if ($live)
+                            <span class="tag-live"><x-icon name="check" class="size-3.5" />{{ __('Live') }}</span>
+                        @else
+                            <span class="text-[12.5px] font-semibold text-ink-3">{{ __('Next') }}</span>
+                        @endif
+                    </div>
+                    <h3 class="mt-3 text-[21px]">{{ $index + 1 }}. {{ __($stage) }}</h3>
+                    <p class="mt-1 text-[15.5px] leading-snug text-ink-2">{{ __($note) }}</p>
+                </li>
+            @endforeach
+        </ol>
+    </div>
+</section>
+
+{{-- Measurement book --}}
+<section class="bg-[#eaf1f6]">
+    <div class="site-wrap grid items-center gap-12 py-20 lg:grid-cols-2 lg:gap-16 lg:py-24">
+        <div class="relative">
+            <div class="mock">
+                <div class="flex items-end justify-between border-b-2 border-ink px-5 py-3.5">
+                    <div><p class="text-[12.5px] text-ink-3">{{ __('Measurement book') }}</p><p class="text-[18px] font-bold">{{ __('Slab, Tower B, Level 4') }}</p></div>
+                    <p class="text-[12px] text-ink-3">{{ __('Sample entry') }}</p>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[420px] text-sm">
-                        <thead>
-                        <tr class="eyebrow border-b border-rule text-[10px] text-ink-3">
-                            <th class="px-5 py-2 text-left font-normal">{{ __('Location') }}</th>
-                            <th class="px-2 py-2 text-right font-normal">{{ __('Nos') }}</th>
-                            <th class="px-2 py-2 text-right font-normal">L</th>
-                            <th class="px-2 py-2 text-right font-normal">B</th>
-                            <th class="px-2 py-2 text-right font-normal">D</th>
-                            <th class="px-5 py-2 text-right font-normal">{{ __('Qty') }}</th>
-                        </tr>
-                        </thead>
+                    <table class="w-full min-w-[400px] text-[13.5px]">
+                        <thead><tr class="border-b border-black/8 text-[11.5px] text-ink-3"><th class="px-5 py-2 text-left font-medium">{{ __('Location') }}</th><th class="px-2 text-right font-medium">{{ __('Nos') }}</th><th class="px-2 text-right font-medium">L</th><th class="px-2 text-right font-medium">B</th><th class="px-2 text-right font-medium">D</th><th class="px-5 text-right font-medium">{{ __('Qty') }}</th></tr></thead>
                         <tbody class="num">
-                        <tr class="border-b border-rule"><td class="px-5 py-2.5 font-sans">{{ __('Panel S1') }}</td><td class="px-2 text-right">2</td><td class="px-2 text-right">10.000</td><td class="px-2 text-right">5.000</td><td class="px-2 text-right">0.500</td><td class="px-5 text-right">50.000</td></tr>
-                        <tr class="border-b border-rule"><td class="px-5 py-2.5 font-sans">{{ __('Panel S2') }}</td><td class="px-2 text-right">1</td><td class="px-2 text-right">6.000</td><td class="px-2 text-right">5.000</td><td class="px-2 text-right">0.500</td><td class="px-5 text-right">15.000</td></tr>
-                        <tr class="border-b border-rule text-laterite"><td class="px-5 py-2.5 font-sans">{{ __('Less: lift opening') }}</td><td class="px-2 text-right">1</td><td class="px-2 text-right">2.000</td><td class="px-2 text-right">2.000</td><td class="px-2 text-right">0.500</td><td class="px-5 text-right">-2.000</td></tr>
-                        <tr class="font-medium"><td colspan="5" class="px-5 py-3 text-right font-sans">{{ __('Total') }}</td><td class="px-5 text-right text-base whitespace-nowrap">63.000 cum</td></tr>
+                            <tr class="border-b border-black/5"><td class="px-5 py-2.5 font-sans">{{ __('Panel S1') }}</td><td class="px-2 text-right">2</td><td class="px-2 text-right">10.000</td><td class="px-2 text-right">5.000</td><td class="px-2 text-right">0.500</td><td class="px-5 text-right">50.000</td></tr>
+                            <tr class="border-b border-black/5"><td class="px-5 py-2.5 font-sans">{{ __('Panel S2') }}</td><td class="px-2 text-right">1</td><td class="px-2 text-right">6.000</td><td class="px-2 text-right">5.000</td><td class="px-2 text-right">0.500</td><td class="px-5 text-right">15.000</td></tr>
+                            <tr class="border-b border-black/5 text-laterite"><td class="px-5 py-2.5 font-sans">{{ __('Less: lift opening') }}</td><td class="px-2 text-right">1</td><td class="px-2 text-right">2.000</td><td class="px-2 text-right">2.000</td><td class="px-2 text-right">0.500</td><td class="px-5 text-right">-2.000</td></tr>
+                            <tr class="font-medium"><td colspan="5" class="px-5 py-3 text-right font-sans">{{ __('Total') }}</td><td class="px-5 text-right whitespace-nowrap">63.000 cum</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="relative grid grid-cols-3 border-t-2 border-ink text-[13px]">
-                    <div class="border-r border-rule px-5 py-3"><p class="eyebrow text-[10px] text-ink-3">{{ __('Item') }}</p><p class="num">2.1 RCC M25</p></div>
-                    <div class="border-r border-rule px-4 py-3"><p class="eyebrow text-[10px] text-ink-3">BOQ</p><p class="num">100.000</p></div>
-                    <div class="px-4 py-3"><p class="eyebrow text-[10px] text-ink-3">{{ __('Balance') }}</p><p class="num">37.000</p></div>
-                </div>
             </div>
-            <span class="animate-stamp absolute -top-5 right-4 rounded-[3px] border-[3px] border-laterite bg-sheet/90 px-3 py-0.5 font-display text-[28px] font-bold tracking-widest text-laterite [animation-delay:900ms] sm:right-10">{{ __('APPROVED') }}</span>
+            <span class="animate-stamp absolute -top-5 right-6 rounded border-[3px] border-moss bg-white/90 px-3 py-0.5 text-[20px] font-extrabold tracking-[0.12em] text-moss">{{ __('APPROVED') }}</span>
+        </div>
+        <div>
+            <h2 class="text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('A measurement book that holds up in a client meeting.') }}</h2>
+            <ul class="mt-7 space-y-5">
+                @foreach ([['stamp', 'Approved means locked', 'An approved measurement or bill cannot be edited. Corrections are made with a reversal entry that goes through approval again.'], ['flag', 'Deviations show up on their own', 'Go past the BOQ quantity and tolerance, and the entry is flagged for the project manager.'], ['shield', 'Every change has a name on it', 'Who entered it, who checked it and what they said, all in the audit log.']] as [$icon, $title, $text])
+                    <li class="flex gap-4"><x-icon :name="$icon" class="mt-0.5 size-6 text-neel" /><div><h3 class="text-[18px]">{{ __($title) }}</h3><p class="mt-1 text-[16px] leading-snug text-ink-2">{{ __($text) }}</p></div></li>
+                @endforeach
+            </ul>
         </div>
     </div>
 </section>
 
-<section id="how" class="border-b border-rule">
-    <div class="mx-auto max-w-7xl px-5 py-20">
-        <p class="eyebrow text-laterite">{{ __('How it works') }}</p>
-        <h2 class="mt-3 max-w-3xl text-[clamp(2.5rem,5vw,4rem)]">{{ __('Eight stages. One record.') }}</h2>
-        <p class="mt-3 max-w-2xl text-lg text-ink-2">{{ __('A BOQ line is quantified, executed, measured, approved and billed in one place, so nobody has to re-key a figure or argue over which sheet is right.') }}</p>
+{{-- Billing --}}
+<section>
+    <div class="site-wrap grid items-center gap-12 py-20 lg:grid-cols-[1.1fr_1fr] lg:gap-20 lg:py-24">
+        <div>
+            <h2 class="text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('The bill writes itself from approved work.') }}</h2>
+            <p class="mt-4 text-lg leading-relaxed text-ink-2">{{ __('Pick the period and Nirmaan360 pulls every approved, unbilled measurement. Retention, advance recovery and TDS follow the terms on your project or work order.') }}</p>
+            <div class="mt-7 grid gap-5 sm:grid-cols-2">
+                <div class="flex gap-3"><x-icon name="layers" class="size-6 text-laterite" /><div><h3 class="text-[17px]">{{ __('One measurement, one bill') }}</h3><p class="mt-1 text-[15.5px] leading-snug text-ink-2">{{ __('Once it is on a bill it cannot appear on another.') }}</p></div></div>
+                <div class="flex gap-3"><x-icon name="link" class="size-6 text-laterite" /><div><h3 class="text-[17px]">{{ __('Client sign-off by link') }}</h3><p class="mt-1 text-[15.5px] leading-snug text-ink-2">{{ __('Your client approves or returns the bill without an account.') }}</p></div></div>
+            </div>
+        </div>
+        <div class="mock">
+            <div class="flex items-center justify-between border-b border-black/8 px-5 py-3.5"><p class="font-bold">{{ __('RA bill abstract') }}</p><p class="text-[12px] text-ink-3">{{ __('Sample figures') }}</p></div>
+            <dl class="num text-[14.5px]">
+                <div class="flex justify-between border-b border-black/5 px-5 py-3"><dt class="font-sans">{{ __('Gross value of work') }}</dt><dd>₹2,50,000.00</dd></div>
+                <div class="flex justify-between border-b border-black/5 px-5 py-3"><dt class="font-sans">{{ __('Retention') }} 5%</dt><dd class="text-laterite">−₹12,500.00</dd></div>
+                <div class="flex justify-between border-b border-black/5 px-5 py-3"><dt class="font-sans">{{ __('Advance recovery') }} 10%</dt><dd class="text-laterite">−₹25,000.00</dd></div>
+                <div class="flex justify-between border-b border-black/5 px-5 py-3"><dt class="font-sans">{{ __('TDS') }} 2%</dt><dd class="text-laterite">−₹5,000.00</dd></div>
+                <div class="flex justify-between border-b border-black/5 px-5 py-3"><dt class="font-sans">{{ __('GST') }} 18%</dt><dd>+₹45,000.00</dd></div>
+                <div class="flex items-baseline justify-between bg-neel-deep px-5 py-4 text-white"><dt class="font-sans text-[17px] font-bold">{{ __('Net payable') }}</dt><dd class="text-[18px]">₹2,52,500.00</dd></div>
+            </dl>
+        </div>
+    </div>
+</section>
 
-        <div class="mt-12 grid gap-px bg-rule sm:grid-cols-2 lg:grid-cols-4">
-            @foreach ($stages as $index => [$stage, $note, $live])
-                <div class="bg-paper p-5">
-                    <div class="flex items-center justify-between">
-                        <span class="num text-sm text-ink-3">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</span>
-                        <span class="stamp {{ $live ? 'border-moss text-moss' : 'border-ink-3 text-ink-3' }}">{{ $live ? __('Live') : __('Next') }}</span>
+{{-- Field app --}}
+<section class="overflow-hidden bg-neel-deep text-white">
+    <div class="site-wrap grid items-center gap-12 py-20 lg:grid-cols-2 lg:py-0">
+        <div class="lg:py-24">
+            <p class="tag-soon text-haldi"><x-icon name="phone" class="size-4" />{{ __('Mobile app in testing') }}</p>
+            <h2 class="mt-3 text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('Built for site, where the network drops and hands are dusty.') }}</h2>
+            <p class="mt-4 text-lg leading-relaxed text-white/70">{{ __('The field app for Android and iPhone saves everything on the phone and syncs when the signal comes back. Until it ships, the web app works in any phone browser.') }}</p>
+            <ul class="mt-7 grid gap-4 sm:grid-cols-2">
+                @foreach ([['offline', 'Works offline', 'Entries wait on the phone and sync once.'], ['camera', 'Photos on the report', 'Site photos attached to the day.'], ['users', 'Fast hajiri', 'Present, half day or overtime in a tap.'], ['language', 'Three languages', 'English, Marathi and Hindi.']] as [$icon, $title, $text])
+                    <li class="flex gap-3"><x-icon :name="$icon" class="mt-0.5 size-5 text-haldi" /><div><p class="font-semibold">{{ __($title) }}</p><p class="text-[15px] text-white/60">{{ __($text) }}</p></div></li>
+                @endforeach
+            </ul>
+        </div>
+        <div class="flex justify-center gap-5 lg:pt-16">
+            <div class="mock w-[230px] translate-y-6 rounded-t-[28px] rounded-b-none border-[6px] border-b-0 border-black/60 p-4 lg:translate-y-12">
+                <p class="text-[13px] font-bold">{{ __('Today\'s attendance') }}</p>
+                <div class="mt-3 space-y-2.5">
+                    @foreach ([['Dattu Pawar', 'Mason', 'P'], ['Ganesh Kale', 'Bar bender', 'P'], ['Sunil Gaikwad', 'Carpenter', 'H'], ['Anita Bhosale', 'Helper', 'P'], ['Raju Shinde', 'Helper', 'OT']] as [$person, $trade, $mark])
+                        <div class="flex items-center justify-between gap-2"><div class="min-w-0"><p class="truncate text-[13px] font-medium">{{ $person }}</p><p class="text-[11px] text-ink-3">{{ __($trade) }}</p></div><span class="grid size-8 shrink-0 place-items-center rounded-md text-[12px] font-bold {{ $mark === 'P' ? 'bg-moss text-white' : ($mark === 'H' ? 'bg-haldi text-ink' : 'bg-neel text-white') }}">{{ $mark }}</span></div>
+                    @endforeach
+                </div>
+                <div class="mt-4 rounded-md bg-stone-100 py-2 text-center text-[11.5px] text-ink-2">{{ __('Saved on phone. Will sync.') }}</div>
+            </div>
+            <div class="mock hidden w-[230px] rounded-t-[28px] rounded-b-none border-[6px] border-b-0 border-black/60 p-4 sm:block">
+                <p class="text-[13px] font-bold">{{ __('Daily report') }}</p>
+                <p class="text-[11px] text-ink-3">{{ __('Tower B') }}</p>
+                <div class="mt-3 space-y-2">
+                    @foreach ([['Mason', 12], ['Helper', 30], ['Carpenter', 8], ['Bar bender', 6]] as [$trade, $count])
+                        <div class="flex items-center justify-between text-[13px]"><span>{{ __($trade) }}</span><span class="flex items-center gap-2"><span class="grid size-6 place-items-center rounded bg-stone-100 text-ink-2">−</span><span class="num w-5 text-center">{{ $count }}</span><span class="grid size-6 place-items-center rounded bg-stone-100 text-ink-2">+</span></span></div>
+                    @endforeach
+                </div>
+                <div class="mt-3 grid grid-cols-3 gap-1.5"><div class="aspect-square rounded bg-stone-200"></div><div class="aspect-square rounded bg-stone-200"></div><div class="grid aspect-square place-items-center rounded border border-dashed border-black/20 text-ink-3"><x-icon name="camera" class="size-4" /></div></div>
+                <div class="mt-3 rounded-md bg-laterite py-2 text-center text-[12.5px] font-semibold text-white">{{ __('Submit DPR') }}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- By role --}}
+<section class="bg-[#f6f2ea]" x-data="{ role: 'engineer' }">
+    <div class="site-wrap py-20 lg:py-24">
+        <h2 class="max-w-2xl text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('Everyone on the job works from the same numbers.') }}</h2>
+        <div class="mt-9 grid gap-8 lg:grid-cols-[280px_1fr]">
+            <div class="flex gap-1 overflow-x-auto lg:flex-col" role="tablist">
+                @foreach ($roles as $key => [$icon, $label])
+                    <button type="button" role="tab" @click="role = '{{ $key }}'" :aria-selected="role === '{{ $key }}'" :class="role === '{{ $key }}' ? 'bg-white text-ink shadow-sm' : 'text-ink-2 hover:bg-white/60'" class="flex shrink-0 items-center gap-3 rounded-md px-4 py-3 text-left text-[16px] font-semibold transition-colors"><x-icon :name="$icon" class="size-5" />{{ __($label) }}</button>
+                @endforeach
+            </div>
+            <div class="rounded-lg bg-white p-7 sm:p-9">
+                @foreach ($roles as $key => [$icon, $label, $headline, $points])
+                    <div x-show="role === '{{ $key }}'" @if (! $loop->first) x-cloak @endif>
+                        <h3 class="text-[25px]">{{ __($headline) }}</h3>
+                        <ul class="mt-5 grid gap-x-8 gap-y-3.5 md:grid-cols-2">
+                            @foreach ($points as $point)
+                                <li class="flex gap-2.5 text-[16px] leading-snug"><x-icon name="check" class="mt-0.5 size-5 text-moss" />{{ __($point) }}</li>
+                            @endforeach
+                        </ul>
                     </div>
-                    <h3 class="mt-4 text-[34px]">{{ __($stage) }}</h3>
-                    <p class="mt-1 text-[15px] leading-snug text-ink-2">{{ __($note) }}</p>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- AI: clearly labelled as early access --}}
+<section>
+    <div class="site-wrap grid gap-12 py-20 lg:grid-cols-[1fr_1.15fr] lg:gap-16 lg:py-24">
+        <div>
+            <p class="tag-soon">{{ __('Early access') }}</p>
+            <h2 class="mt-2 text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('AI agents that do site paperwork, with you approving the result.') }}</h2>
+            <p class="mt-4 text-lg leading-relaxed text-ink-2">{{ __('We are building these on top of your BOQ, measurements and bills. An agent drafts, and a person approves. Anything that moves money stays with you.') }}</p>
+            <div class="mock mt-8 max-w-md p-5">
+                <p class="ml-auto w-fit max-w-[85%] rounded-lg bg-neel px-3.5 py-2 text-[14.5px] text-white">{{ __('Tower B ला या महिन्यात किती स्टील दिले?') }}</p>
+                <p class="mt-3 w-fit max-w-[90%] rounded-lg bg-stone-100 px-3.5 py-2 text-[14.5px] leading-snug">{{ __('42.6 MT issued this month, against 58.5 MT measured to date. 3 issue slips are linked below.') }}</p>
+                <p class="mt-3 text-xs text-ink-3">{{ __('Preview of a planned feature, with sample data') }}</p>
+            </div>
+        </div>
+        <div>
+            <ul class="divide-y divide-black/8 border-y border-black/8">
+                @foreach ($agents as [$icon, $name, $text])
+                    <li class="flex gap-4 py-4"><span class="grid size-10 shrink-0 place-items-center rounded-md bg-[#e8f1ec] text-moss"><x-icon :name="$icon" /></span><div><h3 class="text-[17px]">{{ __($name) }}</h3><p class="mt-0.5 text-[15.5px] leading-snug text-ink-2">{{ __($text) }}</p></div></li>
+                @endforeach
+            </ul>
+            <a href="{{ route('ai') }}" class="site-btn site-btn-outline mt-7">{{ __('See the AI roadmap') }}<x-icon name="arrow" class="size-4" /></a>
+        </div>
+    </div>
+</section>
+
+{{-- Pricing preview --}}
+<section class="bg-[#f6f2ea]">
+    <div class="site-wrap py-20 lg:py-24">
+        <div class="flex flex-wrap items-end justify-between gap-5">
+            <h2 class="max-w-xl text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('Start free on one site. Pay when you run more.') }}</h2>
+            <a href="{{ route('pricing') }}" class="font-semibold text-laterite hover:underline">{{ __('Compare all plans') }}</a>
+        </div>
+        <div class="mt-9 grid gap-5 md:grid-cols-3">
+            @foreach (['free', 'contractor', 'business'] as $key)
+                @php $plan = $plans[$key]; @endphp
+                <div class="rounded-lg bg-white p-7 {{ $key === 'contractor' ? 'ring-2 ring-laterite' : '' }}">
+                    <h3 class="text-[22px]">{{ __($plan['label']) }}</h3>
+                    <p class="mt-1 text-[15px] text-ink-2">{{ __($plan['tagline']) }}</p>
+                    <p class="mt-5"><span class="text-[34px] font-extrabold tracking-tight">₹{{ \App\Support\Dec::indian($plan['monthly'], 0) }}</span> <span class="text-ink-3">{{ $key === 'free' ? __('forever') : __('/month + GST') }}</span></p>
+                    <p class="mt-3 text-[15px] font-medium">{{ $plan['max_projects'] ? trans_choice(':count project|:count projects', $plan['max_projects']) : __('Unlimited projects') }}, {{ $plan['max_users'] ? __(':count users', ['count' => $plan['max_users']]) : __('unlimited users') }}</p>
+                    <a href="{{ route('register', ['plan' => $key]) }}" class="site-btn {{ $key === 'contractor' ? 'site-btn-primary' : 'site-btn-outline' }} mt-6 w-full">{{ $key === 'free' ? __('Start free') : __('Start a 30-day trial') }}</a>
                 </div>
             @endforeach
         </div>
-
-        <div class="mt-14">
-            <p class="eyebrow text-ink-3">{{ __('One line, every figure · 2.1 RCC M25, cum · sample') }}</p>
-            <div class="dim-line mt-4 text-ink"></div>
-            <div class="mt-4 grid grid-cols-3 gap-y-6 sm:grid-cols-6">
-                @foreach ($ledger as [$label, $value])
-                    <div>
-                        <p class="eyebrow text-[10px] text-ink-3">{{ __($label) }}</p>
-                        <p class="num mt-1 text-[clamp(1.25rem,2.4vw,2rem)] {{ $label === 'Balance' ? 'text-laterite' : '' }}">{{ $value }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
     </div>
 </section>
 
-<section class="bg-paper-2/60">
-    <div class="mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-2">
-        <div>
-            <p class="eyebrow text-laterite">{{ __('RA billing') }}</p>
-            <h2 class="mt-3 text-[clamp(2.5rem,5vw,4rem)]">{{ __('The bill writes itself from approved work.') }}</h2>
-            <dl class="mt-8 space-y-6">
-                <div class="border-l-2 border-laterite pl-4">
-                    <dt class="font-display text-2xl font-semibold">{{ __('Approved means locked') }}</dt>
-                    <dd class="text-ink-2">{{ __('An approved measurement or bill cannot be edited. Corrections are made with a reversal entry that goes through approval again.') }}</dd>
-                </div>
-                <div class="border-l-2 border-laterite pl-4">
-                    <dt class="font-display text-2xl font-semibold">{{ __('One measurement, one bill') }}</dt>
-                    <dd class="text-ink-2">{{ __('Once a measurement is on a bill it cannot appear on another. Cancel an unapproved bill and it is free again.') }}</dd>
-                </div>
-                <div class="border-l-2 border-laterite pl-4">
-                    <dt class="font-display text-2xl font-semibold">{{ __('Your contract, your order') }}</dt>
-                    <dd class="text-ink-2">{{ __('Retention, advance recovery and TDS follow the terms set on each project or work order.') }}</dd>
-                </div>
-            </dl>
-        </div>
-
-        <div class="ruled-paper self-center rounded-[3px] border border-rule bg-sheet shadow-sm">
-            <div class="border-b-2 border-ink bg-sheet px-6 py-3">
-                <p class="eyebrow text-ink-3">{{ __('Sample figures') }}</p>
-                <p class="font-display text-[26px] font-semibold">{{ __('RA bill abstract') }}</p>
-            </div>
-            <dl class="num bg-sheet/80 text-[15px]">
-                <div class="flex justify-between border-b border-rule px-6 py-3"><dt class="font-sans">{{ __('Gross value of work') }}</dt><dd>₹2,50,000.00</dd></div>
-                <div class="flex justify-between border-b border-rule px-6 py-3"><dt class="font-sans">{{ __('Retention') }} 5%</dt><dd class="text-laterite">−₹12,500.00</dd></div>
-                <div class="flex justify-between border-b border-rule px-6 py-3"><dt class="font-sans">{{ __('Advance recovery') }} 10%</dt><dd class="text-laterite">−₹25,000.00</dd></div>
-                <div class="flex justify-between border-b border-rule px-6 py-3"><dt class="font-sans">{{ __('TDS') }} 2%</dt><dd class="text-laterite">−₹5,000.00</dd></div>
-                <div class="flex justify-between border-b border-rule px-6 py-3"><dt class="font-sans">{{ __('GST') }} 18%</dt><dd>+₹45,000.00</dd></div>
-                <div class="flex items-baseline justify-between bg-ink px-6 py-4 text-paper"><dt class="font-display text-2xl font-semibold">{{ __('Net payable') }}</dt><dd class="text-xl">₹2,52,500.00</dd></div>
-            </dl>
-        </div>
-    </div>
-</section>
-
-<section id="schedule" class="border-b border-rule">
-    <div class="mx-auto max-w-7xl px-5 py-20">
-        <p class="eyebrow text-laterite">{{ __('Schedule of items') }}</p>
-        <h2 class="mt-3 text-[clamp(2.5rem,5vw,4rem)]">{{ __('What is in the book today') }}</h2>
-        <div class="mt-8 overflow-x-auto rounded-[3px] border border-rule bg-sheet">
-            <table class="ledger min-w-[680px]">
-                <thead><tr><th>{{ __('Item') }}</th><th>{{ __('Work') }}</th><th>{{ __('Includes') }}</th><th>{{ __('Status') }}</th></tr></thead>
-                <tbody>
-                @foreach ($schedule as [$item, $work, $includes, $live])
-                    <tr>
-                        <td class="num text-xs">{{ $item }}</td>
-                        <td class="font-semibold whitespace-nowrap">{{ __($work) }}</td>
-                        <td class="text-ink-2">{{ __($includes) }}</td>
-                        <td><span class="stamp {{ $live ? 'border-moss text-moss' : 'border-ink-3 text-ink-3' }}">{{ $live ? __('Live') : __('Next') }}</span></td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
-
-<section id="plans">
-    <div class="mx-auto max-w-7xl px-5 py-20">
-        <p class="eyebrow text-laterite">{{ __('Plans') }}</p>
-        <h2 class="mt-3 text-[clamp(2.5rem,5vw,4rem)]">{{ __('From one engineer to a full contractor.') }}</h2>
-        <div class="mt-10 grid gap-px bg-ink/80 sm:grid-cols-2 lg:grid-cols-4">
+{{-- FAQ --}}
+<section>
+    <div class="site-wrap grid gap-10 py-20 lg:grid-cols-[1fr_1.6fr] lg:py-24">
+        <h2 class="text-[clamp(1.9rem,3.6vw,2.75rem)]">{{ __('Questions contractors ask us') }}</h2>
+        <div class="faq divide-y divide-black/10 border-y border-black/10">
             @foreach ([
-                ['Free / Site', 'Free', '1 project · 3 users', 'Daily reports, issues, measurement book, attendance and petty cash.'],
-                ['Contractor', '30-day trial', '5 projects · 25 users', 'Everything in Free, plus work orders, RA bills and contacts.'],
-                ['Business', 'Pricing at launch', 'Unlimited projects and users', 'Everything in Contractor, plus API access.'],
-                ['Enterprise / Infra', 'Pricing at launch', 'Unlimited projects and users', 'Everything in Business. SSO and a dedicated database are planned.'],
-            ] as [$plan, $price, $limits, $features])
-                <div class="flex flex-col bg-sheet p-6">
-                    <h3 class="text-[30px]">{{ __($plan) }}</h3>
-                    <p class="num mt-2 text-sm text-laterite">{{ __($price) }}</p>
-                    <p class="mt-4 text-sm font-semibold">{{ __($limits) }}</p>
-                    <p class="mt-1 flex-1 text-[15px] text-ink-2">{{ __($features) }}</p>
-                    <a href="{{ route('register') }}" class="btn btn-ghost mt-6">{{ __('Start free') }}</a>
-                </div>
+                ['Do I need a card to start?', 'No. You get 30 days on the plan you pick, then you move to the free plan unless you decide to buy.'],
+                ['Can I bring in my existing BOQ?', 'Yes. Import a CSV with section, code, description, unit, quantity and rate. Excel import is on the way.'],
+                ['What if an approved measurement is wrong?', 'Approved records stay locked. You create a reversal entry, it goes through approval, and then you record the right measurement.'],
+                ['Does it work in Marathi and Hindi?', 'Yes, you can switch language at any time. The main screens are translated and we are adding the rest.'],
+                ['Is there a mobile app?', 'The Android and iPhone app is in testing. Today the full product works in the browser on your phone.'],
+                ['Can my client approve a bill?', 'Yes. Add the client as an approval level and send a signed link. They do not need an account.'],
+            ] as [$question, $answer])
+                <details><summary>{{ __($question) }}<x-icon name="plus" class="faq-plus size-5 text-ink-3 transition-transform" /></summary><p class="pb-5 text-[16.5px] leading-relaxed text-ink-2">{{ __($answer) }}</p></details>
             @endforeach
         </div>
     </div>
 </section>
 
-<section class="graph-paper bg-laterite-dark text-paper">
-    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-5 py-14">
+{{-- Close --}}
+<section class="bg-laterite text-white">
+    <div class="site-wrap flex flex-wrap items-center justify-between gap-6 py-14">
         <div>
-            <h2 class="text-[clamp(2.25rem,4.5vw,3.5rem)]">{{ __('Need a quick quantity?') }}</h2>
-            <p class="mt-1 text-lg text-paper/80">{{ __('Concrete, brickwork, plaster, steel, tiles, paint, cut and fill. Free, with no sign-up.') }}</p>
+            <h2 class="text-[clamp(1.75rem,3.4vw,2.5rem)]">{{ __('Put your next RA bill on Nirmaan360.') }}</h2>
+            <p class="mt-2 text-lg text-white/85">{{ __('Set up a project and BOQ in an afternoon.') }}</p>
         </div>
-        <a href="{{ route('calculators') }}" class="btn border-paper bg-paper px-5 py-2.5 text-base text-ink hover:bg-sheet">{{ __('Open calculators') }}</a>
+        <a href="{{ route('register') }}" class="site-btn site-btn-light px-6 py-3">{{ __('Start a 30-day trial') }}<x-icon name="arrow" class="size-4" /></a>
     </div>
 </section>
 @endsection

@@ -14,6 +14,7 @@ class Organization extends Model
         return [
             'settings' => 'array',
             'trial_ends_at' => 'datetime',
+            'paid_until' => 'datetime',
         ];
     }
 
@@ -22,15 +23,27 @@ class Organization extends Model
         return $this->hasMany(User::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(BillingPayment::class);
+    }
+
     public function isOnTrial(): bool
     {
         return $this->plan_status === 'trial' && $this->trial_ends_at?->isFuture();
     }
 
-    /** An expired trial falls back to the free plan. */
+    /** A paid period that ended more than the grace period ago. */
+    public function hasLapsed(): bool
+    {
+        return $this->paid_until !== null
+            && $this->paid_until->copy()->addDays(config('buildos.payment_grace_days'))->isPast();
+    }
+
+    /** An expired trial or a lapsed paid plan falls back to the free plan. */
     public function effectivePlan(): string
     {
-        if ($this->plan_status === 'trial' && ! $this->isOnTrial()) {
+        if (($this->plan_status === 'trial' && ! $this->isOnTrial()) || $this->hasLapsed()) {
             return 'free';
         }
 

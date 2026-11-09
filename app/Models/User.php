@@ -50,6 +50,12 @@ class User extends Authenticatable
         return config("buildos.roles.{$this->role}.label", $this->role);
     }
 
+    /** Staff who run the platform. Separate from company roles, which all grant '*' to owners. */
+    public function isPlatformAdmin(): bool
+    {
+        return in_array(strtolower($this->email), config('buildos.platform_admins'), true);
+    }
+
     public function isApprovalOverride(): bool
     {
         return in_array($this->role, config('buildos.approver_override_roles'), true);
