@@ -632,6 +632,7 @@
   "shellDiscardConfirm": "Yes, throw away",
   "shellDiscardKeep": "Keep it",
   "shellDiscardTitle": "Throw away this entry?",
+  "shellOfflineApprovals": "Approvals need network.",
   "shellOfflineDetail": "Entries wait on phone.",
   "shellOfflineLabel": "Offline",
   "shellOutboxAllSentBody": "Nothing is left on this phone.",

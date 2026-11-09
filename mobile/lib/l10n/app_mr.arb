@@ -426,6 +426,7 @@
   "shellDiscardConfirm": "होय, काढून टाका",
   "shellDiscardKeep": "राहू द्या",
   "shellDiscardTitle": "ही नोंद काढून टाकायची?",
+  "shellOfflineApprovals": "मंजुरीसाठी नेटवर्क हवे.",
   "shellOfflineDetail": "नोंदी फोनवर राहतील.",
   "shellOfflineLabel": "ऑफलाइन",
   "shellOutboxAllSentBody": "या फोनवर काही बाकी नाही.",

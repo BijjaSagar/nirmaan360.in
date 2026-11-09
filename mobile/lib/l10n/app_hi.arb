@@ -426,6 +426,7 @@
   "shellDiscardConfirm": "हाँ, हटाएँ",
   "shellDiscardKeep": "रहने दें",
   "shellDiscardTitle": "यह प्रविष्टि हटाएँ?",
+  "shellOfflineApprovals": "मंज़ूरी के लिए नेटवर्क चाहिए।",
   "shellOfflineDetail": "प्रविष्टियाँ फ़ोन पर रहेंगी।",
   "shellOfflineLabel": "ऑफ़लाइन",
   "shellOutboxAllSentBody": "इस फ़ोन पर कुछ बाकी नहीं।",

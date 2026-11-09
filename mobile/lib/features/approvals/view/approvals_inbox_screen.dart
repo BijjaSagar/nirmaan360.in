@@ -75,7 +75,6 @@ class _InboxView extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  if (!state.online) OfflineBanner(label: l.approvalsOffline, detail: l.approvalsOfflineDetail),
                   BookTitleBar(
                     eyebrow: state.actionable > 0 ? l.approvalsEyebrow(state.actionable) : null,
                     title: l.approvalsTitle,

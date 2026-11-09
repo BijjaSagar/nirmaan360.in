@@ -367,7 +367,6 @@ void main() {
     await settle(tester);
 
     expect(find.text('Measurement · 2.1 · 15.000 cum'), findsOneWidget);
-    expect(find.textContaining('approvals need network'), findsOneWidget);
     expect(tester.widget<GloveButton>(find.byKey(_refresh)).onPressed, isNull);
   });
 

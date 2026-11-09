@@ -1415,6 +1415,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get shellDiscardTitle => 'यह प्रविष्टि हटाएँ?';
 
   @override
+  String get shellOfflineApprovals => 'मंज़ूरी के लिए नेटवर्क चाहिए।';
+
+  @override
   String get shellOfflineDetail => 'प्रविष्टियाँ फ़ोन पर रहेंगी।';
 
   @override

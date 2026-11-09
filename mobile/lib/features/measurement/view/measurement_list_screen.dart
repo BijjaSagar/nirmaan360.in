@@ -83,7 +83,7 @@ class _BookView extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
+                  if (!state.online && canGoBack) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   BookTitleBar(
                     eyebrow: state.projectName,
                     title: l.measurementBookTitle,

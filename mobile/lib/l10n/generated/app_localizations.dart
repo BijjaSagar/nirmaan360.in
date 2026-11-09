@@ -2656,6 +2656,12 @@ abstract class AppLocalizations {
   /// **'Throw away this entry?'**
   String get shellDiscardTitle;
 
+  /// No description provided for @shellOfflineApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals need network.'**
+  String get shellOfflineApprovals;
+
   /// No description provided for @shellOfflineDetail.
   ///
   /// In en, this message translates to:

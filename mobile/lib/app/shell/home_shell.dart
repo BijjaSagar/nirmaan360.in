@@ -24,6 +24,8 @@ class _ShellTab {
 /// get a slot at the top from the shell.
 const Set<int> _tabsWithOwnSlot = <int>{0, 3};
 
+const int _approvalsBranch = 2;
+
 /// The four-tab shell around Home, Measure, Approvals and Outbox.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.navigationShell});
@@ -86,7 +88,8 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
             Column(
               children: <Widget>[
                 SizedBox(height: safeTop),
-                if (!_tabsWithOwnSlot.contains(shell.currentIndex)) const _DateSlot(),
+                if (!_tabsWithOwnSlot.contains(shell.currentIndex))
+                  _DateSlot(approvals: shell.currentIndex == _approvalsBranch),
                 Expanded(
                   child: MediaQuery.removePadding(
                     context: context,
@@ -142,13 +145,16 @@ class _SyncRule extends StatelessWidget {
 
 /// Today's date, in the slot the offline banner takes over.
 class _DateSlot extends StatelessWidget {
-  const _DateSlot();
+  const _DateSlot({required this.approvals});
+
+  final bool approvals;
 
   @override
   Widget build(BuildContext context) {
     final String locale = Localizations.localeOf(context).languageCode;
     final String date = AppFormat.weekdayDate(context.read<AppServices>().context.today, locale);
     return OfflineSlot(
+      offlineLabel: approvals ? AppLocalizations.of(context).shellOfflineApprovals : null,
       online: Padding(
         padding: const EdgeInsets.symmetric(horizontal: N360Space.gutter),
         child: Align(alignment: Alignment.centerLeft, child: SectionLabel(date)),

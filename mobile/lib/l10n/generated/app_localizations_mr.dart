@@ -1428,6 +1428,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get shellDiscardTitle => 'ही नोंद काढून टाकायची?';
 
   @override
+  String get shellOfflineApprovals => 'मंजुरीसाठी नेटवर्क हवे.';
+
+  @override
   String get shellOfflineDetail => 'नोंदी फोनवर राहतील.';
 
   @override

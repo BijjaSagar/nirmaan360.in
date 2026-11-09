@@ -1454,6 +1454,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellDiscardTitle => 'Throw away this entry?';
 
   @override
+  String get shellOfflineApprovals => 'Approvals need network.';
+
+  @override
   String get shellOfflineDetail => 'Entries wait on phone.';
 
   @override

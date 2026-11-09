@@ -1,114 +1,581 @@
 {
-  "shellSignInWelcome": { "en": "Welcome", "mr": "नमस्कार", "hi": "नमस्ते" },
-  "shellSignInEmail": { "en": "Email", "mr": "ईमेल", "hi": "ईमेल" },
-  "shellSignInPassword": { "en": "Password", "mr": "पासवर्ड", "hi": "पासवर्ड" },
-  "shellSignInShow": { "en": "Show", "mr": "दाखवा", "hi": "दिखाएँ" },
-  "shellSignInHide": { "en": "Hide", "mr": "लपवा", "hi": "छिपाएँ" },
-  "shellSignInButton": { "en": "Sign in", "mr": "साइन इन करा", "hi": "साइन इन करें" },
-  "shellSignInBusy": { "en": "Signing in…", "mr": "साइन इन होत आहे…", "hi": "साइन इन हो रहा है…" },
-  "shellSignInEmailRequired": { "en": "Enter your email", "mr": "तुमचा ईमेल लिहा", "hi": "अपना ईमेल लिखें" },
-  "shellSignInPasswordRequired": { "en": "Enter your password", "mr": "तुमचा पासवर्ड लिहा", "hi": "अपना पासवर्ड लिखें" },
-  "shellSignInWrongTitle": { "en": "Wrong email or password", "mr": "ईमेल किंवा पासवर्ड चुकीचा आहे", "hi": "ईमेल या पासवर्ड गलत है" },
-  "shellSignInWrongBody": { "en": "Check both and try again.", "mr": "दोन्ही तपासून पुन्हा प्रयत्न करा.", "hi": "दोनों जाँचकर फिर कोशिश करें।" },
-  "shellSignInNetworkTitle": { "en": "No network", "mr": "नेटवर्क नाही", "hi": "नेटवर्क नहीं है" },
-  "shellSignInNetworkBody": { "en": "Check your signal and try again.", "mr": "सिग्नल तपासून पुन्हा प्रयत्न करा.", "hi": "सिग्नल जाँचकर फिर कोशिश करें।" },
-  "shellSignInServerTitle": { "en": "Server is not responding", "mr": "सर्व्हर प्रतिसाद देत नाही", "hi": "सर्वर जवाब नहीं दे रहा" },
-  "shellSignInServerBody": { "en": "It is not your phone. Try again in a few minutes.", "mr": "तुमच्या फोनचा दोष नाही. थोड्या वेळाने पुन्हा प्रयत्न करा.", "hi": "आपके फ़ोन की गलती नहीं है। कुछ देर बाद फिर कोशिश करें।" },
-  "shellSignInTooManyTitle": { "en": "Too many tries", "mr": "खूप वेळा प्रयत्न झाले", "hi": "बहुत बार कोशिश हुई" },
-  "shellSignInTooManyBody": { "en": "Wait a minute and try again.", "mr": "एक मिनिट थांबून पुन्हा प्रयत्न करा.", "hi": "एक मिनट रुककर फिर कोशिश करें।" },
-  "shellSignInOtherUserTitle": { "en": "Someone else's work is waiting", "mr": "दुसऱ्या व्यक्तीचे काम बाकी आहे", "hi": "किसी और का काम बाकी है" },
-  "shellSignInOtherUserBody": { "en": "This phone has {count} unsent entries from another person. They must sign in and send them first.", "mr": "या फोनवर दुसऱ्या व्यक्तीच्या {count} नोंदी पाठवायच्या बाकी आहेत. त्यांनी आधी साइन इन करून त्या पाठवाव्यात.", "hi": "इस फ़ोन पर किसी और की {count} प्रविष्टियाँ भेजनी बाकी हैं। उन्हें पहले साइन इन करके भेजना होगा।", "placeholders": { "count": { "type": "int" } } },
-  "shellSignInExpired": { "en": "You were signed out. Nothing is lost: your work is safe on this phone. Sign in to send it.", "mr": "तुम्हाला साइन आउट केले आहे. काहीही गेलेले नाही: तुमचे काम या फोनवर सुरक्षित आहे. ते पाठवण्यासाठी पुन्हा साइन इन करा.", "hi": "आपको साइन आउट कर दिया गया। कुछ नहीं खोया: आपका काम इस फ़ोन पर सुरक्षित है। भेजने के लिए फिर साइन इन करें।" },
-
-  "shellPickerEyebrow": { "en": "Your projects", "mr": "तुमचे प्रकल्प", "hi": "आपकी परियोजनाएँ" },
-  "shellPickerTitle": { "en": "Which site today?", "mr": "आज कोणती साइट?", "hi": "आज कौन सी साइट?" },
-  "shellPickerEmptyTitle": { "en": "No projects yet", "mr": "अजून प्रकल्प नाहीत", "hi": "अभी कोई परियोजना नहीं" },
-  "shellPickerEmptyBody": { "en": "Ask your office to add you to a project, then try again.", "mr": "कार्यालयाला तुम्हाला प्रकल्पात जोडायला सांगा, मग पुन्हा प्रयत्न करा.", "hi": "कार्यालय से आपको परियोजना में जोड़ने को कहें, फिर कोशिश करें।" },
-  "shellPickerLoading": { "en": "Getting your projects…", "mr": "तुमचे प्रकल्प आणत आहे…", "hi": "आपकी परियोजनाएँ ला रहे हैं…" },
-  "shellPickerCurrent": { "en": "Current", "mr": "चालू", "hi": "चालू" },
-  "shellSwitchProject": { "en": "Switch project", "mr": "प्रकल्प बदला", "hi": "परियोजना बदलें" },
-
-  "shellTabHome": { "en": "Home", "mr": "मुख्य", "hi": "होम" },
-  "shellTabMeasure": { "en": "Measure", "mr": "मोजमाप", "hi": "माप" },
-  "shellTabApprovals": { "en": "Approvals", "mr": "मंजुरी", "hi": "मंज़ूरी" },
-  "shellTabOutbox": { "en": "Outbox", "mr": "आउटबॉक्स", "hi": "आउटबॉक्स" },
-  "shellOfflineLabel": { "en": "Offline", "mr": "ऑफलाइन", "hi": "ऑफ़लाइन" },
-  "shellOfflineDetail": { "en": "Entries wait on phone.", "mr": "नोंदी फोनवर राहतील.", "hi": "प्रविष्टियाँ फ़ोन पर रहेंगी।" },
-  "shellSyncingLabel": { "en": "Sending and updating", "mr": "पाठवत आणि अद्ययावत करत आहे", "hi": "भेज रहे हैं और अपडेट कर रहे हैं" },
-  "shellSettings": { "en": "Settings", "mr": "सेटिंग्ज", "hi": "सेटिंग्स" },
-
-  "shellPillWaiting": { "en": "waiting", "mr": "बाकी", "hi": "बाकी" },
-  "shellPillSending": { "en": "sending", "mr": "पाठवत आहे", "hi": "भेज रहे हैं" },
-  "shellPillAllSent": { "en": "All sent", "mr": "सर्व पाठवले", "hi": "सब भेज दिया" },
-  "shellPillAttention": { "en": "needs a look", "mr": "तपासा", "hi": "देखें" },
-
-  "shellTodayReport": { "en": "Report", "mr": "अहवाल", "hi": "रिपोर्ट" },
-  "shellTodayAttendance": { "en": "Attendance", "mr": "हजेरी", "hi": "हाज़िरी" },
-  "shellTodayMeasured": { "en": "Measured", "mr": "मोजमाप", "hi": "माप" },
-  "shellTodayExpenses": { "en": "Spent", "mr": "खर्च", "hi": "खर्च" },
-  "shellReportNotStarted": { "en": "Not started", "mr": "सुरू नाही", "hi": "शुरू नहीं" },
-  "shellReportSaved": { "en": "Saved", "mr": "जतन झाला", "hi": "सहेजा गया" },
-  "shellReportAttention": { "en": "Needs a look", "mr": "तपासा", "hi": "देखें" },
-  "shellTodaySemantics": { "en": "{label}: {value}", "mr": "{label}: {value}", "hi": "{label}: {value}", "placeholders": { "label": { "type": "String" }, "value": { "type": "String" } } },
-
-  "shellProgressTitle": { "en": "Construction progress", "mr": "बांधकामाची प्रगती", "hi": "निर्माण की प्रगति" },
-  "shellProgressBasis": { "en": "By value of approved work", "mr": "मंजूर कामाच्या किमतीनुसार", "hi": "मंज़ूर काम के मूल्य से" },
-  "shellProgressEnd": { "en": "End", "mr": "शेवट", "hi": "समाप्ति" },
-  "shellProgressNoEnd": { "en": "Not set", "mr": "ठरलेला नाही", "hi": "तय नहीं" },
-  "shellProgressDaysLeft": { "en": "Days left", "mr": "बाकी दिवस", "hi": "बचे दिन" },
-  "shellProgressDaysLate": { "en": "Days late", "mr": "उशीर, दिवस", "hi": "देरी, दिन" },
-  "shellProgressEmptyTitle": { "en": "No BOQ yet", "mr": "अजून BOQ नाही", "hi": "अभी BOQ नहीं" },
-  "shellProgressEmptyBody": { "en": "Progress will show here once the BOQ is added.", "mr": "BOQ जोडल्यावर प्रगती इथे दिसेल.", "hi": "BOQ जुड़ने पर प्रगति यहाँ दिखेगी।" },
-  "shellProgressSemantics": { "en": "{percent} percent complete", "mr": "{percent} टक्के पूर्ण", "hi": "{percent} प्रतिशत पूरा", "placeholders": { "percent": { "type": "String" } } },
-  "shellCaptionToday": { "en": "today", "mr": "आज", "hi": "आज" },
-  "shellCaptionMarked": { "en": "marked", "mr": "नोंदवले", "hi": "दर्ज" },
-  "shellCaptionOpen": { "en": "open", "mr": "उघड्या", "hi": "खुली" },
-  "shellTileExpenses": { "en": "Expenses", "mr": "खर्च", "hi": "खर्च" },
-  "shellTileDaily": { "en": "Daily report", "mr": "दैनिक अहवाल", "hi": "दैनिक रिपोर्ट" },
-  "shellTileMeasure": { "en": "Measure", "mr": "मोजमाप", "hi": "माप" },
-  "shellTileAttendance": { "en": "Attendance", "mr": "हजेरी", "hi": "हाज़िरी" },
-  "shellTileIssues": { "en": "Issues", "mr": "समस्या", "hi": "समस्याएँ" },
-  "shellTilePetty": { "en": "Petty cash", "mr": "किरकोळ रोख", "hi": "फुटकर नकद" },
-  "shellTileApprovals": { "en": "Approvals", "mr": "मंजुरी", "hi": "मंज़ूरी" },
-
-  "shellReturnedTitle": { "en": "Returned to you", "mr": "तुम्हाला परत पाठवलेले", "hi": "आपको वापस भेजा गया" },
-  "shellReturnedDpr": { "en": "Daily report · {date}", "mr": "दैनिक अहवाल · {date}", "hi": "दैनिक रिपोर्ट · {date}", "placeholders": { "date": { "type": "String" } } },
-  "shellReturnedMeasurement": { "en": "Measurement {code} · {qty} {unit}", "mr": "मोजमाप {code} · {qty} {unit}", "hi": "माप {code} · {qty} {unit}", "placeholders": { "code": { "type": "String" }, "qty": { "type": "String" }, "unit": { "type": "String" } } },
-  "shellReturnedFix": { "en": "Fix", "mr": "दुरुस्त करा", "hi": "सुधारें" },
-  "shellReturnedNoRemark": { "en": "No remark given", "mr": "शेरा दिलेला नाही", "hi": "कोई टिप्पणी नहीं" },
-  "shellReturnedRemarkLabel": { "en": "Remark", "mr": "शेरा", "hi": "टिप्पणी" },
-
-  "shellOutboxTitle": { "en": "Outbox", "mr": "आउटबॉक्स", "hi": "आउटबॉक्स" },
-  "shellOutboxWaitingLabel": { "en": "waiting to send", "mr": "पाठवायचे बाकी", "hi": "भेजना बाकी" },
-  "shellOutboxTrayLabel": { "en": "on phone", "mr": "फोनवर", "hi": "फ़ोन पर" },
-  "shellOutboxNeverSynced": { "en": "Not synced yet", "mr": "अजून सिंक झालेले नाही", "hi": "अभी सिंक नहीं हुआ" },
-  "shellOutboxAllSentStamp": { "en": "All sent", "mr": "सर्व पाठवले", "hi": "सब भेजा" },
-  "shellOutboxAllSentBody": { "en": "Nothing is left on this phone.", "mr": "या फोनवर काही बाकी नाही.", "hi": "इस फ़ोन पर कुछ बाकी नहीं।" },
-  "shellOutboxAttention": { "en": "{count, plural, =1{1 needs your attention} other{{count} need your attention}}", "mr": "{count} नोंदींकडे लक्ष द्या", "hi": "{count} प्रविष्टियों पर ध्यान दें", "placeholders": { "count": { "type": "int" } } },
-  "shellOutboxLogTitle": { "en": "Not applied", "mr": "लागू झाले नाही", "hi": "लागू नहीं हुआ" },
-  "shellOutboxServerError": { "en": "The server is having trouble. Your work is safe and will send later.", "mr": "सर्व्हरला अडचण आहे. तुमचे काम सुरक्षित आहे, नंतर पाठवले जाईल.", "hi": "सर्वर में दिक्कत है। आपका काम सुरक्षित है, बाद में भेजा जाएगा।" },
-  "shellSlipWaiting": { "en": "Waiting", "mr": "बाकी", "hi": "बाकी" },
-  "shellSlipSending": { "en": "Sending", "mr": "पाठवत आहे", "hi": "भेज रहे हैं" },
-  "shellDiscardTitle": { "en": "Throw away this entry?", "mr": "ही नोंद काढून टाकायची?", "hi": "यह प्रविष्टि हटाएँ?" },
-  "shellDiscardBody": { "en": "It has not reached the server. It will be removed from this phone.", "mr": "ती सर्व्हरवर पोहोचलेली नाही. ती या फोनवरून काढली जाईल.", "hi": "यह सर्वर तक नहीं पहुँची है। इसे इस फ़ोन से हटा दिया जाएगा।" },
-  "shellDiscardConfirm": { "en": "Yes, throw away", "mr": "होय, काढून टाका", "hi": "हाँ, हटाएँ" },
-  "shellDiscardKeep": { "en": "Keep it", "mr": "राहू द्या", "hi": "रहने दें" },
-
-  "shellTimeJustNow": { "en": "just now", "mr": "आत्ताच", "hi": "अभी" },
-  "shellTimeMinutes": { "en": "{count} min ago", "mr": "{count} मिनिटांपूर्वी", "hi": "{count} मिनट पहले", "placeholders": { "count": { "type": "int" } } },
-  "shellTimeHours": { "en": "{count} hr ago", "mr": "{count} तासांपूर्वी", "hi": "{count} घंटे पहले", "placeholders": { "count": { "type": "int" } } },
-  "shellTimeYesterday": { "en": "yesterday", "mr": "काल", "hi": "कल" },
-  "shellTimeDays": { "en": "{count} days ago", "mr": "{count} दिवसांपूर्वी", "hi": "{count} दिन पहले", "placeholders": { "count": { "type": "int" } } },
-
-  "shellSettingsSignedIn": { "en": "Signed in as", "mr": "साइन इन केलेले", "hi": "साइन इन" },
-  "shellSettingsLanguage": { "en": "Language", "mr": "भाषा", "hi": "भाषा" },
-  "shellSettingsVersion": { "en": "App version", "mr": "ॲप आवृत्ती", "hi": "ऐप वर्ज़न" },
-  "shellSignOut": { "en": "Sign out", "mr": "साइन आउट", "hi": "साइन आउट" },
-  "shellSignOutConfirmTitle": { "en": "Sign out of this phone?", "mr": "या फोनवरून साइन आउट करायचे?", "hi": "इस फ़ोन से साइन आउट करें?" },
-  "shellSignOutConfirmBody": { "en": "You will need network to sign in again.", "mr": "पुन्हा साइन इन करायला नेटवर्क लागेल.", "hi": "फिर साइन इन करने के लिए नेटवर्क चाहिए।" },
-  "shellSignOutUnsentTitle": { "en": "{count, plural, =1{1 entry not sent} other{{count} entries not sent}}", "mr": "{count} नोंदी पाठवलेल्या नाहीत", "hi": "{count} प्रविष्टियाँ नहीं भेजी गईं", "placeholders": { "count": { "type": "int" } } },
-  "shellSignOutUnsentBody": { "en": "If you sign out now they are deleted from this phone and cannot be brought back. Send them first.", "mr": "आता साइन आउट केल्यास त्या या फोनवरून कायमच्या जातील. आधी त्या पाठवा.", "hi": "अभी साइन आउट करने पर वे इस फ़ोन से हमेशा के लिए मिट जाएँगी। पहले उन्हें भेजें।" },
-  "shellSignOutSendFirst": { "en": "Send them first", "mr": "आधी पाठवा", "hi": "पहले भेजें" },
-  "shellSignOutHold": { "en": "Press and hold to lose them", "mr": "नोंदी गमावण्यासाठी दाबून ठेवा", "hi": "मिटाने के लिए दबाए रखें" },
-  "shellSignOutDiscard": { "en": "Sign out and lose them", "mr": "साइन आउट करून गमवा", "hi": "साइन आउट कर मिटाएँ" }
+  "shellSignInWelcome": {
+    "en": "Welcome",
+    "mr": "नमस्कार",
+    "hi": "नमस्ते"
+  },
+  "shellSignInEmail": {
+    "en": "Email",
+    "mr": "ईमेल",
+    "hi": "ईमेल"
+  },
+  "shellSignInPassword": {
+    "en": "Password",
+    "mr": "पासवर्ड",
+    "hi": "पासवर्ड"
+  },
+  "shellSignInShow": {
+    "en": "Show",
+    "mr": "दाखवा",
+    "hi": "दिखाएँ"
+  },
+  "shellSignInHide": {
+    "en": "Hide",
+    "mr": "लपवा",
+    "hi": "छिपाएँ"
+  },
+  "shellSignInButton": {
+    "en": "Sign in",
+    "mr": "साइन इन करा",
+    "hi": "साइन इन करें"
+  },
+  "shellSignInBusy": {
+    "en": "Signing in…",
+    "mr": "साइन इन होत आहे…",
+    "hi": "साइन इन हो रहा है…"
+  },
+  "shellSignInEmailRequired": {
+    "en": "Enter your email",
+    "mr": "तुमचा ईमेल लिहा",
+    "hi": "अपना ईमेल लिखें"
+  },
+  "shellSignInPasswordRequired": {
+    "en": "Enter your password",
+    "mr": "तुमचा पासवर्ड लिहा",
+    "hi": "अपना पासवर्ड लिखें"
+  },
+  "shellSignInWrongTitle": {
+    "en": "Wrong email or password",
+    "mr": "ईमेल किंवा पासवर्ड चुकीचा आहे",
+    "hi": "ईमेल या पासवर्ड गलत है"
+  },
+  "shellSignInWrongBody": {
+    "en": "Check both and try again.",
+    "mr": "दोन्ही तपासून पुन्हा प्रयत्न करा.",
+    "hi": "दोनों जाँचकर फिर कोशिश करें।"
+  },
+  "shellSignInNetworkTitle": {
+    "en": "No network",
+    "mr": "नेटवर्क नाही",
+    "hi": "नेटवर्क नहीं है"
+  },
+  "shellSignInNetworkBody": {
+    "en": "Check your signal and try again.",
+    "mr": "सिग्नल तपासून पुन्हा प्रयत्न करा.",
+    "hi": "सिग्नल जाँचकर फिर कोशिश करें।"
+  },
+  "shellSignInServerTitle": {
+    "en": "Server is not responding",
+    "mr": "सर्व्हर प्रतिसाद देत नाही",
+    "hi": "सर्वर जवाब नहीं दे रहा"
+  },
+  "shellSignInServerBody": {
+    "en": "It is not your phone. Try again in a few minutes.",
+    "mr": "तुमच्या फोनचा दोष नाही. थोड्या वेळाने पुन्हा प्रयत्न करा.",
+    "hi": "आपके फ़ोन की गलती नहीं है। कुछ देर बाद फिर कोशिश करें।"
+  },
+  "shellSignInTooManyTitle": {
+    "en": "Too many tries",
+    "mr": "खूप वेळा प्रयत्न झाले",
+    "hi": "बहुत बार कोशिश हुई"
+  },
+  "shellSignInTooManyBody": {
+    "en": "Wait a minute and try again.",
+    "mr": "एक मिनिट थांबून पुन्हा प्रयत्न करा.",
+    "hi": "एक मिनट रुककर फिर कोशिश करें।"
+  },
+  "shellSignInOtherUserTitle": {
+    "en": "Someone else's work is waiting",
+    "mr": "दुसऱ्या व्यक्तीचे काम बाकी आहे",
+    "hi": "किसी और का काम बाकी है"
+  },
+  "shellSignInOtherUserBody": {
+    "en": "This phone has {count} unsent entries from another person. They must sign in and send them first.",
+    "mr": "या फोनवर दुसऱ्या व्यक्तीच्या {count} नोंदी पाठवायच्या बाकी आहेत. त्यांनी आधी साइन इन करून त्या पाठवाव्यात.",
+    "hi": "इस फ़ोन पर किसी और की {count} प्रविष्टियाँ भेजनी बाकी हैं। उन्हें पहले साइन इन करके भेजना होगा।",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSignInExpired": {
+    "en": "You were signed out. Nothing is lost: your work is safe on this phone. Sign in to send it.",
+    "mr": "तुम्हाला साइन आउट केले आहे. काहीही गेलेले नाही: तुमचे काम या फोनवर सुरक्षित आहे. ते पाठवण्यासाठी पुन्हा साइन इन करा.",
+    "hi": "आपको साइन आउट कर दिया गया। कुछ नहीं खोया: आपका काम इस फ़ोन पर सुरक्षित है। भेजने के लिए फिर साइन इन करें।"
+  },
+  "shellPickerEyebrow": {
+    "en": "Your projects",
+    "mr": "तुमचे प्रकल्प",
+    "hi": "आपकी परियोजनाएँ"
+  },
+  "shellPickerTitle": {
+    "en": "Which site today?",
+    "mr": "आज कोणती साइट?",
+    "hi": "आज कौन सी साइट?"
+  },
+  "shellPickerEmptyTitle": {
+    "en": "No projects yet",
+    "mr": "अजून प्रकल्प नाहीत",
+    "hi": "अभी कोई परियोजना नहीं"
+  },
+  "shellPickerEmptyBody": {
+    "en": "Ask your office to add you to a project, then try again.",
+    "mr": "कार्यालयाला तुम्हाला प्रकल्पात जोडायला सांगा, मग पुन्हा प्रयत्न करा.",
+    "hi": "कार्यालय से आपको परियोजना में जोड़ने को कहें, फिर कोशिश करें।"
+  },
+  "shellPickerLoading": {
+    "en": "Getting your projects…",
+    "mr": "तुमचे प्रकल्प आणत आहे…",
+    "hi": "आपकी परियोजनाएँ ला रहे हैं…"
+  },
+  "shellPickerCurrent": {
+    "en": "Current",
+    "mr": "चालू",
+    "hi": "चालू"
+  },
+  "shellSwitchProject": {
+    "en": "Switch project",
+    "mr": "प्रकल्प बदला",
+    "hi": "परियोजना बदलें"
+  },
+  "shellTabHome": {
+    "en": "Home",
+    "mr": "मुख्य",
+    "hi": "होम"
+  },
+  "shellTabMeasure": {
+    "en": "Measure",
+    "mr": "मोजमाप",
+    "hi": "माप"
+  },
+  "shellTabApprovals": {
+    "en": "Approvals",
+    "mr": "मंजुरी",
+    "hi": "मंज़ूरी"
+  },
+  "shellTabOutbox": {
+    "en": "Outbox",
+    "mr": "आउटबॉक्स",
+    "hi": "आउटबॉक्स"
+  },
+  "shellOfflineLabel": {
+    "en": "Offline",
+    "mr": "ऑफलाइन",
+    "hi": "ऑफ़लाइन"
+  },
+  "shellOfflineDetail": {
+    "en": "Entries wait on phone.",
+    "mr": "नोंदी फोनवर राहतील.",
+    "hi": "प्रविष्टियाँ फ़ोन पर रहेंगी।"
+  },
+  "shellSyncingLabel": {
+    "en": "Sending and updating",
+    "mr": "पाठवत आणि अद्ययावत करत आहे",
+    "hi": "भेज रहे हैं और अपडेट कर रहे हैं"
+  },
+  "shellSettings": {
+    "en": "Settings",
+    "mr": "सेटिंग्ज",
+    "hi": "सेटिंग्स"
+  },
+  "shellPillWaiting": {
+    "en": "waiting",
+    "mr": "बाकी",
+    "hi": "बाकी"
+  },
+  "shellPillSending": {
+    "en": "sending",
+    "mr": "पाठवत आहे",
+    "hi": "भेज रहे हैं"
+  },
+  "shellPillAllSent": {
+    "en": "All sent",
+    "mr": "सर्व पाठवले",
+    "hi": "सब भेज दिया"
+  },
+  "shellPillAttention": {
+    "en": "needs a look",
+    "mr": "तपासा",
+    "hi": "देखें"
+  },
+  "shellTodayReport": {
+    "en": "Report",
+    "mr": "अहवाल",
+    "hi": "रिपोर्ट"
+  },
+  "shellTodayAttendance": {
+    "en": "Attendance",
+    "mr": "हजेरी",
+    "hi": "हाज़िरी"
+  },
+  "shellTodayMeasured": {
+    "en": "Measured",
+    "mr": "मोजमाप",
+    "hi": "माप"
+  },
+  "shellTodayExpenses": {
+    "en": "Spent",
+    "mr": "खर्च",
+    "hi": "खर्च"
+  },
+  "shellReportNotStarted": {
+    "en": "Not started",
+    "mr": "सुरू नाही",
+    "hi": "शुरू नहीं"
+  },
+  "shellReportSaved": {
+    "en": "Saved",
+    "mr": "जतन झाला",
+    "hi": "सहेजा गया"
+  },
+  "shellReportAttention": {
+    "en": "Needs a look",
+    "mr": "तपासा",
+    "hi": "देखें"
+  },
+  "shellTodaySemantics": {
+    "en": "{label}: {value}",
+    "mr": "{label}: {value}",
+    "hi": "{label}: {value}",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "shellProgressTitle": {
+    "en": "Construction progress",
+    "mr": "बांधकामाची प्रगती",
+    "hi": "निर्माण की प्रगति"
+  },
+  "shellProgressBasis": {
+    "en": "By value of approved work",
+    "mr": "मंजूर कामाच्या किमतीनुसार",
+    "hi": "मंज़ूर काम के मूल्य से"
+  },
+  "shellProgressEnd": {
+    "en": "End",
+    "mr": "शेवट",
+    "hi": "समाप्ति"
+  },
+  "shellProgressNoEnd": {
+    "en": "Not set",
+    "mr": "ठरलेला नाही",
+    "hi": "तय नहीं"
+  },
+  "shellProgressDaysLeft": {
+    "en": "Days left",
+    "mr": "बाकी दिवस",
+    "hi": "बचे दिन"
+  },
+  "shellProgressDaysLate": {
+    "en": "Days late",
+    "mr": "उशीर, दिवस",
+    "hi": "देरी, दिन"
+  },
+  "shellProgressEmptyTitle": {
+    "en": "No BOQ yet",
+    "mr": "अजून BOQ नाही",
+    "hi": "अभी BOQ नहीं"
+  },
+  "shellProgressEmptyBody": {
+    "en": "Progress will show here once the BOQ is added.",
+    "mr": "BOQ जोडल्यावर प्रगती इथे दिसेल.",
+    "hi": "BOQ जुड़ने पर प्रगति यहाँ दिखेगी।"
+  },
+  "shellProgressSemantics": {
+    "en": "{percent} percent complete",
+    "mr": "{percent} टक्के पूर्ण",
+    "hi": "{percent} प्रतिशत पूरा",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "shellCaptionToday": {
+    "en": "today",
+    "mr": "आज",
+    "hi": "आज"
+  },
+  "shellCaptionMarked": {
+    "en": "marked",
+    "mr": "नोंदवले",
+    "hi": "दर्ज"
+  },
+  "shellCaptionOpen": {
+    "en": "open",
+    "mr": "उघड्या",
+    "hi": "खुली"
+  },
+  "shellTileExpenses": {
+    "en": "Expenses",
+    "mr": "खर्च",
+    "hi": "खर्च"
+  },
+  "shellTileDaily": {
+    "en": "Daily report",
+    "mr": "दैनिक अहवाल",
+    "hi": "दैनिक रिपोर्ट"
+  },
+  "shellTileMeasure": {
+    "en": "Measure",
+    "mr": "मोजमाप",
+    "hi": "माप"
+  },
+  "shellTileAttendance": {
+    "en": "Attendance",
+    "mr": "हजेरी",
+    "hi": "हाज़िरी"
+  },
+  "shellTileIssues": {
+    "en": "Issues",
+    "mr": "समस्या",
+    "hi": "समस्याएँ"
+  },
+  "shellTilePetty": {
+    "en": "Petty cash",
+    "mr": "किरकोळ रोख",
+    "hi": "फुटकर नकद"
+  },
+  "shellTileApprovals": {
+    "en": "Approvals",
+    "mr": "मंजुरी",
+    "hi": "मंज़ूरी"
+  },
+  "shellReturnedTitle": {
+    "en": "Returned to you",
+    "mr": "तुम्हाला परत पाठवलेले",
+    "hi": "आपको वापस भेजा गया"
+  },
+  "shellReturnedDpr": {
+    "en": "Daily report · {date}",
+    "mr": "दैनिक अहवाल · {date}",
+    "hi": "दैनिक रिपोर्ट · {date}",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "shellReturnedMeasurement": {
+    "en": "Measurement {code} · {qty} {unit}",
+    "mr": "मोजमाप {code} · {qty} {unit}",
+    "hi": "माप {code} · {qty} {unit}",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "shellReturnedFix": {
+    "en": "Fix",
+    "mr": "दुरुस्त करा",
+    "hi": "सुधारें"
+  },
+  "shellReturnedNoRemark": {
+    "en": "No remark given",
+    "mr": "शेरा दिलेला नाही",
+    "hi": "कोई टिप्पणी नहीं"
+  },
+  "shellReturnedRemarkLabel": {
+    "en": "Remark",
+    "mr": "शेरा",
+    "hi": "टिप्पणी"
+  },
+  "shellOutboxTitle": {
+    "en": "Outbox",
+    "mr": "आउटबॉक्स",
+    "hi": "आउटबॉक्स"
+  },
+  "shellOutboxWaitingLabel": {
+    "en": "waiting to send",
+    "mr": "पाठवायचे बाकी",
+    "hi": "भेजना बाकी"
+  },
+  "shellOutboxTrayLabel": {
+    "en": "on phone",
+    "mr": "फोनवर",
+    "hi": "फ़ोन पर"
+  },
+  "shellOutboxNeverSynced": {
+    "en": "Not synced yet",
+    "mr": "अजून सिंक झालेले नाही",
+    "hi": "अभी सिंक नहीं हुआ"
+  },
+  "shellOutboxAllSentStamp": {
+    "en": "All sent",
+    "mr": "सर्व पाठवले",
+    "hi": "सब भेजा"
+  },
+  "shellOutboxAllSentBody": {
+    "en": "Nothing is left on this phone.",
+    "mr": "या फोनवर काही बाकी नाही.",
+    "hi": "इस फ़ोन पर कुछ बाकी नहीं।"
+  },
+  "shellOutboxAttention": {
+    "en": "{count, plural, =1{1 needs your attention} other{{count} need your attention}}",
+    "mr": "{count} नोंदींकडे लक्ष द्या",
+    "hi": "{count} प्रविष्टियों पर ध्यान दें",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellOutboxLogTitle": {
+    "en": "Not applied",
+    "mr": "लागू झाले नाही",
+    "hi": "लागू नहीं हुआ"
+  },
+  "shellOutboxServerError": {
+    "en": "The server is having trouble. Your work is safe and will send later.",
+    "mr": "सर्व्हरला अडचण आहे. तुमचे काम सुरक्षित आहे, नंतर पाठवले जाईल.",
+    "hi": "सर्वर में दिक्कत है। आपका काम सुरक्षित है, बाद में भेजा जाएगा।"
+  },
+  "shellSlipWaiting": {
+    "en": "Waiting",
+    "mr": "बाकी",
+    "hi": "बाकी"
+  },
+  "shellSlipSending": {
+    "en": "Sending",
+    "mr": "पाठवत आहे",
+    "hi": "भेज रहे हैं"
+  },
+  "shellDiscardTitle": {
+    "en": "Throw away this entry?",
+    "mr": "ही नोंद काढून टाकायची?",
+    "hi": "यह प्रविष्टि हटाएँ?"
+  },
+  "shellDiscardBody": {
+    "en": "It has not reached the server. It will be removed from this phone.",
+    "mr": "ती सर्व्हरवर पोहोचलेली नाही. ती या फोनवरून काढली जाईल.",
+    "hi": "यह सर्वर तक नहीं पहुँची है। इसे इस फ़ोन से हटा दिया जाएगा।"
+  },
+  "shellDiscardConfirm": {
+    "en": "Yes, throw away",
+    "mr": "होय, काढून टाका",
+    "hi": "हाँ, हटाएँ"
+  },
+  "shellDiscardKeep": {
+    "en": "Keep it",
+    "mr": "राहू द्या",
+    "hi": "रहने दें"
+  },
+  "shellTimeJustNow": {
+    "en": "just now",
+    "mr": "आत्ताच",
+    "hi": "अभी"
+  },
+  "shellTimeMinutes": {
+    "en": "{count} min ago",
+    "mr": "{count} मिनिटांपूर्वी",
+    "hi": "{count} मिनट पहले",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellTimeHours": {
+    "en": "{count} hr ago",
+    "mr": "{count} तासांपूर्वी",
+    "hi": "{count} घंटे पहले",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellTimeYesterday": {
+    "en": "yesterday",
+    "mr": "काल",
+    "hi": "कल"
+  },
+  "shellTimeDays": {
+    "en": "{count} days ago",
+    "mr": "{count} दिवसांपूर्वी",
+    "hi": "{count} दिन पहले",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSettingsSignedIn": {
+    "en": "Signed in as",
+    "mr": "साइन इन केलेले",
+    "hi": "साइन इन"
+  },
+  "shellSettingsLanguage": {
+    "en": "Language",
+    "mr": "भाषा",
+    "hi": "भाषा"
+  },
+  "shellSettingsVersion": {
+    "en": "App version",
+    "mr": "ॲप आवृत्ती",
+    "hi": "ऐप वर्ज़न"
+  },
+  "shellSignOut": {
+    "en": "Sign out",
+    "mr": "साइन आउट",
+    "hi": "साइन आउट"
+  },
+  "shellSignOutConfirmTitle": {
+    "en": "Sign out of this phone?",
+    "mr": "या फोनवरून साइन आउट करायचे?",
+    "hi": "इस फ़ोन से साइन आउट करें?"
+  },
+  "shellSignOutConfirmBody": {
+    "en": "You will need network to sign in again.",
+    "mr": "पुन्हा साइन इन करायला नेटवर्क लागेल.",
+    "hi": "फिर साइन इन करने के लिए नेटवर्क चाहिए।"
+  },
+  "shellSignOutUnsentTitle": {
+    "en": "{count, plural, =1{1 entry not sent} other{{count} entries not sent}}",
+    "mr": "{count} नोंदी पाठवलेल्या नाहीत",
+    "hi": "{count} प्रविष्टियाँ नहीं भेजी गईं",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSignOutUnsentBody": {
+    "en": "If you sign out now they are deleted from this phone and cannot be brought back. Send them first.",
+    "mr": "आता साइन आउट केल्यास त्या या फोनवरून कायमच्या जातील. आधी त्या पाठवा.",
+    "hi": "अभी साइन आउट करने पर वे इस फ़ोन से हमेशा के लिए मिट जाएँगी। पहले उन्हें भेजें।"
+  },
+  "shellSignOutSendFirst": {
+    "en": "Send them first",
+    "mr": "आधी पाठवा",
+    "hi": "पहले भेजें"
+  },
+  "shellSignOutHold": {
+    "en": "Press and hold to lose them",
+    "mr": "नोंदी गमावण्यासाठी दाबून ठेवा",
+    "hi": "मिटाने के लिए दबाए रखें"
+  },
+  "shellSignOutDiscard": {
+    "en": "Sign out and lose them",
+    "mr": "साइन आउट करून गमवा",
+    "hi": "साइन आउट कर मिटाएँ"
+  },
+  "shellOfflineApprovals": {
+    "en": "Approvals need network.",
+    "mr": "मंजुरीसाठी नेटवर्क हवे.",
+    "hi": "मंज़ूरी के लिए नेटवर्क चाहिए।"
+  }
 }
