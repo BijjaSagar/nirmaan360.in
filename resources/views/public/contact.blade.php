@@ -1,13 +1,13 @@
 @extends('layouts.public')
 @section('title', __('Contact'))
 @section('content')
-<section class="bg-[#f6f2ea]">
+<section>
     <div class="site-wrap grid gap-12 py-16 lg:grid-cols-[1fr_1.1fr] lg:py-24">
         <div>
-            <h1 class="text-[clamp(2.5rem,5vw,3.75rem)]">{{ __('Tell us about your projects.') }}</h1>
+            <h1 class="text-[clamp(2.6rem,5.4vw,4.25rem)]">{{ __('Tell us about your projects.') }}</h1>
             <p class="mt-4 max-w-md text-lg leading-relaxed text-ink-2">{{ __('Larger rollouts, AI early access or a question about the product. Leave your details and we will get back to you.') }}</p>
             <ul class="mt-8 space-y-4 text-[16px]">
-                <li class="flex gap-3"><x-icon name="crane" class="size-6 text-laterite" />{{ __('Enterprise and infrastructure pricing') }}</li>
+                <li class="flex gap-3"><x-icon name="crane" class="size-6 shrink-0 text-laterite" />{{ __('Enterprise and infrastructure pricing') }}</li>
                 <li class="flex gap-3"><x-icon name="message" class="size-6 text-laterite" />{{ __('AI agent early access') }}</li>
                 <li class="flex gap-3"><x-icon name="users" class="size-6 text-laterite" />{{ __('Help moving your team across') }}</li>
             </ul>
@@ -18,7 +18,7 @@
                 </div>
             @endif
         </div>
-        <form method="POST" action="{{ route('contact.store') }}" class="rounded-lg bg-white p-7 shadow-sm sm:p-9">
+        <form method="POST" action="{{ route('contact.store') }}" class="site-card p-7 sm:p-9">
             @csrf
             @if (session('success'))
                 <p class="mb-5 rounded-md bg-moss/10 px-4 py-3 text-[15px] font-medium text-moss" role="status">{{ session('success') }}</p>
