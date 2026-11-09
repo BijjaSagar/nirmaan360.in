@@ -11,7 +11,7 @@
                 <h2 class="card-title text-laterite-dark">{{ __('Nothing was imported') }}</h2>
                 <span class="num text-sm text-ink-3">{{ count($import['errors']) + ($import['more'] ?? 0) }} {{ __('problems') }}</span>
             </div>
-            <p class="px-4 pt-3 text-sm text-ink-2">{{ __('Fix these in the file and upload it again. Rows are numbered as in Excel.') }}</p>
+            <p class="px-4 pt-3 text-sm text-ink-2">{{ empty($import['pdf']) ? __('Fix these in the file and upload it again. Rows are numbered as in Excel.') : __('Lines are numbered as in the table read from the PDF, with the heading as line 1. If the PDF was read wrongly, upload the Excel file instead.') }}</p>
             <div class="overflow-x-auto p-4">
                 <table class="ledger">
                     <thead><tr><th class="w-20">{{ __('Row') }}</th><th class="w-40">{{ __('Column') }}</th><th>{{ __('Problem') }}</th></tr></thead>
@@ -69,7 +69,8 @@
                     <p class="text-sm text-ink-3">{{ __('Rows with an existing item code are updated. If any row has a problem, nothing is imported.') }}</p>
                     <p class="text-sm text-ink-3">{{ __('Quantity cannot go below what is already approved. Use values, not formulas.') }}</p>
                     <p class="text-sm text-ink-3">{{ __('An engineer\'s estimate also works: Sr. No., Description, Qty, Rate, Unit and Amount columns. Part rows, add-on percentages and totals are read for you.') }}</p>
-                    <x-field :label="__('Excel file (.xlsx)')" name="file"><input id="file" name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="input" required></x-field>
+                    <p class="text-sm text-ink-3">{{ __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so upload the Excel file for those.') }}</p>
+                    <x-field :label="__('Excel or PDF file (.xlsx, .pdf)')" name="file"><input id="file" name="file" type="file" accept=".xlsx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="input" required></x-field>
                     <div class="flex items-center justify-between gap-2">
                         <a href="{{ route('boq.excel.template') }}" class="link text-sm">{{ __('Download template') }}</a>
                         <button class="btn btn-primary">{{ __('Import') }}</button>

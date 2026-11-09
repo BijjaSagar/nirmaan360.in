@@ -11,6 +11,7 @@
         $sources = [
             'csv_import' => __('Imported from a CSV file'),
             'excel_import' => __('Imported from an Excel file'),
+            'pdf_import' => __('Imported from a PDF file'),
             'starter' => __('Starter template'),
             'concrete' => __('Concrete'),
             'edit' => __('Edited on screen'),
