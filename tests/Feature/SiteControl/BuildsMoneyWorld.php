@@ -53,6 +53,7 @@ use App\Models\MachineLog;
 use App\Models\Material;
 use App\Models\MaterialIssue;
 use App\Models\MaterialIssueItem;
+use App\Models\MaterialPrice;
 use App\Models\MaterialReturn;
 use App\Models\MaterialReturnItem;
 use App\Models\MaterialStore;
@@ -69,6 +70,8 @@ use App\Models\PlanActivity;
 use App\Models\PlanBoqLink;
 use App\Models\PlanBudgetLine;
 use App\Models\PlanCostEntry;
+use App\Models\PriceWatchMaterial;
+use App\Models\PriceWatchProjectRate;
 use App\Models\ProgressEntry;
 use App\Models\ProgressPhoto;
 use App\Models\Project;
@@ -169,6 +172,8 @@ trait BuildsMoneyWorld
         'current_rate' => '83614775.00',
         'revision_value' => '83614776.00',
         'alert_money' => '83614777.00',
+        'watch_price' => '83614778.00',
+        'watch_boq' => '83614779.00',
     ];
 
     protected Organization $organization;
@@ -420,6 +425,11 @@ trait BuildsMoneyWorld
         BoqRevision::create(['organization_id' => $org, 'project_id' => $project->id, 'boq_item_id' => $item->id, 'action' => 'edited', 'source' => 'manual', 'item_code' => $item->code, 'item_description' => $item->description, 'changes' => ['rate' => ['1.00', $money['boq_rate']]], 'reason' => 'Rate agreed with the client', 'valuation_before' => $money['revision_value'], 'valuation_after' => $money['revision_value'], 'user_id' => $owner->id]);
         BoqCurrentRate::create(['organization_id' => $org, 'project_id' => $project->id, 'boq_item_id' => $item->id, 'rate' => $money['current_rate'], 'noted_on' => '2026-11-01', 'source' => 'Market enquiry', 'noted_by' => $owner->id]);
 
+        // Price watch: a watched material with its dated price, and the BOQ rate this project assumed for it
+        $watch = PriceWatchMaterial::create(['organization_id' => $org, 'key' => 'cement', 'name' => 'Cement', 'unit' => 'kg', 'material_id' => $cement->id, 'sort' => 10]);
+        $watchPrice = MaterialPrice::create(['organization_id' => $org, 'price_watch_material_id' => $watch->id, 'rate' => $money['watch_price'], 'unit' => 'kg', 'priced_on' => now()->toDateString(), 'source' => 'Dealer quote', 'noted_by' => $owner->id]);
+        PriceWatchProjectRate::create(['organization_id' => $org, 'project_id' => $project->id, 'price_watch_material_id' => $watch->id, 'boq_rate' => $money['watch_boq'], 'noted_by' => $owner->id]);
+
         // Alerts: one about money that only money.overview may read, and one about time that everyone may
         Alert::create(['organization_id' => $org, 'project_id' => $project->id, 'type' => 'budget_over', 'reference' => 'project', 'severity' => 'critical', 'title' => 'Spend is over the approved budget', 'message' => 'Spend of ₹'.Dec::indian($money['alert_money']).' is above the approved budget.', 'needs_permission' => 'money.overview', 'status' => 'open', 'first_seen_at' => now(), 'last_seen_at' => now()]);
         Alert::create(['organization_id' => $org, 'project_id' => $project->id, 'type' => 'schedule_lag', 'reference' => 'project', 'severity' => 'warning', 'title' => 'Work is behind time', 'message' => 'Time used 50%, work done 35%.', 'status' => 'open', 'first_seen_at' => now(), 'last_seen_at' => now()]);
@@ -445,6 +455,7 @@ trait BuildsMoneyWorld
             ContractorMilestone::class => $milestone, ContractorPayment::class => $payment, ContractorTender::class => $tender,
             DeliveryChallan::class => $challan, ProjectPermit::class => $permit, ProjectPermitFile::class => $permitFile, Party::class => $vendor,
             CustomRole::class => $customRole, User::class => $engineer,
+            PriceWatchMaterial::class => $watch, MaterialPrice::class => $watchPrice,
         ];
 
         // Parameters that are plain values: the asset tag, an agent key, and the ids the public API and signed links take.
