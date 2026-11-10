@@ -13,7 +13,7 @@ import '../../support/test_app.dart';
 
 /// Push on its own: a fake phone, a fake server and a real in-memory database.
 class _Rig {
-  _Rig._(this.db, this.api, this.messaging, this.connectivity, this.push, this.languages);
+  _Rig._(this.db, this.api, this.messaging, this.connectivity, this.push);
 
   final AppDatabase db;
   final FakeApi api;
@@ -21,8 +21,7 @@ class _Rig {
   final FakeConnectivity connectivity;
   final PushService push;
 
-  /// The app's language: change [language] and add to [languages] to switch it.
-  final StreamController<String> languages;
+  /// The app's language, as the push service reads it.
   static String language = 'mr';
 
   static _Rig build({
@@ -36,7 +35,6 @@ class _Rig {
     final FakeApi server = api ?? FakeApi();
     final FakePushMessaging phone = messaging ?? FakePushMessaging();
     final FakeConnectivity network = connectivity ?? FakeConnectivity();
-    final StreamController<String> languages = StreamController<String>.broadcast();
     final PushService push = PushService(
       messaging: phone,
       devices: ApiDeviceRegistry(server, portal: () => contractor),
@@ -45,16 +43,14 @@ class _Rig {
       deviceName: 'Test phone',
       appVersion: '1.0.0 (14)',
       locale: () async => language,
-      localeChanges: languages.stream,
       connectivity: network,
       patience: const Duration(milliseconds: 200),
     );
-    return _Rig._(database, server, phone, network, push, languages);
+    return _Rig._(database, server, phone, network, push);
   }
 
   Future<void> dispose() async {
     await push.dispose();
-    await languages.close();
     await db.close();
   }
 }
@@ -218,7 +214,6 @@ void main() {
       final FakeApi api = FakeApi();
       final _Rig first = await _started(messaging: FakePushMessaging(permissionNow: PushPermission.granted), db: db, api: api);
       await first.push.dispose();
-      await first.languages.close();
 
       final _Rig second = await _started(messaging: FakePushMessaging(permissionNow: PushPermission.granted), db: db, api: api);
       addTearDown(second.dispose);
@@ -232,15 +227,13 @@ void main() {
       addTearDown(rig.dispose);
 
       _Rig.language = 'hi';
-      rig.languages.add('hi');
-      await pumpEventQueue();
+      await rig.push.languageChanged();
 
       expect(rig.api.deviceRegistrations.map((r) => r.locale), <String?>['mr', 'hi']);
       expect(rig.api.deviceRegistrations.last.previousToken, isNull);
 
       // The same language again sends nothing.
-      rig.languages.add('hi');
-      await pumpEventQueue();
+      await rig.push.languageChanged();
       expect(rig.api.deviceRegistrations, hasLength(2));
     });
 
@@ -248,8 +241,7 @@ void main() {
       final _Rig rig = await _started();
       addTearDown(rig.dispose);
 
-      rig.languages.add('hi');
-      await pumpEventQueue();
+      await rig.push.languageChanged();
       expect(rig.api.deviceRegistrations, isEmpty);
     });
 

@@ -31,6 +31,10 @@ class AuthRepository {
   /// phone off the server's push list. Never throws, and waits a few seconds at most.
   Future<void> Function()? beforeSignOut;
 
+  /// Runs after the language changes on this phone, so push text follows it.
+  /// Never throws.
+  Future<void> Function()? afterLocaleChange;
+
   CurrentUser? get currentUser => _ctx.session.user;
 
   bool can(String permission) => currentUser?.can(permission) ?? false;
@@ -146,8 +150,11 @@ class AuthRepository {
 
   Future<String?> readLocale() => _ctx.db.readMeta(MetaKey.locale);
 
-  Future<void> setLocale(String locale) =>
-      _ctx.db.writeMeta(MetaKey.locale, locale);
+  Future<void> setLocale(String locale) async {
+    final String? before = await readLocale();
+    await _ctx.db.writeMeta(MetaKey.locale, locale);
+    if (before != locale) await afterLocaleChange?.call();
+  }
 
   Future<void> _wipeLocalData() async {
     final db = _ctx.db;

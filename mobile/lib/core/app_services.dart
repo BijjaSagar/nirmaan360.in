@@ -94,6 +94,7 @@ class AppServices {
        syncCenter = SyncRepository(context) {
     offlineUploader = OfflineUploader(context, dpr);
     auth.beforeSignOut = push.forgetThisPhone;
+    auth.afterLocaleChange = push.languageChanged;
   }
 
   /// Production wiring: real database, secure token storage, Dio.
@@ -223,7 +224,6 @@ class AppServices {
       platform: pushPlatform,
       appVersion: AppInfo.label,
       locale: () => _pushLocale(db, session),
-      localeChanges: db.watchMeta(MetaKey.locale).distinct().skip(1),
       connectivity: connectivity,
     );
     engine.afterPull = (sentSomething) async {

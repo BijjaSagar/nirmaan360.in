@@ -45,15 +45,12 @@ class PushService {
     this._deviceName = AppConfig.deviceName,
     this._appVersion,
     this._locale,
-    Stream<Object?>? localeChanges,
     ConnectivityMonitor? connectivity,
     this._patience = const Duration(seconds: 4),
   }) {
     _connectivity = connectivity?.changes.listen((online) {
       if (online) unawaited(retryPending());
     });
-    // Push text is written in the person's language, so a new choice is sent at once.
-    _localeChanges = localeChanges?.listen((_) => unawaited(_registerCurrent()), onError: _ignore);
   }
 
   final PushMessaging _messaging;
@@ -66,7 +63,6 @@ class PushService {
   final Duration _patience;
 
   StreamSubscription<bool>? _connectivity;
-  StreamSubscription<Object?>? _localeChanges;
   final List<StreamSubscription<Object?>> _subscriptions = <StreamSubscription<Object?>>[];
   final StreamController<PushState> _states = StreamController<PushState>.broadcast();
   final StreamController<PushMessage> _foreground = StreamController<PushMessage>.broadcast();
@@ -225,11 +221,16 @@ class PushService {
     }
   }
 
-  /// Sends this phone's current token again, when push is on.
-  Future<void> _registerCurrent() async {
+  /// The person chose another language on this phone. Push text is written in
+  /// it, so the registration is sent again at once. Never throws.
+  Future<void> languageChanged() async {
     if (!_ready || !_eligible || _state != PushState.on) return;
-    final String? token = await _messaging.token();
-    if (token != null) await _register(token);
+    try {
+      final String? token = await _messaging.token();
+      if (token != null) await _register(token);
+    } on Object catch (error) {
+      debugPrint('Push language update failed: ${error.runtimeType}');
+    }
   }
 
   Future<void> _activate() async {
@@ -333,7 +334,6 @@ class PushService {
 
   Future<void> dispose() async {
     await _connectivity?.cancel();
-    await _localeChanges?.cancel();
     for (final StreamSubscription<Object?> subscription in _subscriptions) {
       await subscription.cancel();
     }

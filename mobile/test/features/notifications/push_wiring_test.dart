@@ -54,6 +54,22 @@ void main() {
     expect(<String>['en', 'mr', 'hi'], contains(registration.locale));
   });
 
+  test('choosing another language sends the registration again in it', () async {
+    final TestApp app = await TestApp.create(pushMessaging: FakePushMessaging(permissionNow: PushPermission.granted));
+    addTearDown(app.dispose);
+    await app.services.startPush();
+    await pumpEventQueue();
+    final String? first = app.api.deviceRegistrations.single.locale;
+
+    final String other = first == 'hi' ? 'mr' : 'hi';
+    await app.services.auth.setLocale(other);
+    expect(app.api.deviceRegistrations.map((r) => r.locale), <String?>[first, other]);
+
+    // The same choice again sends nothing.
+    await app.services.auth.setLocale(other);
+    expect(app.api.deviceRegistrations, hasLength(2));
+  });
+
   test('a company on the offline plan is never offered push', () async {
     final FakePushMessaging phone = FakePushMessaging(permissionNow: PushPermission.granted);
     final FakeApi api = FakeApi()..offlineCompany = true;
