@@ -13,6 +13,7 @@ import '../../../core/design/design.dart';
 import '../../../core/money/money.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../bloc/project_form_cubit.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// One calm screen to start a new site. Needs network: the server names the
 /// project and enforces the plan's limit.
@@ -142,6 +143,7 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 PageHeader(title: t.shellProjectFormTitle),
+                const LicenceNotice(),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const ClampingScrollPhysics(),

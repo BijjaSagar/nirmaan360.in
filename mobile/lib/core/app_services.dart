@@ -317,6 +317,7 @@ class AppServices {
     final OfflinePlanState? local = offlinePlan.state;
     if (local != null && !local.signedOut) session.resumeLocally();
     unawaited(offlinePlan.check());
+    offlinePlan.startWatching();
     scheduler.start();
   }
 

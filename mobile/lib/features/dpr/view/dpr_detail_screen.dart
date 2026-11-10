@@ -11,6 +11,7 @@ import 'widgets/dpr_format.dart';
 import 'widgets/dpr_ui.dart';
 import 'widgets/photo_strip.dart';
 import 'widgets/work_rows.dart' show DprBoqPercent;
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// One report, read-only: the same cards as the form, nothing left to fill in.
 class DprDetailScreen extends StatelessWidget {
@@ -49,6 +50,7 @@ class _DprDetailBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   DprTopBar(title: l.dprFormTitle),
+                  const LicenceNotice(),
                   Expanded(
                     child: details == null
                         ? (state.loading

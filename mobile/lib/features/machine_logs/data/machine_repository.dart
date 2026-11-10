@@ -159,6 +159,7 @@ class MachineRepository {
     String? operatorName,
     String? remarks,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'log_date');
     void refuse(String field, String message) =>
         throw ValidationFailure(message, errors: {field: [message]});

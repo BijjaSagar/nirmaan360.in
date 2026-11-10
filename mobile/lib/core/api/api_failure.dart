@@ -56,3 +56,16 @@ class OfflinePlanRefused extends ApiFailure {
 
   final String? upgradeUrl;
 }
+
+/// Raised on the phone, never by the server: the offline licence has ended, so
+/// nothing new may be added or changed until it is renewed. Reading, the export
+/// and everything already on the phone are untouched.
+///
+/// An [ApiFailure] on purpose, so every form that already knows how to say
+/// "could not save" also stops cleanly. The app then opens the renewal page.
+class LicenceEnded extends ApiFailure {
+  const LicenceEnded({this.endedAt}) : super('The licence has ended. Connect to the internet to renew it.');
+
+  /// When the signed token ran out, if the phone knows.
+  final DateTime? endedAt;
+}

@@ -1820,6 +1820,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesUnassigned => 'Not assigned';
 
   @override
+  String get licenceContinue => 'Continue';
+
+  @override
+  String licenceEndedOn(String date) {
+    return 'Ended on $date';
+  }
+
+  @override
+  String get licenceRenewedBody => 'You can add and change things again.';
+
+  @override
+  String get licenceRenewedTitle => 'Licence renewed';
+
+  @override
+  String get licenceResultNoAnswer =>
+      'The server did not answer. Try again in a minute.';
+
+  @override
+  String get licenceResultOffline =>
+      'No internet found. Connect to Wi-Fi or mobile data, then try again.';
+
+  @override
+  String get licenceResultStillEnded =>
+      'Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.';
+
+  @override
+  String get licenceScreenTitle => 'Renew licence';
+
+  @override
+  String get licenceTryNow => 'Try renewing now';
+
+  @override
+  String get licenceTrying => 'Asking the server…';
+
+  @override
+  String get licenceViewData => 'Look at my data';
+
+  @override
   String get machineCategoryBackhoe => 'JCB / Backhoe loader';
 
   @override
@@ -2611,7 +2649,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineLicenceEndedBody =>
-      'Nothing is lost and you can still read, add and export. To renew, connect to the internet and open this app. If it stays like this, check your plan on the Nirmaan360 website.';
+      'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until the licence renews. Connect to the internet to renew it.';
 
   @override
   String get offlineLicenceEndedTitle => 'Your licence has ended';
@@ -2644,6 +2682,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineNeedsSignInTitle => 'Sign in again to renew';
+
+  @override
+  String offlineNoticeEnded(String date) {
+    return 'Your licence ended on $date. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.';
+  }
+
+  @override
+  String get offlineNoticeEndedNoDate =>
+      'Your licence has ended. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.';
+
+  @override
+  String offlineNoticeEnding(String date) {
+    return 'Your licence ends on $date. Connect to the internet once before then and it renews by itself.';
+  }
 
   @override
   String get offlineOnPhoneTag => 'On this phone';

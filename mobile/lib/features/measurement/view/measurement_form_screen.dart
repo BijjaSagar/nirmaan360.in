@@ -13,6 +13,7 @@ import 'widgets/boq_picker_sheet.dart';
 import 'widgets/book_kit.dart';
 import 'widgets/details_sheet.dart';
 import 'widgets/form_parts.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// The measurement book's entry page: dimensions on top, the live figure below
 /// them, and the keypad fixed under the thumb.
@@ -305,6 +306,7 @@ class _FormView extends StatelessWidget {
             padding: EdgeInsets.zero,
             children: <Widget>[
               if (!state.online) _offline(l),
+              const LicenceNotice(),
               header,
               const SizedBox(height: N360Space.xs),
               ...notes,
@@ -329,6 +331,7 @@ class _FormView extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     children: <Widget>[
                       if (!state.online) _offline(l),
+              const LicenceNotice(),
                       header,
                       const SizedBox(height: N360Space.sm),
                       dims,

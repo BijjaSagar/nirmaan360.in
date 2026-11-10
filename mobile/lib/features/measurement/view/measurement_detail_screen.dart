@@ -16,6 +16,7 @@ import '../bloc/measurement_book.dart';
 import '../bloc/measurement_detail_cubit.dart';
 import 'measurement_list_screen.dart' show entryTitle;
 import 'widgets/book_kit.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// One entry, in full, with what can still be done to it.
 class MeasurementDetailScreen extends StatelessWidget {
@@ -117,6 +118,7 @@ class _DetailView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   BookTitleBar(title: l.measurementDetailTitle, onBack: () => _leave(context)),
+                  const LicenceNotice(),
                   if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   Expanded(
                     child: ListView(

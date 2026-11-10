@@ -213,6 +213,7 @@ class InspectionRepository {
 
   /// Starts an inspection from [template] on this phone. Nothing is sent.
   Future<InspectionDraft> startDraft({required int projectId, required ChecklistTemplate template}) async {
+    _ctx.assertCanWrite();
     final InspectionDraft draft = InspectionDraft(
       uuid: newUuid(),
       projectId: projectId,
@@ -236,6 +237,7 @@ class InspectionRepository {
   /// Keeps what has been marked so far. A draft that has been finished or
   /// discarded in the meantime is not brought back.
   Future<void> saveDraft(InspectionDraft draft) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final String key = MetaKey.inspectionDrafts(draft.projectId);
       final Map<String, dynamic> map = _draftMap(await _db.readMeta(key));
@@ -246,6 +248,7 @@ class InspectionRepository {
   }
 
   Future<void> discardDraft(int projectId, String uuid) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final String key = MetaKey.inspectionDrafts(projectId);
       final Map<String, dynamic> map = _draftMap(await _db.readMeta(key));
@@ -269,6 +272,7 @@ class InspectionRepository {
   ///
   /// Throws a [ValidationFailure] when the draft is not ready.
   Future<void> finish(InspectionDraft draft) async {
+    _ctx.assertCanWrite();
     if (draft.unmarked.isNotEmpty) {
       const String message = 'Every item needs a result.';
       throw const ValidationFailure(message, errors: {'items': [message]});

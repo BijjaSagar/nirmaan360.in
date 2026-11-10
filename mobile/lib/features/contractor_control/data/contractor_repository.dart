@@ -181,6 +181,7 @@ class ContractorRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(paidOn, 'paid_on');
     String? stored;
     if (billPath != null) {

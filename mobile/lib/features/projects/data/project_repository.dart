@@ -103,6 +103,7 @@ class ProjectRepository {
     String? endDate,
     Money? contractValue,
   }) {
+    _ctx.assertCanWrite();
     if (_ctx.offlinePlan.isLocalOnly) {
       return _createLocalProject(
         name: name,
@@ -143,6 +144,7 @@ class ProjectRepository {
     String? code,
     String? section,
   }) {
+    _ctx.assertCanWrite();
     if (_ctx.offlinePlan.isLocalOnly) {
       return _addLocalBoqItem(
         projectId: projectId,

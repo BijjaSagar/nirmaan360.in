@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -34,9 +36,29 @@ class _Nirmaan360AppState extends State<Nirmaan360App> {
   late final AppGate _gate = widget.gate ?? AppGate(widget.services);
   late final SyncStatusCubit _syncStatus = SyncStatusCubit(widget.services.syncCenter);
   GoRouter? _router;
+  StreamSubscription<Object>? _refusals;
+  bool _renewalOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // A write turned away because the licence has ended opens the page that says
+    // why, whichever screen it came from. The forms already redirect there; this
+    // covers a button that writes in place, and a licence that ends under an open form.
+    _refusals = widget.services.offlinePlan.refusals.listen((_) => _openRenewal());
+  }
+
+  void _openRenewal() {
+    final GoRouter? router = _router;
+    if (router == null || _renewalOpen) return;
+    if (router.routeInformationProvider.value.uri.path == Routes.licenceEnded) return;
+    _renewalOpen = true;
+    unawaited(router.push<void>(Routes.licenceEnded).whenComplete(() => _renewalOpen = false));
+  }
 
   @override
   void dispose() {
+    unawaited(_refusals?.cancel());
     _router?.dispose();
     _gate.close();
     _syncStatus.close();

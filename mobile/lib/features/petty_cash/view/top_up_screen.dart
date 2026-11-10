@@ -9,6 +9,7 @@ import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/top_up_cubit.dart';
 import '../data/petty_cash_repository.dart';
 import 'widgets/petty_widgets.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// Records money put into a wallet: amount on the keypad, then note and date.
 /// Works offline and says so.
@@ -73,6 +74,7 @@ class _TopUpView extends StatelessWidget {
                       subtitle: l.pettyCashTopUpEyebrow,
                       onBack: state.step == 0 ? null : cubit.backToAmount,
                     ),
+                    const LicenceNotice(),
                     Expanded(
                       child: state.step == 0
                           ? _AmountStep(state: state)

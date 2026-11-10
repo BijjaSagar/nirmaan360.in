@@ -176,6 +176,7 @@ class ProgressRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     final String note = remark.trim();
     if (note.isEmpty) {
       throw const ValidationFailure(
@@ -271,6 +272,7 @@ class ProgressRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(workDate, 'work_date');
 
     final String uuid = newUuid();
@@ -336,6 +338,7 @@ class ProgressRepository {
     String? remark,
     required String title,
   }) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final String record = 'resolve:$entryId';
       await _ctx.outbox.enqueue(
@@ -365,6 +368,7 @@ class ProgressRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     final String record = 'stage:$floorId:$trade:$stage';
     final Map<String, String> stored = <String, String>{};
     for (final String path in photoPaths) {

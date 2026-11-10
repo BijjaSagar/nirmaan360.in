@@ -100,9 +100,9 @@
     "hi": "आपका लाइसेंस समाप्त हो गया है"
   },
   "offlineLicenceEndedBody": {
-    "en": "Nothing is lost and you can still read, add and export. To renew, connect to the internet and open this app. If it stays like this, check your plan on the Nirmaan360 website.",
-    "mr": "काहीही हरवलेले नाही. तुम्ही वाचू, जोडू आणि निर्यात करू शकता. नूतनीकरणासाठी इंटरनेटशी जोडा आणि हे ॲप उघडा. तरीही असेच राहिल्यास Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा.",
-    "hi": "कुछ नहीं खोया है। आप पढ़ सकते हैं, जोड़ सकते हैं और निर्यात कर सकते हैं। नवीनीकरण के लिए इंटरनेट से जुड़ें और यह ऐप खोलें। फिर भी ऐसा ही रहे तो Nirmaan360 वेबसाइट पर अपना प्लान देखें।"
+    "en": "Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until the licence renews. Connect to the internet to renew it.",
+    "mr": "काहीही हरवलेले नाही. तुम्ही इथले सर्व काही पाहू शकता आणि डेटाची प्रत काढू शकता, पण परवाना नूतनीकरण होईपर्यंत काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.",
+    "hi": "कुछ नहीं खोया है। आप यहाँ सब कुछ देख सकते हैं और डेटा की कॉपी निकाल सकते हैं, पर लाइसेंस नवीनीकृत होने तक कुछ जोड़ा या बदला नहीं जा सकता। नवीनीकरण के लिए इंटरनेट से जुड़ें।"
   },
   "offlineLicenceNone": {
     "en": "Not ready yet. Connect to the internet once.",
@@ -376,5 +376,90 @@
     "en": "Your plan can keep data on the server now, if you want it there.",
     "mr": "तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवू शकतो, तुम्हाला हवे असल्यास.",
     "hi": "आपका प्लान अब सर्वर पर डेटा रख सकता है, अगर आप चाहें।"
+  },
+  "offlineNoticeEnding": {
+    "en": "Your licence ends on {date}. Connect to the internet once before then and it renews by itself.",
+    "mr": "तुमचा परवाना {date} रोजी संपेल. त्याआधी एकदा इंटरनेटशी जोडा, तो आपोआप नूतनीकरण होईल.",
+    "hi": "आपका लाइसेंस {date} को समाप्त होगा। उससे पहले एक बार इंटरनेट से जुड़ें, यह अपने आप नवीनीकृत हो जाएगा।",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineNoticeEnded": {
+    "en": "Your licence ended on {date}. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.",
+    "mr": "तुमचा परवाना {date} रोजी संपला. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.",
+    "hi": "आपका लाइसेंस {date} को समाप्त हो गया। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। नवीनीकरण के लिए इंटरनेट से जुड़ें।",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineNoticeEndedNoDate": {
+    "en": "Your licence has ended. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.",
+    "mr": "तुमचा परवाना संपला आहे. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.",
+    "hi": "आपका लाइसेंस समाप्त हो गया है। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। नवीनीकरण के लिए इंटरनेट से जुड़ें।"
+  },
+  "licenceScreenTitle": {
+    "en": "Renew licence",
+    "mr": "परवाना नूतनीकरण",
+    "hi": "लाइसेंस नवीनीकरण"
+  },
+  "licenceEndedOn": {
+    "en": "Ended on {date}",
+    "mr": "{date} रोजी संपला",
+    "hi": "{date} को समाप्त हुआ",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenceTryNow": {
+    "en": "Try renewing now",
+    "mr": "आता नूतनीकरण करून पाहा",
+    "hi": "अभी नवीनीकरण करके देखें"
+  },
+  "licenceTrying": {
+    "en": "Asking the server…",
+    "mr": "सर्व्हरला विचारत आहे…",
+    "hi": "सर्वर से पूछ रहे हैं…"
+  },
+  "licenceResultOffline": {
+    "en": "No internet found. Connect to Wi-Fi or mobile data, then try again.",
+    "mr": "इंटरनेट सापडले नाही. वाय-फाय किंवा मोबाइल डेटा जोडा आणि पुन्हा प्रयत्न करा.",
+    "hi": "इंटरनेट नहीं मिला। वाई-फ़ाई या मोबाइल डेटा जोड़ें, फिर दोबारा कोशिश करें।"
+  },
+  "licenceResultNoAnswer": {
+    "en": "The server did not answer. Try again in a minute.",
+    "mr": "सर्व्हरने उत्तर दिले नाही. एका मिनिटाने पुन्हा प्रयत्न करा.",
+    "hi": "सर्वर ने जवाब नहीं दिया। एक मिनट बाद फिर कोशिश करें।"
+  },
+  "licenceResultStillEnded": {
+    "en": "Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.",
+    "mr": "जोडले गेले, पण परवाना अजूनही संपलेला आहे. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.",
+    "hi": "जुड़ गया, पर लाइसेंस अभी भी समाप्त है। Nirmaan360 वेबसाइट पर अपना प्लान जाँचें, फिर दोबारा कोशिश करें।"
+  },
+  "licenceRenewedTitle": {
+    "en": "Licence renewed",
+    "mr": "परवाना नूतनीकरण झाले",
+    "hi": "लाइसेंस नवीनीकृत हुआ"
+  },
+  "licenceRenewedBody": {
+    "en": "You can add and change things again.",
+    "mr": "आता तुम्ही पुन्हा जोडू आणि बदलू शकता.",
+    "hi": "अब आप फिर से जोड़ और बदल सकते हैं।"
+  },
+  "licenceContinue": {
+    "en": "Continue",
+    "mr": "पुढे चला",
+    "hi": "आगे बढ़ें"
+  },
+  "licenceViewData": {
+    "en": "Look at my data",
+    "mr": "माझा डेटा पाहा",
+    "hi": "मेरा डेटा देखें"
   }
 }

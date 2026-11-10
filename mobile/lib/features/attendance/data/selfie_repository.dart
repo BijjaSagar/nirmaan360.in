@@ -88,6 +88,7 @@ class SelfieRepository {
 
   /// Written when the note has been shown and the worker has agreed. A new version asks again.
   Future<void> accept(SelfieConsent consent) async {
+    _ctx.assertCanWrite();
     final String? prefix = _acceptedKey;
     if (prefix != null) await _db.writeMeta(MetaKey.selfieConsentAccepted, '$prefix${consent.version}');
   }
@@ -118,6 +119,7 @@ class SelfieRepository {
     required DateTime capturedAt,
     required SelfieConsent consent,
   }) async {
+    _ctx.assertCanWrite();
     final String uuid = newUuid();
     final Map<String, String> fields = <String, String>{
       'site_id': '$siteId',

@@ -55,6 +55,7 @@ class ApprovalRepository {
   Future<void> sendBack(int approvalId, {required String remark}) => _act(approvalId, 'return', remark);
 
   Future<void> _act(int approvalId, String action, String? remark) async {
+    _ctx.assertCanWrite();
     if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
 
     final item = await (_db.select(_db.approvalsInbox)..where((t) => t.id.equals(approvalId))).getSingleOrNull();

@@ -177,6 +177,7 @@ class MaterialRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'challan_date');
     final String uuid = newUuid();
     String? stored;
@@ -225,6 +226,7 @@ class MaterialRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'used_on');
     final String uuid = newUuid();
     await _queue(
@@ -259,6 +261,7 @@ class MaterialRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'check_date');
     final String uuid = newUuid();
     await _queue(
@@ -295,6 +298,7 @@ class MaterialRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'grn_date');
     final String uuid = newUuid();
     await _queue(
@@ -343,6 +347,7 @@ class MaterialRepository {
     required String title,
     String? subtitle,
   }) async {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'issue_date');
     final String uuid = newUuid();
     await _queue(

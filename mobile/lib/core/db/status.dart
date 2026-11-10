@@ -48,6 +48,10 @@ abstract final class MetaKey {
   /// The stable id this install holds its licence under. Kept through a sign-out.
   static const offlineDeviceId = 'offline.device_id';
 
+  /// The latest moment this phone has seen, as ISO 8601. The licence is judged
+  /// against the later of this and the clock, so setting the clock back gains nothing.
+  static const offlineSeen = 'offline.seen';
+
   /// The upload's `client_uuid` and details that have no column, for one local record.
   static String offlineRecord(String kind, int localId) => 'offline.record.$kind.$localId';
 

@@ -14,6 +14,7 @@ class LicenceClaims {
     required this.plan,
     required this.features,
     required this.expiresAt,
+    this.issuedAt,
   });
 
   final int licenceId;
@@ -22,6 +23,10 @@ class LicenceClaims {
   final String plan;
   final Set<String> features;
   final DateTime expiresAt;
+
+  /// When the server signed it. Signed along with the rest, so unlike the
+  /// phone's clock it can be believed: no later moment can come before it.
+  final DateTime? issuedAt;
 }
 
 /// Checks a `v1.<payload>.<signature>` token with the public key, and returns
@@ -62,6 +67,7 @@ Future<LicenceClaims?> verifyLicenceToken(
     final Object? organization = claims['org'];
     if (exp is! int || licence is! num || organization is! num) return null;
     if (claims['dev'] != deviceId) return null;
+    final Object? iat = claims['iat'];
 
     return LicenceClaims(
       licenceId: licence.toInt(),
@@ -70,6 +76,7 @@ Future<LicenceClaims?> verifyLicenceToken(
       plan: claims['plan'] as String? ?? '',
       features: ((claims['features'] as List?) ?? const <Object?>[]).map((e) => e.toString()).toSet(),
       expiresAt: DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true),
+      issuedAt: iat is int ? DateTime.fromMillisecondsSinceEpoch(iat * 1000, isUtc: true) : null,
     );
   } on Object catch (e) {
     // A token that cannot even be read is not a licence.

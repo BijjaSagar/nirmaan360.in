@@ -10,6 +10,7 @@ import '../../attendance/view/widgets/field_kit.dart';
 import '../../site_progress/view/widgets/progress_widgets.dart' show ProgressPhotoRow;
 import '../bloc/issue_form_cubit.dart';
 import 'widgets/issue_widgets.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// Raising an issue takes under half a minute: a title, an urgency, done.
 /// Everything else is optional, and says so.
@@ -101,6 +102,7 @@ class _IssueFormViewState extends State<_IssueFormView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   FieldTopBar(title: l.issuesFormTitle, subtitle: l.issuesFormEyebrow),
+                  const LicenceNotice(),
                   Expanded(
                     child: ListView(
                       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,

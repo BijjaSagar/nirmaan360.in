@@ -17,6 +17,7 @@ import 'widgets/manpower_rows.dart';
 import 'widgets/photo_strip.dart';
 import 'widgets/review_sheet.dart';
 import 'widgets/work_rows.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// The daily report: grouped cards, saved on every change.
 ///
@@ -278,6 +279,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
                 title: l.dprFormTitle,
                 trailing: _SaveIndicator(status: state.save, tick: state.saveTick),
               ),
+              const LicenceNotice(),
               Expanded(
                 child: DprActionLayout(
                   body: ListView(

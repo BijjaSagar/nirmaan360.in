@@ -164,6 +164,7 @@ class AttendanceRepository {
     required String status,
     Hours? otHours,
   }) {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'attendance_date');
     if (otHours != null && otHours > Hours.fromInt(16)) {
       throw const ValidationFailure(
@@ -189,6 +190,7 @@ class AttendanceRepository {
   /// Marks already on the day are kept, so a tap here never turns someone
   /// recorded absent into present. Returns how many workers were marked.
   Future<int> markAllPresent(int projectId, String date) {
+    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'attendance_date');
     return _db.transaction(() async {
       final workers = await (_db.select(_db.workers)
@@ -295,6 +297,7 @@ class AttendanceRepository {
     String type = 'own',
     Money? dailyWage,
   }) async {
+    _ctx.assertCanWrite();
     if (_ctx.offlinePlan.isLocalOnly) {
       return _addLocalWorker(name: name, trade: trade, phone: phone, type: type, dailyWage: dailyWage);
     }
@@ -402,6 +405,7 @@ class AttendanceRepository {
   /// The server dates a scan by the day it receives it. So a kept scan is only
   /// sent on the day it was made: see `SyncEngine._checkScanIsToday`.
   Future<ScanOutcome> scan(int projectId, String code) async {
+    _ctx.assertCanWrite();
     final String trimmed = code.trim();
     final int? workerId = WorkerCard.workerIdOf(trimmed);
     if (workerId == null || trimmed.length > WorkerCard.longest) return const ScanOutcome(ScanResult.notACard);

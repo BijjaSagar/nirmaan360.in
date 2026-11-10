@@ -62,6 +62,7 @@ class DprRepository {
   /// Without [clientUuid] the open draft for that project and date is reused
   /// or created. Pass [clientUuid] to edit one specific report.
   Future<String> saveDraft(DprInput input, {String? clientUuid}) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final existing = clientUuid != null
           ? await _find(clientUuid)
@@ -89,6 +90,7 @@ class DprRepository {
 
   /// Edits a RETURNED report. Call [send] when the engineer is done.
   Future<void> editReturned(String clientUuid, DprInput input) async {
+    _ctx.assertCanWrite();
     final dpr = await _require(clientUuid);
     if (dpr.status != DocStatus.returned) {
       throw RecordLocked('Only a returned report can be edited (${dpr.status}).');
@@ -102,6 +104,7 @@ class DprRepository {
     int projectId,
     String reportDate,
   ) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final yesterday = _previousDate(reportDate);
       final previous =
@@ -155,6 +158,7 @@ class DprRepository {
     String? caption,
     DateTime? takenAt,
   }) async {
+    _ctx.assertCanWrite();
     final dpr = await _require(dprClientUuid);
     await _assertEditable(dpr);
 
@@ -185,6 +189,7 @@ class DprRepository {
   /// The stored file is deliberately left in place: a file is only ever
   /// deleted after its upload has succeeded.
   Future<void> removePhoto(String photoUuid) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final photo =
           await (_db.select(_db.dprPhotos)
@@ -203,6 +208,7 @@ class DprRepository {
   /// Queues the report, then each new photo, then the submission, in one
   /// transaction. A second call while it is waiting does nothing.
   Future<void> send(String clientUuid) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final dpr = await _require(clientUuid);
       if (await _hasUnsentSubmit(clientUuid)) return;

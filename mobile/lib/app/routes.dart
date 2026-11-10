@@ -131,7 +131,38 @@ abstract final class Routes {
   /// Asks the owner before anything goes to the server.
   static const offlineUpload = '/offline-plan/upload';
 
-  static bool isOfflinePlan(String path) => path == offlinePlan || path == offlineUpload;
+  /// Where a phone goes once its licence has ended: why nothing can be added,
+  /// and a button that tries to renew now. Reading and the export stay open.
+  static const licenceEnded = '/offline-plan/renew';
+
+  static bool isOfflinePlan(String path) => path == offlinePlan || path == offlineUpload || path == licenceEnded;
+
+  /// Every page that adds or changes a record. Once a licence has ended these
+  /// all lead to [licenceEnded], and the data layer refuses the write as well.
+  static bool isEntryForm(String path) => entryForms.contains(path);
+
+  /// The paths [isEntryForm] answers for.
+  static const Set<String> entryForms = <String>{
+    projectForm,
+    boqForm,
+    dprForm,
+    measurementForm,
+    issueForm,
+    expenseForm,
+    walletForm,
+    topUp,
+    progressForm,
+    contractorRequest,
+    machineLogForm,
+    inspectionFill,
+    materialReceive,
+    materialUse,
+    materialCount,
+    materialReceiveOrder,
+    materialIssue,
+    attendanceScan,
+    attendanceSelfie,
+  };
 
   /// What a company on the offline plan has: site, measurement, labour and
   /// petty cash, and the screens that set a project up. Approvals, the outbox

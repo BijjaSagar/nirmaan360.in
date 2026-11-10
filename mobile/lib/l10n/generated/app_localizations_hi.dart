@@ -1775,6 +1775,44 @@ class AppLocalizationsHi extends AppLocalizations {
   String get issuesUnassigned => 'किसी को नहीं सौंपा';
 
   @override
+  String get licenceContinue => 'आगे बढ़ें';
+
+  @override
+  String licenceEndedOn(String date) {
+    return '$date को समाप्त हुआ';
+  }
+
+  @override
+  String get licenceRenewedBody => 'अब आप फिर से जोड़ और बदल सकते हैं।';
+
+  @override
+  String get licenceRenewedTitle => 'लाइसेंस नवीनीकृत हुआ';
+
+  @override
+  String get licenceResultNoAnswer =>
+      'सर्वर ने जवाब नहीं दिया। एक मिनट बाद फिर कोशिश करें।';
+
+  @override
+  String get licenceResultOffline =>
+      'इंटरनेट नहीं मिला। वाई-फ़ाई या मोबाइल डेटा जोड़ें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get licenceResultStillEnded =>
+      'जुड़ गया, पर लाइसेंस अभी भी समाप्त है। Nirmaan360 वेबसाइट पर अपना प्लान जाँचें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get licenceScreenTitle => 'लाइसेंस नवीनीकरण';
+
+  @override
+  String get licenceTryNow => 'अभी नवीनीकरण करके देखें';
+
+  @override
+  String get licenceTrying => 'सर्वर से पूछ रहे हैं…';
+
+  @override
+  String get licenceViewData => 'मेरा डेटा देखें';
+
+  @override
   String get machineCategoryBackhoe => 'JCB / बैकहो लोडर';
 
   @override
@@ -2568,7 +2606,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get offlineLicenceEndedBody =>
-      'कुछ नहीं खोया है। आप पढ़ सकते हैं, जोड़ सकते हैं और निर्यात कर सकते हैं। नवीनीकरण के लिए इंटरनेट से जुड़ें और यह ऐप खोलें। फिर भी ऐसा ही रहे तो Nirmaan360 वेबसाइट पर अपना प्लान देखें।';
+      'कुछ नहीं खोया है। आप यहाँ सब कुछ देख सकते हैं और डेटा की कॉपी निकाल सकते हैं, पर लाइसेंस नवीनीकृत होने तक कुछ जोड़ा या बदला नहीं जा सकता। नवीनीकरण के लिए इंटरनेट से जुड़ें।';
 
   @override
   String get offlineLicenceEndedTitle => 'आपका लाइसेंस समाप्त हो गया है';
@@ -2600,6 +2638,20 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get offlineNeedsSignInTitle => 'नवीनीकरण के लिए फिर साइन इन करें';
+
+  @override
+  String offlineNoticeEnded(String date) {
+    return 'आपका लाइसेंस $date को समाप्त हो गया। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। नवीनीकरण के लिए इंटरनेट से जुड़ें।';
+  }
+
+  @override
+  String get offlineNoticeEndedNoDate =>
+      'आपका लाइसेंस समाप्त हो गया है। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। नवीनीकरण के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String offlineNoticeEnding(String date) {
+    return 'आपका लाइसेंस $date को समाप्त होगा। उससे पहले एक बार इंटरनेट से जुड़ें, यह अपने आप नवीनीकृत हो जाएगा।';
+  }
 
   @override
   String get offlineOnPhoneTag => 'इस फ़ोन पर';

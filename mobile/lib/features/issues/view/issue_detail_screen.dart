@@ -10,6 +10,7 @@ import '../bloc/issue_detail_cubit.dart';
 import '../bloc/issue_helpers.dart';
 import '../data/issue_repository.dart';
 import 'widgets/issue_widgets.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 
 class IssueDetailScreen extends StatelessWidget {
   const IssueDetailScreen({super.key, required this.clientUuid});
@@ -160,6 +161,7 @@ class _Body extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         FieldTopBar(title: l.issuesTitle),
+        const LicenceNotice(),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(

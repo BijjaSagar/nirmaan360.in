@@ -821,6 +821,24 @@
   "issuesSyncSending": "Sending",
   "issuesTitle": "Issues",
   "issuesUnassigned": "Not assigned",
+  "licenceContinue": "Continue",
+  "licenceEndedOn": "Ended on {date}",
+  "@licenceEndedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "licenceRenewedBody": "You can add and change things again.",
+  "licenceRenewedTitle": "Licence renewed",
+  "licenceResultNoAnswer": "The server did not answer. Try again in a minute.",
+  "licenceResultOffline": "No internet found. Connect to Wi-Fi or mobile data, then try again.",
+  "licenceResultStillEnded": "Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.",
+  "licenceScreenTitle": "Renew licence",
+  "licenceTryNow": "Try renewing now",
+  "licenceTrying": "Asking the server…",
+  "licenceViewData": "Look at my data",
   "machineCategoryBackhoe": "JCB / Backhoe loader",
   "machineCategoryCompressor": "Compressor",
   "machineCategoryCrane": "Crane",
@@ -1170,7 +1188,7 @@
       }
     }
   },
-  "offlineLicenceEndedBody": "Nothing is lost and you can still read, add and export. To renew, connect to the internet and open this app. If it stays like this, check your plan on the Nirmaan360 website.",
+  "offlineLicenceEndedBody": "Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until the licence renews. Connect to the internet to renew it.",
   "offlineLicenceEndedTitle": "Your licence has ended",
   "offlineLicenceEndingBody": "Ends on {date}. Connect to the internet once and it renews by itself.",
   "@offlineLicenceEndingBody": {
@@ -1187,6 +1205,23 @@
   "offlineNeedsInternet": "This needs the internet. Your data here is not affected.",
   "offlineNeedsSignInBody": "Nothing is lost. Your work continues here. The licence can only renew after you sign in.",
   "offlineNeedsSignInTitle": "Sign in again to renew",
+  "offlineNoticeEnded": "Your licence ended on {date}. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.",
+  "@offlineNoticeEnded": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineNoticeEndedNoDate": "Your licence has ended. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.",
+  "offlineNoticeEnding": "Your licence ends on {date}. Connect to the internet once before then and it renews by itself.",
+  "@offlineNoticeEnding": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "offlineOnPhoneTag": "On this phone",
   "offlineOnPhoneTitle": "Only on this phone",
   "offlineOnlyHereBody": "Nothing is kept on our server. If this phone is lost or reset, the data is gone. Export a copy and keep it safe.",

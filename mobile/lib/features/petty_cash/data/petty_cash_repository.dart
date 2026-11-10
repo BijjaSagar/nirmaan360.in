@@ -97,6 +97,7 @@ class PettyCashRepository {
     String? description,
     String? billSourcePath,
   }) async {
+    _ctx.assertCanWrite();
     _assertEntry(amount, entryDate);
     if (category == null || category.trim().isEmpty) {
       throw const ValidationFailure(
@@ -161,6 +162,7 @@ class PettyCashRepository {
     required String entryDate,
     String? description,
   }) async {
+    _ctx.assertCanWrite();
     _assertEntry(amount, entryDate);
     final wallet = await _requireWallet(walletId);
 
@@ -187,6 +189,7 @@ class PettyCashRepository {
     required String name,
     int? userId,
   }) {
+    _ctx.assertCanWrite();
     if (_ctx.offlinePlan.isLocalOnly) {
       _ctx.assertWithin(<(String, String?, int)>[('name', name, 120)]);
       return _ctx.createLocal(

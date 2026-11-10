@@ -41,6 +41,11 @@ class DataContext {
 
   int? get currentUserId => session.user?.id;
 
+  /// Throws [LicenceEnded] once an offline licence has ended; does nothing for a
+  /// company on a normal plan. Every path that adds or changes a record on the
+  /// phone calls this first, before it touches anything.
+  void assertCanWrite() => offlinePlan.assertCanWrite();
+
   /// Today's calendar date in India, `YYYY-MM-DD`.
   String get today => istDate(clock.now());
 
@@ -62,6 +67,7 @@ class DataContext {
     required Future<Map<String, dynamic>> Function(String clientUuid) send,
     required Future<T> Function(Map<String, dynamic> row) store,
   }) async {
+    assertCanWrite();
     if (!connectivity.isOnline) throw const OfflineFailure();
 
     final normalised = identity
@@ -94,7 +100,8 @@ class DataContext {
     required String table,
     Map<String, Object?> extras = const <String, Object?>{},
     required Future<T> Function(int localId) insert,
-  }) {
+  }) async {
+    assertCanWrite();
     return db.transaction(() async {
       final row = await db.customSelect('SELECT MIN(COALESCE(MIN(id), 0), 0) - 1 AS next FROM $table').getSingle();
       final int localId = row.read<int>('next');

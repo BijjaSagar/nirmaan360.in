@@ -44,6 +44,63 @@ enum LicenceIssue { none, deviceLimit, revoked, invalid }
 /// How the licence stands today.
 enum LicenceStanding { active, endingSoon, ended, none }
 
+/// From this long before the licence ends the app says so, calmly. A week,
+/// because a site may be without a network for days.
+const Duration kLicenceWarning = Duration(days: 7);
+
+/// How the licence stands right now, as screens and the write guard see it.
+@immutable
+class LicenceStatus extends Equatable {
+  const LicenceStatus({this.standing = LicenceStanding.none, this.endsAt, this.entriesBlocked = false});
+
+  final LicenceStanding standing;
+
+  /// From the verified token, never from anything the phone can edit.
+  final DateTime? endsAt;
+
+  /// New entries and edits are refused. Reading and the export still work.
+  final bool entriesBlocked;
+
+  /// Inside the last week, and not yet over.
+  bool get isEndingSoon => standing == LicenceStanding.endingSoon;
+
+  /// What a company on a normal plan has: nothing to say about a licence.
+  static const LicenceStatus none = LicenceStatus();
+
+  @override
+  List<Object?> get props => <Object?>[standing, endsAt, entriesBlocked];
+}
+
+/// What came of asking for a new licence at once.
+enum LicenceRenewal {
+  /// A fresh token is in and entries are open again.
+  renewed,
+
+  /// There is no network to ask on.
+  offline,
+
+  /// The server did not answer, or answered with an error.
+  noAnswer,
+
+  /// The server answered, but the licence it gave has already ended too.
+  stillEnded,
+
+  /// The server no longer accepts the sign-in, so renewing needs a fresh one.
+  needsSignIn,
+
+  /// The owner freed this phone on the web. It takes a person to take the slot back.
+  freed,
+
+  /// Another phone holds the only slot.
+  deviceLimit,
+
+  /// The company now syncs online, so there is no licence to renew.
+  planChanged,
+
+  /// Nothing to renew: not on the offline plan.
+  notNeeded,
+}
+
 /// Everything this phone holds about the offline plan. Stored as one JSON
 /// value. Its absence is what a company on any normal plan looks like.
 @immutable
@@ -54,6 +111,7 @@ class OfflinePlanState extends Equatable {
     this.publicKey,
     this.keyId,
     this.expiresAt,
+    this.issuedAt,
     this.issue = LicenceIssue.none,
     this.manageUrl,
     this.upgradeUrl,
@@ -75,6 +133,7 @@ class OfflinePlanState extends Equatable {
       publicKey: json['public_key'] as String?,
       keyId: json['key_id'] as String?,
       expiresAt: DateTime.tryParse(json['expires_at'] as String? ?? '')?.toUtc(),
+      issuedAt: DateTime.tryParse(json['issued_at'] as String? ?? '')?.toUtc(),
       issue: named(LicenceIssue.values, json['issue'], LicenceIssue.none),
       manageUrl: json['manage_url'] as String?,
       upgradeUrl: json['upgrade_url'] as String?,
@@ -90,6 +149,9 @@ class OfflinePlanState extends Equatable {
 
   /// From the verified token, never from the server's reply beside it.
   final DateTime? expiresAt;
+
+  /// When the server signed the token, also from the verified token.
+  final DateTime? issuedAt;
   final LicenceIssue issue;
 
   /// Where the owner frees a phone.
@@ -105,12 +167,27 @@ class OfflinePlanState extends Equatable {
 
   bool get hasToken => token != null;
 
+  /// [now] should come from [OfflinePlan.now], which a clock set back cannot fool.
   LicenceStanding standing(DateTime now) {
     final DateTime? end = expiresAt;
+    // A token that failed its signature check is no licence, with or without one stored.
+    if (issue == LicenceIssue.invalid) return LicenceStanding.ended;
     if (token == null || end == null) return LicenceStanding.none;
-    if (issue == LicenceIssue.invalid || !end.isAfter(now)) return LicenceStanding.ended;
-    if (end.difference(now) <= const Duration(days: 14)) return LicenceStanding.endingSoon;
+    if (!end.isAfter(now)) return LicenceStanding.ended;
+    if (end.difference(now) <= kLicenceWarning) return LicenceStanding.endingSoon;
     return LicenceStanding.active;
+  }
+
+  /// Entries are refused only while the company is still on the offline plan.
+  /// Once the server says it syncs, there is no licence to renew, and a phone
+  /// whose owner chose to stay local is a normal company's phone.
+  LicenceStatus statusAt(DateTime now) {
+    final LicenceStanding at = standing(now);
+    return LicenceStatus(
+      standing: at,
+      endsAt: expiresAt,
+      entriesBlocked: mode == OfflineMode.local && at == LicenceStanding.ended,
+    );
   }
 
   OfflinePlanState copyWith({
@@ -119,6 +196,7 @@ class OfflinePlanState extends Equatable {
     String? publicKey,
     String? keyId,
     DateTime? expiresAt,
+    DateTime? issuedAt,
     LicenceIssue? issue,
     String? manageUrl,
     bool clearManageUrl = false,
@@ -132,6 +210,7 @@ class OfflinePlanState extends Equatable {
       publicKey: publicKey ?? this.publicKey,
       keyId: keyId ?? this.keyId,
       expiresAt: expiresAt ?? this.expiresAt,
+      issuedAt: issuedAt ?? this.issuedAt,
       issue: issue ?? this.issue,
       manageUrl: clearManageUrl ? null : (manageUrl ?? this.manageUrl),
       upgradeUrl: upgradeUrl ?? this.upgradeUrl,
@@ -146,6 +225,7 @@ class OfflinePlanState extends Equatable {
     'public_key': publicKey,
     'key_id': keyId,
     'expires_at': expiresAt?.toIso8601String(),
+    'issued_at': issuedAt?.toIso8601String(),
     'issue': issue.name,
     'manage_url': manageUrl,
     'upgrade_url': upgradeUrl,
@@ -160,6 +240,7 @@ class OfflinePlanState extends Equatable {
     publicKey,
     keyId,
     expiresAt,
+    issuedAt,
     issue,
     manageUrl,
     upgradeUrl,
@@ -200,6 +281,7 @@ class OfflinePlan {
     this.appVersion,
     this.normalInterval = const Duration(hours: 6),
     this.localInterval = const Duration(hours: 1),
+    this.nearEndInterval = const Duration(seconds: 30),
   });
 
   final AppDatabase _db;
@@ -217,13 +299,101 @@ class OfflinePlan {
   /// How often a phone on the plan renews its licence while online.
   final Duration localInterval;
 
+  /// How soon a phone that is in its last week, or past the end, asks again.
+  /// Short, because every minute online is a chance it must not waste.
+  final Duration nearEndInterval;
+
   final StreamController<OfflinePlanState?> _changes = StreamController<OfflinePlanState?>.broadcast();
+  final StreamController<LicenceStatus> _licenceChanges = StreamController<LicenceStatus>.broadcast();
+  final StreamController<LicenceEnded> _refusals = StreamController<LicenceEnded>.broadcast();
 
   OfflinePlanState? _state;
   DateTime? _lastAsked;
   Future<void>? _asking;
+  bool _lastAskFailed = false;
+  StreamSubscription<bool>? _connectivitySub;
+  Timer? _clockTimer;
+
+  /// The latest moment this app has seen, kept in memory and on disk.
+  DateTime? _seen;
+  DateTime? _seenSaved;
+  LicenceStatus _lastStatus = LicenceStatus.none;
 
   OfflinePlanState? get state => _state;
+
+  /// The time the licence is judged by: the later of the phone's clock, the
+  /// latest moment this app has ever seen, and the moment the server signed the
+  /// current token. Setting the clock back changes none of those, so it buys no
+  /// extra days. Every screen and the write guard ask this, never the clock.
+  DateTime now() {
+    var latest = _clock.now().toUtc();
+    final DateTime? seen = _seen;
+    if (seen != null && seen.isAfter(latest)) latest = seen;
+    final DateTime? signed = _state?.issuedAt;
+    if (signed != null && signed.isAfter(latest)) latest = signed;
+    _seen = latest;
+    return latest;
+  }
+
+  /// How the licence stands now. [LicenceStatus.none] for a normal company.
+  LicenceStatus get licence => _statusOf(_state);
+
+  LicenceStatus _statusOf(OfflinePlanState? state) => state == null ? LicenceStatus.none : state.statusAt(now());
+
+  /// Emits the current status on listen, then every change.
+  Stream<LicenceStatus> get licenceChanges => Stream.multi((controller) {
+    controller.add(licence);
+    final StreamSubscription<LicenceStatus> subscription = _licenceChanges.stream.listen(controller.add);
+    controller.onCancel = subscription.cancel;
+  });
+
+  /// Fires each time a write is turned away because the licence has ended, so
+  /// the app can open the page that explains it, wherever the write came from.
+  Stream<LicenceEnded> get refusals => _refusals.stream;
+
+  /// Throws [LicenceEnded] when the licence has ended, and does nothing for a
+  /// company on a normal plan. Every path that adds or changes a record on the
+  /// phone calls this first, before it touches anything.
+  void assertCanWrite() {
+    if (_state == null) return;
+    final LicenceStatus status = licence;
+    if (!status.entriesBlocked) return;
+    final refusal = LicenceEnded(endedAt: status.endsAt);
+    // Screens that were drawn before the licence ran out catch up now.
+    _emitLicence();
+    if (!_refusals.isClosed) _refusals.add(refusal);
+    throw refusal;
+  }
+
+  /// Keeps the latest moment seen, so a clock set back and a restart cannot
+  /// take days back. Cheap: writes only when a minute has passed.
+  Future<void> rememberTime() async {
+    if (_state == null) return;
+    final DateTime latest = now();
+    final DateTime? saved = _seenSaved;
+    if (saved != null && latest.difference(saved).abs() < const Duration(minutes: 1)) return;
+    _seenSaved = latest;
+    try {
+      await _db.writeMeta(MetaKey.offlineSeen, latest.toIso8601String());
+    } on Object catch (e) {
+      // Closed under us at shutdown, or a full disk. The next call tries again.
+      _seenSaved = saved;
+      debugPrint('Could not remember the time: $e');
+    }
+  }
+
+  /// Starts the one-minute watch that saves the time and flips the screens the
+  /// moment the licence ends. Not started in tests, which move the clock by hand.
+  void startWatching() {
+    _clockTimer ??= Timer.periodic(const Duration(minutes: 1), (_) => unawaited(tick()));
+  }
+
+  /// One look at the time: saves it and tells anyone listening if the licence
+  /// has crossed a line.
+  Future<void> tick() async {
+    await rememberTime();
+    _emitLicence();
+  }
 
   /// True for every mode: until the upload has finished, nothing syncs.
   bool get isLocalOnly => _state != null;
@@ -239,6 +409,7 @@ class OfflinePlan {
   Future<void> load() async {
     final OfflinePlanState? stored = await readStored(_db);
     if (stored == null) return;
+    await _readSeen();
     var current = stored;
     if (current.token != null && current.publicKey != null) {
       final LicenceClaims? claims = await verifyLicenceToken(
@@ -250,11 +421,23 @@ class OfflinePlan {
           ? current.copyWith(issue: LicenceIssue.invalid)
           : current.copyWith(
               expiresAt: claims.expiresAt,
+              issuedAt: claims.issuedAt,
               issue: current.issue == LicenceIssue.invalid ? LicenceIssue.none : current.issue,
             );
+    } else if (current.token == null && current.expiresAt != null) {
+      // An end date with no token to back it can only have been edited.
+      current = current.copyWith(issue: LicenceIssue.invalid);
     }
     await _seedLocal();
     await _write(current);
+    await rememberTime();
+  }
+
+  Future<void> _readSeen() async {
+    final DateTime? saved = DateTime.tryParse(await _db.readMeta(MetaKey.offlineSeen) ?? '')?.toUtc();
+    if (saved == null) return;
+    _seenSaved = saved;
+    if (_seen == null || saved.isAfter(_seen!)) _seen = saved;
   }
 
   static Future<OfflinePlanState?> readStored(AppDatabase db) async {
@@ -285,12 +468,13 @@ class OfflinePlan {
   }
 
   Future<void> _ask(bool force) async {
+    _lastAskFailed = false;
     try {
       final user = _session.user;
       // A contractor's login may call almost nothing, and has no plan of its own.
       if (user == null || user.isContractor || !_connectivity.isOnline) return;
       if (!force && !_isDue()) return;
-      _lastAsked = _clock.now();
+      _lastAsked = now();
 
       final Map<String, dynamic> status = await _api.offlineStatus();
       if (status['offline'] == true) {
@@ -305,9 +489,11 @@ class OfflinePlan {
       await _enterOrStayLocal();
     } on ApiFailure catch (e) {
       // A renewal that met no answer should not wait out the whole interval.
+      _lastAskFailed = true;
       if (_state != null) _lastAsked = null;
       debugPrint('Plan check failed: $e');
     } on Object catch (e) {
+      _lastAskFailed = true;
       debugPrint('Plan check failed: $e');
     }
   }
@@ -315,7 +501,32 @@ class OfflinePlan {
   bool _isDue() {
     final DateTime? last = _lastAsked;
     if (last == null) return true;
-    return _clock.now().difference(last) >= (_state == null ? normalInterval : localInterval);
+    final OfflinePlanState? current = _state;
+    final Duration waited = now().difference(last);
+    if (current == null) return waited >= normalInterval;
+    // In the last week, or past the end, every chance online is used.
+    final LicenceStanding standing = current.standing(now());
+    final bool nearEnd = standing == LicenceStanding.endingSoon || standing == LicenceStanding.ended;
+    return waited >= (nearEnd ? nearEndInterval : localInterval);
+  }
+
+  /// Asks for a new licence right now and says what came of it. Never throws.
+  /// A fresh token lifts the block as it arrives, with no restart.
+  Future<LicenceRenewal> renewNow() async {
+    if (_state == null) return LicenceRenewal.notNeeded;
+    if (!_connectivity.isOnline) return LicenceRenewal.offline;
+    // A check already in flight may have decided it was not due.
+    final Future<void>? running = _asking;
+    if (running != null) await running;
+    await check(force: true);
+
+    final OfflinePlanState? after = _state;
+    if (after == null || after.mode != OfflineMode.local) return LicenceRenewal.planChanged;
+    if (after.needsSignIn) return LicenceRenewal.needsSignIn;
+    if (after.issue == LicenceIssue.revoked) return LicenceRenewal.freed;
+    if (after.issue == LicenceIssue.deviceLimit) return LicenceRenewal.deviceLimit;
+    if (_lastAskFailed) return LicenceRenewal.noAnswer;
+    return licence.entriesBlocked ? LicenceRenewal.stillEnded : LicenceRenewal.renewed;
   }
 
   /// The sync engine was told `offline_plan`, or wrote it down in the background.
@@ -323,6 +534,7 @@ class OfflinePlan {
     await markLocal(_db, upgradeUrl: upgradeUrl);
     _state = await readStored(_db);
     await _seedLocal();
+    _watchConnectivity();
     _emit();
     unawaited(check(force: true));
   }
@@ -407,16 +619,25 @@ class OfflinePlan {
       debugPrint('Licence token failed its signature check.');
       return;
     }
+    // The server's own signed time is the one moment that can be believed, so a
+    // phone whose clock once ran far ahead recovers as soon as it renews.
+    final DateTime? signed = claims.issuedAt;
+    if (signed != null) _seen = signed;
     await _write(
       _state!.copyWith(
         token: token,
         publicKey: publicKey,
         keyId: keyId,
         expiresAt: claims.expiresAt,
+        issuedAt: signed,
         issue: LicenceIssue.none,
         clearManageUrl: true,
       ),
     );
+    if (signed != null) {
+      _seenSaved = null;
+      await rememberTime();
+    }
   }
 
   /// The owner asked to take a slot, after a phone was freed.
@@ -462,7 +683,12 @@ class OfflinePlan {
   /// Back to being a normal company.
   Future<void> leave() async {
     await _db.deleteMeta(MetaKey.offlinePlan);
+    await _db.deleteMeta(MetaKey.offlineSeen);
     _state = null;
+    _seen = null;
+    _seenSaved = null;
+    unawaited(_connectivitySub?.cancel());
+    _connectivitySub = null;
     _emit();
   }
 
@@ -524,11 +750,37 @@ class OfflinePlan {
     if (next == _state && await _db.readMeta(MetaKey.offlinePlan) != null) return;
     await _db.writeMeta(MetaKey.offlinePlan, jsonEncode(next.toJson()));
     _state = next;
+    _watchConnectivity();
     _emit();
   }
 
   void _emit() {
     if (!_changes.isClosed) _changes.add(_state);
+    _emitLicence();
+  }
+
+  void _emitLicence() {
+    final LicenceStatus status = licence;
+    if (status == _lastStatus) return;
+    _lastStatus = status;
+    if (!_licenceChanges.isClosed) _licenceChanges.add(status);
+  }
+
+  /// The moment the phone is online, a phone on the plan asks for a new licence
+  /// by itself. The scheduler does the same on its own beat; this one needs no
+  /// timer, so the renewal never waits on a sync run.
+  void _watchConnectivity() {
+    if (_connectivitySub != null) return;
+    _connectivitySub = _connectivity.changes.listen((online) {
+      if (online && _state != null) unawaited(check());
+    });
+  }
+
+  void _stopWatching() {
+    unawaited(_connectivitySub?.cancel());
+    _connectivitySub = null;
+    _clockTimer?.cancel();
+    _clockTimer = null;
   }
 
   /// Where the owner frees phones. The server names it with `device_limit`
@@ -551,7 +803,12 @@ class OfflinePlan {
     _ => AppConfig.deviceName,
   };
 
-  Future<void> dispose() => _changes.close();
+  Future<void> dispose() async {
+    _stopWatching();
+    await _changes.close();
+    await _licenceChanges.close();
+    await _refusals.close();
+  }
 }
 
 const Map<String, Object> _localLookups = <String, Object>{

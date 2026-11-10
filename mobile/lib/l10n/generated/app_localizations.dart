@@ -3298,6 +3298,72 @@ abstract class AppLocalizations {
   /// **'Not assigned'**
   String get issuesUnassigned;
 
+  /// No description provided for @licenceContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get licenceContinue;
+
+  /// No description provided for @licenceEndedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended on {date}'**
+  String licenceEndedOn(String date);
+
+  /// No description provided for @licenceRenewedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add and change things again.'**
+  String get licenceRenewedBody;
+
+  /// No description provided for @licenceRenewedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Licence renewed'**
+  String get licenceRenewedTitle;
+
+  /// No description provided for @licenceResultNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not answer. Try again in a minute.'**
+  String get licenceResultNoAnswer;
+
+  /// No description provided for @licenceResultOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet found. Connect to Wi-Fi or mobile data, then try again.'**
+  String get licenceResultOffline;
+
+  /// No description provided for @licenceResultStillEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.'**
+  String get licenceResultStillEnded;
+
+  /// No description provided for @licenceScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Renew licence'**
+  String get licenceScreenTitle;
+
+  /// No description provided for @licenceTryNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Try renewing now'**
+  String get licenceTryNow;
+
+  /// No description provided for @licenceTrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking the server…'**
+  String get licenceTrying;
+
+  /// No description provided for @licenceViewData.
+  ///
+  /// In en, this message translates to:
+  /// **'Look at my data'**
+  String get licenceViewData;
+
   /// No description provided for @machineCategoryBackhoe.
   ///
   /// In en, this message translates to:
@@ -4723,7 +4789,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineLicenceEndedBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing is lost and you can still read, add and export. To renew, connect to the internet and open this app. If it stays like this, check your plan on the Nirmaan360 website.'**
+  /// **'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until the licence renews. Connect to the internet to renew it.'**
   String get offlineLicenceEndedBody;
 
   /// No description provided for @offlineLicenceEndedTitle.
@@ -4779,6 +4845,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in again to renew'**
   String get offlineNeedsSignInTitle;
+
+  /// No description provided for @offlineNoticeEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Your licence ended on {date}. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.'**
+  String offlineNoticeEnded(String date);
+
+  /// No description provided for @offlineNoticeEndedNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Your licence has ended. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.'**
+  String get offlineNoticeEndedNoDate;
+
+  /// No description provided for @offlineNoticeEnding.
+  ///
+  /// In en, this message translates to:
+  /// **'Your licence ends on {date}. Connect to the internet once before then and it renews by itself.'**
+  String offlineNoticeEnding(String date);
 
   /// No description provided for @offlineOnPhoneTag.
   ///

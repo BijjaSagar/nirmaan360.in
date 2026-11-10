@@ -1788,6 +1788,44 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesUnassigned => 'कोणाकडेही नाही';
 
   @override
+  String get licenceContinue => 'पुढे चला';
+
+  @override
+  String licenceEndedOn(String date) {
+    return '$date रोजी संपला';
+  }
+
+  @override
+  String get licenceRenewedBody => 'आता तुम्ही पुन्हा जोडू आणि बदलू शकता.';
+
+  @override
+  String get licenceRenewedTitle => 'परवाना नूतनीकरण झाले';
+
+  @override
+  String get licenceResultNoAnswer =>
+      'सर्व्हरने उत्तर दिले नाही. एका मिनिटाने पुन्हा प्रयत्न करा.';
+
+  @override
+  String get licenceResultOffline =>
+      'इंटरनेट सापडले नाही. वाय-फाय किंवा मोबाइल डेटा जोडा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get licenceResultStillEnded =>
+      'जोडले गेले, पण परवाना अजूनही संपलेला आहे. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get licenceScreenTitle => 'परवाना नूतनीकरण';
+
+  @override
+  String get licenceTryNow => 'आता नूतनीकरण करून पाहा';
+
+  @override
+  String get licenceTrying => 'सर्व्हरला विचारत आहे…';
+
+  @override
+  String get licenceViewData => 'माझा डेटा पाहा';
+
+  @override
   String get machineCategoryBackhoe => 'JCB / बॅकहो लोडर';
 
   @override
@@ -2577,7 +2615,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get offlineLicenceEndedBody =>
-      'काहीही हरवलेले नाही. तुम्ही वाचू, जोडू आणि निर्यात करू शकता. नूतनीकरणासाठी इंटरनेटशी जोडा आणि हे ॲप उघडा. तरीही असेच राहिल्यास Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा.';
+      'काहीही हरवलेले नाही. तुम्ही इथले सर्व काही पाहू शकता आणि डेटाची प्रत काढू शकता, पण परवाना नूतनीकरण होईपर्यंत काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.';
 
   @override
   String get offlineLicenceEndedTitle => 'तुमचा परवाना संपला आहे';
@@ -2609,6 +2647,20 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get offlineNeedsSignInTitle => 'नूतनीकरणासाठी पुन्हा साइन इन करा';
+
+  @override
+  String offlineNoticeEnded(String date) {
+    return 'तुमचा परवाना $date रोजी संपला. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.';
+  }
+
+  @override
+  String get offlineNoticeEndedNoDate =>
+      'तुमचा परवाना संपला आहे. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.';
+
+  @override
+  String offlineNoticeEnding(String date) {
+    return 'तुमचा परवाना $date रोजी संपेल. त्याआधी एकदा इंटरनेटशी जोडा, तो आपोआप नूतनीकरण होईल.';
+  }
 
   @override
   String get offlineOnPhoneTag => 'या फोनवर';

@@ -95,6 +95,7 @@ class SyncRepository {
   /// restores the server's copy. Stored files are left on disk, because a
   /// file is only ever deleted after its upload has succeeded.
   Future<void> discard(int outboxId) {
+    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final row =
           await (_db.select(_db.outbox)..where((t) => t.id.equals(outboxId)))

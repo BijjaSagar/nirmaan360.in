@@ -155,6 +155,7 @@ class FakeApi implements NirmaanApi {
         'plan': 'offline',
         'features': <String>['site', 'measurement', 'labour', 'petty_cash'],
         'max_devices': 1,
+        'iat': _now.millisecondsSinceEpoch ~/ 1000,
         'exp': exp,
       }),
     );

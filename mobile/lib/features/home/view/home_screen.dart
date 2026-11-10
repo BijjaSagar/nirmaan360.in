@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../contractor_control/data/contractor_models.dart';
 import '../../projects/view/widgets/project_photo.dart';
+import '../../offline_plan/view/widgets/licence_notice.dart';
 import '../../site_alerts/data/site_alerts_models.dart';
 import '../../site_alerts/view/site_dashboard_screen.dart' show AlertSeverityWords, alertStampKind;
 import '../../site_progress/data/progress_models.dart' show percentText;
@@ -72,7 +73,7 @@ class _HomeView extends StatelessWidget {
           // a sentence fits here, and the grid is already full.
           final OfflinePlanState? offline = context.select((AppGate gate) => gate.state.offline);
           final List<Widget> siteRows = <Widget>[
-            if (offline != null) _OnThisPhoneRow(offline: offline),
+            if (offline != null) const _OnThisPhoneRow(),
             if (siteControl && (user?.can('progress.view') ?? false) && !(state.site?.refused ?? false))
               _SiteAlertsRow(site: state.site),
             if (siteControl && (user?.can('contractor.view') ?? false) && !(state.contractors?.refused ?? false))
@@ -93,6 +94,8 @@ class _HomeView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
+                        // The last week of an offline licence, or its end. Nothing for any other plan.
+                        const LicenceNotice(padding: EdgeInsets.only(bottom: N360Space.cardGap)),
                         if (state.returned.isNotEmpty) ...<Widget>[
                           LedgerList(
                             children: <Widget>[for (final item in state.returned) _ReturnedRow(item: item)],
@@ -141,6 +144,11 @@ class _HomeView extends StatelessWidget {
   void _openReport(BuildContext context, HomeSummary? data, bool canWrite) {
     final String? uuid = data?.dprClientUuid;
     final bool localOnly = context.read<AppGate>().state.isLocalOnly;
+    // Once the licence has ended the form is closed, so a report opens to be read.
+    if (context.read<AppGate>().state.licenceEnded) {
+      context.push(uuid != null ? Routes.dprDetail(uuid) : Routes.dprList);
+      return;
+    }
     switch (data?.dprState) {
       case DprDayState.notStarted when canWrite:
         context.push(Routes.dprForm);
@@ -368,17 +376,14 @@ class _SyncTag extends StatelessWidget {
 
 /// Says, every day, that this phone holds the only copy, and leads to the export.
 class _OnThisPhoneRow extends StatelessWidget {
-  const _OnThisPhoneRow({required this.offline});
-
-  final OfflinePlanState offline;
+  const _OnThisPhoneRow();
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final DateTime now = context.read<AppServices>().context.clock.now();
     // Once the owner has chosen to stay local on an online plan, there is no
     // licence left to renew and no reason to go on about one.
-    final bool ended = offline.mode == OfflineMode.local && offline.standing(now) == LicenceStanding.ended;
+    final bool ended = context.select((AppGate gate) => gate.state.licenceEnded);
     return LedgerListTile(
       key: const ValueKey<String>('home-on-this-phone'),
       leading: Icon(
