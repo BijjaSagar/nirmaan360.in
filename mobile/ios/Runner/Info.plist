@@ -51,6 +51,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Take site photos and bill photos, and scan a worker's attendance card.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Nirmaan360 only uses location while you take a worker's attendance photo, to show it was taken at the site. It never follows you in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>When you take a worker's attendance photo, the phone notes where it was taken, so the office can see it was taken at the site. It is asked only then.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
