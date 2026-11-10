@@ -7,6 +7,7 @@ use App\Models\Material;
 use App\Models\MaterialShortDelivery;
 use App\Models\User;
 use App\Notifications\ProcurementAlert;
+use App\Services\Notify\MaterialNotifier;
 use App\Services\Procurement\ProcurementRules;
 use App\Services\Procurement\StockLedgerService;
 use App\Services\Procurement\UnitConverter;
@@ -30,6 +31,7 @@ class ShortDeliveryService
         private StockLedgerService $ledger,
         private UnitConverter $units,
         private SupplierRecordService $suppliers,
+        private MaterialNotifier $notifier,
     ) {}
 
     public function rules(): array
@@ -63,6 +65,8 @@ class ShortDeliveryService
         ]);
 
         $this->alertIfRepeated($row);
+        // A shortage opens a gap that needs a written reason, so the people who can write it are pushed.
+        $this->notifier->shortDelivery($row, $by);
 
         return $row;
     }
@@ -148,6 +152,8 @@ class ShortDeliveryService
         ]], $by);
 
         $this->alertIfRepeated($row);
+        // A shortage opens a gap that needs a written reason, so the people who can write it are pushed.
+        $this->notifier->shortDelivery($row, $by);
 
         return $row;
     }

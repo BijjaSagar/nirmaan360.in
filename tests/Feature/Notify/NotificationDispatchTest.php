@@ -7,7 +7,6 @@ use App\Mail\Notify\WorkflowNotificationMail;
 use App\Models\DeviceToken;
 use App\Models\Issue;
 use App\Models\NotificationFailure;
-use App\Models\NotificationPreference;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\User;
@@ -36,22 +35,6 @@ class NotificationDispatchTest extends NotifyTestCase
         parent::setUp();
         $this->organization = $this->tenant();
         $this->project = $this->makeProject($this->organization);
-    }
-
-    private function device(User $user, string $token = 'device-1'): DeviceToken
-    {
-        return DeviceToken::withoutGlobalScopes()->create([
-            'organization_id' => $user->organization_id,
-            'user_id' => $user->id,
-            'token_hash' => DeviceToken::hashOf($token),
-            'token' => $token,
-            'platform' => 'android',
-        ]);
-    }
-
-    private function prefer(User $user, array $choices): void
-    {
-        NotificationPreference::withoutGlobalScopes()->updateOrCreate(['user_id' => $user->id], ['organization_id' => $user->organization_id, ...$choices]);
     }
 
     private function submitEntry(User $engineer)
@@ -157,8 +140,8 @@ class NotificationDispatchTest extends NotifyTestCase
         $engineer = $this->member($this->organization);
         $qs = $this->member($this->organization, 'qs');
         $qs->update(['phone' => '9876543210']);
-        $this->device($qs, 'one');
-        $this->device($qs, 'two');
+        $this->phone($qs, 'one');
+        $this->phone($qs, 'two');
         $this->prefer($qs, ['email' => false, 'push' => true, 'whatsapp' => true]);
         $this->actingAs($engineer);
 
@@ -191,7 +174,7 @@ class NotificationDispatchTest extends NotifyTestCase
         $engineer = $this->member($this->organization);
         $qs = $this->member($this->organization, 'qs');
         $qs->update(['phone' => '9876543210']);
-        $this->device($qs);
+        $this->phone($qs);
         $this->prefer($qs, ['email' => true, 'push' => true, 'whatsapp' => true]);
         $this->actingAs($engineer);
 
@@ -327,7 +310,7 @@ class NotificationDispatchTest extends NotifyTestCase
         $this->connectFcm();
         $this->fakeFcm(404, ['error' => ['details' => [['errorCode' => 'UNREGISTERED']]]]);
         $user = $this->member($this->organization);
-        $this->device($user);
+        $this->phone($user);
         $this->prefer($user, ['email' => false]);
 
         app(Notifier::class)->send($user, new NotificationMessage('issue.assigned', 'Title'));
