@@ -377,6 +377,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get approvalsRemarks => 'टिप्पणी';
 
   @override
+  String get approvalsReportDate => 'रिपोर्ट की तारीख़';
+
+  @override
   String get approvalsRoleAccounts => 'लेखा';
 
   @override

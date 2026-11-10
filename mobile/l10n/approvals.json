@@ -419,6 +419,11 @@
     "mr": "क्लायंट",
     "hi": "क्लाइंट"
   },
+  "approvalsReportDate": {
+    "en": "Report date",
+    "mr": "अहवालाची तारीख",
+    "hi": "रिपोर्ट की तारीख़"
+  },
   "approvalsWeather": {
     "en": "Weather",
     "mr": "हवामान",

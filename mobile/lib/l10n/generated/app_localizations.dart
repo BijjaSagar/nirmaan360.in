@@ -754,6 +754,12 @@ abstract class AppLocalizations {
   /// **'Remarks'**
   String get approvalsRemarks;
 
+  /// No description provided for @approvalsReportDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Report date'**
+  String get approvalsReportDate;
+
   /// No description provided for @approvalsRoleAccounts.
   ///
   /// In en, this message translates to:

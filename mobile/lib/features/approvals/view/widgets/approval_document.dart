@@ -103,7 +103,7 @@ class _DprDoc extends StatelessWidget {
     final List<Map<String, dynamic>> photos = readList(doc['photos']);
 
     return _sheet(<Widget>[
-      if (date != null) BookRow.words(label: l.measurementDateLabel, value: dayLabel(context, date, today)),
+      if (date != null) BookRow.words(label: l.approvalsReportDate, value: dayLabel(context, date, today)),
       if (weather != null) BookRow.words(label: l.approvalsWeather, value: weather),
       if (summary != null) ...<Widget>[
         _Heading(l.approvalsSummary),

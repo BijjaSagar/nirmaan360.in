@@ -390,6 +390,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsRemarks => 'शेरा';
 
   @override
+  String get approvalsReportDate => 'अहवालाची तारीख';
+
+  @override
   String get approvalsRoleAccounts => 'लेखा';
 
   @override

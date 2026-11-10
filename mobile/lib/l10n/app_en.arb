@@ -188,6 +188,7 @@
   "approvalsRemarkHint": "What needs fixing",
   "approvalsRemarkLabel": "Remark",
   "approvalsRemarks": "Remarks",
+  "approvalsReportDate": "Report date",
   "approvalsRoleAccounts": "Accounts",
   "approvalsRoleAdmin": "Admin",
   "approvalsRoleClient": "Client",
