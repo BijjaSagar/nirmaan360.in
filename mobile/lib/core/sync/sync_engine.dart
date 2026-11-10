@@ -208,6 +208,7 @@ class SyncEngine {
       await _pushAll();
 
       await _pull();
+      await _session?.reloadUser();
       _online = true;
 
       try {

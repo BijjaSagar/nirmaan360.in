@@ -489,6 +489,15 @@ void main() {
   });
 
   group('session', () {
+    test('a permission granted on the website applies after the next sync', () async {
+      expect(app.services.session.user!.can('alerts.view'), isFalse);
+      app.api.grant('alerts.view');
+
+      await app.sync();
+
+      expect(app.services.session.user!.can('alerts.view'), isTrue);
+    });
+
     test('a 401 keeps all unsent work', () async {
       final uuid = await app.services.measurements.create(entryInput());
       await app.services.attendance.mark(

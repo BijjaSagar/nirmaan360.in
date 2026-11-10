@@ -101,6 +101,16 @@ class SessionController {
     _set(SessionState(SessionStatus.expired, _state.user));
   }
 
+  /// Takes up the user the last pull saved, so a permission granted or taken
+  /// away on the website applies at once rather than at the next launch.
+  Future<void> reloadUser() async {
+    if (_state.status != SessionStatus.signedIn) return;
+    final CurrentUser? saved = await _readCachedUser();
+    if (saved == null || saved.id != _state.user?.id) return;
+    if (jsonEncode(saved.toJson()) == jsonEncode(_state.user?.toJson())) return;
+    _set(SessionState(SessionStatus.signedIn, saved));
+  }
+
   /// The offline plan's restart: no usable token, but the data is here and
   /// nobody signed out, so the app stays open.
   void resumeLocally() {
