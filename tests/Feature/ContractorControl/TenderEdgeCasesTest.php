@@ -152,4 +152,16 @@ class TenderEdgeCasesTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->tender();
     }
+
+    public function test_a_line_with_no_tender_offers_one_under_its_description_on_a_wide_screen(): void
+    {
+        $this->get(route('boq.index', $this->project))
+            ->assertOk()
+            ->assertSee(route('boq.tenders.show', $this->item), false)
+            ->assertSee(__('Get quotes from contractors'));
+
+        $this->actingAs($this->supervisor)->get(route('boq.index', $this->project))
+            ->assertOk()
+            ->assertDontSee(__('Get quotes from contractors'));
+    }
 }
