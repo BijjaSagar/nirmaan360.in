@@ -112,6 +112,44 @@ class AppLocalizationsHi extends AppLocalizations {
   String get alertsTitle => 'साइट का हाल';
 
   @override
+  String get announcementsEmptyMessage =>
+      'आपकी कंपनी की ख़बरें और रिमाइंडर यहाँ दिखेंगे।';
+
+  @override
+  String get announcementsEmptyTitle => 'अभी कोई घोषणा नहीं';
+
+  @override
+  String get announcementsFailedMessage => 'थोड़ी देर में फिर से कोशिश करें।';
+
+  @override
+  String get announcementsFailedTitle => 'घोषणाएँ पढ़ी नहीं जा सकीं';
+
+  @override
+  String get announcementsLoading => 'घोषणाएँ पढ़ रहे हैं';
+
+  @override
+  String get announcementsMore => 'पुरानी दिखाएँ';
+
+  @override
+  String get announcementsOfflineMessage =>
+      'घोषणाएँ सर्वर पर रहती हैं। इंटरनेट जोड़ें और फिर से कोशिश करें।';
+
+  @override
+  String get announcementsOfflineTitle => 'इंटरनेट चाहिए';
+
+  @override
+  String get announcementsReminder => 'रिमाइंडर';
+
+  @override
+  String get announcementsRetry => 'फिर से कोशिश करें';
+
+  @override
+  String get announcementsSettingsSubtitle => 'आपको भेजी गई ख़बरें और रिमाइंडर';
+
+  @override
+  String get announcementsTitle => 'घोषणाएँ';
+
+  @override
   String get appName => 'निर्माण360';
 
   @override
@@ -3884,6 +3922,13 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get pushPrefsAlertsHint =>
       'आपके प्रोजेक्ट पर नए अलर्ट, जैसे काम पिछड़ना। ज़रूरी अलर्ट किसी भी समय आते हैं।';
+
+  @override
+  String get pushPrefsAnnouncements => 'घोषणाएँ और रिमाइंडर';
+
+  @override
+  String get pushPrefsAnnouncementsHint =>
+      'आपकी कंपनी या Nirmaan360 की ख़बरें और रिमाइंडर। ये शांत समय ख़त्म होने तक रुकते हैं।';
 
   @override
   String get pushPrefsApprovals => 'मंज़ूरी';

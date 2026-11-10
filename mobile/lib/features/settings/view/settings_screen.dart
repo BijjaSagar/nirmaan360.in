@@ -114,6 +114,15 @@ class SettingsScreen extends StatelessWidget {
                               // or on the offline plan.
                               if (push.data != null && push.data != PushState.unavailable)
                                 PushSettingsTile(state: push.data!),
+                              // The server keeps the list, so a phone on the offline plan has none.
+                              if (!context.select((AppGate gate) => gate.state.isLocalOnly))
+                                LedgerListTile(
+                                  key: const ValueKey<String>('settings-announcements'),
+                                  leading: const Icon(Icons.campaign_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+                                  title: t.announcementsTitle,
+                                  subtitle: t.announcementsSettingsSubtitle,
+                                  onTap: () => context.push(Routes.announcements),
+                                ),
                               if (context.select((AppGate gate) => gate.state.isLocalOnly))
                                 LedgerListTile(
                                   key: const ValueKey<String>('settings-offline-plan'),

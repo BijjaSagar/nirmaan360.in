@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/design/design.dart';
+import '../features/announcements/view/announcements_screen.dart';
 import '../features/approvals/view/approval_detail_screen.dart';
 import '../features/approvals/view/approvals_inbox_screen.dart';
 import '../features/attendance/view/attendance_screen.dart';
@@ -98,7 +99,10 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
       _route(
         Routes.settings,
         (_) => const SettingsScreen(),
-        routes: <RouteBase>[_route('notifications', (_) => const NotificationSettingsScreen())],
+        routes: <RouteBase>[
+          _route('notifications', (_) => const NotificationSettingsScreen()),
+          _route('announcements', (s) => AnnouncementsScreen(highlightId: int.tryParse(s.uri.queryParameters['id'] ?? ''))),
+        ],
       ),
       // The contractor portal: all a contractor login can open. `payments`,
       // `bills` and `contracts/:id` come before nothing that would swallow them.

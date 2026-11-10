@@ -16,6 +16,7 @@ enum PushKind {
   deliveryChallan,
   portalPayment,
   portalBill,
+  announcement,
 }
 
 /// What a push message points at: a kind of thing, which one, and the few
@@ -113,6 +114,8 @@ class PushTarget {
         return PushKind.portalPayment;
       case 'portal_bill':
         return PushKind.portalBill;
+      case 'announcement':
+        return PushKind.announcement;
       default:
         return null;
     }
@@ -207,6 +210,9 @@ class PushRouter {
         return Routes.portalPayments;
       case PushKind.portalBill:
         return id == null ? Routes.portalBills : Routes.portalBill(id);
+      case PushKind.announcement:
+        // Staff and contractor logins alike: the list is a Settings page, which the gate always opens.
+        return id == null ? Routes.announcements : Routes.announcementsAt(id);
     }
   }
 

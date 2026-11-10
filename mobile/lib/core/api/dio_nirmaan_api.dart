@@ -139,6 +139,11 @@ class DioNirmaanApi implements NirmaanApi {
     return (body['data'] as Map).cast<String, dynamic>();
   }
 
+  @override
+  Future<Map<String, dynamic>> announcements({int page = 1, String? locale, bool portal = false}) => _call(
+    () => _dio.get(_notify('/announcements', portal), queryParameters: <String, dynamic>{'page': page, 'locale': ?locale}),
+  );
+
   /// A contractor login reaches the notification routes under its portal.
   static String _notify(String path, bool portal) => portal ? '/contractor-portal$path' : path;
 

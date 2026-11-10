@@ -20,8 +20,13 @@ abstract final class Routes {
   /// The person's own switches: which kinds of push, quiet hours, email and WhatsApp.
   static const notificationSettings = '/settings/notifications';
 
-  /// Settings and its one sub-page, open whenever Settings is.
-  static bool isSettings(String path) => path == settings || path == notificationSettings;
+  /// News and reminders sent to this person. Optional query: `id`, the one a
+  /// tapped notification was about. A contractor login reads it too.
+  static const announcements = '/settings/announcements';
+  static String announcementsAt(int id) => '$announcements?id=$id';
+
+  /// Settings and its sub-pages, open whenever Settings is.
+  static bool isSettings(String path) => path == settings || path == notificationSettings || path == announcements;
 
   static const dprList = '/dpr';
 

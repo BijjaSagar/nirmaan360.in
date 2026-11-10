@@ -169,6 +169,16 @@
     "mr": "तुम्हाला द्यायचे पेमेंट मंजूर झाले, किंवा तुमचे बिल भरले गेले.",
     "hi": "आपको होने वाला भुगतान मंज़ूर हुआ, या आपका बिल चुकाया गया।"
   },
+  "pushPrefsAnnouncements": {
+    "en": "Announcements and reminders",
+    "mr": "घोषणा आणि आठवणी",
+    "hi": "घोषणाएँ और रिमाइंडर"
+  },
+  "pushPrefsAnnouncementsHint": {
+    "en": "News and reminders from your company or from Nirmaan360. They wait for quiet hours to end.",
+    "mr": "तुमच्या कंपनीकडून किंवा Nirmaan360 कडून बातम्या आणि आठवणी. शांत वेळ संपेपर्यंत त्या थांबतात.",
+    "hi": "आपकी कंपनी या Nirmaan360 की ख़बरें और रिमाइंडर। ये शांत समय ख़त्म होने तक रुकते हैं।"
+  },
   "pushPrefsQuietSection": {
     "en": "Quiet hours",
     "mr": "शांत वेळ",
