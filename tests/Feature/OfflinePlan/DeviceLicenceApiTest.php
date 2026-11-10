@@ -76,7 +76,8 @@ class DeviceLicenceApiTest extends ApiTestCase
         $this->assertSame(1, DeviceLicence::where('device_id', 'phone-0002')->value('slot'));
 
         // The freed phone is told the next time it comes online.
-        $this->refreshPhone('phone-0001')->assertStatus(410)->assertJsonPath('code', 'licence_revoked');
+        $this->refreshPhone('phone-0001')->assertStatus(410)->assertJsonPath('code', 'licence_revoked')
+            ->assertJsonPath('manage_url', route('offline.devices.index'));
     }
 
     public function test_the_limit_set_in_admin_is_the_limit_that_applies(): void
