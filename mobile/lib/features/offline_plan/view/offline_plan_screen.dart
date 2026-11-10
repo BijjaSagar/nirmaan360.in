@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/app_format.dart';
 import '../../../app/app_gate.dart';
+import '../../../app/routes.dart';
 import '../../../app/widgets/back_header.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
@@ -113,6 +115,20 @@ class _OfflinePlanScreenState extends State<OfflinePlanScreen> {
                         leading: const Icon(Icons.description_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
                         title: t.offlineHereEntries,
                         trailing: Text('${work.entries}', style: N360Type.figure),
+                      ),
+                    ],
+                  ),
+                ],
+                if (offline.mode == OfflineMode.declined) ...<Widget>[
+                  const SizedBox(height: N360Space.cardGap),
+                  LedgerList(
+                    children: <Widget>[
+                      LedgerListTile(
+                        key: const ValueKey<String>('offline-upload-later'),
+                        leading: const Icon(Icons.cloud_upload_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+                        title: t.offlineUploadLaterTile,
+                        subtitle: t.offlineUploadLaterHint,
+                        onTap: () => context.push(Routes.offlineUpload),
                       ),
                     ],
                   ),

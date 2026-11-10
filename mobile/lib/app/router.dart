@@ -17,6 +17,7 @@ import '../features/measurement/view/measurement_detail_screen.dart';
 import '../features/measurement/view/measurement_form_screen.dart';
 import '../features/measurement/view/measurement_list_screen.dart';
 import '../features/offline_plan/view/offline_plan_screen.dart';
+import '../features/offline_plan/view/offline_upload_screen.dart';
 import '../features/petty_cash/view/expense_form_screen.dart';
 import '../features/petty_cash/view/petty_cash_screen.dart';
 import '../features/petty_cash/view/top_up_screen.dart';
@@ -153,6 +154,7 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
       ),
       _route(Routes.attendance, (_) => const AttendanceScreen()),
       _route(Routes.offlinePlan, (_) => const OfflinePlanScreen()),
+      _route(Routes.offlineUpload, (_) => const OfflineUploadScreen()),
       _route(
         Routes.contractors,
         (_) => const ContractorScreen(),

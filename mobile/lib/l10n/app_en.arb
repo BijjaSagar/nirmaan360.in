@@ -965,8 +965,11 @@
   "offlineFreeFailed": "That did not work. Check your internet and try again.",
   "offlineFreeThisPhone": "Move to a new phone",
   "offlineFreeTitle": "Free this phone's licence?",
+  "offlineHereBoq": "BOQ lines",
   "offlineHereEntries": "Entries and photos",
   "offlineHereProjects": "Projects made here",
+  "offlineHereWallets": "Wallets",
+  "offlineHereWorkers": "Workers",
   "offlineHomeEnded": "Your licence has ended. See how to renew.",
   "offlineHomeHint": "Your data is only here. Keep a copy.",
   "offlineInvalidTitle": "The licence could not be checked",
@@ -1009,6 +1012,50 @@
   "offlineSignInButton": "Sign in",
   "offlineSignOutBody": "Your data stays on this phone. You will need internet to sign in again.",
   "offlineSignOutTitle": "Sign out?",
+  "offlineUploadAskBody": "Your company's plan has changed, so the server can keep your data now. Nothing goes up unless you say yes.",
+  "offlineUploadAskTitle": "Upload your data to the server?",
+  "offlineUploadBusy": "The server is busy. Try again in a minute.",
+  "offlineUploadContinue": "Continue upload",
+  "offlineUploadDone": "Your data is moving to the server. Anything that needs a look will show in Outbox.",
+  "offlineUploadInterruptedBody": "Nothing is lost and nothing will go twice. Continue when you are ready, or keep working on this phone for now.",
+  "offlineUploadInterruptedTitle": "The upload stopped part way",
+  "offlineUploadLaterHint": "Your plan can keep data on the server now, if you want it there.",
+  "offlineUploadLaterTile": "Upload to the server",
+  "offlineUploadNo": "No, keep it on this phone",
+  "offlineUploadNoNetwork": "No internet right now. Continue when you have a connection.",
+  "offlineUploadPlanLimit": "Your plan does not allow this yet: {reason}",
+  "@offlineUploadPlanLimit": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineUploadProgress": "{done} of {total} moved",
+  "@offlineUploadProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineUploadRefused": "The server did not accept this: {reason}",
+  "@offlineUploadRefused": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineUploadRunningBody": "Keep the app open. If it stops, nothing is lost and nothing goes twice.",
+  "offlineUploadRunningTitle": "Uploading your data",
+  "offlineUploadSignIn": "Please sign in again, then continue. Nothing is lost.",
+  "offlineUploadStillOffline": "Your company is on the offline plan again, so nothing went up.",
+  "offlineUploadTitle": "Your data",
+  "offlineUploadYes": "Yes, upload my data",
   "pettyCashAddExpense": "Add expense",
   "pettyCashAddMoney": "Add money",
   "pettyCashAmount": "Amount",

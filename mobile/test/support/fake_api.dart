@@ -1234,6 +1234,7 @@ class FakeApi implements NirmaanApi {
     String? contractValue,
     String? code,
   }) async {
+    _refuseIfOffline();
     _guard();
     _requireSetupPermission('project.manage');
     return _createOnce(
@@ -1286,6 +1287,7 @@ class FakeApi implements NirmaanApi {
     String? code,
     String? section,
   }) async {
+    _refuseIfOffline();
     if (id != null) {
       _seedBoqItem(
         id: id,
@@ -1341,6 +1343,7 @@ class FakeApi implements NirmaanApi {
     required String name,
     int? userId,
   }) async {
+    _refuseIfOffline();
     _guard();
     _requireSetupPermission('petty_cash.manage');
     _requireProject(projectId);
@@ -1376,6 +1379,7 @@ class FakeApi implements NirmaanApi {
     String type = 'own',
     String? dailyWage,
   }) async {
+    _refuseIfOffline();
     _guard();
     final existing = _workersByUuid[clientUuid];
     if (existing != null) return existing;

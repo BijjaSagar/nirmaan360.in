@@ -26,6 +26,7 @@ import '../features/projects/data/project_repository.dart';
 import '../features/site_alerts/data/site_alerts_repository.dart';
 import '../features/site_progress/data/progress_repository.dart';
 import '../features/offline_plan/data/offline_export.dart';
+import '../features/offline_plan/data/offline_upload.dart';
 import '../features/sync_center/data/sync_repository.dart';
 import 'api/dio_nirmaan_api.dart';
 import 'api/nirmaan_api.dart';
@@ -78,7 +79,9 @@ class AppServices {
        attendance = AttendanceRepository(context),
        pettyCash = PettyCashRepository(context),
        approvals = ApprovalRepository(context),
-       syncCenter = SyncRepository(context);
+       syncCenter = SyncRepository(context) {
+    offlineUploader = OfflineUploader(context, dpr);
+  }
 
   /// Production wiring: real database, secure token storage, Dio.
   factory AppServices.production() {
@@ -242,6 +245,9 @@ class AppServices {
 
   /// Whether this company keeps its data on the phone, and its licence.
   final OfflinePlan offlinePlan;
+
+  /// Takes local work to the server, after the owner has said yes.
+  late final OfflineUploader offlineUploader;
 
   /// Writes the data and photos into one file, and returns it.
   final Future<OfflineExport> Function() exportBackup;

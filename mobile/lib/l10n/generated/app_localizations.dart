@@ -4012,6 +4012,12 @@ abstract class AppLocalizations {
   /// **'Free this phone\'s licence?'**
   String get offlineFreeTitle;
 
+  /// No description provided for @offlineHereBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ lines'**
+  String get offlineHereBoq;
+
   /// No description provided for @offlineHereEntries.
   ///
   /// In en, this message translates to:
@@ -4023,6 +4029,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Projects made here'**
   String get offlineHereProjects;
+
+  /// No description provided for @offlineHereWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets'**
+  String get offlineHereWallets;
+
+  /// No description provided for @offlineHereWorkers.
+  ///
+  /// In en, this message translates to:
+  /// **'Workers'**
+  String get offlineHereWorkers;
 
   /// No description provided for @offlineHomeEnded.
   ///
@@ -4191,6 +4209,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign out?'**
   String get offlineSignOutTitle;
+
+  /// No description provided for @offlineUploadAskBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company\'s plan has changed, so the server can keep your data now. Nothing goes up unless you say yes.'**
+  String get offlineUploadAskBody;
+
+  /// No description provided for @offlineUploadAskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload your data to the server?'**
+  String get offlineUploadAskTitle;
+
+  /// No description provided for @offlineUploadBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The server is busy. Try again in a minute.'**
+  String get offlineUploadBusy;
+
+  /// No description provided for @offlineUploadContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue upload'**
+  String get offlineUploadContinue;
+
+  /// No description provided for @offlineUploadDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is moving to the server. Anything that needs a look will show in Outbox.'**
+  String get offlineUploadDone;
+
+  /// No description provided for @offlineUploadInterruptedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is lost and nothing will go twice. Continue when you are ready, or keep working on this phone for now.'**
+  String get offlineUploadInterruptedBody;
+
+  /// No description provided for @offlineUploadInterruptedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The upload stopped part way'**
+  String get offlineUploadInterruptedTitle;
+
+  /// No description provided for @offlineUploadLaterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan can keep data on the server now, if you want it there.'**
+  String get offlineUploadLaterHint;
+
+  /// No description provided for @offlineUploadLaterTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload to the server'**
+  String get offlineUploadLaterTile;
+
+  /// No description provided for @offlineUploadNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No, keep it on this phone'**
+  String get offlineUploadNo;
+
+  /// No description provided for @offlineUploadNoNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet right now. Continue when you have a connection.'**
+  String get offlineUploadNoNetwork;
+
+  /// No description provided for @offlineUploadPlanLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan does not allow this yet: {reason}'**
+  String offlineUploadPlanLimit(String reason);
+
+  /// No description provided for @offlineUploadProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} moved'**
+  String offlineUploadProgress(int done, int total);
+
+  /// No description provided for @offlineUploadRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The server did not accept this: {reason}'**
+  String offlineUploadRefused(String reason);
+
+  /// No description provided for @offlineUploadRunningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the app open. If it stops, nothing is lost and nothing goes twice.'**
+  String get offlineUploadRunningBody;
+
+  /// No description provided for @offlineUploadRunningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading your data'**
+  String get offlineUploadRunningTitle;
+
+  /// No description provided for @offlineUploadSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again, then continue. Nothing is lost.'**
+  String get offlineUploadSignIn;
+
+  /// No description provided for @offlineUploadStillOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company is on the offline plan again, so nothing went up.'**
+  String get offlineUploadStillOffline;
+
+  /// No description provided for @offlineUploadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data'**
+  String get offlineUploadTitle;
+
+  /// No description provided for @offlineUploadYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, upload my data'**
+  String get offlineUploadYes;
 
   /// No description provided for @pettyCashAddExpense.
   ///

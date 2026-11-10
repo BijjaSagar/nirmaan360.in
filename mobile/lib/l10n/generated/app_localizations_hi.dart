@@ -2152,10 +2152,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get offlineFreeTitle => 'इस फ़ोन का लाइसेंस खाली करें?';
 
   @override
+  String get offlineHereBoq => 'BOQ पंक्तियाँ';
+
+  @override
   String get offlineHereEntries => 'प्रविष्टियाँ और फ़ोटो';
 
   @override
   String get offlineHereProjects => 'यहाँ बनाए प्रोजेक्ट';
+
+  @override
+  String get offlineHereWallets => 'वॉलेट';
+
+  @override
+  String get offlineHereWorkers => 'मज़दूर';
 
   @override
   String get offlineHomeEnded =>
@@ -2251,6 +2260,81 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get offlineSignOutTitle => 'साइन आउट करें?';
+
+  @override
+  String get offlineUploadAskBody =>
+      'आपकी कंपनी का प्लान बदल गया है, इसलिए सर्वर अब आपका डेटा रख सकता है। आपके हाँ कहे बिना कुछ अपलोड नहीं होगा।';
+
+  @override
+  String get offlineUploadAskTitle => 'अपना डेटा सर्वर पर अपलोड करें?';
+
+  @override
+  String get offlineUploadBusy =>
+      'सर्वर व्यस्त है। एक मिनट बाद फिर कोशिश करें।';
+
+  @override
+  String get offlineUploadContinue => 'अपलोड जारी रखें';
+
+  @override
+  String get offlineUploadDone =>
+      'आपका डेटा सर्वर पर जा रहा है। जिस पर ध्यान देना है वह Outbox में दिखेगा।';
+
+  @override
+  String get offlineUploadInterruptedBody =>
+      'कुछ नहीं खोया है और कुछ दो बार नहीं जाएगा। तैयार होने पर जारी रखें, या अभी इसी फ़ोन पर काम करें।';
+
+  @override
+  String get offlineUploadInterruptedTitle => 'अपलोड बीच में रुक गया';
+
+  @override
+  String get offlineUploadLaterHint =>
+      'आपका प्लान अब सर्वर पर डेटा रख सकता है, अगर आप चाहें।';
+
+  @override
+  String get offlineUploadLaterTile => 'सर्वर पर अपलोड करें';
+
+  @override
+  String get offlineUploadNo => 'नहीं, इसी फ़ोन पर रखें';
+
+  @override
+  String get offlineUploadNoNetwork =>
+      'अभी इंटरनेट नहीं है। कनेक्शन मिलने पर जारी रखें।';
+
+  @override
+  String offlineUploadPlanLimit(String reason) {
+    return 'आपके प्लान में यह अभी नहीं है: $reason';
+  }
+
+  @override
+  String offlineUploadProgress(int done, int total) {
+    return '$total में से $done गए';
+  }
+
+  @override
+  String offlineUploadRefused(String reason) {
+    return 'सर्वर ने यह स्वीकार नहीं किया: $reason';
+  }
+
+  @override
+  String get offlineUploadRunningBody =>
+      'ऐप खुला रखें। रुकने पर भी कुछ नहीं खोएगा और कुछ दो बार नहीं जाएगा।';
+
+  @override
+  String get offlineUploadRunningTitle => 'आपका डेटा अपलोड हो रहा है';
+
+  @override
+  String get offlineUploadSignIn =>
+      'कृपया फिर साइन इन करें, फिर जारी रखें। कुछ नहीं खोया है।';
+
+  @override
+  String get offlineUploadStillOffline =>
+      'आपकी कंपनी फिर ऑफ़लाइन प्लान पर है, इसलिए कुछ अपलोड नहीं हुआ।';
+
+  @override
+  String get offlineUploadTitle => 'आपका डेटा';
+
+  @override
+  String get offlineUploadYes => 'हाँ, मेरा डेटा अपलोड करें';
 
   @override
   String get pettyCashAddExpense => 'ख़र्च जोड़ें';

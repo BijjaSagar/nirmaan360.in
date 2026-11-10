@@ -2160,10 +2160,19 @@ class AppLocalizationsMr extends AppLocalizations {
   String get offlineFreeTitle => 'या फोनचा परवाना मोकळा करायचा?';
 
   @override
+  String get offlineHereBoq => 'BOQ ओळी';
+
+  @override
   String get offlineHereEntries => 'नोंदी आणि फोटो';
 
   @override
   String get offlineHereProjects => 'इथे तयार केलेले प्रकल्प';
+
+  @override
+  String get offlineHereWallets => 'वॉलेट';
+
+  @override
+  String get offlineHereWorkers => 'कामगार';
 
   @override
   String get offlineHomeEnded =>
@@ -2259,6 +2268,81 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get offlineSignOutTitle => 'साइन आउट करायचे?';
+
+  @override
+  String get offlineUploadAskBody =>
+      'तुमच्या कंपनीचा प्लॅन बदलला आहे, त्यामुळे सर्व्हर आता तुमचा डेटा ठेवू शकतो. तुम्ही हो म्हटल्याशिवाय काहीही अपलोड होणार नाही.';
+
+  @override
+  String get offlineUploadAskTitle => 'तुमचा डेटा सर्व्हरवर अपलोड करायचा?';
+
+  @override
+  String get offlineUploadBusy =>
+      'सर्व्हर व्यस्त आहे. एका मिनिटाने पुन्हा प्रयत्न करा.';
+
+  @override
+  String get offlineUploadContinue => 'अपलोड पुढे सुरू करा';
+
+  @override
+  String get offlineUploadDone =>
+      'तुमचा डेटा सर्व्हरवर जात आहे. ज्याकडे पाहण्याची गरज आहे ते Outbox मध्ये दिसेल.';
+
+  @override
+  String get offlineUploadInterruptedBody =>
+      'काहीही हरवलेले नाही आणि काहीही दोनदा जाणार नाही. तयार असाल तेव्हा पुढे सुरू करा, किंवा सध्या या फोनवरच काम करा.';
+
+  @override
+  String get offlineUploadInterruptedTitle => 'अपलोड मध्येच थांबले';
+
+  @override
+  String get offlineUploadLaterHint =>
+      'तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवू शकतो, तुम्हाला हवे असल्यास.';
+
+  @override
+  String get offlineUploadLaterTile => 'सर्व्हरवर अपलोड करा';
+
+  @override
+  String get offlineUploadNo => 'नाही, या फोनवरच ठेवा';
+
+  @override
+  String get offlineUploadNoNetwork =>
+      'आत्ता इंटरनेट नाही. कनेक्शन मिळाल्यावर पुढे सुरू करा.';
+
+  @override
+  String offlineUploadPlanLimit(String reason) {
+    return 'तुमच्या प्लॅनमध्ये हे अजून नाही: $reason';
+  }
+
+  @override
+  String offlineUploadProgress(int done, int total) {
+    return '$total पैकी $done गेले';
+  }
+
+  @override
+  String offlineUploadRefused(String reason) {
+    return 'सर्व्हरने हे स्वीकारले नाही: $reason';
+  }
+
+  @override
+  String get offlineUploadRunningBody =>
+      'ॲप उघडे ठेवा. थांबले तरी काही हरवणार नाही आणि काहीही दोनदा जाणार नाही.';
+
+  @override
+  String get offlineUploadRunningTitle => 'तुमचा डेटा अपलोड होत आहे';
+
+  @override
+  String get offlineUploadSignIn =>
+      'कृपया पुन्हा साइन इन करा आणि पुढे सुरू करा. काहीही हरवलेले नाही.';
+
+  @override
+  String get offlineUploadStillOffline =>
+      'तुमची कंपनी पुन्हा ऑफलाइन प्लॅनवर आहे, त्यामुळे काहीही अपलोड झाले नाही.';
+
+  @override
+  String get offlineUploadTitle => 'तुमचा डेटा';
+
+  @override
+  String get offlineUploadYes => 'हो, माझा डेटा अपलोड करा';
 
   @override
   String get pettyCashAddExpense => 'खर्च जोडा';

@@ -342,6 +342,8 @@ class AppGate extends Cubit<GateState> {
       return path == Routes.settings ? path : Routes.offlineUpload;
     }
     if (s.licenceBlocked) return path == Routes.settings ? path : Routes.offlinePlan;
+    // Upload is offered only once the server stops saying offline.
+    if (path == Routes.offlineUpload && offline.mode == OfflineMode.local) return Routes.offlinePlan;
     if (Routes.isOfflinePlan(path)) return path;
     if (!Routes.isLocalFeature(path)) return s.hasProject ? Routes.home : Routes.projects;
     return null;

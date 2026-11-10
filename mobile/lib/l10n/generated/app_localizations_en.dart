@@ -2193,10 +2193,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineFreeTitle => 'Free this phone\'s licence?';
 
   @override
+  String get offlineHereBoq => 'BOQ lines';
+
+  @override
   String get offlineHereEntries => 'Entries and photos';
 
   @override
   String get offlineHereProjects => 'Projects made here';
+
+  @override
+  String get offlineHereWallets => 'Wallets';
+
+  @override
+  String get offlineHereWorkers => 'Workers';
 
   @override
   String get offlineHomeEnded => 'Your licence has ended. See how to renew.';
@@ -2292,6 +2301,80 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineSignOutTitle => 'Sign out?';
+
+  @override
+  String get offlineUploadAskBody =>
+      'Your company\'s plan has changed, so the server can keep your data now. Nothing goes up unless you say yes.';
+
+  @override
+  String get offlineUploadAskTitle => 'Upload your data to the server?';
+
+  @override
+  String get offlineUploadBusy => 'The server is busy. Try again in a minute.';
+
+  @override
+  String get offlineUploadContinue => 'Continue upload';
+
+  @override
+  String get offlineUploadDone =>
+      'Your data is moving to the server. Anything that needs a look will show in Outbox.';
+
+  @override
+  String get offlineUploadInterruptedBody =>
+      'Nothing is lost and nothing will go twice. Continue when you are ready, or keep working on this phone for now.';
+
+  @override
+  String get offlineUploadInterruptedTitle => 'The upload stopped part way';
+
+  @override
+  String get offlineUploadLaterHint =>
+      'Your plan can keep data on the server now, if you want it there.';
+
+  @override
+  String get offlineUploadLaterTile => 'Upload to the server';
+
+  @override
+  String get offlineUploadNo => 'No, keep it on this phone';
+
+  @override
+  String get offlineUploadNoNetwork =>
+      'No internet right now. Continue when you have a connection.';
+
+  @override
+  String offlineUploadPlanLimit(String reason) {
+    return 'Your plan does not allow this yet: $reason';
+  }
+
+  @override
+  String offlineUploadProgress(int done, int total) {
+    return '$done of $total moved';
+  }
+
+  @override
+  String offlineUploadRefused(String reason) {
+    return 'The server did not accept this: $reason';
+  }
+
+  @override
+  String get offlineUploadRunningBody =>
+      'Keep the app open. If it stops, nothing is lost and nothing goes twice.';
+
+  @override
+  String get offlineUploadRunningTitle => 'Uploading your data';
+
+  @override
+  String get offlineUploadSignIn =>
+      'Please sign in again, then continue. Nothing is lost.';
+
+  @override
+  String get offlineUploadStillOffline =>
+      'Your company is on the offline plan again, so nothing went up.';
+
+  @override
+  String get offlineUploadTitle => 'Your data';
+
+  @override
+  String get offlineUploadYes => 'Yes, upload my data';
 
   @override
   String get pettyCashAddExpense => 'Add expense';
