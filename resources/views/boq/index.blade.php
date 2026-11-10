@@ -61,7 +61,7 @@
                     <thead>
                     <tr>
                         <th>{{ __('Code') }}</th><th class="w-[30%]">{{ __('Description') }}</th><th>{{ __('Unit') }}</th>@can('money.view')<th class="r">{{ __('Rate') }}</th>@endcan
-                        <th class="r">{{ __('BOQ') }}</th><th class="r">{{ __('Executed') }}</th><th class="r">{{ __('Measured') }}</th><th class="r">{{ __('Approved') }}</th><th class="r">{{ __('Billed') }}</th><th class="r">{{ __('Balance') }}</th>
+                        <th class="r">{{ __('BOQ') }}</th>@if ($values)<th class="r">{{ __('Amount') }}</th>@endif<th class="r">{{ __('Executed') }}</th><th class="r">{{ __('Measured') }}</th><th class="r">{{ __('Approved') }}</th><th class="r">{{ __('Billed') }}</th><th class="r">{{ __('Balance') }}</th>@if ($values)<th class="r">{{ __('Balance value') }}</th>@endif
                         @if ($setup || auth()->user()->can('boq.manage'))<th></th>@endif
                     </tr>
                     </thead>
@@ -71,7 +71,18 @@
                         @if ($item->section?->name !== $section)
                             @php $section = $item->section?->name; @endphp
                             @if ($section)
-                                <tr><td colspan="11" class="bg-paper-2/40 font-display text-base font-semibold">{{ $section }}</td></tr>
+                                @if ($values)
+                                    {{-- Each section shows its own value and what is left of it, in the money columns. --}}
+                                    <tr class="bg-paper-2/40">
+                                        <td colspan="5" class="font-display text-base font-semibold">{{ $section }}</td>
+                                        <td class="r num font-semibold">{{ \App\Support\Dec::indian($values['sections'][$section]['amount']) }}</td>
+                                        <td colspan="5"></td>
+                                        <td class="r num font-semibold">{{ \App\Support\Dec::indian($values['sections'][$section]['balance']) }}</td>
+                                        @if ($setup || auth()->user()->can('boq.manage'))<td></td>@endif
+                                    </tr>
+                                @else
+                                    <tr><td colspan="11" class="bg-paper-2/40 font-display text-base font-semibold">{{ $section }}</td></tr>
+                                @endif
                             @endif
                         @endif
                         @php $editPayload = ['url' => route('boq.update', $item), 'removeUrl' => route('boq.destroy', $item), 'code' => $item->code, 'description' => $item->description, 'unit' => $item->unit, 'qty' => $item->qty, 'rate' => \App\Support\Money::orNull($item->rate), 'category' => $item->category ?? '', 'details' => $item->details ?? '', 'reason' => '']; @endphp
@@ -89,11 +100,13 @@
                             <td>{{ $item->unit }}</td>
                             @can('money.view')<td class="r">{{ \App\Support\Dec::indian($item->rate) }}</td>@endcan
                             <td class="r">{{ fmt_qty($item->qty) }}</td>
+                            @if ($values)<td class="r num">{{ \App\Support\Dec::indian($values['lines'][$item->id]['amount']) }}</td>@endif
                             <td class="r">{{ fmt_qty($item->executed_qty ?? 0) }}</td>
                             <td class="r">{{ fmt_qty($item->measured_qty ?? 0) }}</td>
                             <td class="r">{{ fmt_qty($item->approved_qty ?? 0) }}</td>
                             <td class="r">{{ fmt_qty($item->billed_qty ?? 0) }}</td>
                             <td class="r {{ \App\Support\Dec::of($item->balanceQty())->isNegative() ? 'font-medium text-laterite' : '' }}">{{ fmt_qty($item->balanceQty()) }}</td>
+                            @if ($values)<td class="r num {{ \App\Support\Dec::of($values['lines'][$item->id]['balance'])->isNegative() ? 'font-medium text-laterite' : '' }}">{{ \App\Support\Dec::indian($values['lines'][$item->id]['balance']) }}</td>@endif
                             @if ($setup || auth()->user()->can('boq.manage'))
                                 <td class="text-right whitespace-nowrap">
                                     @can('boq.manage')
@@ -107,6 +120,17 @@
                         </tr>
                     @endforeach
                     </tbody>
+                    @if ($values)
+                        <tfoot>
+                        <tr class="border-t-2 border-ink">
+                            <td colspan="5" class="font-display text-base font-semibold">{{ __('Total') }}</td>
+                            <td class="r num font-semibold">{{ \App\Support\Dec::indian($values['grand']['amount']) }}</td>
+                            <td colspan="5"></td>
+                            <td class="r num font-semibold">{{ \App\Support\Dec::indian($values['grand']['balance']) }}</td>
+                            @if ($setup || auth()->user()->can('boq.manage'))<td></td>@endif
+                        </tr>
+                        </tfoot>
+                    @endif
                 </table>
             @endif
         </div>
