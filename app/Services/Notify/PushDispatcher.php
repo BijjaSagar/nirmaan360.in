@@ -4,6 +4,7 @@ namespace App\Services\Notify;
 
 use App\Jobs\Notify\DeliverNotification;
 use App\Models\Alert;
+use App\Models\Announcement;
 use App\Models\Approval;
 use App\Models\DeviceToken;
 use App\Models\NotificationPreference;
@@ -220,6 +221,11 @@ class PushDispatcher
      */
     private function stillMatters(User $user, NotificationMessage $message, PushTarget $target): bool
     {
+        // An announcement that was stopped, or removed, sends nothing more: not even copies held for quiet hours.
+        if ($target->type === 'announcement') {
+            return Announcement::whereKey($target->id)->where('status', '!=', Announcement::CANCELLED)->exists();
+        }
+
         $alertId = $target->type === 'alert' ? $target->id : ($target->extra['alert_id'] ?? null);
 
         if ($alertId !== null) {
@@ -237,6 +243,12 @@ class PushDispatcher
         return $approval !== null
             && (int) $approval->current_level === (int) ($target->extra['level'] ?? $approval->current_level)
             && app(ApprovalService::class)->canAct($approval, $user);
+    }
+
+    /** Whether the words carry a rupee figure, which nobody without money.view may be sent. */
+    public static function mentionsMoney(string $text): bool
+    {
+        return (bool) preg_match(self::MONEY, $text);
     }
 
     /**

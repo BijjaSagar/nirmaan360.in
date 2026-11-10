@@ -8,10 +8,12 @@ use App\Support\Modules;
 use App\Support\PlatformSettings;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Throwable;
 
 /**
- * One run of an announcement: works out who it is for and queues a push for each of their phones.
- * A retry is safe, since each run has its own key and nobody is pushed twice under one key.
+ * One run of an announcement: works out who it is for, remembers them, and hands their phones to
+ * SendAnnouncementBatch jobs. It only reads people and queues, so it ends well inside the queue's
+ * 90 second retry window even for every company. A retry is safe: nobody is pushed twice under one run's key.
  */
 class SendAnnouncement implements ShouldQueue
 {
@@ -19,7 +21,7 @@ class SendAnnouncement implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 600;
+    public int $timeout = 75;
 
     /** @var list<int> */
     public array $backoff = [60, 300];
@@ -36,7 +38,13 @@ class SendAnnouncement implements ShouldQueue
         $announcement = Announcement::find($this->announcementId);
 
         if ($announcement !== null) {
-            $announcements->send($announcement, $this->runKey);
+            $announcements->startRun($announcement, $this->runKey);
         }
+    }
+
+    /** After the last retry: a one-off is marked failed in the history instead of staying "sending". */
+    public function failed(?Throwable $exception): void
+    {
+        app(AnnouncementService::class)->runFailed($this->announcementId, $this->runKey, $exception);
     }
 }

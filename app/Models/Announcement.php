@@ -30,6 +30,8 @@ class Announcement extends Model
 
     public const CANCELLED = 'cancelled';
 
+    public const FAILED = 'failed';
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -38,6 +40,7 @@ class Announcement extends Model
             'translations' => 'array',
             'roles' => 'array',
             'repeat_until' => 'date',
+            'scheduled_for' => 'datetime',
             'next_run_at' => 'datetime',
             'last_sent_at' => 'datetime',
             'cancelled_at' => 'datetime',
@@ -94,6 +97,14 @@ class Announcement extends Model
     public function canBeCancelled(): bool
     {
         return $this->status === self::SCHEDULED;
+    }
+
+    /** Every language's words, for checks that must look at all of them. */
+    public function allText(): string
+    {
+        return collect([$this->title, $this->body])
+            ->merge(collect($this->translations ?? [])->flatMap(fn ($text) => is_array($text) ? array_values($text) : []))
+            ->implode("\n");
     }
 
     /** The title in this language, or the English one when none was written for it. */

@@ -10,9 +10,12 @@ use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Party;
 use App\Models\User;
+use App\Services\Notify\AnnouncementService;
 use App\Services\Notify\FcmGateway;
 use App\Services\Notify\NotificationMessage;
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -235,6 +238,48 @@ class AnnouncementsTest extends NotifyTestCase
         $this->get('/announcement-images/'.Str::random(40))->assertNotFound();
     }
 
+    public function test_firebase_is_sent_the_announcement_with_its_picture_for_android_and_iphone(): void
+    {
+        Storage::fake();
+        URL::forceRootUrl('https://nirmaan360.test');
+        URL::forceScheme('https');
+        $this->connectFcm();
+        $this->fakeFcm();
+        $this->at('2026-11-10 11:00');
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $colleague = $this->member($organization, 'engineer');
+        $this->phone($colleague, 'colleague-token');
+
+        // The test queue runs each job at once, so this goes all the way to the HTTP call to Firebase.
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form(['image' => UploadedFile::fake()->image('banner.jpg', 1200, 600)]))->assertSessionHasNoErrors();
+        $announcement = Announcement::sole();
+        $url = $announcement->imageUrl();
+
+        $sent = Http::recorded(fn (Request $request) => str_contains($request->url(), 'fcm.googleapis.com/v1/projects/demo-project/messages:send'));
+        $this->assertCount(1, $sent);
+        $message = $sent->values()->first()[0]->data()['message'];
+
+        $this->assertSame('colleague-token', $message['token']);
+        $this->assertSame(['title' => 'Site safety week', 'body' => 'Wear helmets on every site from Monday.', 'image' => $url], $message['notification']);
+        $this->assertSame(['channel_id' => 'updates', 'tag' => 'announcement-'.$announcement->id, 'image' => $url], $message['android']['notification']);
+        $this->assertSame('HIGH', $message['android']['priority']);
+        $this->assertSame(['sound' => 'default', 'mutable-content' => 1], $message['apns']['payload']['aps']);
+        $this->assertSame(['image' => $url], $message['apns']['fcm_options']);
+        $this->assertSame('announcement-'.$announcement->id, $message['apns']['headers']['apns-collapse-id']);
+        $this->assertSame([
+            'repeats' => '0',
+            'type' => 'announcement',
+            'id' => (string) $announcement->id,
+            'category' => 'announcements',
+            'event' => 'announcement.sent',
+            'critical' => '0',
+        ], $message['data']);
+
+        $announcement->refresh();
+        $this->assertSame([1, 1, 0], [$announcement->phones_count, $announcement->sent_count, $announcement->failed_count]);
+    }
+
     public function test_a_push_without_a_picture_or_with_an_http_one_carries_no_picture_fields(): void
     {
         $plain = app(FcmGateway::class)->payload('token', new NotificationMessage('announcement.sent', 'Title', 'Body'))['message'];
@@ -404,6 +449,114 @@ class AnnouncementsTest extends NotifyTestCase
 
         $announcement->refresh();
         $this->assertSame([2, 1, 1], [$announcement->phones_count, $announcement->sent_count, $announcement->failed_count]);
+    }
+
+    public function test_stopping_a_reminder_drops_the_copies_held_for_quiet_hours(): void
+    {
+        $this->connectFcm();
+        Queue::fake([DeliverNotification::class]);
+        $this->at('2026-11-10 22:00');
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $colleague = $this->member($organization, 'engineer');
+        $this->phone($colleague);
+
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form(['schedule' => 'daily', 'repeat_time' => '22:30']))->assertSessionHasNoErrors();
+        $reminder = Announcement::sole();
+
+        $this->at('2026-11-10 22:30');
+        $this->artisan('announcements:send-due');
+        $held = $this->pushesFor($colleague);
+        $this->assertCount(1, $held);
+        $this->assertNotNull($held[0]->delay, 'held until quiet hours end');
+
+        $this->actingAs($owner)->post(route('notify.announcements.cancel', $reminder))->assertSessionHasNoErrors();
+
+        // 07:00: the held job runs, and Firebase is not called.
+        $this->fakeFcm();
+        $this->at('2026-11-11 07:00');
+        app()->call([$held[0], 'handle']);
+        Http::assertNothingSent();
+        $this->assertSame([0, 1], [$reminder->refresh()->sent_count, $reminder->skipped_count]);
+    }
+
+    public function test_a_rupee_amount_reaches_only_people_who_may_see_money_by_push_and_in_the_app(): void
+    {
+        $this->connectFcm();
+        Queue::fake([DeliverNotification::class]);
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $engineer = $this->member($organization, 'engineer');
+        $this->phone($owner, 'phone-owner');
+        $this->phone($engineer, 'phone-engineer');
+
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form(['title_hi' => 'बोनस ₹5000 मिलेगा']))->assertSessionHasNoErrors();
+
+        $this->assertCount(1, $this->pushesFor($owner));
+        $this->assertCount(0, $this->pushesFor($engineer));
+        Sanctum::actingAs($engineer);
+        $this->getJson(self::API.'/announcements')->assertOk()->assertJsonCount(0, 'data');
+        Sanctum::actingAs($owner);
+        $this->getJson(self::API.'/announcements?locale=hi')->assertOk()->assertJsonPath('data.0.title', 'बोनस ₹5000 मिलेगा');
+    }
+
+    public function test_a_picture_is_redrawn_as_a_small_jpeg_before_it_is_kept(): void
+    {
+        Storage::fake();
+        $owner = $this->member($this->tenant(), 'owner');
+
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form(['image' => UploadedFile::fake()->image('wide.png', 2400, 1200)]))->assertRedirect(route('notify.announcements'))->assertSessionHasNoErrors();
+
+        $path = Announcement::sole()->image_path;
+        $this->assertStringEndsWith('.jpg', $path);
+        $info = getimagesizefromstring(Storage::get($path));
+        $this->assertSame([1200, 600, 'image/jpeg'], [$info[0], $info[1], $info['mime']]);
+    }
+
+    public function test_a_large_audience_is_pushed_in_short_batches(): void
+    {
+        $this->connectFcm();
+        Queue::fake([DeliverNotification::class]);
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        foreach (range(1, 3) as $index) {
+            $this->phone($this->member($organization, 'engineer'), 'phone-'.$index);
+        }
+
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form())->assertSessionHasNoErrors();
+
+        $announcement = Announcement::sole();
+        $this->assertSame([4, 3], [$announcement->recipients_count, $announcement->phones_count]);
+        $this->assertCount(3, Queue::pushed(DeliverNotification::class));
+
+        // Sent again for the same run, as a retried job would be: nobody is pushed twice and nothing is counted twice.
+        app(AnnouncementService::class)->sendBatch($announcement, 'once', User::where('organization_id', $organization->id)->pluck('id')->all());
+        $this->assertCount(3, Queue::pushed(DeliverNotification::class));
+        $this->assertSame(3, $announcement->refresh()->phones_count);
+    }
+
+    public function test_a_run_that_cannot_start_is_shown_as_failed_and_logged(): void
+    {
+        Queue::fake([SendAnnouncement::class]);
+        $owner = $this->member($this->tenant(), 'owner');
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form())->assertSessionHasNoErrors();
+        $announcement = Announcement::sole();
+
+        (new SendAnnouncement($announcement->id, 'once'))->failed(new \RuntimeException('database went away'));
+
+        $this->assertSame(Announcement::FAILED, $announcement->refresh()->status);
+        $this->assertTrue(AuditLog::where('action', 'announcement.failed')->where('auditable_id', $announcement->id)->exists());
+        $this->actingAs($owner)->get(route('notify.announcements'))->assertOk()->assertSee(__('Could not be sent. Write it again to retry.'));
+    }
+
+    public function test_the_history_shows_when_a_stopped_one_was_meant_to_go(): void
+    {
+        $this->at('2026-11-10 11:00');
+        $owner = $this->member($this->tenant(), 'owner');
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form(['schedule' => 'once', 'send_at' => '2026-11-20T18:30']))->assertSessionHasNoErrors();
+        $this->actingAs($owner)->post(route('notify.announcements.cancel', Announcement::sole()))->assertSessionHasNoErrors();
+
+        $this->actingAs($owner)->get(route('notify.announcements'))->assertOk()->assertSee('Once, on 20 Nov 2026, 18:30');
     }
 
     public function test_the_choices_are_checked(): void
