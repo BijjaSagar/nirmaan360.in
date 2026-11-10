@@ -389,6 +389,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsRemarks => 'Remarks';
 
   @override
+  String get approvalsReportDate => 'Report date';
+
+  @override
   String get approvalsRoleAccounts => 'Accounts';
 
   @override

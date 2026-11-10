@@ -131,6 +131,37 @@ Map<String, dynamic> billNote(int id) => {
   'steps': [],
 };
 
+Map<String, dynamic> dailyReport(int id) => {
+  'id': id,
+  'doc_type': 'dpr',
+  'status': 'IN_REVIEW',
+  'title': 'Daily report · 9 Nov',
+  'project': {'id': 1, 'code': 'KT-B', 'name': 'Kalyani Tower B'},
+  'submitted_by': {'id': 4, 'name': 'Sachin More'},
+  'submitted_at': '2026-11-09T09:50:00+05:30',
+  'current_level': 1,
+  'levels': ['pm'],
+  'current_role': 'pm',
+  'current_role_label': 'Project Manager',
+  'can_act': true,
+  'document': {
+    'id': 4,
+    'report_date': '2026-11-08',
+    'weather': 'Clear',
+    'summary': 'Slab casting at level 6.',
+    'hindrances': null,
+    'manpower_total': 24,
+    'manpower': [
+      {'trade': 'Mason', 'count': 12},
+      {'trade': 'Helper', 'count': 12},
+    ],
+    'work_items': [],
+    'photos': [],
+    'created_by_name': 'Sachin More',
+  },
+  'steps': [],
+};
+
 Future<TestApp> approvalsApp(ActingApi api, {FakeConnectivity? connectivity}) async {
   api.approvalInbox.addAll(<Map<String, dynamic>>[measurement(7), bill(8)]);
   final TestApp app = await bookApp(api: api, connectivity: connectivity);
@@ -423,6 +454,38 @@ void main() {
 
     expect(find.textContaining('review and approve it on the website'), findsOneWidget);
     expect(find.byKey(_approve), findsNothing);
+  });
+
+  // A daily report has a report date. "Measured on" belongs to measurements.
+  for (final (String locale, String reportDate, String measuredOn) in <(String, String, String)>[
+    ('en', 'Report date', 'Measured on'),
+    ('mr', 'अहवालाची तारीख', 'मोजमापाची तारीख'),
+    ('hi', 'रिपोर्ट की तारीख़', 'माप की तारीख़'),
+  ]) {
+    testWidgets('a daily report labels its date as the report date ($locale)', (tester) async {
+      final ActingApi api = ActingApi();
+      api.approvalInbox.add(dailyReport(10));
+      final TestApp app = await bookApp(api: api);
+      addTearDown(app.dispose);
+      await pumpBook(tester, app, start: Routes.approvalDetail(10), locale: locale);
+      await settle(tester);
+
+      expect(find.text(reportDate), findsOneWidget);
+      expect(find.text(measuredOn), findsNothing);
+      expect(find.text('Slab casting at level 6.'), findsOneWidget);
+    });
+  }
+
+  testWidgets('a measurement still says when it was measured', (tester) async {
+    final ActingApi api = ActingApi();
+    api.approvalInbox.add(measurement(7));
+    final TestApp app = await bookApp(api: api);
+    addTearDown(app.dispose);
+    await pumpBook(tester, app, start: Routes.approvalDetail(7));
+    await settle(tester);
+
+    expect(find.text('Measured on'), findsOneWidget);
+    expect(find.text('Report date'), findsNothing);
   });
 
   testWidgets('a bill shows net payable, grouped the Indian way, and its chain', (tester) async {

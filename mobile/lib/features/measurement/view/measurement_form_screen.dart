@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +16,28 @@ import 'widgets/book_kit.dart';
 import 'widgets/details_sheet.dart';
 import 'widgets/form_parts.dart';
 import '../../offline_plan/view/widgets/licence_notice.dart';
+
+/// Height the full layout takes between the status bar and the gesture bar,
+/// with the BOQ title on two lines and text at normal size. Measured with the
+/// real fonts in English, Marathi and Hindi: header 85, dimensions 60,
+/// Add / Deduct 56, quantity band 128, Send / Save 56, keypad 264 and six 8 dp
+/// gaps make 697, rounded up.
+const double _fullLayoutHeight = 700;
+
+/// What the full layout grows by for each 100% of extra text size. The header,
+/// the dimension tiles and the band grow with the text, and Save breaks onto
+/// two lines near 200%. Measured up to 200%, where Marathi needs 897.
+const double _fullLayoutGrowth = 200;
+
+/// Whether the full layout fits a page [height] tall. The header sits under
+/// the status bar and the keypad stands above the gesture bar, so both come
+/// off first. When it does not fit, the compact layout is used: in the full
+/// one the list above the band would cut Add / Deduct and the details key.
+bool _fullLayoutFits(double height, MediaQueryData media) {
+  final double textScale = media.textScaler.scale(N360Type.body.fontSize!) / N360Type.body.fontSize!;
+  final double needed = _fullLayoutHeight + _fullLayoutGrowth * math.max(0, textScale - 1);
+  return height - media.padding.top - media.padding.bottom >= needed;
+}
 
 /// The measurement book's entry page: dimensions on top, the live figure below
 /// them, and the keypad fixed under the thumb.
@@ -203,7 +227,7 @@ class _FormView extends StatelessWidget {
                 bottom: false,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final bool compact = constraints.maxHeight - media.padding.bottom < 700;
+                    final bool compact = !_fullLayoutFits(constraints.maxHeight, media);
                     return _layout(context, l, state, cubit, compact: compact, media: media);
                   },
                 ),
