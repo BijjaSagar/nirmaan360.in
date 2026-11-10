@@ -26,10 +26,8 @@ class AnnouncementsScreen extends StatelessWidget {
     final AppGate gate = context.read<AppGate>();
     final String locale = Localizations.localeOf(context).languageCode;
     return BlocProvider<AnnouncementsCubit>(
-      create: (_) => AnnouncementsCubit(
-        AnnouncementsRepository(services.context.api, portal: () => gate.state.isContractor),
-        locale: locale,
-      )..load(),
+      create: (_) =>
+          AnnouncementsCubit(AnnouncementsRepository(services.context.api, portal: () => gate.state.isContractor), locale: locale)..load(),
       child: _AnnouncementsView(highlightId: highlightId),
     );
   }
@@ -43,29 +41,37 @@ class _AnnouncementsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    return Scaffold(
-      body: LedgerPaper(
-        child: SafeArea(
-          top: false,
-          bottom: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              FieldTopBar(title: l.announcementsTitle),
-              Expanded(
-                child: BlocBuilder<AnnouncementsCubit, AnnouncementsState>(
-                  builder: (context, state) => LedgerRefresh(
-                    onRefresh: () => context.read<AnnouncementsCubit>().load(),
-                    semanticsLabel: l.announcementsLoading,
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
-                      children: _children(context, l, state),
+    return BlocListener<AnnouncementsCubit, AnnouncementsState>(
+      listenWhen: (before, now) => now.quietFailures > before.quietFailures,
+      listener: (context, state) => showPaperToast(
+        context,
+        state.failure is OfflineFailure ? l.announcementsOfflineMessage : l.announcementsFailedMessage,
+        kind: PaperToastKind.info,
+      ),
+      child: Scaffold(
+        body: LedgerPaper(
+          child: SafeArea(
+            top: false,
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                FieldTopBar(title: l.announcementsTitle),
+                Expanded(
+                  child: BlocBuilder<AnnouncementsCubit, AnnouncementsState>(
+                    builder: (context, state) => LedgerRefresh(
+                      onRefresh: () => context.read<AnnouncementsCubit>().load(),
+                      semanticsLabel: l.announcementsLoading,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.lg),
+                        children: _children(context, l, state),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -155,11 +161,12 @@ class AnnouncementCard extends StatelessWidget {
                     key: ValueKey<String>('announcement-image-${announcement.id}'),
                     fit: BoxFit.cover,
                     semanticLabel: announcement.title,
-                    loadingBuilder: (context, child, progress) =>
-                        progress == null ? child : const ColoredBox(color: N360Colors.paper2),
+                    loadingBuilder: (context, child, progress) => progress == null ? child : const ColoredBox(color: N360Colors.paper2),
                     errorBuilder: (context, error, stack) => const ColoredBox(
                       color: N360Colors.paper2,
-                      child: Center(child: Icon(Icons.image_not_supported_outlined, color: N360Colors.ink2, size: N360IconSize.lg)),
+                      child: Center(
+                        child: Icon(Icons.image_not_supported_outlined, color: N360Colors.ink2, size: N360IconSize.lg),
+                      ),
                     ),
                   ),
                 ),

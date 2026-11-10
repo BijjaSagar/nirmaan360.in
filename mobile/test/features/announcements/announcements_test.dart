@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
 import 'package:nirmaan360/core/push/push_messaging.dart';
 import 'package:nirmaan360/core/push/push_target.dart';
+import 'package:nirmaan360/features/announcements/bloc/announcements_cubit.dart';
 import 'package:nirmaan360/features/announcements/data/announcement.dart';
 import 'package:nirmaan360/features/announcements/view/announcements_screen.dart';
 import 'package:nirmaan360/features/notifications/view/notification_settings_screen.dart';
@@ -12,6 +15,30 @@ import '../../app/shell_test_helpers.dart';
 import '../../core/design/test_helpers.dart' show loadRealFonts;
 import '../../support/fake_push.dart';
 import '../../support/test_app.dart';
+
+/// Holds back an answer until [release], to put a refresh between a request and its answer.
+class _SlowApi extends FakeApi {
+  bool hold = false;
+  final List<Completer<void>> _held = <Completer<void>>[];
+
+  void release() {
+    for (final Completer<void> gate in _held) {
+      gate.complete();
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> announcements({int page = 1, String? locale, bool portal = false}) async {
+    if (hold) {
+      final Completer<void> gate = Completer<void>();
+      _held.add(gate);
+      final Map<String, dynamic> answer = await super.announcements(page: page, locale: locale, portal: portal);
+      await gate.future;
+      return answer;
+    }
+    return super.announcements(page: page, locale: locale, portal: portal);
+  }
+}
 
 /// A row as `GET /announcements` sends it.
 Map<String, dynamic> _row(int id, {String? title, String? image, bool repeats = false, String from = 'Acme Infra'}) => <String, dynamic>{
@@ -156,6 +183,43 @@ void main() {
     expect(find.text('The oldest'), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('announcements-more')), findsNothing);
     expect(api.announcementCalls.map((call) => call.page), <int>[1, 2]);
+  });
+
+  testWidgets('a failed "Show older" says so and keeps the list', (tester) async {
+    final FakeApi api = FakeApi()
+      ..announcementsPerPage = 1
+      ..announcementRows = <Map<String, dynamic>>[_row(2, title: 'Newest'), _row(1)];
+    await _open(tester, api);
+
+    api.offline = true;
+    await tester.tap(find.byKey(const ValueKey<String>('announcements-more')));
+    await settle(tester);
+
+    expect(find.text(en.announcementsOfflineMessage), findsOneWidget);
+    expect(find.text('Newest'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('announcements-more')), findsOneWidget, reason: 'it can be tried again');
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(milliseconds: 400));
+  });
+
+  test('an older page that arrives after a refresh is dropped', () async {
+    final _SlowApi api = _SlowApi()
+      ..announcementsPerPage = 1
+      ..announcementRows = <Map<String, dynamic>>[_row(3), _row(2), _row(1)];
+    final AnnouncementsCubit cubit = AnnouncementsCubit(AnnouncementsRepository(api, portal: () => false), locale: 'en');
+    addTearDown(cubit.close);
+
+    await cubit.load();
+    api.hold = true;
+    final Future<void> older = cubit.loadMore();
+    api.announcementRows = <Map<String, dynamic>>[_row(4), _row(3), _row(2), _row(1)];
+    api.hold = false;
+    await cubit.load();
+    api.release();
+    await older;
+
+    expect(cubit.state.items.map((item) => item.id), <int>[4]);
+    expect(cubit.state.page, 1);
   });
 
   testWidgets('a contractor login reads its list under the portal', (tester) async {
