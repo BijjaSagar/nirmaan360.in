@@ -304,6 +304,8 @@ class OfflinePlan {
     } on OfflinePlanRefused {
       await _enterOrStayLocal();
     } on ApiFailure catch (e) {
+      // A renewal that met no answer should not wait out the whole interval.
+      if (_state != null) _lastAsked = null;
       debugPrint('Plan check failed: $e');
     } on Object catch (e) {
       debugPrint('Plan check failed: $e');

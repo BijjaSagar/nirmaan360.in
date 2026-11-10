@@ -316,8 +316,11 @@ void main() {
       final String? first = await app.db.readMeta(MetaKey.offlineDeviceId);
       expect(first, isNotNull);
 
+      // Leave the plan first: on it, a sign-out wipes nothing at all.
+      await app.services.offlinePlan.leave();
       await app.services.auth.signOut(discardUnsent: true);
 
+      expect(await app.services.auth.unsentWorkCount(), 0);
       expect(await app.db.readMeta(MetaKey.offlineDeviceId), first);
     });
 

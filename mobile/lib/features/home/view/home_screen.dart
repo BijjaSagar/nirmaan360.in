@@ -374,7 +374,9 @@ class _OnThisPhoneRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final DateTime now = context.read<AppServices>().context.clock.now();
-    final bool ended = offline.standing(now) == LicenceStanding.ended;
+    // Once the owner has chosen to stay local on an online plan, there is no
+    // licence left to renew and no reason to go on about one.
+    final bool ended = offline.mode == OfflineMode.local && offline.standing(now) == LicenceStanding.ended;
     return LedgerListTile(
       key: const ValueKey<String>('home-on-this-phone'),
       leading: Icon(

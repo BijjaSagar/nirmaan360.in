@@ -152,6 +152,20 @@ class _Headline extends StatelessWidget {
             const SizedBox(height: N360Space.sm),
             Text(problem, style: N360Type.fit(N360Type.body, problem).copyWith(color: N360Colors.stampRed)),
           ],
+          if (state.stop == UploadStop.signIn) ...<Widget>[
+            const SizedBox(height: N360Space.sm),
+            GloveButton(
+              key: const ValueKey<String>('offline-upload-sign-in'),
+              label: t.offlineSignInButton,
+              icon: Icons.login,
+              fullWidth: true,
+              onPressed: () async {
+                final AppServices services = context.read<AppServices>();
+                await services.offlinePlan.noteSignedOut();
+                await services.session.endKeepingUser();
+              },
+            ),
+          ],
         ],
       ),
     );

@@ -362,3 +362,25 @@ Warm and soft: a light warm page, large white rounded cards, big confident figur
 Outdoor contrast: body text at least 7:1, labels at least 4.5:1. Text on orange is dark ink. The deep oranges are below 4.5:1 on light surfaces, so small orange text and icons use `laterite` (`#8F4622`), a darker cut of `#BC5E2F`. Primary actions sit in the lower half of the screen for one-handed use, and every icon that stands for an action has a text label.
 
 Motion must mean something and stay cheap on a low-end Android phone: no blurs, no backdrop filters, no animated opacity on large subtrees, `RepaintBoundary` around anything that animates often, transforms over layout.
+
+## Offline plan (`plan: offline`)
+
+One person, one phone, no server copy. Features: site, measurement, labour, petty_cash. Backend: `routes/api_modules/offline_plan.php`, `config/modules/offline_plan.php`, `app/Services/OfflinePlan/*`.
+
+The app asks `GET offline/status` right after sign-in, on start, and at most every 6 hours while online (hourly for a phone on the plan). A company with `syncs: true` stores nothing and behaves as before; a failure of this call is ignored.
+
+| Call | Success | Refusals the app reads |
+| --- | --- | --- |
+| `GET offline/status` | `{plan, offline, syncs, max_devices, active_devices, licence_days, signing_key}` | |
+| `POST offline/devices/activate` | 201 or 200 `{licence, token, signing_key, max_devices, active_devices}` | 409 `device_limit` with `manage_url`, 403 `not_offline_plan` |
+| `POST offline/devices/refresh` | 200 same shape | 410 `licence_revoked`, 404 `licence_missing`, 403 `not_offline_plan` |
+| `POST offline/devices/release` | 200 `{status, licence}` | 404 `licence_missing` |
+| Anything else | | 403 `{code: "offline_plan", upgrade_url}` |
+
+Token: `v1.<b64url JSON>.<b64url Ed25519 signature over the decoded payload bytes>`; claims `lic, org, usr, dev, plan, features, max_devices, iat, exp`. Verified on the phone with `DartEd25519` against the `signing_key` the same reply carried. A token whose `dev` is another phone is refused.
+
+State is one JSON value under `MetaKey.offlinePlan`, read by the sync engine at the start of every run, so the background task stops too. Modes: `local`, `asking` (the server stopped saying offline), `declined`, `uploading`. Dio also refuses to send anything but `/auth/*`, `/me` and `/offline/*`; `offline_plan` from the server is `OfflinePlanRefused`, never a row-level failure.
+
+Records made on the phone have negative ids and `MetaKey.offlineRecord(kind, id)` beside them: the `client_uuid` the upload uses and any detail with no column (`contract_value`, `daily_wage`). No schema change. A 401 or a sign-out on this plan clears only the sign-in; a different person is refused with `DifferentUserFailure`. The licence ending never blocks reading, adding or exporting.
+
+Upload needs a person's yes (`OfflineUploader`): masters in the order projects, BOQ, workers, wallets, each created with its stored `client_uuid`, then every local id moved in one transaction across tables and queued payloads. Queued entries then go through the normal sync. Interrupted uploads resume; rows that fail go to the Outbox as usual.
