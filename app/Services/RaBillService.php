@@ -11,6 +11,7 @@ use App\Models\RaBillItem;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderItem;
+use App\Services\Notify\ContractorNotifier;
 use App\Support\Dec;
 use Brick\Math\BigDecimal;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 
 class RaBillService
 {
-    public function __construct(private DeductionEngine $engine) {}
+    public function __construct(private DeductionEngine $engine, private ContractorNotifier $contractors) {}
 
     /**
      * Build a draft RA bill from approved, unbilled measurements up to the period end.
@@ -248,6 +249,8 @@ class RaBillService
         }
 
         $bill->update(['status' => 'PAID', 'paid_at' => now(), 'paid_amount' => $bill->adjustedNet()]);
+        // A subcontractor with a portal login is pushed that their bill has been paid.
+        $this->contractors->billPaid($bill);
 
         return $bill;
     }

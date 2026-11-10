@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Seo\Analytics;
 use App\Services\SmsGateway;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -84,6 +85,9 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        // Counted on the next page, and only the plan's key is sent: no name, email or company.
+        app(Analytics::class)->record($request, 'sign_up', ['method' => 'email', 'plan' => $plan]);
 
         return redirect()->route('dashboard')->with('success', $isFree ? __('Welcome! Your free plan is ready.') : __('Welcome! Your :days-day trial has started.', ['days' => config('buildos.trial_days')]));
     }

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
 <head>
+    {{-- The head include marks this page noindex: only listed website pages may be indexed. --}}
     @include('layouts.partials.head')
-    <meta name="robots" content="noindex">
     <title>{{ $bill->number }} · {{ config('buildos.brand') }}</title>
 </head>
 <body class="font-sans antialiased">

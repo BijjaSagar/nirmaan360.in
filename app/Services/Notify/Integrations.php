@@ -58,7 +58,11 @@ class Integrations
             $works = false;
         }
 
-        $this->settings->set([$this->testedKey($name) => $works ? now()->toIso8601String() : null]);
+        $this->settings->set([
+            $this->testedKey($name) => $works ? now()->toIso8601String() : null,
+            // Which account passed: one that arrives later through the environment has not been tested.
+            ...($name === 'fcm' ? ['integration_fcm_tested_for' => $works ? $this->fcm->fingerprint() : null] : []),
+        ]);
 
         return $works ? null : match ($name) {
             'sms' => __('The SMS was not accepted. Check the key, the template and the number, then try again.'),
@@ -84,6 +88,10 @@ class Integrations
             $tested = $this->settings->get($this->testedKey($name));
             $live = ($definition['live'])();
 
+            if ($name === 'fcm' && $this->settings->get('integration_fcm_tested_for') !== $this->fcm->fingerprint()) {
+                $tested = null;
+            }
+
             return [
                 'name' => $name,
                 'title' => $definition['title'],
@@ -92,6 +100,10 @@ class Integrations
                 'live' => $live,
                 'state' => ! $live ? 'not_connected' : ($tested ? 'tested' : 'saved'),
                 'testedAt' => $tested ? Carbon::parse($tested) : null,
+                // For push only: whose account is in use and where it comes from. Never the key.
+                'account' => $name === 'fcm' ? $this->fcm->identity() : null,
+                'source' => $name === 'fcm' ? $this->fcm->source() : null,
+                'environment' => $name === 'fcm' ? $this->fcm->environmentState() : null,
                 'fields' => array_map(fn (array $field) => [
                     ...$field,
                     'value' => $this->isSecret($field) ? null : $this->settings->get($field['key']),
@@ -99,6 +111,12 @@ class Integrations
                 ], $definition['fields']),
             ];
         })->all();
+    }
+
+    /** @return list<string> Fields of one integration that must never be flashed to the session or shown back. */
+    public function secretKeys(string $name): array
+    {
+        return collect($this->definition($name)['fields'])->filter($this->isSecret(...))->pluck('key')->all();
     }
 
     private function isSecret(array $field): bool

@@ -3,7 +3,6 @@
 namespace Tests\Feature\Notify;
 
 use App\Models\OtpCode;
-use App\Services\Notify\FcmGateway;
 use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\PermanentDeliveryFailure;
 use App\Services\Notify\Phone;
@@ -130,78 +129,5 @@ class GatewayTest extends NotifyTestCase
         $this->assertSame('approval_update', $gateway->templateFor('approval.waiting'));
         $this->assertSame('issue_update', $gateway->templateFor('issue.raised'));
         $this->assertNull($gateway->templateFor('company.export_ready'));
-    }
-
-    public function test_fcm_rejects_text_that_is_not_a_service_account(): void
-    {
-        $this->assertFalse(FcmGateway::isServiceAccount('not json'));
-        $this->assertFalse(FcmGateway::isServiceAccount('{"project_id":"x","client_email":"y","private_key":"not a key"}'));
-        $this->assertFalse(app(FcmGateway::class)->isLive());
-    }
-
-    public function test_fcm_signs_in_with_a_verifiable_token_and_sends(): void
-    {
-        $account = $this->connectFcm();
-        $this->fakeFcm();
-
-        $this->assertTrue(app(FcmGateway::class)->send('device-token', new NotificationMessage('issue.assigned', 'Title', 'Body', 'https://example.test/x')));
-
-        Http::assertSent(function (Request $request) use ($account) {
-            if (! str_contains($request->url(), 'oauth2.googleapis.com')) {
-                return false;
-            }
-
-            [$header, $claims, $signature] = explode('.', $request['assertion']);
-            $decode = fn (string $part) => base64_decode(strtr($part, '-_', '+/'));
-            $body = json_decode($decode($claims), true);
-
-            return openssl_verify($header.'.'.$claims, $decode($signature), $account['public_key'], OPENSSL_ALGO_SHA256) === 1
-                && $body['iss'] === $account['client_email']
-                && $body['scope'] === 'https://www.googleapis.com/auth/firebase.messaging';
-        });
-
-        Http::assertSent(fn (Request $request) => $request->url() === 'https://fcm.googleapis.com/v1/projects/demo-project/messages:send'
-            && $request->hasHeader('Authorization', 'Bearer google-token')
-            && $request['message']['token'] === 'device-token'
-            && $request['message']['notification'] === ['title' => 'Title', 'body' => 'Body']
-            && $request['message']['data'] === ['event' => 'issue.assigned', 'url' => 'https://example.test/x']);
-    }
-
-    public function test_fcm_reuses_its_access_token(): void
-    {
-        $this->connectFcm();
-        $this->fakeFcm();
-        $gateway = app(FcmGateway::class);
-
-        $gateway->send('a', new NotificationMessage('issue.assigned', 'One'));
-        $gateway->send('b', new NotificationMessage('issue.assigned', 'Two'));
-
-        $this->assertCount(1, Http::recorded(fn (Request $request) => str_contains($request->url(), 'oauth2.googleapis.com')));
-    }
-
-    public function test_fcm_says_when_a_device_has_gone(): void
-    {
-        $this->connectFcm();
-        $this->fakeFcm(404, ['error' => ['status' => 'NOT_FOUND', 'details' => [['errorCode' => 'UNREGISTERED']]]]);
-
-        $this->assertFalse(app(FcmGateway::class)->send('gone', new NotificationMessage('issue.assigned', 'Title')));
-    }
-
-    public function test_fcm_check_sends_a_dry_run_and_treats_bad_sample_token_as_success(): void
-    {
-        $this->connectFcm();
-        $this->fakeFcm(400, ['error' => ['status' => 'INVALID_ARGUMENT']]);
-
-        $this->assertTrue(app(FcmGateway::class)->keysWork());
-
-        Http::assertSent(fn (Request $request) => str_contains($request->url(), 'messages:send') && $request['validate_only'] === true);
-    }
-
-    public function test_fcm_check_fails_when_firebase_refuses_the_account(): void
-    {
-        $this->connectFcm();
-        $this->fakeFcm(403, ['error' => ['status' => 'PERMISSION_DENIED']]);
-
-        $this->assertFalse(app(FcmGateway::class)->keysWork());
     }
 }

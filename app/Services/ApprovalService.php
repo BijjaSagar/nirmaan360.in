@@ -51,6 +51,7 @@ class ApprovalService
             if ($levels === []) {
                 $document->onApprovalApproved();
                 AuditLog::record('approval.auto_approved', $document);
+                $this->workflow->approvedWithoutApproval($document);
 
                 return null;
             }

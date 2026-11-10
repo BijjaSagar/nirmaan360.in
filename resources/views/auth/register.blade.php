@@ -9,7 +9,8 @@
             {{ __('Plan: :plan. No card needed. After the trial you move to the free plan.', ['plan' => __(config("buildos.plans.{$plan}.label"))]) }}
         @endif
     </p>
-    <form method="POST" action="{{ route('register') }}" class="mt-6 space-y-4">
+    {{-- data-track: starting to fill this form is counted once, with the plan's key and nothing that was typed. --}}
+    <form method="POST" action="{{ route('register') }}" class="mt-6 space-y-4" data-track="sign_up_start" data-track-plan="{{ old('plan', $plan) }}">
         @csrf
         <input type="hidden" name="plan" value="{{ old('plan', $plan) }}">
         <x-field :label="__('Company name')" name="company">

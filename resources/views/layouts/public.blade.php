@@ -1,14 +1,9 @@
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
 <head>
+    {{-- The description, canonical address, language versions and share tags come from modules/seo/head, inside this include. --}}
     @include('layouts.partials.head', ['siteFonts' => true])
-    <title>@yield('title') · {{ config('buildos.brand') }}</title>
-    <meta name="description" content="@yield('description', __('Construction software for Indian builders and contractors. Material against the BOQ, contractor payment against work done and time against progress, on one record.'))">
-    <meta property="og:title" content="@yield('title') · {{ config('buildos.brand') }}">
-    <meta property="og:description" content="@yield('description', __('Construction software for Indian builders and contractors. Material against the BOQ, contractor payment against work done and time against progress, on one record.'))">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <link rel="canonical" href="{{ url()->current() }}">
+    @include('modules.seo.title')
 </head>
 <body class="site font-sans text-ink antialiased">
 @if (site_setting('announcement'))
@@ -66,7 +61,7 @@
 <footer class="bg-ink text-paper/65">
     <div class="site-wrap grid gap-10 py-16 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <div>
-            <x-brand />
+            <x-brand lazy />
             <p class="mt-4 max-w-xs text-[15px] leading-relaxed">{{ __('Material, contractor payment and time, tracked against the BOQ. For builders and contractors in India.') }}</p>
             <ul class="mt-4 space-y-1.5 text-[15px]">
                 @if (site_setting('contact_email'))<li class="flex items-center gap-2"><x-icon name="mail" class="size-4" /><a href="mailto:{{ site_setting('contact_email') }}" class="hover:text-paper">{{ site_setting('contact_email') }}</a></li>@endif
@@ -104,6 +99,10 @@
                 <li><a href="{{ route('contact') }}" class="hover:text-paper">{{ __('Contact') }}</a></li>
                 <li><a href="{{ route('privacy') }}" class="hover:text-paper">{{ __('Privacy') }}</a></li>
                 <li><a href="{{ route('terms') }}" class="hover:text-paper">{{ __('Terms') }}</a></li>
+                @if (app(\App\Services\Seo\Analytics::class)->measurementId())
+                    {{-- Opens the analytics question again, so a choice can be changed at any time. --}}
+                    <li><button type="button" data-consent-open class="cursor-pointer hover:text-paper">{{ __('Cookie settings') }}</button></li>
+                @endif
             </ul>
         </div>
     </div>

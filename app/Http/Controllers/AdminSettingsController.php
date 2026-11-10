@@ -264,9 +264,11 @@ class AdminSettingsController extends Controller
         if ($request->hasFile('logo')) {
             $this->deleteLogo();
             $data['logo_path'] = $request->file('logo')->store('platform');
+            // Its size lets the page keep the logo's space before the picture loads, so the menu does not jump.
+            [$data['logo_width'], $data['logo_height']] = getimagesize($request->file('logo')->getRealPath()) ?: [null, null];
         } elseif ($request->boolean('remove_logo')) {
             $this->deleteLogo();
-            $data['logo_path'] = null;
+            $data['logo_path'] = $data['logo_width'] = $data['logo_height'] = null;
         }
 
         // Clearing a field should bring back the built-in brand name.

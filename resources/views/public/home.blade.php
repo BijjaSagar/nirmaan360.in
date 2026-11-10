@@ -1,6 +1,4 @@
 @extends('layouts.public')
-@section('title', __('Material, contractor payment and time, tracked'))
-@section('description', __('Construction software for Indian builders and contractors. Material against the BOQ, contractor payment against work done and time against progress, on one record.'))
 @section('content')
 @php
     // Everything drawn in the mocks is sample data. No customer, contractor or supplier here is real.
@@ -513,7 +511,7 @@
     <div class="site-wrap grid gap-10 border-t border-rule py-16 lg:grid-cols-[1fr_1.6fr] lg:py-24">
         <h2 class="text-[clamp(2rem,3.8vw,3rem)]">{{ __('Questions builders ask us') }}</h2>
         <div class="faq divide-y divide-rule border-y border-rule">
-            @foreach ([
+            @foreach ($faqs = [
                 ['How much will this save me?', 'We do not promise a number. The engineer who shaped this puts wastage on an untracked site at 5 to 10% of material and aims to bring it to 1 to 2%. That is his estimate, not a measured result, and it depends on entries going in every day. What the app does is show the gap the day the entry goes in.'],
                 ['Do I need a card to start?', 'No. You get :days days on the plan you pick, then you move to the free plan unless you decide to buy.'],
                 ['Can site staff see rates and payments?', 'No. Site staff enter quantities, photos and remarks. Rates, contract values and payments need the money permission, which you give only to the people who should have it.'],
@@ -528,6 +526,8 @@
         </div>
     </div>
 </section>
+{{-- The same questions, in the same words, for search engines. --}}
+@include('modules.seo.faq', ['faqs' => array_map(fn (array $faq) => [__($faq[0]), __($faq[1], $trial)], $faqs)])
 @endif
 
 <section class="site-panel mb-3 overflow-hidden bg-laterite text-paper sm:mb-5">
