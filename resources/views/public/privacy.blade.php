@@ -13,6 +13,8 @@
         <li>Project records you and your team enter, such as BOQs, daily reports, measurements, attendance, bills and photos.</li>
         <li>Payment records. Card and bank details are handled by Razorpay and never reach our servers.</li>
         <li>Technical data needed to run the service, such as IP address and sign-in activity.</li>
+        <li>Location, in the phone app only: when you mark attendance with a photo, the app reads your phone's precise location once and saves it with that photo, so the company can check it was taken at the site. The app does not read your location at any other time or in the background.</li>
+        <li>A notification token for your phone, only after you turn on alerts in the app. It is used only to deliver your notifications through Google Firebase Cloud Messaging.</li>
     </ul>
 
     <h2>How we use it</h2>
@@ -25,7 +27,7 @@
     @endif
 
     <h2>Who can see your records</h2>
-    <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage and payments, and they handle data only so that we can run the service.</p>
+    <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service.</p>
 
     <h2>Where your data is stored</h2>
     <p>Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region.</p>
