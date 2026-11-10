@@ -4,12 +4,18 @@
     @php
         use App\Services\ContractorControl\Figures;
         use App\Support\Dec;
-        $tone = match ($tender->status) { 'OPEN' => 'border-neel text-neel', 'AWARDED' => 'border-moss text-moss', default => 'border-ink-3 text-ink-3' };
         $current = collect($comparison['bids'])->where('current', true);
+        $canQuote = $tender->isOpen() && auth()->user()->can('contractor.tender');
+
+        // A BOQ line's page sends its quote here to be chosen; otherwise the lowest starts chosen.
+        $asked = old('bid_id', request()->query('bid'));
+        $chosen = $current->first(fn (array $row) => is_scalar($asked) && (string) $row['bid']->id === (string) $asked) ?? $current->firstWhere('lowest', true);
     @endphp
 
+    <div @if ($canQuote) x-data="contractorPopup()" @endif>
+    <div @if ($canQuote) :inert="open" @endif>
     <x-page-header :title="$tender->title" :subtitle="$tender->number.' · '.$project->name">
-        <span class="stamp {{ $tone }}">{{ __(\Illuminate\Support\Str::headline(strtolower($tender->status))) }}</span>
+        @include('modules.contractor_control.tenders._status', ['status' => $tender->status])
     </x-page-header>
 
     @if ($tender->scope || $tender->due_on)
@@ -54,7 +60,18 @@
                         @endforeach
                     </div>
                 </details>
-                <p class="mt-1 text-xs text-ink-3"><span class="num">{{ $row['bid']->received_on->format('d M Y') }}</span>@if ($row['bid']->enteredBy) · {{ $row['bid']->enteredBy->name }}@endif @if ($row['bid']->remarks) · {{ $row['bid']->remarks }}@endif</p>
+                @include('modules.contractor_control.tenders._offer', [
+                    'receivedOn' => $row['bid']->received_on,
+                    'validUntil' => $row['bid']->valid_until,
+                    'includesMaterial' => $row['bid']->includes_material,
+                    'completionDays' => $row['bid']->completion_days,
+                    'enteredBy' => $row['bid']->enteredBy?->name,
+                    'paymentTerms' => $row['bid']->payment_terms,
+                    'remarks' => $row['bid']->remarks,
+                ])
+                @if ($row['bid']->quotation_path)
+                    <p class="mt-1.5"><a href="{{ route('contractor-control.tenders.bids.quotation', $row['bid']) }}" target="_blank" rel="noopener" class="link text-sm">{{ __('Open the quotation') }}</a></p>
+                @endif
             </div>
         @empty
             <x-empty :title="__('No quotes yet')" :note="__('Add each contractor\'s quote below.')" />
@@ -62,23 +79,14 @@
     </section>
 
     @if ($tender->isOpen())
-        @can('contractor.tender')
+        @if ($canQuote)
             <section class="card mt-5">
                 <div class="card-head"><h2 class="card-title">{{ __('Add a quote') }}</h2></div>
-                <form method="POST" action="{{ route('contractor-control.tenders.bids.store', $tender) }}" class="grid gap-4 p-4 sm:grid-cols-2">
+                <form method="POST" action="{{ route('contractor-control.tenders.bids.store', $tender) }}" enctype="multipart/form-data" class="grid gap-4 p-4 sm:grid-cols-2">
                     @csrf
                     <input type="hidden" name="client_uuid" value="{{ old('client_uuid', (string) \Illuminate\Support\Str::uuid()) }}">
-                    <x-field :label="__('Contractor')" name="party_id">
-                        <select id="party_id" name="party_id" class="input">
-                            <option value="">{{ __('Choose') }}</option>
-                            @foreach ($contractors as $contractor)
-                                <option value="{{ $contractor->id }}" @selected(old('party_id') == $contractor->id)>{{ $contractor->name }}</option>
-                            @endforeach
-                        </select>
-                    </x-field>
-                    <x-field :label="__('Or a new contractor')" name="new_contractor"><input id="new_contractor" name="new_contractor" value="{{ old('new_contractor') }}" maxlength="160" class="input"></x-field>
-                    <x-field :label="__('Quoted amount (₹)')" name="quoted_amount" :hint="$tender->items->count() > 1 ? __('One figure for all items, or rates below.') : null"><input id="quoted_amount" name="quoted_amount" type="number" inputmode="decimal" step="0.01" min="0.01" value="{{ old('quoted_amount') }}" class="input num"></x-field>
-                    <x-field :label="__('Date received')" name="received_on"><input id="received_on" name="received_on" type="date" max="{{ today()->format('Y-m-d') }}" value="{{ old('received_on', today()->format('Y-m-d')) }}" class="input"></x-field>
+                    @include('modules.contractor_control.tenders._quote-who', ['prefix' => 'quote', 'active' => true, 'class' => 'sm:col-span-2'])
+                    <x-field :label="__('Quoted amount (₹)')" name="quoted_amount" :hint="$tender->items->count() > 1 ? __('One figure for all items, or rates below.') : null" class="sm:col-span-2"><input id="quoted_amount" name="quoted_amount" type="number" inputmode="decimal" step="0.01" min="0.01" value="{{ old('quoted_amount') }}" class="input num"></x-field>
                     @if ($tender->items->count() > 1)
                         <details class="sm:col-span-2" @if ($errors->has('rates') || old('rates')) open @endif>
                             <summary class="link cursor-pointer text-sm">{{ __('Enter a rate for each item') }}</summary>
@@ -91,22 +99,22 @@
                             </div>
                         </details>
                     @endif
-                    <x-field :label="__('Remarks')" name="remarks" class="sm:col-span-2"><input id="remarks" name="remarks" value="{{ old('remarks') }}" maxlength="500" class="input"></x-field>
+                    @include('modules.contractor_control.tenders._quote-offer', ['prefix' => 'quote', 'active' => true])
                     <div class="sm:col-span-2"><button class="btn btn-primary">{{ __('Add quote') }}</button></div>
                 </form>
             </section>
-        @endcan
+        @endif
 
         @can('contractor.award')
             @if ($current->isNotEmpty())
-                <section class="card mt-5">
+                <section id="award" class="card mt-5 scroll-mt-4">
                     <div class="card-head"><h2 class="card-title">{{ __('Select the winner') }}</h2></div>
                     <form method="POST" action="{{ route('contractor-control.tenders.award', $tender) }}" class="grid gap-4 p-4 sm:grid-cols-6">
                         @csrf
                         <x-field :label="__('Quotation')" name="bid_id" class="sm:col-span-6">
                             <select id="bid_id" name="bid_id" class="input" required>
                                 @foreach ($current as $row)
-                                    <option value="{{ $row['bid']->id }}" @selected(old('bid_id') == $row['bid']->id || (! old('bid_id') && $row['lowest']))>{{ $row['contractor'] }} · {{ inr($row['amount']) }}@if ($row['lowest']) ({{ __('Lowest') }})@endif</option>
+                                    <option value="{{ $row['bid']->id }}" @selected($chosen && $chosen['bid']->id === $row['bid']->id)>{{ $row['contractor'] }} · {{ inr($row['amount']) }}@if ($row['lowest']) ({{ __('Lowest') }})@endif</option>
                                 @endforeach
                             </select>
                         </x-field>
@@ -144,4 +152,8 @@
             </form>
         @endcan
     @endif
+    </div>
+
+    @includeWhen($canQuote, 'modules.contractor_control.tenders._contractor-popup')
+    </div>
 @endsection

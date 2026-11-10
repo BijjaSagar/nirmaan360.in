@@ -3,6 +3,7 @@
 namespace App\Http\Presenters;
 
 use App\Models\ContractorPayment;
+use App\Models\ContractorTenderItem;
 
 /**
  * The only way contractor figures leave the service layer for someone without money.view.
@@ -106,6 +107,123 @@ final class ContractorControlPresenter
             'is_reversal' => $payment->isReversal(),
             'approval_id' => $payment->currentApproval?->id,
             'impact' => $impact ? self::impact($impact) : null,
+        ];
+    }
+
+    /**
+     * Beside a line on the BOQ table: how many tenders it is in and how many quotes came in.
+     * The lowest rate is money.
+     *
+     * @param  array{tenders: int, quotes: int, lowest_rate: ?string}  $marker
+     */
+    public static function tenderMarker(array $marker, bool $canSeeMoney): array
+    {
+        $base = ['tenders' => $marker['tenders'], 'quotes' => $marker['quotes']];
+
+        return $canSeeMoney ? [...$base, 'lowest_rate' => $marker['lowest_rate']] : $base;
+    }
+
+    /**
+     * A BOQ line's tenders, for the screen and the API alike. Without money.view a reader learns
+     * that a tender exists, who quoted and when, and nothing of what was quoted.
+     */
+    public static function lineTenders(array $data, bool $canSeeMoney): array
+    {
+        $item = $data['item'];
+        $summary = $data['summary'];
+
+        $base = [
+            'boq_item_id' => $item->id,
+            'code' => $item->code,
+            'description' => $item->description,
+            'unit' => $item->unit,
+            'qty' => $item->qty,
+            'tender_count' => $summary['tenders'],
+            'open_tender_count' => $summary['open'],
+            'quote_count' => $summary['quotes'],
+            'tenders' => array_map(fn (array $row) => self::lineTender($row, $canSeeMoney), $data['tenders']),
+        ];
+
+        if (! $canSeeMoney) {
+            return $base;
+        }
+
+        return [
+            ...$base,
+            'boq_rate' => $item->rate,
+            'boq_amount' => $item->amount(),
+            'lowest_rate' => $summary['lowest_rate'],
+            'lowest_contractor' => $summary['lowest_contractor'],
+        ];
+    }
+
+    private static function lineTender(array $row, bool $canSeeMoney): array
+    {
+        $tender = $row['tender'];
+        $quotes = $row['quotes'];
+
+        // Cheapest first would itself say who quoted least, so without money they come in the order received.
+        if (! $canSeeMoney) {
+            usort($quotes, fn (array $a, array $b) => $a['bid']->id <=> $b['bid']->id);
+        }
+
+        $base = [
+            'id' => $tender->id,
+            'number' => $tender->number,
+            'title' => $tender->title,
+            'status' => $tender->status,
+            'due_on' => $tender->due_on?->toDateString(),
+            'work_order_id' => $tender->work_order_id,
+            'work_order_number' => $tender->workOrder?->number,
+            'qty' => $row['qty'],
+            'lines' => $tender->items->map(fn (ContractorTenderItem $line) => [
+                'id' => $line->id,
+                'boq_item_id' => $line->boq_item_id,
+                'code' => $line->boqItem?->code,
+                'description' => $line->boqItem?->description,
+                'unit' => $line->boqItem?->unit,
+                'qty' => $line->qty,
+            ])->all(),
+            'quote_count' => count(array_filter($quotes, fn (array $quote) => $quote['current'])),
+            'quotes' => array_map(fn (array $quote) => self::lineQuote($quote, $canSeeMoney), $quotes),
+        ];
+
+        return $canSeeMoney ? [...$base, 'boq_rate' => $row['boq_rate'], 'boq_amount' => $row['boq_amount'], 'lowest_rate' => $row['lowest_rate']] : $base;
+    }
+
+    private static function lineQuote(array $quote, bool $canSeeMoney): array
+    {
+        $bid = $quote['bid'];
+
+        $base = [
+            'bid_id' => $bid->id,
+            'contractor' => $quote['contractor'],
+            'received_on' => $bid->received_on?->toDateString(),
+            'current' => $quote['current'],
+            'selected' => $quote['selected'],
+            'valid_until' => $bid->valid_until?->toDateString(),
+            'includes_material' => $bid->includes_material,
+            'completion_days' => $bid->completion_days,
+            'entered_by' => $bid->enteredBy?->name,
+        ];
+
+        if (! $canSeeMoney) {
+            return $base;
+        }
+
+        // Payment terms and remarks are free text, which may quote a price, so they travel with the figures.
+        return [
+            ...$base,
+            'rate' => $quote['rate'],
+            'amount' => $quote['amount'],
+            'diff' => $quote['diff'],
+            'diff_amount' => $quote['diff_amount'],
+            'diff_pct' => $quote['diff_pct'],
+            'lowest' => $quote['lowest'],
+            'payment_terms' => $bid->payment_terms,
+            'remarks' => $bid->remarks,
+            'has_quotation' => $bid->quotation_path !== null,
+            'quotation_name' => $bid->quotation_name,
         ];
     }
 

@@ -201,7 +201,7 @@ trait BuildsMoneyWorld
         // Photos, receipts and drawings are real (empty) files, so the routes that serve them answer rather than fail.
         Storage::fake();
 
-        foreach (['none/measurement.jpg', 'none/photo.jpg', 'none/issue.jpg', 'none/bill.jpg', 'none/ncr.jpg', 'none/A-101.pdf', 'none/progress.jpg', 'none/payment-bill.jpg', 'none/challan.jpg', 'none/challan-bill.pdf', 'none/permit.pdf'] as $path) {
+        foreach (['none/measurement.jpg', 'none/photo.jpg', 'none/issue.jpg', 'none/bill.jpg', 'none/ncr.jpg', 'none/A-101.pdf', 'none/progress.jpg', 'none/payment-bill.jpg', 'none/challan.jpg', 'none/challan-bill.pdf', 'none/permit.pdf', 'none/quotation.pdf'] as $path) {
             Storage::put($path, 'stored file');
         }
 
@@ -406,13 +406,19 @@ trait BuildsMoneyWorld
         $progressPhoto = ProgressPhoto::create(['organization_id' => $org, 'project_id' => $project->id, 'progress_entry_id' => $progress->id, 'path' => 'none/progress.jpg', 'uploaded_by' => $engineer->id]);
         $cell = MepStageCell::create(['organization_id' => $org, 'project_id' => $project->id, 'project_floor_id' => $floor->id, 'trade' => 'plumbing', 'stage' => 'core_cutting', 'status' => 'in_progress', 'status_at' => now(), 'updated_by' => $engineer->id]);
 
-        // Contractor control: a milestone, a payment the engineer raised, and a tender with one bid
+        // Contractor control: a milestone, a payment the engineer raised, and a tender with one bid.
+        // The bid's free text quotes a price, so a page that shows it to site staff is caught by the rupee check.
         $milestone = ContractorMilestone::create(['organization_id' => $org, 'project_id' => $project->id, 'work_order_id' => $workOrder->id, 'title' => 'Slab complete', 'amount' => $money['milestone'], 'sort' => 1, 'created_by' => $owner->id]);
         $payment = app(ContractorPaymentService::class)->raise($workOrder, ['paid_on' => '2026-11-06', 'amount' => $money['payment'], 'mode' => 'bank', 'paid_to' => 'Shree Formwork', 'boq_item_id' => $item->id], null, $engineer);
         $payment->update(['bill_path' => 'none/payment-bill.jpg']);
         $tender = ContractorTender::create(['organization_id' => $org, 'project_id' => $project->id, 'number' => 'CT-001', 'title' => 'Flooring tender', 'status' => 'OPEN', 'created_by' => $owner->id]);
         $tenderItem = ContractorTenderItem::create(['organization_id' => $org, 'contractor_tender_id' => $tender->id, 'boq_item_id' => $item->id, 'qty' => '100.000', 'boq_rate' => $money['boq_rate']]);
-        $bid = ContractorBid::create(['organization_id' => $org, 'contractor_tender_id' => $tender->id, 'party_id' => $subcontractor->id, 'quoted_amount' => $money['bid'], 'received_on' => '2026-11-04', 'entered_by' => $owner->id]);
+        $bid = ContractorBid::create([
+            'organization_id' => $org, 'contractor_tender_id' => $tender->id, 'party_id' => $subcontractor->id, 'quoted_amount' => $money['bid'], 'received_on' => '2026-11-04', 'entered_by' => $owner->id,
+            'valid_until' => '2026-12-31', 'includes_material' => true, 'completion_days' => 45,
+            'payment_terms' => 'Advance of ₹1,23,456.00, the rest in 30 days', 'remarks' => 'Will come down to ₹8,250.50 a cum',
+            'quotation_path' => 'none/quotation.pdf', 'quotation_name' => 'quotation.pdf',
+        ]);
         ContractorBidItem::create(['organization_id' => $org, 'contractor_bid_id' => $bid->id, 'contractor_tender_item_id' => $tenderItem->id, 'rate' => Dec::money(Dec::of($money['bid'])->dividedBy(100, 2)), 'amount' => $money['bid']]);
 
         // Material control: a delivery challan with its photo and supplier bill
@@ -462,7 +468,7 @@ trait BuildsMoneyWorld
             AssetHireBill::class => $hireBill, VendorBill::class => $vendorBill, GstInvoice::class => $invoice,
             WageRun::class => $wageRun, WageRunLine::class => $wageLine, CrmTender::class => $crmTender, CrmLead::class => $lead,
             ProjectFloor::class => $floor, ProgressEntry::class => $progress, ProgressPhoto::class => $progressPhoto, MepStageCell::class => $cell,
-            ContractorMilestone::class => $milestone, ContractorPayment::class => $payment, ContractorTender::class => $tender,
+            ContractorMilestone::class => $milestone, ContractorPayment::class => $payment, ContractorTender::class => $tender, ContractorBid::class => $bid,
             DeliveryChallan::class => $challan, ProjectPermit::class => $permit, ProjectPermitFile::class => $permitFile, Party::class => $vendor,
             CustomRole::class => $customRole, User::class => $engineer,
             PriceWatchMaterial::class => $watch, MaterialPrice::class => $watchPrice,

@@ -19,7 +19,14 @@ class ContractorBid extends Model
 
     protected function casts(): array
     {
-        return ['quoted_amount' => 'decimal:2', 'received_on' => 'date', 'is_selected' => 'boolean'];
+        return [
+            'quoted_amount' => 'decimal:2',
+            'received_on' => 'date',
+            'is_selected' => 'boolean',
+            'valid_until' => 'date',
+            'includes_material' => 'boolean',
+            'completion_days' => 'integer',
+        ];
     }
 
     public function isCurrent(): bool

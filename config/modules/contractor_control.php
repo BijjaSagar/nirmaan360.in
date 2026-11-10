@@ -5,7 +5,7 @@ return [
     'plans' => ['contractor', 'business', 'enterprise'],
 
     // Contract values, payments and quotes also need money.view, from config/modules/site_control.php.
-    // Without it, contractor.view shows work % and nothing else.
+    // Without it, contractor.view shows work %, and on a BOQ line which tenders it is in and who quoted, with no prices.
     'permissions' => [
         'pm' => ['contractor.*'],
         'qs' => ['contractor.view', 'contractor.tender'],

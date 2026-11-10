@@ -12,4 +12,7 @@ Route::middleware('feature:site_control')->group(function () {
     Route::post('/work-orders/{workOrder}/contractor-payments', [ContractorControlApiController::class, 'requestPayment'])->middleware('can:contractor.request');
     Route::get('/contractor-payments/{payment}', [ContractorControlApiController::class, 'showPayment'])->middleware('can:contractor.view');
     Route::get('/contractor-payments/{payment}/bill', [ContractorControlApiController::class, 'bill'])->middleware('can:money.view');
+
+    // The tenders a BOQ line is in. The presenter leaves every price out without money.view.
+    Route::get('/boq-items/{item}/tenders', [ContractorControlApiController::class, 'lineTenders'])->middleware(['can:boq.view', 'can:contractor.view']);
 });

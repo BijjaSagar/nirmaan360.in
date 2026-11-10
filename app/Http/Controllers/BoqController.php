@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Presenters\ContractorControlPresenter;
 use App\Models\BoqItem;
 use App\Models\Project;
 use App\Services\BoqService;
+use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ProjectSetup\BoqCategories;
 use App\Services\ProjectSetup\BoqRevisions;
 use App\Support\Dec;
@@ -24,9 +26,9 @@ class BoqController extends Controller
     /** Read when the file has them. A file without them still imports, and leaves them as they are. */
     private const OPTIONAL_COLUMNS = ['category', 'details'];
 
-    public function __construct(private BoqService $service) {}
+    public function __construct(private BoqService $service, private BoqLineTenders $lineTenders) {}
 
-    public function index(Project $project): View
+    public function index(Request $request, Project $project): View
     {
         $items = BoqItem::withLedger()->with('section')->where('project_id', $project->id)->orderBy('sort')->orderBy('id')->get();
 
@@ -38,7 +40,25 @@ class BoqController extends Controller
             'items' => $items,
             'total' => $values['grand']['amount'] ?? null,
             'values' => $values,
+            'tenders' => $this->tenderMarkers($request, $project),
         ]);
+    }
+
+    /**
+     * Beside each line, for people who may see tenders: how many it is in and how many quotes came in.
+     * The lowest quoted rate is money, so the presenter drops it for everyone else.
+     *
+     * @return array<int, array<string, mixed>>|null BOQ item id => marker. Null when tenders are not this person's to see.
+     */
+    private function tenderMarkers(Request $request, Project $project): ?array
+    {
+        if (! $this->lineTenders->visibleTo($request->user())) {
+            return null;
+        }
+
+        $money = Money::visible($request->user());
+
+        return array_map(fn (array $marker) => ContractorControlPresenter::tenderMarker($marker, $money), $this->lineTenders->markers($project));
     }
 
     /**
