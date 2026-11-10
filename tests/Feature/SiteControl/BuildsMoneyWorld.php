@@ -469,7 +469,7 @@ trait BuildsMoneyWorld
         ];
 
         // Parameters that are plain values: the asset tag, an agent key, and the ids the public API and signed links take.
-        $this->params = ['tag' => $asset->tag, 'agent' => 'project_brain', 'id' => $dpr->id, 'projectId' => $project->id, 'dprId' => $dpr->id, 'billId' => $bill->id];
+        $this->params = ['tag' => $asset->tag, 'agent' => 'project_brain', 'integration' => 'fcm', 'id' => $dpr->id, 'projectId' => $project->id, 'dprId' => $dpr->id, 'billId' => $bill->id];
     }
 
     /** The eight digits that identify a figure, however it is grouped or rounded on a page. */
