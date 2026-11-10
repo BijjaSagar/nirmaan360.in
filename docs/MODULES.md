@@ -72,6 +72,14 @@ The `site_alerts` module runs other modules' checks and shows their cards withou
 
 A `Finding` with a rupee figure must set `needs` to `money.view` or `money.overview`; it is then hidden from, and never sent to, anyone without that permission. Its `notify` names the permission of the people told when it opens, or is null when your module has already told them itself. A card shows money only when `$viewer->can('money.overview')`. Work percentages come from `App\Services\SiteControl\WorkProgress`.
 
+## Website pages, search engines and analytics
+
+Every page passes through `resources/views/modules/seo/head.blade.php`, included by `layouts/partials/head`. It marks the page `noindex` unless it is a listed website page, so a new app screen needs nothing.
+
+- A new public page must be added to `App\Services\Seo\PublicPages`, with its title and description in `SeoText`, or named in `NOT_LISTED` in `tests/Feature/Seo/SitemapTest` with the reason it stays out of search. That test fails until one of the two is done. A page offered in Hindi and Marathi also needs a route in `routes/seo.php` and every line translated (`LanguageVersionsTest`).
+- Do not write a title, description, canonical link or share tag in a view. They come from `/admin/seo`, where the platform admin edits them per language.
+- To count something in Google Analytics, add the event and the only values it may carry to `App\Services\Seo\Analytics::events()`. Then call `Analytics::record()` on the server, or put `data-track` on the form or section. Never pass a name, email, phone number, company, project or amount. The page address sent is the route's pattern, so route parameters and query strings stay on the site.
+
 ## Contractor logins
 
 A role marked `'portal' => true` in `config/buildos.php` (today only `contractor`) is an outside login, not a team member. `User::isContractor()` names it, `App\Http\Middleware\ContractorPortalGate` turns it away from every signed-in route outside `contractor-portal.*` and `api/v1/contractor-portal/*`, the team screens never offer or edit it, and it takes no seat on the plan. It is handed out from the contractor's page by whoever holds the role's `managed_by` permission, through the ordinary invitation flow with `contractor_party_id` set. A new module needs nothing for this: the gate refuses a contractor before the module's routes run. `tests/Feature/ContractorPortal/ContractorPortalBoundaryTest` walks every route to prove it.

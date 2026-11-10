@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BillingPayment;
 use App\Services\BillingService;
 use App\Services\RazorpayGateway;
+use App\Services\Seo\Analytics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -46,6 +47,9 @@ class BillingController extends Controller
 
             return back()->withErrors(['plan' => __('We could not reach the payment service. Please try again.')]);
         }
+
+        // Which plan and period, never the amount.
+        app(Analytics::class)->record($request, 'begin_checkout', ['plan' => $data['plan'], 'cycle' => $data['cycle']]);
 
         return view('billing.checkout', ['payment' => $payment, 'keyId' => $this->gateway->keyId()]);
     }

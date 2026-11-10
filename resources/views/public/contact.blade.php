@@ -1,5 +1,4 @@
 @extends('layouts.public')
-@section('title', __('Contact'))
 @section('content')
 <section>
     <div class="site-wrap grid gap-12 py-16 lg:grid-cols-[1fr_1.1fr] lg:py-24">

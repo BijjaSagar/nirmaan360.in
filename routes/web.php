@@ -41,6 +41,9 @@ Route::get('/terms', [PublicController::class, 'terms'])->name('terms');
 Route::get('/brand/logo', [PublicController::class, 'logo'])->name('brand.logo');
 Route::get('/locale/{locale}', LocaleController::class)->name('locale');
 
+// Sitemap, robots.txt and the Hindi and Marathi addresses of the pages above.
+require __DIR__.'/seo.php';
+
 Route::middleware('signed')->group(function () {
     Route::get('/client/bills/{bill}', [ClientSignoffController::class, 'show'])->name('client.bill');
     Route::post('/client/bills/{bill}', [ClientSignoffController::class, 'act'])->name('client.bill.act')->middleware('throttle:20,1');

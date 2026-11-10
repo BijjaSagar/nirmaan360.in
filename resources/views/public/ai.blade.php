@@ -1,6 +1,4 @@
 @extends('layouts.public')
-@section('title', __('AI agents'))
-@section('description', __('AI agents for construction paperwork, from daily reports to RA bills, with a person approving every result. Now taking early access requests.'))
 @section('content')
 @php
     $groups = [

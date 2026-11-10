@@ -1,6 +1,4 @@
 @extends('layouts.public')
-@section('title', __('Free construction calculators'))
-@section('description', __('Free calculators for concrete, brickwork, plaster, steel, tiles, paint and cut and fill, in metric units for Indian sites.'))
 @section('content')
 <script>
     function calculators() {
@@ -83,7 +81,8 @@
     </div>
 </section>
 
-<section class="site-wrap py-10" x-data="calculators()">
+{{-- data-track: the first number typed into a calculator is counted, by the calculator's name only. See modules/seo/analytics-script. --}}
+<section class="site-wrap py-10" x-data="calculators()" data-track="calculator_use" data-track-calculator="concrete" :data-track-calculator="tab">
     <div class="flex flex-wrap gap-1.5" role="tablist">
         <template x-for="(label, key) in tabs" :key="key">
             <button type="button" role="tab" class="btn" :aria-selected="tab === key" :class="tab === key ? 'btn-ink' : 'btn-ghost'" @click="tab = key" x-text="label"></button>

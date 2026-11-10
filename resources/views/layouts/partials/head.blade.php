@@ -3,10 +3,14 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
 <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+{{-- The stylesheet comes from fonts.bunny.net and the font files from cdn.jsdelivr.net, so both connections are opened early. --}}
 <link rel="preconnect" href="https://fonts.bunny.net">
-<link href="https://fonts.bunny.net/css?family=khand:500,600,700|mukta:400,500,600,700,800|dm-mono:400,500" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+{{-- display=swap shows the text in a system font at once and swaps the web font in, instead of leaving it blank while fonts load. --}}
+<link href="https://fonts.bunny.net/css?family=khand:500,600,700|mukta:400,500,600,700,800|dm-mono:400,500&amp;display=swap" rel="stylesheet">
 @if ($siteFonts ?? false)
-    <link href="https://fonts.bunny.net/css?family=newsreader:400,500|noto-serif-devanagari:400,500|instrument-sans:400,500,600" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=newsreader:400,500|noto-serif-devanagari:400,500|instrument-sans:400,500,600&amp;display=swap" rel="stylesheet">
 @endif
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 @php
@@ -19,3 +23,4 @@
 @if ($brandColors)
     <style>:root,.site{ @foreach ($brandColors as $name => $value)--color-{{ $name }}:{{ $value }};@endforeach @if (isset($brandColors['laterite']))--site-cta:{{ $brandColors['laterite'] }};--site-cta-hover:{{ $brandColors['laterite-dark'] ?? $brandColors['laterite'] }};@endif }</style>
 @endif
+@include('modules.seo.head')

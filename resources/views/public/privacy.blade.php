@@ -1,5 +1,4 @@
 @extends('layouts.public')
-@section('title', __('Privacy'))
 @section('content')
 <article class="site-wrap max-w-3xl py-16 text-[17px] leading-relaxed text-ink-2 [&_h2]:mt-9 [&_h2]:text-[23px] [&_h2]:text-ink [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5">
     <h1 class="text-[clamp(2.25rem,4.5vw,3.25rem)] text-ink">Privacy policy</h1>
@@ -18,6 +17,12 @@
 
     <h2>How we use it</h2>
     <p>We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. Your project records are not used to train shared AI models unless you opt in.</p>
+
+    @if (app(\App\Services\Seo\Analytics::class)->measurementId())
+    {{-- Only shown while Google Analytics is switched on in /admin/seo. --}}
+    <h2>Analytics cookies</h2>
+    <p>If you choose Accept on the cookie question, we use Google Analytics to count visits to our website{{ app(\App\Services\Seo\Analytics::class)->includesApp() ? ' and to screens inside the app' : '' }}, and to see which pages are used. It sets cookies only after you accept. We do not send Google your name, email, mobile number, company or project details, or any amounts. You can change your choice at any time from Cookie settings at the bottom of the page.</p>
+    @endif
 
     <h2>Who can see your records</h2>
     <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage and payments, and they handle data only so that we can run the service.</p>

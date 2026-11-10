@@ -1,5 +1,4 @@
 @extends('layouts.public')
-@section('title', __('Terms'))
 @section('content')
 <article class="site-wrap max-w-3xl py-16 text-[17px] leading-relaxed text-ink-2 [&_h2]:mt-9 [&_h2]:text-[23px] [&_h2]:text-ink [&_p]:mt-3">
     <h1 class="text-[clamp(2.25rem,4.5vw,3.25rem)] text-ink">Terms of service</h1>

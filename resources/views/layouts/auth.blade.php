@@ -2,7 +2,7 @@
 <html lang="{{ app()->getLocale() }}">
 <head>
     @include('layouts.partials.head', ['siteFonts' => true])
-    <title>@yield('title') · {{ config('buildos.brand') }}</title>
+    @include('modules.seo.title')
 </head>
 <body class="site font-sans text-ink antialiased">
 <div class="grid min-h-screen lg:grid-cols-[1fr_minmax(0,520px)]">

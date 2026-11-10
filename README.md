@@ -15,7 +15,8 @@ This repository covers the foundation and most of the first release, "Site to Bi
 - Work orders and client and subcontractor RA bills, with PDF download
 - Client sign-off through a signed link
 - REST API with offline sync for measurements (`/api/v1`)
-- Public home page and free calculators, in English with partial Marathi and Hindi
+- Public website and free calculators in English, Marathi (`/mr`) and Hindi (`/hi`)
+- Search engine tags, `/sitemap.xml`, `/robots.txt` and Google Analytics 4 behind a consent question, all set from `/admin/seo`
 
 ## Not built yet
 

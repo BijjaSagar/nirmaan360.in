@@ -1,6 +1,4 @@
 @extends('layouts.public')
-@section('title', __('Pricing'))
-@section('description', __('Simple plans for Indian contractors. Start free on one site, or try Contractor or Business for :days days with no card.', ['days' => config('buildos.trial_days')]))
 @section('content')
 @php
     $order = ['free', 'contractor', 'business', 'enterprise'];
@@ -150,7 +148,7 @@
         <div class="site-wrap grid gap-10 py-16 lg:grid-cols-[1fr_1.6fr] lg:py-20">
             <h2 class="text-[clamp(2rem,3.6vw,2.75rem)]">{{ __('About billing') }}</h2>
             <div class="faq divide-y divide-ink/10 border-y border-ink/10">
-                @foreach ([
+                @foreach ($faqs = [
                     ['What happens after the trial?', 'Your company moves to the free plan and your data stays. Work orders and RA bills unlock again when you buy a plan.'],
                     ['Does it charge me automatically?', 'No. You pay for a month or a year at a time. Nothing renews until you pay again.'],
                     ['What if a paid period runs out?', 'You get :days extra days to renew. After that the company moves to the free plan until you pay.'],
@@ -163,5 +161,7 @@
             </div>
         </div>
     </section>
+    {{-- The same questions, in the same words, for search engines. --}}
+    @include('modules.seo.faq', ['faqs' => array_map(fn (array $faq) => [__($faq[0]), __($faq[1], ['days' => config('buildos.payment_grace_days')])], $faqs)])
 </div>
 @endsection

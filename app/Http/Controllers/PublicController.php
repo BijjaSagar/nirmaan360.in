@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContactRequest;
+use App\Services\Seo\Analytics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -51,7 +52,7 @@ class PublicController extends Controller
             return back()->with('success', __('Thanks. We have your message and will get back to you.'));
         }
 
-        ContactRequest::create($request->validate([
+        $contact = ContactRequest::create($request->validate([
             'type' => ['required', Rule::in(self::CONTACT_TYPES)],
             'name' => ['required', 'string', 'max:120'],
             'company' => ['nullable', 'string', 'max:160'],
@@ -59,6 +60,9 @@ class PublicController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'message' => ['nullable', 'string', 'max:2000'],
         ]));
+
+        // Only the kind of enquiry is counted. What the person typed stays in the database.
+        app(Analytics::class)->record($request, 'generate_lead', ['topic' => $contact->type]);
 
         return back()->with('success', __('Thanks. We have your message and will get back to you.'));
     }
