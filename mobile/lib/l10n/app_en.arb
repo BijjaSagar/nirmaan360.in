@@ -1987,6 +1987,17 @@
   },
   "progressTitle": "Site progress",
   "progressWorkDone": "Work done",
+  "pushPromptBody": "We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.",
+  "pushPromptNotNow": "Not now",
+  "pushPromptTitle": "Get alerts on this phone?",
+  "pushPromptTurnOn": "Turn on alerts",
+  "pushSettingsBlocked": "Open your phone's Settings, allow notifications for Nirmaan360, then come back. Tap Turn on to check again.",
+  "pushSettingsBlockedShort": "Not allowed on this phone",
+  "pushSettingsIsOn": "On",
+  "pushSettingsOff": "Off. Tap to turn on.",
+  "pushSettingsOn": "On. Approvals and alerts reach this phone.",
+  "pushSettingsTitle": "Phone alerts",
+  "pushSettingsTurnOn": "Turn on",
   "scanAlready": "{name} is already marked {status} today",
   "@scanAlready": {
     "placeholders": {

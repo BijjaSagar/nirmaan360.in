@@ -70,7 +70,12 @@
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
+		<string>remote-notification</string>
 	</array>
+	<!-- Firebase stays unregistered, and learns nothing about the phone, until a member of staff
+	     has signed in and agreed to alerts. The app turns it on then (see PushService). -->
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UILaunchStoryboardName</key>

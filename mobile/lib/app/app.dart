@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../core/app_services.dart';
 import 'app_frame.dart';
 import 'app_gate.dart';
+import 'push_navigator.dart';
 import 'router.dart';
 import 'routes.dart';
 import 'shell/sync_status_cubit.dart';
@@ -32,16 +33,18 @@ class Nirmaan360App extends StatefulWidget {
   State<Nirmaan360App> createState() => _Nirmaan360AppState();
 }
 
-class _Nirmaan360AppState extends State<Nirmaan360App> {
+class _Nirmaan360AppState extends State<Nirmaan360App> with WidgetsBindingObserver {
   late final AppGate _gate = widget.gate ?? AppGate(widget.services);
   late final SyncStatusCubit _syncStatus = SyncStatusCubit(widget.services.syncCenter);
   GoRouter? _router;
+  PushNavigator? _pushNavigator;
   StreamSubscription<Object>? _refusals;
   bool _renewalOpen = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // A write turned away because the licence has ended opens the page that says
     // why, whichever screen it came from. The forms already redirect there; this
     // covers a button that writes in place, and a licence that ends under an open form.
@@ -57,8 +60,16 @@ class _Nirmaan360AppState extends State<Nirmaan360App> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The person may have changed the phone's notification setting while away.
+    if (state == AppLifecycleState.resumed) unawaited(widget.services.push.refresh());
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_refusals?.cancel());
+    _pushNavigator?.dispose();
     _router?.dispose();
     _gate.close();
     _syncStatus.close();
@@ -80,6 +91,7 @@ class _Nirmaan360AppState extends State<Nirmaan360App> {
           builder: (context, state) {
             if (!state.ready) return const BootPaper();
             final GoRouter router = _router ??= buildRouter(_gate, initialLocation: widget.initialLocation);
+            _pushNavigator ??= PushNavigator(services: widget.services, gate: _gate, router: router)..start();
             return N360AppFrame(router: router, locale: state.locale);
           },
         ),

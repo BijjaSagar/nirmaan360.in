@@ -3890,6 +3890,41 @@ class AppLocalizationsMr extends AppLocalizations {
   String get progressWorkDone => 'झालेले काम';
 
   @override
+  String get pushPromptBody =>
+      'एखादी गोष्ट तुमच्या मंजुरीसाठी थांबली, एखादा अहवाल किंवा मोजमाप तुमच्याकडे परत आले, किंवा साइटची नवीन सूचना आली की आम्ही कळवू. हे तुम्ही कधीही सेटिंग्जमध्ये बदलू शकता.';
+
+  @override
+  String get pushPromptNotNow => 'आत्ता नको';
+
+  @override
+  String get pushPromptTitle => 'या फोनवर सूचना मिळवायच्या का?';
+
+  @override
+  String get pushPromptTurnOn => 'सूचना चालू करा';
+
+  @override
+  String get pushSettingsBlocked =>
+      'फोनच्या सेटिंग्जमध्ये Nirmaan360 साठी सूचनांना परवानगी द्या आणि परत या. पुन्हा तपासण्यासाठी चालू करा दाबा.';
+
+  @override
+  String get pushSettingsBlockedShort => 'या फोनवर परवानगी नाही';
+
+  @override
+  String get pushSettingsIsOn => 'चालू';
+
+  @override
+  String get pushSettingsOff => 'बंद. चालू करण्यासाठी दाबा.';
+
+  @override
+  String get pushSettingsOn => 'चालू. मंजुरी आणि सूचना या फोनवर येतील.';
+
+  @override
+  String get pushSettingsTitle => 'फोनवरील सूचना';
+
+  @override
+  String get pushSettingsTurnOn => 'चालू करा';
+
+  @override
   String scanAlready(String name, String status) {
     return '$name आज आधीच $status नोंदवले आहे';
   }

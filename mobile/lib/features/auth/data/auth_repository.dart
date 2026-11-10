@@ -27,6 +27,10 @@ class AuthRepository {
   final DataContext _ctx;
   final PortalRepository _portal;
 
+  /// Runs once a sign-out is certain, while the token still works. It takes this
+  /// phone off the server's push list. Never throws, and waits a few seconds at most.
+  Future<void> Function()? beforeSignOut;
+
   CurrentUser? get currentUser => _ctx.session.user;
 
   bool can(String permission) => currentUser?.can(permission) ?? false;
@@ -111,6 +115,7 @@ class AuthRepository {
     final unsent = await unsentWorkCount();
     if (unsent > 0 && !discardUnsent) throw UnsentWorkFailure(unsent);
 
+    await beforeSignOut?.call();
     try {
       await _ctx.api.logout();
     } on Exception {
@@ -152,7 +157,7 @@ class AuthRepository {
         await db.delete(table).go();
       }
       await (db.delete(db.keyValues)
-            ..where((t) => t.key.isIn(<String>[MetaKey.locale, MetaKey.offlineDeviceId]).not()))
+            ..where((t) => t.key.isIn(<String>[MetaKey.locale, MetaKey.offlineDeviceId, MetaKey.pushExplained]).not()))
           .go();
     });
     await _ctx.attachments.deleteAll();

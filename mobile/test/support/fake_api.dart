@@ -200,6 +200,49 @@ class FakeApi implements NirmaanApi {
     return _issueLicence(deviceId);
   }
 
+  // Push devices -------------------------------------------------------------
+
+  /// Tokens the server holds, in the order they were first registered.
+  final List<String> pushTokens = <String>[];
+
+  /// Every `POST /devices` that reached the server, newest last.
+  final List<({String token, String platform, String? deviceName})> deviceRegistrations =
+      <({String token, String platform, String? deviceName})>[];
+
+  /// Every `DELETE /devices` that reached the server.
+  final List<String> deviceRemovals = <String>[];
+
+  /// What `push_connected` says in the reply.
+  bool pushConnected = false;
+
+  /// Sign-outs that reached the server. After one, the token is no longer good.
+  int logoutCalls = 0;
+
+  /// The next `POST /devices` throws this.
+  ApiFailure? failNextDeviceRegistration;
+
+  @override
+  Future<DeviceRegistration> registerDevice({required String token, required String platform, String? deviceName}) async {
+    if (offline) throw const OfflineFailure();
+    final ApiFailure? failure = failNextDeviceRegistration;
+    if (failure != null) {
+      failNextDeviceRegistration = null;
+      throw failure;
+    }
+    deviceRegistrations.add((token: token, platform: platform, deviceName: deviceName));
+    if (!pushTokens.contains(token)) pushTokens.add(token);
+    return DeviceRegistration(pushConnected: pushConnected);
+  }
+
+  @override
+  Future<void> unregisterDevice(String token) async {
+    if (offline) throw const OfflineFailure();
+    // The real route needs the person's token, which a sign-out has already ended.
+    if (logoutCalls > 0) throw const AuthExpired();
+    deviceRemovals.add(token);
+    pushTokens.remove(token);
+  }
+
   @override
   Future<void> releaseDevice(String deviceId) async {
     releaseCalls++;
@@ -459,6 +502,7 @@ class FakeApi implements NirmaanApi {
   @override
   Future<void> logout() async {
     _guard();
+    logoutCalls++;
   }
 
   @override

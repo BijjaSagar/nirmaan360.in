@@ -3925,6 +3925,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressWorkDone => 'Work done';
 
   @override
+  String get pushPromptBody =>
+      'We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.';
+
+  @override
+  String get pushPromptNotNow => 'Not now';
+
+  @override
+  String get pushPromptTitle => 'Get alerts on this phone?';
+
+  @override
+  String get pushPromptTurnOn => 'Turn on alerts';
+
+  @override
+  String get pushSettingsBlocked =>
+      'Open your phone\'s Settings, allow notifications for Nirmaan360, then come back. Tap Turn on to check again.';
+
+  @override
+  String get pushSettingsBlockedShort => 'Not allowed on this phone';
+
+  @override
+  String get pushSettingsIsOn => 'On';
+
+  @override
+  String get pushSettingsOff => 'Off. Tap to turn on.';
+
+  @override
+  String get pushSettingsOn => 'On. Approvals and alerts reach this phone.';
+
+  @override
+  String get pushSettingsTitle => 'Phone alerts';
+
+  @override
+  String get pushSettingsTurnOn => 'Turn on';
+
+  @override
   String scanAlready(String name, String status) {
     return '$name is already marked $status today';
   }

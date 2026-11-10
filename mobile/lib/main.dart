@@ -25,6 +25,9 @@ void main() {
 Future<void> _start(AppServices services, AppGate gate) async {
   try {
     await services.start();
+    // After the app is up, and on its own: push never decides whether the app opens.
+    // A build with no Firebase settings does nothing here.
+    unawaited(services.startPush());
   } catch (error, stack) {
     // A broken local store must never leave the user on the launch screen.
     FlutterError.reportError(

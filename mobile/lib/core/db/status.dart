@@ -42,6 +42,13 @@ abstract final class MetaKey {
   static const selfieConsentAccepted = 'selfie.consent.accepted';
   static const locale = 'locale';
 
+  /// Set once the person has been asked, in the app's own words, whether to get
+  /// notifications. It is asked once per install, so it outlives a sign-out.
+  static const pushExplained = 'push.explained';
+
+  /// The FCM token this phone last gave the server, so it can be taken back.
+  static const pushToken = 'push.token';
+
   /// The offline plan's state, as JSON. Absent for a company on any normal plan.
   static const offlinePlan = 'offline.state';
 

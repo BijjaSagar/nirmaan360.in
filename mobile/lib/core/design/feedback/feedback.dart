@@ -66,7 +66,26 @@ void showPaperToast(
   Duration duration = const Duration(milliseconds: 2600),
   double bottomOffset = N360Size.bar + N360Space.xl,
 }) {
-  final overlay = Overlay.of(context, rootOverlay: true);
+  insertPaperToast(
+    Overlay.of(context, rootOverlay: true),
+    message,
+    kind: kind,
+    icon: icon,
+    duration: duration,
+    bottomOffset: bottomOffset,
+  );
+}
+
+/// [showPaperToast] for code that holds the overlay itself and has no widget
+/// context below it, such as the one place that turns a push message into a note.
+void insertPaperToast(
+  OverlayState overlay,
+  String message, {
+  PaperToastKind kind = PaperToastKind.info,
+  IconData? icon,
+  Duration duration = const Duration(milliseconds: 2600),
+  double bottomOffset = N360Size.bar + N360Space.xl,
+}) {
   late final OverlayEntry entry;
   entry = OverlayEntry(
     builder: (context) => _ToastHost(

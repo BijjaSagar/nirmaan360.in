@@ -38,6 +38,18 @@ To run the offline stack against a local server (never production):
 flutter test test/integration/real_api_test.dart --dart-define=REAL_API_URL=http://127.0.0.1:8361/api/v1
 ```
 
+## Push notifications
+
+Push is off unless the build is given the Firebase settings. Put the two console files anywhere outside the repo, then from `mobile/`:
+
+```bash
+dart run tool/firebase_defines.dart --android ~/Downloads/google-services.json --ios ~/Downloads/GoogleService-Info.plist
+flutter build apk --dart-define-from-file=firebase.defines.json
+flutter build ipa --dart-define-from-file=firebase.defines.json
+```
+
+`firebase.defines.json` is git-ignored and the script prints none of its values. iOS also needs the APNs key uploaded in the Firebase console. See "Push notifications" in [docs/CONTRACT.md](docs/CONTRACT.md).
+
 ## Translations
 
 Add strings to `l10n/<area>.json` with `en`, `mr` and `hi` side by side, then:

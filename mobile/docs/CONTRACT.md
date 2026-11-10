@@ -420,6 +420,39 @@ What the phone does with that:
 - What the server can still refuse when a kept photo arrives (too far from the site, too rough a reading, a photo for that worker and day already there, older than 7 days) is a 422 in the Sync Center in its own words. A 500 is sent again.
 - Platform: `geolocator` (MIT) 14.0.1, iOS 11 or later, Android with Google Play services location, minSdk from Flutter. The Info.plist has `NSLocationWhenInUseUsageDescription` only, and the manifest has `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` only. The package references the always-authorization call, so a build for TestFlight should set `BYPASS_PERMISSION_LOCATION_ALWAYS=1`, or App Store Connect warns about a missing "always" purpose string (ITMS-90683).
 
+### Push notifications
+
+Client side only. Everything is in `lib/core/push/`, `lib/app/push_navigator.dart` and `lib/features/notifications/`.
+
+**Settings come from the build, not from the repo.** `FirebaseSettings` reads `--dart-define-from-file`. `dart run tool/firebase_defines.dart --android <google-services.json> --ios <GoogleService-Info.plist>` reads the two console files and writes the git-ignored `firebase.defines.json` (keys `FIREBASE_PROJECT_ID`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_ANDROID_API_KEY`, `FIREBASE_ANDROID_APP_ID`, `FIREBASE_IOS_API_KEY`, `FIREBASE_IOS_APP_ID`, `FIREBASE_IOS_BUNDLE_ID`). It prints no value. Then `flutter build ... --dart-define-from-file=firebase.defines.json`. Neither Gradle nor the Xcode project references a Google file, so a clone without them builds, and a build without the defines runs with no push at all: `FirebasePushMessaging.isConfigured` is false, Firebase is never started, and Settings shows no notifications row. `firebase_core` 5 and `firebase_messaging` 17 start from Dart (`Firebase.initializeApp(options:)`); the iOS plugin handles a launch with no `GoogleService-Info.plist`, and the Android SDK shows a notification in a cold process with no default `FirebaseApp` (it logs and skips its analytics instead). Both packages are BSD-3-Clause. Never commit `firebase.defines.json`, `google-services.json` or `GoogleService-Info.plist` (`mobile/.gitignore` covers all three).
+
+**Registration.** `POST /devices` `{token, platform: android|ios, device_name}` and `DELETE /devices` `{token}` (`NotifyApiController`) take the FCM registration token itself, so `ApiDeviceRegistry` calls them as they are. The reply's `push_connected` says whether the server can send yet; the phone registers either way. `DeviceRegistry` is the one class to change if the real push API differs. `firebase_messaging` 17 marks `getToken`, `onTokenRefresh` and `deleteToken` deprecated for a Firebase installation id (`register()`, `onRegistered`); the server's `FcmGateway` sends to a registration token, so the app keeps the token calls until the server says otherwise.
+
+**When.** Push is for a signed-in member of staff on a company that syncs (`AppServices._mayGetPush`): never a contractor login, never the offline plan, never before sign-in. Firebase auto-init is off in the manifest and `Info.plist`, so until then Firebase learns nothing about the phone. `PushService.setEligible` follows the session. With the phone's permission not asked, `PushState.askFirst` makes `PushPromptHost` (in `HomeShell`) show `PushPromptSheet` 1.5 seconds after the shell appears: a short explanation with "Turn on alerts" and "Not now". `MetaKey.pushExplained` records the answer on the first closing of the sheet and survives a sign-out, so it is asked once per install. Only "Turn on alerts" calls the phone's own question (`requestPermission`; Android 13 `POST_NOTIFICATIONS` is in the manifest). Settings has the row that asks again (`PushSettingsTile`); a phone that refuses for good shows how to allow it in the phone's Settings. A phone that already allows notifications is switched on without any question.
+
+**Token.** Switching on calls `setAutoInitEnabled(true)`, reads the token and registers it. A refreshed token is registered and the old one deleted from the server. A token the server did not take (offline, 5xx, 429) is kept and sent again when the network returns and after every sync (`PushService.retryPending`); a 401 or 422 is not retried. Signing out calls `PushService.forgetThisPhone` through `AuthRepository.beforeSignOut`, before `POST /auth/logout`: `DELETE /devices`, `deleteToken`, `setAutoInitEnabled(false)`, each best effort with a 4 second wait, so signing out still works offline. A token the server could not be told about is dropped by the server when Firebase answers `UNREGISTERED`.
+
+**What arrives.** A message while the app is open shows as a short note (`insertPaperToast`) and starts a sync. In the background the phone shows the notification (the server sends `notification` and `data`); `firebaseBackgroundHandler` only makes sure Firebase is up and never opens the database. A tap, from the background or from a closed app (`getInitialMessage`), goes to `PushNavigator`, which waits until the gate is ready, drops the tap when nobody is signed in, and opens the target from Home.
+
+**Payload the app reads** (`PushTarget.parse`; FCM `data` values are strings; anything else is ignored, never an error):
+
+| Key | Meaning |
+| --- | --- |
+| `type` | `approval`, `dpr` (or `report`), `measurement`, `issue`, `alert` |
+| `id` | The server id of that record. Absent or not a whole number above zero: the list opens instead |
+| `project_id` | Optional. Selects that project first, if the person has it |
+| `event` | Used only when `type` is missing: its first word (`approval.waiting`, `issue.assigned`, `alert.<kind>`) names the kind, with no id |
+
+| Target | Opens | Otherwise |
+| --- | --- | --- |
+| `approval` + id | `/approvals/{id}` | `/approvals` |
+| `dpr` + id | `/dpr/{uuid}` of the row with that `serverId` | `/dpr` |
+| `measurement` + id | `/measurements/{uuid}` | `/measurements` |
+| `issue` + id | `/issues/{uuid}` | `/issues` |
+| `alert` | `/site?tab=alerts` | |
+
+Every path goes through `AppGate.redirect`, the router's own gate: whoever cannot open it lands on Home. Unknown or malformed data lands on Home. The server today sends only `event` and `url` (a web address); the app needs `type` and `id` added for a tap to land on the record.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

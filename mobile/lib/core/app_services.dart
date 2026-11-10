@@ -44,6 +44,11 @@ import 'sync/data_context.dart';
 import 'sync/photo_capture.dart';
 import 'sync/sync_engine.dart';
 import 'sync/sync_scheduler.dart';
+import 'push/device_registry.dart';
+import 'push/firebase_push_messaging.dart';
+import 'push/push_messaging.dart';
+import 'push/push_service.dart';
+import 'session/current_user.dart';
 
 /// Offers a file to the person: the file, a subject, and where the button is.
 typedef ShareFile = Future<void> Function(String path, String subject, Rect? origin);
@@ -62,6 +67,7 @@ class AppServices {
     required this.portal,
     required this.priceWatch,
     required this.projectImages,
+    required this.push,
     required this.db,
     required this.api,
     required this.session,
@@ -87,6 +93,7 @@ class AppServices {
        approvals = ApprovalRepository(context),
        syncCenter = SyncRepository(context) {
     offlineUploader = OfflineUploader(context, dpr);
+    auth.beforeSignOut = push.forgetThisPhone;
   }
 
   /// Production wiring: real database, secure token storage, Dio.
@@ -110,6 +117,9 @@ class AppServices {
       onDispose: connectivity.dispose,
       tempDirectory: () async => (await getTemporaryDirectory()).path,
       shareFile: _systemShare,
+      // Off unless the build was given Firebase settings: see FirebaseSettings.
+      pushMessaging: FirebasePushMessaging(),
+      pushPlatform: defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android',
     );
   }
 
@@ -123,6 +133,7 @@ class AppServices {
     AttachmentStore? attachments,
     Future<String> Function()? tempDirectory,
     ShareFile? shareFile,
+    PushMessaging? pushMessaging,
   }) {
     final monitor = connectivity ?? _AlwaysOnline();
     final session = SessionController(
@@ -139,6 +150,8 @@ class AppServices {
       observeLifecycle: false,
       tempDirectory: tempDirectory ?? () async => Directory.systemTemp.path,
       shareFile: shareFile ?? (path, subject, origin) async {},
+      pushMessaging: pushMessaging ?? const NoPushMessaging(),
+      pushPlatform: 'android',
     );
   }
 
@@ -153,6 +166,8 @@ class AppServices {
     Future<void> Function()? onDispose,
     required Future<String> Function() tempDirectory,
     required ShareFile shareFile,
+    required PushMessaging pushMessaging,
+    required String pushPlatform,
   }) {
     final offlinePlan = OfflinePlan(
       db: db,
@@ -201,6 +216,13 @@ class AppServices {
     final portal = PortalRepository(context);
     final priceWatch = PriceWatchRepository(context);
     final projectImages = ProjectImageRepository(context);
+    final push = PushService(
+      messaging: pushMessaging,
+      devices: ApiDeviceRegistry(api),
+      db: db,
+      platform: pushPlatform,
+      connectivity: connectivity,
+    );
     engine.afterPull = (sentSomething) async {
       // Separately, so a failure in one does not leave the other stale.
       for (final refresh in <Future<void> Function({bool force})>[
@@ -219,6 +241,8 @@ class AppServices {
         }
       }
       await projectImages.sweepRemoved();
+      // A token the server did not take earlier goes again: a sync means there is a network.
+      await push.retryPending();
     };
     return AppServices._(
       progress: progress,
@@ -230,6 +254,7 @@ class AppServices {
       portal: portal,
       priceWatch: priceWatch,
       projectImages: projectImages,
+      push: push,
       db: db,
       api: api,
       session: session,
@@ -305,6 +330,12 @@ class AppServices {
   final PriceWatchRepository priceWatch;
   final ProjectImageRepository projectImages;
 
+  /// Push notifications: asking, the token, and what arrives or is tapped.
+  final PushService push;
+
+  StreamSubscription<SessionState>? _pushSession;
+  StreamSubscription<OfflinePlanState?>? _pushPlan;
+
   /// Restores the session and starts the triggers. Offline-safe.
   ///
   /// Rows stuck in `sending` from a killed process go back to `pending` here.
@@ -321,8 +352,32 @@ class AppServices {
     scheduler.start();
   }
 
+  /// Push is for a signed-in member of staff on a company that syncs. Never a
+  /// contractor login, and never the offline plan, which has no server to send it.
+  bool get _mayGetPush {
+    final CurrentUser? user = session.user;
+    return session.current.isSignedIn && user != null && !user.isContractor && !offlinePlan.isLocalOnly;
+  }
+
+  void _watchPushEligibility() {
+    void update() => unawaited(push.setEligible(_mayGetPush));
+    _pushSession ??= session.changes.listen((_) => update());
+    _pushPlan ??= offlinePlan.changes.listen((_) => update());
+    update();
+  }
+
+  /// Starts push, after the app is up. Nothing here needs the network, and a
+  /// build with no Firebase settings does nothing. Never throws.
+  Future<void> startPush() {
+    _watchPushEligibility();
+    return push.start();
+  }
+
   /// Stops timers and closes the database.
   Future<void> dispose() async {
+    await _pushSession?.cancel();
+    await _pushPlan?.cancel();
+    await push.dispose();
     await scheduler.stop();
     await sync.dispose();
     await offlinePlan.dispose();

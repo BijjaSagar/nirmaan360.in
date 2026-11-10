@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/core/app_services.dart';
 import 'package:nirmaan360/core/db/app_database.dart';
+import 'package:nirmaan360/core/push/push_messaging.dart';
 import 'package:nirmaan360/core/session/current_user.dart';
 import 'package:nirmaan360/core/session/token_store.dart';
 import 'package:nirmaan360/core/sync/attachment_store.dart';
@@ -117,6 +118,7 @@ class TestApp {
     FakeConnectivity? connectivity,
     AttachmentStore? attachments,
     AppDatabase? db,
+    PushMessaging? pushMessaging,
   }) async {
     final fakeApi = api ?? FakeApi();
     final fakeClock = clock ?? FakeClock();
@@ -131,6 +133,7 @@ class TestApp {
       clock: fakeClock,
       connectivity: fakeConnectivity,
       attachments: store,
+      pushMessaging: pushMessaging,
     );
 
     final app = TestApp._(

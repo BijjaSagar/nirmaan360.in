@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_name">मंज़ूरी और अलर्ट</string>
+    <string name="notification_channel_description">आपकी मंज़ूरी के लिए रुका काम, आपके पास लौटी रिपोर्टें और साइट के अलर्ट।</string>
+</resources>

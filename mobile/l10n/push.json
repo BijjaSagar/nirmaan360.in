@@ -1,0 +1,57 @@
+{
+  "pushPromptTitle": {
+    "en": "Get alerts on this phone?",
+    "mr": "या फोनवर सूचना मिळवायच्या का?",
+    "hi": "इस फ़ोन पर अलर्ट चाहिए?"
+  },
+  "pushPromptBody": {
+    "en": "We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.",
+    "mr": "एखादी गोष्ट तुमच्या मंजुरीसाठी थांबली, एखादा अहवाल किंवा मोजमाप तुमच्याकडे परत आले, किंवा साइटची नवीन सूचना आली की आम्ही कळवू. हे तुम्ही कधीही सेटिंग्जमध्ये बदलू शकता.",
+    "hi": "जब कोई चीज़ आपकी मंज़ूरी के लिए रुकी हो, कोई रिपोर्ट या माप आपके पास वापस आए, या साइट का नया अलर्ट खुले, तब हम बताएँगे। इसे आप कभी भी सेटिंग्स में बदल सकते हैं।"
+  },
+  "pushPromptTurnOn": {
+    "en": "Turn on alerts",
+    "mr": "सूचना चालू करा",
+    "hi": "अलर्ट चालू करें"
+  },
+  "pushPromptNotNow": {
+    "en": "Not now",
+    "mr": "आत्ता नको",
+    "hi": "अभी नहीं"
+  },
+  "pushSettingsTitle": {
+    "en": "Phone alerts",
+    "mr": "फोनवरील सूचना",
+    "hi": "फ़ोन के अलर्ट"
+  },
+  "pushSettingsOn": {
+    "en": "On. Approvals and alerts reach this phone.",
+    "mr": "चालू. मंजुरी आणि सूचना या फोनवर येतील.",
+    "hi": "चालू। मंज़ूरी और अलर्ट इस फ़ोन पर आएँगे।"
+  },
+  "pushSettingsOff": {
+    "en": "Off. Tap to turn on.",
+    "mr": "बंद. चालू करण्यासाठी दाबा.",
+    "hi": "बंद। चालू करने के लिए दबाएँ।"
+  },
+  "pushSettingsBlocked": {
+    "en": "Open your phone's Settings, allow notifications for Nirmaan360, then come back. Tap Turn on to check again.",
+    "mr": "फोनच्या सेटिंग्जमध्ये Nirmaan360 साठी सूचनांना परवानगी द्या आणि परत या. पुन्हा तपासण्यासाठी चालू करा दाबा.",
+    "hi": "फ़ोन की सेटिंग्स खोलें, Nirmaan360 के लिए नोटिफ़िकेशन की अनुमति दें, फिर वापस आएँ। दोबारा जाँचने के लिए चालू करें दबाएँ।"
+  },
+  "pushSettingsTurnOn": {
+    "en": "Turn on",
+    "mr": "चालू करा",
+    "hi": "चालू करें"
+  },
+  "pushSettingsIsOn": {
+    "en": "On",
+    "mr": "चालू",
+    "hi": "चालू"
+  },
+  "pushSettingsBlockedShort": {
+    "en": "Not allowed on this phone",
+    "mr": "या फोनवर परवानगी नाही",
+    "hi": "इस फ़ोन पर अनुमति नहीं"
+  }
+}

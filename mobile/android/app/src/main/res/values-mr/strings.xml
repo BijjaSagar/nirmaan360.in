@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_name">मंजुरी आणि सूचना</string>
+    <string name="notification_channel_description">तुमच्या मंजुरीसाठी थांबलेले काम, तुमच्याकडे परत आलेले अहवाल आणि साइटच्या सूचना.</string>
+</resources>

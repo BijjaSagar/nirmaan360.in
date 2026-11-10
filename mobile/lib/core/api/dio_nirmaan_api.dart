@@ -99,6 +99,22 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
+  Future<DeviceRegistration> registerDevice({required String token, required String platform, String? deviceName}) async {
+    final body = await _call(
+      () => _dio.post(
+        '/devices',
+        data: {'token': token, 'platform': platform, 'device_name': ?deviceName},
+      ),
+    );
+    return DeviceRegistration(pushConnected: body['push_connected'] == true);
+  }
+
+  @override
+  Future<void> unregisterDevice(String token) async {
+    await _call(() => _dio.delete('/devices', data: {'token': token}));
+  }
+
+  @override
   Future<Map<String, dynamic>> me() async {
     final body = await _call(() => _dio.get('/me'));
     return (body['user'] as Map).cast<String, dynamic>();

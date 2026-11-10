@@ -10,9 +10,11 @@ import '../../../app/widgets/back_header.dart';
 import '../../../app/widgets/language_switch.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
+import '../../../core/push/push_service.dart';
 import '../../../core/session/current_user.dart';
 import '../../../core/sync/failures.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../notifications/view/push_settings_tile.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -103,22 +105,30 @@ class SettingsScreen extends StatelessWidget {
                           onChanged: (code) => context.read<AppServices>().auth.setLocale(code),
                         ),
                         const SizedBox(height: N360Space.lg),
-                        LedgerList(
-                          children: <Widget>[
-                            if (context.select((AppGate gate) => gate.state.isLocalOnly))
+                        StreamBuilder<PushState>(
+                          stream: context.read<AppServices>().push.states,
+                          initialData: context.read<AppServices>().push.state,
+                          builder: (context, push) => LedgerList(
+                            children: <Widget>[
+                              // Only where push is offered: never on a build without Firebase,
+                              // a contractor login or the offline plan.
+                              if (push.data != null && push.data != PushState.unavailable)
+                                PushSettingsTile(state: push.data!),
+                              if (context.select((AppGate gate) => gate.state.isLocalOnly))
+                                LedgerListTile(
+                                  key: const ValueKey<String>('settings-offline-plan'),
+                                  leading: const Icon(Icons.phone_android, size: N360IconSize.lg, color: N360Colors.ink2),
+                                  title: t.offlinePlanTitle,
+                                  subtitle: t.offlineOnPhoneTitle,
+                                  onTap: () => context.push(Routes.offlinePlan),
+                                ),
                               LedgerListTile(
-                                key: const ValueKey<String>('settings-offline-plan'),
-                                leading: const Icon(Icons.phone_android, size: N360IconSize.lg, color: N360Colors.ink2),
-                                title: t.offlinePlanTitle,
-                                subtitle: t.offlineOnPhoneTitle,
-                                onTap: () => context.push(Routes.offlinePlan),
+                                leading: const Icon(Icons.info_outline, size: N360IconSize.lg, color: N360Colors.ink2),
+                                title: t.shellSettingsVersion,
+                                trailing: Text(AppInfo.label, style: N360Type.figure),
                               ),
-                            LedgerListTile(
-                              leading: const Icon(Icons.info_outline, size: N360IconSize.lg, color: N360Colors.ink2),
-                              title: t.shellSettingsVersion,
-                              trailing: Text(AppInfo.label, style: N360Type.figure),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -6934,6 +6934,72 @@ abstract class AppLocalizations {
   /// **'Work done'**
   String get progressWorkDone;
 
+  /// No description provided for @pushPromptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.'**
+  String get pushPromptBody;
+
+  /// No description provided for @pushPromptNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get pushPromptNotNow;
+
+  /// No description provided for @pushPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get alerts on this phone?'**
+  String get pushPromptTitle;
+
+  /// No description provided for @pushPromptTurnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on alerts'**
+  String get pushPromptTurnOn;
+
+  /// No description provided for @pushSettingsBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your phone\'s Settings, allow notifications for Nirmaan360, then come back. Tap Turn on to check again.'**
+  String get pushSettingsBlocked;
+
+  /// No description provided for @pushSettingsBlockedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not allowed on this phone'**
+  String get pushSettingsBlockedShort;
+
+  /// No description provided for @pushSettingsIsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get pushSettingsIsOn;
+
+  /// No description provided for @pushSettingsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Tap to turn on.'**
+  String get pushSettingsOff;
+
+  /// No description provided for @pushSettingsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On. Approvals and alerts reach this phone.'**
+  String get pushSettingsOn;
+
+  /// No description provided for @pushSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone alerts'**
+  String get pushSettingsTitle;
+
+  /// No description provided for @pushSettingsTurnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get pushSettingsTurnOn;
+
   /// No description provided for @scanAlready.
   ///
   /// In en, this message translates to:

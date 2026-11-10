@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/app_services.dart';
 import '../../core/design/design.dart';
 import '../../core/sync/sync_status.dart';
+import '../../features/notifications/view/push_prompt.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../app_gate.dart';
 import 'sync_status_cubit.dart';
@@ -116,6 +117,8 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
               ),
             ),
             Positioned(top: barBottom - _SyncRule.height, left: 0, right: 0, child: const _SyncRule()),
+            // Draws nothing. Offers alerts once, on the first visit after signing in.
+            const PushPromptHost(),
           ],
         ),
         bottomNavigationBar: N360BottomBar(

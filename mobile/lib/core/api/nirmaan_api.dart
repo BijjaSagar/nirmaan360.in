@@ -109,6 +109,15 @@ class UploadResult {
   final int id;
 }
 
+/// The reply to `POST /devices`.
+class DeviceRegistration {
+  const DeviceRegistration({required this.pushConnected});
+
+  /// Whether the server can send push at all yet. False until the office has
+  /// connected Firebase on the server; the phone is registered either way.
+  final bool pushConnected;
+}
+
 class ApprovalsResponse {
   const ApprovalsResponse({required this.items, required this.waitingCount});
 
@@ -125,6 +134,14 @@ abstract interface class NirmaanApi {
   });
 
   Future<void> logout();
+
+  /// `POST /devices` with `{token, platform, device_name}`: this phone's FCM
+  /// token, for the signed-in person. Registering the same token again updates
+  /// the row, even for a new owner. [platform] is `android` or `ios`.
+  Future<DeviceRegistration> registerDevice({required String token, required String platform, String? deviceName});
+
+  /// `DELETE /devices` with `{token}`: forgets this phone for the signed-in person.
+  Future<void> unregisterDevice(String token);
 
   /// The `user` object of `GET /me`.
   Future<Map<String, dynamic>> me();

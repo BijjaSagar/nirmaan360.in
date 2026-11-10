@@ -7,6 +7,8 @@
     <!-- Where a worker's attendance photo was taken, read once when the photo is taken. Never in the background. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Alerts. Android 13 and later ask the person before the first one; the app asks only after sign-in, with an explanation. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="Nirmaan360"
@@ -42,6 +44,20 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Push. Firebase stays unregistered, and learns nothing about the phone, until a member
+             of staff has signed in and agreed to alerts: the app turns it on then (see PushService). -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_nirmaan360" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="n360_alerts" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
