@@ -442,6 +442,17 @@ class _BottomActions extends StatelessWidget {
                         onPressed: () => context.push(Routes.attendanceScan),
                       ),
                     ),
+                    const SizedBox(width: N360Space.sm),
+                    Expanded(
+                      child: GloveButton(
+                        key: const ValueKey<String>('attendance-selfie'),
+                        label: l.attendanceSelfie,
+                        icon: Icons.photo_camera_outlined,
+                        kind: GloveButtonKind.secondary,
+                        fullWidth: true,
+                        onPressed: () => context.push(Routes.attendanceSelfie),
+                      ),
+                    ),
                   ],
                 ),
               ],

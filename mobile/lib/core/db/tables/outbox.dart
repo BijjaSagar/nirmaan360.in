@@ -31,7 +31,8 @@ enum OutboxType {
   machineLog('machine_log'),
   goodsReceipt('goods_receipt'),
   materialIssue('material_issue'),
-  attendanceScan('attendance_scan');
+  attendanceScan('attendance_scan'),
+  attendanceSelfie('attendance_selfie');
 
   const OutboxType(this.wire);
 
@@ -40,7 +41,7 @@ enum OutboxType {
   /// File uploads go through `/sync/upload`, one at a time.
   bool get isFile => this == OutboxType.dprPhoto || this == OutboxType.pettyBill;
 
-  /// Site progress, material, contractor payments, inspections, machine logs, goods receipts, store issues, card scans and the photos on issues and measurements have their own endpoints. Each row is
+  /// Site progress, material, contractor payments, inspections, machine logs, goods receipts, store issues, card scans, attendance photos and the photos on issues and measurements have their own endpoints. Each row is
   /// posted on its own, with the same `client_uuid` on every attempt.
   bool get isDirect => switch (this) {
     OutboxType.progressEntry ||
@@ -59,7 +60,8 @@ enum OutboxType {
     OutboxType.machineLog ||
     OutboxType.goodsReceipt ||
     OutboxType.materialIssue ||
-    OutboxType.attendanceScan => true,
+    OutboxType.attendanceScan ||
+    OutboxType.attendanceSelfie => true,
     _ => false,
   };
 }

@@ -515,6 +515,7 @@ class SyncEngine {
       case OutboxType.goodsReceipt:
       case OutboxType.materialIssue:
       case OutboxType.attendanceScan:
+      case OutboxType.attendanceSelfie:
         return null;
     }
   }
@@ -653,6 +654,7 @@ class SyncEngine {
       case OutboxType.goodsReceipt:
       case OutboxType.materialIssue:
       case OutboxType.attendanceScan:
+      case OutboxType.attendanceSelfie:
         break;
     }
   }
@@ -849,6 +851,19 @@ class SyncEngine {
         return _api.postGoodsReceipt(row.projectId, <String, dynamic>{...body}..remove('local'));
       case OutboxType.materialIssue:
         return _api.postMaterialIssue(row.projectId, <String, dynamic>{...body}..remove('local'));
+      case OutboxType.attendanceSelfie:
+        await _checkConsentUnchanged(data);
+        return _api.uploadFieldPhoto(
+          '/projects/${row.projectId}/attendance/selfies',
+          filePath: await _attachments.absolutePath(row.filePath!),
+          clientUuid: row.wireUuid,
+          fileField: 'selfie',
+          fields: <String, String>{
+            for (final key in const <String>['site_id', 'worker_id', 'lat', 'lng', 'accuracy_m', 'captured_at', 'consent_version'])
+              if (data[key] != null) key: '${data[key]}',
+            'consent': '1',
+          },
+        );
       case OutboxType.attendanceScan:
         _checkScanIsToday(data);
         return _api.postAttendanceScan(row.projectId, <String, dynamic>{'code': data['code'], 'client_uuid': row.wireUuid});
@@ -867,6 +882,19 @@ class SyncEngine {
     final String message =
         'This scan was made on $scanned. The server marks a scan on the day it receives it, so it was not sent. Mark attendance for $scanned by hand.';
     throw ValidationFailure(message, errors: {'code': [message]});
+  }
+
+  /// The server stores its own consent version and note with the photo, not what
+  /// the phone showed. A photo taken under one note and sent after the note changed
+  /// would be recorded as agreed to the new one. So it waits for a person, who
+  /// takes it again with the new note.
+  Future<void> _checkConsentUnchanged(Map<String, dynamic> data) async {
+    final Map<String, dynamic> now = await _api.attendanceSelfieConsent();
+    final Object? taken = data['consent_version'];
+    if (taken == null || now['version'] == taken) return;
+    const String message =
+        'The consent note was changed after this photo was taken, so nothing was sent. Show the worker the new note and take the photo again.';
+    throw const ValidationFailure(message, errors: {'consent': [message]});
   }
 
   /// An inspection is marked by item position, and the server numbers the items

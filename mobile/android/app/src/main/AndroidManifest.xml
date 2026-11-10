@@ -4,6 +4,9 @@
     <!-- Scan a worker's attendance card, and take site and bill photos. A phone with no camera can still install the app. -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- Where a worker's attendance photo was taken, read once when the photo is taken. Never in the background. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
         android:label="Nirmaan360"

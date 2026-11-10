@@ -231,6 +231,7 @@
   "attendanceOtMore": "Half hour more",
   "attendanceSaveFailed": "That mark was not saved. Tap it again.",
   "attendanceScanCard": "Scan card",
+  "attendanceSelfie": "Selfie",
   "attendanceSheetDone": "{name} added to the muster",
   "@attendanceSheetDone": {
     "placeholders": {
@@ -1961,6 +1962,86 @@
   "scanStatusOvertime": "overtime",
   "scanStatusPresent": "present",
   "scanTitle": "Scan worker card",
+  "selfieConsentAgree": "The worker agrees",
+  "selfieConsentAsk": "Read this to the worker. Take the photo only if they agree.",
+  "selfieConsentNeedsNetwork": "Connect to the internet once to load the consent note. It has to be shown before the first photo.",
+  "selfieConsentRead": "Read the consent note",
+  "selfieConsentTitle": "Before the first photo",
+  "selfieConsentVersion": "Consent note {version}",
+  "@selfieConsentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieFailed": "Could not save. Please try again.",
+  "selfieIntro": "Take a photo of the worker at the site. The phone notes where it was taken, and the server checks that it was near the site.",
+  "selfieLocating": "Finding your location",
+  "selfieLocationDenied": "Location is off for this app. Turn it on in your phone's settings, then take the photo again. Without it the photo cannot be checked.",
+  "selfieLocationFailed": "Could not find your location. Move to open sky and try again.",
+  "selfieLocationNote": "Location noted, accurate to about {metres} m",
+  "@selfieLocationNote": {
+    "placeholders": {
+      "metres": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieLocationOff": "The phone's location is switched off. Switch it on, then take the photo again.",
+  "selfieLocationWhy": "The phone asks for your location only now, to note where this photo was taken. It is not tracked in the background.",
+  "selfieMarked": "{name} marked present. {distance} m from the site centre, {radius} m allowed.",
+  "@selfieMarked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "int"
+      },
+      "radius": {
+        "type": "int"
+      }
+    }
+  },
+  "selfieMarkedPlain": "{name} marked present",
+  "@selfieMarkedPlain": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieNoCamera": "The camera could not open. Allow the camera in your phone's settings.",
+  "selfieNoSiteMessage": "A photo is checked against a site's map position. Ask your office to add a site on the website.",
+  "selfieNoSiteTitle": "This project has no site",
+  "selfiePhotoRequired": "Take the photo first",
+  "selfieQueued": "Saved on this phone. {name} will be marked when you are online, and the server will check the location then.",
+  "@selfieQueued": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieQueuedNote": "A saved photo is sent within 7 days. After that the server refuses it.",
+  "selfieRefused": "Not marked: {reason}",
+  "@selfieRefused": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieRetake": "Take again",
+  "selfieSend": "Mark present",
+  "selfieSite": "Site",
+  "selfieTakePhoto": "Take photo",
+  "selfieTitle": "Attendance by photo",
+  "selfieWorker": "Worker",
+  "selfieWorkerChoose": "Choose worker",
+  "selfieWorkerRequired": "Choose the worker",
+  "selfieWorkerSearch": "Search worker",
   "shellCaptionMarked": "marked",
   "shellCaptionOpen": "open",
   "shellCaptionToAnswer": "to answer",
@@ -2258,6 +2339,7 @@
   "syncStaleLog": "A newer change was already on the server, so this one was not applied.",
   "syncTypeAttendance": "Attendance",
   "syncTypeAttendanceScan": "Card scan",
+  "syncTypeAttendanceSelfie": "Attendance photo",
   "syncTypeContractorPayment": "Contractor payment request",
   "syncTypeDpr": "Daily report",
   "syncTypeDprPhoto": "Report photo",

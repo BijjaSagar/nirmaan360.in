@@ -366,12 +366,12 @@ class AttendanceRepository {
     ..where(
       (t) =>
           t.projectId.equals(projectId) &
-          t.type.equals(OutboxType.attendanceScan.name) &
+          t.type.isIn(<String>[OutboxType.attendanceScan.name, OutboxType.attendanceSelfie.name]) &
           t.status.equals(OutboxStatus.done.name).not(),
     )
     ..orderBy([(t) => OrderingTerm.asc(t.id)]);
 
-  /// The workers whose card was scanned on [date] and not yet sent, so the muster
+  /// The workers whose card was scanned, or whose photo was taken, on [date] and not yet sent, so the muster
   /// can show them present before the server has said so.
   Stream<Set<int>> watchUnsentScans(int projectId, String date) =>
       _unsentScans(projectId).watch().map((rows) => _scannedOn(rows, date));

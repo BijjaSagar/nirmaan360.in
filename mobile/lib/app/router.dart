@@ -6,6 +6,7 @@ import '../features/approvals/view/approval_detail_screen.dart';
 import '../features/approvals/view/approvals_inbox_screen.dart';
 import '../features/attendance/view/attendance_screen.dart';
 import '../features/attendance/view/scan_attendance_screen.dart';
+import '../features/attendance/view/selfie_screen.dart';
 import '../features/auth/view/sign_in_screen.dart';
 import '../features/dpr/view/dpr_detail_screen.dart';
 import '../features/dpr/view/dpr_form_screen.dart';
@@ -166,6 +167,7 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         (_) => const AttendanceScreen(),
         routes: <RouteBase>[
           _route('scan', (_) => const ScanAttendanceScreen()),
+          _route('selfie', (_) => const SelfieScreen()),
         ],
       ),
       _route(Routes.offlinePlan, (_) => const OfflinePlanScreen()),

@@ -13,6 +13,7 @@ import '../features/approvals/data/approval_repository.dart';
 import '../features/contractor_control/data/contractor_repository.dart';
 import '../features/contractor_portal/data/portal_repository.dart';
 import '../features/attendance/data/attendance_repository.dart';
+import '../features/attendance/data/selfie_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/dpr/data/dpr_repository.dart';
 import '../features/home/data/home_repository.dart';
@@ -81,6 +82,7 @@ class AppServices {
        measurements = MeasurementRepository(context),
        issues = IssueRepository(context),
        attendance = AttendanceRepository(context),
+       selfies = SelfieRepository(context),
        pettyCash = PettyCashRepository(context),
        approvals = ApprovalRepository(context),
        syncCenter = SyncRepository(context) {
@@ -279,6 +281,9 @@ class AppServices {
   final MeasurementRepository measurements;
   final IssueRepository issues;
   final AttendanceRepository attendance;
+
+  /// Attendance by a photo of the worker taken at the site.
+  final SelfieRepository selfies;
   final PettyCashRepository pettyCash;
   final ApprovalRepository approvals;
   final SyncRepository syncCenter;

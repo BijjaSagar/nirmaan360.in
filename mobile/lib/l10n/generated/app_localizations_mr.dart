@@ -512,6 +512,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get attendanceScanCard => 'कार्ड स्कॅन';
 
   @override
+  String get attendanceSelfie => 'सेल्फी';
+
+  @override
   String attendanceSheetDone(String name) {
     return '$name हजेरीत जोडले';
   }
@@ -3851,6 +3854,124 @@ class AppLocalizationsMr extends AppLocalizations {
   String get scanTitle => 'कामगाराचे कार्ड स्कॅन करा';
 
   @override
+  String get selfieConsentAgree => 'कामगाराची संमती आहे';
+
+  @override
+  String get selfieConsentAsk =>
+      'हे कामगाराला वाचून दाखवा. त्यांनी संमती दिली तरच फोटो घ्या.';
+
+  @override
+  String get selfieConsentNeedsNetwork =>
+      'संमतीची टीप लोड करण्यासाठी एकदा इंटरनेटशी जोडा. पहिल्या फोटोआधी ती दाखवावी लागते.';
+
+  @override
+  String get selfieConsentRead => 'संमतीची टीप वाचा';
+
+  @override
+  String get selfieConsentTitle => 'पहिल्या फोटोआधी';
+
+  @override
+  String selfieConsentVersion(String version) {
+    return 'संमती टीप $version';
+  }
+
+  @override
+  String get selfieFailed => 'जतन झाले नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get selfieIntro =>
+      'कामगाराचा साइटवर फोटो घ्या. फोन तो कुठे घेतला ते नोंदवतो आणि सर्व्हर तो साइटजवळ होता का ते तपासतो.';
+
+  @override
+  String get selfieLocating => 'तुमचे स्थान शोधत आहे';
+
+  @override
+  String get selfieLocationDenied =>
+      'या अ‍ॅपसाठी स्थान बंद आहे. फोनच्या सेटिंग्जमध्ये ते सुरू करा आणि फोटो पुन्हा घ्या. त्याशिवाय फोटो तपासता येत नाही.';
+
+  @override
+  String get selfieLocationFailed =>
+      'तुमचे स्थान सापडले नाही. मोकळ्या आकाशाखाली जा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String selfieLocationNote(String metres) {
+    return 'स्थान नोंदवले, सुमारे $metres मी. अचूक';
+  }
+
+  @override
+  String get selfieLocationOff =>
+      'फोनचे स्थान बंद आहे. ते सुरू करा आणि फोटो पुन्हा घ्या.';
+
+  @override
+  String get selfieLocationWhy =>
+      'हा फोटो कुठे घेतला ते नोंदवण्यासाठीच फोन आता तुमचे स्थान विचारतो. पार्श्वभूमीत तुमचा मागोवा घेतला जात नाही.';
+
+  @override
+  String selfieMarked(String name, int distance, int radius) {
+    return '$name हजर नोंदवले. साइटच्या मध्यापासून $distance मी., $radius मी. पर्यंत चालते.';
+  }
+
+  @override
+  String selfieMarkedPlain(String name) {
+    return '$name हजर नोंदवले';
+  }
+
+  @override
+  String get selfieNoCamera =>
+      'कॅमेरा उघडला नाही. फोनच्या सेटिंग्जमध्ये कॅमेरा सुरू करा.';
+
+  @override
+  String get selfieNoSiteMessage =>
+      'फोटो साइटच्या नकाशावरील जागेशी तपासला जातो. कार्यालयाला वेबसाइटवर साइट जोडायला सांगा.';
+
+  @override
+  String get selfieNoSiteTitle => 'या प्रकल्पावर साइट नाही';
+
+  @override
+  String get selfiePhotoRequired => 'आधी फोटो घ्या';
+
+  @override
+  String selfieQueued(String name) {
+    return 'या फोनवर जतन झाले. इंटरनेट आल्यावर $name यांना हजर नोंदवले जाईल आणि तेव्हा सर्व्हर स्थान तपासेल.';
+  }
+
+  @override
+  String get selfieQueuedNote =>
+      'जतन केलेला फोटो ७ दिवसांत पाठवला जातो. त्यानंतर सर्व्हर तो नाकारतो.';
+
+  @override
+  String selfieRefused(String reason) {
+    return 'नोंदवले नाही: $reason';
+  }
+
+  @override
+  String get selfieRetake => 'पुन्हा घ्या';
+
+  @override
+  String get selfieSend => 'हजर नोंदवा';
+
+  @override
+  String get selfieSite => 'साइट';
+
+  @override
+  String get selfieTakePhoto => 'फोटो घ्या';
+
+  @override
+  String get selfieTitle => 'फोटोने हजेरी';
+
+  @override
+  String get selfieWorker => 'कामगार';
+
+  @override
+  String get selfieWorkerChoose => 'कामगार निवडा';
+
+  @override
+  String get selfieWorkerRequired => 'कामगार निवडा';
+
+  @override
+  String get selfieWorkerSearch => 'कामगार शोधा';
+
+  @override
   String get shellCaptionMarked => 'नोंदवले';
 
   @override
@@ -4411,6 +4532,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeAttendanceScan => 'कार्ड स्कॅन';
+
+  @override
+  String get syncTypeAttendanceSelfie => 'हजेरीचा फोटो';
 
   @override
   String get syncTypeContractorPayment => 'ठेकेदार देयक विनंती';

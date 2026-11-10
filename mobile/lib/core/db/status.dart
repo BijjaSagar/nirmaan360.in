@@ -33,6 +33,13 @@ abstract final class MetaKey {
   static const lookups = 'sync.lookups';
   static const sessionUser = 'session.user';
   static const selectedProject = 'selected_project';
+
+  /// The selfie consent note the server last sent: `{version, text}`. Kept so it can be
+  /// shown with no network once it has been loaded.
+  static const selfieConsent = 'selfie.consent';
+
+  /// Who accepted which version of the note on this phone: `<user id>|<version>`.
+  static const selfieConsentAccepted = 'selfie.consent.accepted';
   static const locale = 'locale';
 
   /// The offline plan's state, as JSON. Absent for a company on any normal plan.

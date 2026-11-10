@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert' show base64, base64Decode, base64Url, jsonEncode, utf8;
-import 'dart:math' show max, min;
+import 'dart:math' show atan2, cos, max, min, pi, sin, sqrt;
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart' show KeyPairType, SimpleKeyPair, SimplePublicKey;
@@ -2871,6 +2871,111 @@ class FakeApi implements NirmaanApi {
   Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body) async =>
       _storeProgress(stockCountPosts, body);
 
+  // Attendance by photo --------------------------------------------------------------
+
+  /// What `GET /attendance/selfie-consent` answers.
+  Row selfieConsentBody = {'version': 'selfie-v1', 'text': 'The worker in this photo agrees to it being taken, with this location, only to record attendance at this site.'};
+  int selfieConsentReads = 0;
+
+  /// The sites' map position and fence, which the server holds and does not send: id to [lat, lng, radius in metres].
+  final Map<int, List<num>> siteFences = {1: [18.5204, 73.8567, 200]};
+
+  /// Every selfie stored, by `client_uuid`, and every request that reached the server.
+  final Map<String, Row> selfiePosts = {};
+  final List<Map<String, String>> selfieForms = [];
+  final List<String> selfieFiles = [];
+
+  int _metres(double fromLat, double fromLng, double toLat, double toLng) {
+    double rad(double d) => d * pi / 180;
+    final dLat = rad(toLat - fromLat);
+    final dLng = rad(toLng - fromLng);
+    final a = sin(dLat / 2) * sin(dLat / 2) + cos(rad(fromLat)) * cos(rad(toLat)) * sin(dLng / 2) * sin(dLng / 2);
+    return (6371000 * 2 * atan2(sqrt(a), sqrt(1 - a))).round();
+  }
+
+  @override
+  Future<Map<String, dynamic>> attendanceSelfieConsent() async {
+    _guard();
+    selfieConsentReads++;
+    return selfieConsentBody;
+  }
+
+  /// `SelfieAttendanceService::record`, in the order the server checks.
+  Future<Map<String, dynamic>> _postSelfie(int projectId, String uuid, String filePath, Map<String, String> fields) async {
+    selfieForms.add(fields);
+    selfieFiles.add(filePath);
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    ValidationFailure refuse(String field, String message) => ValidationFailure(message, errors: {field: [message]});
+    var stored = selfiePosts[uuid];
+    if (stored == null) {
+      if (fields['consent'] != '1') throw refuse('consent', 'The consent must be accepted.');
+      final siteId = int.parse(fields['site_id'] ?? '0');
+      final fence = siteFences[siteId];
+      final site = sites.where((s) => s['id'] == siteId && s['project_id'] == projectId).firstOrNull;
+      if (site == null) throw refuse('site_id', 'The selected site id is invalid.');
+      final workerId = int.parse(fields['worker_id'] ?? '0');
+      final worker = workers.where((w) => w['id'] == workerId).firstOrNull;
+      if (worker == null) throw refuse('worker_id', 'The selected worker id is invalid.');
+      final lat = double.parse(fields['lat']!);
+      final lng = double.parse(fields['lng']!);
+      final accuracy = fields['accuracy_m'] == null ? 0.0 : double.parse(fields['accuracy_m']!);
+      final at = DateTime.parse(fields['captured_at']!);
+      if (at.isAfter(_now.add(const Duration(minutes: 10)))) throw refuse('captured_at', 'The captured at field must be a date before or equal to +10 minutes.');
+      if (at.isBefore(_now.subtract(const Duration(days: 7)))) throw refuse('captured_at', 'The captured at field must be a date after or equal to -7 days.');
+      if (fence == null) throw refuse('site_id', 'This site has no map location yet, so a selfie cannot be checked against it.');
+      final radius = fence[2].toInt();
+      if (accuracy > radius) throw refuse('lat', 'The location is too rough to check (${accuracy.round()} m). Move to open sky and try again.');
+      final distance = _metres(lat, lng, fence[0].toDouble(), fence[1].toDouble());
+      if (distance > radius) {
+        throw refuse('lat', 'This location is $distance m from ${site['name']}. Attendance needs to be within $radius m.');
+      }
+      final local = at.toUtc().add(const Duration(hours: 5, minutes: 30));
+      String two(int v) => v.toString().padLeft(2, '0');
+      final day = '${local.year}-${two(local.month)}-${two(local.day)}';
+      if (selfiePosts.values.any((s) => s['worker_id'] == workerId && s['attendance_date'] == day)) {
+        throw refuse('worker_id', 'This worker already has a selfie for that day. Delete it first to take another.');
+      }
+      Row? mark = attendance.where((a) => a['project_id'] == projectId && a['worker_id'] == workerId && a['attendance_date'] == day).firstOrNull;
+      if (mark == null) {
+        mark = {
+          'id': _nextId++,
+          'client_uuid': uuid,
+          'project_id': projectId,
+          'worker_id': workerId,
+          'attendance_date': day,
+          'status': 'present',
+          'ot_hours': '0.0',
+          'marked_by': user['id'],
+          'client_updated_at': null,
+          'updated_at': _stampNow(),
+        };
+        attendance.add(mark);
+      } else if (mark['status'] == 'absent') {
+        mark['status'] = 'present';
+      }
+      stored = {
+        'id': _nextId++,
+        'client_uuid': uuid,
+        'worker_id': workerId,
+        'site_id': siteId,
+        'attendance_date': day,
+        'distance_m': distance,
+        'radius_m': radius,
+        'consent_version': selfieConsentBody['version'],
+      };
+      selfiePosts[uuid] = stored;
+    }
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return stored;
+  }
+
   // Attendance by QR card ---------------------------------------------------------
 
   /// Moves the server's clock, and so the day it dates a scan by.
@@ -3390,6 +3495,8 @@ class FakeApi implements NirmaanApi {
     Map<String, String> fields = const <String, String>{},
   }) async {
     _guard();
+    final selfie = RegExp(r'^/projects/(\d+)/attendance/selfies$').firstMatch(path);
+    if (selfie != null) return _postSelfie(int.parse(selfie.group(1)!), clientUuid, filePath, fields);
     fieldPhotos.add((path, clientUuid));
     fieldPhotoForms.add((fileField, fields));
     final match = RegExp(r'^/(issues|measurements)/(\d+)/').firstMatch(path);

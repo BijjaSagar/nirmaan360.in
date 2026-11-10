@@ -988,6 +988,12 @@ abstract class AppLocalizations {
   /// **'Scan card'**
   String get attendanceScanCard;
 
+  /// No description provided for @attendanceSelfie.
+  ///
+  /// In en, this message translates to:
+  /// **'Selfie'**
+  String get attendanceSelfie;
+
   /// No description provided for @attendanceSheetDone.
   ///
   /// In en, this message translates to:
@@ -6880,6 +6886,198 @@ abstract class AppLocalizations {
   /// **'Scan worker card'**
   String get scanTitle;
 
+  /// No description provided for @selfieConsentAgree.
+  ///
+  /// In en, this message translates to:
+  /// **'The worker agrees'**
+  String get selfieConsentAgree;
+
+  /// No description provided for @selfieConsentAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Read this to the worker. Take the photo only if they agree.'**
+  String get selfieConsentAsk;
+
+  /// No description provided for @selfieConsentNeedsNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load the consent note. It has to be shown before the first photo.'**
+  String get selfieConsentNeedsNetwork;
+
+  /// No description provided for @selfieConsentRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the consent note'**
+  String get selfieConsentRead;
+
+  /// No description provided for @selfieConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before the first photo'**
+  String get selfieConsentTitle;
+
+  /// No description provided for @selfieConsentVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Consent note {version}'**
+  String selfieConsentVersion(String version);
+
+  /// No description provided for @selfieFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Please try again.'**
+  String get selfieFailed;
+
+  /// No description provided for @selfieIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo of the worker at the site. The phone notes where it was taken, and the server checks that it was near the site.'**
+  String get selfieIntro;
+
+  /// No description provided for @selfieLocating.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your location'**
+  String get selfieLocating;
+
+  /// No description provided for @selfieLocationDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off for this app. Turn it on in your phone\'s settings, then take the photo again. Without it the photo cannot be checked.'**
+  String get selfieLocationDenied;
+
+  /// No description provided for @selfieLocationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not find your location. Move to open sky and try again.'**
+  String get selfieLocationFailed;
+
+  /// No description provided for @selfieLocationNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Location noted, accurate to about {metres} m'**
+  String selfieLocationNote(String metres);
+
+  /// No description provided for @selfieLocationOff.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone\'s location is switched off. Switch it on, then take the photo again.'**
+  String get selfieLocationOff;
+
+  /// No description provided for @selfieLocationWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone asks for your location only now, to note where this photo was taken. It is not tracked in the background.'**
+  String get selfieLocationWhy;
+
+  /// No description provided for @selfieMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} marked present. {distance} m from the site centre, {radius} m allowed.'**
+  String selfieMarked(String name, int distance, int radius);
+
+  /// No description provided for @selfieMarkedPlain.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} marked present'**
+  String selfieMarkedPlain(String name);
+
+  /// No description provided for @selfieNoCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera could not open. Allow the camera in your phone\'s settings.'**
+  String get selfieNoCamera;
+
+  /// No description provided for @selfieNoSiteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A photo is checked against a site\'s map position. Ask your office to add a site on the website.'**
+  String get selfieNoSiteMessage;
+
+  /// No description provided for @selfieNoSiteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This project has no site'**
+  String get selfieNoSiteTitle;
+
+  /// No description provided for @selfiePhotoRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the photo first'**
+  String get selfiePhotoRequired;
+
+  /// No description provided for @selfieQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. {name} will be marked when you are online, and the server will check the location then.'**
+  String selfieQueued(String name);
+
+  /// No description provided for @selfieQueuedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A saved photo is sent within 7 days. After that the server refuses it.'**
+  String get selfieQueuedNote;
+
+  /// No description provided for @selfieRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Not marked: {reason}'**
+  String selfieRefused(String reason);
+
+  /// No description provided for @selfieRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Take again'**
+  String get selfieRetake;
+
+  /// No description provided for @selfieSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark present'**
+  String get selfieSend;
+
+  /// No description provided for @selfieSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Site'**
+  String get selfieSite;
+
+  /// No description provided for @selfieTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get selfieTakePhoto;
+
+  /// No description provided for @selfieTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance by photo'**
+  String get selfieTitle;
+
+  /// No description provided for @selfieWorker.
+  ///
+  /// In en, this message translates to:
+  /// **'Worker'**
+  String get selfieWorker;
+
+  /// No description provided for @selfieWorkerChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose worker'**
+  String get selfieWorkerChoose;
+
+  /// No description provided for @selfieWorkerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the worker'**
+  String get selfieWorkerRequired;
+
+  /// No description provided for @selfieWorkerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search worker'**
+  String get selfieWorkerSearch;
+
   /// No description provided for @shellCaptionMarked.
   ///
   /// In en, this message translates to:
@@ -7899,6 +8097,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Card scan'**
   String get syncTypeAttendanceScan;
+
+  /// No description provided for @syncTypeAttendanceSelfie.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance photo'**
+  String get syncTypeAttendanceSelfie;
 
   /// No description provided for @syncTypeContractorPayment.
   ///

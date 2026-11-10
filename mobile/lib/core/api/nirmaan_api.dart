@@ -374,6 +374,11 @@ abstract interface class NirmaanApi {
   /// `client_uuid` returns the first mark with `already_marked` true.
   Future<Map<String, dynamic>> postAttendanceScan(int projectId, Map<String, dynamic> body);
 
+  /// `GET /attendance/selfie-consent`: `{version, text}`, the note in the person's
+  /// language. The photo is posted with [uploadFieldPhoto] to
+  /// `/projects/{project}/attendance/selfies`, file field `selfie`.
+  Future<Map<String, dynamic>> attendanceSelfieConsent();
+
   // Goods receipts against a purchase order, and issues from a store. They are
   // posted one at a time to their own endpoints, not through
   // `/procurement/push`: see docs/CONTRACT.md for why.

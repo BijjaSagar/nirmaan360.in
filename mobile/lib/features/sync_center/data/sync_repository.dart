@@ -103,6 +103,9 @@ class SyncRepository {
 
       await _discardOutboxRows(row);
       await _restoreRecord(row);
+      // A photo of a worker is not left on the phone once nobody means to send it.
+      final String? kept = row.filePath;
+      if (row.type == OutboxType.attendanceSelfie && kept != null) await _ctx.attachments.delete(kept);
     });
   }
 
@@ -225,6 +228,7 @@ class SyncRepository {
       case OutboxType.goodsReceipt:
       case OutboxType.materialIssue:
       case OutboxType.attendanceScan:
+      case OutboxType.attendanceSelfie:
         break;
     }
   }

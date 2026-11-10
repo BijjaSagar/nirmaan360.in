@@ -510,6 +510,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceScanCard => 'Scan card';
 
   @override
+  String get attendanceSelfie => 'Selfie';
+
+  @override
   String attendanceSheetDone(String name) {
     return '$name added to the muster';
   }
@@ -3886,6 +3889,124 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanTitle => 'Scan worker card';
 
   @override
+  String get selfieConsentAgree => 'The worker agrees';
+
+  @override
+  String get selfieConsentAsk =>
+      'Read this to the worker. Take the photo only if they agree.';
+
+  @override
+  String get selfieConsentNeedsNetwork =>
+      'Connect to the internet once to load the consent note. It has to be shown before the first photo.';
+
+  @override
+  String get selfieConsentRead => 'Read the consent note';
+
+  @override
+  String get selfieConsentTitle => 'Before the first photo';
+
+  @override
+  String selfieConsentVersion(String version) {
+    return 'Consent note $version';
+  }
+
+  @override
+  String get selfieFailed => 'Could not save. Please try again.';
+
+  @override
+  String get selfieIntro =>
+      'Take a photo of the worker at the site. The phone notes where it was taken, and the server checks that it was near the site.';
+
+  @override
+  String get selfieLocating => 'Finding your location';
+
+  @override
+  String get selfieLocationDenied =>
+      'Location is off for this app. Turn it on in your phone\'s settings, then take the photo again. Without it the photo cannot be checked.';
+
+  @override
+  String get selfieLocationFailed =>
+      'Could not find your location. Move to open sky and try again.';
+
+  @override
+  String selfieLocationNote(String metres) {
+    return 'Location noted, accurate to about $metres m';
+  }
+
+  @override
+  String get selfieLocationOff =>
+      'The phone\'s location is switched off. Switch it on, then take the photo again.';
+
+  @override
+  String get selfieLocationWhy =>
+      'The phone asks for your location only now, to note where this photo was taken. It is not tracked in the background.';
+
+  @override
+  String selfieMarked(String name, int distance, int radius) {
+    return '$name marked present. $distance m from the site centre, $radius m allowed.';
+  }
+
+  @override
+  String selfieMarkedPlain(String name) {
+    return '$name marked present';
+  }
+
+  @override
+  String get selfieNoCamera =>
+      'The camera could not open. Allow the camera in your phone\'s settings.';
+
+  @override
+  String get selfieNoSiteMessage =>
+      'A photo is checked against a site\'s map position. Ask your office to add a site on the website.';
+
+  @override
+  String get selfieNoSiteTitle => 'This project has no site';
+
+  @override
+  String get selfiePhotoRequired => 'Take the photo first';
+
+  @override
+  String selfieQueued(String name) {
+    return 'Saved on this phone. $name will be marked when you are online, and the server will check the location then.';
+  }
+
+  @override
+  String get selfieQueuedNote =>
+      'A saved photo is sent within 7 days. After that the server refuses it.';
+
+  @override
+  String selfieRefused(String reason) {
+    return 'Not marked: $reason';
+  }
+
+  @override
+  String get selfieRetake => 'Take again';
+
+  @override
+  String get selfieSend => 'Mark present';
+
+  @override
+  String get selfieSite => 'Site';
+
+  @override
+  String get selfieTakePhoto => 'Take photo';
+
+  @override
+  String get selfieTitle => 'Attendance by photo';
+
+  @override
+  String get selfieWorker => 'Worker';
+
+  @override
+  String get selfieWorkerChoose => 'Choose worker';
+
+  @override
+  String get selfieWorkerRequired => 'Choose the worker';
+
+  @override
+  String get selfieWorkerSearch => 'Search worker';
+
+  @override
   String get shellCaptionMarked => 'marked';
 
   @override
@@ -4460,6 +4581,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeAttendanceScan => 'Card scan';
+
+  @override
+  String get syncTypeAttendanceSelfie => 'Attendance photo';
 
   @override
   String get syncTypeContractorPayment => 'Contractor payment request';
