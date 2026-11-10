@@ -32,16 +32,27 @@ class Announcement extends Model
 
     public const FAILED = 'failed';
 
+    public const PARTIAL = 'partial';
+
+    /**
+     * Hours after its last run starts that an announcement can still be stopped: a copy can wait up to a
+     * whole day of quiet hours, plus the time the run takes to queue.
+     */
+    public const STOP_WINDOW_HOURS = 26;
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
             'translations' => 'array',
+            'mentions_money' => 'boolean',
             'roles' => 'array',
             'repeat_until' => 'date',
             'scheduled_for' => 'datetime',
             'next_run_at' => 'datetime',
+            'run_started_at' => 'datetime',
+            'first_batch_at' => 'datetime',
             'last_sent_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
@@ -94,17 +105,44 @@ class Announcement extends Model
         return in_array($this->schedule, ['daily', 'weekly'], true);
     }
 
+    /**
+     * Scheduled ones, running reminders, and anything that went out in the last day: until then some
+     * copies may still be waiting for people's quiet hours to end, and stopping drops them.
+     */
     public function canBeCancelled(): bool
     {
-        return $this->status === self::SCHEDULED;
+        // A run queued but not started yet can always be stopped, however old the announcement is.
+        return $this->status === self::SCHEDULED
+            || ($this->status === self::SENDING && $this->run_started_at === null)
+            || (in_array($this->status, self::STOPPABLE_AFTER_SENDING, true) && $this->sentRecently());
     }
 
-    /** Every language's words, for checks that must look at all of them. */
-    public function allText(): string
+    public const STOPPABLE_AFTER_SENDING = [self::SENDING, self::SENT, self::PARTIAL];
+
+    /**
+     * A failed or partly sent one-off can be sent again under the same run: whoever already got it is
+     * passed over, for as long as their claim on the run lasts (the push dedupe window, counted from
+     * when it first queued phones, which later runs do not move). A failed one reached nobody and can
+     * go at any time.
+     */
+    public function canBeRetried(): bool
     {
-        return collect([$this->title, $this->body])
-            ->merge(collect($this->translations ?? [])->flatMap(fn ($text) => is_array($text) ? array_values($text) : []))
-            ->implode("\n");
+        if ($this->repeats()) {
+            return false;
+        }
+
+        $window = (int) config('modules.notify.push.dedupe_hours', 24) - 1;
+
+        return $this->status === self::FAILED
+            || ($this->status === self::PARTIAL && $this->first_batch_at !== null && $this->first_batch_at->greaterThanOrEqualTo(now()->subHours($window)));
+    }
+
+    /** Whether its last run started recently enough that some copies may still be waiting for quiet hours to end. */
+    public function sentRecently(): bool
+    {
+        $when = collect([$this->run_started_at, $this->last_sent_at, $this->scheduled_for, $this->created_at])->filter()->max();
+
+        return $when !== null && $when->greaterThanOrEqualTo(now()->subHours(self::STOP_WINDOW_HOURS));
     }
 
     /** The title in this language, or the English one when none was written for it. */

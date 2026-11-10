@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Project;
 use App\Services\Notify\AnnouncementService;
 use App\Services\Notify\Notifier;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -42,6 +43,8 @@ class AnnouncementController extends Controller
             'history' => $history,
             'service' => $this->announcements,
             'pushConnected' => $notifier->connected('push'),
+            // A settings.manage role need not hold money.view: such a viewer sees that a message had figures, not the figures.
+            'canSeeMoney' => Money::visible($request->user()),
             'companies' => $company === null ? Organization::orderBy('name')->get(['id', 'name']) : collect(),
             'projects' => $this->projects($company),
             'roles' => $this->announcements->roleOptions($company),
@@ -58,23 +61,45 @@ class AnnouncementController extends Controller
 
         $announcement = $this->announcements->create($request->user(), $data, $request->file('image'), $company);
 
-        return redirect()->route($this->routes($company)['index'])->with('success', match ($announcement->schedule) {
+        $saved = match ($announcement->schedule) {
             'now' => __('Announcement sent. Phones get it within a minute, or after quiet hours for people who keep them.'),
-            'once' => __('Announcement scheduled for :date.', ['date' => $announcement->next_run_at?->format('d M Y, H:i')]),
-            default => __('Reminder saved. The first one goes on :date.', ['date' => $announcement->next_run_at?->format('d M Y, H:i')]),
-        });
+            'once' => __('Announcement scheduled for :date.', ['date' => $announcement->scheduled_for?->format('d M Y, H:i')]),
+            default => __('Reminder saved. The first one goes on :date.', ['date' => $announcement->scheduled_for?->format('d M Y, H:i')]),
+        };
+
+        // Said out loud, so a writer whose words were taken for money knows who it went to.
+        if ($announcement->mentions_money) {
+            $saved .= ' '.__('It has money figures, so it goes only to people who may see money.');
+        }
+
+        return redirect()->route($this->routes($company)['index'])->with('success', $saved);
     }
 
     public function cancel(Request $request, Announcement $announcement): RedirectResponse
     {
-        $company = $this->company($request);
-
-        // A company admin reaches only their own company's announcements; anything else does not exist for them.
-        abort_if($company !== null && $announcement->organization_id !== $company->id, 404);
+        $this->ownedBy($request, $announcement);
 
         $this->announcements->cancel($announcement, $request->user());
 
-        return back()->with('success', __('Stopped. Nothing more will be sent for it.'));
+        return back()->with('success', __('Stopped. Nothing more will be sent for it, and copies waiting for quiet hours to end are dropped. Phones that already showed it keep it.'));
+    }
+
+    /** Sends a failed or partly sent one-off again to the people it did not reach. */
+    public function retry(Request $request, Announcement $announcement): RedirectResponse
+    {
+        $this->ownedBy($request, $announcement);
+
+        $this->announcements->retry($announcement, $request->user());
+
+        return back()->with('success', __('Sending again to the people it did not reach.'));
+    }
+
+    /** A company admin reaches only their own company's announcements; anything else does not exist for them. */
+    private function ownedBy(Request $request, Announcement $announcement): void
+    {
+        $company = $this->company($request);
+
+        abort_if($company !== null && $announcement->organization_id !== $company->id, 404);
     }
 
     /**
@@ -96,12 +121,12 @@ class AnnouncementController extends Controller
         return $request->routeIs('admin.*') ? null : $request->user()->organization;
     }
 
-    /** @return array{index: string, store: string, cancel: string} */
+    /** @return array{index: string, store: string, cancel: string, retry: string} */
     private function routes(?Organization $company): array
     {
         $prefix = $company === null ? 'admin.announcements' : 'notify.announcements';
 
-        return ['index' => $prefix, 'store' => $prefix.'.store', 'cancel' => $prefix.'.cancel'];
+        return ['index' => $prefix, 'store' => $prefix.'.store', 'cancel' => $prefix.'.cancel', 'retry' => $prefix.'.retry'];
     }
 
     private function projects(?Organization $company)

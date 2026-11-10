@@ -542,11 +542,11 @@ class AnnouncementsTest extends NotifyTestCase
         $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form())->assertSessionHasNoErrors();
         $announcement = Announcement::sole();
 
-        (new SendAnnouncement($announcement->id, 'once'))->failed(new \RuntimeException('database went away'));
+        (new SendAnnouncement($announcement->id, 'once', $announcement->run_token))->failed(new \RuntimeException('database went away'));
 
         $this->assertSame(Announcement::FAILED, $announcement->refresh()->status);
         $this->assertTrue(AuditLog::where('action', 'announcement.failed')->where('auditable_id', $announcement->id)->exists());
-        $this->actingAs($owner)->get(route('notify.announcements'))->assertOk()->assertSee(__('Could not be sent. Write it again to retry.'));
+        $this->actingAs($owner)->get(route('notify.announcements'))->assertOk()->assertSee(__('Could not be sent.'))->assertSee(__('Send again'));
     }
 
     public function test_the_history_shows_when_a_stopped_one_was_meant_to_go(): void

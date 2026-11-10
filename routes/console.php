@@ -18,4 +18,4 @@ Schedule::command('crm:send-reminders')->everyTenMinutes()->withoutOverlapping()
 // Site alerts module: run every alert source over the live projects, open, refresh and resolve alerts, and tell the people concerned.
 Schedule::command('site-alerts:scan')->dailyAt('07:30')->timezone('Asia/Kolkata')->withoutOverlapping()->onOneServer();
 // Notify module: start the broadcasts and reminders whose time has come. Each run is claimed once, so overlapping runs send nothing twice.
-Schedule::command('announcements:send-due')->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::command('announcements:send-due')->everyMinute()->withoutOverlapping(5)->onOneServer();

@@ -46,6 +46,11 @@
                 <input id="image" name="image" type="file" accept="image/jpeg,image/png" class="input">
             </x-field>
 
+            <div>
+                <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="has_money" value="1" class="mt-1" @checked(old('has_money'))> <span>{{ __('Contains money figures') }}</span></label>
+                <p class="hint">{{ __('Then it goes only to people who may see money. Amounts written with ₹, Rs, rupees, lakh or crore are found on their own. Tick this for any other figure, or one in the picture.') }}</p>
+            </div>
+
             <fieldset class="space-y-2">
                 <legend class="label">{{ __('Send to') }}</legend>
                 @error('audience')<p class="error">{{ $message }}</p>@enderror
@@ -57,6 +62,7 @@
                     <label class="flex items-center gap-2"><input type="radio" name="audience" value="roles" x-model="audience"> {{ __('Some roles') }}</label>
                     <label class="flex items-center gap-2"><input type="radio" name="audience" value="project" x-model="audience"> {{ __('The people on one project') }}</label>
                 </div>
+                <p class="hint">{{ __('Contractor logins get it only when the Contractor role is ticked under Some roles.') }}</p>
 
                 @if ($company === null)
                     <div x-show="audience === 'company' || audience === 'roles'" x-cloak>
@@ -134,6 +140,9 @@
             </fieldset>
 
             <p class="hint">{{ __('People can switch announcements off in their notification settings. A message with a rupee amount reaches only people who may see money, by push and in the app.') }}</p>
+            @if ($company !== null)
+                <p class="hint">{{ __('A company can have :active announcements and reminders waiting at once, and write :daily a day.', ['active' => \App\Services\Notify\AnnouncementService::COMPANY_ACTIVE_MAX, 'daily' => \App\Services\Notify\AnnouncementService::COMPANY_DAILY_MAX]) }}</p>
+            @endif
         </div>
 
         <div class="border-t border-rule px-4 py-3">
@@ -168,12 +177,18 @@
                     <tr>
                         <td class="max-w-xs">
                             <div class="flex items-start gap-3">
-                                @if ($announcement->imageUrl())
+                                @if ($announcement->imageUrl() && ($canSeeMoney || ! $announcement->mentions_money))
                                     <img src="{{ $announcement->imageUrl() }}" alt="" class="size-12 shrink-0 rounded border border-rule object-cover" loading="lazy">
                                 @endif
                                 <div>
-                                    <p class="font-semibold">{{ $announcement->title }}</p>
-                                    <p class="text-xs text-ink-3">{{ \Illuminate\Support\Str::limit($announcement->body, 120) }}</p>
+                                    @if ($announcement->mentions_money && ! $canSeeMoney)
+                                        <p class="font-semibold">{{ __('Message with money figures') }}</p>
+                                        <p class="text-xs text-ink-3">{{ __('Only people who may see money can read it.') }}</p>
+                                    @else
+                                        @if ($announcement->mentions_money)<p class="text-xs text-laterite">{{ __('Only for people who may see money') }}</p>@endif
+                                        <p class="font-semibold">{{ $announcement->title }}</p>
+                                        <p class="text-xs text-ink-3">{{ \Illuminate\Support\Str::limit($announcement->body, 120) }}</p>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -191,7 +206,8 @@
                                     @case('sending') {{ __('Sending') }} @break
                                     @case('sent') {{ __('Last sent :date', ['date' => $announcement->last_sent_at?->format('d M Y, H:i')]) }} @break
                                     @case('cancelled') {{ __('Stopped on :date', ['date' => $announcement->cancelled_at?->format('d M Y, H:i')]) }} @break
-                                    @case('failed') <span class="text-laterite">{{ __('Could not be sent. Write it again to retry.') }}</span> @break
+                                    @case('failed') <span class="text-laterite">{{ __('Could not be sent.') }}</span> @break
+                                    @case('partial') <span class="text-laterite">{{ __('Partly sent: it stopped before reaching everyone.') }}</span> @break
                                 @endswitch
                                 @if ($announcement->repeats() && $announcement->runs > 0) · {{ __('Sent :count times', ['count' => $announcement->runs]) }} @endif
                             </p>
@@ -201,18 +217,26 @@
                         <td class="num text-right">{{ $announcement->failed_count }}</td>
                         <td class="text-sm">{{ $announcement->author?->name }}<p class="num text-xs text-ink-3">{{ $announcement->created_at->format('d M, H:i') }}</p></td>
                         <td>
-                            @if ($announcement->canBeCancelled())
-                                <form method="POST" action="{{ route($routes['cancel'], $announcement) }}" x-data @submit="if (! confirm(@js(__('Stop this? Nothing more will be sent for it.')))) $event.preventDefault()">
-                                    @csrf
-                                    <button class="btn btn-ghost">{{ __('Stop') }}</button>
-                                </form>
-                            @endif
+                            <div class="flex flex-col gap-2">
+                                @if ($announcement->canBeRetried())
+                                    <form method="POST" action="{{ route($routes['retry'], $announcement) }}" x-data="{ busy: false }" @submit="busy = true">
+                                        @csrf
+                                        <button class="btn btn-ghost" x-bind:disabled="busy">{{ __('Send again') }}</button>
+                                    </form>
+                                @endif
+                                @if ($announcement->canBeCancelled())
+                                    <form method="POST" action="{{ route($routes['cancel'], $announcement) }}" x-data @submit="if (! confirm(@js(__('Stop this? Nothing more will be sent for it, and copies waiting for quiet hours to end are dropped. Phones that already showed it keep it.')))) $event.preventDefault()">
+                                        @csrf
+                                        <button class="btn btn-ghost">{{ __('Stop') }}</button>
+                                    </form>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @endforeach
                 </tbody>
             </table>
-            <p class="hint px-4 pb-3">{{ __('Delivered counts the phones Firebase accepted, out of the phones it was queued for. People who switched announcements off, or turned off push, get no push but still see it in the app.') }}</p>
+            <p class="hint px-4 pb-3">{{ __('Delivered counts the phones Firebase accepted, out of the phones it was queued for. People who switched announcements off, or turned off push, get no push but still see it in the app.') }} {{ __('Send again reaches only the people a failed or partly sent announcement did not reach.') }}</p>
         @endif
     </section>
 @endsection

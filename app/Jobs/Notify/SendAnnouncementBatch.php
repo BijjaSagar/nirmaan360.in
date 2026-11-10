@@ -8,6 +8,7 @@ use App\Support\Modules;
 use App\Support\PlatformSettings;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Throwable;
 
 /**
  * Queues the push for one batch of an announcement run (AnnouncementService::BATCH people).
@@ -40,5 +41,11 @@ class SendAnnouncementBatch implements ShouldQueue
         if ($announcement !== null) {
             $announcements->sendBatch($announcement, $this->runKey, $this->userIds);
         }
+    }
+
+    /** After the last retry: a one-off is marked partly sent, so it can be sent again to the people it missed. */
+    public function failed(?Throwable $exception): void
+    {
+        app(AnnouncementService::class)->batchFailed($this->announcementId, $this->runKey, $exception);
     }
 }

@@ -8,6 +8,7 @@ use App\Support\Modules;
 use App\Support\PlatformSettings;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -26,7 +27,13 @@ class SendAnnouncement implements ShouldQueue
     /** @var list<int> */
     public array $backoff = [60, 300];
 
-    public function __construct(public int $announcementId, public string $runKey) {}
+    /** This queued copy of the run's job. Kept across the queue's retries; a copy queued again by the sweep has its own. */
+    public string $copy;
+
+    public function __construct(public int $announcementId, public string $runKey, public ?string $token = null)
+    {
+        $this->copy = (string) Str::uuid();
+    }
 
     public function handle(AnnouncementService $announcements, PlatformSettings $settings): void
     {
@@ -38,13 +45,13 @@ class SendAnnouncement implements ShouldQueue
         $announcement = Announcement::find($this->announcementId);
 
         if ($announcement !== null) {
-            $announcements->startRun($announcement, $this->runKey);
+            $announcements->startRun($announcement, $this->runKey, $this->token, $this->copy);
         }
     }
 
     /** After the last retry: a one-off is marked failed in the history instead of staying "sending". */
     public function failed(?Throwable $exception): void
     {
-        app(AnnouncementService::class)->runFailed($this->announcementId, $this->runKey, $exception);
+        app(AnnouncementService::class)->runFailed($this->announcementId, $this->runKey, $exception, $this->token, $this->copy);
     }
 }

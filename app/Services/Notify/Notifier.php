@@ -104,6 +104,10 @@ class Notifier
     public function deliver(User $user, string $channel, NotificationMessage $message, ?int $deviceId): void
     {
         if (! $this->connected($channel)) {
+            if ($channel === 'push') {
+                AnnouncementTally::count($message, AnnouncementTally::SKIPPED);
+            }
+
             return;
         }
 
