@@ -2,8 +2,12 @@
 
 namespace App\Http\Presenters;
 
+use App\Models\ContractorBid;
 use App\Models\ContractorPayment;
+use App\Models\ContractorTender;
 use App\Models\ContractorTenderItem;
+use App\Models\Party;
+use App\Support\Dec;
 
 /**
  * The only way contractor figures leave the service layer for someone without money.view.
@@ -124,6 +128,18 @@ final class ContractorControlPresenter
     }
 
     /**
+     * Every line's marker, keyed by BOQ item id, as BoqLineTenders::markersFor gives them.
+     * Null stays null: tenders are not this person's to see.
+     *
+     * @param  array<int, array{tenders: int, quotes: int, lowest_rate: ?string}>|null  $markers
+     * @return array<int, array<string, mixed>>|null
+     */
+    public static function tenderMarkers(?array $markers, bool $canSeeMoney): ?array
+    {
+        return $markers === null ? null : array_map(fn (array $marker) => self::tenderMarker($marker, $canSeeMoney), $markers);
+    }
+
+    /**
      * A BOQ line's tenders, for the screen and the API alike. Without money.view a reader learns
      * that a tender exists, who quoted and when, and nothing of what was quoted.
      */
@@ -138,6 +154,8 @@ final class ContractorControlPresenter
             'description' => $item->description,
             'unit' => $item->unit,
             'qty' => $item->qty,
+            // Quotes are compared by their totals, so a line with no quantity cannot start a tender.
+            'no_quantity' => Dec::of($item->qty)->isZero(),
             'tender_count' => $summary['tenders'],
             'open_tender_count' => $summary['open'],
             'quote_count' => $summary['quotes'],
@@ -176,14 +194,7 @@ final class ContractorControlPresenter
             'work_order_id' => $tender->work_order_id,
             'work_order_number' => $tender->workOrder?->number,
             'qty' => $row['qty'],
-            'lines' => $tender->items->map(fn (ContractorTenderItem $line) => [
-                'id' => $line->id,
-                'boq_item_id' => $line->boq_item_id,
-                'code' => $line->boqItem?->code,
-                'description' => $line->boqItem?->description,
-                'unit' => $line->boqItem?->unit,
-                'qty' => $line->qty,
-            ])->all(),
+            'lines' => $tender->items->map(fn (ContractorTenderItem $line) => self::tenderLine($line, false))->all(),
             'quote_count' => count(array_filter($quotes, fn (array $quote) => $quote['current'])),
             'quotes' => array_map(fn (array $quote) => self::lineQuote($quote, $canSeeMoney), $quotes),
         ];
@@ -201,17 +212,13 @@ final class ContractorControlPresenter
             'received_on' => $bid->received_on?->toDateString(),
             'current' => $quote['current'],
             'selected' => $quote['selected'],
-            'valid_until' => $bid->valid_until?->toDateString(),
-            'includes_material' => $bid->includes_material,
-            'completion_days' => $bid->completion_days,
-            'entered_by' => $bid->enteredBy?->name,
+            ...self::offer($bid),
         ];
 
         if (! $canSeeMoney) {
             return $base;
         }
 
-        // Payment terms and remarks are free text, which may quote a price, so they travel with the figures.
         return [
             ...$base,
             'rate' => $quote['rate'],
@@ -220,6 +227,123 @@ final class ContractorControlPresenter
             'diff_amount' => $quote['diff_amount'],
             'diff_pct' => $quote['diff_pct'],
             'lowest' => $quote['lowest'],
+            ...self::offerText($bid),
+        ];
+    }
+
+    /**
+     * One tender with its quotes side by side, for the app. Without money.view a reader learns the
+     * lines, who quoted, when, and what each offers besides the price, and nothing of what was quoted.
+     *
+     * @param  array{boq_amount: string, lowest: ?string, bids: list<array<string, mixed>>}  $comparison  From ContractorTenderService::comparison
+     * @param  array{quote: bool, award: bool}  $can  From BoqLineTenders::abilities
+     */
+    public static function tender(ContractorTender $tender, array $comparison, bool $canSeeMoney, array $can): array
+    {
+        $rows = $comparison['bids'];
+
+        // Cheapest first would itself say who quoted least, so without money the current ones come in the order received.
+        if (! $canSeeMoney) {
+            usort($rows, fn (array $a, array $b) => [! $a['current'], $a['bid']->id] <=> [! $b['current'], $b['bid']->id]);
+        }
+
+        $base = [
+            'id' => $tender->id,
+            'number' => $tender->number,
+            'title' => $tender->title,
+            'status' => $tender->status,
+            'due_on' => $tender->due_on?->toDateString(),
+            'project_id' => $tender->project_id,
+            'work_order_id' => $tender->work_order_id,
+            'work_order_number' => $tender->workOrder?->number,
+            'awarded_at' => $tender->awarded_at?->toIso8601String(),
+            'lines' => $tender->items->map(fn (ContractorTenderItem $line) => self::tenderLine($line, $canSeeMoney))->all(),
+            'quote_count' => count(array_filter($rows, fn (array $row) => $row['current'])),
+            'can' => $can,
+            'quotes' => array_map(fn (array $row) => self::tenderQuote($row, $canSeeMoney), $rows),
+        ];
+
+        if (! $canSeeMoney) {
+            return $base;
+        }
+
+        // The scope and the award note are free text, which may quote a price.
+        return [
+            ...$base,
+            'scope' => $tender->scope,
+            'award_note' => $tender->award_note,
+            'boq_amount' => $comparison['boq_amount'],
+            'lowest_amount' => $comparison['lowest'],
+        ];
+    }
+
+    /** A subcontractor in the quote form's picker. */
+    public static function contractorOption(Party $party): array
+    {
+        return ['id' => $party->id, 'name' => $party->name, 'phone' => $party->phone];
+    }
+
+    /** A line of a tender, with the quantity and BOQ rate copied when the tender was made. */
+    private static function tenderLine(ContractorTenderItem $line, bool $canSeeMoney): array
+    {
+        $base = [
+            'id' => $line->id,
+            'boq_item_id' => $line->boq_item_id,
+            'code' => $line->boqItem?->code,
+            'description' => $line->boqItem?->description,
+            'unit' => $line->boqItem?->unit,
+            'qty' => $line->qty,
+        ];
+
+        return $canSeeMoney ? [...$base, 'boq_rate' => $line->boq_rate, 'boq_amount' => $line->amount()] : $base;
+    }
+
+    /** One quote on the tender's comparison: its total against the BOQ, and its rate for each line. */
+    private static function tenderQuote(array $row, bool $canSeeMoney): array
+    {
+        $bid = $row['bid'];
+
+        $base = [
+            'bid_id' => $bid->id,
+            'party_id' => $bid->party_id,
+            'contractor' => $row['contractor'],
+            'received_on' => $bid->received_on?->toDateString(),
+            'current' => $row['current'],
+            'replaced_by' => $bid->superseded_by_id,
+            'selected' => (bool) $row['selected'],
+            ...self::offer($bid),
+        ];
+
+        if (! $canSeeMoney) {
+            return $base;
+        }
+
+        return [
+            ...$base,
+            'amount' => $row['amount'],
+            'diff' => $row['diff'],
+            'diff_pct' => $row['diff_pct'],
+            'lowest' => $row['lowest'],
+            'rates' => $row['lines'],
+            ...self::offerText($bid),
+        ];
+    }
+
+    /** What a contractor offers besides the price. None of it is money. */
+    private static function offer(ContractorBid $bid): array
+    {
+        return [
+            'valid_until' => $bid->valid_until?->toDateString(),
+            'includes_material' => $bid->includes_material,
+            'completion_days' => $bid->completion_days,
+            'entered_by' => $bid->enteredBy?->name,
+        ];
+    }
+
+    /** Payment terms and remarks are free text, which may quote a price, so they travel with the figures, as does the quotation. */
+    private static function offerText(ContractorBid $bid): array
+    {
+        return [
             'payment_terms' => $bid->payment_terms,
             'remarks' => $bid->remarks,
             'has_quotation' => $bid->quotation_path !== null,

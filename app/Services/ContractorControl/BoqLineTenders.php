@@ -11,6 +11,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\SiteControl\WorkProgress;
 use App\Support\Dec;
+use App\Support\Money;
 use Brick\Math\BigDecimal;
 
 /**
@@ -25,6 +26,35 @@ class BoqLineTenders
     public function visibleTo(User $user): bool
     {
         return $user->can('contractor.view') && $user->organization->allowsFeature('site_control');
+    }
+
+    /**
+     * What this person may do with tenders, for the screens and the app alike. Quoting means typing
+     * rates, so it needs money.view as well as contractor.tender, and so does choosing a winner.
+     * Starting a tender needs what quoting does. Given a tender, only an open one takes either.
+     *
+     * @return array{quote: bool, award: bool}
+     */
+    public function abilities(User $user, ?ContractorTender $tender = null): array
+    {
+        $open = $tender === null || $tender->isOpen();
+        $money = Money::visible($user);
+
+        return [
+            'quote' => $open && $money && $user->can('contractor.tender'),
+            'award' => $open && $money && $user->can('contractor.award'),
+        ];
+    }
+
+    /**
+     * The BOQ table's markers for this person, or null when tenders are not theirs to see.
+     * They still carry the lowest rate: ContractorControlPresenter::tenderMarkers drops it.
+     *
+     * @return array<int, array{tenders: int, quotes: int, lowest_rate: ?string}>|null
+     */
+    public function markersFor(User $user, Project $project): ?array
+    {
+        return $this->visibleTo($user) ? $this->markers($project) : null;
     }
 
     /**

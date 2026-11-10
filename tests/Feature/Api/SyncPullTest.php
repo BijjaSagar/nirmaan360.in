@@ -93,7 +93,11 @@ class SyncPullTest extends ApiTestCase
         $this->assertSame($body['dprs'][0], $this->getJson($base.'/dprs')->json('data.0'));
         $this->assertSame($body['issues'][0], $this->getJson($base.'/issues')->json('data.0'));
         $this->assertSame($body['measurements'][0], $this->getJson($base.'/measurements')->json('data.0'));
-        $this->assertSame($body['boq_items'][0], $this->getJson($base.'/boq')->json('data.0'));
+        // The BOQ list adds each line's tender marker, which a delta pull cannot carry: a new quote changes it without touching the line.
+        $boq = $this->getJson($base.'/boq')->json('data.0');
+        $this->assertArrayHasKey('tenders', $boq);
+        unset($boq['tenders']);
+        $this->assertSame($body['boq_items'][0], $boq);
         $this->assertSame($body['workers'][0], $this->getJson(self::API.'/workers')->json('data.0'));
         $this->assertSame($body['attendance'][0], $this->getJson($base.'/attendance?date=2026-11-08')->json('data.0'));
         $this->assertSame($body['projects'][0], $this->getJson(self::API.'/projects')->json('data.0'));
