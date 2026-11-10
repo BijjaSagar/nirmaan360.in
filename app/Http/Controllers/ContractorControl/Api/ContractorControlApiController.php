@@ -4,10 +4,12 @@ namespace App\Http\Controllers\ContractorControl\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\ContractorControlPresenter;
+use App\Models\BoqItem;
 use App\Models\ContractorPayment;
 use App\Models\Project;
 use App\Models\WorkOrder;
 use App\Services\BillingExtras\PrivateFile;
+use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ContractorControl\ContractorLedgerService;
 use App\Services\ContractorControl\ContractorPaymentService;
 use App\Services\ContractorControl\WorkPaymentRatio;
@@ -21,6 +23,7 @@ class ContractorControlApiController extends Controller
         private WorkPaymentRatio $ratio,
         private ContractorLedgerService $ledger,
         private ContractorPaymentService $service,
+        private BoqLineTenders $lineTenders,
     ) {}
 
     public function board(Request $request, Project $project): JsonResponse
@@ -83,6 +86,14 @@ class ContractorControlApiController extends Controller
         $payment->load('workOrder', 'party', 'enteredBy', 'currentApproval');
 
         return response()->json(['data' => ContractorControlPresenter::payment($payment, $money, $money ? $this->ratio->impact($payment) : null)]);
+    }
+
+    /** The tenders a BOQ line is in. Without money.view: that they exist and who quoted, with no prices. */
+    public function lineTenders(Request $request, BoqItem $item): JsonResponse
+    {
+        return response()->json([
+            'data' => ContractorControlPresenter::lineTenders($this->lineTenders->forLine($item), $request->user()->can('money.view')),
+        ]);
     }
 
     public function bill(ContractorPayment $payment): StreamedResponse

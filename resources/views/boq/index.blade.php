@@ -91,10 +91,12 @@
                             <td>
                                 {{ $item->description }}
                                 @include('modules.project_setup.boq._line-meta', ['item' => $item])
+                                @includeWhen($tenders !== null, 'modules.contractor_control.boq._marker', ['item' => $item, 'marker' => $tenders[$item->id] ?? null])
                                 {{-- The table scrolls sideways on a phone, so the actions are repeated here where a thumb can reach them. --}}
                                 <div class="mt-1 flex gap-5 text-sm sm:hidden">
                                     @can('boq.manage')<button type="button" class="link py-2" @click="edit = @js($editPayload)">{{ __('Edit') }}</button>@endcan
                                     @if ($setup)<a href="{{ route('project-setup.history', [$project, 'item' => $item->id]) }}" class="link py-2">{{ __('History') }}</a>@endif
+                                    @includeWhen($tenders !== null, 'modules.contractor_control.boq._action', ['item' => $item, 'class' => 'py-2'])
                                 </div>
                             </td>
                             <td>{{ $item->unit }}</td>
@@ -115,6 +117,7 @@
                                     @if ($setup)
                                         <a href="{{ route('project-setup.history', [$project, 'item' => $item->id]) }}" class="link ml-2 text-xs">{{ __('History') }}</a>
                                     @endif
+                                    @includeWhen($tenders !== null, 'modules.contractor_control.boq._action', ['item' => $item, 'class' => 'ml-2 text-xs'])
                                 </td>
                             @endif
                         </tr>

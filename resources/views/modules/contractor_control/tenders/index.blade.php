@@ -1,8 +1,6 @@
 @extends('layouts.app')
 @section('title', __('Contractor tenders'))
 @section('content')
-    @php($tone = fn ($status) => match ($status) { 'OPEN' => 'border-neel text-neel', 'AWARDED' => 'border-moss text-moss', default => 'border-ink-3 text-ink-3' })
-
     <x-page-header :title="__('Contractor tenders')" :subtitle="$project->name">
         @can('contractor.tender')
             <a href="{{ route('contractor-control.tenders.create', $project) }}" class="btn btn-primary">{{ __('New tender') }}</a>
@@ -17,7 +15,7 @@
                         <p class="font-semibold">{{ $tender->title }}</p>
                         <p class="text-xs text-ink-3"><span class="num">{{ $tender->number }}</span> · {{ trans_choice(':count item|:count items', $tender->items->count(), ['count' => $tender->items->count()]) }} · {{ trans_choice(':count quote|:count quotes', $tender->bids->count(), ['count' => $tender->bids->count()]) }}</p>
                     </div>
-                    <span class="stamp {{ $tone($tender->status) }}">{{ __(\Illuminate\Support\Str::headline(strtolower($tender->status))) }}</span>
+                    @include('modules.contractor_control.tenders._status', ['status' => $tender->status])
                 </div>
                 <dl class="mt-2 grid grid-cols-2 gap-x-4 text-xs">
                     <div><dt class="text-ink-3">{{ __('BOQ amount') }}</dt><dd class="num">{{ inr($tender->boqAmount()) }}</dd></div>

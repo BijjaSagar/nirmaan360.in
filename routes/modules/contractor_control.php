@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ContractorControl\BoardController;
+use App\Http\Controllers\ContractorControl\BoqLineTenderController;
 use App\Http\Controllers\ContractorControl\ContractController;
 use App\Http\Controllers\ContractorControl\LedgerController;
 use App\Http\Controllers\ContractorControl\MilestoneController;
@@ -38,11 +39,20 @@ Route::middleware('feature:site_control')->prefix('contractor-control')->name('c
         Route::post('/projects/{project}/tenders', [TenderController::class, 'store'])->middleware('can:contractor.tender')->name('tenders.store');
         Route::get('/tenders/{tender}', [TenderController::class, 'show'])->middleware('can:contractor.view')->name('tenders.show');
         Route::post('/tenders/{tender}/bids', [TenderController::class, 'addBid'])->middleware('can:contractor.tender')->name('tenders.bids.store');
+        Route::get('/bids/{bid}/quotation', [TenderController::class, 'quotation'])->middleware('can:contractor.view')->name('tenders.bids.quotation');
         Route::post('/tenders/{tender}/award', [TenderController::class, 'award'])->middleware('can:contractor.award')->name('tenders.award');
         Route::post('/tenders/{tender}/cancel', [TenderController::class, 'cancel'])->middleware('can:contractor.tender')->name('tenders.cancel');
 
         Route::get('/contractors', [LedgerController::class, 'index'])->middleware('can:contractor.view')->name('contractors.index');
+        Route::post('/contractors', [TenderController::class, 'storeContractor'])->middleware('can:contractor.tender')->name('contractors.store');
         Route::get('/contractors/{party}', [LedgerController::class, 'show'])->middleware('can:contractor.view')->name('contractors.show');
         Route::get('/contractors/{party}/ledger.pdf', [LedgerController::class, 'pdf'])->middleware('can:contractor.view')->name('contractors.pdf');
     });
+});
+
+// Opened from a line on the BOQ page, so these sit beside the other /boq-items addresses and keep the BOQ menu item lit.
+Route::middleware('feature:site_control')->group(function () {
+    // Who quoted, for anyone with contractor.view. The presenter leaves every price out without money.view.
+    Route::get('/boq-items/{item}/tenders', [BoqLineTenderController::class, 'show'])->middleware(['can:boq.view', 'can:contractor.view'])->name('boq.tenders.show');
+    Route::post('/boq-items/{item}/tenders', [BoqLineTenderController::class, 'store'])->middleware(['can:money.view', 'can:contractor.tender'])->name('boq.tenders.store');
 });

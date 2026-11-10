@@ -17,9 +17,12 @@ use App\Support\Dec;
 use App\Support\Idempotent;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /** Quotes from several contractors against the BOQ, and the contract that comes of the chosen one. */
 class ContractorTenderService
@@ -48,8 +51,27 @@ class ContractorTenderService
             'rates' => ['nullable', 'array'],
             'rates.*' => ['nullable', 'numeric', 'min:0', 'max:9999999999', 'decimal:0,2'],
             'received_on' => ['nullable', 'date', 'before_or_equal:today'],
+            // What the contractor offers besides the price.
+            'valid_until' => ['nullable', 'date'],
+            'includes_material' => ['nullable', 'boolean'],
+            'completion_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
+            'payment_terms' => ['nullable', 'string', 'max:500'],
             'remarks' => ['nullable', 'string', 'max:500'],
+            'quotation' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:8192'],
             'client_uuid' => ['nullable', 'uuid'],
+        ];
+    }
+
+    /** For the popup that adds a contractor while a quote is being entered. */
+    public function contractorRules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:160'],
+            'contact_person' => ['nullable', 'string', 'max:120'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:190'],
+            'gstin' => ['nullable', 'string', 'size:15'],
+            'address' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -110,9 +132,9 @@ class ContractorTenderService
     /**
      * Record a quote, either as rates for each item or as one figure for the whole tender.
      * A later quote from the same contractor replaces the earlier one in the comparison
-     * and the earlier one is kept.
+     * and the earlier one is kept. The quotation they sent can be attached.
      */
-    public function addBid(ContractorTender $tender, array $data, User $by): ContractorBid
+    public function addBid(ContractorTender $tender, array $data, User $by, ?UploadedFile $quotation = null): ContractorBid
     {
         $uuid = $data['client_uuid'] ?? null;
         $find = fn () => $uuid ? $this->findBid($tender->organization_id, $uuid) : null;
@@ -125,37 +147,80 @@ class ContractorTenderService
         $tender->loadMissing('items');
         [$rates, $quoted] = $this->pricing($tender, $data);
 
-        return Idempotent::create(function () use ($tender, $data, $by, $uuid, $rates, $quoted) {
-            $party = $this->contractor($tender, $data);
+        // The file is kept only if this request is the one that saves the quote.
+        $path = $quotation ? $this->keep($quotation, $tender) : null;
+        $file = $path ? ['quotation_path' => $path, 'quotation_name' => mb_substr($quotation->getClientOriginalName(), 0, 255)] : [];
 
-            $bid = ContractorBid::create([
-                'organization_id' => $tender->organization_id,
-                'contractor_tender_id' => $tender->id,
-                'party_id' => $party->id,
-                'quoted_amount' => $quoted,
-                'received_on' => $data['received_on'] ?? today()->toDateString(),
-                'remarks' => $data['remarks'] ?? null,
-                'entered_by' => $by->id,
-                'client_uuid' => $uuid,
-            ]);
+        try {
+            $bid = Idempotent::create(function () use ($tender, $data, $by, $uuid, $rates, $quoted, $file) {
+                $party = $this->contractor($tender, $data);
 
-            foreach ($tender->items as $item) {
-                $bid->items()->create([
+                $bid = ContractorBid::create([
                     'organization_id' => $tender->organization_id,
-                    'contractor_tender_item_id' => $item->id,
-                    'rate' => $rates[$item->id],
-                    'amount' => Dec::money(Dec::of($item->qty)->multipliedBy(Dec::of($rates[$item->id]))),
+                    'contractor_tender_id' => $tender->id,
+                    'party_id' => $party->id,
+                    'quoted_amount' => $quoted,
+                    'received_on' => $data['received_on'] ?? today()->toDateString(),
+                    ...$this->offer($data),
+                    ...$file,
+                    'entered_by' => $by->id,
+                    'client_uuid' => $uuid,
                 ]);
-            }
 
-            ContractorBid::where('contractor_tender_id', $tender->id)
-                ->where('party_id', $party->id)
-                ->whereNull('superseded_by_id')
-                ->whereKeyNot($bid->id)
-                ->update(['superseded_by_id' => $bid->id]);
+                foreach ($tender->items as $item) {
+                    $bid->items()->create([
+                        'organization_id' => $tender->organization_id,
+                        'contractor_tender_item_id' => $item->id,
+                        'rate' => $rates[$item->id],
+                        'amount' => Dec::money(Dec::of($item->qty)->multipliedBy(Dec::of($rates[$item->id]))),
+                    ]);
+                }
 
-            return $bid;
-        }, $find);
+                ContractorBid::where('contractor_tender_id', $tender->id)
+                    ->where('party_id', $party->id)
+                    ->whereNull('superseded_by_id')
+                    ->whereKeyNot($bid->id)
+                    ->update(['superseded_by_id' => $bid->id]);
+
+                return $bid;
+            }, $find);
+        } catch (Throwable $exception) {
+            $this->discard($path);
+
+            throw $exception;
+        }
+
+        // A repeat of a quote already saved: the first request's file stands.
+        if (! $bid->wasRecentlyCreated) {
+            $this->discard($path);
+        }
+
+        return $bid;
+    }
+
+    /**
+     * A subcontractor who can quote. A name the company already has returns that contractor,
+     * so asking twice never makes a second copy.
+     */
+    public function addContractor(int $organizationId, array $data): Party
+    {
+        $name = trim($data['name']);
+
+        $existing = Party::where('organization_id', $organizationId)
+            ->where('type', 'subcontractor')
+            ->whereRaw('lower(name) = ?', [mb_strtolower($name)])
+            ->first();
+
+        return $existing ?? Party::create([
+            'organization_id' => $organizationId,
+            'type' => 'subcontractor',
+            'name' => $name,
+            'contact_person' => $data['contact_person'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'email' => $data['email'] ?? null,
+            'gstin' => filled($data['gstin'] ?? null) ? strtoupper($data['gstin']) : null,
+            'address' => $data['address'] ?? null,
+        ]);
     }
 
     /**
@@ -352,15 +417,38 @@ class ContractorTenderService
             return Party::findOrFail($data['party_id']);
         }
 
-        $name = trim($data['new_contractor']);
+        return $this->addContractor($tender->organization_id, ['name' => $data['new_contractor'], 'phone' => $data['new_contractor_phone'] ?? null]);
+    }
 
-        return Party::where('type', 'subcontractor')->where('name', $name)->first()
-            ?? Party::create([
-                'organization_id' => $tender->organization_id,
-                'type' => 'subcontractor',
-                'name' => $name,
-                'phone' => $data['new_contractor_phone'] ?? null,
-            ]);
+    /** What the contractor offers besides the price. */
+    private function offer(array $data): array
+    {
+        return [
+            'valid_until' => $data['valid_until'] ?? null,
+            'includes_material' => isset($data['includes_material']) ? (bool) $data['includes_material'] : null,
+            'completion_days' => $data['completion_days'] ?? null,
+            'payment_terms' => $data['payment_terms'] ?? null,
+            'remarks' => $data['remarks'] ?? null,
+        ];
+    }
+
+    /** Private storage, under the company and the project. A quote is not saved without the file that came with it. */
+    private function keep(UploadedFile $quotation, ContractorTender $tender): string
+    {
+        $path = $quotation->store('org-'.$tender->organization_id.'/contractor-quotations/'.$tender->project_id);
+
+        if ($path === false) {
+            throw ValidationException::withMessages(['quotation' => __('The quotation file could not be saved. Try again.')]);
+        }
+
+        return $path;
+    }
+
+    private function discard(?string $path): void
+    {
+        if ($path) {
+            Storage::delete($path);
+        }
     }
 
     private function assertOpen(ContractorTender $tender): void
