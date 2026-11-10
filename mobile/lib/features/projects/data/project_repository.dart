@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
+import '../../../core/offline/offline_plan.dart' show LocalRecordKind;
+import '../../../core/api/api_failure.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/pull_applier.dart';
 
@@ -101,6 +103,15 @@ class ProjectRepository {
     String? endDate,
     Money? contractValue,
   }) {
+    if (_ctx.offlinePlan.isLocalOnly) {
+      return _createLocalProject(
+        name: name,
+        location: location,
+        startDate: startDate,
+        endDate: endDate,
+        contractValue: contractValue,
+      );
+    }
     return _ctx.createOnline(
       identity: ['project', name],
       send: (clientUuid) => _ctx.api.createProject(
@@ -132,6 +143,17 @@ class ProjectRepository {
     String? code,
     String? section,
   }) {
+    if (_ctx.offlinePlan.isLocalOnly) {
+      return _addLocalBoqItem(
+        projectId: projectId,
+        description: description,
+        unit: unit,
+        qty: qty,
+        rate: rate,
+        code: code,
+        section: section,
+      );
+    }
     return _ctx.createOnline(
       identity: ['boq', projectId, description, unit, code, section],
       send: (clientUuid) => _ctx.api.addBoqItem(
@@ -154,6 +176,87 @@ class ProjectRepository {
         return (_db.select(_db.boqItems)
               ..where((t) => t.id.equals(row.id.value)))
             .getSingle();
+      },
+    );
+  }
+
+  Future<ProjectRow> _createLocalProject({
+    required String name,
+    String? location,
+    String? startDate,
+    String? endDate,
+    Money? contractValue,
+  }) async {
+    _ctx.assertWithin(<(String, String?, int)>[('name', name, 160), ('location', location, 160)]);
+    if (startDate != null && endDate != null && endDate.compareTo(startDate) < 0) {
+      const message = 'The end date cannot be before the start date.';
+      throw const ValidationFailure(message, errors: {'end_date': [message]});
+    }
+    return _ctx.createLocal(
+      kind: LocalRecordKind.project,
+      table: 'projects',
+      extras: <String, Object?>{'contract_value': contractValue?.toWire()},
+      insert: (id) async {
+        // The server gives it a real code on upload.
+        await _db.into(_db.projects).insert(
+          ProjectsCompanion.insert(
+            id: Value(id),
+            code: 'L${-id}',
+            name: name,
+            location: Value(location),
+            startDate: Value(startDate),
+            endDate: Value(endDate),
+            updatedAt: Value(_ctx.clock.now()),
+          ),
+        );
+        return (_db.select(_db.projects)..where((t) => t.id.equals(id))).getSingle();
+      },
+    );
+  }
+
+  Future<BoqItemRow> _addLocalBoqItem({
+    required int projectId,
+    required String description,
+    required String unit,
+    required Qty qty,
+    required Money rate,
+    String? code,
+    String? section,
+  }) async {
+    _ctx.assertWithin(<(String, String?, int)>[
+      ('description', description, 2000),
+      ('unit', unit, 16),
+      ('code', code, 32),
+      ('section', section, 120),
+    ]);
+    final lines = await (_db.select(_db.boqItems)..where((t) => t.projectId.equals(projectId))).get();
+    var last = lines.length;
+    for (final BoqItemRow line in lines) {
+      final int? number = int.tryParse(line.code);
+      if (number != null && number > last) last = number;
+    }
+    return _ctx.createLocal(
+      kind: LocalRecordKind.boqItem,
+      table: 'boq_items',
+      insert: (id) async {
+        await _db.into(_db.boqItems).insert(
+          BoqItemsCompanion.insert(
+            id: Value(id),
+            projectId: projectId,
+            section: Value(section),
+            code: code?.trim().isNotEmpty ?? false ? code!.trim() : '${last + 1}',
+            description: description,
+            unit: unit,
+            qty: qty,
+            rate: rate,
+            sort: Value(last + 1),
+            measuredQty: Qty.zero,
+            approvedQty: Qty.zero,
+            balanceQty: qty,
+            updatedAt: Value(_ctx.clock.now()),
+          ),
+        );
+        return (_db.select(_db.boqItems)..where((t) => t.id.equals(id))).getSingle();
       },
     );
   }

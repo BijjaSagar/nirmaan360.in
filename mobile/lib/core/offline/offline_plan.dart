@@ -16,6 +16,14 @@ import '../sync/connectivity.dart';
 import '../sync/ids.dart';
 import 'licence_token.dart';
 
+/// Names used to file a record created on this phone: see `createLocal`.
+abstract final class LocalRecordKind {
+  static const project = 'project';
+  static const boqItem = 'boq_item';
+  static const worker = 'worker';
+  static const wallet = 'wallet';
+}
+
 /// How a phone on the offline plan is running.
 enum OfflineMode {
   /// On the plan: everything stays on this phone.

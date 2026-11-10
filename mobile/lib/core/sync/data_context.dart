@@ -84,6 +84,39 @@ class DataContext {
     });
   }
 
+  /// Creates a master that exists only on this phone, for the offline plan.
+  ///
+  /// Its id is negative, so it can never clash with a server id. Beside it is
+  /// kept the `client_uuid` the upload will use, so a retry cannot duplicate
+  /// it, and anything [extras] holds that the local table has no column for.
+  Future<T> createLocal<T>({
+    required String kind,
+    required String table,
+    Map<String, Object?> extras = const <String, Object?>{},
+    required Future<T> Function(int localId) insert,
+  }) {
+    return db.transaction(() async {
+      final row = await db.customSelect('SELECT MIN(COALESCE(MIN(id), 0), 0) - 1 AS next FROM $table').getSingle();
+      final int localId = row.read<int>('next');
+      await db.writeMeta(
+        MetaKey.offlineRecord(kind, localId),
+        jsonEncode(<String, Object?>{'uuid': newUuid(), ...extras}),
+      );
+      return insert(localId);
+    });
+  }
+
+  /// The same limits the server applies, because a record kept here has to be
+  /// accepted if the owner uploads it one day. [fields] is field, text, longest.
+  void assertWithin(Iterable<(String, String?, int)> fields) {
+    for (final (String field, String? value, int longest) in fields) {
+      if (value != null && value.runes.length > longest) {
+        final String message = 'This must not be longer than $longest characters.';
+        throw ValidationFailure(message, errors: {field: [message]});
+      }
+    }
+  }
+
   /// The server refuses future dates with `before_or_equal:today`. Saying so
   /// now is kinder than a rejection a week later in the sync screen.
   void assertNotFuture(String date, String field) {

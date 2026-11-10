@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../../core/api/api_failure.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
+import '../../../core/offline/offline_plan.dart' show LocalRecordKind;
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/ids.dart';
 
@@ -248,6 +249,9 @@ class AttendanceRepository {
     String type = 'own',
     Money? dailyWage,
   }) async {
+    if (_ctx.offlinePlan.isLocalOnly) {
+      return _addLocalWorker(name: name, trade: trade, phone: phone, type: type, dailyWage: dailyWage);
+    }
     if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
 
     final actionKey = 'idempotency.worker.${base64Url.encode(utf8.encode('$name|$trade|$phone|$type'))}';
@@ -280,5 +284,33 @@ class AttendanceRepository {
     return (_db.select(_db.workers)
           ..where((t) => t.id.equals(companion.id.value)))
         .getSingle();
+  }
+
+  Future<WorkerRow> _addLocalWorker({
+    required String name,
+    required String trade,
+    String? phone,
+    required String type,
+    Money? dailyWage,
+  }) {
+    _ctx.assertWithin(<(String, String?, int)>[('name', name, 120), ('trade', trade, 60), ('phone', phone, 20)]);
+    return _ctx.createLocal(
+      kind: LocalRecordKind.worker,
+      table: 'workers',
+      extras: <String, Object?>{'daily_wage': dailyWage?.toWire()},
+      insert: (id) async {
+        await _db.into(_db.workers).insert(
+          WorkersCompanion.insert(
+            id: Value(id),
+            name: name,
+            phone: Value(phone),
+            trade: trade,
+            type: Value(type),
+            updatedAt: Value(_ctx.clock.now()),
+          ),
+        );
+        return (_db.select(_db.workers)..where((t) => t.id.equals(id))).getSingle();
+      },
+    );
   }
 }

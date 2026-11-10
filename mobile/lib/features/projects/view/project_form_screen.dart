@@ -124,7 +124,8 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final String locale = Localizations.localeOf(context).languageCode;
-    final bool online = context.select((SyncStatusCubit s) => s.state.online);
+    final bool localOnly = context.select((AppGate gate) => gate.state.isLocalOnly);
+    final bool online = context.select((SyncStatusCubit s) => s.state.online) || localOnly;
     final Money? value = Money.tryParse(_value);
 
     return BlocConsumer<ProjectFormCubit, ProjectFormState>(
