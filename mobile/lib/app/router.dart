@@ -8,6 +8,13 @@ import '../features/attendance/view/attendance_screen.dart';
 import '../features/attendance/view/scan_attendance_screen.dart';
 import '../features/attendance/view/selfie_screen.dart';
 import '../features/auth/view/sign_in_screen.dart';
+import '../features/contractor_control/view/contract_detail_screen.dart';
+import '../features/contractor_control/view/contractor_screen.dart';
+import '../features/contractor_control/view/payment_form_screen.dart';
+import '../features/contractor_portal/view/portal_bill_screen.dart';
+import '../features/contractor_portal/view/portal_contract_screen.dart';
+import '../features/contractor_portal/view/portal_home_screen.dart';
+import '../features/contractor_portal/view/portal_lists_screen.dart';
 import '../features/dpr/view/dpr_detail_screen.dart';
 import '../features/dpr/view/dpr_form_screen.dart';
 import '../features/dpr/view/dpr_list_screen.dart';
@@ -20,9 +27,15 @@ import '../features/issues/view/issue_form_screen.dart';
 import '../features/issues/view/issue_list_screen.dart';
 import '../features/machine_logs/view/machine_log_form_screen.dart';
 import '../features/machine_logs/view/machine_logs_screen.dart';
+import '../features/material_control/bloc/material_form_cubit.dart';
+import '../features/material_control/view/issue_stock_screen.dart';
+import '../features/material_control/view/material_form_screen.dart';
+import '../features/material_control/view/material_screen.dart';
+import '../features/material_control/view/receive_order_screen.dart';
 import '../features/measurement/view/measurement_detail_screen.dart';
 import '../features/measurement/view/measurement_form_screen.dart';
 import '../features/measurement/view/measurement_list_screen.dart';
+import '../features/notifications/view/notification_settings_screen.dart';
 import '../features/offline_plan/view/licence_ended_screen.dart';
 import '../features/offline_plan/view/offline_plan_screen.dart';
 import '../features/offline_plan/view/offline_upload_screen.dart';
@@ -30,34 +43,24 @@ import '../features/petty_cash/view/expense_form_screen.dart';
 import '../features/petty_cash/view/petty_cash_screen.dart';
 import '../features/petty_cash/view/top_up_screen.dart';
 import '../features/petty_cash/view/wallet_form_screen.dart';
-import '../features/contractor_control/view/contract_detail_screen.dart';
-import '../features/contractor_control/view/contractor_screen.dart';
-import '../features/contractor_control/view/payment_form_screen.dart';
-import '../features/contractor_portal/view/portal_bill_screen.dart';
-import '../features/contractor_portal/view/portal_contract_screen.dart';
-import '../features/contractor_portal/view/portal_home_screen.dart';
-import '../features/contractor_portal/view/portal_lists_screen.dart';
-import '../features/site_alerts/bloc/site_alerts_cubit.dart';
-import '../features/site_alerts/view/site_dashboard_screen.dart';
-import '../features/site_progress/view/floor_progress_screen.dart';
-import '../features/site_progress/view/progress_form_screen.dart';
-import '../features/site_progress/view/progress_screen.dart';
-import '../features/site_progress/view/stage_row_screen.dart';
-import '../features/material_control/bloc/material_form_cubit.dart';
-import '../features/material_control/view/material_form_screen.dart';
-import '../features/material_control/view/issue_stock_screen.dart';
-import '../features/material_control/view/material_screen.dart';
-import '../features/material_control/view/receive_order_screen.dart';
 import '../features/price_watch/view/price_material_screen.dart';
 import '../features/price_watch/view/price_watch_screen.dart';
 import '../features/projects/view/boq_form_screen.dart';
 import '../features/projects/view/boq_screen.dart';
 import '../features/projects/view/project_form_screen.dart';
 import '../features/projects/view/project_picker_screen.dart';
-import '../features/notifications/view/notification_settings_screen.dart';
 import '../features/settings/view/settings_screen.dart';
+import '../features/site_alerts/bloc/site_alerts_cubit.dart';
+import '../features/site_alerts/view/site_dashboard_screen.dart';
+import '../features/site_progress/view/floor_progress_screen.dart';
+import '../features/site_progress/view/progress_form_screen.dart';
+import '../features/site_progress/view/progress_screen.dart';
+import '../features/site_progress/view/stage_row_screen.dart';
 import '../features/site_tools/view/site_tools_screen.dart';
 import '../features/sync_center/view/sync_center_screen.dart';
+import '../features/tenders/view/award_form_screen.dart';
+import '../features/tenders/view/line_tenders_screen.dart';
+import '../features/tenders/view/quote_form_screen.dart';
 import 'app_gate.dart';
 import 'routes.dart';
 import 'shell/home_shell.dart';
@@ -93,7 +96,30 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
       _route(
         Routes.boq,
         (_) => const BoqScreen(),
-        routes: <RouteBase>[_route('form', (_) => const BoqFormScreen())],
+        routes: <RouteBase>[
+          _route('form', (_) => const BoqFormScreen()),
+          _route(
+            ':item/tenders',
+            (s) => LineTendersScreen(boqItemId: int.parse(s.pathParameters['item']!)),
+            routes: <RouteBase>[
+              _route(
+                ':tender/quote',
+                (s) => QuoteFormScreen(
+                  boqItemId: int.parse(s.pathParameters['item']!),
+                  tenderId: int.parse(s.pathParameters['tender']!),
+                ),
+              ),
+              _route(
+                ':tender/award',
+                (s) => AwardFormScreen(
+                  boqItemId: int.parse(s.pathParameters['item']!),
+                  tenderId: int.parse(s.pathParameters['tender']!),
+                  bidId: int.tryParse(s.uri.queryParameters['bid'] ?? '') ?? 0,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       _route(
         Routes.settings,

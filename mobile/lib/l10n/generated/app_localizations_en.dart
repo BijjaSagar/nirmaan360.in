@@ -4917,4 +4917,418 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeStagePhoto => 'Stage photo';
+
+  @override
+  String get tenderAddQuote => 'Add a quote';
+
+  @override
+  String get tenderAdvance => 'Advance (₹)';
+
+  @override
+  String get tenderAdvanceError =>
+      'Enter 0 or more, with two decimals at most.';
+
+  @override
+  String get tenderAdvanceRecovery => 'Advance recovery %';
+
+  @override
+  String get tenderAmountError =>
+      'Enter an amount above zero, with two decimals at most.';
+
+  @override
+  String get tenderAwardExplain =>
+      'A work order is made at this quote\'s rates. Measurements, RA bills and payments then run on it.';
+
+  @override
+  String get tenderAwardSend => 'Create work order';
+
+  @override
+  String get tenderAwardTitle => 'Select this contractor';
+
+  @override
+  String get tenderAwarded => 'Work order made';
+
+  @override
+  String get tenderBasisGross => 'Gross';
+
+  @override
+  String get tenderBasisRunning => 'Balance';
+
+  @override
+  String tenderBoqAmount(String amount) {
+    return 'BOQ amount $amount';
+  }
+
+  @override
+  String tenderBoqQty(String qty, String unit) {
+    return 'BOQ $qty $unit';
+  }
+
+  @override
+  String tenderBoqRate(String rate) {
+    return 'BOQ rate $rate';
+  }
+
+  @override
+  String get tenderClosed =>
+      'This tender is closed, so it takes no more quotes.';
+
+  @override
+  String get tenderCompletionDays => 'Days to finish';
+
+  @override
+  String get tenderContractor => 'Contractor';
+
+  @override
+  String get tenderContractorAdd => 'Add a contractor';
+
+  @override
+  String get tenderContractorChoose => 'Choose a contractor';
+
+  @override
+  String get tenderContractorName => 'Name';
+
+  @override
+  String get tenderContractorNameRequired => 'Enter the contractor\'s name.';
+
+  @override
+  String get tenderContractorNone => 'No contractor by that name';
+
+  @override
+  String get tenderContractorPerson => 'Contact person';
+
+  @override
+  String get tenderContractorPhone => 'Phone';
+
+  @override
+  String get tenderContractorRequired => 'Choose who quoted.';
+
+  @override
+  String get tenderContractorSave => 'Add contractor';
+
+  @override
+  String get tenderContractorSearch => 'Search contractors';
+
+  @override
+  String get tenderContractorsFailed =>
+      'The contractor list could not be loaded.';
+
+  @override
+  String tenderCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tenders',
+      one: '1 tender',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tenderDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tenderDaysError => 'Enter whole days, 1 to 3650.';
+
+  @override
+  String get tenderDeductionBasis => 'Deductions on';
+
+  @override
+  String get tenderDeductionOrder => 'Deduction order';
+
+  @override
+  String tenderDue(String date) {
+    return 'Quotes due $date';
+  }
+
+  @override
+  String get tenderEndDate => 'Finish by';
+
+  @override
+  String get tenderEndError => 'Finish by cannot be before the start.';
+
+  @override
+  String tenderEnteredBy(String name) {
+    return 'Entered by $name';
+  }
+
+  @override
+  String get tenderFieldDue => 'Quotes due by';
+
+  @override
+  String get tenderFieldScope => 'Scope of work';
+
+  @override
+  String get tenderFieldTitle => 'Title';
+
+  @override
+  String get tenderGst => 'GST %';
+
+  @override
+  String get tenderIncludesMaterial => 'Material included in the rate';
+
+  @override
+  String tenderLineAmount(String qty, String unit, String amount) {
+    return '$qty $unit × rate = $amount';
+  }
+
+  @override
+  String get tenderLinkEmpty => 'Tenders · Get quotes from contractors';
+
+  @override
+  String get tenderLoadFailed =>
+      'Tenders could not be loaded. Pull down to try again.';
+
+  @override
+  String get tenderLoading => 'Loading tenders';
+
+  @override
+  String tenderLowest(String rate) {
+    return 'Lowest $rate';
+  }
+
+  @override
+  String tenderLowestBy(String rate, String contractor) {
+    return 'Lowest $rate · $contractor';
+  }
+
+  @override
+  String get tenderMaterialIn => 'Material included';
+
+  @override
+  String get tenderMaterialOut => 'Labour only';
+
+  @override
+  String get tenderMoneyHidden =>
+      'Rates, terms and files are shown only to those who may see money.';
+
+  @override
+  String get tenderNew => 'New tender';
+
+  @override
+  String get tenderNewContractorTitle => 'New contractor';
+
+  @override
+  String get tenderNewTitle => 'New tender';
+
+  @override
+  String get tenderNoDate => 'No date';
+
+  @override
+  String get tenderNoQuantity =>
+      'This line has no quantity, so quotes are taken as a total amount.';
+
+  @override
+  String get tenderNoneAsk =>
+      'No one has asked contractors for quotes on this line yet.';
+
+  @override
+  String get tenderNoneStart =>
+      'Start a tender to collect quotes from contractors for this line.';
+
+  @override
+  String get tenderNoneTitle => 'No tender yet';
+
+  @override
+  String get tenderNote => 'Note';
+
+  @override
+  String get tenderOfflineMessage =>
+      'Quotes and awards are read from the office as they are now. Connect, then pull down to try again.';
+
+  @override
+  String get tenderOfflineTitle => 'Tenders need the internet';
+
+  @override
+  String get tenderOpenElsewhere => 'Open in another app';
+
+  @override
+  String get tenderOptional => 'Optional';
+
+  @override
+  String get tenderOrderAdvanceFirst => 'Advance → Retention → Material → TDS';
+
+  @override
+  String get tenderOrderRetentionFirst =>
+      'Retention → Advance → Material → TDS';
+
+  @override
+  String get tenderOrderTdsFirst => 'TDS → Retention → Advance → Material';
+
+  @override
+  String tenderOtherLines(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Also $count other lines',
+      one: 'Also 1 other line',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tenderPaymentTerms => 'Payment terms';
+
+  @override
+  String get tenderPctError => 'Enter 0 to 100, with two decimals at most.';
+
+  @override
+  String tenderPerUnit(String rate, String unit) {
+    return '$rate per $unit';
+  }
+
+  @override
+  String get tenderPickDate => 'Pick a date';
+
+  @override
+  String get tenderQuotationFailed => 'The quotation could not be opened.';
+
+  @override
+  String get tenderQuotationNotPicture =>
+      'This quotation is a file, not a photo. Open it in another app.';
+
+  @override
+  String get tenderQuotationPhoto => 'Photo of the quotation';
+
+  @override
+  String tenderQuoteCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count quotes',
+      one: '1 quote',
+      zero: 'no quotes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tenderQuoteGone =>
+      'This quote is no longer in the tender. Go back and choose again.';
+
+  @override
+  String get tenderQuoteSaved => 'Quote saved';
+
+  @override
+  String get tenderQuoteTitle => 'Add a quote';
+
+  @override
+  String get tenderQuotedAmount => 'Quoted amount (₹)';
+
+  @override
+  String get tenderQuotesNone => 'No quotes yet';
+
+  @override
+  String get tenderRateError =>
+      'Enter a rate above zero, with two decimals at most.';
+
+  @override
+  String tenderRatePer(String unit) {
+    return 'Rate per $unit';
+  }
+
+  @override
+  String tenderReceived(String date) {
+    return 'Received $date';
+  }
+
+  @override
+  String get tenderReceivedOn => 'Received on';
+
+  @override
+  String get tenderRefusedMessage =>
+      'Ask your office if you need to see tenders.';
+
+  @override
+  String get tenderRefusedTitle => 'Not for your role';
+
+  @override
+  String get tenderRemarks => 'Remarks';
+
+  @override
+  String get tenderRetention => 'Retention %';
+
+  @override
+  String get tenderSaveFailed =>
+      'Could not save. Check the connection and try again.';
+
+  @override
+  String get tenderSaveQuote => 'Save quote';
+
+  @override
+  String get tenderSelect => 'Select this contractor';
+
+  @override
+  String get tenderStart => 'Start tender';
+
+  @override
+  String get tenderStartDate => 'Start date';
+
+  @override
+  String get tenderStarted => 'Tender started';
+
+  @override
+  String get tenderStatusAwarded => 'Awarded';
+
+  @override
+  String get tenderStatusCancelled => 'Cancelled';
+
+  @override
+  String get tenderStatusOpen => 'Open';
+
+  @override
+  String get tenderTagLowest => 'Lowest';
+
+  @override
+  String get tenderTagReplaced => 'Replaced';
+
+  @override
+  String get tenderTagSelected => 'Selected';
+
+  @override
+  String get tenderTds => 'TDS %';
+
+  @override
+  String get tenderTitle => 'Tenders';
+
+  @override
+  String get tenderTitleRequired => 'Give the tender a title.';
+
+  @override
+  String tenderTotal(String amount) {
+    return 'Quoted total $amount';
+  }
+
+  @override
+  String get tenderValidError =>
+      'Valid till cannot be before the day it was received.';
+
+  @override
+  String get tenderValidTill => 'Valid till';
+
+  @override
+  String tenderValidUntil(String date) {
+    return 'Valid till $date';
+  }
+
+  @override
+  String get tenderViewQuotation => 'View quotation';
+
+  @override
+  String tenderVsBoq(String pct) {
+    return '$pct% vs BOQ';
+  }
+
+  @override
+  String tenderWorkOrder(String number) {
+    return 'Work order $number';
+  }
 }

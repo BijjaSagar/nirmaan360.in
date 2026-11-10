@@ -2485,5 +2485,264 @@
   "syncTypeProgressPhoto": "Progress photo",
   "syncTypeProgressResolve": "Pending item resolved",
   "syncTypeStage": "Stage update",
-  "syncTypeStagePhoto": "Stage photo"
+  "syncTypeStagePhoto": "Stage photo",
+  "tenderAddQuote": "Add a quote",
+  "tenderAdvance": "Advance (₹)",
+  "tenderAdvanceError": "Enter 0 or more, with two decimals at most.",
+  "tenderAdvanceRecovery": "Advance recovery %",
+  "tenderAmountError": "Enter an amount above zero, with two decimals at most.",
+  "tenderAwardExplain": "A work order is made at this quote's rates. Measurements, RA bills and payments then run on it.",
+  "tenderAwardSend": "Create work order",
+  "tenderAwardTitle": "Select this contractor",
+  "tenderAwarded": "Work order made",
+  "tenderBasisGross": "Gross",
+  "tenderBasisRunning": "Balance",
+  "tenderBoqAmount": "BOQ amount {amount}",
+  "@tenderBoqAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderBoqQty": "BOQ {qty} {unit}",
+  "@tenderBoqQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderBoqRate": "BOQ rate {rate}",
+  "@tenderBoqRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderClosed": "This tender is closed, so it takes no more quotes.",
+  "tenderCompletionDays": "Days to finish",
+  "tenderContractor": "Contractor",
+  "tenderContractorAdd": "Add a contractor",
+  "tenderContractorChoose": "Choose a contractor",
+  "tenderContractorName": "Name",
+  "tenderContractorNameRequired": "Enter the contractor's name.",
+  "tenderContractorNone": "No contractor by that name",
+  "tenderContractorPerson": "Contact person",
+  "tenderContractorPhone": "Phone",
+  "tenderContractorRequired": "Choose who quoted.",
+  "tenderContractorSave": "Add contractor",
+  "tenderContractorSearch": "Search contractors",
+  "tenderContractorsFailed": "The contractor list could not be loaded.",
+  "tenderCount": "{count, plural, =1{1 tender} other{{count} tenders}}",
+  "@tenderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderDays": "{days, plural, =1{1 day} other{{days} days}}",
+  "@tenderDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderDaysError": "Enter whole days, 1 to 3650.",
+  "tenderDeductionBasis": "Deductions on",
+  "tenderDeductionOrder": "Deduction order",
+  "tenderDue": "Quotes due {date}",
+  "@tenderDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderEndDate": "Finish by",
+  "tenderEndError": "Finish by cannot be before the start.",
+  "tenderEnteredBy": "Entered by {name}",
+  "@tenderEnteredBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderFieldDue": "Quotes due by",
+  "tenderFieldScope": "Scope of work",
+  "tenderFieldTitle": "Title",
+  "tenderGst": "GST %",
+  "tenderIncludesMaterial": "Material included in the rate",
+  "tenderLineAmount": "{qty} {unit} × rate = {amount}",
+  "@tenderLineAmount": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderLinkEmpty": "Tenders · Get quotes from contractors",
+  "tenderLoadFailed": "Tenders could not be loaded. Pull down to try again.",
+  "tenderLoading": "Loading tenders",
+  "tenderLowest": "Lowest {rate}",
+  "@tenderLowest": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderLowestBy": "Lowest {rate} · {contractor}",
+  "@tenderLowestBy": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "contractor": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderMaterialIn": "Material included",
+  "tenderMaterialOut": "Labour only",
+  "tenderMoneyHidden": "Rates, terms and files are shown only to those who may see money.",
+  "tenderNew": "New tender",
+  "tenderNewContractorTitle": "New contractor",
+  "tenderNewTitle": "New tender",
+  "tenderNoDate": "No date",
+  "tenderNoQuantity": "This line has no quantity, so quotes are taken as a total amount.",
+  "tenderNoneAsk": "No one has asked contractors for quotes on this line yet.",
+  "tenderNoneStart": "Start a tender to collect quotes from contractors for this line.",
+  "tenderNoneTitle": "No tender yet",
+  "tenderNote": "Note",
+  "tenderOfflineMessage": "Quotes and awards are read from the office as they are now. Connect, then pull down to try again.",
+  "tenderOfflineTitle": "Tenders need the internet",
+  "tenderOpenElsewhere": "Open in another app",
+  "tenderOptional": "Optional",
+  "tenderOrderAdvanceFirst": "Advance → Retention → Material → TDS",
+  "tenderOrderRetentionFirst": "Retention → Advance → Material → TDS",
+  "tenderOrderTdsFirst": "TDS → Retention → Advance → Material",
+  "tenderOtherLines": "{count, plural, =1{Also 1 other line} other{Also {count} other lines}}",
+  "@tenderOtherLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderPaymentTerms": "Payment terms",
+  "tenderPctError": "Enter 0 to 100, with two decimals at most.",
+  "tenderPerUnit": "{rate} per {unit}",
+  "@tenderPerUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderPickDate": "Pick a date",
+  "tenderQuotationFailed": "The quotation could not be opened.",
+  "tenderQuotationNotPicture": "This quotation is a file, not a photo. Open it in another app.",
+  "tenderQuotationPhoto": "Photo of the quotation",
+  "tenderQuoteCount": "{count, plural, =0{no quotes} =1{1 quote} other{{count} quotes}}",
+  "@tenderQuoteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderQuoteGone": "This quote is no longer in the tender. Go back and choose again.",
+  "tenderQuoteSaved": "Quote saved",
+  "tenderQuoteTitle": "Add a quote",
+  "tenderQuotedAmount": "Quoted amount (₹)",
+  "tenderQuotesNone": "No quotes yet",
+  "tenderRateError": "Enter a rate above zero, with two decimals at most.",
+  "tenderRatePer": "Rate per {unit}",
+  "@tenderRatePer": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderReceived": "Received {date}",
+  "@tenderReceived": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderReceivedOn": "Received on",
+  "tenderRefusedMessage": "Ask your office if you need to see tenders.",
+  "tenderRefusedTitle": "Not for your role",
+  "tenderRemarks": "Remarks",
+  "tenderRetention": "Retention %",
+  "tenderSaveFailed": "Could not save. Check the connection and try again.",
+  "tenderSaveQuote": "Save quote",
+  "tenderSelect": "Select this contractor",
+  "tenderStart": "Start tender",
+  "tenderStartDate": "Start date",
+  "tenderStarted": "Tender started",
+  "tenderStatusAwarded": "Awarded",
+  "tenderStatusCancelled": "Cancelled",
+  "tenderStatusOpen": "Open",
+  "tenderTagLowest": "Lowest",
+  "tenderTagReplaced": "Replaced",
+  "tenderTagSelected": "Selected",
+  "tenderTds": "TDS %",
+  "tenderTitle": "Tenders",
+  "tenderTitleRequired": "Give the tender a title.",
+  "tenderTotal": "Quoted total {amount}",
+  "@tenderTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderValidError": "Valid till cannot be before the day it was received.",
+  "tenderValidTill": "Valid till",
+  "tenderValidUntil": "Valid till {date}",
+  "@tenderValidUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderViewQuotation": "View quotation",
+  "tenderVsBoq": "{pct}% vs BOQ",
+  "@tenderVsBoq": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderWorkOrder": "Work order {number}",
+  "@tenderWorkOrder": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  }
 }

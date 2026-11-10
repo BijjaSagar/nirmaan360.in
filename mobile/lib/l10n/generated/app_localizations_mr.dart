@@ -4868,4 +4868,416 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeStagePhoto => 'टप्प्याचा फोटो';
+
+  @override
+  String get tenderAddQuote => 'दर नोंदवा';
+
+  @override
+  String get tenderAdvance => 'ॲडव्हान्स (₹)';
+
+  @override
+  String get tenderAdvanceError =>
+      '0 किंवा जास्त लिहा, जास्तीत जास्त दोन दशांश.';
+
+  @override
+  String get tenderAdvanceRecovery => 'ॲडव्हान्स वसुली %';
+
+  @override
+  String get tenderAmountError =>
+      'शून्यापेक्षा जास्त रक्कम लिहा, जास्तीत जास्त दोन दशांश.';
+
+  @override
+  String get tenderAwardExplain =>
+      'या दरानुसार वर्क ऑर्डर तयार होईल. त्यानंतर मोजमाप, RA बिले आणि पेमेंट त्यावरच चालतील.';
+
+  @override
+  String get tenderAwardSend => 'वर्क ऑर्डर तयार करा';
+
+  @override
+  String get tenderAwardTitle => 'हा ठेकेदार निवडा';
+
+  @override
+  String get tenderAwarded => 'वर्क ऑर्डर तयार झाली';
+
+  @override
+  String get tenderBasisGross => 'एकूण';
+
+  @override
+  String get tenderBasisRunning => 'शिल्लक';
+
+  @override
+  String tenderBoqAmount(String amount) {
+    return 'BOQ रक्कम $amount';
+  }
+
+  @override
+  String tenderBoqQty(String qty, String unit) {
+    return 'BOQ $qty $unit';
+  }
+
+  @override
+  String tenderBoqRate(String rate) {
+    return 'BOQ दर $rate';
+  }
+
+  @override
+  String get tenderClosed => 'ही निविदा बंद आहे, आता दर घेता येणार नाहीत.';
+
+  @override
+  String get tenderCompletionDays => 'काम पूर्ण करायला दिवस';
+
+  @override
+  String get tenderContractor => 'ठेकेदार';
+
+  @override
+  String get tenderContractorAdd => 'ठेकेदार जोडा';
+
+  @override
+  String get tenderContractorChoose => 'ठेकेदार निवडा';
+
+  @override
+  String get tenderContractorName => 'नाव';
+
+  @override
+  String get tenderContractorNameRequired => 'ठेकेदाराचे नाव लिहा.';
+
+  @override
+  String get tenderContractorNone => 'या नावाचा ठेकेदार नाही';
+
+  @override
+  String get tenderContractorPerson => 'संपर्क व्यक्ती';
+
+  @override
+  String get tenderContractorPhone => 'फोन';
+
+  @override
+  String get tenderContractorRequired => 'दर कोणी दिला ते निवडा.';
+
+  @override
+  String get tenderContractorSave => 'ठेकेदार जोडा';
+
+  @override
+  String get tenderContractorSearch => 'ठेकेदार शोधा';
+
+  @override
+  String get tenderContractorsFailed => 'ठेकेदारांची यादी आणता आली नाही.';
+
+  @override
+  String tenderCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count निविदा',
+      one: '1 निविदा',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tenderDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days दिवस',
+      one: '1 दिवस',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tenderDaysError => 'पूर्ण दिवस लिहा, 1 ते 3650.';
+
+  @override
+  String get tenderDeductionBasis => 'कपात कशावर';
+
+  @override
+  String get tenderDeductionOrder => 'कपातीचा क्रम';
+
+  @override
+  String tenderDue(String date) {
+    return 'दर देण्याची मुदत $date';
+  }
+
+  @override
+  String get tenderEndDate => 'पूर्ण करण्याची तारीख';
+
+  @override
+  String get tenderEndError =>
+      'पूर्ण करण्याची तारीख सुरुवातीच्या आधी असू शकत नाही.';
+
+  @override
+  String tenderEnteredBy(String name) {
+    return '$name यांनी नोंदवले';
+  }
+
+  @override
+  String get tenderFieldDue => 'दर देण्याची मुदत';
+
+  @override
+  String get tenderFieldScope => 'कामाची व्याप्ती';
+
+  @override
+  String get tenderFieldTitle => 'शीर्षक';
+
+  @override
+  String get tenderGst => 'GST %';
+
+  @override
+  String get tenderIncludesMaterial => 'दरात मटेरियल समाविष्ट';
+
+  @override
+  String tenderLineAmount(String qty, String unit, String amount) {
+    return '$qty $unit × दर = $amount';
+  }
+
+  @override
+  String get tenderLinkEmpty => 'निविदा · ठेकेदारांकडून दर मागवा';
+
+  @override
+  String get tenderLoadFailed =>
+      'निविदा आणता आल्या नाहीत. खाली ओढून पुन्हा प्रयत्न करा.';
+
+  @override
+  String get tenderLoading => 'निविदा येत आहेत';
+
+  @override
+  String tenderLowest(String rate) {
+    return 'सर्वात कमी $rate';
+  }
+
+  @override
+  String tenderLowestBy(String rate, String contractor) {
+    return 'सर्वात कमी $rate · $contractor';
+  }
+
+  @override
+  String get tenderMaterialIn => 'मटेरियलसह';
+
+  @override
+  String get tenderMaterialOut => 'फक्त मजुरी';
+
+  @override
+  String get tenderMoneyHidden =>
+      'दर, अटी आणि फाइल्स फक्त पैशांचे अधिकार असलेल्यांना दिसतात.';
+
+  @override
+  String get tenderNew => 'नवीन निविदा';
+
+  @override
+  String get tenderNewContractorTitle => 'नवीन ठेकेदार';
+
+  @override
+  String get tenderNewTitle => 'नवीन निविदा';
+
+  @override
+  String get tenderNoDate => 'तारीख नाही';
+
+  @override
+  String get tenderNoQuantity =>
+      'या ओळीला प्रमाण नाही, म्हणून दर एकूण रकमेत घेतले जातात.';
+
+  @override
+  String get tenderNoneAsk =>
+      'या ओळीसाठी अजून कोणी ठेकेदारांकडून दर मागवलेले नाहीत.';
+
+  @override
+  String get tenderNoneStart =>
+      'या ओळीसाठी ठेकेदारांचे दर गोळा करायला निविदा सुरू करा.';
+
+  @override
+  String get tenderNoneTitle => 'अजून निविदा नाही';
+
+  @override
+  String get tenderNote => 'टीप';
+
+  @override
+  String get tenderOfflineMessage =>
+      'दर आणि निवड ऑफिसमधून आत्ताच्या स्थितीत वाचले जातात. नेटवर्क मिळाल्यावर खाली ओढून पुन्हा प्रयत्न करा.';
+
+  @override
+  String get tenderOfflineTitle => 'निविदांसाठी इंटरनेट हवे';
+
+  @override
+  String get tenderOpenElsewhere => 'दुसऱ्या ॲपमध्ये उघडा';
+
+  @override
+  String get tenderOptional => 'ऐच्छिक';
+
+  @override
+  String get tenderOrderAdvanceFirst => 'ॲडव्हान्स → रिटेन्शन → मटेरियल → TDS';
+
+  @override
+  String get tenderOrderRetentionFirst =>
+      'रिटेन्शन → ॲडव्हान्स → मटेरियल → TDS';
+
+  @override
+  String get tenderOrderTdsFirst => 'TDS → रिटेन्शन → ॲडव्हान्स → मटेरियल';
+
+  @override
+  String tenderOtherLines(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'अजून $count ओळी',
+      one: 'अजून 1 ओळ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tenderPaymentTerms => 'पेमेंटच्या अटी';
+
+  @override
+  String get tenderPctError => '0 ते 100 लिहा, जास्तीत जास्त दोन दशांश.';
+
+  @override
+  String tenderPerUnit(String rate, String unit) {
+    return '$rate प्रति $unit';
+  }
+
+  @override
+  String get tenderPickDate => 'तारीख निवडा';
+
+  @override
+  String get tenderQuotationFailed => 'कोटेशन उघडता आले नाही.';
+
+  @override
+  String get tenderQuotationNotPicture =>
+      'हे कोटेशन फोटो नसून फाइल आहे. दुसऱ्या ॲपमध्ये उघडा.';
+
+  @override
+  String get tenderQuotationPhoto => 'कोटेशनचा फोटो';
+
+  @override
+  String tenderQuoteCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count दर',
+      one: '1 दर',
+      zero: 'एकही दर नाही',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tenderQuoteGone =>
+      'हा दर आता निविदेत नाही. मागे जाऊन पुन्हा निवडा.';
+
+  @override
+  String get tenderQuoteSaved => 'दर जतन झाला';
+
+  @override
+  String get tenderQuoteTitle => 'दर नोंदवा';
+
+  @override
+  String get tenderQuotedAmount => 'दिलेली रक्कम (₹)';
+
+  @override
+  String get tenderQuotesNone => 'अजून दर आलेले नाहीत';
+
+  @override
+  String get tenderRateError =>
+      'शून्यापेक्षा जास्त दर लिहा, जास्तीत जास्त दोन दशांश.';
+
+  @override
+  String tenderRatePer(String unit) {
+    return 'प्रति $unit दर';
+  }
+
+  @override
+  String tenderReceived(String date) {
+    return 'मिळाले $date';
+  }
+
+  @override
+  String get tenderReceivedOn => 'मिळाल्याची तारीख';
+
+  @override
+  String get tenderRefusedMessage => 'निविदा पाहायच्या असतील तर ऑफिसला विचारा.';
+
+  @override
+  String get tenderRefusedTitle => 'तुमच्या भूमिकेसाठी नाही';
+
+  @override
+  String get tenderRemarks => 'शेरा';
+
+  @override
+  String get tenderRetention => 'रिटेन्शन %';
+
+  @override
+  String get tenderSaveFailed =>
+      'जतन झाले नाही. नेटवर्क तपासून पुन्हा प्रयत्न करा.';
+
+  @override
+  String get tenderSaveQuote => 'दर जतन करा';
+
+  @override
+  String get tenderSelect => 'हा ठेकेदार निवडा';
+
+  @override
+  String get tenderStart => 'निविदा सुरू करा';
+
+  @override
+  String get tenderStartDate => 'सुरुवातीची तारीख';
+
+  @override
+  String get tenderStarted => 'निविदा सुरू झाली';
+
+  @override
+  String get tenderStatusAwarded => 'दिली';
+
+  @override
+  String get tenderStatusCancelled => 'रद्द';
+
+  @override
+  String get tenderStatusOpen => 'चालू';
+
+  @override
+  String get tenderTagLowest => 'सर्वात कमी';
+
+  @override
+  String get tenderTagReplaced => 'बदलला';
+
+  @override
+  String get tenderTagSelected => 'निवडला';
+
+  @override
+  String get tenderTds => 'TDS %';
+
+  @override
+  String get tenderTitle => 'निविदा';
+
+  @override
+  String get tenderTitleRequired => 'निविदेला शीर्षक द्या.';
+
+  @override
+  String tenderTotal(String amount) {
+    return 'एकूण दर $amount';
+  }
+
+  @override
+  String get tenderValidError =>
+      'वैधतेची तारीख मिळाल्याच्या तारखेच्या आधी असू शकत नाही.';
+
+  @override
+  String get tenderValidTill => 'कधीपर्यंत वैध';
+
+  @override
+  String tenderValidUntil(String date) {
+    return '$date पर्यंत वैध';
+  }
+
+  @override
+  String get tenderViewQuotation => 'कोटेशन पहा';
+
+  @override
+  String tenderVsBoq(String pct) {
+    return 'BOQ पेक्षा $pct%';
+  }
+
+  @override
+  String tenderWorkOrder(String number) {
+    return 'वर्क ऑर्डर $number';
+  }
 }

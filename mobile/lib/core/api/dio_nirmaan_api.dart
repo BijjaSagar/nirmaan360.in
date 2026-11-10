@@ -513,6 +513,67 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> boqWithTenders(int projectId) => _getRows('/projects/$projectId/boq');
+
+  @override
+  Future<Map<String, dynamic>> boqLineTenders(int boqItemId) => _getData('/boq-items/$boqItemId/tenders');
+
+  @override
+  Future<Map<String, dynamic>> createLineTender(int boqItemId, Map<String, dynamic> body) =>
+      _postData('/boq-items/$boqItemId/tenders', body);
+
+  @override
+  Future<List<Map<String, dynamic>>> subcontractors({String? query}) async {
+    final body = await _call(
+      () => _dio.get('/contractors', queryParameters: <String, dynamic>{if (query != null && query.isNotEmpty) 'q': query}),
+    );
+    return (body['data'] as List).map((row) => (row as Map).cast<String, dynamic>()).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> createSubcontractor(Map<String, dynamic> body) => _postData('/contractors', body);
+
+  @override
+  Future<Map<String, dynamic>> tenderComparison(int tenderId) => _getData('/tenders/$tenderId');
+
+  @override
+  Future<Map<String, dynamic>> postTenderQuote(int tenderId, Map<String, dynamic> body, {String? filePath}) async {
+    final path = '/tenders/$tenderId/bids';
+    final reply = await _call(() async {
+      // Always multipart, as the server reads it, so `rates[12]` arrives as a map.
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData();
+      for (final entry in body.entries) {
+        final Object? value = entry.value;
+        if (value == null) continue;
+        if (value is Map) {
+          for (final rate in value.entries) {
+            if (rate.value != null) form.fields.add(MapEntry('${entry.key}[${rate.key}]', '${rate.value}'));
+          }
+        } else {
+          form.fields.add(MapEntry(entry.key, '$value'));
+        }
+      }
+      if (filePath != null) {
+        form.files.add(MapEntry('quotation', await MultipartFile.fromFile(filePath, filename: p.basename(filePath))));
+      }
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (reply['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Uint8List> quotationBytes(int bidId) => _bytes('/bids/$bidId/quotation');
+
+  @override
+  Future<Map<String, dynamic>> awardTender(int tenderId, Map<String, dynamic> body) =>
+      _postData('/tenders/$tenderId/award', body);
+
+  @override
   Future<List<Map<String, dynamic>>> checklistTemplates() => _getRows('/checklist-templates');
 
   @override

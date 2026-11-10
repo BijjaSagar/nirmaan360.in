@@ -8691,6 +8691,672 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stage photo'**
   String get syncTypeStagePhoto;
+
+  /// No description provided for @tenderAddQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a quote'**
+  String get tenderAddQuote;
+
+  /// No description provided for @tenderAdvance.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance (₹)'**
+  String get tenderAdvance;
+
+  /// No description provided for @tenderAdvanceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 0 or more, with two decimals at most.'**
+  String get tenderAdvanceError;
+
+  /// No description provided for @tenderAdvanceRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance recovery %'**
+  String get tenderAdvanceRecovery;
+
+  /// No description provided for @tenderAmountError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount above zero, with two decimals at most.'**
+  String get tenderAmountError;
+
+  /// No description provided for @tenderAwardExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'A work order is made at this quote\'s rates. Measurements, RA bills and payments then run on it.'**
+  String get tenderAwardExplain;
+
+  /// No description provided for @tenderAwardSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Create work order'**
+  String get tenderAwardSend;
+
+  /// No description provided for @tenderAwardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select this contractor'**
+  String get tenderAwardTitle;
+
+  /// No description provided for @tenderAwarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Work order made'**
+  String get tenderAwarded;
+
+  /// No description provided for @tenderBasisGross.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross'**
+  String get tenderBasisGross;
+
+  /// No description provided for @tenderBasisRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get tenderBasisRunning;
+
+  /// No description provided for @tenderBoqAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ amount {amount}'**
+  String tenderBoqAmount(String amount);
+
+  /// No description provided for @tenderBoqQty.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ {qty} {unit}'**
+  String tenderBoqQty(String qty, String unit);
+
+  /// No description provided for @tenderBoqRate.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ rate {rate}'**
+  String tenderBoqRate(String rate);
+
+  /// No description provided for @tenderClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This tender is closed, so it takes no more quotes.'**
+  String get tenderClosed;
+
+  /// No description provided for @tenderCompletionDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days to finish'**
+  String get tenderCompletionDays;
+
+  /// No description provided for @tenderContractor.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractor'**
+  String get tenderContractor;
+
+  /// No description provided for @tenderContractorAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a contractor'**
+  String get tenderContractorAdd;
+
+  /// No description provided for @tenderContractorChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a contractor'**
+  String get tenderContractorChoose;
+
+  /// No description provided for @tenderContractorName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get tenderContractorName;
+
+  /// No description provided for @tenderContractorNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the contractor\'s name.'**
+  String get tenderContractorNameRequired;
+
+  /// No description provided for @tenderContractorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No contractor by that name'**
+  String get tenderContractorNone;
+
+  /// No description provided for @tenderContractorPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact person'**
+  String get tenderContractorPerson;
+
+  /// No description provided for @tenderContractorPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get tenderContractorPhone;
+
+  /// No description provided for @tenderContractorRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose who quoted.'**
+  String get tenderContractorRequired;
+
+  /// No description provided for @tenderContractorSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contractor'**
+  String get tenderContractorSave;
+
+  /// No description provided for @tenderContractorSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contractors'**
+  String get tenderContractorSearch;
+
+  /// No description provided for @tenderContractorsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The contractor list could not be loaded.'**
+  String get tenderContractorsFailed;
+
+  /// No description provided for @tenderCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tender} other{{count} tenders}}'**
+  String tenderCount(int count);
+
+  /// No description provided for @tenderDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
+  String tenderDays(int days);
+
+  /// No description provided for @tenderDaysError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter whole days, 1 to 3650.'**
+  String get tenderDaysError;
+
+  /// No description provided for @tenderDeductionBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Deductions on'**
+  String get tenderDeductionBasis;
+
+  /// No description provided for @tenderDeductionOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Deduction order'**
+  String get tenderDeductionOrder;
+
+  /// No description provided for @tenderDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotes due {date}'**
+  String tenderDue(String date);
+
+  /// No description provided for @tenderEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish by'**
+  String get tenderEndDate;
+
+  /// No description provided for @tenderEndError.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish by cannot be before the start.'**
+  String get tenderEndError;
+
+  /// No description provided for @tenderEnteredBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered by {name}'**
+  String tenderEnteredBy(String name);
+
+  /// No description provided for @tenderFieldDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotes due by'**
+  String get tenderFieldDue;
+
+  /// No description provided for @tenderFieldScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope of work'**
+  String get tenderFieldScope;
+
+  /// No description provided for @tenderFieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get tenderFieldTitle;
+
+  /// No description provided for @tenderGst.
+  ///
+  /// In en, this message translates to:
+  /// **'GST %'**
+  String get tenderGst;
+
+  /// No description provided for @tenderIncludesMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material included in the rate'**
+  String get tenderIncludesMaterial;
+
+  /// No description provided for @tenderLineAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'{qty} {unit} × rate = {amount}'**
+  String tenderLineAmount(String qty, String unit, String amount);
+
+  /// No description provided for @tenderLinkEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenders · Get quotes from contractors'**
+  String get tenderLinkEmpty;
+
+  /// No description provided for @tenderLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenders could not be loaded. Pull down to try again.'**
+  String get tenderLoadFailed;
+
+  /// No description provided for @tenderLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tenders'**
+  String get tenderLoading;
+
+  /// No description provided for @tenderLowest.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest {rate}'**
+  String tenderLowest(String rate);
+
+  /// No description provided for @tenderLowestBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest {rate} · {contractor}'**
+  String tenderLowestBy(String rate, String contractor);
+
+  /// No description provided for @tenderMaterialIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Material included'**
+  String get tenderMaterialIn;
+
+  /// No description provided for @tenderMaterialOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Labour only'**
+  String get tenderMaterialOut;
+
+  /// No description provided for @tenderMoneyHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Rates, terms and files are shown only to those who may see money.'**
+  String get tenderMoneyHidden;
+
+  /// No description provided for @tenderNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New tender'**
+  String get tenderNew;
+
+  /// No description provided for @tenderNewContractorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New contractor'**
+  String get tenderNewContractorTitle;
+
+  /// No description provided for @tenderNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New tender'**
+  String get tenderNewTitle;
+
+  /// No description provided for @tenderNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get tenderNoDate;
+
+  /// No description provided for @tenderNoQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'This line has no quantity, so quotes are taken as a total amount.'**
+  String get tenderNoQuantity;
+
+  /// No description provided for @tenderNoneAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'No one has asked contractors for quotes on this line yet.'**
+  String get tenderNoneAsk;
+
+  /// No description provided for @tenderNoneStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a tender to collect quotes from contractors for this line.'**
+  String get tenderNoneStart;
+
+  /// No description provided for @tenderNoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No tender yet'**
+  String get tenderNoneTitle;
+
+  /// No description provided for @tenderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get tenderNote;
+
+  /// No description provided for @tenderOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Quotes and awards are read from the office as they are now. Connect, then pull down to try again.'**
+  String get tenderOfflineMessage;
+
+  /// No description provided for @tenderOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenders need the internet'**
+  String get tenderOfflineTitle;
+
+  /// No description provided for @tenderOpenElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in another app'**
+  String get tenderOpenElsewhere;
+
+  /// No description provided for @tenderOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get tenderOptional;
+
+  /// No description provided for @tenderOrderAdvanceFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Advance → Retention → Material → TDS'**
+  String get tenderOrderAdvanceFirst;
+
+  /// No description provided for @tenderOrderRetentionFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Retention → Advance → Material → TDS'**
+  String get tenderOrderRetentionFirst;
+
+  /// No description provided for @tenderOrderTdsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'TDS → Retention → Advance → Material'**
+  String get tenderOrderTdsFirst;
+
+  /// No description provided for @tenderOtherLines.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Also 1 other line} other{Also {count} other lines}}'**
+  String tenderOtherLines(int count);
+
+  /// No description provided for @tenderPaymentTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment terms'**
+  String get tenderPaymentTerms;
+
+  /// No description provided for @tenderPctError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 0 to 100, with two decimals at most.'**
+  String get tenderPctError;
+
+  /// No description provided for @tenderPerUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} per {unit}'**
+  String tenderPerUnit(String rate, String unit);
+
+  /// No description provided for @tenderPickDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date'**
+  String get tenderPickDate;
+
+  /// No description provided for @tenderQuotationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The quotation could not be opened.'**
+  String get tenderQuotationFailed;
+
+  /// No description provided for @tenderQuotationNotPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'This quotation is a file, not a photo. Open it in another app.'**
+  String get tenderQuotationNotPicture;
+
+  /// No description provided for @tenderQuotationPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of the quotation'**
+  String get tenderQuotationPhoto;
+
+  /// No description provided for @tenderQuoteCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{no quotes} =1{1 quote} other{{count} quotes}}'**
+  String tenderQuoteCount(int count);
+
+  /// No description provided for @tenderQuoteGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This quote is no longer in the tender. Go back and choose again.'**
+  String get tenderQuoteGone;
+
+  /// No description provided for @tenderQuoteSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote saved'**
+  String get tenderQuoteSaved;
+
+  /// No description provided for @tenderQuoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a quote'**
+  String get tenderQuoteTitle;
+
+  /// No description provided for @tenderQuotedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted amount (₹)'**
+  String get tenderQuotedAmount;
+
+  /// No description provided for @tenderQuotesNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No quotes yet'**
+  String get tenderQuotesNone;
+
+  /// No description provided for @tenderRateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a rate above zero, with two decimals at most.'**
+  String get tenderRateError;
+
+  /// No description provided for @tenderRatePer.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate per {unit}'**
+  String tenderRatePer(String unit);
+
+  /// No description provided for @tenderReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received {date}'**
+  String tenderReceived(String date);
+
+  /// No description provided for @tenderReceivedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Received on'**
+  String get tenderReceivedOn;
+
+  /// No description provided for @tenderRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your office if you need to see tenders.'**
+  String get tenderRefusedMessage;
+
+  /// No description provided for @tenderRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not for your role'**
+  String get tenderRefusedTitle;
+
+  /// No description provided for @tenderRemarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Remarks'**
+  String get tenderRemarks;
+
+  /// No description provided for @tenderRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Retention %'**
+  String get tenderRetention;
+
+  /// No description provided for @tenderSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Check the connection and try again.'**
+  String get tenderSaveFailed;
+
+  /// No description provided for @tenderSaveQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Save quote'**
+  String get tenderSaveQuote;
+
+  /// No description provided for @tenderSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select this contractor'**
+  String get tenderSelect;
+
+  /// No description provided for @tenderStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start tender'**
+  String get tenderStart;
+
+  /// No description provided for @tenderStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get tenderStartDate;
+
+  /// No description provided for @tenderStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tender started'**
+  String get tenderStarted;
+
+  /// No description provided for @tenderStatusAwarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Awarded'**
+  String get tenderStatusAwarded;
+
+  /// No description provided for @tenderStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get tenderStatusCancelled;
+
+  /// No description provided for @tenderStatusOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get tenderStatusOpen;
+
+  /// No description provided for @tenderTagLowest.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest'**
+  String get tenderTagLowest;
+
+  /// No description provided for @tenderTagReplaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaced'**
+  String get tenderTagReplaced;
+
+  /// No description provided for @tenderTagSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get tenderTagSelected;
+
+  /// No description provided for @tenderTds.
+  ///
+  /// In en, this message translates to:
+  /// **'TDS %'**
+  String get tenderTds;
+
+  /// No description provided for @tenderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tenders'**
+  String get tenderTitle;
+
+  /// No description provided for @tenderTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the tender a title.'**
+  String get tenderTitleRequired;
+
+  /// No description provided for @tenderTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted total {amount}'**
+  String tenderTotal(String amount);
+
+  /// No description provided for @tenderValidError.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid till cannot be before the day it was received.'**
+  String get tenderValidError;
+
+  /// No description provided for @tenderValidTill.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid till'**
+  String get tenderValidTill;
+
+  /// No description provided for @tenderValidUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid till {date}'**
+  String tenderValidUntil(String date);
+
+  /// No description provided for @tenderViewQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'View quotation'**
+  String get tenderViewQuotation;
+
+  /// No description provided for @tenderVsBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% vs BOQ'**
+  String tenderVsBoq(String pct);
+
+  /// No description provided for @tenderWorkOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Work order {number}'**
+  String tenderWorkOrder(String number);
 }
 
 class _AppLocalizationsDelegate

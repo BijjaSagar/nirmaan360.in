@@ -13,6 +13,7 @@ import 'package:nirmaan360/features/machine_logs/data/machine_models.dart';
 import 'package:nirmaan360/features/material_control/data/material_repository.dart';
 import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
 import 'package:nirmaan360/features/offline_plan/data/offline_upload.dart';
+import 'package:nirmaan360/features/tenders/data/tender_repository.dart';
 
 import '../../support/test_app.dart';
 
@@ -247,6 +248,22 @@ Map<String, Future<Object?> Function(_Phone)> _writes() {
     ),
     'approvals.approve': (p) => p.app.services.approvals.approve(1),
     'approvals.sendBack': (p) => p.app.services.approvals.sendBack(1, remark: 'Redo'),
+    'tenders.startTender': (p) => TenderRepository(p.app.services.context).startTender(1, title: 'Shuttering'),
+    'tenders.addSubcontractor': (p) => TenderRepository(p.app.services.context).addSubcontractor(name: 'Om Sai'),
+    'tenders.addQuote': (p) => TenderRepository(p.app.services.context).addQuote(1, const QuoteInput(partyId: 7)),
+    'tenders.award': (p) => TenderRepository(p.app.services.context).award(
+      1,
+      AwardInput(
+        bidId: 1,
+        retentionPct: '5',
+        tdsPct: '1',
+        gstPct: '18',
+        advanceAmount: Money.zero,
+        advanceRecoveryPct: '0',
+        deductionBasis: 'gross',
+        deductionOrder: 'retention,advance,material,tds',
+      ),
+    ),
     'syncCenter.discard': (p) => p.app.services.syncCenter.discard(1),
     'context.createLocal': (p) => p.app.services.context.createLocal<void>(kind: 'project', table: 'projects', insert: (_) async {}),
     'context.createOnline': (p) => p.app.services.context.createOnline<void>(

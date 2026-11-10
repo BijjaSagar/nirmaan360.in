@@ -1856,6 +1856,295 @@ class FakeApi implements NirmaanApi {
     return _presentContractor(stored);
   }
 
+  // Tenders on BOQ lines -------------------------------------------------------
+
+  /// Tenders by BOQ line, in the presenter's shape with every figure. Money is
+  /// taken out on the way for someone without money.view, as the server does.
+  final Map<int, List<Row>> lineTenderRows = {};
+  bool tenderCanQuote = true;
+  bool tenderCanAward = true;
+  ApiFailure? tenderFailure;
+  final List<Row> subcontractorRows = [
+    {'id': 7, 'name': 'Shree Formwork', 'phone': '9800000007', 'contact_person': 'Ramesh'},
+    {'id': 8, 'name': 'Kalyan Builders', 'phone': null, 'contact_person': null},
+  ];
+  final List<(int, Row)> tenderStarts = [];
+  final List<(int, Row, String?)> tenderQuotePosts = [];
+  final List<(int, Row)> tenderAwards = [];
+  final List<Row> subcontractorAdds = [];
+  int boqWithTendersReads = 0;
+  final Map<String, Row> _tenderOnce = {};
+  int _nextTenderId = 500;
+
+  static const Set<String> _tenderMoneyKeys = {
+    'boq_rate',
+    'boq_amount',
+    'lowest_rate',
+    'lowest_contractor',
+    'rate',
+    'amount',
+    'diff',
+    'diff_amount',
+    'diff_pct',
+    'lowest',
+    'payment_terms',
+    'remarks',
+    'has_quotation',
+    'quotation_name',
+  };
+
+  Object? _hideTenderMoney(Object? value) {
+    if (_seesContractorMoney) return value;
+    if (value is List) return value.map(_hideTenderMoney).toList();
+    if (value is Map) {
+      return <String, dynamic>{
+        for (final entry in value.cast<String, dynamic>().entries)
+          if (!_tenderMoneyKeys.contains(entry.key)) entry.key: _hideTenderMoney(entry.value),
+      };
+    }
+    return value;
+  }
+
+  void _tenderGuard() {
+    _guard();
+    final failure = tenderFailure;
+    if (failure != null) throw failure;
+  }
+
+  /// Adds a tender to a line, quotes included, as a test sets it up.
+  Row seedTender({
+    required int boqItemId,
+    int? id,
+    String title = 'Slab shuttering',
+    String status = 'OPEN',
+    String qty = '100.000',
+    List<Row> quotes = const [],
+    List<Row>? lines,
+  }) {
+    final int tenderId = id ?? _nextTenderId++;
+    final Row tender = {
+      'id': tenderId,
+      'number': 'CT-$tenderId',
+      'title': title,
+      'status': status,
+      'due_on': null,
+      'work_order_id': null,
+      'work_order_number': null,
+      'qty': qty,
+      'lines': lines ?? [
+        {'id': tenderId * 10, 'boq_item_id': boqItemId, 'code': '2.1', 'description': 'RCC work 2.1', 'unit': 'cum', 'qty': qty},
+      ],
+      'quote_count': quotes.where((q) => q['current'] != false).length,
+      'quotes': [...quotes],
+      'boq_rate': '500.00',
+      'boq_amount': '50000.00',
+      'lowest_rate': null,
+    };
+    lineTenderRows.putIfAbsent(boqItemId, () => []).add(tender);
+    return tender;
+  }
+
+  Row? _tenderById(int tenderId) {
+    for (final rows in lineTenderRows.values) {
+      for (final row in rows) {
+        if (row['id'] == tenderId) return row;
+      }
+    }
+    return null;
+  }
+
+  ({int tenders, int quotes, String? lowest, String? by}) _lineSummary(int boqItemId) {
+    final rows = lineTenderRows[boqItemId] ?? const <Row>[];
+    var quotes = 0;
+    Decimal? lowest;
+    String? by;
+    for (final tender in rows) {
+      for (final Row quote in (tender['quotes'] as List).cast<Row>()) {
+        if (quote['current'] == false) continue;
+        quotes++;
+        final rate = quote['rate'] == null ? null : Decimal.parse('${quote['rate']}');
+        if (rate != null && (lowest == null || rate < lowest)) {
+          lowest = rate;
+          by = quote['contractor'] as String?;
+        }
+      }
+    }
+    return (tenders: rows.length, quotes: quotes, lowest: lowest?.toStringAsFixed(2), by: by);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> boqWithTenders(int projectId) async {
+    _tenderGuard();
+    boqWithTendersReads++;
+    return [
+      for (final item in boqItems.where((b) => b['project_id'] == projectId))
+        {
+          ...item,
+          'tenders': lineTenderRows[item['id']] == null
+              ? null
+              : _hideTenderMoney({
+                  'tenders': _lineSummary(item['id'] as int).tenders,
+                  'quotes': _lineSummary(item['id'] as int).quotes,
+                  'lowest_rate': _lineSummary(item['id'] as int).lowest,
+                }),
+        },
+    ];
+  }
+
+  @override
+  Future<Map<String, dynamic>> boqLineTenders(int boqItemId) async {
+    _tenderGuard();
+    final item = boqItems.firstWhere(
+      (b) => b['id'] == boqItemId,
+      orElse: () => throw const ServerFailure('Not found.', statusCode: 404),
+    );
+    final rows = lineTenderRows[boqItemId] ?? <Row>[];
+    final summary = _lineSummary(boqItemId);
+    final qty = Decimal.parse('${item['qty']}');
+    final rate = Decimal.parse('${item['rate']}');
+    return _hideTenderMoney({
+          'boq_item_id': boqItemId,
+          'code': item['code'],
+          'description': item['description'],
+          'unit': item['unit'],
+          'qty': item['qty'],
+          'tender_count': rows.length,
+          'open_tender_count': rows.where((r) => r['status'] == 'OPEN').length,
+          'quote_count': summary.quotes,
+          'tenders': rows,
+          'can': {'quote': tenderCanQuote, 'award': tenderCanAward},
+          'no_quantity': qty == Decimal.zero,
+          'boq_rate': item['rate'],
+          'boq_amount': (qty * rate).toStringAsFixed(2),
+          'lowest_rate': summary.lowest,
+          'lowest_contractor': summary.by,
+        })
+        as Row;
+  }
+
+  @override
+  Future<Map<String, dynamic>> createLineTender(int boqItemId, Map<String, dynamic> body) async {
+    _tenderGuard();
+    final uuid = body['client_uuid'] as String;
+    final kept = _tenderOnce[uuid];
+    if (kept != null) return kept;
+    if ('${body['title'] ?? ''}'.trim().isEmpty) {
+      throw const ValidationFailure('The title field is required.', errors: {
+        'title': ['The title field is required.'],
+      });
+    }
+    final item = boqItems.firstWhere((b) => b['id'] == boqItemId);
+    tenderStarts.add((boqItemId, {...body}));
+    final tender = seedTender(boqItemId: boqItemId, title: body['title'] as String, qty: '${item['qty']}');
+    tender['due_on'] = body['due_on'];
+    (tender['lines'] as List).first['code'] = item['code'];
+    return _tenderOnce[uuid] = {'id': tender['id'], 'number': tender['number']};
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> subcontractors({String? query}) async {
+    _tenderGuard();
+    final needle = (query ?? '').toLowerCase();
+    return subcontractorRows.where((r) => '${r['name']}'.toLowerCase().contains(needle)).map((r) => {...r}).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> createSubcontractor(Map<String, dynamic> body) async {
+    _tenderGuard();
+    if ('${body['name'] ?? ''}'.trim().isEmpty) {
+      throw const ValidationFailure('The name field is required.', errors: {
+        'name': ['The name field is required.'],
+      });
+    }
+    subcontractorAdds.add({...body});
+    final row = <String, dynamic>{
+      'id': 100 + subcontractorRows.length,
+      'name': body['name'],
+      'phone': body['phone'],
+      'contact_person': body['contact_person'],
+    };
+    subcontractorRows.add(row);
+    return {...row};
+  }
+
+  @override
+  Future<Map<String, dynamic>> tenderComparison(int tenderId) async {
+    _tenderGuard();
+    return _tenderById(tenderId) ?? (throw const ServerFailure('Not found.', statusCode: 404));
+  }
+
+  @override
+  Future<Map<String, dynamic>> postTenderQuote(int tenderId, Map<String, dynamic> body, {String? filePath}) async {
+    _tenderGuard();
+    final uuid = body['client_uuid'] as String;
+    final kept = _tenderOnce[uuid];
+    if (kept != null) return kept;
+    final tender = _tenderById(tenderId)!;
+    if (tender['status'] != 'OPEN') throw const ServerFailure('This tender is closed.', statusCode: 409);
+    tenderQuotePosts.add((tenderId, {...body}, filePath));
+    final party = subcontractorRows.firstWhere((r) => r['id'] == body['party_id']);
+    final quotes = (tender['quotes'] as List).cast<Row>();
+    for (final quote in quotes) {
+      if (quote['contractor'] == party['name']) quote['current'] = false;
+    }
+    final lines = (tender['lines'] as List).cast<Row>();
+    final rates = (body['rates'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    Decimal amount = Decimal.zero;
+    for (final line in lines) {
+      final rate = rates['${line['id']}'];
+      if (rate != null) amount += Decimal.parse('$rate') * Decimal.parse('${line['qty']}');
+    }
+    if (rates.isEmpty && body['quoted_amount'] != null) amount = Decimal.parse('${body['quoted_amount']}');
+    final bidId = 900 + tenderQuotePosts.length;
+    quotes.add({
+      'bid_id': bidId,
+      'contractor': party['name'],
+      'received_on': body['received_on'],
+      'current': true,
+      'selected': false,
+      'valid_until': body['valid_until'],
+      'includes_material': body['includes_material'] == 1,
+      'completion_days': body['completion_days'],
+      'entered_by': 'Rahul Patil',
+      'rate': rates.isEmpty ? null : rates.values.first,
+      'amount': amount.toStringAsFixed(2),
+      'diff': null,
+      'diff_amount': null,
+      'diff_pct': null,
+      'lowest': false,
+      'payment_terms': body['payment_terms'],
+      'remarks': body['remarks'],
+      'has_quotation': filePath != null,
+      'quotation_name': filePath == null ? null : 'quotation.jpg',
+    });
+    tender['quote_count'] = quotes.where((q) => q['current'] != false).length;
+    return _tenderOnce[uuid] = {'id': bidId};
+  }
+
+  @override
+  Future<Uint8List> quotationBytes(int bidId) async {
+    _tenderGuard();
+    // A PDF's first bytes: not a picture.
+    return Uint8List.fromList(const [0x25, 0x50, 0x44, 0x46, 0x2D]);
+  }
+
+  @override
+  Future<Map<String, dynamic>> awardTender(int tenderId, Map<String, dynamic> body) async {
+    _tenderGuard();
+    final tender = _tenderById(tenderId)!;
+    if (tender['status'] != 'OPEN') throw const ServerFailure('This tender is closed.', statusCode: 409);
+    tenderAwards.add((tenderId, {...body}));
+    tender['status'] = 'AWARDED';
+    tender['work_order_id'] = 99;
+    tender['work_order_number'] = 'WO-99';
+    for (final Row quote in (tender['quotes'] as List).cast<Row>()) {
+      quote['selected'] = quote['bid_id'] == body['bid_id'];
+    }
+    return {
+      'work_order': {'id': 99, 'number': 'WO-99'},
+    };
+  }
+
   // Inspections ---------------------------------------------------------------
 
   /// Gives the signed-in user the plan feature and the permission to fill in

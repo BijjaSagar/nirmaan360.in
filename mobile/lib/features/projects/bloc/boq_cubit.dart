@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/api/api_failure.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show ProjectRow;
 import '../../../core/sync/sync_status.dart' show SyncOutcome, SyncRunResult;
+import '../../tenders/data/tender_repository.dart';
 import '../data/project_repository.dart';
 
 export '../data/project_repository.dart' show BoqLine;
@@ -51,6 +53,7 @@ class BoqState {
     this.all = const [],
     this.query = '',
     this.sections = const [],
+    this.markers = const <int, TenderMarker>{},
   });
 
   final BoqLoad load;
@@ -61,6 +64,10 @@ class BoqState {
   /// [all] narrowed to [query] and grouped by section.
   final List<BoqSectionLines> sections;
 
+  /// Lines in a tender, by BOQ item id, as the office last said. Read live and
+  /// kept only while the screen is open, so offline the lines show without them.
+  final Map<int, TenderMarker> markers;
+
   BoqState copyWith({
     BoqLoad? load,
     ProjectRow? project,
@@ -68,6 +75,7 @@ class BoqState {
     List<BoqLine>? all,
     String? query,
     List<BoqSectionLines>? sections,
+    Map<int, TenderMarker>? markers,
   }) {
     return BoqState(
       load: load ?? this.load,
@@ -75,6 +83,7 @@ class BoqState {
       all: all ?? this.all,
       query: query ?? this.query,
       sections: sections ?? this.sections,
+      markers: markers ?? this.markers,
     );
   }
 }
@@ -82,11 +91,14 @@ class BoqState {
 /// The BOQ of the current project. Search filters in memory, so a keystroke
 /// never waits on the database.
 class BoqCubit extends Cubit<BoqState> {
-  BoqCubit(this._services) : super(const BoqState()) {
+  BoqCubit(this._services) : tenders = TenderRepository(_services.context), super(const BoqState()) {
     _projectSub = _services.projects.watchCurrentProject().listen(_onProject);
   }
 
   final AppServices _services;
+
+  /// Tender markers beside each line, for those who may see tenders.
+  final TenderRepository tenders;
   StreamSubscription<ProjectRow?>? _projectSub;
   StreamSubscription<List<BoqLine>>? _linesSub;
 
@@ -101,6 +113,18 @@ class BoqCubit extends Cubit<BoqState> {
     emit(state.copyWith(project: project));
     _linesSub?.cancel();
     _linesSub = _services.projects.watchBoqItems(project.id).listen(_onLines);
+    _loadMarkers(project.id);
+  }
+
+  /// Best effort: without the server the BOQ still reads, just without markers.
+  Future<void> _loadMarkers(int projectId) async {
+    if (!tenders.canView || !_services.connectivity.isOnline) return;
+    try {
+      final Map<int, TenderMarker> markers = await tenders.markers(projectId);
+      if (!isClosed && state.project?.id == projectId) emit(state.copyWith(markers: markers));
+    } on ApiFailure {
+      // The last markers stay.
+    }
   }
 
   void _onLines(List<BoqLine> lines) {
@@ -124,6 +148,8 @@ class BoqCubit extends Cubit<BoqState> {
     if (!_services.connectivity.isOnline) return false;
     try {
       final SyncRunResult result = await _services.sync.syncNow();
+      final int? projectId = state.project?.id;
+      if (projectId != null) await _loadMarkers(projectId);
       // Busy means a sync is already running and will bring the same data.
       return result.isSuccess || result.outcome == SyncOutcome.busy;
     } on Object {

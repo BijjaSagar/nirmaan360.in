@@ -290,6 +290,18 @@ Needs the `site_control` plan feature. `contractor.view` reads, `contractor.requ
 - Requests still waiting are laid over the list. The figure someone without `money.view` typed is never shown back, in the list, the Sync Center or the outbox title.
 - The bill opens from `GET /contractor-payments/{id}/bill` for `money.view`. A PDF cannot be drawn on the phone, so it says to open it on the website. Approving stays on the approvals screen or the website.
 
+### Tenders and quotes on a BOQ line
+
+Needs `site_control`, `boq.view` and `contractor.view` (a store keeper sees nothing, and the offline plan has no tenders). Online only: a quote is compared, and a contractor chosen, against what the office holds now, so nothing waits in the outbox and nothing is kept on the phone. `ContractorControlPresenter::lineTenders` decides what leaves the server: without `money.view` a line says which tenders exist, who quoted and when, and nothing of rates, amounts, terms, remarks or the file.
+
+- The BOQ screen reads `GET /projects/{project}/boq` when it opens and on pull-to-refresh, and lays each line's `tenders` `{tenders, quotes, lowest_rate}` under it ("1 tender · 2 quotes · Lowest ₹450.00 per cum"). A line in no tender says "Tenders · Get quotes from contractors". Offline the BOQ shows without markers.
+- A line opens `GET /boq-items/{item}/tenders`. `can.quote` and `can.award` decide the "Add a quote" and "Select this contractor" buttons; `no_quantity` makes the quote form ask a total instead of rates. "New tender" needs `money.view` and `contractor.tender`, as on the website.
+- `POST /boq-items/{item}/tenders` takes `title` (the line's code and description to start with), `scope` and `due_on`, with a `client_uuid`.
+- The quote form reads `GET /contractors` for the picker and adds one with `POST /contractors` (`name`, `phone`, `contact_person`). It sends `POST /tenders/{tender}/bids`, always multipart: `party_id`, `rates[<tender_item_id>]` per line (or `quoted_amount`), `received_on`, `valid_until`, `includes_material` as 1 or 0, `completion_days`, `payment_terms`, `remarks`, the photo as `quotation`, and a `client_uuid`. Rates are above 0 with two decimals at most, and each line shows qty × rate as typed.
+- The `client_uuid` for a new tender and for a quote is kept under `idempotency.tender.line.<item>` and `idempotency.quote.<tender>` until the server answers, so a retry after a dropped reply never makes two.
+- "Select this contractor" sends `POST /tenders/{tender}/award` with `bid_id` and the website's starting terms (retention 5, TDS 1, GST 18, advance 0, recovery 0, deductions on gross, retention first). Percentages are sent as typed, after checking 0 to 100 and two decimals. The reply's work order opens the contract when the person may see contracts.
+- `GET /bids/{bid}/quotation` (`money.view`) shows a photo on the phone and hands a PDF to another app.
+
 ### Contractor portal
 
 A subcontractor can sign in. `GET /me` and the login reply carry `kind` (`contractor` or `staff`), `contractor` (`party_id`, `name`) and `can['contractor_portal.view']`; a reply from an older server has no `kind` and is staff. Needs the `contractor_portal` plan feature. `ContractorPortalGate` refuses a contractor with a 403 everywhere except `/contractor-portal*`, `/me`, sign-out and language, so the app must not make any other call for one.

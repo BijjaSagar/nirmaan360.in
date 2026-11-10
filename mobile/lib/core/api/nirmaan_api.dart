@@ -277,6 +277,40 @@ abstract interface class NirmaanApi {
   /// `client_uuid` in [body].
   Future<Map<String, dynamic>> postContractorPayment(int workOrderId, Map<String, dynamic> body, {String? filePath});
 
+  // Tenders on a BOQ line. Online only: a quote or an award is decided against
+  // what the office holds now. Without `money.view` the server sends who quoted
+  // and when, and no rate, amount, terms or file.
+
+  /// `GET /projects/{project}/boq`: the lines, each with `tenders`
+  /// `{tenders, quotes, lowest_rate?}` or null when it is in no tender.
+  Future<List<Map<String, dynamic>>> boqWithTenders(int projectId);
+
+  /// `GET /boq-items/{item}/tenders`: the line, its tenders and their quotes, and `can`.
+  Future<Map<String, dynamic>> boqLineTenders(int boqItemId);
+
+  /// `POST /boq-items/{item}/tenders` with `title`, `scope`, `due_on` and `client_uuid`.
+  Future<Map<String, dynamic>> createLineTender(int boqItemId, Map<String, dynamic> body);
+
+  /// `GET /contractors?q=`: the company's subcontractors, for the quote form.
+  Future<List<Map<String, dynamic>>> subcontractors({String? query});
+
+  /// `POST /contractors`: a new subcontractor. Returns `{id, name, ...}`.
+  Future<Map<String, dynamic>> createSubcontractor(Map<String, dynamic> body);
+
+  /// `GET /tenders/{tender}`: every quote side by side.
+  Future<Map<String, dynamic>> tenderComparison(int tenderId);
+
+  /// `POST /tenders/{tender}/bids`, multipart with the quotation as
+  /// `quotation` when there is one. A repeated `client_uuid` returns the first quote.
+  Future<Map<String, dynamic>> postTenderQuote(int tenderId, Map<String, dynamic> body, {String? filePath});
+
+  /// `GET /bids/{bid}/quotation`. Needs `money.view`.
+  Future<Uint8List> quotationBytes(int bidId);
+
+  /// `POST /tenders/{tender}/award` with `bid_id` and the contract terms.
+  /// Returns the work order it made.
+  Future<Map<String, dynamic>> awardTender(int tenderId, Map<String, dynamic> body);
+
   // Inspections. Reads fill a cache on the phone. A finished inspection is sent
   // whole, from the outbox, because that is the one call the server repeats safely.
 

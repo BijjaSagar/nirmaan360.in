@@ -13,6 +13,12 @@ abstract final class Routes {
   /// BOQ lines of the current project, and adding one.
   static const boq = '/boq';
   static const boqForm = '/boq/form';
+
+  /// A BOQ line's tenders, a quote for one of them, and choosing a quote.
+  static String boqTenders(int boqItemId) => '/boq/$boqItemId/tenders';
+  static String tenderQuote(int boqItemId, int tenderId) => '/boq/$boqItemId/tenders/$tenderId/quote';
+  static String tenderAward(int boqItemId, int tenderId, int bidId) =>
+      '/boq/$boqItemId/tenders/$tenderId/award?bid=$bidId';
   static const home = '/home';
   static const outbox = '/outbox';
   static const settings = '/settings';
