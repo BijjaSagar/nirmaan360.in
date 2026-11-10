@@ -446,4 +446,30 @@ class BoqPdfImportTest extends ReportsTestCase
 
         $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('इम्पोर्ट से पहले PDF जाँचें')->assertSee('ये 10 पंक्तियाँ इम्पोर्ट करें');
     }
+
+    public function test_reading_a_pdf_gives_no_time_limit_to_a_process_that_has_none(): void
+    {
+        // The console, the queue and this test run have no limit. One set here would stop the process later, part way through other work.
+        $this->assertSame('0', ini_get('max_execution_time'));
+
+        $read = app(BoqPdfReader::class)->read($this->pdf($this->estimate())->getRealPath());
+
+        $this->assertTrue($read->ok());
+        $this->assertSame('0', ini_get('max_execution_time'));
+    }
+
+    public function test_reading_a_pdf_in_a_web_request_raises_a_shorter_time_limit_only(): void
+    {
+        try {
+            // A web request gets a limit from PHP-FPM. A short one is raised to 120 seconds, a longer one is kept.
+            foreach (['30' => '120', '300' => '300'] as $given => $expected) {
+                set_time_limit((int) $given);
+
+                $this->assertTrue(app(BoqPdfReader::class)->read($this->pdf($this->estimate())->getRealPath())->ok());
+                $this->assertSame($expected, ini_get('max_execution_time'));
+            }
+        } finally {
+            set_time_limit(0);
+        }
+    }
 }

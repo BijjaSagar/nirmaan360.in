@@ -60,7 +60,7 @@ final class BoqPdfReader
         }
 
         Memory::ensure();
-        @set_time_limit(120);
+        self::allowTime(120);
         $deadline = hrtime(true) + self::TIME_BUDGET_SECONDS * 1_000_000_000;
 
         try {
@@ -372,5 +372,19 @@ final class BoqPdfReader
     private function slow(): string
     {
         return __('This PDF is too complex to read in the time allowed. Export only the estimate pages, or upload the Excel file instead.');
+    }
+
+    /**
+     * A web request has a time limit, and a long PDF can need more of it, so a lower limit is raised.
+     * The console, the queue and the tests have no limit (0), and are not given one: set_time_limit()
+     * would start a timer that stops the whole process later, part way through other work.
+     */
+    private static function allowTime(int $seconds): void
+    {
+        $limit = (int) ini_get('max_execution_time');
+
+        if ($limit > 0) {
+            @set_time_limit(max($limit, $seconds));
+        }
     }
 }

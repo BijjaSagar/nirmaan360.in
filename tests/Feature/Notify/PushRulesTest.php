@@ -475,12 +475,14 @@ class PushRulesTest extends NotifyTestCase
         $morning = Carbon::parse('2026-11-11 07:00', 'Asia/Kolkata')->timestamp;
         $this->assertEqualsCanonicalizing([$morning, $night, $night], DB::table('jobs')->pluck('available_at')->map(fn ($at) => (int) $at)->all());
 
-        // The worker stops after one job once its process is over the memory limit, and late in the whole suite this
-        // process is far over the default of 128 MB. So the limit is lifted here; it is not part of what is tested.
-        $work = ['connection' => 'database', '--stop-when-empty' => true, '--sleep' => 0, '--memory' => 4096];
+        // One job per run. A worker started without --once is a daemon: it puts signal handlers on this whole process,
+        // and they would go off later in the middle of another test (see Tests\TestCase::tearDown).
+        $work = ['connection' => 'database', '--once' => true, '--sleep' => 0];
 
-        // That night the worker sends the critical one and leaves the other where it is.
-        $this->artisan('queue:work', $work);
+        // That night the worker sends the critical push and its email. A third run finds nothing due and leaves the held push where it is.
+        for ($run = 1; $run <= 3; $run++) {
+            $this->artisan('queue:work', $work);
+        }
         $this->assertSame(['Deadline passed · Riverside Tower'], $this->titlesSent());
         $this->assertSame(1, DB::table('jobs')->count());
 
