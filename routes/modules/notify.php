@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Notify\AnnouncementController;
 use App\Http\Controllers\Notify\CompanyDataController;
 use App\Http\Controllers\Notify\IntegrationController;
 use App\Http\Controllers\Notify\NotificationPreferenceController;
@@ -27,6 +28,20 @@ Route::prefix('admin')->name('admin.')->middleware(EnsurePlatformAdmin::class)->
     // Reloading a test result, or a browser restoring the tab, asks for these addresses with GET. Send it back to the page.
     Route::get('/integrations/{integration}/test', 'backToPage')->whereIn('integration', Integrations::NAMES)->name('integrations.test.back');
     Route::get('/integrations/fcm/send-to-me', 'backToPage')->name('integrations.push-test.back');
+});
+
+// Broadcasts and reminders. Platform staff write to any company; the form posts a file, so it is a plain POST.
+Route::prefix('admin')->name('admin.')->middleware(EnsurePlatformAdmin::class)->controller(AnnouncementController::class)->group(function () {
+    Route::get('/announcements', 'index')->name('announcements');
+    Route::post('/announcements', 'store')->name('announcements.store')->middleware('throttle:20,1');
+    Route::post('/announcements/{announcement}/cancel', 'cancel')->whereNumber('announcement')->name('announcements.cancel');
+});
+
+// A company's own admin writes to their own company only. The controller checks each announcement is theirs.
+Route::middleware('can:settings.manage')->controller(AnnouncementController::class)->group(function () {
+    Route::get('/announcements', 'index')->name('notify.announcements');
+    Route::post('/announcements', 'store')->name('notify.announcements.store')->middleware('throttle:20,1');
+    Route::post('/announcements/{announcement}/cancel', 'cancel')->whereNumber('announcement')->name('notify.announcements.cancel');
 });
 
 // Selfies are personal data, so viewing one needs the manage permission and not just attendance.view.

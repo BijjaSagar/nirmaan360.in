@@ -22,6 +22,8 @@ namespace App\Services\Notify;
  *   issue               id = issue. Open the issue: uuid is its client_uuid when it has one.
  *   portal_payment      id = payment, for a contractor login. Open GET /contractor-portal/payments.
  *   portal_bill         id = bill, for a contractor login. Open GET /contractor-portal/bills/{id}.
+ *   announcement        id = announcement. Open the list GET /announcements (GET /contractor-portal/announcements
+ *                       for a contractor login) at that one. repeats is "1" for a daily or weekly reminder.
  *   test                The admin's test push. Nothing to open.
  *   link                Anything else. Nothing to open in the app; url is the web page.
  */

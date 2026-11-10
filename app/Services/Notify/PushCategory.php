@@ -21,8 +21,11 @@ final class PushCategory
 
     public const ISSUES = 'issues';
 
-    /** The only kind a contractor login receives: its own payments and bills. */
+    /** A contractor login's own payments and bills. With announcements, all it receives. */
     public const CONTRACTOR = 'contractor';
+
+    /** Broadcasts and reminders from the company's admin or from platform staff. Offered to everyone. */
+    public const ANNOUNCEMENTS = 'announcements';
 
     /** A staff switch is offered to someone who holds any one of these permissions. An empty list means everyone. */
     private const STAFF = [
@@ -31,6 +34,7 @@ final class PushCategory
         self::PAYMENTS => ['contractor.request', 'contractor.approve'],
         self::MATERIAL => ['material_control.reason'],
         self::ISSUES => ['issue.view'],
+        self::ANNOUNCEMENTS => [],
     ];
 
     /**
@@ -41,7 +45,7 @@ final class PushCategory
     public static function namesFor(User $user): array
     {
         if ($user->isContractor()) {
-            return [self::CONTRACTOR];
+            return [self::CONTRACTOR, self::ANNOUNCEMENTS];
         }
 
         $names = [];
@@ -70,6 +74,7 @@ final class PushCategory
             self::MATERIAL => __('Material checks', [], $locale),
             self::ISSUES => __('Issues', [], $locale),
             self::CONTRACTOR => __('My payments and bills', [], $locale),
+            self::ANNOUNCEMENTS => __('Announcements and reminders', [], $locale),
             default => $category,
         };
     }
@@ -83,6 +88,7 @@ final class PushCategory
             self::MATERIAL => __('A material gap or a short delivery needs a written reason.', [], $locale),
             self::ISSUES => __('An issue was assigned to you, raised as urgent, or changed status.', [], $locale),
             self::CONTRACTOR => __('A payment to you was approved, or one of your bills was paid.', [], $locale),
+            self::ANNOUNCEMENTS => __('News and reminders sent by your company or by :app. They wait for the end of quiet hours.', ['app' => config('buildos.brand')], $locale),
             default => '',
         };
     }

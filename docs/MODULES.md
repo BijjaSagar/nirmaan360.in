@@ -92,6 +92,10 @@ A site alert needs none of this: the engine pushes every new alert to everyone w
 
 Firebase's service account is saved under Platform admin > Integrations, encrypted like the other integration secrets. The `FIREBASE_CREDENTIALS_BASE64` environment variable (the same file in base64) is used only while nothing is saved there. With neither, push is off and nothing else changes.
 
+A push may carry a picture: pass a public `https` address as `image` on the `NotificationMessage`. `FcmGateway` puts it in the notification for Android and in `fcm_options.image` with `mutable-content` for the iPhone app's notification service extension, and drops anything that is not `https` (plain `http` only on a local machine).
+
+Broadcasts and reminders written by people, rather than by a module, are announcements: Platform admin > Announcements for every company or some of them, and Account > Announcements for a company's own admin (`settings.manage`). `AnnouncementService` sends them through `PushDispatcher` under the `announcements` switch, now, at a set time or every day or week (`announcements:send-due` runs every minute), keeps who each one reached in `announcement_recipients`, and the app lists them from `GET /announcements`. A module that needs to tell people something should still use `Notifier` with its own category.
+
 ## Contractor logins
 
 A role marked `'portal' => true` in `config/buildos.php` (today only `contractor`) is an outside login, not a team member. `User::isContractor()` names it, `App\Http\Middleware\ContractorPortalGate` turns it away from every signed-in route outside `contractor-portal.*` and `api/v1/contractor-portal/*`, the team screens never offer or edit it, and it takes no seat on the plan. It is handed out from the contractor's page by whoever holds the role's `managed_by` permission, through the ordinary invitation flow with `contractor_party_id` set. A new module needs nothing for this: the gate refuses a contractor before the module's routes run. `tests/Feature/ContractorPortal/ContractorPortalBoundaryTest` walks every route to prove it.

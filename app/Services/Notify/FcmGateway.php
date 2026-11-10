@@ -182,21 +182,45 @@ class FcmGateway
             'url' => $message->url,
         ];
 
+        // Android draws the picture itself. iOS needs the app's notification service extension, which
+        // mutable-content wakes and which downloads fcm_options.image before the notification shows.
+        $image = $this->imageUrl($message);
+
         return ['message' => [
             'token' => $deviceToken,
-            'notification' => array_filter(['title' => Str::limit($message->title, 120), 'body' => Str::limit($message->body, 300)]),
+            'notification' => array_filter(['title' => Str::limit($message->title, 120), 'body' => Str::limit($message->body, 300), 'image' => $image]),
             'data' => array_map(strval(...), array_filter($data, fn ($value) => $value !== null)),
             'android' => [
                 'priority' => 'HIGH',
                 'ttl' => $ttl.'s',
-                'notification' => array_filter(['channel_id' => $message->critical ? self::CHANNEL_CRITICAL : self::CHANNEL_UPDATES, 'tag' => $tag]),
+                'notification' => array_filter(['channel_id' => $message->critical ? self::CHANNEL_CRITICAL : self::CHANNEL_UPDATES, 'tag' => $tag, 'image' => $image]),
             ],
-            'apns' => [
+            'apns' => array_filter([
                 'headers' => array_filter(['apns-priority' => '10', 'apns-expiration' => (string) (now()->timestamp + $ttl), 'apns-collapse-id' => $tag]),
                 // Time-sensitive lets a critical push through a Focus mode when the app holds that capability; without it iOS shows it as usual.
-                'payload' => ['aps' => array_filter(['sound' => 'default', 'interruption-level' => $message->critical ? 'time-sensitive' : null])],
-            ],
+                'payload' => ['aps' => array_filter([
+                    'sound' => 'default',
+                    'interruption-level' => $message->critical ? 'time-sensitive' : null,
+                    'mutable-content' => $image === null ? null : 1,
+                ])],
+                'fcm_options' => $image === null ? null : ['image' => $image],
+            ]),
         ]];
+    }
+
+    /**
+     * Only an https address: iOS will not fetch a picture over plain http, and Firebase may refuse it.
+     * A local machine, which has no certificate, may use http so the Android emulator can be tested.
+     */
+    private function imageUrl(NotificationMessage $message): ?string
+    {
+        $url = $message->image ?? null;
+
+        if (! is_string($url) || strlen($url) > 2048) {
+            return null;
+        }
+
+        return str_starts_with($url, 'https://') || (app()->environment('local') && str_starts_with($url, 'http://')) ? $url : null;
     }
 
     /** The saved file wins over the environment, as every setting saved in /admin does. */
