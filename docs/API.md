@@ -24,6 +24,8 @@ With the default roles: owner and project manager may do everything. The estimat
 
 **Money.** Without `money.view` the tender endpoints leave the keys for prices out, rather than sending null. (The BOQ list keeps its `rate` key as null, as before.) That covers rates, amounts, differences, the lowest flags, payment terms, remarks, the quotation file, the tender's scope and the award note, because free text may quote a price. Quotes then come current first in the order received, since cheapest first would itself say who quoted least.
 
+**Write replies.** `POST /boq-items/{item}/tenders`, `POST /tenders/{tender}/bids` and `POST /tenders/{tender}/award` answer with the whole tender, as `GET /tenders/{tender}` shows it, only to someone who may read that (`boq.view` and `contractor.view`). A role that may enter or choose quotes without that read gets only `{id, number, title, status, work_order_id, work_order_number}` in `data`, with `bid_id` or `work_order` beside it as usual.
+
 **Errors.** A record of another company, or of a project the person is not given, answers 404, whatever its id. A missing permission answers 403. Validation answers 422 in Laravel's shape, `{"message": "...", "errors": {"field": ["..."]}}`.
 
 **`can`.** The line and the tender say what this person may do. `can.quote` means they may start a tender from the line and add quotes. `can.award` means they may choose a winner. On a tender both are false once it is no longer `OPEN`.

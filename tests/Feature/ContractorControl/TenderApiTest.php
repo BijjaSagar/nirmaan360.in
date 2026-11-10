@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\BoqItem;
 use App\Models\ContractorBid;
 use App\Models\ContractorTender;
+use App\Models\CustomRole;
 use App\Models\Party;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -260,7 +261,9 @@ class TenderApiTest extends TestCase
             $response = $this->as($role)->getJson(route('api.boq.tenders.show', $this->item))->assertOk();
 
             $this->assertNoMoney($response, $role);
-            $response->assertJsonPath('data.quote_count', 2)->assertJsonPath('data.tenders.0.quotes.2.contractor', 'Contractor B');
+            // Current quotes first in the order received, then the replaced one, as on GET /tenders/{tender}.
+            $response->assertJsonPath('data.quote_count', 2)->assertJsonPath('data.tenders.0.quotes.1.contractor', 'Contractor B')
+                ->assertJsonPath('data.tenders.0.quotes.0.current', true)->assertJsonPath('data.tenders.0.quotes.2.current', false);
         }
     }
 
@@ -652,5 +655,32 @@ class TenderApiTest extends TestCase
         $this->assertSame(1, ContractorTender::withoutGlobalScopes()->count());
         $this->assertSame(1, ContractorBid::withoutGlobalScopes()->count());
         $this->assertSame(0, WorkOrder::withoutGlobalScopes()->count());
+    }
+
+    /** A role allowed to enter or choose quotes but not to compare them gets the tender's own record back, never the other quotes. */
+    public function test_a_write_reply_holds_the_comparison_only_for_someone_who_may_read_it(): void
+    {
+        [$tender, , , $b] = $this->flooring();
+        $role = CustomRole::create(['organization_id' => $this->organization->id, 'name' => 'Quote entry', 'permissions' => ['project.view', 'money.view', 'contractor.tender', 'contractor.award']]);
+        $clerk = $this->member($this->organization, 'viewer');
+        $clerk->forceFill(['custom_role_id' => $role->id])->save();
+        $clerk = $clerk->refresh();
+
+        $this->as($clerk)->getJson(route('api.contractor-control.tenders.show', $tender))->assertForbidden();
+
+        $quoted = $this->as($clerk)->postJson(route('api.contractor-control.tenders.bids.store', $tender), [
+            'party_id' => $this->contractorNamed('Contractor C')->id, 'quoted_amount' => '100000',
+        ])->assertCreated();
+
+        $this->assertSame(['id', 'number', 'title', 'status', 'work_order_id', 'work_order_number'], array_keys($quoted->json('data')));
+        $this->assertIsInt($quoted->json('bid_id'));
+        $this->assertStringNotContainsString('90000', $quoted->getContent());
+        $this->assertStringNotContainsString('30 days after the bill', $quoted->getContent());
+
+        $awarded = $this->as($clerk)->postJson(route('api.contractor-control.tenders.award', $tender), $this->awardTerms($b))->assertCreated();
+
+        $this->assertSame(['id', 'number', 'title', 'status', 'work_order_id', 'work_order_number'], array_keys($awarded->json('data')));
+        $awarded->assertJsonPath('data.status', 'AWARDED')->assertJsonPath('work_order.id', $awarded->json('data.work_order_id'));
+        $this->assertStringNotContainsString('Tiles from Morbi', $awarded->getContent());
     }
 }

@@ -99,10 +99,26 @@ class TenderApiController extends Controller
         ], $workOrder->wasRecentlyCreated ? 201 : 200);
     }
 
-    /** Read again after a write, so the quotes, the lowest and the status are the ones now saved. */
+    /**
+     * Read again after a write, so the quotes, the lowest and the status are the ones now saved.
+     * The comparison is what GET /tenders/{tender} shows, so it goes only to someone allowed that read.
+     * A role that may enter quotes or choose one without seeing the comparison gets the tender's own
+     * record and nothing about the other quotes, as on the web, where those actions just go back.
+     */
     private function present(ContractorTender $tender, User $user): array
     {
         $tender = $tender->fresh();
+
+        if (! $user->can('boq.view') || ! $user->can('contractor.view')) {
+            return [
+                'id' => $tender->id,
+                'number' => $tender->number,
+                'title' => $tender->title,
+                'status' => $tender->status,
+                'work_order_id' => $tender->work_order_id,
+                'work_order_number' => $tender->workOrder?->number,
+            ];
+        }
 
         return ContractorControlPresenter::tender($tender, $this->tenders->comparison($tender), Money::visible($user), $this->lines->abilities($user, $tender));
     }

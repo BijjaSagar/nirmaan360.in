@@ -180,9 +180,10 @@ final class ContractorControlPresenter
         $tender = $row['tender'];
         $quotes = $row['quotes'];
 
-        // Cheapest first would itself say who quoted least, so without money they come in the order received.
+        // Cheapest first would itself say who quoted least, so without money they come in the order received,
+        // current ones first, the same as GET /tenders/{tender}.
         if (! $canSeeMoney) {
-            usort($quotes, fn (array $a, array $b) => $a['bid']->id <=> $b['bid']->id);
+            usort($quotes, fn (array $a, array $b) => [! $a['current'], $a['bid']->id] <=> [! $b['current'], $b['bid']->id]);
         }
 
         $base = [
