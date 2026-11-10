@@ -172,7 +172,7 @@ class TenderApiTest extends TestCase
 
         // The rest of each row is as the app already reads it.
         $this->assertSame(
-            ['id', 'project_id', 'section', 'code', 'description', 'unit', 'qty', 'rate', 'sort', 'measured_qty', 'approved_qty', 'balance_qty', 'updated_at', 'tenders'],
+            ['id', 'project_id', 'section', 'code', 'description', 'unit', 'qty', 'rate', 'amount', 'balance_amount', 'sort', 'measured_qty', 'approved_qty', 'balance_qty', 'updated_at', 'tenders'],
             array_keys($rows[$this->item->id]),
         );
         $this->assertSame(['100.000', '1000.00', '100.000'], [$rows[$this->item->id]['qty'], $rows[$this->item->id]['rate'], $rows[$this->item->id]['balance_qty']]);

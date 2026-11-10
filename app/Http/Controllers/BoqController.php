@@ -6,6 +6,7 @@ use App\Http\Presenters\ContractorControlPresenter;
 use App\Models\BoqItem;
 use App\Models\Project;
 use App\Services\BoqService;
+use App\Services\BoqValues;
 use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ProjectSetup\BoqCategories;
 use App\Services\ProjectSetup\BoqRevisions;
@@ -33,7 +34,7 @@ class BoqController extends Controller
         $items = BoqItem::withLedger()->with('section')->where('project_id', $project->id)->orderBy('sort')->orderBy('id')->get();
 
         // Values are money, so they are only worked out for someone who may see them.
-        $values = Money::visible() ? $this->values($items) : null;
+        $values = Money::visible() ? BoqValues::of($items) : null;
 
         return view('boq.index', [
             'project' => $project,
@@ -55,35 +56,6 @@ class BoqController extends Controller
         $user = $request->user();
 
         return ContractorControlPresenter::tenderMarkers($this->lineTenders->markersFor($user, $project), Money::visible($user));
-    }
-
-    /**
-     * Each line's value (BOQ quantity × rate) and the value of what is still to be measured
-     * (balance quantity × rate), with totals for each section and for the whole BOQ.
-     *
-     * @return array{lines: array<int, array{amount:string, balance:string}>, sections: array<string, array{amount:string, balance:string}>, grand: array{amount:string, balance:string}}
-     */
-    private function values($items): array
-    {
-        $lines = [];
-        $sections = [];
-        $grand = ['amount' => Dec::of(0), 'balance' => Dec::of(0)];
-
-        foreach ($items as $item) {
-            $amount = Dec::of($item->amount());
-            $balance = Dec::of($item->balanceQty())->multipliedBy(Dec::of($item->rate));
-            $section = (string) $item->section?->name;
-
-            $lines[$item->id] = ['amount' => Dec::money($amount), 'balance' => Dec::money($balance)];
-            $sections[$section]['amount'] = ($sections[$section]['amount'] ?? Dec::of(0))->plus($amount);
-            $sections[$section]['balance'] = ($sections[$section]['balance'] ?? Dec::of(0))->plus($balance);
-            $grand['amount'] = $grand['amount']->plus($amount);
-            $grand['balance'] = $grand['balance']->plus($balance);
-        }
-
-        $money = fn (array $pair) => ['amount' => Dec::money($pair['amount']), 'balance' => Dec::money($pair['balance'])];
-
-        return ['lines' => $lines, 'sections' => array_map($money, $sections), 'grand' => $money($grand)];
     }
 
     public function store(Request $request, Project $project): RedirectResponse

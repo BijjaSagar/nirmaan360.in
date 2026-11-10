@@ -32,17 +32,22 @@ With the default roles: owner and project manager may do everything. The estimat
 
 ### `GET /projects/{project}/boq`
 
-Unchanged, except that each line gains `tenders`: the marker the web BOQ table shows. It counts tenders that are not cancelled, and only each contractor's latest quote. `lowest_rate` is only there for `money.view`. `tenders` is null for a line with no tender, and on every line for someone who may not see tenders (no `contractor.view`, or a plan without the module).
+Each line carries `amount` (quantity × rate) and `balance_amount` (balance quantity × rate), and the reply carries `totals` beside `data`: the whole BOQ and each section in BOQ order, the same figures as the web BOQ page. They are money, so without `money.view` the line fields are null and `totals` is null. `amount` and `balance_amount` also come in `/sync/pull` `boq_items`, which share the line's shape.
 
-`tenders` is not in `/sync/pull`, whose `boq_items` keep their shape: a new quote changes the marker without changing the line, so a delta pull would not carry it. Read it from this endpoint while online.
+Each line also gains `tenders`: the marker the web BOQ table shows. It counts tenders that are not cancelled, and only each contractor's latest quote. `lowest_rate` is only there for `money.view`. `tenders` is null for a line with no tender, and on every line for someone who may not see tenders (no `contractor.view`, or a plan without the module).
+
+`tenders` is not in `/sync/pull`: a new quote changes the marker without changing the line, so a delta pull would not carry it. Read it from this endpoint while online.
 
 ```json
 {"data": [{
   "id": 1, "project_id": 1, "section": "Superstructure", "code": "2.1", "description": "RCC M25 in slab", "unit": "cum",
-  "qty": "100.000", "rate": "1000.00", "sort": 0, "measured_qty": "0.000", "approved_qty": "0.000", "balance_qty": "100.000",
+  "qty": "100.000", "rate": "1000.00", "amount": "100000.00", "balance_amount": "100000.00", "sort": 0,
+  "measured_qty": "0.000", "approved_qty": "0.000", "balance_qty": "100.000",
   "updated_at": "2026-11-10T18:50:19+05:30",
   "tenders": {"tenders": 1, "quotes": 2, "lowest_rate": "900.00"}
-}]}
+}],
+ "totals": {"amount": "100000.00", "balance_amount": "100000.00",
+            "sections": [{"section": "Superstructure", "amount": "100000.00", "balance_amount": "100000.00"}]}}
 ```
 
 ### `GET /boq-items/{item}/tenders`

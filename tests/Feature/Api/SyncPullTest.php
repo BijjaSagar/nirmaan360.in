@@ -66,7 +66,7 @@ class SyncPullTest extends ApiTestCase
         $this->assertSame(['id', 'name', 'role'], array_keys($body['users'][0]));
         $this->assertSame(['id', 'code', 'name', 'location', 'status', 'start_date', 'end_date', 'measurement_tolerance_pct', 'image_url', 'updated_at'], array_keys($body['projects'][0]));
         $this->assertSame(['id', 'project_id', 'name', 'address', 'updated_at'], array_keys($body['sites'][0]));
-        $this->assertSame(['id', 'project_id', 'section', 'code', 'description', 'unit', 'qty', 'rate', 'sort', 'measured_qty', 'approved_qty', 'balance_qty', 'updated_at'], array_keys($body['boq_items'][0]));
+        $this->assertSame(['id', 'project_id', 'section', 'code', 'description', 'unit', 'qty', 'rate', 'amount', 'balance_amount', 'sort', 'measured_qty', 'approved_qty', 'balance_qty', 'updated_at'], array_keys($body['boq_items'][0]));
         $this->assertSame(['id', 'name', 'phone', 'trade', 'type', 'is_active', 'updated_at'], array_keys($body['workers'][0]));
         $this->assertSame(['id', 'project_id', 'name', 'user_id', 'balance', 'updated_at'], array_keys($body['wallets'][0]));
         $this->assertSame(['id', 'client_uuid', 'project_id', 'site_id', 'report_date', 'weather', 'summary', 'hindrances', 'status', 'created_by', 'created_by_name', 'manpower', 'machinery', 'work_items', 'photos', 'return_remark', 'client_updated_at', 'updated_at'], array_keys($body['dprs'][0]));

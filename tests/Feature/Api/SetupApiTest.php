@@ -287,7 +287,7 @@ class SetupApiTest extends ApiTestCase
             ->assertJsonPath('data.approved_qty', '0.000')
             ->assertJsonPath('data.balance_qty', '10.500');
 
-        $this->assertSame(['id', 'project_id', 'section', 'code', 'description', 'unit', 'qty', 'rate', 'sort', 'measured_qty', 'approved_qty', 'balance_qty', 'updated_at'], array_keys($response->json('data')));
+        $this->assertSame(['id', 'project_id', 'section', 'code', 'description', 'unit', 'qty', 'rate', 'amount', 'balance_amount', 'sort', 'measured_qty', 'approved_qty', 'balance_qty', 'updated_at'], array_keys($response->json('data')));
     }
 
     public function test_a_line_needs_description_unit_qty_and_rate(): void

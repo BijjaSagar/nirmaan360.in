@@ -10,6 +10,7 @@ use App\Http\Presenters\ProjectPresenter;
 use App\Models\BoqItem;
 use App\Models\Project;
 use App\Services\BoqService;
+use App\Services\BoqValues;
 use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ProjectService;
 use App\Support\Money;
@@ -57,9 +58,12 @@ class ProjectApiController extends Controller
         $user = $request->user();
         $tenders = ContractorControlPresenter::tenderMarkers($this->lineTenders->markersFor($user, $project), Money::visible($user));
 
+        $items = BoqItem::withLedger()->with('section')->where('project_id', $project->id)->orderBy('sort')->orderBy('id')->get();
+
         return response()->json([
-            'data' => BoqItem::withLedger()->with('section')->where('project_id', $project->id)->orderBy('sort')->orderBy('id')->get()
-                ->map(fn (BoqItem $item) => [...BoqItemPresenter::present($item), 'tenders' => $tenders[$item->id] ?? null]),
+            'data' => $items->map(fn (BoqItem $item) => [...BoqItemPresenter::present($item), 'tenders' => $tenders[$item->id] ?? null]),
+            // The same totals as the web BOQ page. Money, so null to anyone who may not see it.
+            'totals' => Money::visible($user) ? BoqItemPresenter::totals(BoqValues::of($items)) : null,
         ]);
     }
 
