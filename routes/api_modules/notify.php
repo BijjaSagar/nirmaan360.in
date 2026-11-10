@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Notify\AnnouncementApiController;
 use App\Http\Controllers\Notify\NotifyApiController;
 use App\Http\Controllers\Notify\SelfieAttendanceApiController;
 use Illuminate\Support\Facades\Route;
@@ -9,13 +10,16 @@ Route::post('/devices', [NotifyApiController::class, 'storeDevice']);
 Route::delete('/devices', [NotifyApiController::class, 'destroyDevice']);
 Route::get('/notification-preferences', [NotifyApiController::class, 'preferences']);
 Route::put('/notification-preferences', [NotifyApiController::class, 'updatePreferences']);
+// What was announced to this person, which a push of type "announcement" opens.
+Route::get('/announcements', [AnnouncementApiController::class, 'index']);
 
-// The same four for a contractor login, whose gate lets through nothing outside /contractor-portal.
+// The same five for a contractor login, whose gate lets through nothing outside /contractor-portal.
 Route::middleware(['feature:contractor_portal', 'can:contractor_portal.view'])->prefix('contractor-portal')->group(function () {
     Route::post('/devices', [NotifyApiController::class, 'storeDevice']);
     Route::delete('/devices', [NotifyApiController::class, 'destroyDevice']);
     Route::get('/notification-preferences', [NotifyApiController::class, 'preferences']);
     Route::put('/notification-preferences', [NotifyApiController::class, 'updatePreferences']);
+    Route::get('/announcements', [AnnouncementApiController::class, 'index']);
 });
 
 Route::middleware(['feature:labour', 'can:attendance.manage'])->group(function () {

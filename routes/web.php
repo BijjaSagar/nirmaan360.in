@@ -18,6 +18,7 @@ use App\Http\Controllers\IssueController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Notify\AnnouncementController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\PettyCashController;
 use App\Http\Controllers\ProjectController;
@@ -39,6 +40,8 @@ Route::post('/contact', [PublicController::class, 'storeContact'])->name('contac
 Route::get('/privacy', [PublicController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [PublicController::class, 'terms'])->name('terms');
 Route::get('/brand/logo', [PublicController::class, 'logo'])->name('brand.logo');
+// An announcement's picture, fetched by Firebase and by phones without signing in. See AnnouncementController::image.
+Route::get('/announcement-images/{token}', [AnnouncementController::class, 'image'])->where('token', '[A-Za-z0-9]{40}')->name('announcements.image')->middleware('throttle:600,1');
 Route::get('/locale/{locale}', LocaleController::class)->name('locale');
 
 // Sitemap, robots.txt and the Hindi and Marathi addresses of the pages above.

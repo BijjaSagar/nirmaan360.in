@@ -3,6 +3,7 @@
 namespace App\Jobs\Notify;
 
 use App\Models\User;
+use App\Services\Notify\AnnouncementTally;
 use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\Notifier;
 use App\Services\Notify\PermanentDeliveryFailure;
@@ -51,6 +52,10 @@ class DeliverNotification implements ShouldQueue
     public function failed(?Throwable $exception): void
     {
         app(Notifier::class)->recordFailure($this->userId, $this->channel, $this->message->event, $exception);
+
+        if ($this->channel === 'push') {
+            AnnouncementTally::count($this->message, AnnouncementTally::FAILED);
+        }
     }
 
     /** Keys and mail settings saved in /admin must reach a worker that started before they were saved. */

@@ -32,9 +32,9 @@ class PushPreferencesTest extends NotifyTestCase
             ->assertJsonPath('data.push.connected', false)
             ->assertJsonPath('data.push.quiet_hours', ['enabled' => true, 'from' => '22:00', 'until' => '07:00', 'timezone' => 'Asia/Kolkata']);
 
-        $this->assertSame(['alerts', 'approvals', 'payments', 'material', 'issues'], array_column($response->json('data.push.categories'), 'key'));
-        $this->assertSame(['Site alerts', 'Approvals', 'Contractor payments', 'Material checks', 'Issues'], array_column($response->json('data.push.categories'), 'label'));
-        $this->assertSame([true, true, true, true, true], array_column($response->json('data.push.categories'), 'enabled'));
+        $this->assertSame(['alerts', 'approvals', 'payments', 'material', 'issues', 'announcements'], array_column($response->json('data.push.categories'), 'key'));
+        $this->assertSame(['Site alerts', 'Approvals', 'Contractor payments', 'Material checks', 'Issues', 'Announcements and reminders'], array_column($response->json('data.push.categories'), 'label'));
+        $this->assertSame([true, true, true, true, true, true], array_column($response->json('data.push.categories'), 'enabled'));
         $this->assertNotEmpty($response->json('data.push.categories.0.hint'));
     }
 
@@ -43,11 +43,11 @@ class PushPreferencesTest extends NotifyTestCase
         $organization = $this->tenant();
 
         foreach ([
-            'owner' => ['alerts', 'approvals', 'payments', 'material', 'issues'],
-            'accounts' => ['alerts', 'approvals', 'payments'],
-            'engineer' => ['alerts', 'approvals', 'payments', 'material', 'issues'],
-            'store' => ['alerts', 'approvals', 'material', 'issues'],
-            'viewer' => ['alerts', 'approvals', 'issues'],
+            'owner' => ['alerts', 'approvals', 'payments', 'material', 'issues', 'announcements'],
+            'accounts' => ['alerts', 'approvals', 'payments', 'announcements'],
+            'engineer' => ['alerts', 'approvals', 'payments', 'material', 'issues', 'announcements'],
+            'store' => ['alerts', 'approvals', 'material', 'issues', 'announcements'],
+            'viewer' => ['alerts', 'approvals', 'issues', 'announcements'],
         ] as $role => $expected) {
             Sanctum::actingAs($this->member($organization, $role));
 
@@ -76,7 +76,7 @@ class PushPreferencesTest extends NotifyTestCase
             'quiet_hours' => ['from' => '21:30', 'until' => '06:15'],
         ])->assertOk()->assertJsonPath('data.push.quiet_hours.from', '21:30')->assertJsonPath('data.push.quiet_hours.until', '06:15')->assertJsonPath('data.push.quiet_hours.enabled', true);
 
-        $this->assertSame(['alerts' => false, 'approvals' => true, 'payments' => true, 'material' => false, 'issues' => true], array_column($response->json('data.push.categories'), 'enabled', 'key'));
+        $this->assertSame(['alerts' => false, 'approvals' => true, 'payments' => true, 'material' => false, 'issues' => true, 'announcements' => true], array_column($response->json('data.push.categories'), 'enabled', 'key'));
 
         // A later change touches only what it names.
         $this->putJson(self::API.'/notification-preferences', ['categories' => ['alerts' => true], 'quiet_hours' => ['enabled' => false]])->assertOk();
@@ -147,7 +147,8 @@ class PushPreferencesTest extends NotifyTestCase
         ])->assertRedirect()->assertSessionHas('success');
 
         $saved = $this->saved($user);
-        $this->assertSame(['alerts' => false, 'approvals' => true, 'payments' => true, 'material' => true, 'issues' => false], $saved->push_categories);
+        // Unticked boxes are sent as off, the announcements one among them.
+        $this->assertSame(['alerts' => false, 'approvals' => true, 'payments' => true, 'material' => true, 'issues' => false, 'announcements' => false], $saved->push_categories);
         $this->assertTrue($saved->quiet_hours);
         $this->assertSame(['23:00', '06:00'], $saved->quietWindow());
 
@@ -195,7 +196,7 @@ class PushPreferencesTest extends NotifyTestCase
             ->assertRedirect()->assertSessionHas('success');
 
         $saved = $this->saved($contractor);
-        $this->assertSame(['contractor' => false], $saved->push_categories);
+        $this->assertSame(['contractor' => false, 'announcements' => false], $saved->push_categories);
         $this->assertFalse($saved->quiet_hours);
         $this->assertSame(['21:00', '08:00'], $saved->quietWindow());
         // A contractor login is told by push only, so no other channel can be switched on for it here.
@@ -210,7 +211,7 @@ class PushPreferencesTest extends NotifyTestCase
 
         $response = $this->getJson(self::API.'/contractor-portal/notification-preferences')->assertOk();
         $this->assertSame(['push'], array_keys($response->json('data')));
-        $this->assertSame(['contractor'], array_column($response->json('data.push.categories'), 'key'));
+        $this->assertSame(['contractor', 'announcements'], array_column($response->json('data.push.categories'), 'key'));
         $this->assertSame('My payments and bills', $response->json('data.push.categories.0.label'));
 
         $this->putJson(self::API.'/contractor-portal/notification-preferences', ['categories' => ['contractor' => false, 'alerts' => false], 'email' => false, 'quiet_hours' => ['enabled' => false]])
