@@ -63,6 +63,7 @@ Future<TestApp> tenderApp({
   if (feature) ((server.user['organization'] as Map)['features'] as List).add('site_control');
   await server.addBoqItem(projectId: 1, id: _line, code: '2.1', qty: '100.000', rate: '500.00', unit: 'cum');
   await server.addBoqItem(projectId: 1, id: 12, code: '2.2', qty: '50.000', rate: '80.00', unit: 'sqm');
+  await server.addBoqItem(projectId: 1, id: 13, code: '2.3', qty: '0.000', rate: '80.00', unit: 'sqm');
   if (quotes) {
     server.seedTender(
       boqItemId: _line,
@@ -290,6 +291,16 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('a line with no quantity cannot start a tender, and says why', (WidgetTester tester) async {
+      final TestApp app = await tenderApp();
+      addTearDown(app.dispose);
+      await pumpScreen(tester, app, start: Routes.boqTenders(13));
+
+      expect(find.text(en.tenderNoQuantity), findsOneWidget);
+      expect(find.byKey(k('tender-new')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('offline it says tenders need the internet', (WidgetTester tester) async {
       final TestApp app = await tenderApp();
       addTearDown(app.dispose);
@@ -486,6 +497,8 @@ void main() {
       expect(body['advance_recovery_pct'], '0');
       expect(body['deduction_basis'], 'gross');
       expect(body['deduction_order'], 'retention,advance,material,tds');
+      expect(body['client_uuid'], isA<String>());
+      expect(await app.db.readMeta('idempotency.award.31.41'), isNull);
       expect(find.text(en.tenderStatusAwarded), findsOneWidget);
       expect(find.text(en.tenderWorkOrder('WO-99')), findsOneWidget);
       expect(find.text(en.tenderTagSelected), findsOneWidget);

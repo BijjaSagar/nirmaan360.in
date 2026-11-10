@@ -292,23 +292,27 @@ abstract interface class NirmaanApi {
   Future<Map<String, dynamic>> createLineTender(int boqItemId, Map<String, dynamic> body);
 
   /// `GET /contractors?q=`: the company's subcontractors, for the quote form.
+  /// The server sends 100 a page; every page is read, up to a limit.
   Future<List<Map<String, dynamic>>> subcontractors({String? query});
 
-  /// `POST /contractors`: a new subcontractor. Returns `{id, name, ...}`.
+  /// `POST /contractors`: a new subcontractor, or the one already there by that
+  /// name. Returns `{id, name, phone}`.
   Future<Map<String, dynamic>> createSubcontractor(Map<String, dynamic> body);
 
   /// `GET /tenders/{tender}`: every quote side by side.
   Future<Map<String, dynamic>> tenderComparison(int tenderId);
 
   /// `POST /tenders/{tender}/bids`, multipart with the quotation as
-  /// `quotation` when there is one. A repeated `client_uuid` returns the first quote.
+  /// `quotation` when there is one. A repeated `client_uuid` returns the first
+  /// quote. Returns the whole reply: `data` (the tender) and `bid_id`.
   Future<Map<String, dynamic>> postTenderQuote(int tenderId, Map<String, dynamic> body, {String? filePath});
 
   /// `GET /bids/{bid}/quotation`. Needs `money.view`.
   Future<Uint8List> quotationBytes(int bidId);
 
-  /// `POST /tenders/{tender}/award` with `bid_id` and the contract terms.
-  /// Returns the work order it made.
+  /// `POST /tenders/{tender}/award` with `bid_id`, the contract terms and a
+  /// `client_uuid`. Returns the whole reply: `data` (the tender, now `AWARDED`)
+  /// and `work_order` `{id, number}`.
   Future<Map<String, dynamic>> awardTender(int tenderId, Map<String, dynamic> body);
 
   // Inspections. Reads fill a cache on the phone. A finished inspection is sent

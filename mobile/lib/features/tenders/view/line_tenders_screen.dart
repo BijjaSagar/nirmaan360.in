@@ -54,6 +54,11 @@ String signedPct(String pct) => pct.startsWith('-') || pct.startsWith('+') ? pct
 class _LineTendersView extends StatelessWidget {
   const _LineTendersView();
 
+  /// The server's `can.quote` covers starting a tender from the line, and a line
+  /// with no quantity cannot start one.
+  static bool _canStart(BuildContext context, LineTenders line) =>
+      line.canQuote && !line.noQuantity && context.read<LineTendersCubit>().repository.canStart;
+
   Future<void> _newTender(BuildContext context, LineTenders line) async {
     final LineTendersCubit cubit = context.read<LineTendersCubit>();
     final bool? started = await showLedgerSheet<bool>(
@@ -80,7 +85,7 @@ class _LineTendersView extends StatelessWidget {
           child: BlocBuilder<LineTendersCubit, LineTendersState>(
             builder: (context, state) {
               final LineTenders? line = state.line;
-              final bool canStart = context.read<LineTendersCubit>().repository.canStart;
+              final bool canStart = line != null && _canStart(context, line);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
@@ -92,7 +97,7 @@ class _LineTendersView extends StatelessWidget {
                       child: _body(context, l, state),
                     ),
                   ),
-                  if (line != null && canStart)
+                  if (canStart)
                     FieldActionBar(
                       child: GloveButton(
                         key: const ValueKey<String>('tender-new'),
@@ -131,7 +136,7 @@ class _LineTendersView extends StatelessWidget {
       };
     }
     final bool seesMoney = context.read<LineTendersCubit>().repository.seesMoney;
-    final bool canStart = context.read<LineTendersCubit>().repository.canStart;
+    final bool canStart = _canStart(context, line);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.sm, N360Space.gutter, N360Space.lg),

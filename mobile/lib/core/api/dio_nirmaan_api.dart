@@ -522,12 +522,24 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Map<String, dynamic>> createLineTender(int boqItemId, Map<String, dynamic> body) =>
       _postData('/boq-items/$boqItemId/tenders', body);
 
+  /// Ten pages of 100 is more subcontractors than any site has to choose from.
+  static const int _contractorPages = 10;
+
   @override
   Future<List<Map<String, dynamic>>> subcontractors({String? query}) async {
-    final body = await _call(
-      () => _dio.get('/contractors', queryParameters: <String, dynamic>{if (query != null && query.isNotEmpty) 'q': query}),
-    );
-    return (body['data'] as List).map((row) => (row as Map).cast<String, dynamic>()).toList();
+    final rows = <Map<String, dynamic>>[];
+    for (var page = 1; page <= _contractorPages; page++) {
+      final body = await _call(
+        () => _dio.get(
+          '/contractors',
+          queryParameters: <String, dynamic>{if (query != null && query.isNotEmpty) 'q': query, 'page': page},
+        ),
+      );
+      rows.addAll((body['data'] as List).map((row) => (row as Map).cast<String, dynamic>()));
+      final last = (body['last_page'] as num?)?.toInt() ?? page;
+      if (page >= last) break;
+    }
+    return rows;
   }
 
   @override
@@ -563,7 +575,7 @@ class DioNirmaanApi implements NirmaanApi {
         options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
       );
     });
-    return (reply['data'] as Map).cast<String, dynamic>();
+    return reply;
   }
 
   @override
@@ -571,7 +583,7 @@ class DioNirmaanApi implements NirmaanApi {
 
   @override
   Future<Map<String, dynamic>> awardTender(int tenderId, Map<String, dynamic> body) =>
-      _postData('/tenders/$tenderId/award', body);
+      _call(() => _dio.post('/tenders/$tenderId/award', data: body));
 
   @override
   Future<List<Map<String, dynamic>>> checklistTemplates() => _getRows('/checklist-templates');

@@ -5063,7 +5063,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get tenderNoQuantity =>
-      'इस लाइन में मात्रा नहीं है, इसलिए कोटेशन कुल राशि में लिए जाते हैं।';
+      'इस लाइन में अभी मात्रा नहीं है, इसलिए टेंडर नहीं निकाला जा सकता। कोटेशन की तुलना हो सके, इसके लिए पहले BOQ में मात्रा भरें।';
 
   @override
   String get tenderNoneAsk =>

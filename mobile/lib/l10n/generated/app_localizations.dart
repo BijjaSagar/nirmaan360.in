@@ -9025,7 +9025,7 @@ abstract class AppLocalizations {
   /// No description provided for @tenderNoQuantity.
   ///
   /// In en, this message translates to:
-  /// **'This line has no quantity, so quotes are taken as a total amount.'**
+  /// **'This line has no quantity yet, so it cannot be put out to tender. Enter the quantity in the BOQ first, so quotes can be compared.'**
   String get tenderNoQuantity;
 
   /// No description provided for @tenderNoneAsk.

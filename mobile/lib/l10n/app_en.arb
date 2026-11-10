@@ -2623,7 +2623,7 @@
   "tenderNewContractorTitle": "New contractor",
   "tenderNewTitle": "New tender",
   "tenderNoDate": "No date",
-  "tenderNoQuantity": "This line has no quantity, so quotes are taken as a total amount.",
+  "tenderNoQuantity": "This line has no quantity yet, so it cannot be put out to tender. Enter the quantity in the BOQ first, so quotes can be compared.",
   "tenderNoneAsk": "No one has asked contractors for quotes on this line yet.",
   "tenderNoneStart": "Start a tender to collect quotes from contractors for this line.",
   "tenderNoneTitle": "No tender yet",

@@ -676,4 +676,57 @@ void main() {
       expect(worker['id'], 5);
     });
   });
+  group('tenders', () {
+    test('subcontractors reads every page the server has', () async {
+      answer((options) {
+        final int page = options.queryParameters['page'] as int;
+        return json({
+          'current_page': page,
+          'last_page': 2,
+          'data': [
+            {'id': page, 'name': 'Contractor $page', 'phone': null},
+          ],
+        });
+      });
+
+      final rows = await api.subcontractors(query: 'con');
+
+      expect(rows.map((r) => r['id']), [1, 2]);
+      expect(adapter.requests.map((r) => r.queryParameters['q']), ['con', 'con']);
+      expect(adapter.requests.first.path, '/contractors');
+    });
+
+    test('a quote goes as multipart, with each rate keyed by the tender line', () async {
+      answer((_) => json({'data': {'id': 31, 'status': 'OPEN'}, 'bid_id': 41}, status: 201));
+
+      final reply = await api.postTenderQuote(31, {
+        'party_id': 7,
+        'rates': {'310': '475.50'},
+        'includes_material': 1,
+        'remarks': null,
+        'client_uuid': 'u1',
+      });
+
+      final FormData form = adapter.requests.single.data as FormData;
+      final fields = {for (final f in form.fields) f.key: f.value};
+      expect(adapter.requests.single.path, '/tenders/31/bids');
+      expect(fields['rates[310]'], '475.50');
+      expect(fields['party_id'], '7');
+      expect(fields['includes_material'], '1');
+      expect(fields.containsKey('remarks'), isFalse);
+      expect(reply['bid_id'], 41);
+    });
+
+    test('an award keeps the work order that comes beside the tender', () async {
+      answer((_) => json({
+        'data': {'id': 31, 'status': 'AWARDED', 'work_order_id': 12},
+        'work_order': {'id': 12, 'number': 'WO-12'},
+      }, status: 201));
+
+      final reply = await api.awardTender(31, {'bid_id': 41});
+
+      expect((reply['work_order'] as Map)['id'], 12);
+      expect((reply['data'] as Map)['status'], 'AWARDED');
+    });
+  });
 }

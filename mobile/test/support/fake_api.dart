@@ -2118,7 +2118,7 @@ class FakeApi implements NirmaanApi {
       'quotation_name': filePath == null ? null : 'quotation.jpg',
     });
     tender['quote_count'] = quotes.where((q) => q['current'] != false).length;
-    return _tenderOnce[uuid] = {'id': bidId};
+    return _tenderOnce[uuid] = {'data': _hideTenderMoney(tender), 'bid_id': bidId};
   }
 
   @override
@@ -2141,6 +2141,7 @@ class FakeApi implements NirmaanApi {
       quote['selected'] = quote['bid_id'] == body['bid_id'];
     }
     return {
+      'data': _hideTenderMoney(tender),
       'work_order': {'id': 99, 'number': 'WO-99'},
     };
   }

@@ -5124,7 +5124,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tenderNoQuantity =>
-      'This line has no quantity, so quotes are taken as a total amount.';
+      'This line has no quantity yet, so it cannot be put out to tender. Enter the quantity in the BOQ first, so quotes can be compared.';
 
   @override
   String get tenderNoneAsk =>

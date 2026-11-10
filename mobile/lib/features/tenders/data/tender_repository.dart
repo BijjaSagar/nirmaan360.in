@@ -201,9 +201,12 @@ class TenderRepository {
   }
 
   /// Chooses a quote. Returns the work order made from it, when the server says.
+  /// Sending the same choice again returns the same work order.
   Future<int?> award(int tenderId, AwardInput input) async {
     _ctx.assertCanWrite();
     _online();
+    final String key = 'idempotency.award.$tenderId.${input.bidId}';
+    final String uuid = await _uuid(key);
     final Map<String, dynamic> reply = await _ctx.api.awardTender(tenderId, <String, dynamic>{
       'bid_id': input.bidId,
       'start_date': ?input.startDate,
@@ -216,9 +219,12 @@ class TenderRepository {
       'deduction_basis': input.deductionBasis,
       'deduction_order': input.deductionOrder,
       'award_note': ?input.note,
+      'client_uuid': uuid,
     });
+    await _ctx.db.deleteMeta(key);
     final Object? order = reply['work_order'];
-    final Object? id = order is Map ? order['id'] : (reply['work_order_id'] ?? reply['id']);
+    final Object? tender = reply['data'];
+    final Object? id = order is Map ? order['id'] : (tender is Map ? tender['work_order_id'] : null);
     return (id as num?)?.toInt();
   }
 

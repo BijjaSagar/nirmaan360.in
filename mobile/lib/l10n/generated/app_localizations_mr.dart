@@ -5074,7 +5074,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get tenderNoQuantity =>
-      'या ओळीला प्रमाण नाही, म्हणून दर एकूण रकमेत घेतले जातात.';
+      'या ओळीला अजून प्रमाण नाही, म्हणून निविदा काढता येणार नाही. दरांची तुलना करता यावी म्हणून आधी BOQ मध्ये प्रमाण भरा.';
 
   @override
   String get tenderNoneAsk =>
