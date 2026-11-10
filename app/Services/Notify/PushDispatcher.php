@@ -91,11 +91,14 @@ class PushDispatcher
         $device = DeviceToken::withoutGlobalScopes()->where('user_id', $user->id)->find($deviceId);
 
         if ($device === null) {
+            AnnouncementTally::count($message, AnnouncementTally::SKIPPED);
+
             return;
         }
 
         if (! $device->isSignedIn()) {
             $device->delete();
+            AnnouncementTally::count($message, AnnouncementTally::SKIPPED);
 
             return;
         }
@@ -104,15 +107,22 @@ class PushDispatcher
         $target = $message->push ?? null;
 
         if (! $preference->allows('push') || $this->withheldForMoney($user, [$message])) {
+            AnnouncementTally::count($message, AnnouncementTally::SKIPPED);
+
             return;
         }
 
         if ($target !== null && (! $this->mayReceive($user, $target, $preference) || ! $this->stillMatters($user, $message, $target))) {
+            AnnouncementTally::count($message, AnnouncementTally::SKIPPED);
+
             return;
         }
 
-        if (! $this->fcm->send($device->token, $message)) {
+        if ($this->fcm->send($device->token, $message)) {
+            AnnouncementTally::count($message, AnnouncementTally::SENT);
+        } else {
             $device->delete();
+            AnnouncementTally::count($message, AnnouncementTally::FAILED);
         }
     }
 

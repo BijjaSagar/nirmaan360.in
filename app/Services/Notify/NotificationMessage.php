@@ -10,6 +10,7 @@ final readonly class NotificationMessage
      * @param  bool  $critical  Emailed even if the person has switched email off, and pushed during quiet hours.
      * @param  ?PushTarget  $push  What the push opens in the app and which switch it obeys. Read it as
      *                             ($message->push ?? null): a job queued before this field existed has none.
+     * @param  ?string  $image  A public HTTPS picture shown in the notification. Read it as ($message->image ?? null).
      */
     public function __construct(
         public string $event,
@@ -18,5 +19,6 @@ final readonly class NotificationMessage
         public ?string $url = null,
         public bool $critical = false,
         public ?PushTarget $push = null,
+        public ?string $image = null,
     ) {}
 }
