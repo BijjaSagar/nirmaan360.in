@@ -6,6 +6,7 @@ use App\Services\Crm\FinancialYear;
 use App\Services\Crm\ReasonService;
 use App\Services\Crm\WinLossReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\BuildsTenant;
 use Tests\TestCase;
 
@@ -81,6 +82,9 @@ class WinLossReportTest extends TestCase
 
     public function test_the_year_boundaries_are_the_first_of_april_and_the_last_of_march(): void
     {
+        // The list of years always has the current one too, so the day is pinned inside FY 2026-27.
+        // On the real clock this test would start failing on 1 April 2028.
+        $this->travelTo(Carbon::parse('2026-11-10 12:00', 'Asia/Kolkata'));
         $user = $this->crmUser();
         $this->makeTender($user->organization, ['title' => 'Last day of FY25', 'stage' => 'won', 'closed_on' => '2026-03-31', 'awarded_value' => '1.00']);
         $this->makeTender($user->organization, ['title' => 'First day of FY26', 'stage' => 'won', 'closed_on' => '2026-04-01', 'awarded_value' => '2.00']);

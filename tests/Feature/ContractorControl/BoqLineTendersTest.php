@@ -598,7 +598,8 @@ class BoqLineTendersTest extends TestCase
             'client_uuid' => (string) Str::uuid(),
             'party_id' => $contractor,
             'rates' => [$this->lineId($tender) => '925.50'],
-            'received_on' => today()->toDateString(),
+            // Both fixed: with "received today", the run after 31 January 2027 would see a quote valid until before it arrived.
+            'received_on' => '2026-11-05',
             'valid_until' => '2027-01-31',
             'includes_material' => '0',
             'completion_days' => '30',
