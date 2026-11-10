@@ -259,6 +259,19 @@ abstract interface class NirmaanApi {
   /// Returns the inspection with its items.
   Future<Map<String, dynamic>> postInspection(int projectId, Map<String, dynamic> body);
 
+  // Machine logs. Reads fill a cache on the phone. The presenter has no rate or
+  // cost in it, and this app shows none.
+
+  /// One page of `GET /assets`, the working machines by code, 100 to a page, in Laravel's page shape.
+  Future<Map<String, dynamic>> machineAssets({int page = 1});
+
+  /// One page of `GET /machine-logs` for a project, newest first, 50 to a page.
+  Future<Map<String, dynamic>> machineLogs(int projectId, {int page = 1});
+
+  /// `POST /machine-logs`. A repeated `client_uuid` in [body] returns the first
+  /// log and stores nothing, so the outbox may send the same row again.
+  Future<Map<String, dynamic>> postMachineLog(Map<String, dynamic> body);
+
   // Site dashboard and alerts. Read only.
 
   /// `GET /projects/{project}/site-dashboard`: the cards the server worked out

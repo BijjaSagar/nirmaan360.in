@@ -221,6 +221,7 @@ class SyncRepository {
       case OutboxType.progressCorrection:
       case OutboxType.contractorPayment:
       case OutboxType.inspection:
+      case OutboxType.machineLog:
         break;
     }
   }

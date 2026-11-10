@@ -15,6 +15,8 @@ import 'package:nirmaan360/core/db/app_database.dart';
 import 'package:nirmaan360/core/session/token_store.dart';
 import 'package:nirmaan360/core/sync/attachment_store.dart';
 import 'package:nirmaan360/core/sync/sync_status.dart';
+import 'package:nirmaan360/core/money/money.dart';
+import 'package:nirmaan360/core/sync/ids.dart';
 import 'package:nirmaan360/features/inspections/data/inspection_repository.dart';
 
 const _url = String.fromEnvironment('REAL_API_URL');
@@ -96,6 +98,90 @@ void main() {
       expect(detail.items[1].result, ItemResult.fail);
       expect(detail.items[1].remark, 'Real API test: no shoes');
       expect(detail.notSent, isFalse);
+    },
+    skip: _url.isEmpty ? 'set REAL_API_URL to run against a local server' : null,
+    timeout: const Timeout(Duration(minutes: 3)),
+  );
+
+  test(
+    'a machine log typed offline reaches the real server once, though the reply is lost',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final tokens = InMemoryTokenStore();
+      final dio = Dio();
+      final api = DioNirmaanApi(readToken: tokens.read, baseUrl: _url, dio: dio);
+      final services = AppServices.forTesting(
+        db: db,
+        api: api,
+        tokens: tokens,
+        attachments: InMemoryAttachmentStore(),
+      );
+      addTearDown(services.dispose);
+
+      final signIn = await services.auth.signIn(email: 'engineer@demo.test', password: 'password');
+      expect(signIn.firstSync.outcome, SyncOutcome.success);
+      final project = (await services.projects.watchProjects().first).first;
+      await services.projects.selectProject(project.id);
+      await services.syncCenter.syncNow();
+
+      final seen = (await services.machines.readOverview(project.id))!;
+      expect(seen.refused, isFalse);
+      final jcb = seen.machines.firstWhere((m) => m.meterIsHours);
+
+      // A day in the last two months that this run has to itself, so a second run
+      // does not meet the server's 24 hours a day for one machine.
+      final day = DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30)).subtract(Duration(days: 3 + DateTime.now().microsecond % 55));
+      String two(int v) => v.toString().padLeft(2, '0');
+      final date = '${day.year}-${two(day.month)}-${two(day.day)}';
+
+      // Network off. The log is typed with the server unreachable, from readings only.
+      dio.options.baseUrl = _unreachable;
+      final uuid = newUuid();
+      await services.machines.log(
+        uuid: uuid,
+        projectId: project.id,
+        machine: jcb,
+        date: date,
+        openingReading: Qty.parse('100'),
+        closingReading: Qty.parse('106.5'),
+        operatorName: 'Real API test',
+      );
+      await services.syncCenter.syncNow();
+      expect((await db.select(db.outbox).get()).single.status, OutboxStatus.pending);
+
+      dio.options.baseUrl = _url;
+      var dropNextReply = true;
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onResponse: (response, handler) {
+            if (dropNextReply && response.requestOptions.method == 'POST' && response.requestOptions.path.endsWith('/machine-logs')) {
+              dropNextReply = false;
+              handler.reject(DioException(requestOptions: response.requestOptions, type: DioExceptionType.connectionError));
+              return;
+            }
+            handler.next(response);
+          },
+        ),
+      );
+      for (var i = 0; i < 6; i++) {
+        await services.syncCenter.syncNow();
+        if ((await db.select(db.outbox).get()).every((r) => r.status == OutboxStatus.done)) break;
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+
+      expect(dropNextReply, isFalse, reason: 'the lost reply must happen');
+      final row = (await db.select(db.outbox).get()).single;
+      expect(row.status, OutboxStatus.done, reason: '${row.attentionReason}');
+
+      final page = await api.machineLogs(project.id);
+      final mine = (page['data'] as List).cast<Map<String, dynamic>>().where((r) => r['client_uuid'] == uuid).toList();
+      expect(mine, hasLength(1));
+      expect(mine.single['hours'], '6.500', reason: 'the server worked the hours out from the readings');
+      expect(mine.single['operator'], 'Real API test');
+
+      final log = (await services.machines.readOverview(project.id))!.logs.firstWhere((l) => l.clientUuid == uuid);
+      expect(log.hours, Hours.parse('6.5'));
+      expect(log.notSent, isFalse);
     },
     skip: _url.isEmpty ? 'set REAL_API_URL to run against a local server' : null,
     timeout: const Timeout(Duration(minutes: 3)),

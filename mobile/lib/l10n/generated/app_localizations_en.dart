@@ -1814,6 +1814,196 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesUnassigned => 'Not assigned';
 
   @override
+  String get machineCategoryBackhoe => 'JCB / Backhoe loader';
+
+  @override
+  String get machineCategoryCompressor => 'Compressor';
+
+  @override
+  String get machineCategoryCrane => 'Crane';
+
+  @override
+  String get machineCategoryDgSet => 'DG set';
+
+  @override
+  String get machineCategoryExcavator => 'Excavator';
+
+  @override
+  String get machineCategoryFormwork => 'Shuttering / Formwork';
+
+  @override
+  String get machineCategoryMixer => 'Concrete mixer';
+
+  @override
+  String get machineCategoryOther => 'Other';
+
+  @override
+  String get machineCategoryPump => 'Concrete pump';
+
+  @override
+  String get machineCategoryRoller => 'Roller / Compactor';
+
+  @override
+  String get machineCategoryScaffolding => 'Scaffolding';
+
+  @override
+  String get machineCategoryTipper => 'Tipper / Truck';
+
+  @override
+  String get machineCategoryTools => 'Tools and small plant';
+
+  @override
+  String get machineCategoryTransitMixer => 'Transit mixer';
+
+  @override
+  String get machineCategoryVehicle => 'Vehicle';
+
+  @override
+  String get machineFormBreakdown => 'Hours lost to breakdown';
+
+  @override
+  String get machineFormChoose => 'Choose a machine';
+
+  @override
+  String get machineFormClosing => 'Closing reading';
+
+  @override
+  String get machineFormClosingBelow =>
+      'The closing reading cannot be lower than the opening reading';
+
+  @override
+  String get machineFormDate => 'Date';
+
+  @override
+  String get machineFormHours => 'Hours worked';
+
+  @override
+  String get machineFormHoursError =>
+      'Enter hours from 0 to 24, with one decimal at most';
+
+  @override
+  String get machineFormHoursHint => 'One decimal at most, like 7.5';
+
+  @override
+  String get machineFormKm => 'Km run';
+
+  @override
+  String get machineFormKmError => 'Enter km from 0 to 99,999';
+
+  @override
+  String machineFormLogged(String hours) {
+    return 'Already logged that day: $hours h. One machine cannot pass 24 h in a day.';
+  }
+
+  @override
+  String get machineFormMachine => 'Machine';
+
+  @override
+  String get machineFormMachineRequired => 'Choose the machine first';
+
+  @override
+  String get machineFormNoMachinesTitle => 'No machines to log against';
+
+  @override
+  String get machineFormNoneMatch => 'No machine matches';
+
+  @override
+  String get machineFormNothing =>
+      'Enter the hours or km worked, or the hours lost to breakdown';
+
+  @override
+  String get machineFormOpening => 'Opening reading';
+
+  @override
+  String get machineFormOperator => 'Operator';
+
+  @override
+  String get machineFormReadingError => 'Enter a number from 0 to 99,999,999';
+
+  @override
+  String get machineFormReadingsHintHours =>
+      'Leave Hours worked blank and the hours are worked out from the two readings.';
+
+  @override
+  String get machineFormReadingsHintKm =>
+      'Leave Km run blank and the km are worked out from the two readings.';
+
+  @override
+  String get machineFormRemarks => 'Remarks';
+
+  @override
+  String get machineFormSave => 'Save log';
+
+  @override
+  String get machineFormSearch => 'Search by code or name';
+
+  @override
+  String get machinesAdd => 'Add a log';
+
+  @override
+  String machinesBreakdownValue(String hours) {
+    return 'Breakdown $hours h';
+  }
+
+  @override
+  String get machinesEmptyMessage =>
+      'A day\'s work of a machine on this project will show here.';
+
+  @override
+  String get machinesEmptyTitle => 'No logs yet';
+
+  @override
+  String machinesHoursValue(String hours) {
+    return '$hours h';
+  }
+
+  @override
+  String machinesKmValue(String km) {
+    return '$km km';
+  }
+
+  @override
+  String get machinesLatestOnly =>
+      'Showing the latest 50. The rest are on the website.';
+
+  @override
+  String get machinesLoading => 'Loading machine logs';
+
+  @override
+  String get machinesNoDataMessage =>
+      'Connect to the internet once to load the machines. After that the log opens offline.';
+
+  @override
+  String get machinesNoMachinesMessage =>
+      'Machines are added on the website. They show here after that.';
+
+  @override
+  String get machinesNoMachinesTitle => 'No machines yet';
+
+  @override
+  String machinesOperatorValue(String name) {
+    return 'Operator $name';
+  }
+
+  @override
+  String get machinesRefusedMessage =>
+      'The machine log is not open to your role. Ask your office if you need it.';
+
+  @override
+  String get machinesRefusedTitle => 'Not part of your role';
+
+  @override
+  String get machinesTitle => 'Machine log';
+
+  @override
+  String get machinesUnderRepair => 'Under repair';
+
+  @override
+  String machinesUnknownMachine(int id) {
+    return 'Machine no. $id';
+  }
+
+  @override
   String get materialAdd => 'Add entry';
 
   @override
@@ -3924,6 +4114,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Fill a checklist for a pour, shuttering or a safety round';
 
   @override
+  String get siteToolsMachinesHint =>
+      'Record what a machine worked today, in hours or km';
+
+  @override
   String get siteToolsTitle => 'Site tools';
 
   @override
@@ -4065,6 +4259,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeIssueStatus => 'Issue status';
+
+  @override
+  String get syncTypeMachineLog => 'Machine log';
 
   @override
   String get syncTypeMeasurement => 'Measurement';

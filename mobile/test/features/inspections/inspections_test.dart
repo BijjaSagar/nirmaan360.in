@@ -61,6 +61,12 @@ InspectionDraft markAll(InspectionDraft draft, ItemResult result, {Map<int, Item
   return next;
 }
 
+/// A second app on the same tester must not inherit the first one's state.
+Future<void> freshApp(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump();
+}
+
 Future<void> settle(WidgetTester tester) async {
   await pumpDrift(tester, 10);
   await tester.pump(const Duration(milliseconds: 500));
@@ -539,6 +545,7 @@ void main() {
 
       final TestApp noPlan = await inspectionApp(plan: false);
       addTearDown(noPlan.dispose);
+      await freshApp(tester);
       await pumpShellApp(tester, noPlan);
       expect(find.byKey(k('home-site-tools')), findsNothing);
       expect(tester.takeException(), isNull);
@@ -552,8 +559,10 @@ void main() {
 
       final TestApp noPermission = await inspectionApp(fill: false);
       addTearDown(noPermission.dispose);
+      await freshApp(tester);
       await pumpShellApp(tester, noPermission, location: Routes.siteTools);
       expect(find.byType(HomeScreen), findsOneWidget);
+      await freshApp(tester);
       await pumpShellApp(tester, noPermission, location: Routes.inspectionDetail('12'));
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -573,9 +582,11 @@ void main() {
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.byKey(k('home-site-tools')), findsNothing);
 
+      await freshApp(tester);
       await pumpShellApp(tester, app, location: Routes.inspections);
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.byKey(k('inspections-start')), findsNothing);
+      await freshApp(tester);
       await pumpShellApp(tester, app, location: Routes.siteTools);
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(app.api.refusedCalls, 0);

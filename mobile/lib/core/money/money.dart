@@ -203,6 +203,10 @@ final class Hours extends ScaledDecimal<Hours> {
     return parsed == null ? null : Hours.of(parsed);
   }
 
+  /// True when [input] has more decimal places than hours hold, so parsing it
+  /// would round what someone typed.
+  static bool hasExtraDecimals(String? input) => (_parseUserText(input)?.scale ?? 0) > 1;
+
   static final Hours zero = Hours.of(Decimal.zero);
 
   @override

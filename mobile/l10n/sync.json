@@ -43,5 +43,6 @@
   "syncTypeMeasurementPhoto": { "en": "Measurement photo", "mr": "मोजमापाचा फोटो", "hi": "माप की फ़ोटो" },
   "syncTypeProgressCorrection": { "en": "Progress correction", "mr": "प्रगतीची दुरुस्ती", "hi": "प्रगति में सुधार" },
   "syncTypeContractorPayment": { "en": "Contractor payment request", "mr": "ठेकेदार देयक विनंती", "hi": "ठेकेदार भुगतान अनुरोध" },
-  "syncTypeInspection": { "en": "Inspection", "mr": "पाहणी", "hi": "निरीक्षण" }
+  "syncTypeInspection": { "en": "Inspection", "mr": "पाहणी", "hi": "निरीक्षण" },
+  "syncTypeMachineLog": { "en": "Machine log", "mr": "यंत्र नोंद", "hi": "मशीन लॉग" }
 }

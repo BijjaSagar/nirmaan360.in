@@ -328,6 +328,27 @@ What the phone does with that:
 - 422, 403 and 404 go to the Sync Center, in the server's own words for a 422.
 - Item states are shown in words with a mark beside them (Pass, Fail, Not applicable, No result yet), never by colour alone.
 
+### Machine logs
+
+Needs the `assets` plan feature and `asset.log` in the `can` list. `asset.view`, which the server asks for on the two reads, does not reach the app, so the phone gates on `asset.log` alone and treats a 403 or 404 on a read as "refused", with a calm page. Every role that logs a machine also sees them. A company on the offline plan has no `assets`, and the gate also keeps the screens away from any phone that keeps its data local. Nothing about a rate, a hire term or a cost is read, kept or shown: `MachineLogPresenter` sends none, and the hire-bill flag `billed` is not used either.
+
+The server's rules, from `PlantLogService::logRules` and `record`, and `MachineLogApiTest`:
+
+- `POST /machine-logs` takes `asset_id` and `log_date` (not in the future), and optional `project_id`, `hours` (0 to 24), `km` (0 to 99,999), `breakdown_hours` (0 to 24), `opening_reading` and `closing_reading` (0 to 99,999,999), `operator` (80), `remarks` (255) and `client_uuid`. Quantities are strings, hours `"7.5"`, readings and km `"108.500"`.
+- Something must be entered: `hours`, `km`, `breakdown_hours`, or both readings. A reading pair gives `hours` on a machine whose `meter_unit` is `hours`, and `km` on one whose `meter_unit` is `km`. A machine with no meter unit gets nothing from its readings. Otherwise 422 on `hours`, "Enter the hours or km worked, or the hours lost to breakdown." A closing reading below the opening one is a 422 on `closing_reading`.
+- One machine cannot pass 24 hours of `hours` on one day, counting every log of that day: 422 on `hours`. A day a hire bill covers, and a retired machine, are refused on `log_date` and `asset_id`.
+- A repeated `client_uuid` returns the first log with 200 and stores nothing. 201 the first time. The API has no way to edit or delete a log.
+
+What the phone does with that:
+
+- It reads `GET /assets` (up to five pages of 100, retired machines are not listed) and `GET /machine-logs?project_id=` (the latest 50), and keeps them per project under `machines.<projectId>`, on the same schedule as site progress. The key goes with the project, and is dropped on the next sync when someone loses the permission or the plan. A row that does not parse never stops the sync: a figure that is not a number is left out, a machine with no id is skipped.
+- A log is an outbox row of type `machine_log`, posted on its own to `POST /machine-logs` with a `client_uuid` and the project's id. It is safe to write offline: a repeat stores nothing. The form holds one `client_uuid` for its life.
+- Hours are `Hours`, one decimal, like overtime. A figure typed with more places is refused, never rounded. A server figure shows to one decimal. Readings and km are `Qty`.
+- The form checks what it can from the last copy: a machine, a day not in the future, hours and breakdown from 0 to 24, km and readings in range, the closing reading not below the opening one, and something entered, with a reading pair counting only on a machine whose meter counts hours or km. It says how many hours the phone knows are already logged for that machine that day, and does not block: another phone may have logged more or less, and the server decides.
+- What the server can still refuse when the log arrives (the 24 hours, a hire bill, a machine retired meanwhile, 403) goes to the Sync Center in the server's own words.
+- The reply is added to the kept list in the transaction that finishes the outbox row. Logs waiting to send are laid over the list, marked "Not sent yet", and counted toward the day's hours the phone knows of.
+- Home has one "Site tools" row for inspections and the machine log together, and it names only the tools open to that person. It is hidden when neither is.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

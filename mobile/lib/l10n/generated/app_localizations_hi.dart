@@ -1769,6 +1769,195 @@ class AppLocalizationsHi extends AppLocalizations {
   String get issuesUnassigned => 'किसी को नहीं सौंपा';
 
   @override
+  String get machineCategoryBackhoe => 'JCB / बैकहो लोडर';
+
+  @override
+  String get machineCategoryCompressor => 'कंप्रेसर';
+
+  @override
+  String get machineCategoryCrane => 'क्रेन';
+
+  @override
+  String get machineCategoryDgSet => 'DG सेट';
+
+  @override
+  String get machineCategoryExcavator => 'एक्सकेवेटर';
+
+  @override
+  String get machineCategoryFormwork => 'शटरिंग / फ़ॉर्मवर्क';
+
+  @override
+  String get machineCategoryMixer => 'कंक्रीट मिक्सर';
+
+  @override
+  String get machineCategoryOther => 'अन्य';
+
+  @override
+  String get machineCategoryPump => 'कंक्रीट पंप';
+
+  @override
+  String get machineCategoryRoller => 'रोलर / कॉम्पैक्टर';
+
+  @override
+  String get machineCategoryScaffolding => 'स्कैफ़ोल्डिंग';
+
+  @override
+  String get machineCategoryTipper => 'टिपर / ट्रक';
+
+  @override
+  String get machineCategoryTools => 'औज़ार और छोटी मशीनें';
+
+  @override
+  String get machineCategoryTransitMixer => 'ट्रांज़िट मिक्सर';
+
+  @override
+  String get machineCategoryVehicle => 'गाड़ी';
+
+  @override
+  String get machineFormBreakdown => 'खराबी में गए घंटे';
+
+  @override
+  String get machineFormChoose => 'मशीन चुनें';
+
+  @override
+  String get machineFormClosing => 'अंतिम रीडिंग';
+
+  @override
+  String get machineFormClosingBelow =>
+      'अंतिम रीडिंग शुरुआती रीडिंग से कम नहीं हो सकती';
+
+  @override
+  String get machineFormDate => 'तारीख';
+
+  @override
+  String get machineFormHours => 'काम के घंटे';
+
+  @override
+  String get machineFormHoursError =>
+      '0 से 24 घंटे लिखें, ज़्यादा से ज़्यादा एक दशमलव';
+
+  @override
+  String get machineFormHoursHint => 'ज़्यादा से ज़्यादा एक दशमलव, जैसे 7.5';
+
+  @override
+  String get machineFormKm => 'चले किमी';
+
+  @override
+  String get machineFormKmError => '0 से 99,999 किमी लिखें';
+
+  @override
+  String machineFormLogged(String hours) {
+    return 'उस दिन पहले से दर्ज: $hours घंटे। एक मशीन के दिन के घंटे 24 से ज़्यादा नहीं हो सकते।';
+  }
+
+  @override
+  String get machineFormMachine => 'मशीन';
+
+  @override
+  String get machineFormMachineRequired => 'पहले मशीन चुनें';
+
+  @override
+  String get machineFormNoMachinesTitle => 'लॉग करने के लिए मशीनें नहीं';
+
+  @override
+  String get machineFormNoneMatch => 'कोई मशीन नहीं मिली';
+
+  @override
+  String get machineFormNothing =>
+      'काम के घंटे या किमी, या खराबी में गए घंटे लिखें';
+
+  @override
+  String get machineFormOpening => 'शुरुआती रीडिंग';
+
+  @override
+  String get machineFormOperator => 'ऑपरेटर';
+
+  @override
+  String get machineFormReadingError => '0 से 99,999,999 तक की संख्या लिखें';
+
+  @override
+  String get machineFormReadingsHintHours =>
+      'काम के घंटे खाली छोड़ें, दो रीडिंग से घंटे निकाले जाएँगे।';
+
+  @override
+  String get machineFormReadingsHintKm =>
+      'चले किमी खाली छोड़ें, दो रीडिंग से किमी निकाले जाएँगे।';
+
+  @override
+  String get machineFormRemarks => 'टिप्पणी';
+
+  @override
+  String get machineFormSave => 'लॉग सेव करें';
+
+  @override
+  String get machineFormSearch => 'कोड या नाम से खोजें';
+
+  @override
+  String get machinesAdd => 'लॉग जोड़ें';
+
+  @override
+  String machinesBreakdownValue(String hours) {
+    return 'खराबी $hours घंटे';
+  }
+
+  @override
+  String get machinesEmptyMessage =>
+      'इस प्रोजेक्ट की मशीन का दिन भर का काम यहाँ दिखेगा।';
+
+  @override
+  String get machinesEmptyTitle => 'अभी कोई लॉग नहीं';
+
+  @override
+  String machinesHoursValue(String hours) {
+    return '$hours घंटे';
+  }
+
+  @override
+  String machinesKmValue(String km) {
+    return '$km किमी';
+  }
+
+  @override
+  String get machinesLatestOnly => 'नए 50 दिखाए हैं। बाकी वेबसाइट पर हैं।';
+
+  @override
+  String get machinesLoading => 'मशीन लॉग लोड हो रहे हैं';
+
+  @override
+  String get machinesNoDataMessage =>
+      'मशीनें लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद लॉग ऑफ़लाइन भी खुलेगा।';
+
+  @override
+  String get machinesNoMachinesMessage =>
+      'मशीनें वेबसाइट पर जोड़ी जाती हैं। उसके बाद वे यहाँ दिखेंगी।';
+
+  @override
+  String get machinesNoMachinesTitle => 'अभी कोई मशीन नहीं';
+
+  @override
+  String machinesOperatorValue(String name) {
+    return 'ऑपरेटर $name';
+  }
+
+  @override
+  String get machinesRefusedMessage =>
+      'मशीन लॉग आपकी भूमिका के लिए उपलब्ध नहीं है। ज़रूरत हो तो ऑफ़िस से पूछें।';
+
+  @override
+  String get machinesRefusedTitle => 'यह आपकी भूमिका में नहीं है';
+
+  @override
+  String get machinesTitle => 'मशीन लॉग';
+
+  @override
+  String get machinesUnderRepair => 'मरम्मत में';
+
+  @override
+  String machinesUnknownMachine(int id) {
+    return 'मशीन नं. $id';
+  }
+
+  @override
   String get materialAdd => 'एंट्री करें';
 
   @override
@@ -3866,6 +4055,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'पोर, शटरिंग या सुरक्षा राउंड की चेकलिस्ट भरें';
 
   @override
+  String get siteToolsMachinesHint =>
+      'मशीन आज कितना चली, घंटों या किमी में दर्ज करें';
+
+  @override
   String get siteToolsTitle => 'साइट टूल्स';
 
   @override
@@ -4007,6 +4200,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get syncTypeIssueStatus => 'समस्या की स्थिति';
+
+  @override
+  String get syncTypeMachineLog => 'मशीन लॉग';
 
   @override
   String get syncTypeMeasurement => 'माप';

@@ -819,6 +819,104 @@
   "issuesSyncSending": "Sending",
   "issuesTitle": "Issues",
   "issuesUnassigned": "Not assigned",
+  "machineCategoryBackhoe": "JCB / Backhoe loader",
+  "machineCategoryCompressor": "Compressor",
+  "machineCategoryCrane": "Crane",
+  "machineCategoryDgSet": "DG set",
+  "machineCategoryExcavator": "Excavator",
+  "machineCategoryFormwork": "Shuttering / Formwork",
+  "machineCategoryMixer": "Concrete mixer",
+  "machineCategoryOther": "Other",
+  "machineCategoryPump": "Concrete pump",
+  "machineCategoryRoller": "Roller / Compactor",
+  "machineCategoryScaffolding": "Scaffolding",
+  "machineCategoryTipper": "Tipper / Truck",
+  "machineCategoryTools": "Tools and small plant",
+  "machineCategoryTransitMixer": "Transit mixer",
+  "machineCategoryVehicle": "Vehicle",
+  "machineFormBreakdown": "Hours lost to breakdown",
+  "machineFormChoose": "Choose a machine",
+  "machineFormClosing": "Closing reading",
+  "machineFormClosingBelow": "The closing reading cannot be lower than the opening reading",
+  "machineFormDate": "Date",
+  "machineFormHours": "Hours worked",
+  "machineFormHoursError": "Enter hours from 0 to 24, with one decimal at most",
+  "machineFormHoursHint": "One decimal at most, like 7.5",
+  "machineFormKm": "Km run",
+  "machineFormKmError": "Enter km from 0 to 99,999",
+  "machineFormLogged": "Already logged that day: {hours} h. One machine cannot pass 24 h in a day.",
+  "@machineFormLogged": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machineFormMachine": "Machine",
+  "machineFormMachineRequired": "Choose the machine first",
+  "machineFormNoMachinesTitle": "No machines to log against",
+  "machineFormNoneMatch": "No machine matches",
+  "machineFormNothing": "Enter the hours or km worked, or the hours lost to breakdown",
+  "machineFormOpening": "Opening reading",
+  "machineFormOperator": "Operator",
+  "machineFormReadingError": "Enter a number from 0 to 99,999,999",
+  "machineFormReadingsHintHours": "Leave Hours worked blank and the hours are worked out from the two readings.",
+  "machineFormReadingsHintKm": "Leave Km run blank and the km are worked out from the two readings.",
+  "machineFormRemarks": "Remarks",
+  "machineFormSave": "Save log",
+  "machineFormSearch": "Search by code or name",
+  "machinesAdd": "Add a log",
+  "machinesBreakdownValue": "Breakdown {hours} h",
+  "@machinesBreakdownValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesEmptyMessage": "A day's work of a machine on this project will show here.",
+  "machinesEmptyTitle": "No logs yet",
+  "machinesHoursValue": "{hours} h",
+  "@machinesHoursValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesKmValue": "{km} km",
+  "@machinesKmValue": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesLatestOnly": "Showing the latest 50. The rest are on the website.",
+  "machinesLoading": "Loading machine logs",
+  "machinesNoDataMessage": "Connect to the internet once to load the machines. After that the log opens offline.",
+  "machinesNoMachinesMessage": "Machines are added on the website. They show here after that.",
+  "machinesNoMachinesTitle": "No machines yet",
+  "machinesOperatorValue": "Operator {name}",
+  "@machinesOperatorValue": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesRefusedMessage": "The machine log is not open to your role. Ask your office if you need it.",
+  "machinesRefusedTitle": "Not part of your role",
+  "machinesTitle": "Machine log",
+  "machinesUnderRepair": "Under repair",
+  "machinesUnknownMachine": "Machine no. {id}",
+  "@machinesUnknownMachine": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
   "materialAdd": "Add entry",
   "materialBoqForWork": "BOQ for work done",
   "materialChallanNo": "Challan no. (optional)",
@@ -1950,6 +2048,7 @@
     }
   },
   "siteToolsInspectionsHint": "Fill a checklist for a pour, shuttering or a safety round",
+  "siteToolsMachinesHint": "Record what a machine worked today, in hours or km",
   "siteToolsTitle": "Site tools",
   "statusApproved": "Approved",
   "statusDraft": "Draft",
@@ -2023,6 +2122,7 @@
   "syncTypeIssue": "Issue",
   "syncTypeIssuePhoto": "Issue photo",
   "syncTypeIssueStatus": "Issue status",
+  "syncTypeMachineLog": "Machine log",
   "syncTypeMeasurement": "Measurement",
   "syncTypeMeasurementPhoto": "Measurement photo",
   "syncTypeMeasurementSubmit": "Measurement submission",

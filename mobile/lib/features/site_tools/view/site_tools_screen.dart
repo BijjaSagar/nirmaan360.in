@@ -20,6 +20,7 @@ class SiteToolsScreen extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final ProjectRow? project = context.select((AppGate gate) => gate.state.currentProject);
     final bool inspect = context.select((AppGate gate) => gate.state.canInspect);
+    final bool machines = context.select((AppGate gate) => gate.state.canLogMachines);
     return Scaffold(
       body: LedgerPaper(
         child: SafeArea(
@@ -42,6 +43,18 @@ class SiteToolsScreen extends StatelessWidget {
                             title: l.inspectionsTitle,
                             subtitle: l.siteToolsInspectionsHint,
                             onTap: () => context.push(Routes.inspections),
+                          ),
+                        if (machines)
+                          LedgerListTile(
+                            key: const ValueKey<String>('site-tool-machines'),
+                            leading: const Icon(
+                              Icons.precision_manufacturing_outlined,
+                              size: N360IconSize.lg,
+                              color: N360Colors.ink2,
+                            ),
+                            title: l.machinesTitle,
+                            subtitle: l.siteToolsMachinesHint,
+                            onTap: () => context.push(Routes.machines),
                           ),
                       ],
                     ),

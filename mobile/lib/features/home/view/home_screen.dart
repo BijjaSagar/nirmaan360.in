@@ -537,8 +537,8 @@ class _ContractorsRow extends StatelessWidget {
   }
 }
 
-/// The way in to the tools that are not part of the day's figures: checklists,
-/// and later others. A row, not a tile, because the grid is already full.
+/// The way in to the tools that are not part of the day's figures: checklists
+/// and the machine log. A row, not a tile each, because the grid is already full.
 class _SiteToolsRow extends StatelessWidget {
   const _SiteToolsRow();
 
@@ -546,11 +546,12 @@ class _SiteToolsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final bool inspect = context.select((AppGate gate) => gate.state.canInspect);
+    final bool machines = context.select((AppGate gate) => gate.state.canLogMachines);
     return LedgerListTile(
       key: const ValueKey<String>('home-site-tools'),
       leading: const Icon(Icons.handyman_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
       title: t.siteToolsTitle,
-      subtitle: <String>[if (inspect) t.inspectionsTitle].join(' · '),
+      subtitle: <String>[if (inspect) t.inspectionsTitle, if (machines) t.machinesTitle].join(' · '),
       onTap: () => context.push(Routes.siteTools),
     );
   }

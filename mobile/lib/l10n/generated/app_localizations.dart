@@ -3286,6 +3286,342 @@ abstract class AppLocalizations {
   /// **'Not assigned'**
   String get issuesUnassigned;
 
+  /// No description provided for @machineCategoryBackhoe.
+  ///
+  /// In en, this message translates to:
+  /// **'JCB / Backhoe loader'**
+  String get machineCategoryBackhoe;
+
+  /// No description provided for @machineCategoryCompressor.
+  ///
+  /// In en, this message translates to:
+  /// **'Compressor'**
+  String get machineCategoryCompressor;
+
+  /// No description provided for @machineCategoryCrane.
+  ///
+  /// In en, this message translates to:
+  /// **'Crane'**
+  String get machineCategoryCrane;
+
+  /// No description provided for @machineCategoryDgSet.
+  ///
+  /// In en, this message translates to:
+  /// **'DG set'**
+  String get machineCategoryDgSet;
+
+  /// No description provided for @machineCategoryExcavator.
+  ///
+  /// In en, this message translates to:
+  /// **'Excavator'**
+  String get machineCategoryExcavator;
+
+  /// No description provided for @machineCategoryFormwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuttering / Formwork'**
+  String get machineCategoryFormwork;
+
+  /// No description provided for @machineCategoryMixer.
+  ///
+  /// In en, this message translates to:
+  /// **'Concrete mixer'**
+  String get machineCategoryMixer;
+
+  /// No description provided for @machineCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get machineCategoryOther;
+
+  /// No description provided for @machineCategoryPump.
+  ///
+  /// In en, this message translates to:
+  /// **'Concrete pump'**
+  String get machineCategoryPump;
+
+  /// No description provided for @machineCategoryRoller.
+  ///
+  /// In en, this message translates to:
+  /// **'Roller / Compactor'**
+  String get machineCategoryRoller;
+
+  /// No description provided for @machineCategoryScaffolding.
+  ///
+  /// In en, this message translates to:
+  /// **'Scaffolding'**
+  String get machineCategoryScaffolding;
+
+  /// No description provided for @machineCategoryTipper.
+  ///
+  /// In en, this message translates to:
+  /// **'Tipper / Truck'**
+  String get machineCategoryTipper;
+
+  /// No description provided for @machineCategoryTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools and small plant'**
+  String get machineCategoryTools;
+
+  /// No description provided for @machineCategoryTransitMixer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transit mixer'**
+  String get machineCategoryTransitMixer;
+
+  /// No description provided for @machineCategoryVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle'**
+  String get machineCategoryVehicle;
+
+  /// No description provided for @machineFormBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours lost to breakdown'**
+  String get machineFormBreakdown;
+
+  /// No description provided for @machineFormChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a machine'**
+  String get machineFormChoose;
+
+  /// No description provided for @machineFormClosing.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing reading'**
+  String get machineFormClosing;
+
+  /// No description provided for @machineFormClosingBelow.
+  ///
+  /// In en, this message translates to:
+  /// **'The closing reading cannot be lower than the opening reading'**
+  String get machineFormClosingBelow;
+
+  /// No description provided for @machineFormDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get machineFormDate;
+
+  /// No description provided for @machineFormHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours worked'**
+  String get machineFormHours;
+
+  /// No description provided for @machineFormHoursError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter hours from 0 to 24, with one decimal at most'**
+  String get machineFormHoursError;
+
+  /// No description provided for @machineFormHoursHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One decimal at most, like 7.5'**
+  String get machineFormHoursHint;
+
+  /// No description provided for @machineFormKm.
+  ///
+  /// In en, this message translates to:
+  /// **'Km run'**
+  String get machineFormKm;
+
+  /// No description provided for @machineFormKmError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter km from 0 to 99,999'**
+  String get machineFormKmError;
+
+  /// No description provided for @machineFormLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'Already logged that day: {hours} h. One machine cannot pass 24 h in a day.'**
+  String machineFormLogged(String hours);
+
+  /// No description provided for @machineFormMachine.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine'**
+  String get machineFormMachine;
+
+  /// No description provided for @machineFormMachineRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the machine first'**
+  String get machineFormMachineRequired;
+
+  /// No description provided for @machineFormNoMachinesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No machines to log against'**
+  String get machineFormNoMachinesTitle;
+
+  /// No description provided for @machineFormNoneMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No machine matches'**
+  String get machineFormNoneMatch;
+
+  /// No description provided for @machineFormNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the hours or km worked, or the hours lost to breakdown'**
+  String get machineFormNothing;
+
+  /// No description provided for @machineFormOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening reading'**
+  String get machineFormOpening;
+
+  /// No description provided for @machineFormOperator.
+  ///
+  /// In en, this message translates to:
+  /// **'Operator'**
+  String get machineFormOperator;
+
+  /// No description provided for @machineFormReadingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number from 0 to 99,999,999'**
+  String get machineFormReadingError;
+
+  /// No description provided for @machineFormReadingsHintHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Hours worked blank and the hours are worked out from the two readings.'**
+  String get machineFormReadingsHintHours;
+
+  /// No description provided for @machineFormReadingsHintKm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Km run blank and the km are worked out from the two readings.'**
+  String get machineFormReadingsHintKm;
+
+  /// No description provided for @machineFormRemarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Remarks'**
+  String get machineFormRemarks;
+
+  /// No description provided for @machineFormSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save log'**
+  String get machineFormSave;
+
+  /// No description provided for @machineFormSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by code or name'**
+  String get machineFormSearch;
+
+  /// No description provided for @machinesAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a log'**
+  String get machinesAdd;
+
+  /// No description provided for @machinesBreakdownValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakdown {hours} h'**
+  String machinesBreakdownValue(String hours);
+
+  /// No description provided for @machinesEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A day\'s work of a machine on this project will show here.'**
+  String get machinesEmptyMessage;
+
+  /// No description provided for @machinesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No logs yet'**
+  String get machinesEmptyTitle;
+
+  /// No description provided for @machinesHoursValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h'**
+  String machinesHoursValue(String hours);
+
+  /// No description provided for @machinesKmValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km'**
+  String machinesKmValue(String km);
+
+  /// No description provided for @machinesLatestOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the latest 50. The rest are on the website.'**
+  String get machinesLatestOnly;
+
+  /// No description provided for @machinesLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading machine logs'**
+  String get machinesLoading;
+
+  /// No description provided for @machinesNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load the machines. After that the log opens offline.'**
+  String get machinesNoDataMessage;
+
+  /// No description provided for @machinesNoMachinesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Machines are added on the website. They show here after that.'**
+  String get machinesNoMachinesMessage;
+
+  /// No description provided for @machinesNoMachinesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No machines yet'**
+  String get machinesNoMachinesTitle;
+
+  /// No description provided for @machinesOperatorValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Operator {name}'**
+  String machinesOperatorValue(String name);
+
+  /// No description provided for @machinesRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The machine log is not open to your role. Ask your office if you need it.'**
+  String get machinesRefusedMessage;
+
+  /// No description provided for @machinesRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not part of your role'**
+  String get machinesRefusedTitle;
+
+  /// No description provided for @machinesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine log'**
+  String get machinesTitle;
+
+  /// No description provided for @machinesUnderRepair.
+  ///
+  /// In en, this message translates to:
+  /// **'Under repair'**
+  String get machinesUnderRepair;
+
+  /// No description provided for @machinesUnknownMachine.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine no. {id}'**
+  String machinesUnknownMachine(int id);
+
   /// No description provided for @materialAdd.
   ///
   /// In en, this message translates to:
@@ -6970,6 +7306,12 @@ abstract class AppLocalizations {
   /// **'Fill a checklist for a pour, shuttering or a safety round'**
   String get siteToolsInspectionsHint;
 
+  /// No description provided for @siteToolsMachinesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Record what a machine worked today, in hours or km'**
+  String get siteToolsMachinesHint;
+
   /// No description provided for @siteToolsTitle.
   ///
   /// In en, this message translates to:
@@ -7221,6 +7563,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Issue status'**
   String get syncTypeIssueStatus;
+
+  /// No description provided for @syncTypeMachineLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine log'**
+  String get syncTypeMachineLog;
 
   /// No description provided for @syncTypeMeasurement.
   ///

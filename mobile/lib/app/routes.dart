@@ -73,6 +73,15 @@ abstract final class Routes {
   /// By the server's id, or by the uuid of one finished here and not yet sent.
   static String inspectionDetail(String key) => '/inspections/$key';
 
+  /// The daily machine log: what each machine worked, and a quick entry.
+  static const machines = '/machines';
+
+  /// A day's log for one machine. Optional query: `asset`.
+  static const machineLogForm = '/machines/form';
+
+  /// True for the machine log pages, and no other path.
+  static bool isMachines(String path) => path == machines || path.startsWith('$machines/');
+
   /// True for the inspection pages, and no other path.
   static bool isInspections(String path) => path == inspections || path.startsWith('$inspections/');
 

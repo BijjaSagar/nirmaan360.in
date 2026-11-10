@@ -73,6 +73,9 @@ abstract final class MetaKey {
   /// The checklists and recent inspections this phone read for a project, as JSON.
   static String inspections(int projectId) => 'inspections.$projectId';
 
+  /// The machines and the latest machine logs this phone read for a project, as JSON.
+  static String machines(int projectId) => 'machines.$projectId';
+
   /// Inspections being filled in on this phone and not finished, by their uuid, as JSON.
   /// They are work the server has never seen, so a sign-out counts them.
   static String inspectionDrafts(int projectId) => 'inspection.drafts.$projectId';

@@ -18,6 +18,7 @@ import 'contractor_payments.dart';
 import 'floor_entries.dart';
 import 'ids.dart';
 import 'inspection_cache.dart';
+import 'machine_cache.dart';
 import 'pull_applier.dart';
 import 'record_photos.dart';
 import 'sync_status.dart';
@@ -78,6 +79,7 @@ class SyncEngine {
   late final FloorEntries _floorEntries = FloorEntries(db: _db, api: _api);
   late final ContractorPayments _contractorPayments = ContractorPayments(_db);
   late final InspectionCache _inspectionCache = InspectionCache(_db);
+  late final MachineCache _machineCache = MachineCache(_db);
   final String _instanceId;
 
   late final StreamSubscription<bool> _connectivitySub;
@@ -507,6 +509,7 @@ class SyncEngine {
       case OutboxType.progressCorrection:
       case OutboxType.contractorPayment:
       case OutboxType.inspection:
+      case OutboxType.machineLog:
         return null;
     }
   }
@@ -641,6 +644,7 @@ class SyncEngine {
       case OutboxType.progressCorrection:
       case OutboxType.contractorPayment:
       case OutboxType.inspection:
+      case OutboxType.machineLog:
         break;
     }
   }
@@ -736,6 +740,10 @@ class SyncEngine {
       if (row.type == OutboxType.inspection) {
         await _inspectionCache.remember(row.projectId, stored);
       }
+      // A machine log the same way, so it is listed from the moment it is stored.
+      if (row.type == OutboxType.machineLog) {
+        await _machineCache.remember(row.projectId, stored);
+      }
     });
     _sentThisRun++;
     _notifyProgress();
@@ -816,6 +824,8 @@ class SyncEngine {
         await _checkChecklistUnchanged(data);
         // `local` is what the phone shows while it waits. The server needs the rest.
         return _api.postInspection(row.projectId, <String, dynamic>{...body}..remove('local'));
+      case OutboxType.machineLog:
+        return _api.postMachineLog(body);
       default:
         throw StateError('${row.type} is not a direct row.');
     }

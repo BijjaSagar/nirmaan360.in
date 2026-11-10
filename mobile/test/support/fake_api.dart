@@ -1959,6 +1959,180 @@ class FakeApi implements NirmaanApi {
     return stored;
   }
 
+  // Machine logs ---------------------------------------------------------------
+
+  /// Gives the signed-in user the plan feature and the permission to log a
+  /// machine, as an engineer on a plan with `assets` has them.
+  void grantMachineLogs() {
+    final features = (user['organization'] as Map)['features'] as List;
+    if (!features.contains('assets')) features.add('assets');
+    grant('asset.log');
+  }
+
+  Row _machine(int id, String name, String category, String? meter, int? projectId, {String? registration, String status = 'active'}) => {
+    'id': id,
+    'code': 'AST-${id.toString().padLeft(4, '0')}',
+    'name': name,
+    'category': category,
+    'ownership': 'owned',
+    'registration_no': registration,
+    'meter_unit': meter,
+    'project_id': projectId,
+    'site_id': null,
+    'status': status,
+    'updated_at': '2026-11-01T09:00:00+05:30',
+  };
+
+  /// What `MachineLogPresenter::asset` sends: no rate, no hire term, no cost.
+  late List<Row> machineAssetRows = [
+    _machine(1, 'JCB 3DX', 'backhoe', 'hours', 1, registration: 'MH12 AB 1234'),
+    _machine(2, 'Tipper', 'tipper', 'km', null),
+    _machine(3, 'Hired Crane', 'crane', null, 2, status: 'under_repair'),
+  ];
+
+  Row _machineLogRow(int id, int assetId, String date, {String hours = '0.000', String km = '0.000', String breakdown = '0.000', String? operator, String? uuid}) => {
+    'id': id,
+    'client_uuid': uuid,
+    'asset_id': assetId,
+    'project_id': 1,
+    'log_date': date,
+    'opening_reading': null,
+    'closing_reading': null,
+    'hours': hours,
+    'km': km,
+    'breakdown_hours': breakdown,
+    'operator': operator,
+    'remarks': null,
+    'billed': false,
+    'created_at': '2026-11-08T18:00:00+05:30',
+  };
+
+  late List<Row> machineLogRows = [
+    _machineLogRow(21, 1, '2026-11-08', hours: '8.500', operator: 'Ramesh'),
+    _machineLogRow(22, 2, '2026-11-08', km: '42.500'),
+    _machineLogRow(23, 3, '2026-11-07', breakdown: '4.000'),
+  ];
+
+  /// Logs posted from the phone, by `client_uuid`.
+  final Map<String, Row> machineLogPosts = {};
+  int machineLogPostCalls = 0;
+  int machineAssetReads = 0;
+
+  /// Machines per page, so a test can make the list run to a second page.
+  int machineAssetsPerPage = 100;
+
+  /// Every read of the machines or the logs throws this.
+  ApiFailure? machineReadFailure;
+
+  /// Only the list of logs throws this, so the machines still come.
+  ApiFailure? machineLogListFailure;
+
+  /// `asset id:date` pairs a hire bill covers, which the server refuses.
+  final Set<String> machineHireBilled = {};
+  void Function(Map<String, dynamic> body)? onMachineLogPost;
+  var _machineLogSerial = 700;
+
+  @override
+  Future<Map<String, dynamic>> machineAssets({int page = 1}) async {
+    _guard();
+    machineAssetReads++;
+    final failure = machineReadFailure;
+    if (failure != null) throw failure;
+    final from = (page - 1) * machineAssetsPerPage;
+    return {
+      'data': machineAssetRows.skip(from).take(machineAssetsPerPage).toList(),
+      'current_page': page,
+      'last_page': (machineAssetRows.length / machineAssetsPerPage).ceil().clamp(1, 1000),
+      'total': machineAssetRows.length,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> machineLogs(int projectId, {int page = 1}) async {
+    _guard();
+    final failure = machineReadFailure ?? machineLogListFailure;
+    if (failure != null) throw failure;
+    final rows = [...machineLogRows, ...machineLogPosts.values].where((row) => row['project_id'] == projectId).toList()
+      ..sort((a, b) {
+        final byDay = (b['log_date'] as String).compareTo(a['log_date'] as String);
+        return byDay != 0 ? byDay : (b['id'] as int).compareTo(a['id'] as int);
+      });
+    return {
+      'data': rows.take(50).toList(),
+      'current_page': 1,
+      'last_page': rows.length > 50 ? 2 : 1,
+      'total': rows.length,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMachineLog(Map<String, dynamic> body) async {
+    _guard();
+    machineLogPostCalls++;
+    onMachineLogPost?.call(body);
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    final uuid = body['client_uuid'] as String?;
+    var stored = uuid == null ? null : machineLogPosts[uuid];
+    if (stored == null) {
+      // PlantLogService::record, in the order the server checks.
+      ValidationFailure refuse(String field, String message) => ValidationFailure(message, errors: {field: [message]});
+      final asset = machineAssetRows.where((row) => row['id'] == body['asset_id']).firstOrNull;
+      if (asset == null) throw refuse('asset_id', 'The selected asset id is invalid.');
+      final date = body['log_date'] as String;
+      if (date.compareTo('2026-11-09') > 0) throw refuse('log_date', 'The log date field must be a date before or equal to today.');
+      if (machineHireBilled.contains('${asset['id']}:$date')) {
+        throw refuse('log_date', 'A hire bill already covers this date. Cancel the bill to add entries.');
+      }
+      Decimal? number(Object? raw) => raw == null || '$raw'.trim().isEmpty ? null : Decimal.parse('$raw');
+      final opening = number(body['opening_reading']);
+      final closing = number(body['closing_reading']);
+      final both = opening != null && closing != null;
+      if (both && closing < opening) throw refuse('closing_reading', 'The closing reading cannot be lower than the opening reading.');
+      final fromMeter = both ? closing - opening : null;
+      final hours = number(body['hours']) ?? (asset['meter_unit'] == 'hours' ? fromMeter : null);
+      final km = number(body['km']) ?? (asset['meter_unit'] == 'km' ? fromMeter : null);
+      final lost = number(body['breakdown_hours']);
+      if (hours == null && km == null && lost == null) {
+        throw refuse('hours', 'Enter the hours or km worked, or the hours lost to breakdown.');
+      }
+      var already = Decimal.zero;
+      for (final row in [...machineLogRows, ...machineLogPosts.values]) {
+        if (row['asset_id'] == asset['id'] && row['log_date'] == date) already += Decimal.parse(row['hours'] as String);
+      }
+      if (already + (hours ?? Decimal.zero) > Decimal.fromInt(24)) {
+        throw refuse('hours', 'That would be more than 24 hours for this machine on one day.');
+      }
+      String three(Decimal? value) => (value ?? Decimal.zero).toStringAsFixed(3);
+      final id = _machineLogSerial++;
+      stored = {
+        'id': id,
+        'client_uuid': uuid,
+        'asset_id': asset['id'],
+        'project_id': body['project_id'] ?? asset['project_id'],
+        'log_date': date,
+        'opening_reading': opening == null ? null : three(opening),
+        'closing_reading': closing == null ? null : three(closing),
+        'hours': three(hours),
+        'km': three(km),
+        'breakdown_hours': three(lost),
+        'operator': body['operator'],
+        'remarks': body['remarks'],
+        'billed': false,
+        'created_at': '2026-11-09T10:00:00+05:30',
+      };
+      machineLogPosts[uuid ?? 'no-uuid-$id'] = stored;
+    }
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return stored;
+  }
+
   // Price watch ---------------------------------------------------------------
 
   /// Gives the signed-in user the plan feature and the money permissions of an

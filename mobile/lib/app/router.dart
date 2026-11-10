@@ -16,6 +16,8 @@ import '../features/inspections/view/inspections_screen.dart';
 import '../features/issues/view/issue_detail_screen.dart';
 import '../features/issues/view/issue_form_screen.dart';
 import '../features/issues/view/issue_list_screen.dart';
+import '../features/machine_logs/view/machine_log_form_screen.dart';
+import '../features/machine_logs/view/machine_logs_screen.dart';
 import '../features/measurement/view/measurement_detail_screen.dart';
 import '../features/measurement/view/measurement_form_screen.dart';
 import '../features/measurement/view/measurement_list_screen.dart';
@@ -168,6 +170,13 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         ],
       ),
       _route(Routes.siteTools, (_) => const SiteToolsScreen()),
+      _route(
+        Routes.machines,
+        (_) => const MachineLogsScreen(),
+        routes: <RouteBase>[
+          _route('form', (s) => MachineLogFormScreen(machineId: int.tryParse(s.uri.queryParameters['asset'] ?? ''))),
+        ],
+      ),
       _route(
         Routes.inspections,
         (_) => const InspectionsScreen(),

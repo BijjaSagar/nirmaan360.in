@@ -18,6 +18,7 @@ import '../features/dpr/data/dpr_repository.dart';
 import '../features/home/data/home_repository.dart';
 import '../features/inspections/data/inspection_repository.dart';
 import '../features/issues/data/issue_repository.dart';
+import '../features/machine_logs/data/machine_repository.dart';
 import '../features/measurement/data/measurement_repository.dart';
 import '../features/petty_cash/data/petty_cash_repository.dart';
 import '../features/price_watch/data/price_watch_repository.dart';
@@ -56,6 +57,7 @@ class AppServices {
     required this.siteAlerts,
     required this.contractors,
     required this.inspections,
+    required this.machines,
     required this.portal,
     required this.priceWatch,
     required this.projectImages,
@@ -193,6 +195,7 @@ class AppServices {
     final siteAlerts = SiteAlertsRepository(context);
     final contractors = ContractorRepository(context);
     final inspections = InspectionRepository(context);
+    final machines = MachineRepository(context);
     final portal = PortalRepository(context);
     final priceWatch = PriceWatchRepository(context);
     final projectImages = ProjectImageRepository(context);
@@ -205,6 +208,7 @@ class AppServices {
         contractors.refreshCurrent,
         priceWatch.refreshCurrent,
         inspections.refreshCurrent,
+        machines.refreshCurrent,
       ]) {
         try {
           await refresh(force: sentSomething);
@@ -220,6 +224,7 @@ class AppServices {
       siteAlerts: siteAlerts,
       contractors: contractors,
       inspections: inspections,
+      machines: machines,
       portal: portal,
       priceWatch: priceWatch,
       projectImages: projectImages,
@@ -284,6 +289,9 @@ class AppServices {
 
   /// Checklists and the inspections filled in from them.
   final InspectionRepository inspections;
+
+  /// The daily machine log: machines, and what each worked.
+  final MachineRepository machines;
 
   /// The contractor portal: all a contractor login reads.
   final PortalRepository portal;

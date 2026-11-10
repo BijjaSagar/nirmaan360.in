@@ -30,6 +30,7 @@ extension SyncLabels on AppLocalizations {
         OutboxType.progressCorrection => syncTypeProgressCorrection,
         OutboxType.contractorPayment => syncTypeContractorPayment,
         OutboxType.inspection => syncTypeInspection,
+        OutboxType.machineLog => syncTypeMachineLog,
       };
 
   String syncReasonFor(OutboxItem item) => switch (item.attentionCode) {
@@ -70,4 +71,5 @@ IconData syncTypeIcon(OutboxType type) => switch (type) {
       OutboxType.progressCorrection => Icons.edit_note,
       OutboxType.contractorPayment => Icons.request_quote_outlined,
       OutboxType.inspection => Icons.fact_check_outlined,
+      OutboxType.machineLog => Icons.precision_manufacturing_outlined,
     };

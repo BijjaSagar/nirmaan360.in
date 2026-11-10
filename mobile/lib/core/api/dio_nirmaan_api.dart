@@ -484,6 +484,18 @@ class DioNirmaanApi implements NirmaanApi {
       _postData('/projects/$projectId/inspections', body);
 
   @override
+  Future<Map<String, dynamic>> machineAssets({int page = 1}) =>
+      _call(() => _dio.get('/assets', queryParameters: <String, dynamic>{'page': page}));
+
+  @override
+  Future<Map<String, dynamic>> machineLogs(int projectId, {int page = 1}) => _call(
+    () => _dio.get('/machine-logs', queryParameters: <String, dynamic>{'project_id': projectId, 'page': page}),
+  );
+
+  @override
+  Future<Map<String, dynamic>> postMachineLog(Map<String, dynamic> body) => _postData('/machine-logs', body);
+
+  @override
   Future<Map<String, dynamic>> siteDashboard(int projectId) => _getData('/projects/$projectId/site-dashboard');
 
   @override

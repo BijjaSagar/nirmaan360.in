@@ -1782,6 +1782,196 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesUnassigned => 'कोणाकडेही नाही';
 
   @override
+  String get machineCategoryBackhoe => 'JCB / बॅकहो लोडर';
+
+  @override
+  String get machineCategoryCompressor => 'कंप्रेसर';
+
+  @override
+  String get machineCategoryCrane => 'क्रेन';
+
+  @override
+  String get machineCategoryDgSet => 'DG सेट';
+
+  @override
+  String get machineCategoryExcavator => 'एक्सकॅव्हेटर';
+
+  @override
+  String get machineCategoryFormwork => 'शटरिंग / फॉर्मवर्क';
+
+  @override
+  String get machineCategoryMixer => 'काँक्रीट मिक्सर';
+
+  @override
+  String get machineCategoryOther => 'इतर';
+
+  @override
+  String get machineCategoryPump => 'काँक्रीट पंप';
+
+  @override
+  String get machineCategoryRoller => 'रोलर / कॉम्पॅक्टर';
+
+  @override
+  String get machineCategoryScaffolding => 'स्कॅफोल्डिंग';
+
+  @override
+  String get machineCategoryTipper => 'टिपर / ट्रक';
+
+  @override
+  String get machineCategoryTools => 'हत्यारे आणि छोटी यंत्रे';
+
+  @override
+  String get machineCategoryTransitMixer => 'ट्रान्झिट मिक्सर';
+
+  @override
+  String get machineCategoryVehicle => 'वाहन';
+
+  @override
+  String get machineFormBreakdown => 'बिघाडात गेलेले तास';
+
+  @override
+  String get machineFormChoose => 'यंत्र निवडा';
+
+  @override
+  String get machineFormClosing => 'शेवटचे रीडिंग';
+
+  @override
+  String get machineFormClosingBelow =>
+      'शेवटचे रीडिंग सुरुवातीच्या रीडिंगपेक्षा कमी असू शकत नाही';
+
+  @override
+  String get machineFormDate => 'दिनांक';
+
+  @override
+  String get machineFormHours => 'कामाचे तास';
+
+  @override
+  String get machineFormHoursError =>
+      '0 ते 24 तास लिहा, जास्तीत जास्त एक दशांश';
+
+  @override
+  String get machineFormHoursHint => 'जास्तीत जास्त एक दशांश, उदा. 7.5';
+
+  @override
+  String get machineFormKm => 'धावलेले किमी';
+
+  @override
+  String get machineFormKmError => '0 ते 99,999 किमी लिहा';
+
+  @override
+  String machineFormLogged(String hours) {
+    return 'त्या दिवशी आधीच नोंदवले: $hours तास. एका यंत्राचे दिवसाचे तास 24 पेक्षा जास्त होऊ शकत नाहीत.';
+  }
+
+  @override
+  String get machineFormMachine => 'यंत्र';
+
+  @override
+  String get machineFormMachineRequired => 'आधी यंत्र निवडा';
+
+  @override
+  String get machineFormNoMachinesTitle => 'नोंद करण्यासाठी यंत्रे नाहीत';
+
+  @override
+  String get machineFormNoneMatch => 'एकही यंत्र जुळत नाही';
+
+  @override
+  String get machineFormNothing =>
+      'कामाचे तास किंवा किमी, किंवा बिघाडात गेलेले तास लिहा';
+
+  @override
+  String get machineFormOpening => 'सुरुवातीचे रीडिंग';
+
+  @override
+  String get machineFormOperator => 'ऑपरेटर';
+
+  @override
+  String get machineFormReadingError => '0 ते 99,999,999 पर्यंत संख्या लिहा';
+
+  @override
+  String get machineFormReadingsHintHours =>
+      'कामाचे तास रिकामे सोडा, दोन रीडिंगवरून तास काढले जातील.';
+
+  @override
+  String get machineFormReadingsHintKm =>
+      'धावलेले किमी रिकामे सोडा, दोन रीडिंगवरून किमी काढले जातील.';
+
+  @override
+  String get machineFormRemarks => 'शेरा';
+
+  @override
+  String get machineFormSave => 'नोंद जतन करा';
+
+  @override
+  String get machineFormSearch => 'कोड किंवा नावाने शोधा';
+
+  @override
+  String get machinesAdd => 'नोंद करा';
+
+  @override
+  String machinesBreakdownValue(String hours) {
+    return 'बिघाड $hours तास';
+  }
+
+  @override
+  String get machinesEmptyMessage =>
+      'या प्रकल्पावरील यंत्राचे दिवसाचे काम इथे दिसेल.';
+
+  @override
+  String get machinesEmptyTitle => 'अजून नोंदी नाहीत';
+
+  @override
+  String machinesHoursValue(String hours) {
+    return '$hours तास';
+  }
+
+  @override
+  String machinesKmValue(String km) {
+    return '$km किमी';
+  }
+
+  @override
+  String get machinesLatestOnly =>
+      'नवीन 50 दाखवल्या आहेत. बाकीच्या वेबसाइटवर आहेत.';
+
+  @override
+  String get machinesLoading => 'यंत्र नोंदी लोड होत आहेत';
+
+  @override
+  String get machinesNoDataMessage =>
+      'यंत्रे लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर नोंदवही ऑफलाइनही उघडेल.';
+
+  @override
+  String get machinesNoMachinesMessage =>
+      'यंत्रे वेबसाइटवर जोडली जातात. त्यानंतर ती इथे दिसतील.';
+
+  @override
+  String get machinesNoMachinesTitle => 'अजून यंत्रे नाहीत';
+
+  @override
+  String machinesOperatorValue(String name) {
+    return 'ऑपरेटर $name';
+  }
+
+  @override
+  String get machinesRefusedMessage =>
+      'यंत्र नोंदवही तुमच्या भूमिकेसाठी उपलब्ध नाही. गरज असल्यास ऑफिसला विचारा.';
+
+  @override
+  String get machinesRefusedTitle => 'तुमच्या भूमिकेत हे नाही';
+
+  @override
+  String get machinesTitle => 'यंत्र नोंदवही';
+
+  @override
+  String get machinesUnderRepair => 'दुरुस्तीत';
+
+  @override
+  String machinesUnknownMachine(int id) {
+    return 'यंत्र क्र. $id';
+  }
+
+  @override
   String get materialAdd => 'नोंद करा';
 
   @override
@@ -3876,6 +4066,10 @@ class AppLocalizationsMr extends AppLocalizations {
       'पोअर, शटरिंग किंवा सुरक्षा फेरीसाठी चेकलिस्ट भरा';
 
   @override
+  String get siteToolsMachinesHint =>
+      'यंत्र आज किती चालले ते तास किंवा किमीमध्ये नोंदवा';
+
+  @override
   String get siteToolsTitle => 'साइट साधने';
 
   @override
@@ -4017,6 +4211,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeIssueStatus => 'समस्येची स्थिती';
+
+  @override
+  String get syncTypeMachineLog => 'यंत्र नोंद';
 
   @override
   String get syncTypeMeasurement => 'मोजमाप';

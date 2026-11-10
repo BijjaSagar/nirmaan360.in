@@ -101,8 +101,14 @@ class GateState extends Equatable {
   bool get canInspect =>
       can('checklist.fill') && (user?.features.contains('qhs') ?? false) && !isContractor && !isLocalOnly;
 
+  /// The daily machine log: `asset.log` on a plan with `assets`. `asset.view`,
+  /// which the server asks for on the reads, does not reach the app, and every
+  /// role that logs a machine also sees them.
+  bool get canLogMachines =>
+      can('asset.log') && (user?.features.contains('assets') ?? false) && !isContractor && !isLocalOnly;
+
   /// Site tools has a row on Home when at least one of its tools is open.
-  bool get hasSiteTools => canInspect;
+  bool get hasSiteTools => canInspect || canLogMachines;
 
   /// A subcontractor's login: the portal and settings, and nothing else.
   bool get isContractor => user?.isContractor ?? false;
@@ -281,6 +287,7 @@ class AppGate extends Cubit<GateState> {
       a.isContractor != b.isContractor ||
       a.canSeePrices != b.canSeePrices ||
       a.canInspect != b.canInspect ||
+      a.canLogMachines != b.canLogMachines ||
       a.hasSiteTools != b.hasSiteTools ||
       a.ready != b.ready ||
       a.offline?.mode != b.offline?.mode ||
@@ -341,6 +348,7 @@ class AppGate extends Cubit<GateState> {
     if (!s.canApprove && path.startsWith(Routes.approvals)) return Routes.home;
     if (Routes.isPrices(path) && !s.canSeePrices) return Routes.home;
     if (Routes.isInspections(path) && !s.canInspect) return Routes.home;
+    if (Routes.isMachines(path) && !s.canLogMachines) return Routes.home;
     if (path == Routes.siteTools && !s.hasSiteTools) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;
