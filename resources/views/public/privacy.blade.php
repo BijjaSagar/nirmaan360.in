@@ -11,6 +11,7 @@
     <ul>
         <li>Account details: your name, email, mobile number and company.</li>
         <li>Project records you and your team enter, such as BOQs, daily reports, measurements, attendance, bills and photos.</li>
+        <li>Details of workers and contractors your team adds, such as their name and phone number.</li>
         <li>Payment records. Card and bank details are handled by Razorpay and never reach our servers.</li>
         <li>Technical data needed to run the service, such as IP address and sign-in activity.</li>
         <li>Location, in the phone app only: when you mark attendance with a photo, the app reads your phone's precise location once and saves it with that photo, so the company can check it was taken at the site. The app does not read your location at any other time or in the background.</li>

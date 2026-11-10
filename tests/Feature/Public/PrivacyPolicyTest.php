@@ -19,6 +19,7 @@ class PrivacyPolicyTest extends TestCase
             ->assertSee('reads your phone\'s precise location once and saves it with that photo', false)
             ->assertSee('does not read your location at any other time or in the background')
             ->assertSee('A notification token for your phone, only after you turn on alerts in the app.')
-            ->assertSee('Google Firebase Cloud Messaging');
+            ->assertSee('Google Firebase Cloud Messaging')
+            ->assertSee('Details of workers and contractors your team adds, such as their name and phone number.');
     }
 }
