@@ -198,5 +198,50 @@
     "en": "This needs the internet. Your data here is not affected.",
     "mr": "यासाठी इंटरनेट लागते. इथला डेटा सुरक्षित आहे.",
     "hi": "इसके लिए इंटरनेट चाहिए। यहाँ का डेटा सुरक्षित है।"
+  },
+  "offlineExportHeading": {
+    "en": "Keep a copy",
+    "mr": "एक प्रत ठेवा",
+    "hi": "एक कॉपी रखें"
+  },
+  "offlineExportHint": {
+    "en": "Makes one file with all your data and photos. Save it to Drive, email it, or send it to another phone.",
+    "mr": "तुमचा सर्व डेटा आणि फोटो असलेली एक फाइल तयार होते. ती ड्राइव्हवर ठेवा, ईमेल करा किंवा दुसऱ्या फोनवर पाठवा.",
+    "hi": "आपके सारे डेटा और फ़ोटो की एक फ़ाइल बनती है। इसे ड्राइव में रखें, ईमेल करें या दूसरे फ़ोन पर भेजें।"
+  },
+  "offlineExportButton": {
+    "en": "Export my data",
+    "mr": "माझा डेटा निर्यात करा",
+    "hi": "मेरा डेटा निर्यात करें"
+  },
+  "offlineExportDone": {
+    "en": "Copy made with {count} photos. Keep the file somewhere safe.",
+    "mr": "{count} फोटोंसह प्रत तयार झाली. फाइल सुरक्षित ठिकाणी ठेवा.",
+    "hi": "{count} फ़ोटो के साथ कॉपी बन गई। फ़ाइल सुरक्षित जगह रखें।",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineExportMissing": {
+    "en": "{count} photos could not be found on this phone.",
+    "mr": "{count} फोटो या फोनवर सापडले नाहीत.",
+    "hi": "{count} फ़ोटो इस फ़ोन पर नहीं मिले।",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineExportFailed": {
+    "en": "The copy could not be made. Your data here is safe. Try again.",
+    "mr": "प्रत तयार झाली नाही. इथला डेटा सुरक्षित आहे. पुन्हा प्रयत्न करा.",
+    "hi": "कॉपी नहीं बन सकी। यहाँ का डेटा सुरक्षित है। फिर से कोशिश करें।"
+  },
+  "offlineShareSubject": {
+    "en": "Nirmaan360 data backup",
+    "mr": "Nirmaan360 डेटा बॅकअप",
+    "hi": "Nirmaan360 डेटा बैकअप"
   }
 }

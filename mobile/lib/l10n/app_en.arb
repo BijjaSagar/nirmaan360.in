@@ -940,6 +940,26 @@
   "offlineCopyLink": "Copy link",
   "offlineDeviceLimitBody": "Your plan allows a set number of phones and they are all in use. Free one on the website, then try again.",
   "offlineDeviceLimitTitle": "Another phone holds your licence",
+  "offlineExportButton": "Export my data",
+  "offlineExportDone": "Copy made with {count} photos. Keep the file somewhere safe.",
+  "@offlineExportDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineExportFailed": "The copy could not be made. Your data here is safe. Try again.",
+  "offlineExportHeading": "Keep a copy",
+  "offlineExportHint": "Makes one file with all your data and photos. Save it to Drive, email it, or send it to another phone.",
+  "offlineExportMissing": "{count} photos could not be found on this phone.",
+  "@offlineExportMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineFreeBody": "Your data does not move by itself. Export a copy first. This phone keeps its data and works until its licence ends.",
   "offlineFreeConfirm": "Free it",
   "offlineFreeFailed": "That did not work. Check your internet and try again.",
@@ -985,6 +1005,7 @@
   "offlineRevokedTitle": "This phone was freed",
   "offlineSaveReport": "Save report",
   "offlineSavedOnPhone": "Saved on this phone",
+  "offlineShareSubject": "Nirmaan360 data backup",
   "offlineSignInButton": "Sign in",
   "offlineSignOutBody": "Your data stays on this phone. You will need internet to sign in again.",
   "offlineSignOutTitle": "Sign out?",

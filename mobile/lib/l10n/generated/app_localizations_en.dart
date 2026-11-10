@@ -2152,6 +2152,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineDeviceLimitTitle => 'Another phone holds your licence';
 
   @override
+  String get offlineExportButton => 'Export my data';
+
+  @override
+  String offlineExportDone(int count) {
+    return 'Copy made with $count photos. Keep the file somewhere safe.';
+  }
+
+  @override
+  String get offlineExportFailed =>
+      'The copy could not be made. Your data here is safe. Try again.';
+
+  @override
+  String get offlineExportHeading => 'Keep a copy';
+
+  @override
+  String get offlineExportHint =>
+      'Makes one file with all your data and photos. Save it to Drive, email it, or send it to another phone.';
+
+  @override
+  String offlineExportMissing(int count) {
+    return '$count photos could not be found on this phone.';
+  }
+
+  @override
   String get offlineFreeBody =>
       'Your data does not move by itself. Export a copy first. This phone keeps its data and works until its licence ends.';
 
@@ -2255,6 +2279,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineSavedOnPhone => 'Saved on this phone';
+
+  @override
+  String get offlineShareSubject => 'Nirmaan360 data backup';
 
   @override
   String get offlineSignInButton => 'Sign in';

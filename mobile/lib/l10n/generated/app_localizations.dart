@@ -3946,6 +3946,42 @@ abstract class AppLocalizations {
   /// **'Another phone holds your licence'**
   String get offlineDeviceLimitTitle;
 
+  /// No description provided for @offlineExportButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Export my data'**
+  String get offlineExportButton;
+
+  /// No description provided for @offlineExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy made with {count} photos. Keep the file somewhere safe.'**
+  String offlineExportDone(int count);
+
+  /// No description provided for @offlineExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The copy could not be made. Your data here is safe. Try again.'**
+  String get offlineExportFailed;
+
+  /// No description provided for @offlineExportHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a copy'**
+  String get offlineExportHeading;
+
+  /// No description provided for @offlineExportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Makes one file with all your data and photos. Save it to Drive, email it, or send it to another phone.'**
+  String get offlineExportHint;
+
+  /// No description provided for @offlineExportMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} photos could not be found on this phone.'**
+  String offlineExportMissing(int count);
+
   /// No description provided for @offlineFreeBody.
   ///
   /// In en, this message translates to:
@@ -4131,6 +4167,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved on this phone'**
   String get offlineSavedOnPhone;
+
+  /// No description provided for @offlineShareSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Nirmaan360 data backup'**
+  String get offlineShareSubject;
 
   /// No description provided for @offlineSignInButton.
   ///

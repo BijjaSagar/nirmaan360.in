@@ -1,4 +1,9 @@
+import 'dart:io' show Directory;
+import 'dart:ui' show Rect;
+
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'api/api_failure.dart';
 import 'dart:async';
@@ -20,6 +25,7 @@ import '../features/projects/data/project_image_repository.dart';
 import '../features/projects/data/project_repository.dart';
 import '../features/site_alerts/data/site_alerts_repository.dart';
 import '../features/site_progress/data/progress_repository.dart';
+import '../features/offline_plan/data/offline_export.dart';
 import '../features/sync_center/data/sync_repository.dart';
 import 'api/dio_nirmaan_api.dart';
 import 'api/nirmaan_api.dart';
@@ -34,6 +40,9 @@ import 'sync/data_context.dart';
 import 'sync/photo_capture.dart';
 import 'sync/sync_engine.dart';
 import 'sync/sync_scheduler.dart';
+
+/// Offers a file to the person: the file, a subject, and where the button is.
+typedef ShareFile = Future<void> Function(String path, String subject, Rect? origin);
 
 /// Composition root for the data layer.
 ///
@@ -56,6 +65,8 @@ class AppServices {
     required this._rawConnectivity,
     required this.context,
     required this.offlinePlan,
+    required this.exportBackup,
+    required this.shareFile,
     this._onDispose,
   }) : photos = PhotoCapture(),
        auth = AuthRepository(context, portal),
@@ -88,6 +99,8 @@ class AppServices {
       attachments: DirectoryAttachmentStore.documents(),
       observeLifecycle: true,
       onDispose: connectivity.dispose,
+      tempDirectory: () async => (await getTemporaryDirectory()).path,
+      shareFile: _systemShare,
     );
   }
 
@@ -99,6 +112,8 @@ class AppServices {
     AppClock? clock,
     ConnectivityMonitor? connectivity,
     AttachmentStore? attachments,
+    Future<String> Function()? tempDirectory,
+    ShareFile? shareFile,
   }) {
     final monitor = connectivity ?? _AlwaysOnline();
     final session = SessionController(
@@ -113,6 +128,8 @@ class AppServices {
       clock: clock ?? const SystemClock(),
       attachments: attachments ?? InMemoryAttachmentStore(),
       observeLifecycle: false,
+      tempDirectory: tempDirectory ?? () async => Directory.systemTemp.path,
+      shareFile: shareFile ?? (path, subject, origin) async {},
     );
   }
 
@@ -125,6 +142,8 @@ class AppServices {
     required AttachmentStore attachments,
     required bool observeLifecycle,
     Future<void> Function()? onDispose,
+    required Future<String> Function() tempDirectory,
+    required ShareFile shareFile,
   }) {
     final offlinePlan = OfflinePlan(
       db: db,
@@ -205,6 +224,8 @@ class AppServices {
       rawConnectivity: connectivity,
       context: context,
       offlinePlan: offlinePlan,
+      exportBackup: OfflineExporter(context, tempDirectory: tempDirectory).create,
+      shareFile: shareFile,
       onDispose: onDispose,
     );
   }
@@ -221,6 +242,12 @@ class AppServices {
 
   /// Whether this company keeps its data on the phone, and its licence.
   final OfflinePlan offlinePlan;
+
+  /// Writes the data and photos into one file, and returns it.
+  final Future<OfflineExport> Function() exportBackup;
+
+  /// Hands a file to the system share sheet.
+  final ShareFile shareFile;
 
   /// Repositories' shared context, for code that needs the raw pieces.
   final DataContext context;
@@ -279,6 +306,17 @@ class AppServices {
 
 /// On the offline plan there is no server to wait for, so no screen should
 /// say "no network" or hold a form back. Anywhere else, the real answer.
+Future<void> _systemShare(String path, String subject, Rect? origin) async {
+  await SharePlus.instance.share(
+    ShareParams(
+      files: <XFile>[XFile(path, mimeType: 'application/zip')],
+      subject: subject,
+      title: subject,
+      sharePositionOrigin: origin,
+    ),
+  );
+}
+
 class _PlanConnectivity implements ConnectivityMonitor {
   const _PlanConnectivity(this._inner, this._plan);
 

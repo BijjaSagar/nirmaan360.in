@@ -11,6 +11,7 @@ import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../core/offline/offline_plan.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import 'widgets/offline_export_card.dart';
 
 /// What the offline plan means for this phone: the data here, the licence,
 /// and how to renew it or keep a copy.
@@ -116,6 +117,10 @@ class _OfflinePlanScreenState extends State<OfflinePlanScreen> {
                     ],
                   ),
                 ],
+                const SizedBox(height: N360Space.lg),
+                SectionLabel(t.offlineExportHeading),
+                const SizedBox(height: N360Space.xs),
+                const OfflineExportCard(),
                 const SizedBox(height: N360Space.lg),
                 SectionLabel(t.offlineLicenceHeading),
                 const SizedBox(height: N360Space.xs),

@@ -2119,6 +2119,30 @@ class AppLocalizationsMr extends AppLocalizations {
   String get offlineDeviceLimitTitle => 'तुमचा परवाना दुसऱ्या फोनकडे आहे';
 
   @override
+  String get offlineExportButton => 'माझा डेटा निर्यात करा';
+
+  @override
+  String offlineExportDone(int count) {
+    return '$count फोटोंसह प्रत तयार झाली. फाइल सुरक्षित ठिकाणी ठेवा.';
+  }
+
+  @override
+  String get offlineExportFailed =>
+      'प्रत तयार झाली नाही. इथला डेटा सुरक्षित आहे. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get offlineExportHeading => 'एक प्रत ठेवा';
+
+  @override
+  String get offlineExportHint =>
+      'तुमचा सर्व डेटा आणि फोटो असलेली एक फाइल तयार होते. ती ड्राइव्हवर ठेवा, ईमेल करा किंवा दुसऱ्या फोनवर पाठवा.';
+
+  @override
+  String offlineExportMissing(int count) {
+    return '$count फोटो या फोनवर सापडले नाहीत.';
+  }
+
+  @override
   String get offlineFreeBody =>
       'तुमचा डेटा आपोआप जाणार नाही. आधी एक प्रत काढा. या फोनवरचा डेटा राहील आणि परवाना संपेपर्यंत चालेल.';
 
@@ -2222,6 +2246,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get offlineSavedOnPhone => 'या फोनवर जतन केले';
+
+  @override
+  String get offlineShareSubject => 'Nirmaan360 डेटा बॅकअप';
 
   @override
   String get offlineSignInButton => 'साइन इन करा';
