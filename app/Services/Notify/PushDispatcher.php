@@ -238,11 +238,15 @@ class PushDispatcher
         // An announcement that was stopped, or removed, sends nothing more: not even copies held for quiet hours.
         // One with a rupee figure is checked again against money.view, which can be lost while it waits.
         if ($target->type === 'announcement') {
-            $announcement = Announcement::find($target->id, ['id', 'status', 'mentions_money']);
+            $announcement = Announcement::find($target->id, ['id', 'status', 'mentions_money', 'title', 'body', 'translations']);
+
+            // The stored answer is the least it can be: the text is read again too, in case the detector grew while it waited.
+            $mentionsMoney = $announcement !== null && ($announcement->mentions_money
+                || MoneyMention::inAnnouncement((string) $announcement->title, (string) $announcement->body, $announcement->translations ?? []));
 
             return $announcement !== null
                 && $announcement->status !== Announcement::CANCELLED
-                && (! $announcement->mentions_money || Money::visible($user));
+                && (! $mentionsMoney || Money::visible($user));
         }
 
         $alertId = $target->type === 'alert' ? $target->id : ($target->extra['alert_id'] ?? null);

@@ -14,6 +14,7 @@ use App\Models\Party;
 use App\Models\User;
 use App\Services\Notify\AnnouncementService;
 use App\Services\Notify\MoneyMention;
+use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\PushDispatcher;
 use App\Support\PlatformSettings;
 use Illuminate\Console\Scheduling\Schedule;
@@ -727,5 +728,67 @@ class AnnouncementReviewFixesTest extends NotifyTestCase
         app()->call([$staying, 'handle']);
 
         $this->assertSame([0, 2], [$announcement->refresh()->sent_count, $announcement->skipped_count]);
+    }
+
+    // Final pre-deploy check
+    public function test_a_reminder_saved_before_the_detector_grew_is_read_again_before_each_run(): void
+    {
+        $this->connectFcm();
+        Queue::fake([DeliverNotification::class]);
+        $this->at('2026-11-10 08:00');
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $engineer = $this->member($organization, 'engineer');
+        $this->phone($owner, 'phone-owner');
+        $this->phone($engineer, 'phone-engineer');
+        $reminder = $this->send($owner, ['schedule' => 'daily', 'repeat_time' => '09:00', 'title' => 'Daily note', 'body' => 'Wear helmets.']);
+
+        // As an older, narrower detector would have stored it: money in the words, the flag left at no.
+        $reminder->forceFill(['body' => 'Diwali bonus 5000 for every worker.', 'mentions_money' => false])->saveQuietly();
+        $this->assertTrue(MoneyMention::inAnnouncement('Daily note', 'Diwali bonus 5000 for every worker.'));
+
+        $this->at('2026-11-10 09:00');
+        $this->artisan('announcements:send-due');
+
+        $this->assertTrue($reminder->fresh()->mentions_money);
+        $this->assertCount(1, $this->pushesFor($owner));
+        $this->assertCount(0, $this->pushesFor($engineer));
+    }
+
+    public function test_a_held_push_reads_the_words_again_when_it_goes_out(): void
+    {
+        $this->connectFcm();
+        $this->fakeFcm();
+        Queue::fake([DeliverNotification::class]);
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $engineer = $this->member($organization, 'engineer');
+        $this->phone($engineer, 'phone-engineer');
+        $announcement = $this->send($owner, ['title' => 'Daily note', 'body' => 'Wear helmets.']);
+        $job = $this->pushesFor($engineer)->sole();
+
+        $announcement->forceFill(['body' => 'Diwali bonus 5000 for every worker.', 'mentions_money' => false])->saveQuietly();
+        app()->call([$job, 'handle']);
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'messages:send'));
+    }
+
+    public function test_loading_announcement_pictures_does_not_use_up_the_sign_in_limits(): void
+    {
+        foreach (range(1, 8) as $ignored) {
+            $this->get('/announcement-images/'.str_repeat('a', 40));
+        }
+
+        $this->from(route('login'))->post(route('otp.send'), ['phone' => '9800000001'])->assertSessionDoesntHaveErrors('throttle');
+    }
+
+    public function test_a_message_without_a_picture_is_queued_in_the_shape_older_workers_read(): void
+    {
+        $plain = serialize(new NotificationMessage('approval.waiting', 'Bill waiting', 'RA bill 4'));
+
+        $this->assertStringNotContainsString('image', $plain);
+        $this->assertNull(unserialize($plain)->image);
+        $this->assertSame('RA bill 4', unserialize($plain)->body);
+        $this->assertSame('https://nirmaan360.in/p.jpg', unserialize(serialize(new NotificationMessage('announcement', 'T', 'B', image: 'https://nirmaan360.in/p.jpg')))->image);
     }
 }

@@ -21,4 +21,34 @@ final readonly class NotificationMessage
         public ?PushTarget $push = null,
         public ?string $image = null,
     ) {}
+
+    /**
+     * Queued jobs carry this message. Without a picture it is written exactly as before the picture
+     * field existed, so a worker still running the older code (during a deploy, or after a rollback)
+     * can read every push and email that has no picture.
+     *
+     * @return array<string, mixed>
+     */
+    public function __serialize(): array
+    {
+        $data = get_object_vars($this);
+
+        if ($this->image === null) {
+            unset($data['image']);
+        }
+
+        return $data;
+    }
+
+    /** @param  array<string, mixed>  $data */
+    public function __unserialize(array $data): void
+    {
+        $this->event = $data['event'];
+        $this->title = $data['title'];
+        $this->body = $data['body'] ?? '';
+        $this->url = $data['url'] ?? null;
+        $this->critical = $data['critical'] ?? false;
+        $this->push = $data['push'] ?? null;
+        $this->image = $data['image'] ?? null;
+    }
 }

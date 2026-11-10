@@ -449,6 +449,20 @@ class AnnouncementService
      *
      * @return array{recipients: int, batches: int}
      */
+    /**
+     * Whether it mentions money is settled when it is written, but the detector grows. A reminder or a
+     * send-again saved earlier is read again before each run, and can only ever move to "mentions money".
+     */
+    private function recheckMoney(Announcement $announcement): void
+    {
+        if ($announcement->mentions_money || ! MoneyMention::inAnnouncement((string) $announcement->title, (string) $announcement->body, $announcement->translations ?? [])) {
+            return;
+        }
+
+        Announcement::whereKey($announcement->id)->update(['mentions_money' => true]);
+        $announcement->mentions_money = true;
+    }
+
     public function startRun(Announcement $announcement, string $runKey, ?string $token, string $copy): array
     {
         // The first copy of the run's job to get here takes the run. Another copy (queued again by the
@@ -465,6 +479,8 @@ class AnnouncementService
         if (! $mine) {
             return ['recipients' => 0, 'batches' => 0];
         }
+
+        $this->recheckMoney($announcement);
 
         $now = now();
         $connected = $this->notifier->connected('push');

@@ -41,7 +41,7 @@ Route::get('/privacy', [PublicController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [PublicController::class, 'terms'])->name('terms');
 Route::get('/brand/logo', [PublicController::class, 'logo'])->name('brand.logo');
 // An announcement's picture, fetched by Firebase and by phones without signing in. See AnnouncementController::image.
-Route::get('/announcement-images/{token}', [AnnouncementController::class, 'image'])->where('token', '[A-Za-z0-9]{40}')->name('announcements.image')->middleware('throttle:600,1');
+Route::get('/announcement-images/{token}', [AnnouncementController::class, 'image'])->where('token', '[A-Za-z0-9]{40}')->name('announcements.image')->middleware('throttle:600,1,announcement-images');
 Route::get('/locale/{locale}', LocaleController::class)->name('locale');
 
 // Sitemap, robots.txt and the Hindi and Marathi addresses of the pages above.

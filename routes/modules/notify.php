@@ -33,17 +33,17 @@ Route::prefix('admin')->name('admin.')->middleware(EnsurePlatformAdmin::class)->
 // Broadcasts and reminders. Platform staff write to any company; the form posts a file, so it is a plain POST.
 Route::prefix('admin')->name('admin.')->middleware(EnsurePlatformAdmin::class)->controller(AnnouncementController::class)->group(function () {
     Route::get('/announcements', 'index')->name('announcements');
-    Route::post('/announcements', 'store')->name('announcements.store')->middleware('throttle:20,1');
+    Route::post('/announcements', 'store')->name('announcements.store')->middleware('throttle:20,1,announcement-writes');
     Route::post('/announcements/{announcement}/cancel', 'cancel')->whereNumber('announcement')->name('announcements.cancel');
-    Route::post('/announcements/{announcement}/retry', 'retry')->whereNumber('announcement')->name('announcements.retry')->middleware('throttle:20,1');
+    Route::post('/announcements/{announcement}/retry', 'retry')->whereNumber('announcement')->name('announcements.retry')->middleware('throttle:20,1,announcement-writes');
 });
 
 // A company's own admin writes to their own company only. The controller checks each announcement is theirs.
 Route::middleware('can:settings.manage')->controller(AnnouncementController::class)->group(function () {
     Route::get('/announcements', 'index')->name('notify.announcements');
-    Route::post('/announcements', 'store')->name('notify.announcements.store')->middleware('throttle:20,1');
+    Route::post('/announcements', 'store')->name('notify.announcements.store')->middleware('throttle:20,1,announcement-writes');
     Route::post('/announcements/{announcement}/cancel', 'cancel')->whereNumber('announcement')->name('notify.announcements.cancel');
-    Route::post('/announcements/{announcement}/retry', 'retry')->whereNumber('announcement')->name('notify.announcements.retry')->middleware('throttle:20,1');
+    Route::post('/announcements/{announcement}/retry', 'retry')->whereNumber('announcement')->name('notify.announcements.retry')->middleware('throttle:20,1,announcement-writes');
 });
 
 // Selfies are personal data, so viewing one needs the manage permission and not just attendance.view.
