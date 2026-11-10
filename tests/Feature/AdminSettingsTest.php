@@ -35,6 +35,22 @@ class AdminSettingsTest extends TestCase
         return $user;
     }
 
+    public function test_a_secret_is_not_kept_in_the_session_when_the_form_has_an_error(): void
+    {
+        $this->admin();
+
+        $this->from(route('admin.payments'))->patch(route('admin.payments.update'), [
+            'razorpay_key_id' => str_repeat('k', 65), 'razorpay_key_secret' => 'secret-from-razorpay', 'razorpay_webhook_secret' => 'hook-secret',
+        ])->assertSessionHasErrors('razorpay_key_id')
+            ->assertSessionMissing('_old_input.razorpay_key_secret')
+            ->assertSessionMissing('_old_input.razorpay_webhook_secret');
+
+        $this->from(route('admin.email'))->patch(route('admin.email.update'), [
+            'mail_from_address' => 'not an email', 'mail_password' => 'smtp-password',
+        ])->assertSessionHasErrors('mail_from_address')
+            ->assertSessionMissing('_old_input.mail_password');
+    }
+
     private function plansPayload(array $contractor = []): array
     {
         $plans = [];
