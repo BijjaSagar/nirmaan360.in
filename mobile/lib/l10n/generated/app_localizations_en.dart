@@ -56,6 +56,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alertsRefusedTitle => 'Not part of your role';
 
   @override
+  String alertsScanDone(int added, int open, int resolved) {
+    return 'Scanned. $added new, $open open, $resolved cleared.';
+  }
+
+  @override
+  String get alertsScanFailed =>
+      'The scan did not go through. Try again in a moment.';
+
+  @override
+  String get alertsScanNow => 'Scan now';
+
+  @override
+  String get alertsScanOffline =>
+      'Scanning needs the internet. Connect and try again.';
+
+  @override
+  String alertsScanRefused(String message) {
+    return 'The server said: $message';
+  }
+
+  @override
+  String alertsScanWait(int seconds) {
+    return 'Try again in $seconds seconds.';
+  }
+
+  @override
+  String get alertsScanning => 'Scanning the site…';
+
+  @override
   String get alertsSeverityCritical => 'Critical';
 
   @override

@@ -282,6 +282,11 @@ abstract interface class NirmaanApi {
   /// first, in Laravel's page shape.
   Future<Map<String, dynamic>> siteAlerts(int projectId);
 
+  /// `POST /projects/{project}/alerts/scan`: runs every alert source over the
+  /// project now and answers `{new, open, resolved}`. Needs `alerts.manage`, and
+  /// the server allows ten a minute: past that it answers 429 in its own words.
+  Future<Map<String, dynamic>> scanSiteAlerts(int projectId);
+
   // Price watch. Read only. These are prices a company recorded, each with its
   // date: `meta.live_feed` is always false. The board and a material need
   // `money.view`, a project's budget effect needs `money.overview`.

@@ -27,6 +27,40 @@
   "alertsNoneTitle": "Nothing needs attention",
   "alertsRefusedMessage": "The site overview is not open to your role. Ask your office if you need it.",
   "alertsRefusedTitle": "Not part of your role",
+  "alertsScanDone": "Scanned. {added} new, {open} open, {resolved} cleared.",
+  "@alertsScanDone": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "open": {
+        "type": "int"
+      },
+      "resolved": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsScanFailed": "The scan did not go through. Try again in a moment.",
+  "alertsScanNow": "Scan now",
+  "alertsScanOffline": "Scanning needs the internet. Connect and try again.",
+  "alertsScanRefused": "The server said: {message}",
+  "@alertsScanRefused": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsScanWait": "Try again in {seconds} seconds.",
+  "@alertsScanWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsScanning": "Scanning the site…",
   "alertsSeverityCritical": "Critical",
   "alertsSeverityInfo": "For information",
   "alertsSeverityWarning": "Warning",

@@ -21,7 +21,11 @@ class AuthExpired extends ApiFailure {
 /// HTTP 429. The server asked for a pause. Not an error with the data: the
 /// request is simply repeated once [retryAfter] has passed.
 class RateLimited extends ApiFailure {
-  const RateLimited({this.retryAfter}) : super('Too many requests.');
+  const RateLimited({this.retryAfter, this.serverMessage}) : super('Too many requests.');
+
+  /// What the server wrote in the reply, when it wrote anything. A screen that
+  /// has to explain a refusal shows this, in the server's own words.
+  final String? serverMessage;
 
   /// How long the server asked to wait, from `Retry-After`.
   final Duration? retryAfter;

@@ -113,6 +113,25 @@ void main() {
       );
     });
 
+    test('a freed phone\'s refusal carries where to free one, in manage_url', () async {
+      answer(
+        (_) => json({
+          'code': 'licence_revoked',
+          'message': 'This phone was freed from the company.',
+          'manage_url': 'https://example.test/offline/devices',
+        }, status: 410),
+      );
+      await expectLater(
+        api.refreshDevice(deviceId: 'phone-0001'),
+        throwsA(
+          isA<ServerFailure>()
+              .having((e) => e.statusCode, 'status', 410)
+              .having((e) => e.code, 'code', 'licence_revoked')
+              .having((e) => e.data?['manage_url'], 'manage_url', 'https://example.test/offline/devices'),
+        ),
+      );
+    });
+
     test('calls the licence routes with what they need', () async {
       answer((_) => json({'token': 't'}));
       await api.activateDevice(deviceId: 'phone-0001', deviceName: 'P', platform: 'android', appVersion: '1.0');
@@ -273,6 +292,17 @@ void main() {
       );
     });
 
+    test('keeps the server\'s own words, for a screen that has to explain', () async {
+      answer((_) => json({'message': ' Too Many Attempts. '}, status: 429));
+      await expectLater(api.me(), throwsA(isA<RateLimited>().having((e) => e.serverMessage, 'serverMessage', 'Too Many Attempts.')));
+
+      answer((_) => json({}, status: 429));
+      await expectLater(api.me(), throwsA(isA<RateLimited>().having((e) => e.serverMessage, 'serverMessage', isNull)));
+
+      answer((_) => json({'message': 42}, status: 429));
+      await expectLater(api.me(), throwsA(isA<RateLimited>().having((e) => e.serverMessage, 'serverMessage', isNull)));
+    });
+
     test('Retry-After as an HTTP date is honoured', () async {
       final at = DateTime.now().toUtc().add(const Duration(minutes: 2));
       answer(
@@ -309,6 +339,33 @@ void main() {
     test('is not a ServerFailure, so it can never become attention', () async {
       answer((_) => json({}, status: 429));
       await expectLater(api.me(), throwsA(isNot(isA<ServerFailure>())));
+    });
+  });
+
+  group('site alerts scan', () {
+    test('posts to the project\'s scan route and reads the counts', () async {
+      answer((_) => json({'data': {'new': 2, 'open': 5, 'resolved': 1}}));
+
+      final Map<String, dynamic> reply = await api.scanSiteAlerts(8);
+
+      expect(adapter.requests.single.method, 'POST');
+      expect(adapter.requests.single.path, '/projects/8/alerts/scan');
+      expect(reply, <String, dynamic>{'new': 2, 'open': 5, 'resolved': 1});
+    });
+
+    test('a 403 is the server\'s refusal in its words, a 429 is a rate limit with its words', () async {
+      answer((_) => json({'message': 'This action is unauthorized.'}, status: 403));
+      await expectLater(api.scanSiteAlerts(8), throwsA(isA<ServerFailure>().having((e) => e.message, 'message', 'This action is unauthorized.')));
+
+      answer((_) => json({'message': 'Too Many Attempts.'}, status: 429, headers: {'retry-after': ['42']}));
+      await expectLater(
+        api.scanSiteAlerts(8),
+        throwsA(
+          isA<RateLimited>()
+              .having((e) => e.serverMessage, 'serverMessage', 'Too Many Attempts.')
+              .having((e) => e.retryAfter, 'retryAfter', const Duration(seconds: 42)),
+        ),
+      );
     });
   });
 

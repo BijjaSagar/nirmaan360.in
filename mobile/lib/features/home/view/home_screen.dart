@@ -69,13 +69,16 @@ class _HomeView extends StatelessWidget {
           final List<_TileSpec> tiles = _tilesFor(context, state, allowEmphasis: !quiet);
           final CurrentUser? user = context.select((AppGate gate) => gate.state.user);
           final bool siteControl = user?.features.contains('site_control') ?? false;
+          // The alerts go by `alerts.view`, the dashboard by `progress.view`; the row is
+          // there for whichever of the two this person has.
+          final bool seesAlerts = context.select((AppGate gate) => gate.state.canSeeAlerts);
+          final bool seesSite = context.select((AppGate gate) => gate.state.hasSite);
           // Two lines above the figures rather than a ninth and tenth tile:
           // a sentence fits here, and the grid is already full.
           final OfflinePlanState? offline = context.select((AppGate gate) => gate.state.offline);
           final List<Widget> siteRows = <Widget>[
             if (offline != null) const _OnThisPhoneRow(),
-            if (siteControl && (user?.can('progress.view') ?? false) && !(state.site?.refused ?? false))
-              _SiteAlertsRow(site: state.site),
+            if (seesSite && !(state.site?.refused ?? false)) _SiteAlertsRow(site: state.site, alerts: seesAlerts),
             if (siteControl && (user?.can('contractor.view') ?? false) && !(state.contractors?.refused ?? false))
               _ContractorsRow(overview: state.contractors),
             // One row for the field tools that are open to this person, rather than a tile each.
@@ -479,18 +482,23 @@ class _ReturnedRow extends StatelessWidget {
 
 /// How many alerts are open and how bad the worst is, one tap from the dashboard.
 class _SiteAlertsRow extends StatelessWidget {
-  const _SiteAlertsRow({required this.site});
+  const _SiteAlertsRow({required this.site, required this.alerts});
 
   /// Null until this phone has read the site once.
   final SiteOverview? site;
+
+  /// The person may read the alerts (`alerts.view`). Without it the row is the
+  /// dashboard's alone, and says nothing about alerts.
+  final bool alerts;
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final SiteOverview? data = site;
-    final int open = data == null || data.alertsRefused ? 0 : data.alertsTotal;
+    final int open = !alerts || data == null || data.alertsRefused ? 0 : data.alertsTotal;
     final AlertSeverity? worst = data?.worst;
     final String subtitle = switch (data) {
+      _ when !alerts => t.alertsHomeDashboardOnly,
       null => t.alertsHomeOverview,
       SiteOverview(alertsRefused: true) => t.alertsHomeDashboardOnly,
       _ when open == 0 => t.alertsNoneTitle,
@@ -502,7 +510,7 @@ class _SiteAlertsRow extends StatelessWidget {
     return LedgerListTile(
       key: const ValueKey<String>('home-site-alerts'),
       leading: const Icon(Icons.notifications_none_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
-      title: t.alertsHomeTitle,
+      title: alerts ? t.alertsHomeTitle : t.alertsTitle,
       subtitle: subtitle,
       status: open > 0 && worst != null ? StatusPill(kind: alertStampKind(worst), label: t.alertSeverityWord(worst)) : null,
       onTap: () => context.push(open > 0 ? '${Routes.siteDashboard}?tab=alerts' : Routes.siteDashboard),

@@ -132,6 +132,27 @@ class GateState extends Equatable {
   /// Site tools has a row on Home when at least one of its tools is open.
   bool get hasSiteTools => canInspect || canLogMachines;
 
+  /// The site dashboard: `progress.view` on a plan with `site_control`.
+  bool get canSeeSiteDashboard =>
+      can('progress.view') && (user?.features.contains('site_control') ?? false) && !isContractor;
+
+  /// The site alerts: `alerts.view`, which the server now sends, on a plan with
+  /// `site_control`. This is the server's own gate for the alerts, not a stand-in.
+  bool get canSeeAlerts =>
+      can('alerts.view') && (user?.features.contains('site_control') ?? false) && !isContractor;
+
+  /// "Scan now": `alerts.manage` and the same plan feature. Seeing the alerts
+  /// is not enough; the server refuses a scan to everyone else.
+  bool get canScanAlerts => can('alerts.manage') && canSeeAlerts;
+
+  /// Home has a row for the site: the dashboard, the alerts, or both.
+  bool get hasSite => canSeeSiteDashboard || canSeeAlerts;
+
+  /// The site page opens for either permission. The plan feature is not asked
+  /// here, as it never was: a company without it meets the server's refusal and
+  /// a calm page, and only the entry points (Home's row) hide it.
+  bool get canOpenSite => can('progress.view') || can('alerts.view');
+
   /// A subcontractor's login: the portal and settings, and nothing else.
   bool get isContractor => user?.isContractor ?? false;
 
@@ -323,6 +344,8 @@ class AppGate extends Cubit<GateState> {
       a.canStockProcure != b.canStockProcure ||
       a.canCaptureAttendance != b.canCaptureAttendance ||
       a.hasSiteTools != b.hasSiteTools ||
+      a.hasSite != b.hasSite ||
+      a.canSeeAlerts != b.canSeeAlerts ||
       a.ready != b.ready ||
       a.offline?.mode != b.offline?.mode ||
       a.licenceEnded != b.licenceEnded ||
@@ -337,7 +360,6 @@ class AppGate extends Cubit<GateState> {
     Routes.topUp: 'petty_cash.manage',
     Routes.progress: 'progress.view',
     Routes.progressForm: 'progress.create',
-    Routes.siteDashboard: 'progress.view',
     Routes.contractors: 'contractor.view',
     Routes.contractorRequest: 'contractor.request',
     Routes.material: 'material_control.view',
@@ -387,6 +409,7 @@ class AppGate extends Cubit<GateState> {
     if (Routes.isAttendanceCapture(path) && !s.canCaptureAttendance) return Routes.attendance;
     if (Routes.isStockEntry(path) && !(s.canStockProcure && s.can('material_control.view'))) return Routes.home;
     if (path == Routes.siteTools && !s.hasSiteTools) return Routes.home;
+    if (path == Routes.siteDashboard && !s.canOpenSite) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;
     final String? needed = _pathPermissions[path];

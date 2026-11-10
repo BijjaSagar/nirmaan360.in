@@ -205,3 +205,22 @@ class SiteOverview extends Equatable {
   @override
   List<Object?> get props => <Object?>[cards, alerts, alertsTotal, dashboardRefused, alertsRefused, fetchedAt];
 }
+
+/// What a scan found, as the server counted it.
+class AlertScan extends Equatable {
+  const AlertScan({required this.added, required this.open, required this.resolved});
+
+  /// The reply is `{new, open, resolved}`. A count that is missing or not a
+  /// number is shown as nothing rather than failing a scan that worked.
+  factory AlertScan.fromJson(Map<String, dynamic> json) {
+    int count(Object? raw) => raw is num ? raw.toInt() : (int.tryParse('$raw') ?? 0);
+    return AlertScan(added: count(json['new']), open: count(json['open']), resolved: count(json['resolved']));
+  }
+
+  final int added;
+  final int open;
+  final int resolved;
+
+  @override
+  List<Object?> get props => <Object?>[added, open, resolved];
+}

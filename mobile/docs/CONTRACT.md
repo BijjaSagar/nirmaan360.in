@@ -262,14 +262,20 @@ Needs the `measurement` plan feature. `measurement.view` reads and `measurement.
 
 ### Site dashboard and alerts
 
-Needs the `site_control` plan feature and `progress.view`. Read only. `alerts.view` and `alerts.manage` are not in the `can` list.
+Needs the `site_control` plan feature. The two parts have their own permissions, and `UserPresenter` now sends both: the dashboard goes by `progress.view`, the alerts by `alerts.view`, and "Scan now" by `alerts.manage`. They are gated on exactly those, with the plan feature, in `GateState.canSeeSiteDashboard`, `canSeeAlerts` and `canScanAlerts`. `progress.view` was a stand-in for the alerts before `alerts.view` reached the app, and is no longer used for them.
 
-- The app reads `GET /projects/{project}/site-dashboard` and `GET /projects/{project}/alerts?status=open`, and keeps the last answer per project under `site.overview.<projectId>`, on the same schedule as site progress. The key goes with the project. `GET /alerts` is not used, because the app works one project at a time.
+- The app reads `GET /projects/{project}/site-dashboard` with `progress.view` and `GET /projects/{project}/alerts?status=open` with `alerts.view`, and keeps the last answer per project under `site.overview.<projectId>`, on the same schedule as site progress. A part the person may not read is not asked for, and is kept as refused. The key goes with the project. `GET /alerts` is not used, because the app works one project at a time.
 - The server writes the cards and the alert wording, in the reader's language. A money figure a person may not see is simply not on the card. A money card kept from before someone lost `money.view` is dropped when it is read.
-- `alerts.view` does not reach the app, so a 403 or 404 on either read is kept as "refused": the screen shows a calm message and Home leaves the row out. A role with no alerts still gets its dashboard.
+- A 403 or 404 on a part the person has the permission for (the plan feature turned off meanwhile) is still kept as "refused": the screen shows a calm message and Home leaves the row out when both parts are.
+- The site page (`/site`) opens for either permission. With both there are two tabs; with one there is only that one, whatever `?tab=` asked for. With neither permission it goes Home. The route does not ask for the plan feature, as it never did: a company without it meets the server's refusal and the calm page, and only Home's row, which does ask, hides it. Home's one row is the alerts row for `alerts.view` (open count and the worst, in words) and a plain "Site overview" row for `progress.view` alone.
 - The phone reads the first page of open alerts, the 30 worst, and shows the true total.
 - Severity is a word on each alert. Home has one row above the tiles rather than a ninth tile.
-- "Scan now" is left out, because `alerts.manage` does not reach the app.
+
+Scan now, for `alerts.manage` only, on the alerts tab (`SiteAlertsRepository.scan`, `SiteAlertsCubit.scan`):
+
+- `POST /projects/{project}/alerts/scan`, no body. 200 `{data: {new, open, resolved}}`. It needs the network and writes nothing on the phone but the list it then reads again; it is never queued. Someone without `alerts.manage` is not offered the button, and the repository sends nothing for them.
+- The route is `throttle:10,1`. Past ten a minute the server answers **429** with `{message: "Too Many Attempts."}` and a `Retry-After` header. `RateLimited` keeps that text in `serverMessage`, and the page shows it as the server said it ("The server said: ..."), then the wait from `Retry-After` in seconds. The same for a 403 ("This action is unauthorized.") and a 422: the server's words, not ours. A 5xx, a reply the phone cannot read and an unknown failure are only "did not go through"; the server's words for those are not passed on. With no network the page says scanning needs the internet, and nothing is sent.
+- Checked against the local server with the app's own client: a project manager's scan answers 200 with the counts, then 429 `Too Many Attempts.` with `Retry-After: 60` once the minute's allowance is used; an engineer, who has `alerts.view` but not `alerts.manage`, gets 403 `This action is unauthorized.`.
 
 ### Contractor control
 
@@ -482,7 +488,7 @@ The app asks `GET offline/status` right after sign-in, on start, and at most eve
 | --- | --- | --- |
 | `GET offline/status` | `{plan, offline, syncs, max_devices, active_devices, licence_days, signing_key}` | |
 | `POST offline/devices/activate` | 201 or 200 `{licence, token, signing_key, max_devices, active_devices}` | 409 `device_limit` with `manage_url`, 403 `not_offline_plan` |
-| `POST offline/devices/refresh` | 200 same shape | 410 `licence_revoked`, 404 `licence_missing`, 403 `not_offline_plan` |
+| `POST offline/devices/refresh` | 200 same shape | 410 `licence_revoked` with `manage_url`, 404 `licence_missing`, 403 `not_offline_plan` |
 | `POST offline/devices/release` | 200 `{status, licence}` | 404 `licence_missing` |
 | Anything else | | 403 `{code: "offline_plan", upgrade_url}` |
 
@@ -493,6 +499,10 @@ State is one JSON value under `MetaKey.offlinePlan`, read by the sync engine at 
 Records made on the phone have negative ids and `MetaKey.offlineRecord(kind, id)` beside them: the `client_uuid` the upload uses and any detail with no column (`contract_value`, `daily_wage`). No schema change. A 401 or a sign-out on this plan clears only the sign-in; a different person is refused with `DifferentUserFailure`. The licence ending stops new entries and edits, and nothing else: see "When the licence ends" below.
 
 Upload needs a person's yes (`OfflineUploader`): masters in the order projects, BOQ, workers, wallets, each created with its stored `client_uuid`, then every local id moved in one transaction across tables and queued payloads. Queued entries then go through the normal sync. Interrupted uploads resume; rows that fail go to the Outbox as usual.
+
+### Where to free a phone
+
+Both `409 device_limit` and `410 licence_revoked` carry `manage_url` at the top level of the reply, next to `code` and `message` (`DeviceLicenceService`). The phone keeps the server's value in `OfflinePlanState.manageUrl` and shows it with a copy button. The address it builds itself from the API address (`<server>/offline/devices`) is used only when the reply has no `manage_url`, or has one that is not an http or https address. The phone giving its own slot back (`POST offline/devices/release`) has no refusal to read, so it uses the built address. Checked against the local server: a freed phone's refresh answers 410 with `manage_url: http://localhost:8361/offline/devices`.
 
 ### When the licence ends
 

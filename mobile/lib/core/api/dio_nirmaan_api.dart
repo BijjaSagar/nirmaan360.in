@@ -503,6 +503,10 @@ class DioNirmaanApi implements NirmaanApi {
       _call(() => _dio.get('/projects/$projectId/alerts', queryParameters: <String, String>{'status': 'open'}));
 
   @override
+  Future<Map<String, dynamic>> scanSiteAlerts(int projectId) =>
+      _postData('/projects/$projectId/alerts/scan', const <String, dynamic>{});
+
+  @override
   Future<Map<String, dynamic>> priceBoard() => _call(() => _dio.get('/price-watch'));
 
   @override
@@ -662,7 +666,12 @@ class DioNirmaanApi implements NirmaanApi {
       return OfflinePlanRefused(message, upgradeUrl: (data as Map)['upgrade_url'] as String?);
     }
     if (status == 429) {
-      return RateLimited(retryAfter: _retryAfter(e.response));
+      return RateLimited(
+        retryAfter: _retryAfter(e.response),
+        serverMessage: data is Map && data['message'] is String && (data['message'] as String).trim().isNotEmpty
+            ? (data['message'] as String).trim()
+            : null,
+      );
     }
     if (status == 422) {
       return ValidationFailure(

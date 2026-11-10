@@ -586,15 +586,14 @@ class OfflinePlan {
       switch (e.code) {
         case 'device_limit':
           await _write(
-            _state!.copyWith(
-              issue: LicenceIssue.deviceLimit,
-              manageUrl: e.data?['manage_url'] as String? ?? _defaultManageUrl,
-            ),
+            _state!.copyWith(issue: LicenceIssue.deviceLimit, manageUrl: _manageUrlIn(e) ?? _defaultManageUrl),
           );
         case 'licence_revoked':
           // A freed phone keeps its token until it runs out. Taking the slot
-          // back by itself would undo what the owner just did on the web.
-          await _write(_state!.copyWith(issue: LicenceIssue.revoked, manageUrl: _defaultManageUrl));
+          // back by itself would undo what the owner just did on the web. The
+          // server says where, in `manage_url`; the built address is only for a
+          // server that does not.
+          await _write(_state!.copyWith(issue: LicenceIssue.revoked, manageUrl: _manageUrlIn(e) ?? _defaultManageUrl));
         case 'licence_missing' when !activate:
           await _renew(activateNow: true);
         case 'not_offline_plan':
@@ -783,8 +782,19 @@ class OfflinePlan {
     _clockTimer = null;
   }
 
-  /// Where the owner frees phones. The server names it with `device_limit`
-  /// but not with `licence_revoked`.
+  /// Where the owner frees phones, as the server named it in its refusal
+  /// (`device_limit` and `licence_revoked` both carry `manage_url`). Null when
+  /// the reply has none, or has something that is not an http address.
+  static String? _manageUrlIn(ServerFailure failure) {
+    final Object? raw = failure.data?['manage_url'];
+    if (raw is! String) return null;
+    final String url = raw.trim();
+    final Uri? parsed = Uri.tryParse(url);
+    return parsed != null && (parsed.scheme == 'http' || parsed.scheme == 'https') && parsed.host.isNotEmpty ? url : null;
+  }
+
+  /// Where the owner frees phones when the server did not say. Built from the
+  /// address the app talks to.
   static String get _defaultManageUrl {
     final String base = AppConfig.apiBaseUrl;
     final int cut = base.indexOf('/api/');

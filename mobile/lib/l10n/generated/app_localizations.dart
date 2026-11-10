@@ -178,6 +178,48 @@ abstract class AppLocalizations {
   /// **'Not part of your role'**
   String get alertsRefusedTitle;
 
+  /// No description provided for @alertsScanDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanned. {added} new, {open} open, {resolved} cleared.'**
+  String alertsScanDone(int added, int open, int resolved);
+
+  /// No description provided for @alertsScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The scan did not go through. Try again in a moment.'**
+  String get alertsScanFailed;
+
+  /// No description provided for @alertsScanNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan now'**
+  String get alertsScanNow;
+
+  /// No description provided for @alertsScanOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning needs the internet. Connect and try again.'**
+  String get alertsScanOffline;
+
+  /// No description provided for @alertsScanRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The server said: {message}'**
+  String alertsScanRefused(String message);
+
+  /// No description provided for @alertsScanWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in {seconds} seconds.'**
+  String alertsScanWait(int seconds);
+
+  /// No description provided for @alertsScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning the site…'**
+  String get alertsScanning;
+
   /// No description provided for @alertsSeverityCritical.
   ///
   /// In en, this message translates to:

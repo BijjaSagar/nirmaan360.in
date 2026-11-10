@@ -2724,6 +2724,20 @@ class FakeApi implements NirmaanApi {
     };
   }
 
+  /// What a scan answers, and what it does to the alerts on the server.
+  Row siteScanBody = {'new': 1, 'open': 3, 'resolved': 0};
+  ApiFailure? siteScanFailure;
+  int siteScanCalls = 0;
+
+  @override
+  Future<Map<String, dynamic>> scanSiteAlerts(int projectId) async {
+    _guard();
+    siteScanCalls++;
+    final failure = siteScanFailure;
+    if (failure != null) throw failure;
+    return siteScanBody;
+  }
+
   // Material control -------------------------------------------------------
 
   Row materialCheckBody = {

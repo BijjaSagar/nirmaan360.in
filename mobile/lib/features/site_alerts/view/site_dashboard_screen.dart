@@ -99,10 +99,11 @@ class _SiteScroll extends StatelessWidget {
     if (overview.refused) return <Widget>[empty(l.alertsRefusedTitle, l.alertsRefusedMessage)];
 
     return <Widget>[
-      SliverToBoxAdapter(child: _Tabs(state: state, overview: overview)),
-      ...switch (state.tab) {
+      // A person who may read only one of the two is not asked to choose.
+      if (state.hasTabs) SliverToBoxAdapter(child: _Tabs(state: state, overview: overview)),
+      ...switch (state.shownTab) {
         SiteTab.dashboard => _dashboard(l, overview, empty),
-        SiteTab.alerts => _alerts(l, overview, empty),
+        SiteTab.alerts => _alerts(l, state, overview, empty),
       },
       const SliverToBoxAdapter(child: SizedBox(height: N360Space.lg)),
     ];
@@ -130,12 +131,16 @@ class _SiteScroll extends StatelessWidget {
 
   List<Widget> _alerts(
     AppLocalizations l,
+    SiteAlertsState state,
     SiteOverview overview,
     SliverToBoxAdapter Function(String, String) empty,
   ) {
     if (overview.alertsRefused) return <Widget>[empty(l.alertsRefusedTitle, l.alertsListRefusedMessage)];
-    if (overview.alerts.isEmpty) return <Widget>[empty(l.alertsNoneTitle, l.alertsNoneMessage)];
+    // Only someone with `alerts.manage` is offered a scan.
+    final Widget? scan = state.canScan ? SliverToBoxAdapter(child: _ScanBar(scan: state.scan)) : null;
+    if (overview.alerts.isEmpty) return <Widget>[?scan, empty(l.alertsNoneTitle, l.alertsNoneMessage)];
     return <Widget>[
+      ?scan,
       FieldGroupSliver(
         padding: EdgeInsets.zero,
         sliver: SliverList.builder(
@@ -163,6 +168,94 @@ class _SiteScroll extends StatelessWidget {
           ),
         ),
     ];
+  }
+}
+
+/// "Scan now" and what came of it. A refusal is shown in the server's own
+/// words, so the rate limit reads as the server said it.
+class _ScanBar extends StatelessWidget {
+  const _ScanBar({required this.scan});
+
+  final ScanNotice scan;
+
+  List<String> _lines(AppLocalizations l) {
+    final String? said = scan.serverMessage;
+    final int? seconds = scan.wait == null ? null : (scan.wait!.inMilliseconds / 1000).ceil();
+    return switch (scan.status) {
+      ScanStatus.idle => const <String>[],
+      ScanStatus.running => <String>[l.alertsScanning],
+      ScanStatus.done => <String>[l.alertsScanDone(scan.result?.added ?? 0, scan.result?.open ?? 0, scan.result?.resolved ?? 0)],
+      ScanStatus.offline => <String>[l.alertsScanOffline],
+      ScanStatus.failed => <String>[l.alertsScanFailed],
+      ScanStatus.refused => <String>[said == null ? l.alertsScanFailed : l.alertsScanRefused(said)],
+      ScanStatus.rateLimited => <String>[
+        if (said != null) l.alertsScanRefused(said),
+        if (seconds != null && seconds > 0) l.alertsScanWait(seconds),
+        if (said == null && (seconds == null || seconds <= 0)) l.alertsScanFailed,
+      ],
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final SiteAlertsCubit cubit = context.read<SiteAlertsCubit>();
+    final List<String> lines = _lines(l);
+    final bool problem = const <ScanStatus>{
+      ScanStatus.offline,
+      ScanStatus.failed,
+      ScanStatus.refused,
+      ScanStatus.rateLimited,
+    }.contains(scan.status);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          GloveButton(
+            key: const ValueKey<String>('site-scan-now'),
+            label: l.alertsScanNow,
+            icon: Icons.radar,
+            kind: GloveButtonKind.secondary,
+            fullWidth: true,
+            loading: scan.running,
+            onPressed: scan.running ? null : cubit.scan,
+          ),
+          if (lines.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: N360Space.xs),
+              child: Semantics(
+                liveRegion: true,
+                child: Row(
+                  key: const ValueKey<String>('site-scan-result'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(
+                      problem
+                          ? Icons.error_outline
+                          : scan.running
+                          ? Icons.hourglass_empty
+                          : Icons.check_circle_outline,
+                      size: N360IconSize.md,
+                      color: problem ? N360Colors.stampRed : N360Colors.ink2,
+                    ),
+                    const SizedBox(width: N360Space.xs),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          for (final String line in lines) Text(line, style: N360Type.fit(N360Type.body, line)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

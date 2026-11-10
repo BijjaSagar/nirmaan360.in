@@ -243,6 +243,53 @@ void main() {
       expect(state.hasToken, isFalse);
     });
 
+    test('a freed phone is sent to the address the server names', () async {
+      final app = await _offlineApp();
+      addTearDown(app.dispose);
+
+      app.api.refreshFailure = const ServerFailure(
+        'Freed.',
+        statusCode: 410,
+        code: 'licence_revoked',
+        data: <String, dynamic>{'code': 'licence_revoked', 'manage_url': 'https://example.test/offline/devices?from=server'},
+      );
+      await app.services.offlinePlan.check(force: true);
+
+      expect(app.services.offlinePlan.state?.issue, LicenceIssue.revoked);
+      expect(app.services.offlinePlan.state?.manageUrl, 'https://example.test/offline/devices?from=server');
+    });
+
+    for (final (String name, Map<String, dynamic>? data) in <(String, Map<String, dynamic>?)>[
+      ('no data at all', null),
+      ('no manage_url', <String, dynamic>{'code': 'licence_revoked'}),
+      ('an empty manage_url', <String, dynamic>{'manage_url': ''}),
+      ('a manage_url that is not an address', <String, dynamic>{'manage_url': 'javascript:alert(1)'}),
+      ('a manage_url that is not text', <String, dynamic>{'manage_url': 42}),
+    ]) {
+      test('a freed phone falls back to the built address when the server sends $name', () async {
+        final app = await _offlineApp();
+        addTearDown(app.dispose);
+
+        app.api.refreshFailure = ServerFailure('Freed.', statusCode: 410, code: 'licence_revoked', data: data);
+        await app.services.offlinePlan.check(force: true);
+
+        expect(app.services.offlinePlan.state?.issue, LicenceIssue.revoked);
+        expect(app.services.offlinePlan.state?.manageUrl, endsWith('/offline/devices'));
+        expect(app.services.offlinePlan.state?.manageUrl, startsWith('http'));
+      });
+    }
+
+    test('the full plan is sent to the address the server names, and falls back the same way', () async {
+      final app = await _offlineApp();
+      addTearDown(app.dispose);
+
+      app.api.refreshFailure = const ServerFailure('Full.', statusCode: 409, code: 'device_limit', data: <String, dynamic>{'manage_url': 42});
+      await app.services.offlinePlan.check(force: true);
+
+      expect(app.services.offlinePlan.state?.issue, LicenceIssue.deviceLimit);
+      expect(app.services.offlinePlan.state?.manageUrl, endsWith('/offline/devices'));
+    });
+
     test('a freed phone keeps its token and does not take the slot back', () async {
       final app = await _offlineApp();
       addTearDown(app.dispose);

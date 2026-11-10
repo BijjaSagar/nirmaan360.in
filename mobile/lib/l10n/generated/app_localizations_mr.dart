@@ -56,6 +56,35 @@ class AppLocalizationsMr extends AppLocalizations {
   String get alertsRefusedTitle => 'तुमच्या भूमिकेत हे नाही';
 
   @override
+  String alertsScanDone(int added, int open, int resolved) {
+    return 'स्कॅन झाले. $added नवीन, $open उघड्या, $resolved मिटवल्या.';
+  }
+
+  @override
+  String get alertsScanFailed =>
+      'स्कॅन झाले नाही. थोड्या वेळाने पुन्हा प्रयत्न करा.';
+
+  @override
+  String get alertsScanNow => 'आता स्कॅन करा';
+
+  @override
+  String get alertsScanOffline =>
+      'स्कॅनसाठी इंटरनेट लागते. जोडा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String alertsScanRefused(String message) {
+    return 'सर्व्हर म्हणाला: $message';
+  }
+
+  @override
+  String alertsScanWait(int seconds) {
+    return '$seconds सेकंदांनी पुन्हा प्रयत्न करा.';
+  }
+
+  @override
+  String get alertsScanning => 'साइट स्कॅन होत आहे…';
+
+  @override
   String get alertsSeverityCritical => 'गंभीर';
 
   @override

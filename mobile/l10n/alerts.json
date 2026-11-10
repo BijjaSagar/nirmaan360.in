@@ -19,5 +19,12 @@
   "alertsHomeOverview": { "en": "Dashboard and alerts for this site", "mr": "या साइटचा डॅशबोर्ड आणि सूचना", "hi": "इस साइट का डैशबोर्ड और अलर्ट" },
   "alertsHomeDashboardOnly": { "en": "Dashboard for this site", "mr": "या साइटचा डॅशबोर्ड", "hi": "इस साइट का डैशबोर्ड" },
   "alertsHomeOpen": { "en": "{count} open", "mr": "{count} उघड्या", "hi": "{count} खुले", "placeholders": { "count": { "type": "int" } } },
-  "alertsHomeCriticalCount": { "en": "{count} critical", "mr": "{count} गंभीर", "hi": "{count} गंभीर", "placeholders": { "count": { "type": "int" } } }
+  "alertsHomeCriticalCount": { "en": "{count} critical", "mr": "{count} गंभीर", "hi": "{count} गंभीर", "placeholders": { "count": { "type": "int" } } },
+  "alertsScanNow": { "en": "Scan now", "mr": "आता स्कॅन करा", "hi": "अभी स्कैन करें" },
+  "alertsScanning": { "en": "Scanning the site…", "mr": "साइट स्कॅन होत आहे…", "hi": "साइट स्कैन हो रही है…" },
+  "alertsScanDone": { "en": "Scanned. {added} new, {open} open, {resolved} cleared.", "mr": "स्कॅन झाले. {added} नवीन, {open} उघड्या, {resolved} मिटवल्या.", "hi": "स्कैन हो गया। {added} नए, {open} खुले, {resolved} हटाए गए।", "placeholders": { "added": { "type": "int" }, "open": { "type": "int" }, "resolved": { "type": "int" } } },
+  "alertsScanOffline": { "en": "Scanning needs the internet. Connect and try again.", "mr": "स्कॅनसाठी इंटरनेट लागते. जोडा आणि पुन्हा प्रयत्न करा.", "hi": "स्कैन के लिए इंटरनेट चाहिए। जुड़ें और फिर कोशिश करें।" },
+  "alertsScanRefused": { "en": "The server said: {message}", "mr": "सर्व्हर म्हणाला: {message}", "hi": "सर्वर ने कहा: {message}", "placeholders": { "message": { "type": "String" } } },
+  "alertsScanWait": { "en": "Try again in {seconds} seconds.", "mr": "{seconds} सेकंदांनी पुन्हा प्रयत्न करा.", "hi": "{seconds} सेकंड बाद फिर कोशिश करें।", "placeholders": { "seconds": { "type": "int" } } },
+  "alertsScanFailed": { "en": "The scan did not go through. Try again in a moment.", "mr": "स्कॅन झाले नाही. थोड्या वेळाने पुन्हा प्रयत्न करा.", "hi": "स्कैन नहीं हो सका। थोड़ी देर में फिर कोशिश करें।" }
 }
