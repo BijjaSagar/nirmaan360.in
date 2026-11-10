@@ -2088,6 +2088,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialQtyCounted => 'Counted quantity';
 
   @override
+  String get materialQtyIssued => 'Quantity issued';
+
+  @override
   String get materialQtyOnChallan => 'Quantity written on challan (optional)';
 
   @override
@@ -3355,6 +3358,147 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priceWatchWithin => 'Within the margin';
 
   @override
+  String get procurementAccepted => 'Received and accepted';
+
+  @override
+  String get procurementActivity => 'Or the activity';
+
+  @override
+  String get procurementActivityHint => 'Such as slab 3 shuttering';
+
+  @override
+  String get procurementAddItem => 'Add another item';
+
+  @override
+  String get procurementForBoq => 'BOQ item';
+
+  @override
+  String procurementInStore(String qty) {
+    return 'In this store $qty';
+  }
+
+  @override
+  String get procurementIssueStock => 'Issue from store';
+
+  @override
+  String get procurementIssuedTo => 'Issued to (optional)';
+
+  @override
+  String get procurementIssuedToHint => 'A person or a gang';
+
+  @override
+  String procurementItemN(int number) {
+    return 'Item $number';
+  }
+
+  @override
+  String get procurementNoOrdersMessage =>
+      'An order shows here once the office has sent it to the supplier and goods can be received against it.';
+
+  @override
+  String get procurementNoOrdersTitle => 'No open purchase orders';
+
+  @override
+  String get procurementNoReceiptsTitle => 'No receipts yet';
+
+  @override
+  String get procurementNoStoreMessage =>
+      'Ask your office to add a store on the website, then try again.';
+
+  @override
+  String get procurementNoStoreTitle => 'No store on this project';
+
+  @override
+  String get procurementNothingReceived =>
+      'Enter what was accepted on at least one line';
+
+  @override
+  String get procurementOpenOrders => 'Open orders';
+
+  @override
+  String get procurementOrder => 'Purchase order';
+
+  @override
+  String get procurementOrderChoose => 'Choose purchase order';
+
+  @override
+  String procurementOrderDue(int count) {
+    return '$count items still due';
+  }
+
+  @override
+  String get procurementOrderRequired => 'Choose the purchase order';
+
+  @override
+  String get procurementOrderSearch => 'Search by number or supplier';
+
+  @override
+  String procurementOrdered(String qty) {
+    return 'Ordered $qty';
+  }
+
+  @override
+  String procurementOverDue(String qty) {
+    return 'Only $qty is still due on this order';
+  }
+
+  @override
+  String get procurementPartialNote =>
+      'Part of an order is fine. Leave a line empty if nothing came on it, and the order stays open for the rest.';
+
+  @override
+  String get procurementQtyInvalid => 'Enter a number';
+
+  @override
+  String get procurementReceiveOrder => 'Receive against order';
+
+  @override
+  String get procurementReceivedHeading => 'Received';
+
+  @override
+  String get procurementRejected => 'Turned away (optional)';
+
+  @override
+  String procurementRejectedFigure(String qty) {
+    return 'Turned away $qty';
+  }
+
+  @override
+  String get procurementRejectedHint =>
+      'Goods you did not accept. They are not added to stock and are still due from the supplier.';
+
+  @override
+  String get procurementRejectedOnly =>
+      'Turned-away goods need some accepted quantity on the same line. For a delivery that was all turned away, use the website.';
+
+  @override
+  String get procurementRemarks => 'Note (optional)';
+
+  @override
+  String get procurementRemarksHint => 'Such as why goods were turned away';
+
+  @override
+  String get procurementRemoveItem => 'Remove';
+
+  @override
+  String get procurementReversed => 'Reversed';
+
+  @override
+  String procurementStillDue(String qty) {
+    return 'Still due $qty';
+  }
+
+  @override
+  String get procurementTabReceipts => 'Order receipts';
+
+  @override
+  String get procurementTooManyDecimals => 'Use at most 3 decimal places';
+
+  @override
+  String get procurementWorkRequired =>
+      'Choose a BOQ item or write the activity';
+
+  @override
   String get progressAdd => 'Add today\'s work';
 
   @override
@@ -4249,6 +4393,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncTypeDprSubmit => 'Report submission';
 
   @override
+  String get syncTypeGoodsReceipt => 'Goods receipt';
+
+  @override
   String get syncTypeInspection => 'Inspection';
 
   @override
@@ -4262,6 +4409,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeMachineLog => 'Machine log';
+
+  @override
+  String get syncTypeMaterialIssue => 'Store issue';
 
   @override
   String get syncTypeMeasurement => 'Measurement';

@@ -92,6 +92,15 @@ abstract final class Routes {
   static const materialUse = '/material/use';
   static const materialCount = '/material/count';
 
+  /// Goods received against a purchase order. Optional query: `order`.
+  static const materialReceiveOrder = '/material/receive-order';
+
+  /// Material issued from a store.
+  static const materialIssue = '/material/issue';
+
+  /// True for the two entries that need `procurement.stock`, and no other path.
+  static bool isStockEntry(String path) => path == materialReceiveOrder || path == materialIssue;
+
   /// Recorded material prices, each with its date. Needs `money.view`.
   static const prices = '/prices';
   static String priceMaterial(int materialId) => '/prices/$materialId';

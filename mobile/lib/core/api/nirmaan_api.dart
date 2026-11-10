@@ -368,6 +368,21 @@ abstract interface class NirmaanApi {
 
   Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body);
 
+  // Goods receipts against a purchase order, and issues from a store. They are
+  // posted one at a time to their own endpoints, not through
+  // `/procurement/push`: see docs/CONTRACT.md for why.
+
+  /// `GET /projects/{project}/grns`: the latest 50 receipts, newest first.
+  Future<List<Map<String, dynamic>>> procurementReceipts(int projectId);
+
+  /// `POST /projects/{project}/grns`. A repeated `client_uuid` in [body] returns
+  /// the first receipt and adds no stock, whatever the purchase order has become.
+  Future<Map<String, dynamic>> postGoodsReceipt(int projectId, Map<String, dynamic> body);
+
+  /// `POST /projects/{project}/material-issues`. A repeated `client_uuid` in
+  /// [body] returns the first issue and takes no stock.
+  Future<Map<String, dynamic>> postMaterialIssue(int projectId, Map<String, dynamic> body);
+
   /// [path] is the photos endpoint of the entry, the stage cell or the issue.
   /// [fileField] is the multipart name the endpoint reads the file from, and
   /// [fields] any further text fields it needs, such as the `kind` of a photo.

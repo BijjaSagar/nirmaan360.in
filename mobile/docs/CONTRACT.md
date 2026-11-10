@@ -349,6 +349,32 @@ What the phone does with that:
 - The reply is added to the kept list in the transaction that finishes the outbox row. Logs waiting to send are laid over the list, marked "Not sent yet", and counted toward the day's hours the phone knows of.
 - Home has one "Site tools" row for inspections and the machine log together, and it names only the tools open to that person. It is hidden when neither is.
 
+### Goods receipts and store issues
+
+Inside the Material page, not a tile of their own. Needs the `procurement` plan feature and `procurement.stock` in the `can` list; `procurement.view`, which the server asks for on the reads, does not reach the app, and every role that has `procurement.stock` (pm, engineer, store) also has it and `material_control.view`. The page itself still needs `material_control.view`, so a custom role with `procurement.stock` alone has no way in. A contractor login and a phone on the offline plan are never offered either (`GateState.canStockProcure`).
+
+The server's rules, from `GrnService`, `MaterialIssueService`, `ProcurementSyncService` and `ProcurementApiTest`:
+
+- `GET /projects/{project}/procurement/snapshot` gives the open purchase orders (`ISSUED` or `PARTIAL`) with, per line, `qty`, `unit_id`, `base_qty`, `received_base_qty` and `remaining_base_qty`, the stores, and `stock` per store and material in the base unit. A receipt that fills an order takes it off the list.
+- `POST /projects/{project}/grns` takes `purchase_order_id`, `grn_date` (not in the future), optional `store_id` (the order's store when left out), `challan_no` (60), `vehicle_no` (30), `remarks` (2000) and `items: [{purchase_order_item_id, qty, unit_id, rejected_qty}]`. **`qty` is what was accepted**: above 0 with at most three decimals, it is what goes into stock and what counts against the order. With what came before it cannot pass the ordered quantity, counted in the base unit across units: 422 on `over_receipt`, "Only 60.000 bag of Cement is still due on this purchase order." **`rejected_qty`** is recorded beside it and is neither stock nor received, so the order still owes it. It is not converted: it is in the same unit as the line. A line of nothing accepted is a 422 on `items.N.qty`, so a delivery that was all turned away cannot be recorded from the phone. A part delivery is normal: the order becomes `PARTIAL`, then `RECEIVED` when every line is in. An order that is not open is a 422 on `purchase_order`.
+- `POST /projects/{project}/material-issues` takes `store_id` (required, so a project with no store cannot issue), `issue_date`, `issued_to` (160) and `items: [{material_id, qty, unit_id, boq_item_id, activity}]`. Each line needs a BOQ item or an `activity` (160), or both. More than the store holds is a 422 on `stock`, "Only 105.000 bag of Cement is available in Site store." The server stores a use from material control as an issue with one line, so `GET /material-issues` and `.../material-control/consumption` return the same rows, and the app reads the second.
+- A repeated `client_uuid` returns the first row with 200 and moves no stock, before any field is checked, so a reply lost after the order filled still comes back. A uuid used on another project is a 422 on `client_uuid`.
+
+Why the single endpoints and not `POST /procurement/push`:
+
+- Both repeat safely. The difference is in a fault. `push` catches any exception for an item, reports it as `status: error` with "This record could not be saved", and answers 200. The app would take that for a refusal and hand a lock wait or a deadlock, which a second try clears, to a person. The single endpoint answers 500, and the outbox sends the same row again on its own.
+- The services take a deadlock with `DB::transaction(..., 3)`. Under `push` they run inside the per-item transaction, where that retry is nested and does not retry the way it does when the call is the outermost.
+- A 422, 403 and 404 land in the same direct-post path as every other write, and the Sync Center shows the server's own words.
+
+What the phone does with that:
+
+- The Material page keeps the open orders, the store stock and the latest receipts in the same value as the rest of material (`material.overview.<projectId>`), read on the same schedule. Only people who may receive and issue get them, and they are written only after `ProcurementCopy` has kept the listed quantity fields: **a rate, an amount or a tax figure is never read, kept or drawn**, even when a server sends one. A copy kept for someone who lost the permission is not refreshed with orders.
+- A receipt is an outbox row of type `goods_receipt`, an issue of type `material_issue`. Each is posted on its own to its endpoint with one `client_uuid` for the whole document, and a repeat returns the first. The `local` part of a receipt (the order's number and each line's material, so a waiting receipt reads right after the order has closed) is removed before it is sent.
+- **Both can be queued offline.** Stock and the order's balance are checked by the server when the document arrives, and it is the only judge, so the phone checks what it can from the last copy and sends the rest. The receipt form refuses an accepted quantity above what is still due (a stale copy can only be too generous about what others took, not about what is left, so this is a block), four decimals, a line with a turned-away quantity and nothing accepted, and a receipt of nothing. The issue form warns about more than the store holds and does not block, because the phone's figure may be out of date. What the server can still refuse (another phone took the balance, the stock went) is a 422 in the Sync Center in its own words.
+- Waiting documents are laid over the copy: the order is due less, the store holds more or less, the material check moves, and the document is listed as "Not sent yet". A document the copy already lists by `client_uuid` is not laid over twice. The reply is added to the copy in the transaction that finishes the outbox row (`MaterialCache`), including the order's balance and the stock, so nothing jumps back before the next read.
+- Units: the line is typed in its order unit by default, with chips for the material's other units. The still-due figure is shown in the unit being typed.
+- 422, 403 and 404 go to the Sync Center. A 500 is sent again.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

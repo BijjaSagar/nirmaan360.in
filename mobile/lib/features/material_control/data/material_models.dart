@@ -6,6 +6,9 @@ import 'package:decimal/decimal.dart';
 
 import '../../../core/db/app_database.dart' show OutboxRow, OutboxType;
 import '../../../core/money/money.dart';
+import 'procurement_models.dart';
+
+export 'procurement_models.dart';
 
 Map<String, dynamic> _map(Object? value) => value is Map ? value.cast<String, dynamic>() : const <String, dynamic>{};
 
@@ -53,6 +56,17 @@ class MaterialInfo {
     final Decimal? factor = unitId == null || unitId == baseUnitId ? null : factors[unitId];
     return factor == null ? qty : Qty.of(qty.value * factor);
   }
+
+  /// [base] counted in [unitId] instead, to the three places a quantity holds.
+  /// For telling someone how much is left in the unit they are typing in.
+  Qty fromBase(Qty base, int? unitId) {
+    final Decimal? factor = unitId == null || unitId == baseUnitId ? null : factors[unitId];
+    if (factor == null || factor == Decimal.zero) return base;
+    return Qty.of((base.value / factor).toDecimal(scaleOnInfinitePrecision: 3));
+  }
+
+  /// The units a quantity of this material can be typed in: its own, then the others.
+  List<int> unitIds() => <int>[?baseUnitId, ...factors.keys.where((id) => id != baseUnitId)];
 }
 
 class MaterialStoreInfo {
@@ -191,26 +205,48 @@ class MaterialDelivery {
 }
 
 class MaterialUse {
-  const MaterialUse({required this.materialId, required this.qty, this.unitId, this.activity, this.date, this.notSent = false});
+  const MaterialUse({
+    required this.materialId,
+    required this.qty,
+    this.unitId,
+    this.activity,
+    this.date,
+    this.issuedTo,
+    this.clientUuid,
+    this.reversed = false,
+    this.notSent = false,
+  });
 
-  /// The server stores a use as an issue with one line.
-  factory MaterialUse.fromJson(Map<String, dynamic> json) {
-    final List<Map<String, dynamic>> items = _rows(json['items']);
-    final Map<String, dynamic> line = items.isEmpty ? const <String, dynamic>{} : items.first;
-    return MaterialUse(
-      materialId: _int(line['material_id']),
-      qty: _qty(line['qty']),
-      unitId: _intOrNull(line['unit_id']),
-      activity: _text(line['activity']),
-      date: _text(json['issue_date']),
-    );
-  }
+  /// The server stores a use as an issue, and an issue can have several lines.
+  /// Each line is one row here, so nothing a store issued is left out.
+  static List<MaterialUse> linesOf(Map<String, dynamic> json) => <MaterialUse>[
+    for (final Map<String, dynamic> line in _rows(json['items']))
+      MaterialUse(
+        materialId: _int(line['material_id']),
+        qty: _qty(line['qty']),
+        unitId: _intOrNull(line['unit_id']),
+        activity: _text(line['activity']),
+        date: _text(json['issue_date']),
+        issuedTo: _text(json['issued_to']),
+        clientUuid: _text(json['client_uuid']),
+        reversed: _text(json['status']) == 'REVERSED',
+      ),
+  ];
 
   final int materialId;
   final Qty qty;
   final int? unitId;
   final String? activity;
   final String? date;
+
+  /// Who a store issue went to, when it said.
+  final String? issuedTo;
+
+  /// What the phone sent it under, so an issue the server already holds is not laid over twice.
+  final String? clientUuid;
+
+  /// Undone on the website. Its stock was put back.
+  final bool reversed;
   final bool notSent;
 }
 
@@ -247,6 +283,9 @@ class MaterialOverview {
     required this.deliveries,
     required this.uses,
     required this.counts,
+    this.orders = const <OpenOrder>[],
+    this.stock = const <StoreStock>[],
+    this.receipts = const <GoodsReceipt>[],
     this.fetchedAt,
     this.unsent = 0,
   });
@@ -262,8 +301,11 @@ class MaterialOverview {
     ],
     suppliers: _rows(json['suppliers']).map(SupplierOption.fromJson).toList(),
     deliveries: _rows(json['challans']).map(MaterialDelivery.fromJson).toList(),
-    uses: _rows(json['uses']).map(MaterialUse.fromJson).toList(),
+    uses: <MaterialUse>[for (final Map<String, dynamic> issue in _rows(json['uses'])) ...MaterialUse.linesOf(issue)],
     counts: _rows(json['counts']).map(StockCount.fromJson).toList(),
+    orders: _rows(json['purchase_orders']).map(OpenOrder.fromJson).toList(),
+    stock: _rows(json['stock']).map(StoreStock.fromJson).toList(),
+    receipts: _rows(json['receipts']).map(GoodsReceipt.fromJson).toList(),
     fetchedAt: DateTime.tryParse(_text(json['fetched_at']) ?? ''),
   );
 
@@ -275,6 +317,15 @@ class MaterialOverview {
   final List<MaterialDelivery> deliveries;
   final List<MaterialUse> uses;
   final List<StockCount> counts;
+
+  /// Purchase orders open for receipts, with what is still due on each line.
+  final List<OpenOrder> orders;
+
+  /// What each store holds of each material, base unit.
+  final List<StoreStock> stock;
+
+  /// The latest goods receipts against purchase orders.
+  final List<GoodsReceipt> receipts;
   final DateTime? fetchedAt;
 
   /// Deliveries, uses and counts not yet on the server.
@@ -294,6 +345,31 @@ class MaterialOverview {
       if (row.materialId == materialId) return row;
     }
     return null;
+  }
+
+  OpenOrder? order(int id) {
+    for (final OpenOrder order in orders) {
+      if (order.id == id) return order;
+    }
+    return null;
+  }
+
+  /// Orders with something still to receive, in the order the server listed them.
+  List<OpenOrder> get ordersDue => orders.where((order) => order.due.isNotEmpty).toList();
+
+  String storeName(int? id) {
+    for (final MaterialStoreInfo store in stores) {
+      if (store.id == id) return store.name;
+    }
+    return '';
+  }
+
+  /// What the phone thinks [storeId] holds of [materialId], in the base unit.
+  Qty stockIn(int storeId, int materialId) {
+    for (final StoreStock row in stock) {
+      if (row.storeId == storeId && row.materialId == materialId) return row.balance;
+    }
+    return Qty.zero;
   }
 
   SupplierOption? supplier(int id) {
@@ -321,6 +397,12 @@ class MaterialOverview {
     final List<MaterialDelivery> newDeliveries = <MaterialDelivery>[];
     final List<MaterialUse> newUses = <MaterialUse>[];
     final List<StockCount> newCounts = <StockCount>[];
+    final List<GoodsReceipt> newReceipts = <GoodsReceipt>[];
+
+    /// Base quantity of each order line already sent from this phone and not yet
+    /// on the server's copy, and what each store gains or loses the same way.
+    final Map<int, Qty> taken = <int, Qty>{};
+    final Map<(int, int), Qty> stockMoved = <(int, int), Qty>{};
     var unsentCount = 0;
 
     MaterialRow rowFor(int materialId) =>
@@ -340,7 +422,24 @@ class MaterialOverview {
 
     Qty baseOf(int materialId, Qty qty, int? unitId) => material(materialId)?.toBase(qty, unitId) ?? qty;
 
+    void moveStock(int? storeId, int materialId, Qty by) {
+      if (storeId == null) return;
+      final (int, int) key = (storeId, materialId);
+      stockMoved[key] = (stockMoved[key] ?? Qty.zero) + by;
+    }
+
+    // A receipt or an issue the server already lists, because a read ran while it was
+    // being sent, has its figures in the copy. Laying it over again would count it twice.
+    final Set<String> listed = <String>{
+      for (final GoodsReceipt receipt in receipts) ?receipt.clientUuid,
+      for (final MaterialUse use in uses) ?use.clientUuid,
+    };
+
     for (final OutboxRow outbox in unsentRows) {
+      if ((outbox.type == OutboxType.goodsReceipt || outbox.type == OutboxType.materialIssue) &&
+          listed.contains(outbox.wireUuid)) {
+        continue;
+      }
       final Map<String, dynamic> data = _map(jsonDecode(outbox.payload));
       final int materialId = _int(data['material_id']);
       final int? unitId = _intOrNull(data['unit_id']);
@@ -402,10 +501,107 @@ class MaterialOverview {
               notSent: true,
             ),
           );
+        case OutboxType.goodsReceipt:
+          unsentCount++;
+          final OpenOrder? known = order(_int(data['purchase_order_id']));
+          final int? storeId = _intOrNull(data['store_id']) ?? known?.storeId;
+          final Map<String, dynamic> local = _map(data['local']);
+          // The material of each line was written down when the receipt was made, so
+          // an order that has since closed on the server still reads right.
+          final Map<int, int> materialOf = <int, int>{
+            for (final Map<String, dynamic> line in _rows(local['lines']))
+              _int(line['purchase_order_item_id']): _int(line['material_id']),
+          };
+          final List<ReceiptLine> lines = <ReceiptLine>[];
+          for (final Map<String, dynamic> item in _rows(data['items'])) {
+            final int lineId = _int(item['purchase_order_item_id']);
+            final OrderLine? orderLine = known?.line(lineId);
+            final int lineMaterial = materialOf[lineId] ?? orderLine?.materialId ?? 0;
+            final int? lineUnit = _intOrNull(item['unit_id']) ?? orderLine?.unitId;
+            final Qty accepted = _qty(item['qty']);
+            final Qty base = baseOf(lineMaterial, accepted, lineUnit);
+            taken[lineId] = (taken[lineId] ?? Qty.zero) + base;
+            moveStock(storeId, lineMaterial, base);
+            final MaterialRow row = rowFor(lineMaterial);
+            moved[lineMaterial] = row.moved(
+              received: row.received + base,
+              shouldBeInStock: row.shouldBeInStock + base,
+              stock: row.stock + base,
+            );
+            lines.add(ReceiptLine(materialId: lineMaterial, qty: accepted, unitId: lineUnit, rejected: _qty(item['rejected_qty'])));
+          }
+          newReceipts.insert(
+            0,
+            GoodsReceipt(
+              orderId: _int(data['purchase_order_id']),
+              orderNumber: _text(local['po_number']) ?? known?.number,
+              storeId: storeId,
+              date: _text(data['grn_date']),
+              challanNo: _text(data['challan_no']),
+              lines: lines,
+              notSent: true,
+            ),
+          );
+        case OutboxType.materialIssue:
+          unsentCount++;
+          final int? storeId = _intOrNull(data['store_id']);
+          final List<MaterialUse> lines = <MaterialUse>[];
+          for (final Map<String, dynamic> item in _rows(data['items'])) {
+            final int lineMaterial = _int(item['material_id']);
+            final int? lineUnit = _intOrNull(item['unit_id']);
+            final Qty qty = _qty(item['qty']);
+            final Qty base = baseOf(lineMaterial, qty, lineUnit);
+            moveStock(storeId, lineMaterial, -base);
+            final MaterialRow row = rowFor(lineMaterial);
+            moved[lineMaterial] = row.moved(
+              used: row.used + base,
+              shouldBeInStock: row.shouldBeInStock - base,
+              stock: row.stock - base,
+            );
+            lines.add(
+              MaterialUse(
+                materialId: lineMaterial,
+                qty: qty,
+                unitId: lineUnit,
+                activity: _text(item['activity']),
+                date: _text(data['issue_date']),
+                issuedTo: _text(data['issued_to']),
+                notSent: true,
+              ),
+            );
+          }
+          newUses.insertAll(0, lines);
         default:
           break;
       }
     }
+
+    Qty notBelowZero(Qty qty) => qty < Qty.zero ? Qty.zero : qty;
+    final List<OpenOrder> openOrders = taken.isEmpty
+        ? orders
+        : <OpenOrder>[
+            for (final OpenOrder open in orders)
+              OpenOrder(
+                id: open.id,
+                number: open.number,
+                vendor: open.vendor,
+                storeId: open.storeId,
+                lines: <OrderLine>[
+                  for (final OrderLine line in open.lines)
+                    OrderLine(
+                      id: line.id,
+                      materialId: line.materialId,
+                      ordered: line.ordered,
+                      unitId: line.unitId,
+                      remaining: notBelowZero(line.remaining - (taken[line.id] ?? Qty.zero)),
+                    ),
+                ],
+              ),
+          ];
+    final Map<(int, int), Qty> held = <(int, int), Qty>{
+      for (final StoreStock row in stock) (row.storeId, row.materialId): row.balance,
+    };
+    stockMoved.forEach((key, by) => held[key] = (held[key] ?? Qty.zero) + by);
 
     return MaterialOverview(
       rows: moved.values.toList(),
@@ -416,6 +612,12 @@ class MaterialOverview {
       deliveries: <MaterialDelivery>[...newDeliveries, ...deliveries],
       uses: <MaterialUse>[...newUses, ...uses],
       counts: <StockCount>[...newCounts, ...counts],
+      orders: openOrders,
+      stock: <StoreStock>[
+        for (final MapEntry<(int, int), Qty> entry in held.entries)
+          StoreStock(storeId: entry.key.$1, materialId: entry.key.$2, balance: entry.value),
+      ],
+      receipts: <GoodsReceipt>[...newReceipts, ...receipts],
       fetchedAt: fetchedAt,
       unsent: unsentCount,
     );

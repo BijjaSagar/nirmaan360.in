@@ -130,6 +130,10 @@ final class Qty extends ScaledDecimal<Qty> {
     return parsed == null ? null : Qty.of(parsed);
   }
 
+  /// True when [input] has more decimal places than a quantity holds (three),
+  /// so parsing it would round what someone typed.
+  static bool hasExtraDecimals(String? input) => (_parseUserText(input)?.scale ?? 0) > 3;
+
   static final Qty zero = Qty.of(Decimal.zero);
   static final Qty one = Qty.of(Decimal.one);
 

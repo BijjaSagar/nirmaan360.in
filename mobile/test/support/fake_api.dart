@@ -2786,6 +2786,27 @@ class FakeApi implements NirmaanApi {
       },
       {'id': 6, 'code': 'SND', 'name': 'Sand', 'base_unit_id': 11, 'conversions': <Row>[]},
     ],
+    // What `ProcurementSyncService::snapshot` adds. The rows carry a rate and tax figures
+    // here on purpose: the real server's order rows can too, and the app must drop them.
+    'stock': <Row>[
+      {'store_id': 1, 'material_id': 5, 'balance': '75.000'},
+      {'store_id': 1, 'material_id': 6, 'balance': '3.000'},
+    ],
+    'purchase_orders': <Row>[
+      {
+        'id': 70,
+        'number': 'PO-101',
+        'status': 'ISSUED',
+        'vendor': 'Gupta Traders',
+        'store_id': 1,
+        'subtotal': '40000.00',
+        'total': '47200.00',
+        'items': <Row>[
+          {'id': 701, 'material_id': 5, 'qty': '100.000', 'unit_id': 10, 'base_qty': '100.000', 'received_base_qty': '0.000', 'remaining_base_qty': '100.000', 'rate': '400.00', 'amount': '40000.00', 'gst_pct': '18.00'},
+          {'id': 702, 'material_id': 6, 'qty': '10.000', 'unit_id': 11, 'base_qty': '10.000', 'received_base_qty': '0.000', 'remaining_base_qty': '10.000', 'rate': '1500.00', 'amount': '15000.00'},
+        ],
+      },
+    ],
   };
   ApiFailure? snapshotFailure;
   final Map<String, Row> challanPosts = {};
@@ -2849,6 +2870,221 @@ class FakeApi implements NirmaanApi {
   @override
   Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body) async =>
       _storeProgress(stockCountPosts, body);
+
+  // Goods receipts and store issues -------------------------------------------
+
+  /// Receipts already on the server, newest first, as `GET /grns` lists them.
+  List<Row> grnRows = [];
+  final Map<String, Row> grnPosts = {};
+  final Map<String, Row> issuePosts = {};
+  int grnPostCalls = 0;
+  int issuePostCalls = 0;
+  int receiptReads = 0;
+
+  /// Every body that reached the server, replays included.
+  final List<Row> grnBodies = [];
+  final List<Row> issueBodies = [];
+
+  /// Only the list of receipts throws this, so the rest of the page still comes.
+  ApiFailure? receiptListFailure;
+  var _grnSerial = 300;
+  var _issueSerial = 400;
+
+  /// Gives the signed-in user what a store keeper has on a plan with `procurement`.
+  void grantStock() {
+    final features = (user['organization'] as Map)['features'] as List;
+    if (!features.contains('procurement')) features.add('procurement');
+    grant('procurement.stock');
+  }
+
+  List<Row> get _orderRows => (procurementSnapshotBody['purchase_orders'] as List).cast<Row>();
+
+  List<Row> get _stockRows => (procurementSnapshotBody['stock'] as List).cast<Row>();
+
+  Decimal _baseOf(Object? materialId, Object? qty, Object? unitId) {
+    final material = (procurementSnapshotBody['materials'] as List).cast<Row>().firstWhere((m) => m['id'] == materialId);
+    final value = Decimal.parse('$qty');
+    if (unitId == null || unitId == material['base_unit_id']) return value;
+    final conversion = (material['conversions'] as List).cast<Row>().where((c) => c['unit_id'] == unitId).firstOrNull;
+    if (conversion == null) throw ValidationFailure('No conversion.', errors: {'items': ['No conversion.']});
+    return value * Decimal.parse('${conversion['factor']}');
+  }
+
+  String _q3(Decimal value) => value.toStringAsFixed(3);
+
+  @override
+  Future<List<Map<String, dynamic>>> procurementReceipts(int projectId) async {
+    _guard();
+    receiptReads++;
+    final failure = receiptListFailure;
+    if (failure != null) throw failure;
+    return [...grnPosts.values.toList().reversed, ...grnRows];
+  }
+
+  /// `GrnService` and `ProcurementApiController::storeGrn`, in the order the server checks.
+  @override
+  Future<Map<String, dynamic>> postGoodsReceipt(int projectId, Map<String, dynamic> body) async {
+    _guard();
+    grnPostCalls++;
+    grnBodies.add(body);
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    final uuid = body['client_uuid'] as String;
+    // A replay comes back first, whatever the order has become since.
+    var stored = grnPosts[uuid];
+    if (stored == null) {
+      ValidationFailure refuse(String field, String message) => ValidationFailure(message, errors: {field: [message]});
+      final order = _orderRows.where((o) => o['id'] == body['purchase_order_id']).firstOrNull;
+      if (order == null) throw refuse('purchase_order_id', 'The selected purchase order id is invalid.');
+      final date = body['grn_date'] as String;
+      if (date.compareTo('2026-11-09') > 0) throw refuse('grn_date', 'The grn date field must be a date before or equal to today.');
+      final items = (body['items'] as List?)?.cast<Row>() ?? const <Row>[];
+      if (items.isEmpty) throw refuse('items', 'The items field is required.');
+      final lines = (order['items'] as List).cast<Row>();
+      final running = {for (final line in lines) line['id'] as int: Decimal.parse('${line['received_base_qty']}')};
+      final prepared = <Row>[];
+      for (final (index, input) in items.indexed) {
+        final qty = Decimal.parse('${input['qty']}');
+        if (qty <= Decimal.zero) throw refuse('items.$index.qty', 'The items.$index.qty field must be greater than 0.');
+        if (qty.scale > 3) throw refuse('items.$index.qty', 'The items.$index.qty field must have 0-3 decimal places.');
+        final line = lines.where((l) => l['id'] == input['purchase_order_item_id']).firstOrNull;
+        if (line == null) throw refuse('items', 'A line on this receipt is not on the purchase order.');
+        final unitId = input['unit_id'] ?? line['unit_id'];
+        final base = _baseOf(line['material_id'], input['qty'], unitId);
+        final total = running[line['id']]! + base;
+        if (total > Decimal.parse('${line['base_qty']}')) {
+          final due = Decimal.parse('${line['base_qty']}') - running[line['id']]!;
+          throw refuse('over_receipt', 'Only ${_q3(due)} of Material ${line['material_id']} is still due on this purchase order.');
+        }
+        running[line['id'] as int] = total;
+        prepared.add({
+          'id': _grnSerial * 10 + index,
+          'purchase_order_item_id': line['id'],
+          'material_id': line['material_id'],
+          'qty': _q3(qty),
+          'unit_id': unitId,
+          'base_qty': _q3(base),
+          'rejected_qty': _q3(Decimal.parse('${input['rejected_qty'] ?? 0}')),
+        });
+      }
+      // Posted: the order's lines and the store move with it, as the ledger does.
+      for (final line in lines) {
+        final total = running[line['id']]!;
+        line['received_base_qty'] = _q3(total);
+        line['remaining_base_qty'] = _q3(Decimal.parse('${line['base_qty']}') - total);
+      }
+      final storeId = body['store_id'] ?? order['store_id'];
+      for (final item in prepared) {
+        final stock = _stockRows.where((s) => s['store_id'] == storeId && s['material_id'] == item['material_id']).firstOrNull;
+        if (stock == null) {
+          _stockRows.add({'store_id': storeId, 'material_id': item['material_id'], 'balance': item['base_qty']});
+        } else {
+          stock['balance'] = _q3(Decimal.parse('${stock['balance']}') + Decimal.parse('${item['base_qty']}'));
+        }
+      }
+      if (lines.every((l) => Decimal.parse('${l['remaining_base_qty']}') <= Decimal.zero)) {
+        order['status'] = 'RECEIVED';
+        _orderRows.remove(order);
+      } else {
+        order['status'] = 'PARTIAL';
+      }
+      final id = _grnSerial++;
+      stored = {
+        'id': id,
+        'number': 'GRN-${id.toString().padLeft(4, '0')}',
+        'client_uuid': uuid,
+        'purchase_order_id': order['id'],
+        'store_id': storeId,
+        'grn_date': date,
+        'challan_no': body['challan_no'],
+        'status': 'POSTED',
+        'items': prepared,
+      };
+      grnPosts[uuid] = stored;
+    }
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return stored;
+  }
+
+  /// `MaterialIssueService` and `ProcurementApiController::storeIssue`.
+  @override
+  Future<Map<String, dynamic>> postMaterialIssue(int projectId, Map<String, dynamic> body) async {
+    _guard();
+    issuePostCalls++;
+    issueBodies.add(body);
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    final uuid = body['client_uuid'] as String;
+    var stored = issuePosts[uuid];
+    if (stored == null) {
+      ValidationFailure refuse(String field, String message) => ValidationFailure(message, errors: {field: [message]});
+      final stores = (procurementSnapshotBody['stores'] as List).cast<Row>();
+      final store = stores.where((s) => s['id'] == body['store_id']).firstOrNull;
+      if (store == null) throw refuse('store_id', 'The selected store id is invalid.');
+      final date = body['issue_date'] as String;
+      if (date.compareTo('2026-11-09') > 0) throw refuse('issue_date', 'The issue date field must be a date before or equal to today.');
+      final items = (body['items'] as List?)?.cast<Row>() ?? const <Row>[];
+      if (items.isEmpty) throw refuse('items', 'The items field is required.');
+      final moves = <Row>[];
+      final left = {for (final s in _stockRows) '${s['store_id']}:${s['material_id']}': Decimal.parse('${s['balance']}')};
+      for (final (index, input) in items.indexed) {
+        final qty = Decimal.parse('${input['qty']}');
+        if (qty <= Decimal.zero) throw refuse('items.$index.qty', 'The items.$index.qty field must be greater than 0.');
+        if (qty.scale > 3) throw refuse('items.$index.qty', 'The items.$index.qty field must have 0-3 decimal places.');
+        if (input['boq_item_id'] == null && (input['activity'] as String?)?.trim().isNotEmpty != true) {
+          throw refuse('items.$index.boq_item_id', 'The items.$index.boq_item_id field is required when items.$index.activity is not present.');
+        }
+        final base = _baseOf(input['material_id'], input['qty'], input['unit_id']);
+        final key = '${store['id']}:${input['material_id']}';
+        final after = (left[key] ?? Decimal.zero) - base;
+        if (after < Decimal.zero) {
+          throw refuse('stock', 'Only ${_q3(left[key] ?? Decimal.zero)} of Material ${input['material_id']} is available in ${store['name']}.');
+        }
+        left[key] = after;
+        moves.add({
+          'id': _issueSerial * 10 + index,
+          'material_id': input['material_id'],
+          'qty': _q3(qty),
+          'unit_id': input['unit_id'],
+          'base_qty': _q3(base),
+          'boq_item_id': input['boq_item_id'],
+          'activity': input['activity'],
+        });
+      }
+      for (final entry in left.entries) {
+        final parts = entry.key.split(':');
+        final stock = _stockRows.where((s) => '${s['store_id']}' == parts[0] && '${s['material_id']}' == parts[1]).firstOrNull;
+        if (stock != null) stock['balance'] = _q3(entry.value);
+      }
+      final id = _issueSerial++;
+      stored = {
+        'id': id,
+        'number': 'MI-${id.toString().padLeft(4, '0')}',
+        'client_uuid': uuid,
+        'store_id': store['id'],
+        'issue_date': date,
+        'issued_to': body['issued_to'],
+        'status': 'POSTED',
+        'items': moves,
+      };
+      issuePosts[uuid] = stored;
+      materialUseRows = [stored, ...materialUseRows];
+    }
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return stored;
+  }
 
   /// Everything posted, by `client_uuid`: a repeat must not add a second.
   final Map<String, Row> progressPosts = {};

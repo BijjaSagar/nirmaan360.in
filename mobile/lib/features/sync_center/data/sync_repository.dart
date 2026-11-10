@@ -222,6 +222,8 @@ class SyncRepository {
       case OutboxType.contractorPayment:
       case OutboxType.inspection:
       case OutboxType.machineLog:
+      case OutboxType.goodsReceipt:
+      case OutboxType.materialIssue:
         break;
     }
   }

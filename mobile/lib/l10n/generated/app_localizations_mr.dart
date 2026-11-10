@@ -2056,6 +2056,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get materialQtyCounted => 'मोजलेले प्रमाण';
 
   @override
+  String get materialQtyIssued => 'दिलेले प्रमाण';
+
+  @override
   String get materialQtyOnChallan => 'चलनावर लिहिलेले प्रमाण (ऐच्छिक)';
 
   @override
@@ -3322,6 +3325,146 @@ class AppLocalizationsMr extends AppLocalizations {
   String get priceWatchWithin => 'मर्यादेत';
 
   @override
+  String get procurementAccepted => 'आलेले आणि स्वीकारलेले';
+
+  @override
+  String get procurementActivity => 'किंवा काम';
+
+  @override
+  String get procurementActivityHint => 'उदा. स्लॅब 3 शटरिंग';
+
+  @override
+  String get procurementAddItem => 'आणखी आयटम जोडा';
+
+  @override
+  String get procurementForBoq => 'BOQ आयटम';
+
+  @override
+  String procurementInStore(String qty) {
+    return 'या स्टोअरमध्ये $qty';
+  }
+
+  @override
+  String get procurementIssueStock => 'स्टोअरमधून मटेरियल द्या';
+
+  @override
+  String get procurementIssuedTo => 'कोणाला दिले (ऐच्छिक)';
+
+  @override
+  String get procurementIssuedToHint => 'व्यक्ती किंवा टोळी';
+
+  @override
+  String procurementItemN(int number) {
+    return 'आयटम $number';
+  }
+
+  @override
+  String get procurementNoOrdersMessage =>
+      'कार्यालयाने ऑर्डर पुरवठादाराकडे पाठवला की तो इथे दिसेल आणि त्यावर माल स्वीकारता येईल.';
+
+  @override
+  String get procurementNoOrdersTitle => 'उघडे खरेदी ऑर्डर नाहीत';
+
+  @override
+  String get procurementNoReceiptsTitle => 'अजून स्वीकृती नाही';
+
+  @override
+  String get procurementNoStoreMessage =>
+      'कार्यालयाला वेबसाइटवर स्टोअर जोडायला सांगा आणि मग पुन्हा प्रयत्न करा.';
+
+  @override
+  String get procurementNoStoreTitle => 'या प्रकल्पावर स्टोअर नाही';
+
+  @override
+  String get procurementNothingReceived =>
+      'किमान एका आयटमवर स्वीकारलेले प्रमाण लिहा';
+
+  @override
+  String get procurementOpenOrders => 'उघडे ऑर्डर';
+
+  @override
+  String get procurementOrder => 'खरेदी ऑर्डर';
+
+  @override
+  String get procurementOrderChoose => 'खरेदी ऑर्डर निवडा';
+
+  @override
+  String procurementOrderDue(int count) {
+    return '$count आयटम येणे बाकी';
+  }
+
+  @override
+  String get procurementOrderRequired => 'खरेदी ऑर्डर निवडा';
+
+  @override
+  String get procurementOrderSearch => 'क्रमांक किंवा पुरवठादाराने शोधा';
+
+  @override
+  String procurementOrdered(String qty) {
+    return 'ऑर्डर केले $qty';
+  }
+
+  @override
+  String procurementOverDue(String qty) {
+    return 'या ऑर्डरवर फक्त $qty येणे बाकी आहे';
+  }
+
+  @override
+  String get procurementPartialNote =>
+      'ऑर्डरचा काही भाग आला तरी चालेल. ज्या आयटमचा माल आला नाही तो रिकामा ठेवा; उरलेल्यासाठी ऑर्डर उघडा राहील.';
+
+  @override
+  String get procurementQtyInvalid => 'संख्या लिहा';
+
+  @override
+  String get procurementReceiveOrder => 'ऑर्डरनुसार माल स्वीकारा';
+
+  @override
+  String get procurementReceivedHeading => 'स्वीकारलेले';
+
+  @override
+  String get procurementRejected => 'परत केलेले (ऐच्छिक)';
+
+  @override
+  String procurementRejectedFigure(String qty) {
+    return 'परत केले $qty';
+  }
+
+  @override
+  String get procurementRejectedHint =>
+      'तुम्ही न स्वीकारलेला माल. तो स्टॉकमध्ये जोडला जात नाही आणि पुरवठादाराकडून येणे बाकीच राहतो.';
+
+  @override
+  String get procurementRejectedOnly =>
+      'परत केलेल्या मालासोबत त्याच आयटमवर काही स्वीकारलेले प्रमाणही हवे. सर्व माल परत केला असल्यास वेबसाइट वापरा.';
+
+  @override
+  String get procurementRemarks => 'टीप (ऐच्छिक)';
+
+  @override
+  String get procurementRemarksHint => 'उदा. माल परत का केला';
+
+  @override
+  String get procurementRemoveItem => 'काढा';
+
+  @override
+  String get procurementReversed => 'रद्द केले';
+
+  @override
+  String procurementStillDue(String qty) {
+    return 'येणे बाकी $qty';
+  }
+
+  @override
+  String get procurementTabReceipts => 'ऑर्डर स्वीकृती';
+
+  @override
+  String get procurementTooManyDecimals => 'जास्तीत जास्त 3 दशांश स्थाने वापरा';
+
+  @override
+  String get procurementWorkRequired => 'BOQ आयटम निवडा किंवा कामाचे नाव लिहा';
+
+  @override
   String get progressAdd => 'आजचे काम नोंदवा';
 
   @override
@@ -4201,6 +4344,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get syncTypeDprSubmit => 'अहवाल सादर करणे';
 
   @override
+  String get syncTypeGoodsReceipt => 'माल स्वीकृती';
+
+  @override
   String get syncTypeInspection => 'पाहणी';
 
   @override
@@ -4214,6 +4360,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeMachineLog => 'यंत्र नोंद';
+
+  @override
+  String get syncTypeMaterialIssue => 'स्टोअरमधून वितरण';
 
   @override
   String get syncTypeMeasurement => 'मोजमाप';

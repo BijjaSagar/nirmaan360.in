@@ -950,6 +950,7 @@
   "materialOnSite": "Stock on site",
   "materialOverStock": "This is more than the stock shown here. The server may refuse it.",
   "materialQtyCounted": "Counted quantity",
+  "materialQtyIssued": "Quantity issued",
   "materialQtyOnChallan": "Quantity written on challan (optional)",
   "materialQtyOnChallanHint": "If less arrived than the challan says, enter the challan figure.",
   "materialQtyReceived": "Quantity received",
@@ -1666,6 +1667,95 @@
     }
   },
   "priceWatchWithin": "Within the margin",
+  "procurementAccepted": "Received and accepted",
+  "procurementActivity": "Or the activity",
+  "procurementActivityHint": "Such as slab 3 shuttering",
+  "procurementAddItem": "Add another item",
+  "procurementForBoq": "BOQ item",
+  "procurementInStore": "In this store {qty}",
+  "@procurementInStore": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementIssueStock": "Issue from store",
+  "procurementIssuedTo": "Issued to (optional)",
+  "procurementIssuedToHint": "A person or a gang",
+  "procurementItemN": "Item {number}",
+  "@procurementItemN": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "procurementNoOrdersMessage": "An order shows here once the office has sent it to the supplier and goods can be received against it.",
+  "procurementNoOrdersTitle": "No open purchase orders",
+  "procurementNoReceiptsTitle": "No receipts yet",
+  "procurementNoStoreMessage": "Ask your office to add a store on the website, then try again.",
+  "procurementNoStoreTitle": "No store on this project",
+  "procurementNothingReceived": "Enter what was accepted on at least one line",
+  "procurementOpenOrders": "Open orders",
+  "procurementOrder": "Purchase order",
+  "procurementOrderChoose": "Choose purchase order",
+  "procurementOrderDue": "{count} items still due",
+  "@procurementOrderDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "procurementOrderRequired": "Choose the purchase order",
+  "procurementOrderSearch": "Search by number or supplier",
+  "procurementOrdered": "Ordered {qty}",
+  "@procurementOrdered": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementOverDue": "Only {qty} is still due on this order",
+  "@procurementOverDue": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementPartialNote": "Part of an order is fine. Leave a line empty if nothing came on it, and the order stays open for the rest.",
+  "procurementQtyInvalid": "Enter a number",
+  "procurementReceiveOrder": "Receive against order",
+  "procurementReceivedHeading": "Received",
+  "procurementRejected": "Turned away (optional)",
+  "procurementRejectedFigure": "Turned away {qty}",
+  "@procurementRejectedFigure": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementRejectedHint": "Goods you did not accept. They are not added to stock and are still due from the supplier.",
+  "procurementRejectedOnly": "Turned-away goods need some accepted quantity on the same line. For a delivery that was all turned away, use the website.",
+  "procurementRemarks": "Note (optional)",
+  "procurementRemarksHint": "Such as why goods were turned away",
+  "procurementRemoveItem": "Remove",
+  "procurementReversed": "Reversed",
+  "procurementStillDue": "Still due {qty}",
+  "@procurementStillDue": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementTabReceipts": "Order receipts",
+  "procurementTooManyDecimals": "Use at most 3 decimal places",
+  "procurementWorkRequired": "Choose a BOQ item or write the activity",
   "progressAdd": "Add today's work",
   "progressBeforeFinishing": "Before finishing check",
   "progressBehind": "Behind by {percent}",
@@ -2118,11 +2208,13 @@
   "syncTypeDpr": "Daily report",
   "syncTypeDprPhoto": "Report photo",
   "syncTypeDprSubmit": "Report submission",
+  "syncTypeGoodsReceipt": "Goods receipt",
   "syncTypeInspection": "Inspection",
   "syncTypeIssue": "Issue",
   "syncTypeIssuePhoto": "Issue photo",
   "syncTypeIssueStatus": "Issue status",
   "syncTypeMachineLog": "Machine log",
+  "syncTypeMaterialIssue": "Store issue",
   "syncTypeMeasurement": "Measurement",
   "syncTypeMeasurementPhoto": "Measurement photo",
   "syncTypeMeasurementSubmit": "Measurement submission",

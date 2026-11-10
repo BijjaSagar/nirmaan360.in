@@ -8,7 +8,7 @@ import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../data/material_repository.dart';
 
-enum MaterialTab { stock, deliveries, used, counts }
+enum MaterialTab { stock, deliveries, used, counts, receipts }
 
 enum MaterialLoad { loading, noProject, ready }
 

@@ -44,5 +44,7 @@
   "syncTypeProgressCorrection": { "en": "Progress correction", "mr": "प्रगतीची दुरुस्ती", "hi": "प्रगति में सुधार" },
   "syncTypeContractorPayment": { "en": "Contractor payment request", "mr": "ठेकेदार देयक विनंती", "hi": "ठेकेदार भुगतान अनुरोध" },
   "syncTypeInspection": { "en": "Inspection", "mr": "पाहणी", "hi": "निरीक्षण" },
-  "syncTypeMachineLog": { "en": "Machine log", "mr": "यंत्र नोंद", "hi": "मशीन लॉग" }
+  "syncTypeMachineLog": { "en": "Machine log", "mr": "यंत्र नोंद", "hi": "मशीन लॉग" },
+  "syncTypeGoodsReceipt": { "en": "Goods receipt", "mr": "माल स्वीकृती", "hi": "माल की प्राप्ति" },
+  "syncTypeMaterialIssue": { "en": "Store issue", "mr": "स्टोअरमधून वितरण", "hi": "स्टोर से निकासी" }
 }

@@ -19,6 +19,7 @@ import 'floor_entries.dart';
 import 'ids.dart';
 import 'inspection_cache.dart';
 import 'machine_cache.dart';
+import 'material_cache.dart';
 import 'pull_applier.dart';
 import 'record_photos.dart';
 import 'sync_status.dart';
@@ -80,6 +81,7 @@ class SyncEngine {
   late final ContractorPayments _contractorPayments = ContractorPayments(_db);
   late final InspectionCache _inspectionCache = InspectionCache(_db);
   late final MachineCache _machineCache = MachineCache(_db);
+  late final MaterialCache _materialCache = MaterialCache(_db);
   final String _instanceId;
 
   late final StreamSubscription<bool> _connectivitySub;
@@ -510,6 +512,8 @@ class SyncEngine {
       case OutboxType.contractorPayment:
       case OutboxType.inspection:
       case OutboxType.machineLog:
+      case OutboxType.goodsReceipt:
+      case OutboxType.materialIssue:
         return null;
     }
   }
@@ -645,6 +649,8 @@ class SyncEngine {
       case OutboxType.contractorPayment:
       case OutboxType.inspection:
       case OutboxType.machineLog:
+      case OutboxType.goodsReceipt:
+      case OutboxType.materialIssue:
         break;
     }
   }
@@ -744,6 +750,14 @@ class SyncEngine {
       if (row.type == OutboxType.machineLog) {
         await _machineCache.remember(row.projectId, stored);
       }
+      // A receipt or an issue moves what is due on the order and what the store holds,
+      // so the copy of material takes it in the same moment.
+      if (row.type == OutboxType.goodsReceipt) {
+        await _materialCache.rememberReceipt(row.projectId, stored);
+      }
+      if (row.type == OutboxType.materialIssue) {
+        await _materialCache.rememberIssue(row.projectId, stored);
+      }
     });
     _sentThisRun++;
     _notifyProgress();
@@ -826,6 +840,11 @@ class SyncEngine {
         return _api.postInspection(row.projectId, <String, dynamic>{...body}..remove('local'));
       case OutboxType.machineLog:
         return _api.postMachineLog(body);
+      case OutboxType.goodsReceipt:
+        // `local` is what the phone shows while it waits. The server needs the rest.
+        return _api.postGoodsReceipt(row.projectId, <String, dynamic>{...body}..remove('local'));
+      case OutboxType.materialIssue:
+        return _api.postMaterialIssue(row.projectId, <String, dynamic>{...body}..remove('local'));
       default:
         throw StateError('${row.type} is not a direct row.');
     }

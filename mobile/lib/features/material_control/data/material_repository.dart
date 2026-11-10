@@ -25,9 +25,28 @@ class MaterialRepository {
     OutboxType.materialChallan,
     OutboxType.materialUse,
     OutboxType.stockCount,
+    OutboxType.goodsReceipt,
+    OutboxType.materialIssue,
   ];
 
+  /// The server's own limits, from `GrnService::rules` and `MaterialIssueService::rules`.
+  static const int challanNoMax = 60;
+  static const int vehicleNoMax = 30;
+  static const int remarksMax = 2000;
+  static const int issuedToMax = 160;
+  static const int activityMax = 160;
+  static const int issueLinesMax = 200;
+
   AppDatabase get _db => _ctx.db;
+
+  /// Receiving against a purchase order and issuing from a store. Only
+  /// `procurement.stock` reaches the app, and every role that has it also reads
+  /// the purchasing lists. A phone that keeps its data local has no `procurement`
+  /// plan feature, so it is never offered either.
+  bool get isStockOpenToUser {
+    final user = _ctx.session.user;
+    return user != null && !user.isContractor && user.can('procurement.stock') && user.features.contains('procurement');
+  }
 
   Stream<MaterialOverview?> watchCached(int projectId) =>
       _db.watchMeta(MetaKey.materialOverview(projectId)).map(_decode);
@@ -81,6 +100,7 @@ class MaterialRepository {
   /// last copy in place.
   Future<void> refresh(int projectId) async {
     final api = _ctx.api;
+    final bool stock = isStockOpenToUser;
     final results = await Future.wait<Object>(<Future<Object>>[
       api.materialCheck(projectId),
       api.materialChallans(projectId),
@@ -88,6 +108,7 @@ class MaterialRepository {
       api.materialStockChecks(projectId),
       api.materialSuppliers(),
       _snapshotOrEmpty(projectId),
+      if (stock) _receiptsOrEmpty(projectId),
     ]);
     final snapshot = results[5] as Map<String, dynamic>;
     await _db.writeMeta(
@@ -95,15 +116,32 @@ class MaterialRepository {
       jsonEncode(<String, dynamic>{
         'check': results[0],
         'challans': results[1],
-        'uses': results[2],
+        'uses': ProcurementCopy.issues(results[2]),
         'counts': results[3],
         'suppliers': results[4],
         'materials': snapshot['materials'] ?? const <Object>[],
         'units': snapshot['units'] ?? const <Object>[],
         'stores': snapshot['stores'] ?? const <Object>[],
+        // Quantities only, and only for someone who may receive and issue. A rate on a
+        // purchase order line is dropped here, so it is never kept on the phone.
+        if (stock) ...<String, dynamic>{
+          'purchase_orders': ProcurementCopy.orders(snapshot['purchase_orders']),
+          'stock': ProcurementCopy.stock(snapshot['stock']),
+          'receipts': ProcurementCopy.receipts(results[6]),
+        },
         'fetched_at': _ctx.clock.now().toUtc().toIso8601String(),
       }),
     );
+  }
+
+  /// A role without the purchasing list still has the rest of the page.
+  Future<List<Map<String, dynamic>>> _receiptsOrEmpty(int projectId) async {
+    try {
+      return await _ctx.api.procurementReceipts(projectId);
+    } on ServerFailure catch (e) {
+      if (e.statusCode == 403 || e.statusCode == 404) return const <Map<String, dynamic>>[];
+      rethrow;
+    }
   }
 
   /// For the sync engine: keeps the selected project ready to use offline.
@@ -241,6 +279,97 @@ class MaterialRepository {
     return uuid;
   }
 
+  /// Goods that came against a purchase order. [lines] are only those with an accepted
+  /// quantity: the server refuses a line of 0, so a line with nothing accepted is left
+  /// out by the caller, and a receipt of nothing is never queued. One `client_uuid`
+  /// stands for the whole receipt, so a lost reply stores it once.
+  Future<String> receiveAgainstOrder({
+    required int projectId,
+    required OpenOrder order,
+    int? storeId,
+    required String date,
+    String? challanNo,
+    String? vehicleNo,
+    String? remarks,
+    required List<ReceiptEntry> lines,
+    required String title,
+    String? subtitle,
+  }) async {
+    _ctx.assertNotFuture(date, 'grn_date');
+    final String uuid = newUuid();
+    await _queue(
+      type: OutboxType.goodsReceipt,
+      uuid: uuid,
+      projectId: projectId,
+      title: title,
+      subtitle: subtitle,
+      data: <String, dynamic>{
+        'purchase_order_id': order.id,
+        'store_id': storeId,
+        'grn_date': date,
+        'challan_no': challanNo,
+        'vehicle_no': vehicleNo,
+        'remarks': remarks,
+        'items': <Map<String, dynamic>>[
+          for (final ReceiptEntry line in lines)
+            <String, dynamic>{
+              'purchase_order_item_id': line.orderLineId,
+              'qty': line.qty.toWire(),
+              'unit_id': line.unitId,
+              'rejected_qty': line.rejected.isZero ? null : line.rejected.toWire(),
+            },
+        ],
+        // For the phone only: the order's number and each line's material, kept so a waiting
+        // receipt reads right even after the order has closed. Removed before it is sent.
+        'local': <String, dynamic>{
+          'po_number': order.number,
+          'lines': <Map<String, dynamic>>[
+            for (final ReceiptEntry line in lines)
+              <String, dynamic>{'purchase_order_item_id': line.orderLineId, 'material_id': line.materialId},
+          ],
+        },
+      },
+    );
+    return uuid;
+  }
+
+  /// Material leaving a store, for BOQ work or an activity.
+  Future<String> issueFromStore({
+    required int projectId,
+    required int storeId,
+    required String date,
+    String? issuedTo,
+    required List<IssueEntry> lines,
+    required String title,
+    String? subtitle,
+  }) async {
+    _ctx.assertNotFuture(date, 'issue_date');
+    final String uuid = newUuid();
+    await _queue(
+      type: OutboxType.materialIssue,
+      uuid: uuid,
+      projectId: projectId,
+      title: title,
+      subtitle: subtitle,
+      data: <String, dynamic>{
+        'store_id': storeId,
+        'issue_date': date,
+        'issued_to': issuedTo,
+        'items': <Map<String, dynamic>>[
+          for (final IssueEntry line in lines)
+            <String, dynamic>{
+              'material_id': line.materialId,
+              'qty': line.qty.toWire(),
+              'unit_id': line.unitId,
+              'boq_item_id': line.boqItemId,
+              'activity': line.activity,
+            },
+        ],
+      },
+    );
+    return uuid;
+  }
+
   Future<void> _queue({
     required OutboxType type,
     required String uuid,
@@ -265,4 +394,38 @@ class MaterialRepository {
       );
     });
   }
+}
+
+/// One line of a receipt as typed: what was accepted and what was turned away.
+class ReceiptEntry {
+  const ReceiptEntry({
+    required this.orderLineId,
+    required this.materialId,
+    this.unitId,
+    required this.qty,
+    required this.rejected,
+  });
+
+  final int orderLineId;
+  final int materialId;
+  final int? unitId;
+
+  /// Accepted. Above zero: the server refuses a line of nothing.
+  final Qty qty;
+
+  /// Turned away, in the same unit. Not stock, and still due on the order.
+  final Qty rejected;
+}
+
+/// One line of an issue as typed.
+class IssueEntry {
+  const IssueEntry({required this.materialId, this.unitId, required this.qty, this.boqItemId, this.activity});
+
+  final int materialId;
+  final int? unitId;
+  final Qty qty;
+
+  /// Either this or [activity] must be given.
+  final int? boqItemId;
+  final String? activity;
 }

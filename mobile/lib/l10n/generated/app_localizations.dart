@@ -3778,6 +3778,12 @@ abstract class AppLocalizations {
   /// **'Counted quantity'**
   String get materialQtyCounted;
 
+  /// No description provided for @materialQtyIssued.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity issued'**
+  String get materialQtyIssued;
+
   /// No description provided for @materialQtyOnChallan.
   ///
   /// In en, this message translates to:
@@ -5944,6 +5950,246 @@ abstract class AppLocalizations {
   /// **'Within the margin'**
   String get priceWatchWithin;
 
+  /// No description provided for @procurementAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Received and accepted'**
+  String get procurementAccepted;
+
+  /// No description provided for @procurementActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Or the activity'**
+  String get procurementActivity;
+
+  /// No description provided for @procurementActivityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Such as slab 3 shuttering'**
+  String get procurementActivityHint;
+
+  /// No description provided for @procurementAddItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Add another item'**
+  String get procurementAddItem;
+
+  /// No description provided for @procurementForBoq.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ item'**
+  String get procurementForBoq;
+
+  /// No description provided for @procurementInStore.
+  ///
+  /// In en, this message translates to:
+  /// **'In this store {qty}'**
+  String procurementInStore(String qty);
+
+  /// No description provided for @procurementIssueStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue from store'**
+  String get procurementIssueStock;
+
+  /// No description provided for @procurementIssuedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Issued to (optional)'**
+  String get procurementIssuedTo;
+
+  /// No description provided for @procurementIssuedToHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A person or a gang'**
+  String get procurementIssuedToHint;
+
+  /// No description provided for @procurementItemN.
+  ///
+  /// In en, this message translates to:
+  /// **'Item {number}'**
+  String procurementItemN(int number);
+
+  /// No description provided for @procurementNoOrdersMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'An order shows here once the office has sent it to the supplier and goods can be received against it.'**
+  String get procurementNoOrdersMessage;
+
+  /// No description provided for @procurementNoOrdersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No open purchase orders'**
+  String get procurementNoOrdersTitle;
+
+  /// No description provided for @procurementNoReceiptsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No receipts yet'**
+  String get procurementNoReceiptsTitle;
+
+  /// No description provided for @procurementNoStoreMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your office to add a store on the website, then try again.'**
+  String get procurementNoStoreMessage;
+
+  /// No description provided for @procurementNoStoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No store on this project'**
+  String get procurementNoStoreTitle;
+
+  /// No description provided for @procurementNothingReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter what was accepted on at least one line'**
+  String get procurementNothingReceived;
+
+  /// No description provided for @procurementOpenOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Open orders'**
+  String get procurementOpenOrders;
+
+  /// No description provided for @procurementOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase order'**
+  String get procurementOrder;
+
+  /// No description provided for @procurementOrderChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose purchase order'**
+  String get procurementOrderChoose;
+
+  /// No description provided for @procurementOrderDue.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items still due'**
+  String procurementOrderDue(int count);
+
+  /// No description provided for @procurementOrderRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the purchase order'**
+  String get procurementOrderRequired;
+
+  /// No description provided for @procurementOrderSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by number or supplier'**
+  String get procurementOrderSearch;
+
+  /// No description provided for @procurementOrdered.
+  ///
+  /// In en, this message translates to:
+  /// **'Ordered {qty}'**
+  String procurementOrdered(String qty);
+
+  /// No description provided for @procurementOverDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {qty} is still due on this order'**
+  String procurementOverDue(String qty);
+
+  /// No description provided for @procurementPartialNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of an order is fine. Leave a line empty if nothing came on it, and the order stays open for the rest.'**
+  String get procurementPartialNote;
+
+  /// No description provided for @procurementQtyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a number'**
+  String get procurementQtyInvalid;
+
+  /// No description provided for @procurementReceiveOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive against order'**
+  String get procurementReceiveOrder;
+
+  /// No description provided for @procurementReceivedHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get procurementReceivedHeading;
+
+  /// No description provided for @procurementRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned away (optional)'**
+  String get procurementRejected;
+
+  /// No description provided for @procurementRejectedFigure.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned away {qty}'**
+  String procurementRejectedFigure(String qty);
+
+  /// No description provided for @procurementRejectedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Goods you did not accept. They are not added to stock and are still due from the supplier.'**
+  String get procurementRejectedHint;
+
+  /// No description provided for @procurementRejectedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned-away goods need some accepted quantity on the same line. For a delivery that was all turned away, use the website.'**
+  String get procurementRejectedOnly;
+
+  /// No description provided for @procurementRemarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get procurementRemarks;
+
+  /// No description provided for @procurementRemarksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Such as why goods were turned away'**
+  String get procurementRemarksHint;
+
+  /// No description provided for @procurementRemoveItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get procurementRemoveItem;
+
+  /// No description provided for @procurementReversed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversed'**
+  String get procurementReversed;
+
+  /// No description provided for @procurementStillDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Still due {qty}'**
+  String procurementStillDue(String qty);
+
+  /// No description provided for @procurementTabReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Order receipts'**
+  String get procurementTabReceipts;
+
+  /// No description provided for @procurementTooManyDecimals.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at most 3 decimal places'**
+  String get procurementTooManyDecimals;
+
+  /// No description provided for @procurementWorkRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a BOQ item or write the activity'**
+  String get procurementWorkRequired;
+
   /// No description provided for @progressAdd.
   ///
   /// In en, this message translates to:
@@ -7540,6 +7786,12 @@ abstract class AppLocalizations {
   /// **'Report submission'**
   String get syncTypeDprSubmit;
 
+  /// No description provided for @syncTypeGoodsReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Goods receipt'**
+  String get syncTypeGoodsReceipt;
+
   /// No description provided for @syncTypeInspection.
   ///
   /// In en, this message translates to:
@@ -7569,6 +7821,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Machine log'**
   String get syncTypeMachineLog;
+
+  /// No description provided for @syncTypeMaterialIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Store issue'**
+  String get syncTypeMaterialIssue;
 
   /// No description provided for @syncTypeMeasurement.
   ///

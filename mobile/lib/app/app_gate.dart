@@ -107,6 +107,13 @@ class GateState extends Equatable {
   bool get canLogMachines =>
       can('asset.log') && (user?.features.contains('assets') ?? false) && !isContractor && !isLocalOnly;
 
+  /// Receiving goods against a purchase order and issuing from a store, inside the
+  /// Material page: `procurement.stock` on a plan with `procurement`. The server's
+  /// `procurement.view` does not reach the app, and every role that has the first
+  /// has the second. Never offered to a contractor login or the offline plan.
+  bool get canStockProcure =>
+      can('procurement.stock') && (user?.features.contains('procurement') ?? false) && !isContractor && !isLocalOnly;
+
   /// Site tools has a row on Home when at least one of its tools is open.
   bool get hasSiteTools => canInspect || canLogMachines;
 
@@ -288,6 +295,7 @@ class AppGate extends Cubit<GateState> {
       a.canSeePrices != b.canSeePrices ||
       a.canInspect != b.canInspect ||
       a.canLogMachines != b.canLogMachines ||
+      a.canStockProcure != b.canStockProcure ||
       a.hasSiteTools != b.hasSiteTools ||
       a.ready != b.ready ||
       a.offline?.mode != b.offline?.mode ||
@@ -349,6 +357,7 @@ class AppGate extends Cubit<GateState> {
     if (Routes.isPrices(path) && !s.canSeePrices) return Routes.home;
     if (Routes.isInspections(path) && !s.canInspect) return Routes.home;
     if (Routes.isMachines(path) && !s.canLogMachines) return Routes.home;
+    if (Routes.isStockEntry(path) && !(s.canStockProcure && s.can('material_control.view'))) return Routes.home;
     if (path == Routes.siteTools && !s.hasSiteTools) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;

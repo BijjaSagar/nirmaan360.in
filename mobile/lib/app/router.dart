@@ -42,7 +42,9 @@ import '../features/site_progress/view/progress_screen.dart';
 import '../features/site_progress/view/stage_row_screen.dart';
 import '../features/material_control/bloc/material_form_cubit.dart';
 import '../features/material_control/view/material_form_screen.dart';
+import '../features/material_control/view/issue_stock_screen.dart';
 import '../features/material_control/view/material_screen.dart';
+import '../features/material_control/view/receive_order_screen.dart';
 import '../features/price_watch/view/price_material_screen.dart';
 import '../features/price_watch/view/price_watch_screen.dart';
 import '../features/projects/view/boq_form_screen.dart';
@@ -209,6 +211,8 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
               path,
               (s) => MaterialFormScreen(kind: kind, materialId: int.tryParse(s.uri.queryParameters['material'] ?? '')),
             ),
+          _route('receive-order', (s) => ReceiveOrderScreen(orderId: int.tryParse(s.uri.queryParameters['order'] ?? ''))),
+          _route('issue', (s) => IssueStockScreen(materialId: int.tryParse(s.uri.queryParameters['material'] ?? ''))),
         ],
       ),
       _route(

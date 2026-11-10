@@ -42,6 +42,11 @@ class _MaterialView extends StatelessWidget {
     if (gate.can('material_control.challan')) _Action(l.materialReceived, Icons.local_shipping_outlined, Routes.materialReceive),
     if (gate.can('material_control.consume')) _Action(l.materialUsed, Icons.construction, Routes.materialUse),
     if (gate.can('material_control.count')) _Action(l.materialCount, Icons.fact_check_outlined, Routes.materialCount),
+    // Against an issued purchase order, and out of a store. Both need `procurement.stock`.
+    if (gate.canStockProcure) ...<_Action>[
+      _Action(l.procurementReceiveOrder, Icons.assignment_turned_in_outlined, Routes.materialReceiveOrder),
+      _Action(l.procurementIssueStock, Icons.outbox_outlined, Routes.materialIssue),
+    ],
   ];
 
   Future<void> _add(BuildContext context, List<_Action> actions) async {
@@ -195,6 +200,7 @@ class _MaterialScroll extends StatelessWidget {
                   count: overview.counts.length,
                   builder: (context, index) => _CountTile(row: overview.counts[index], overview: overview),
                 ),
+        MaterialTab.receipts => _ReceiptsSliver(overview: overview),
       },
       const SliverToBoxAdapter(child: SizedBox(height: N360Space.lg)),
     ];
@@ -256,6 +262,7 @@ class _Tabs extends StatelessWidget {
       (MaterialTab.deliveries, l.materialTabDeliveries),
       (MaterialTab.used, l.materialTabUsed),
       (MaterialTab.counts, l.materialTabCounts),
+      if (context.select((AppGate gate) => gate.state.canStockProcure)) (MaterialTab.receipts, l.procurementTabReceipts),
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -416,11 +423,11 @@ class _UseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final String subtitle = <String>[?row.activity, ?_day(context, row.date)].join(' · ');
+    final String subtitle = <String>[?row.activity, ?row.issuedTo, ?_day(context, row.date)].join(' · ');
     return LedgerListTile(
       title: overview.materialName(row.materialId),
       subtitle: subtitle.isEmpty ? null : subtitle,
-      status: _notSent(l, row.notSent),
+      status: row.reversed ? StatusPill(kind: StampKind.rejected, label: l.procurementReversed) : _notSent(l, row.notSent),
       trailing: _figure('${formatQty(row.qty)} ${overview.unitLabel(row.materialId, row.unitId)}'.trim()),
     );
   }
@@ -446,6 +453,89 @@ class _CountTile extends StatelessWidget {
       subtitle: subtitle.isEmpty ? null : subtitle,
       status: _notSent(l, row.notSent),
       trailing: _figure('${formatQty(row.counted)} $unit'.trim()),
+    );
+  }
+}
+
+/// Purchase orders waiting for goods, then the receipts made against them. A
+/// tap on an order starts a receipt for it. Quantities only.
+class _ReceiptsSliver extends StatelessWidget {
+  const _ReceiptsSliver({required this.overview});
+
+  final MaterialOverview overview;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final List<OpenOrder> open = overview.ordersDue;
+    final List<(GoodsReceipt, ReceiptLine)> lines = <(GoodsReceipt, ReceiptLine)>[
+      for (final GoodsReceipt receipt in overview.receipts)
+        for (final ReceiptLine line in receipt.lines) (receipt, line),
+    ];
+    return SliverMainAxisGroup(
+      slivers: <Widget>[
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.xs, N360Space.gutter, N360Space.xs),
+            child: Text(l.procurementOpenOrders, style: N360Type.fit(N360Type.label, l.procurementOpenOrders)),
+          ),
+        ),
+        if (open.isEmpty)
+          SliverToBoxAdapter(child: EmptyLedger(title: l.procurementNoOrdersTitle, message: l.procurementNoOrdersMessage))
+        else
+          _List(
+            count: open.length,
+            builder: (context, index) {
+              final OpenOrder order = open[index];
+              return LedgerListTile(
+                key: ValueKey<String>('material-order-${order.id}'),
+                title: order.number,
+                subtitle: <String>[?order.vendor, l.procurementOrderDue(order.due.length)].join(' · '),
+                onTap: () => context.push('${Routes.materialReceiveOrder}?order=${order.id}'),
+              );
+            },
+          ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(N360Space.gutter, N360Space.md, N360Space.gutter, N360Space.xs),
+            child: Text(l.procurementReceivedHeading, style: N360Type.fit(N360Type.label, l.procurementReceivedHeading)),
+          ),
+        ),
+        if (lines.isEmpty)
+          SliverToBoxAdapter(child: EmptyLedger(title: l.procurementNoReceiptsTitle, message: l.materialEmptyMessage))
+        else
+          _List(
+            count: lines.length,
+            builder: (context, index) => _ReceiptTile(receipt: lines[index].$1, line: lines[index].$2, overview: overview),
+          ),
+      ],
+    );
+  }
+}
+
+class _ReceiptTile extends StatelessWidget {
+  const _ReceiptTile({required this.receipt, required this.line, required this.overview});
+
+  final GoodsReceipt receipt;
+  final ReceiptLine line;
+  final MaterialOverview overview;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String unit = overview.unitLabel(line.materialId, line.unitId);
+    final String subtitle = <String>[
+      ?(receipt.number ?? receipt.orderNumber),
+      ?receipt.challanNo,
+      ?_day(context, receipt.date),
+      // What was turned away is part of the record, beside what was accepted.
+      if (!line.rejected.isZero) l.procurementRejectedFigure('${formatQty(line.rejected)} $unit'.trim()),
+    ].join(' · ');
+    return LedgerListTile(
+      title: overview.materialName(line.materialId),
+      subtitle: subtitle.isEmpty ? null : subtitle,
+      status: receipt.reversed ? StatusPill(kind: StampKind.rejected, label: l.procurementReversed) : _notSent(l, receipt.notSent),
+      trailing: _figure('${formatQty(line.qty)} $unit'.trim()),
     );
   }
 }

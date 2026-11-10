@@ -583,6 +583,17 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body) =>
       _postData('/projects/$projectId/material-control/stock-checks', body);
 
+  @override
+  Future<List<Map<String, dynamic>>> procurementReceipts(int projectId) => _getRows('/projects/$projectId/grns');
+
+  @override
+  Future<Map<String, dynamic>> postGoodsReceipt(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/grns', body);
+
+  @override
+  Future<Map<String, dynamic>> postMaterialIssue(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-issues', body);
+
   Future<Uint8List> _bytes(String path) async {
     try {
       final response = await _dio.get<List<int>>(

@@ -1,4 +1,4 @@
-// Inspections and machine logs against a real local Laravel server.
+// Inspections, machine logs, goods receipts and store issues against a real local Laravel server.
 //
 // Skipped by default. Use only against local demo data, never production:
 //   php artisan migrate --seed && php artisan serve --port=8361
@@ -18,6 +18,7 @@ import 'package:nirmaan360/core/sync/sync_status.dart';
 import 'package:nirmaan360/core/money/money.dart';
 import 'package:nirmaan360/core/sync/ids.dart';
 import 'package:nirmaan360/features/inspections/data/inspection_repository.dart';
+import 'package:nirmaan360/features/material_control/data/material_repository.dart';
 
 const _url = String.fromEnvironment('REAL_API_URL');
 const _unreachable = 'http://127.0.0.1:9/api/v1';
@@ -182,6 +183,103 @@ void main() {
       final log = (await services.machines.readOverview(project.id))!.logs.firstWhere((l) => l.clientUuid == uuid);
       expect(log.hours, Hours.parse('6.5'));
       expect(log.notSent, isFalse);
+    },
+    skip: _url.isEmpty ? 'set REAL_API_URL to run against a local server' : null,
+    timeout: const Timeout(Duration(minutes: 3)),
+  );
+
+  test(
+    'a receipt against an order and an issue from a store, typed offline, each reach the real server once',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final tokens = InMemoryTokenStore();
+      final dio = Dio();
+      final api = DioNirmaanApi(readToken: tokens.read, baseUrl: _url, dio: dio);
+      final services = AppServices.forTesting(
+        db: db,
+        api: api,
+        tokens: tokens,
+        attachments: InMemoryAttachmentStore(),
+      );
+      addTearDown(services.dispose);
+
+      final signIn = await services.auth.signIn(email: 'engineer@demo.test', password: 'password');
+      expect(signIn.firstSync.outcome, SyncOutcome.success);
+      final project = (await services.projects.watchProjects().first).first;
+      await services.projects.selectProject(project.id);
+      await services.syncCenter.syncNow();
+
+      final seen = (await services.material.readOverview(project.id))!;
+      final order = seen.ordersDue.first;
+      final line = order.due.first;
+      final boq = (await services.material.readBoqLines(project.id)).first;
+      final stockBefore = seen.stockIn(order.storeId ?? seen.stores.first.id, line.materialId);
+
+      // Network off. A bag is accepted and one turned away, then a bag is issued.
+      dio.options.baseUrl = _unreachable;
+      final receiptUuid = await services.material.receiveAgainstOrder(
+        projectId: project.id,
+        order: order,
+        date: services.context.today,
+        challanNo: 'REAL-1',
+        lines: <ReceiptEntry>[
+          ReceiptEntry(orderLineId: line.id, materialId: line.materialId, unitId: line.unitId, qty: Qty.parse('1'), rejected: Qty.parse('1')),
+        ],
+        title: order.number,
+      );
+      final issueUuid = await services.material.issueFromStore(
+        projectId: project.id,
+        storeId: order.storeId ?? seen.stores.first.id,
+        date: services.context.today,
+        issuedTo: 'Real API test',
+        lines: <IssueEntry>[IssueEntry(materialId: line.materialId, unitId: line.unitId, qty: Qty.parse('1'), boqItemId: boq.id)],
+        title: 'Real API issue',
+      );
+      await services.syncCenter.syncNow();
+      expect((await db.select(db.outbox).get()).every((r) => r.status == OutboxStatus.pending), isTrue);
+
+      // Network back, but the reply to each post is lost once.
+      dio.options.baseUrl = _url;
+      var dropped = 0;
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onResponse: (response, handler) {
+            final path = response.requestOptions.path;
+            if (dropped < 2 && response.requestOptions.method == 'POST' && (path.endsWith('/grns') || path.endsWith('/material-issues'))) {
+              dropped++;
+              handler.reject(DioException(requestOptions: response.requestOptions, type: DioExceptionType.connectionError));
+              return;
+            }
+            handler.next(response);
+          },
+        ),
+      );
+      for (var i = 0; i < 8; i++) {
+        await services.syncCenter.syncNow();
+        if ((await db.select(db.outbox).get()).every((r) => r.status == OutboxStatus.done)) break;
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+
+      expect(dropped, 2, reason: 'a reply of each must be lost');
+      for (final row in await db.select(db.outbox).get()) {
+        expect(row.status, OutboxStatus.done, reason: '${row.attentionReason}');
+      }
+
+      final receipts = (await api.procurementReceipts(project.id)).where((r) => r['client_uuid'] == receiptUuid).toList();
+      expect(receipts, hasLength(1));
+      final received = (receipts.single['items'] as List).cast<Map<String, dynamic>>().single;
+      expect(received['qty'], '1.000');
+      expect(received['rejected_qty'], '1.000');
+      final issues = (await api.materialConsumption(project.id)).where((r) => r['client_uuid'] == issueUuid).toList();
+      expect(issues, hasLength(1));
+      expect(issues.single['issued_to'], 'Real API test');
+
+      // One bag in and one bag out: the stock is where it began, and the order owes one bag less.
+      final after = (await services.material.readOverview(project.id))!;
+      expect(after.stockIn(order.storeId ?? seen.stores.first.id, line.materialId), stockBefore);
+      expect(after.order(order.id)!.line(line.id)!.remaining, line.remaining - Qty.parse('1'));
+      expect(after.receipts.where((r) => r.clientUuid == receiptUuid), hasLength(1));
+      expect(after.unsent, 0);
     },
     skip: _url.isEmpty ? 'set REAL_API_URL to run against a local server' : null,
     timeout: const Timeout(Duration(minutes: 3)),
