@@ -7,9 +7,19 @@
         $current = collect($comparison['bids'])->where('current', true);
         $canQuote = $tender->isOpen() && auth()->user()->can('contractor.tender');
 
-        // A BOQ line's page sends its quote here to be chosen; otherwise the lowest starts chosen.
+        // A BOQ line's page sends its quote here to be chosen; with nothing asked for, the lowest starts chosen.
+        // A quote replaced since the link was made stands for that contractor's current quote. One that is not
+        // in this tender, or whose contractor has no current quote, chooses nothing, so the owner picks on purpose.
         $asked = old('bid_id', request()->query('bid'));
-        $chosen = $current->first(fn (array $row) => is_scalar($asked) && (string) $row['bid']->id === (string) $asked) ?? $current->firstWhere('lowest', true);
+        $asked = is_scalar($asked) && (string) $asked !== '' ? (string) $asked : null;
+        $askedRow = $asked === null ? null : collect($comparison['bids'])->first(fn (array $row) => (string) $row['bid']->id === $asked);
+        $chosen = match (true) {
+            $asked === null => $current->firstWhere('lowest', true),
+            $askedRow === null => null,
+            $askedRow['current'] => $askedRow,
+            default => $current->first(fn (array $row) => $row['bid']->party_id === $askedRow['bid']->party_id),
+        };
+        $replaced = $askedRow !== null && ! $askedRow['current'];
     @endphp
 
     <div @if ($canQuote) x-data="contractorPopup()" @endif>
@@ -113,11 +123,19 @@
                         @csrf
                         <x-field :label="__('Quotation')" name="bid_id" class="sm:col-span-6">
                             <select id="bid_id" name="bid_id" class="input" required>
+                                @unless ($chosen)
+                                    <option value="" selected disabled>{{ __('Choose a quotation') }}</option>
+                                @endunless
                                 @foreach ($current as $row)
                                     <option value="{{ $row['bid']->id }}" @selected($chosen && $chosen['bid']->id === $row['bid']->id)>{{ $row['contractor'] }} · {{ inr($row['amount']) }}@if ($row['lowest']) ({{ __('Lowest') }})@endif</option>
                                 @endforeach
                             </select>
                         </x-field>
+                        @if ($replaced)
+                            <p class="text-sm text-ink-2 sm:col-span-6">{{ $chosen ? __('The quote you chose has been replaced by a newer one from the same contractor, so the newer one is chosen.') : __('The quote you chose has been replaced. Choose a quotation.') }}</p>
+                        @elseif ($asked !== null && ! $chosen)
+                            <p class="text-sm text-ink-2 sm:col-span-6">{{ __('The quote you chose is not in this tender. Choose a quotation.') }}</p>
+                        @endif
                         <x-field :label="__('Start date')" name="start_date" class="sm:col-span-2"><input id="start_date" name="start_date" type="date" value="{{ old('start_date') }}" class="input"></x-field>
                         <x-field :label="__('Finish by')" name="end_date" class="sm:col-span-2"><input id="end_date" name="end_date" type="date" value="{{ old('end_date') }}" class="input"></x-field>
                         <x-field :label="__('Note')" name="award_note" class="sm:col-span-2"><input id="award_note" name="award_note" value="{{ old('award_note') }}" maxlength="500" class="input"></x-field>

@@ -52,7 +52,8 @@ class ContractorTenderService
             'rates.*' => ['nullable', 'numeric', 'min:0', 'max:9999999999', 'decimal:0,2'],
             'received_on' => ['nullable', 'date', 'before_or_equal:today'],
             // What the contractor offers besides the price.
-            'valid_until' => ['nullable', 'date'],
+            // A quote cannot run out before it was received. With no date given it counts as received today.
+            'valid_until' => ['nullable', 'date', request()->filled('received_on') ? 'after_or_equal:received_on' : 'after_or_equal:today'],
             'includes_material' => ['nullable', 'boolean'],
             'completion_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'payment_terms' => ['nullable', 'string', 'max:500'],
@@ -102,6 +103,11 @@ class ContractorTenderService
         }
 
         $items = BoqItem::where('project_id', $project->id)->whereIn('id', $data['boq_item_ids'])->get();
+
+        // Quotes are compared by their totals, so a tender whose lines all have no quantity could never take one.
+        if ($items->every(fn (BoqItem $item) => Dec::of($item->qty)->isZero())) {
+            throw ValidationException::withMessages(['boq_item_ids' => __('These BOQ lines have no quantity yet. Enter the quantity in the BOQ first, so the quotes can be compared.')]);
+        }
 
         return Idempotent::create(function () use ($project, $data, $items, $by, $uuid) {
             $tender = ContractorTender::create([
@@ -208,7 +214,11 @@ class ContractorTenderService
 
         $existing = Party::where('organization_id', $organizationId)
             ->where('type', 'subcontractor')
-            ->whereRaw('lower(name) = ?', [mb_strtolower($name)])
+            // SQLite's lower() folds only A to Z and PostgreSQL's folds every letter, so try both foldings.
+            ->where(fn ($query) => $query->where('name', $name)
+                ->orWhereRaw('lower(name) = ?', [mb_strtolower($name)])
+                ->orWhereRaw('lower(name) = ?', [strtolower($name)]))
+            ->orderBy('id')
             ->first();
 
         return $existing ?? Party::create([

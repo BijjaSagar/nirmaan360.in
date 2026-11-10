@@ -21,14 +21,16 @@
         // With nothing sent, the first open tender still waiting for a quote has its form open, and a line with no tender offers a new one.
         $waiting = collect($line['tenders'])->first(fn (array $tender) => $tender['status'] === 'OPEN' && $tender['quote_count'] === 0);
         $quoting = str_starts_with($sent, 'quote-') ? (int) Str::after($sent, 'quote-') : ($sent === '' ? (int) ($waiting['id'] ?? 0) : 0);
-        $starting = $sent === 'tender' || ($sent === '' && $line['tender_count'] === 0);
+        // Quotes are compared by their totals, so a line with no quantity cannot start a tender of its own.
+        $noQty = Dec::of($line['qty'])->isZero();
+        $starting = ! $noQty && ($sent === 'tender' || ($sent === '' && $line['tender_count'] === 0));
     @endphp
 
     <div @if ($canQuote) x-data="{ ...contractorPopup(), quoting: {{ $quoting }}, starting: @js($starting) }" @endif>
     <div @if ($canQuote) :inert="open" @endif>
         <x-page-header :title="__('Tenders for this line')" :subtitle="$line['code'].' · '.$project->name">
             <a href="{{ route('boq.index', $project) }}" class="btn btn-ghost">{{ __('Back to BOQ') }}</a>
-            @if ($canQuote)
+            @if ($canQuote && ! $noQty)
                 <button type="button" class="btn btn-primary" @click="starting = !starting">{{ __('New tender') }}</button>
             @endif
         </x-page-header>
@@ -56,7 +58,9 @@
             <p class="mb-5 text-sm text-ink-3">{{ __('Your role sees who quoted, not the prices.') }}</p>
         @endunless
 
-        @if ($canQuote)
+        @if ($canQuote && $noQty)
+            <p class="mb-5 text-sm text-ink-2">{{ __('This line has no quantity yet. Enter its quantity in the BOQ before asking contractors for quotes.') }}</p>
+        @elseif ($canQuote)
             <section class="card mb-5" x-show="starting" x-cloak>
                 <div class="card-head"><h2 class="card-title">{{ __('New tender for this line') }}</h2></div>
                 <form method="POST" action="{{ route('boq.tenders.store', $itemId) }}" class="grid gap-4 p-4 sm:grid-cols-3">
@@ -66,6 +70,7 @@
                     <x-field :label="__('Title')" name="title" class="sm:col-span-2"><input id="title" name="title" value="{{ old('title', Str::limit($line['description'], 80, '')) }}" maxlength="160" class="input" required></x-field>
                     <x-field :label="__('Quotes needed by')" name="due_on"><input id="due_on" name="due_on" type="date" value="{{ old('due_on') }}" class="input"></x-field>
                     <x-field :label="__('Scope')" name="scope" class="sm:col-span-3"><textarea id="scope" name="scope" rows="2" class="input">{{ old('scope') }}</textarea></x-field>
+                    @error('boq_item_ids')<p class="error sm:col-span-3">{{ $message }}</p>@enderror
                     <div class="flex flex-wrap items-center gap-x-4 gap-y-2 sm:col-span-3">
                         <button class="btn btn-primary">{{ __('Create tender') }}</button>
                         <a href="{{ route('contractor-control.tenders.create', [$project, 'item' => $itemId]) }}" class="link text-sm">{{ __('Put more BOQ lines in the tender') }}</a>

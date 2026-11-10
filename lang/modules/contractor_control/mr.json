@@ -186,5 +186,11 @@
     "Your role sees who quoted, not the prices.": "तुमच्या भूमिकेला कोणी कोटेशन दिले ते दिसते, किंमती नाही.",
     "vs BOQ (%)": "BOQ शी (%)",
     "vs BOQ (₹)": "BOQ शी (₹)",
-    "vs BOQ rate (₹)": "BOQ दराशी (₹)"
+    "vs BOQ rate (₹)": "BOQ दराशी (₹)",
+    "Choose a quotation": "कोटेशन निवडा",
+    "The quote you chose has been replaced by a newer one from the same contractor, so the newer one is chosen.": "तुम्ही निवडलेल्या कोटेशनच्या जागी त्याच ठेकेदाराचे नवीन कोटेशन आले आहे, म्हणून नवीन निवडले आहे.",
+    "The quote you chose has been replaced. Choose a quotation.": "तुम्ही निवडलेल्या कोटेशनच्या जागी नवीन आले आहे. एक कोटेशन निवडा.",
+    "The quote you chose is not in this tender. Choose a quotation.": "तुम्ही निवडलेले कोटेशन या टेंडरमध्ये नाही. एक कोटेशन निवडा.",
+    "These BOQ lines have no quantity yet. Enter the quantity in the BOQ first, so the quotes can be compared.": "या BOQ ओळींमध्ये अजून प्रमाण नाही. आधी BOQ मध्ये प्रमाण भरा, म्हणजे कोटेशनची तुलना करता येईल.",
+    "This line has no quantity yet. Enter its quantity in the BOQ before asking contractors for quotes.": "या ओळीत अजून प्रमाण नाही. ठेकेदारांकडून कोटेशन मागण्यापूर्वी BOQ मध्ये त्याचे प्रमाण भरा."
 }
