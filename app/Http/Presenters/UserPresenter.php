@@ -24,6 +24,7 @@ final class UserPresenter
         'contractor.view', 'contractor.request', 'contractor.approve', 'contractor.manage', 'contractor.tender', 'contractor.award',
         'asset.log', 'checklist.fill', 'procurement.stock',
         'contractor_portal.view',
+        'alerts.view', 'alerts.manage',
     ];
 
     public static function present(User $user): array

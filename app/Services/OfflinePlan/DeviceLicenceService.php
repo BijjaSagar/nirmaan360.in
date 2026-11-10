@@ -106,7 +106,9 @@ class DeviceLicenceService
         }
 
         if (! $licence->isActive()) {
-            throw new OfflinePlanRefused('licence_revoked', __('This phone was freed from the company. It can be activated again if a slot is free.'), 410);
+            throw new OfflinePlanRefused('licence_revoked', __('This phone was freed from the company. It can be activated again if a slot is free.'), 410, [
+                'manage_url' => route('offline.devices.index'),
+            ]);
         }
 
         $this->touch($licence, $organization, $data);
