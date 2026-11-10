@@ -643,6 +643,8 @@ class AnnouncementReviewFixesTest extends NotifyTestCase
     public function test_a_company_has_limits_on_waiting_and_daily_announcements(): void
     {
         Queue::fake([SendAnnouncement::class]);
+        // Pinned to midday: the test moves the clock forward about 100 seconds, which near midnight would start a new day's count.
+        $this->at('2026-11-10 12:00');
         $organization = $this->tenant();
         $owner = $this->member($organization, 'owner');
 
