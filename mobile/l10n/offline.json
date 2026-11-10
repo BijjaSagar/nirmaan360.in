@@ -461,5 +461,45 @@
     "en": "Look at my data",
     "mr": "माझा डेटा पाहा",
     "hi": "मेरा डेटा देखें"
+  },
+  "offlineNoticeNoLicence": {
+    "en": "This phone has no licence yet. You can look at everything, but nothing can be added or changed. Connect to the internet to get one.",
+    "mr": "या फोनला अजून परवाना नाही. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. परवाना मिळवण्यासाठी इंटरनेटशी जोडा.",
+    "hi": "इस फ़ोन को अभी लाइसेंस नहीं मिला है। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। लाइसेंस पाने के लिए इंटरनेट से जुड़ें।"
+  },
+  "offlineNoticeUpload": {
+    "en": "Your licence has ended, and your plan now keeps data on the server. You can look at everything, but nothing can be added or changed. Upload your data to carry on.",
+    "mr": "तुमचा परवाना संपला आहे आणि तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवतो. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. पुढे जाण्यासाठी तुमचा डेटा अपलोड करा.",
+    "hi": "आपका लाइसेंस समाप्त हो गया है और आपका प्लान अब सर्वर पर डेटा रखता है। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। आगे बढ़ने के लिए अपना डेटा अपलोड करें।"
+  },
+  "licenceNoneTitle": {
+    "en": "This phone has no licence yet",
+    "mr": "या फोनला अजून परवाना नाही",
+    "hi": "इस फ़ोन को अभी लाइसेंस नहीं मिला"
+  },
+  "licenceNoneBody": {
+    "en": "Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until this phone has a licence. Connect to the internet and try now.",
+    "mr": "काहीही हरवलेले नाही. तुम्ही इथले सर्व काही पाहू शकता आणि डेटाची प्रत काढू शकता, पण या फोनला परवाना मिळेपर्यंत काहीही जोडता किंवा बदलता येणार नाही. इंटरनेटशी जोडा आणि आता प्रयत्न करा.",
+    "hi": "कुछ नहीं खोया है। आप यहाँ सब कुछ देख सकते हैं और डेटा की कॉपी निकाल सकते हैं, पर इस फ़ोन को लाइसेंस मिलने तक कुछ जोड़ा या बदला नहीं जा सकता। इंटरनेट से जुड़ें और अभी कोशिश करें।"
+  },
+  "licenceEndedUploadBody": {
+    "en": "Your company's plan now keeps data on the server, so this licence cannot be renewed. Nothing is lost. Make a copy if you like, then upload your data to the server to carry on.",
+    "mr": "तुमच्या कंपनीचा प्लॅन आता सर्व्हरवर डेटा ठेवतो, त्यामुळे हा परवाना नूतनीकरण करता येणार नाही. काहीही हरवलेले नाही. हवे तर प्रत काढा, मग पुढे जाण्यासाठी तुमचा डेटा सर्व्हरवर अपलोड करा.",
+    "hi": "आपकी कंपनी का प्लान अब सर्वर पर डेटा रखता है, इसलिए यह लाइसेंस नवीनीकृत नहीं हो सकता। कुछ नहीं खोया है। चाहें तो कॉपी निकालें, फिर आगे बढ़ने के लिए अपना डेटा सर्वर पर अपलोड करें।"
+  },
+  "licenceUploadNow": {
+    "en": "Upload to the server",
+    "mr": "सर्व्हरवर अपलोड करा",
+    "hi": "सर्वर पर अपलोड करें"
+  },
+  "licenceResultPlanSyncs": {
+    "en": "Your plan keeps data on the server now, so there is no licence to renew. Upload your data to carry on.",
+    "mr": "तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवतो, त्यामुळे नूतनीकरण करायला परवाना नाही. पुढे जाण्यासाठी तुमचा डेटा अपलोड करा.",
+    "hi": "आपका प्लान अब सर्वर पर डेटा रखता है, इसलिए नवीनीकरण के लिए कोई लाइसेंस नहीं है। आगे बढ़ने के लिए अपना डेटा अपलोड करें।"
+  },
+  "licenceResultNoLicence": {
+    "en": "Connected, but this phone could not be given a licence. Check your plan on the Nirmaan360 website, then try again.",
+    "mr": "जोडले गेले, पण या फोनला परवाना देता आला नाही. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.",
+    "hi": "जुड़ गया, पर इस फ़ोन को लाइसेंस नहीं दिया जा सका। Nirmaan360 वेबसाइट पर अपना प्लान जाँचें, फिर दोबारा कोशिश करें।"
   }
 }

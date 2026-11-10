@@ -59,9 +59,15 @@ class _Card extends StatelessWidget {
     final String locale = Localizations.localeOf(context).languageCode;
     final DateTime? end = licence.endsAt;
     final String date = end == null ? '' : licenceDate(end, locale);
-    final String text = ended
-        ? (end == null ? t.offlineNoticeEndedNoDate : t.offlineNoticeEnded(date))
-        : t.offlineNoticeEnding(date);
+    final String text = !ended
+        ? t.offlineNoticeEnding(date)
+        : licence.planSyncs
+        ? t.offlineNoticeUpload
+        : licence.hasNoLicence
+        ? t.offlineNoticeNoLicence
+        : end == null
+        ? t.offlineNoticeEndedNoDate
+        : t.offlineNoticeEnded(date);
 
     return LedgerCard(
       key: const ValueKey<String>('licence-notice'),

@@ -1857,6 +1857,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get licenceEndedUploadBody =>
+      'Your company\'s plan now keeps data on the server, so this licence cannot be renewed. Nothing is lost. Make a copy if you like, then upload your data to the server to carry on.';
+
+  @override
+  String get licenceNoneBody =>
+      'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until this phone has a licence. Connect to the internet and try now.';
+
+  @override
+  String get licenceNoneTitle => 'This phone has no licence yet';
+
+  @override
   String get licenceRenewedBody => 'You can add and change things again.';
 
   @override
@@ -1867,8 +1878,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'The server did not answer. Try again in a minute.';
 
   @override
+  String get licenceResultNoLicence =>
+      'Connected, but this phone could not be given a licence. Check your plan on the Nirmaan360 website, then try again.';
+
+  @override
   String get licenceResultOffline =>
       'No internet found. Connect to Wi-Fi or mobile data, then try again.';
+
+  @override
+  String get licenceResultPlanSyncs =>
+      'Your plan keeps data on the server now, so there is no licence to renew. Upload your data to carry on.';
 
   @override
   String get licenceResultStillEnded =>
@@ -1882,6 +1901,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenceTrying => 'Asking the server…';
+
+  @override
+  String get licenceUploadNow => 'Upload to the server';
 
   @override
   String get licenceViewData => 'Look at my data';
@@ -2725,6 +2747,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String offlineNoticeEnding(String date) {
     return 'Your licence ends on $date. Connect to the internet once before then and it renews by itself.';
   }
+
+  @override
+  String get offlineNoticeNoLicence =>
+      'This phone has no licence yet. You can look at everything, but nothing can be added or changed. Connect to the internet to get one.';
+
+  @override
+  String get offlineNoticeUpload =>
+      'Your licence has ended, and your plan now keeps data on the server. You can look at everything, but nothing can be added or changed. Upload your data to carry on.';
 
   @override
   String get offlineOnPhoneTag => 'On this phone';

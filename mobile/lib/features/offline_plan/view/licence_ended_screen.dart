@@ -59,10 +59,11 @@ class _LicenceEndedScreenState extends State<LicenceEndedScreen> {
 
   /// The words for a try that did not renew. The cases that have a card of their
   /// own (a freed phone, a full plan, a lapsed sign-in) are said there instead.
-  String? _words(AppLocalizations t) => switch (_result) {
+  String? _words(AppLocalizations t, LicenceStatus licence) => switch (_result) {
     LicenceRenewal.offline => t.licenceResultOffline,
     LicenceRenewal.noAnswer => t.licenceResultNoAnswer,
-    LicenceRenewal.stillEnded => t.licenceResultStillEnded,
+    LicenceRenewal.stillEnded => licence.hasNoLicence ? t.licenceResultNoLicence : t.licenceResultStillEnded,
+    LicenceRenewal.planChanged => t.licenceResultPlanSyncs,
     _ => null,
   };
 
@@ -76,7 +77,15 @@ class _LicenceEndedScreenState extends State<LicenceEndedScreen> {
     final bool ended = licence.entriesBlocked;
     final String locale = Localizations.localeOf(context).languageCode;
     final DateTime? end = licence.endsAt;
-    final String? words = _words(t);
+    final String? words = _words(t, licence);
+    // The three ways a block reads: a licence that has run out, one that was
+    // never given, and a plan that now keeps its data on the server.
+    final String title = licence.hasNoLicence && !licence.planSyncs ? t.licenceNoneTitle : t.offlineLicenceEndedTitle;
+    final String body = licence.planSyncs
+        ? t.licenceEndedUploadBody
+        : licence.hasNoLicence
+        ? t.licenceNoneBody
+        : t.offlineLicenceEndedBody;
     final bool hasProblem = offline.issue == LicenceIssue.revoked || offline.issue == LicenceIssue.deviceLimit || offline.needsSignIn;
 
     return Scaffold(
@@ -101,8 +110,8 @@ class _LicenceEndedScreenState extends State<LicenceEndedScreen> {
                             const SizedBox(width: N360Space.sm),
                             Expanded(
                               child: Text(
-                                t.offlineLicenceEndedTitle,
-                                style: N360Type.fit(N360Type.title, t.offlineLicenceEndedTitle).copyWith(color: N360Colors.stampRed),
+                                title,
+                                style: N360Type.fit(N360Type.title, title).copyWith(color: N360Colors.stampRed),
                               ),
                             ),
                           ],
@@ -113,16 +122,29 @@ class _LicenceEndedScreenState extends State<LicenceEndedScreen> {
                         ],
                         const SizedBox(height: N360Space.xs),
                         Text(
-                          t.offlineLicenceEndedBody,
-                          style: N360Type.fit(N360Type.body, t.offlineLicenceEndedBody).copyWith(color: N360Colors.ink2),
+                          body,
+                          style: N360Type.fit(N360Type.body, body).copyWith(color: N360Colors.ink2),
                         ),
                         const SizedBox(height: N360Space.md),
+                        if (licence.planSyncs) ...<Widget>[
+                          // The upload is what ends the block here, so it comes first.
+                          GloveButton(
+                            key: const ValueKey<String>('licence-upload'),
+                            label: t.licenceUploadNow,
+                            icon: Icons.cloud_upload_outlined,
+                            fullWidth: true,
+                            large: true,
+                            onPressed: () => context.push(Routes.offlineUpload),
+                          ),
+                          const SizedBox(height: N360Space.sm),
+                        ],
                         GloveButton(
                           key: const ValueKey<String>('licence-try-now'),
                           label: t.licenceTryNow,
                           icon: Icons.refresh,
+                          kind: licence.planSyncs ? GloveButtonKind.secondary : GloveButtonKind.primary,
                           fullWidth: true,
-                          large: true,
+                          large: !licence.planSyncs,
                           loading: _busy,
                           onPressed: _busy ? null : _tryNow,
                         ),

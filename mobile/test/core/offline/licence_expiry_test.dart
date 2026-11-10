@@ -12,6 +12,7 @@ import 'package:nirmaan360/features/inspections/data/inspection_models.dart';
 import 'package:nirmaan360/features/machine_logs/data/machine_models.dart';
 import 'package:nirmaan360/features/material_control/data/material_repository.dart';
 import 'package:nirmaan360/features/measurement/data/measurement_repository.dart';
+import 'package:nirmaan360/features/offline_plan/data/offline_upload.dart';
 
 import '../../support/test_app.dart';
 
@@ -47,6 +48,9 @@ class _Phone {
 Future<_Phone> _phone({FakeApi? api}) async {
   final fake = api ?? FakeApi();
   fake.offlineCompany = true;
+  for (final permission in <String>['project.manage', 'boq.manage', 'worker.manage', 'petty_cash.manage', 'money.view']) {
+    fake.grant(permission);
+  }
   final app = await TestApp.create(seed: false, signedIn: false, api: fake);
   await app.services.auth.signIn(email: 'owner@example.test', password: 'x');
   final services = app.services;
@@ -89,6 +93,31 @@ Future<String> _snapshot(AppDatabase db) async {
     out.writeln('${row.read<String>('key')} = ${row.read<String>('value')}');
   }
   return out.toString();
+}
+
+/// Every write on the list is refused for the licence, and none changes anything.
+Future<void> _expectEveryWriteRefused(_Phone p) async {
+  expect(p.plan.licence.entriesBlocked, isTrue);
+  final String before = await _snapshot(p.app.db);
+  for (final entry in _writes().entries) {
+    await expectLater(
+      () async => entry.value(p),
+      throwsA(isA<LicenceEnded>()),
+      reason: '${entry.key} must be blocked, not just hidden',
+    );
+  }
+  expect(await _snapshot(p.app.db), before, reason: 'a refusal stores nothing and deletes nothing');
+}
+
+/// What a phone looks like that never got a valid token: the plan state with no
+/// token, no key and no end date, as a failed activation leaves it.
+Future<void> _forgetTheLicence(_Phone p) async {
+  final Map<String, dynamic> stored = jsonDecode((await p.app.db.readMeta(MetaKey.offlinePlan))!) as Map<String, dynamic>;
+  for (final key in <String>['token', 'public_key', 'key_id', 'expires_at', 'issued_at']) {
+    stored[key] = null;
+  }
+  await p.app.db.writeMeta(MetaKey.offlinePlan, jsonEncode(stored));
+  await p.plan.load();
 }
 
 /// Every call that adds or changes a record on the phone, by repository. The
@@ -290,18 +319,7 @@ void main() {
       }
 
       await p.runOut();
-      expect(p.plan.licence.entriesBlocked, isTrue);
-      final String before = await _snapshot(p.app.db);
-
-      for (final entry in writes.entries) {
-        await expectLater(
-          () async => entry.value(p),
-          throwsA(isA<LicenceEnded>()),
-          reason: '${entry.key} must be blocked, not just hidden',
-        );
-      }
-
-      expect(await _snapshot(p.app.db), before, reason: 'a refusal stores nothing and deletes nothing');
+      await _expectEveryWriteRefused(p);
     });
 
     test('every repository method that writes is in the matrix above, or is known not to add or change an entry', () {
@@ -602,34 +620,245 @@ void main() {
       expect(await services.context.outbox.unsentCount(), greaterThan(0));
     });
 
-    test('a phone whose owner chose to stay local on an online plan has no licence to renew', () async {
+  });
+
+  group('a phone that keeps its data local, whatever the server now says about the plan', () {
+    test('a good licence is not held back in any mode: the term is paid for', () async {
       final p = await _phone();
       addTearDown(p.app.dispose);
-      await p.runOut();
-      expect(p.plan.licence.entriesBlocked, isTrue);
-
       p.app.api.offlineCompany = false;
       await p.plan.check(force: true);
       expect(p.plan.state!.mode, OfflineMode.asking);
-      expect(p.plan.licence.entriesBlocked, isFalse, reason: 'the server now keeps the data; the upload is the next step');
+      p.plan.assertCanWrite();
+
       await p.plan.decline();
       expect(p.plan.state!.mode, OfflineMode.declined);
-
-      expect(p.plan.licence.entriesBlocked, isFalse);
       p.plan.assertCanWrite();
+      await p.app.services.issues.raise(projectId: p.project.id, title: 'Still allowed on a good token');
     });
 
-    test('a phone that was never given a licence has no end to be held to', () async {
+    test('after the end, and the plan has gone online, every write is still refused, asked or declined', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await p.runOut();
+      p.app.api.offlineCompany = false;
+      await p.plan.check(force: true);
+      expect(p.plan.state!.mode, OfflineMode.asking);
+      expect(p.plan.licence.planSyncs, isTrue);
+      await _expectEveryWriteRefused(p);
+
+      await p.plan.decline();
+      expect(p.plan.state!.mode, OfflineMode.declined);
+      expect(p.plan.licence.planSyncs, isTrue);
+      await _expectEveryWriteRefused(p);
+    });
+
+    test('saying no to the upload gains nothing: a lapsed trial on a free plan cannot work offline for ever', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      p.app.api.offlineCompany = false;
+      await p.plan.check(force: true);
+      await p.plan.decline();
+      p.plan.assertCanWrite();
+
+      await p.runOut();
+
+      expect(p.plan.licence.entriesBlocked, isTrue);
+      await expectLater(p.app.services.issues.raise(projectId: p.project.id, title: 'No'), throwsA(isA<LicenceEnded>()));
+    });
+
+    test('it can still be read and exported while blocked', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await p.runOut();
+      p.app.api.offlineCompany = false;
+      await p.plan.check(force: true);
+      await p.plan.decline();
+
+      expect((await p.app.services.projects.getProject(p.project.id))?.name, 'Kalyani');
+      expect(await p.app.services.issues.watchByProject(p.project.id).first, hasLength(1));
+      expect((await p.plan.work()).projects, 1);
+    });
+
+    test('there is no licence to renew for a plan that syncs, and trying says so', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await p.runOut();
+      p.app.api.offlineCompany = false;
+      await p.plan.check(force: true);
+      await p.plan.decline();
+
+      expect(await p.plan.renewNow(), LicenceRenewal.planChanged);
+      expect(p.plan.licence.entriesBlocked, isTrue);
+    });
+
+    test('a fresh token lifts it, if the plan goes back to offline', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await p.runOut();
+      p.app.api.offlineCompany = false;
+      await p.plan.check(force: true);
+      await p.plan.decline();
+      expect(p.plan.licence.entriesBlocked, isTrue);
+
+      p.app.api.offlineCompany = true;
+      expect(await p.plan.renewNow(), LicenceRenewal.renewed);
+
+      expect(p.plan.state!.mode, OfflineMode.local);
+      expect(p.plan.licence.entriesBlocked, isFalse);
+      await p.app.services.issues.raise(projectId: p.project.id, title: 'Back at work');
+    });
+
+    test('a finished upload lifts it, and the upload itself is not held back, saved reports included', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await p.runOut();
+      p.app.api.offlineCompany = false;
+      await p.plan.check(force: true);
+      expect(p.plan.licence.entriesBlocked, isTrue);
+
+      final OfflineUploader uploader = p.app.services.offlineUploader;
+      final UploadReport report = await uploader.run();
+      expect(report.isReady, isTrue);
+      expect(p.plan.state!.mode, OfflineMode.uploading);
+      expect(p.plan.licence.entriesBlocked, isFalse, reason: 'nothing else is reachable while it runs');
+      await uploader.finish(p.app.services.sync);
+
+      expect(p.plan.isLocalOnly, isFalse);
+      expect(p.plan.licence, LicenceStatus.none);
+      expect(p.app.api.dprs, hasLength(1), reason: 'the saved report was queued by the upload and went up');
+      expect(await p.app.services.context.outbox.unsentCount(), 0);
+      final int server = (await p.app.db.select(p.app.db.projects).get()).single.id;
+      await p.app.services.issues.raise(projectId: server, title: 'A normal company again');
+    });
+
+    test('an upload that stops part way does not leave the phone open if the owner then says no', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await p.runOut();
+      p.app.api.offlineCompany = false;
+      await p.plan.check(force: true);
+      await p.plan.beginUpload();
+      expect(p.plan.licence.entriesBlocked, isFalse);
+
+      await p.plan.decline();
+
+      expect(p.plan.state!.mode, OfflineMode.declined);
+      await _expectEveryWriteRefused(p);
+    });
+  });
+
+  group('a phone with no valid token at all', () {
+    test('every write is refused, and everything can still be read', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await _forgetTheLicence(p);
+
+      expect(p.plan.state!.hasToken, isFalse);
+      expect(p.plan.licence.standing, LicenceStanding.none);
+      expect(p.plan.licence.hasNoLicence, isTrue);
+      await _expectEveryWriteRefused(p);
+      expect((await p.app.services.projects.getProject(p.project.id))?.name, 'Kalyani');
+    });
+
+    test('the plan being full: blocked, the server\'s manage_url kept, and it says so when asked', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await _forgetTheLicence(p);
+      p.app.api.activateFailure = const ServerFailure(
+        'Full.',
+        statusCode: 409,
+        code: 'device_limit',
+        data: <String, dynamic>{'manage_url': 'https://example.test/offline/devices'},
+      );
+
+      expect(await p.plan.renewNow(), LicenceRenewal.deviceLimit);
+
+      expect(p.plan.state!.hasToken, isFalse);
+      expect(p.plan.state!.issue, LicenceIssue.deviceLimit);
+      expect(p.plan.state!.manageUrl, 'https://example.test/offline/devices');
+      await _expectEveryWriteRefused(p);
+    });
+
+    test('a first sign-in that meets a full plan can add nothing at all', () async {
       final api = FakeApi()
         ..offlineCompany = true
         ..activateFailure = const ServerFailure('Full.', statusCode: 409, code: 'device_limit');
       final app = await TestApp.create(seed: false, signedIn: false, api: api);
       addTearDown(app.dispose);
       await app.services.auth.signIn(email: 'owner@example.test', password: 'x');
-      app.clock.advance(const Duration(days: 400));
 
       expect(app.services.offlinePlan.state!.hasToken, isFalse);
+      expect(app.services.offlinePlan.licence.hasNoLicence, isTrue);
+      await expectLater(() async => app.services.projects.createProject(name: 'First'), throwsA(isA<LicenceEnded>()));
+      expect(await app.db.select(app.db.projects).get(), isEmpty);
+    });
+
+    test('a phone that could not reach the server to activate is blocked, then given a licence the moment it can', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await _forgetTheLicence(p);
+      p.app.api.activateFailure = const OfflineFailure();
+
+      expect(await p.plan.renewNow(), LicenceRenewal.noAnswer);
+      await _expectEveryWriteRefused(p);
+
+      p.app.api.activateFailure = null;
+      expect(await p.plan.renewNow(), LicenceRenewal.renewed);
+
+      expect(p.plan.state!.hasToken, isTrue);
+      expect(p.plan.licence.entriesBlocked, isFalse);
+      await p.app.services.issues.raise(projectId: p.project.id, title: 'Licensed at last');
+    });
+
+    test('the moment it is online it asks for its first licence by itself', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      p.app.connectivity.setOnline(false);
+      await _forgetTheLicence(p);
+      expect(p.plan.licence.entriesBlocked, isTrue);
+
+      p.pass(const Duration(minutes: 1));
+      p.app.connectivity.setOnline(true);
+      await pumpEventQueue();
+
+      expect(p.plan.state!.hasToken, isTrue);
+      expect(p.plan.licence.entriesBlocked, isFalse);
+    });
+
+    test('a first reply that fails its signature leaves it blocked', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      await _forgetTheLicence(p);
+      p.app.api.forgeLicence = true;
+
+      expect(await p.plan.renewNow(), LicenceRenewal.stillEnded);
+
+      expect(p.plan.state!.hasToken, isFalse);
+      expect(p.plan.state!.issue, LicenceIssue.invalid);
+      await _expectEveryWriteRefused(p);
+    });
+
+    test('a token with its key taken away is not a licence', () async {
+      final p = await _phone();
+      addTearDown(p.app.dispose);
+      final Map<String, dynamic> stored = jsonDecode((await p.app.db.readMeta(MetaKey.offlinePlan))!) as Map<String, dynamic>;
+      stored['public_key'] = null;
+      await p.app.db.writeMeta(MetaKey.offlinePlan, jsonEncode(stored));
+
+      await p.plan.load();
+
+      expect(p.plan.state!.issue, LicenceIssue.invalid);
+      await _expectEveryWriteRefused(p);
+    });
+
+    test('a company on a normal plan is never in this state, so it is never held', () async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+
+      expect(app.services.offlinePlan.state, isNull);
       expect(app.services.offlinePlan.licence.entriesBlocked, isFalse);
+      app.services.offlinePlan.assertCanWrite();
     });
   });
 }

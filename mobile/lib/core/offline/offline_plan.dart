@@ -51,7 +51,13 @@ const Duration kLicenceWarning = Duration(days: 7);
 /// How the licence stands right now, as screens and the write guard see it.
 @immutable
 class LicenceStatus extends Equatable {
-  const LicenceStatus({this.standing = LicenceStanding.none, this.endsAt, this.entriesBlocked = false});
+  const LicenceStatus({
+    this.standing = LicenceStanding.none,
+    this.endsAt,
+    this.entriesBlocked = false,
+    this.planSyncs = false,
+    this.hasToken = false,
+  });
 
   final LicenceStanding standing;
 
@@ -61,6 +67,17 @@ class LicenceStatus extends Equatable {
   /// New entries and edits are refused. Reading and the export still work.
   final bool entriesBlocked;
 
+  /// The server no longer says offline for this company, and the phone still
+  /// holds its data. A licence cannot be renewed then: only a fresh token (if
+  /// the plan goes back to offline) or the upload to the server lifts a block.
+  final bool planSyncs;
+
+  /// The phone holds a token. One that failed its check is not kept.
+  final bool hasToken;
+
+  /// Blocked, and with no valid token at all, as against one that has run out.
+  bool get hasNoLicence => entriesBlocked && !hasToken;
+
   /// Inside the last week, and not yet over.
   bool get isEndingSoon => standing == LicenceStanding.endingSoon;
 
@@ -68,7 +85,7 @@ class LicenceStatus extends Equatable {
   static const LicenceStatus none = LicenceStatus();
 
   @override
-  List<Object?> get props => <Object?>[standing, endsAt, entriesBlocked];
+  List<Object?> get props => <Object?>[standing, endsAt, entriesBlocked, planSyncs, hasToken];
 }
 
 /// What came of asking for a new licence at once.
@@ -178,15 +195,24 @@ class OfflinePlanState extends Equatable {
     return LicenceStanding.active;
   }
 
-  /// Entries are refused only while the company is still on the offline plan.
-  /// Once the server says it syncs, there is no licence to renew, and a phone
-  /// whose owner chose to stay local is a normal company's phone.
+  /// A phone that keeps its data local, which this state is by existing, may
+  /// add and change things only on a valid token. Once the token has run out, or
+  /// when there never was a valid one, entries stop, whatever the server now
+  /// says about the plan: a lapsed trial that falls back to a free plan, with the
+  /// owner declining the upload, must not mean unlimited offline use. Only a
+  /// fresh token, or the upload that moves the phone to normal sync, lifts it.
+  ///
+  /// The one exception is the upload itself. While it runs, nothing else can be
+  /// reached (every screen leads to the upload page), and it has to queue the
+  /// saved reports, so it is not held back by the thing it is about to end.
   LicenceStatus statusAt(DateTime now) {
     final LicenceStanding at = standing(now);
     return LicenceStatus(
       standing: at,
       endsAt: expiresAt,
-      entriesBlocked: mode == OfflineMode.local && at == LicenceStanding.ended,
+      entriesBlocked: mode != OfflineMode.uploading && (at == LicenceStanding.ended || at == LicenceStanding.none),
+      planSyncs: mode == OfflineMode.asking || mode == OfflineMode.declined,
+      hasToken: hasToken,
     );
   }
 
@@ -424,8 +450,9 @@ class OfflinePlan {
               issuedAt: claims.issuedAt,
               issue: current.issue == LicenceIssue.invalid ? LicenceIssue.none : current.issue,
             );
-    } else if (current.token == null && current.expiresAt != null) {
-      // An end date with no token to back it can only have been edited.
+    } else if (current.token != null || current.expiresAt != null) {
+      // An end date with no token to back it, or a token with no key to check it
+      // by, can only have been edited.
       current = current.copyWith(issue: LicenceIssue.invalid);
     }
     await _seedLocal();
@@ -506,7 +533,7 @@ class OfflinePlan {
     if (current == null) return waited >= normalInterval;
     // In the last week, or past the end, every chance online is used.
     final LicenceStanding standing = current.standing(now());
-    final bool nearEnd = standing == LicenceStanding.endingSoon || standing == LicenceStanding.ended;
+    final bool nearEnd = standing != LicenceStanding.active;
     return waited >= (nearEnd ? nearEndInterval : localInterval);
   }
 

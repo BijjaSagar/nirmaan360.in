@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,6 +16,7 @@ import 'package:nirmaan360/features/home/view/home_screen.dart';
 import 'package:nirmaan360/features/issues/view/issue_list_screen.dart';
 import 'package:nirmaan360/features/measurement/view/measurement_list_screen.dart';
 import 'package:nirmaan360/features/offline_plan/view/licence_ended_screen.dart';
+import 'package:nirmaan360/features/offline_plan/view/offline_upload_screen.dart';
 import 'package:nirmaan360/features/offline_plan/view/offline_plan_screen.dart';
 import 'package:nirmaan360/features/offline_plan/view/widgets/licence_card.dart';
 import 'package:nirmaan360/features/petty_cash/view/petty_cash_screen.dart';
@@ -41,6 +44,25 @@ Future<void> _leave(TestApp app, Duration left) async {
   final DateTime end = app.services.offlinePlan.state!.expiresAt!;
   app.clock.set(end.subtract(left));
   await app.services.offlinePlan.tick();
+}
+
+/// The licence has run out and the company's plan now keeps its data on the
+/// server, whether the owner has said no to the upload or has not been asked.
+Future<void> _planSyncs(TestApp app, {bool declined = true}) async {
+  await _leave(app, -const Duration(days: 1));
+  app.api.offlineCompany = false;
+  await app.services.offlinePlan.check(force: true);
+  if (declined) await app.services.offlinePlan.decline();
+}
+
+/// A phone that never got a valid token, with its data still on it.
+Future<void> _noLicence(TestApp app) async {
+  final Map<String, dynamic> stored = jsonDecode((await app.db.readMeta(MetaKey.offlinePlan))!) as Map<String, dynamic>;
+  for (final key in <String>['token', 'public_key', 'key_id', 'expires_at', 'issued_at']) {
+    stored[key] = null;
+  }
+  await app.db.writeMeta(MetaKey.offlinePlan, jsonEncode(stored));
+  await app.services.offlinePlan.load();
 }
 
 /// The first frames of a route, however it was reached.
@@ -306,6 +328,117 @@ void main() {
     });
   });
 
+  group('a plan that now syncs, with the licence run out', () {
+    testWidgets('Home says to upload, and every form leads to the page that offers it', (tester) async {
+      final app = await _localApp();
+      addTearDown(app.dispose);
+      await _planSyncs(app);
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.offlineNoticeUpload), findsOneWidget);
+      expect(find.text(en.offlineNoticeEnded(licenceDate(app.services.offlinePlan.state!.expiresAt!, 'en'))), findsNothing);
+
+      for (final path in <String>[Routes.dprForm, Routes.issueForm, Routes.expenseForm, Routes.projectForm]) {
+        await _go(tester, path);
+        expect(find.byType(LicenceEndedScreen), findsOneWidget, reason: path);
+      }
+    });
+
+    testWidgets('the page offers the upload first, and the upload opens', (tester) async {
+      final app = await _localApp();
+      addTearDown(app.dispose);
+      await _planSyncs(app);
+      await pumpShellApp(tester, app, location: Routes.licenceEnded);
+
+      expect(find.text(en.licenceEndedUploadBody), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('licence-upload')), findsOneWidget);
+      expect(find.byKey(_tryNow), findsOneWidget, reason: 'a fresh token is still possible if the plan goes back');
+      expect(find.text(en.offlineExportButton), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey<String>('licence-upload')));
+      await settle(tester);
+
+      expect(find.byType(OfflineUploadScreen), findsOneWidget);
+    });
+
+    testWidgets('trying to renew says there is no licence to renew, and changes nothing', (tester) async {
+      final app = await _localApp();
+      addTearDown(app.dispose);
+      await _planSyncs(app);
+      await pumpShellApp(tester, app, location: Routes.licenceEnded);
+
+      await tester.tap(find.byKey(_tryNow));
+      await settle(tester);
+
+      expect(find.text(en.licenceResultPlanSyncs), findsOneWidget);
+      expect(app.services.offlinePlan.licence.entriesBlocked, isTrue);
+    });
+  });
+
+  group('a phone with no valid licence', () {
+    testWidgets('Home and the page say it has none, and every form leads to the page', (tester) async {
+      final app = await _localApp();
+      addTearDown(app.dispose);
+      await _noLicence(app);
+      await pumpShellApp(tester, app);
+
+      expect(find.text(en.offlineNoticeNoLicence), findsOneWidget);
+      await _go(tester, Routes.issueForm);
+      expect(find.byType(LicenceEndedScreen), findsOneWidget);
+      expect(find.text(en.licenceNoneTitle), findsOneWidget);
+      expect(find.text(en.licenceNoneBody), findsOneWidget);
+      expect(find.text(en.offlineLicenceEndedBody), findsNothing);
+    });
+
+    testWidgets('a full plan: the page shows the server\'s link to free a phone', (tester) async {
+      final app = await _localApp();
+      addTearDown(app.dispose);
+      await _noLicence(app);
+      app.api.activateFailure = const ServerFailure(
+        'Full.',
+        statusCode: 409,
+        code: 'device_limit',
+        data: <String, dynamic>{'manage_url': 'https://example.test/offline/devices'},
+      );
+      await pumpShellApp(tester, app, location: Routes.licenceEnded);
+
+      await tester.tap(find.byKey(_tryNow));
+      await settle(tester);
+
+      expect(find.text(en.offlineDeviceLimitTitle), findsOneWidget);
+      expect(find.text('https://example.test/offline/devices'), findsOneWidget);
+      expect(find.text(en.offlineActivateAgain), findsOneWidget);
+      expect(app.services.offlinePlan.licence.entriesBlocked, isTrue);
+    });
+
+    testWidgets('trying while online gives it a licence, and it carries on', (tester) async {
+      final app = await _localApp();
+      addTearDown(app.dispose);
+      await _noLicence(app);
+      await pumpShellApp(tester, app, location: Routes.licenceEnded);
+
+      await tester.tap(find.byKey(_tryNow));
+      await settle(tester);
+
+      expect(find.byKey(const ValueKey<String>('licence-renewed-card')), findsOneWidget);
+      expect(app.services.offlinePlan.state!.hasToken, isTrue);
+      await app.services.issues.raise(projectId: -1, title: 'Licensed');
+    });
+
+    testWidgets('a licence that still cannot be given says so in its own words', (tester) async {
+      final app = await _localApp();
+      addTearDown(app.dispose);
+      await _noLicence(app);
+      app.api.forgeLicence = true;
+      await pumpShellApp(tester, app, location: Routes.licenceEnded);
+
+      await tester.tap(find.byKey(_tryNow));
+      await settle(tester);
+
+      expect(find.text(en.licenceResultNoLicence), findsOneWidget);
+    });
+  });
+
   group('at 360dp in Marathi and Hindi, nothing overflows', () {
     for (final locale in <String>['mr', 'hi']) {
       testWidgets('the renewal page ($locale)', (tester) async {
@@ -362,6 +495,50 @@ void main() {
         await tester.tap(find.byKey(_tryNow));
         await settle(tester);
         expect(find.byKey(const ValueKey<String>('licence-renewed-card')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the renewal page for a plan that syncs ($locale)', (tester) async {
+        final app = await _localApp();
+        addTearDown(app.dispose);
+        await _planSyncs(app);
+        await pumpShellApp(tester, app, location: Routes.licenceEnded, locale: locale);
+        expect(find.byKey(const ValueKey<String>('licence-upload')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.byKey(_tryNow));
+        await settle(tester);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('Home for a plan that syncs ($locale)', (tester) async {
+        final app = await _localApp();
+        addTearDown(app.dispose);
+        await _planSyncs(app);
+        await pumpShellApp(tester, app, locale: locale);
+        expect(find.byKey(_notice), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the renewal page and Home for a phone with no licence ($locale)', (tester) async {
+        final app = await _localApp();
+        addTearDown(app.dispose);
+        await _noLicence(app);
+        app.api.activateFailure = const ServerFailure(
+          'Full.',
+          statusCode: 409,
+          code: 'device_limit',
+          data: <String, dynamic>{'manage_url': 'https://example.test/offline/devices'},
+        );
+        await pumpShellApp(tester, app, location: Routes.licenceEnded, locale: locale);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.byKey(_tryNow));
+        await settle(tester);
+        expect(tester.takeException(), isNull);
+
+        await _go(tester, Routes.home);
+        expect(find.byKey(_notice), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
 

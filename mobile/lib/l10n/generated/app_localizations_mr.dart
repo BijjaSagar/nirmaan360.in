@@ -1825,6 +1825,17 @@ class AppLocalizationsMr extends AppLocalizations {
   }
 
   @override
+  String get licenceEndedUploadBody =>
+      'तुमच्या कंपनीचा प्लॅन आता सर्व्हरवर डेटा ठेवतो, त्यामुळे हा परवाना नूतनीकरण करता येणार नाही. काहीही हरवलेले नाही. हवे तर प्रत काढा, मग पुढे जाण्यासाठी तुमचा डेटा सर्व्हरवर अपलोड करा.';
+
+  @override
+  String get licenceNoneBody =>
+      'काहीही हरवलेले नाही. तुम्ही इथले सर्व काही पाहू शकता आणि डेटाची प्रत काढू शकता, पण या फोनला परवाना मिळेपर्यंत काहीही जोडता किंवा बदलता येणार नाही. इंटरनेटशी जोडा आणि आता प्रयत्न करा.';
+
+  @override
+  String get licenceNoneTitle => 'या फोनला अजून परवाना नाही';
+
+  @override
   String get licenceRenewedBody => 'आता तुम्ही पुन्हा जोडू आणि बदलू शकता.';
 
   @override
@@ -1835,8 +1846,16 @@ class AppLocalizationsMr extends AppLocalizations {
       'सर्व्हरने उत्तर दिले नाही. एका मिनिटाने पुन्हा प्रयत्न करा.';
 
   @override
+  String get licenceResultNoLicence =>
+      'जोडले गेले, पण या फोनला परवाना देता आला नाही. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.';
+
+  @override
   String get licenceResultOffline =>
       'इंटरनेट सापडले नाही. वाय-फाय किंवा मोबाइल डेटा जोडा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get licenceResultPlanSyncs =>
+      'तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवतो, त्यामुळे नूतनीकरण करायला परवाना नाही. पुढे जाण्यासाठी तुमचा डेटा अपलोड करा.';
 
   @override
   String get licenceResultStillEnded =>
@@ -1850,6 +1869,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get licenceTrying => 'सर्व्हरला विचारत आहे…';
+
+  @override
+  String get licenceUploadNow => 'सर्व्हरवर अपलोड करा';
 
   @override
   String get licenceViewData => 'माझा डेटा पाहा';
@@ -2690,6 +2712,14 @@ class AppLocalizationsMr extends AppLocalizations {
   String offlineNoticeEnding(String date) {
     return 'तुमचा परवाना $date रोजी संपेल. त्याआधी एकदा इंटरनेटशी जोडा, तो आपोआप नूतनीकरण होईल.';
   }
+
+  @override
+  String get offlineNoticeNoLicence =>
+      'या फोनला अजून परवाना नाही. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. परवाना मिळवण्यासाठी इंटरनेटशी जोडा.';
+
+  @override
+  String get offlineNoticeUpload =>
+      'तुमचा परवाना संपला आहे आणि तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवतो. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. पुढे जाण्यासाठी तुमचा डेटा अपलोड करा.';
 
   @override
   String get offlineOnPhoneTag => 'या फोनवर';

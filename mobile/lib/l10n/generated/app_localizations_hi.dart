@@ -1812,6 +1812,17 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get licenceEndedUploadBody =>
+      'आपकी कंपनी का प्लान अब सर्वर पर डेटा रखता है, इसलिए यह लाइसेंस नवीनीकृत नहीं हो सकता। कुछ नहीं खोया है। चाहें तो कॉपी निकालें, फिर आगे बढ़ने के लिए अपना डेटा सर्वर पर अपलोड करें।';
+
+  @override
+  String get licenceNoneBody =>
+      'कुछ नहीं खोया है। आप यहाँ सब कुछ देख सकते हैं और डेटा की कॉपी निकाल सकते हैं, पर इस फ़ोन को लाइसेंस मिलने तक कुछ जोड़ा या बदला नहीं जा सकता। इंटरनेट से जुड़ें और अभी कोशिश करें।';
+
+  @override
+  String get licenceNoneTitle => 'इस फ़ोन को अभी लाइसेंस नहीं मिला';
+
+  @override
   String get licenceRenewedBody => 'अब आप फिर से जोड़ और बदल सकते हैं।';
 
   @override
@@ -1822,8 +1833,16 @@ class AppLocalizationsHi extends AppLocalizations {
       'सर्वर ने जवाब नहीं दिया। एक मिनट बाद फिर कोशिश करें।';
 
   @override
+  String get licenceResultNoLicence =>
+      'जुड़ गया, पर इस फ़ोन को लाइसेंस नहीं दिया जा सका। Nirmaan360 वेबसाइट पर अपना प्लान जाँचें, फिर दोबारा कोशिश करें।';
+
+  @override
   String get licenceResultOffline =>
       'इंटरनेट नहीं मिला। वाई-फ़ाई या मोबाइल डेटा जोड़ें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get licenceResultPlanSyncs =>
+      'आपका प्लान अब सर्वर पर डेटा रखता है, इसलिए नवीनीकरण के लिए कोई लाइसेंस नहीं है। आगे बढ़ने के लिए अपना डेटा अपलोड करें।';
 
   @override
   String get licenceResultStillEnded =>
@@ -1837,6 +1856,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get licenceTrying => 'सर्वर से पूछ रहे हैं…';
+
+  @override
+  String get licenceUploadNow => 'सर्वर पर अपलोड करें';
 
   @override
   String get licenceViewData => 'मेरा डेटा देखें';
@@ -2681,6 +2703,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String offlineNoticeEnding(String date) {
     return 'आपका लाइसेंस $date को समाप्त होगा। उससे पहले एक बार इंटरनेट से जुड़ें, यह अपने आप नवीनीकृत हो जाएगा।';
   }
+
+  @override
+  String get offlineNoticeNoLicence =>
+      'इस फ़ोन को अभी लाइसेंस नहीं मिला है। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। लाइसेंस पाने के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String get offlineNoticeUpload =>
+      'आपका लाइसेंस समाप्त हो गया है और आपका प्लान अब सर्वर पर डेटा रखता है। आप सब कुछ देख सकते हैं, पर कुछ जोड़ा या बदला नहीं जा सकता। आगे बढ़ने के लिए अपना डेटा अपलोड करें।';
 
   @override
   String get offlineOnPhoneTag => 'इस फ़ोन पर';

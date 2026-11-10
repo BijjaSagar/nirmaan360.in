@@ -3352,6 +3352,24 @@ abstract class AppLocalizations {
   /// **'Ended on {date}'**
   String licenceEndedOn(String date);
 
+  /// No description provided for @licenceEndedUploadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company\'s plan now keeps data on the server, so this licence cannot be renewed. Nothing is lost. Make a copy if you like, then upload your data to the server to carry on.'**
+  String get licenceEndedUploadBody;
+
+  /// No description provided for @licenceNoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until this phone has a licence. Connect to the internet and try now.'**
+  String get licenceNoneBody;
+
+  /// No description provided for @licenceNoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has no licence yet'**
+  String get licenceNoneTitle;
+
   /// No description provided for @licenceRenewedBody.
   ///
   /// In en, this message translates to:
@@ -3370,11 +3388,23 @@ abstract class AppLocalizations {
   /// **'The server did not answer. Try again in a minute.'**
   String get licenceResultNoAnswer;
 
+  /// No description provided for @licenceResultNoLicence.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected, but this phone could not be given a licence. Check your plan on the Nirmaan360 website, then try again.'**
+  String get licenceResultNoLicence;
+
   /// No description provided for @licenceResultOffline.
   ///
   /// In en, this message translates to:
   /// **'No internet found. Connect to Wi-Fi or mobile data, then try again.'**
   String get licenceResultOffline;
+
+  /// No description provided for @licenceResultPlanSyncs.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan keeps data on the server now, so there is no licence to renew. Upload your data to carry on.'**
+  String get licenceResultPlanSyncs;
 
   /// No description provided for @licenceResultStillEnded.
   ///
@@ -3399,6 +3429,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Asking the server…'**
   String get licenceTrying;
+
+  /// No description provided for @licenceUploadNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload to the server'**
+  String get licenceUploadNow;
 
   /// No description provided for @licenceViewData.
   ///
@@ -4905,6 +4941,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your licence ends on {date}. Connect to the internet once before then and it renews by itself.'**
   String offlineNoticeEnding(String date);
+
+  /// No description provided for @offlineNoticeNoLicence.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has no licence yet. You can look at everything, but nothing can be added or changed. Connect to the internet to get one.'**
+  String get offlineNoticeNoLicence;
+
+  /// No description provided for @offlineNoticeUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Your licence has ended, and your plan now keeps data on the server. You can look at everything, but nothing can be added or changed. Upload your data to carry on.'**
+  String get offlineNoticeUpload;
 
   /// No description provided for @offlineOnPhoneTag.
   ///
