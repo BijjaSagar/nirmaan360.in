@@ -4,6 +4,7 @@ import '../api/api_failure.dart';
 import '../api/nirmaan_api.dart';
 import '../db/app_database.dart';
 import '../db/outbox_dao.dart';
+import '../offline/offline_plan.dart';
 import '../session/session_controller.dart';
 import 'attachment_store.dart';
 import 'clock.dart';
@@ -22,6 +23,7 @@ class DataContext {
     required this.connectivity,
     required this.session,
     required this.sync,
+    required this.offlinePlan,
   }) : outbox = OutboxDao(db);
 
   final AppDatabase db;
@@ -32,6 +34,7 @@ class DataContext {
   final ConnectivityMonitor connectivity;
   final SessionController session;
   final SyncEngine sync;
+  final OfflinePlan offlinePlan;
 
   /// Photos on issues: the server's lists, the files and the queue.
   late final RecordPhotos photos = RecordPhotos(db: db, api: api, attachments: attachments, clock: clock);

@@ -129,6 +129,26 @@ abstract interface class NirmaanApi {
   /// The `user` object of `GET /me`.
   Future<Map<String, dynamic>> me();
 
+  // The offline plan. These, the sign-in routes and `me` are all a company on
+  // that plan may call.
+
+  /// `GET /offline/status`: the plan, and whether this company syncs.
+  Future<Map<String, dynamic>> offlineStatus();
+
+  /// `POST /offline/devices/activate`: `{licence, token, signing_key, ...}`.
+  Future<Map<String, dynamic>> activateDevice({
+    required String deviceId,
+    required String deviceName,
+    String? platform,
+    String? appVersion,
+  });
+
+  /// `POST /offline/devices/refresh`: a new token for this phone.
+  Future<Map<String, dynamic>> refreshDevice({required String deviceId, String? appVersion});
+
+  /// `POST /offline/devices/release`: gives this phone's slot back.
+  Future<void> releaseDevice(String deviceId);
+
   Future<List<PushResult>> push(List<PushItem> items);
 
   /// The whole `GET /sync/pull` body. [since] is passed back byte for byte.

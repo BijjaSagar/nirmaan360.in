@@ -58,6 +58,9 @@ class AuthRepository {
     }
 
     await _ctx.session.startSession(login.token, user);
+    // Before the first pull: a company on the offline plan must not make one.
+    // A failure here changes nothing, and the first pull goes ahead as ever.
+    if (!user.isContractor) await _ctx.offlinePlan.check(force: true);
     // A contractor login has no sites to pull and nothing to send: the portal
     // is its first read. The site team's first pull is exactly as it was.
     final firstSync = user.isContractor ? await _readPortal() : await _ctx.sync.syncNow();
@@ -123,7 +126,7 @@ class AuthRepository {
         await db.delete(table).go();
       }
       await (db.delete(db.keyValues)
-            ..where((t) => t.key.equals(MetaKey.locale).not()))
+            ..where((t) => t.key.isIn(<String>[MetaKey.locale, MetaKey.offlineDeviceId]).not()))
           .go();
     });
     await _ctx.attachments.deleteAll();

@@ -35,6 +35,15 @@ abstract final class MetaKey {
   static const selectedProject = 'selected_project';
   static const locale = 'locale';
 
+  /// The offline plan's state, as JSON. Absent for a company on any normal plan.
+  static const offlinePlan = 'offline.state';
+
+  /// The stable id this install holds its licence under. Kept through a sign-out.
+  static const offlineDeviceId = 'offline.device_id';
+
+  /// The upload's `client_uuid` and details that have no column, for one local record.
+  static String offlineRecord(String kind, int localId) => 'offline.record.$kind.$localId';
+
   /// The last site progress this phone read for a project, as JSON.
   static String progressOverview(int projectId) => 'progress.overview.$projectId';
 

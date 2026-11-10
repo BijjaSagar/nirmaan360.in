@@ -87,6 +87,68 @@ void main() {
     expect(request.headers['Accept'], 'application/json');
   });
 
+  group('the offline plan', () {
+    test('a 403 with code offline_plan is its own failure, not a ServerFailure', () async {
+      answer((_) => json({'code': 'offline_plan', 'message': 'On the offline plan.', 'upgrade_url': 'https://example.test/billing'}, status: 403));
+      await expectLater(
+        api.pull(),
+        throwsA(isA<OfflinePlanRefused>().having((e) => e.upgradeUrl, 'upgradeUrl', 'https://example.test/billing')),
+      );
+    });
+
+    test('an ordinary 403 is still a ServerFailure', () async {
+      answer((_) => json({'message': 'No.'}, status: 403));
+      await expectLater(api.pull(), throwsA(isA<ServerFailure>().having((e) => e.statusCode, 'status', 403)));
+    });
+
+    test('a refused licence carries its code and details', () async {
+      answer((_) => json({'code': 'device_limit', 'message': 'Full.', 'manage_url': 'https://example.test/d'}, status: 409));
+      await expectLater(
+        api.activateDevice(deviceId: 'phone-0001', deviceName: 'P'),
+        throwsA(
+          isA<ServerFailure>()
+              .having((e) => e.code, 'code', 'device_limit')
+              .having((e) => e.data?['manage_url'], 'manage_url', 'https://example.test/d'),
+        ),
+      );
+    });
+
+    test('calls the licence routes with what they need', () async {
+      answer((_) => json({'token': 't'}));
+      await api.activateDevice(deviceId: 'phone-0001', deviceName: 'P', platform: 'android', appVersion: '1.0');
+      await api.refreshDevice(deviceId: 'phone-0001');
+      await api.releaseDevice('phone-0001');
+      await api.offlineStatus();
+
+      expect(adapter.requests.map((r) => r.path), <String>[
+        '/offline/devices/activate',
+        '/offline/devices/refresh',
+        '/offline/devices/release',
+        '/offline/status',
+      ]);
+      expect(adapter.requests.first.data, <String, Object>{
+        'device_id': 'phone-0001',
+        'device_name': 'P',
+        'platform': 'android',
+        'app_version': '1.0',
+      });
+    });
+
+    test('a blocked path never reaches the network', () async {
+      answer((_) => json({}));
+      api.blocksPath = (path) => path != '/me';
+
+      await expectLater(api.pull(), throwsA(isA<OfflineFailure>()));
+      await expectLater(api.push(const []), throwsA(isA<OfflineFailure>()));
+      expect(adapter.requests, isEmpty);
+
+      answer((_) => json({'user': {'id': 1}}));
+      api.blocksPath = (path) => path != '/me';
+      await api.me();
+      expect(adapter.requests, hasLength(1));
+    });
+  });
+
   test('a project photo is only ever asked of our own server', () async {
     answer((_) => ResponseBody.fromBytes(const <int>[1, 2, 3], 200));
     final bytes = await api.projectImageBytes('https://elsewhere.example/api/v1/projects/12/image?v=ab12cd34');

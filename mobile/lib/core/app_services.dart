@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'api/api_failure.dart';
 import 'dart:async';
 
+import '../app/app_info.dart';
 import '../features/approvals/data/approval_repository.dart';
 import '../features/contractor_control/data/contractor_repository.dart';
 import '../features/contractor_portal/data/portal_repository.dart';
@@ -23,6 +24,7 @@ import '../features/sync_center/data/sync_repository.dart';
 import 'api/dio_nirmaan_api.dart';
 import 'api/nirmaan_api.dart';
 import 'db/app_database.dart';
+import 'offline/offline_plan.dart';
 import 'session/session_controller.dart';
 import 'session/token_store.dart';
 import 'sync/attachment_store.dart';
@@ -52,6 +54,7 @@ class AppServices {
     required this.scheduler,
     required this.connectivity,
     required this.context,
+    required this.offlinePlan,
     this._onDispose,
   }) : photos = PhotoCapture(),
        auth = AuthRepository(context, portal),
@@ -122,6 +125,15 @@ class AppServices {
     required bool observeLifecycle,
     Future<void> Function()? onDispose,
   }) {
+    final offlinePlan = OfflinePlan(
+      db: db,
+      api: api,
+      clock: clock,
+      connectivity: connectivity,
+      session: session,
+      appVersion: AppInfo.label,
+    );
+    if (api is DioNirmaanApi) api.blocksPath = offlinePlan.blocksPath;
     final engine = SyncEngine(
       db: db,
       api: api,
@@ -135,7 +147,7 @@ class AppServices {
       engine: engine,
       connectivity: connectivity,
       observeLifecycle: observeLifecycle,
-    );
+    )..beforeRun = offlinePlan.check;
     final context = DataContext(
       db: db,
       api: api,
@@ -144,6 +156,7 @@ class AppServices {
       connectivity: connectivity,
       session: session,
       sync: engine,
+      offlinePlan: offlinePlan,
     );
     final progress = ProgressRepository(context);
     final material = MaterialRepository(context);
@@ -184,6 +197,7 @@ class AppServices {
       scheduler: scheduler,
       connectivity: connectivity,
       context: context,
+      offlinePlan: offlinePlan,
       onDispose: onDispose,
     );
   }
@@ -194,6 +208,9 @@ class AppServices {
   final SyncEngine sync;
   final SyncScheduler scheduler;
   final ConnectivityMonitor connectivity;
+
+  /// Whether this company keeps its data on the phone, and its licence.
+  final OfflinePlan offlinePlan;
 
   /// Repositories' shared context, for code that needs the raw pieces.
   final DataContext context;
@@ -232,7 +249,9 @@ class AppServices {
     if (connectivity is ConnectivityPlusMonitor) {
       await (connectivity as ConnectivityPlusMonitor).start();
     }
+    await offlinePlan.load();
     await auth.restoreSession();
+    unawaited(offlinePlan.check());
     scheduler.start();
   }
 
@@ -240,6 +259,7 @@ class AppServices {
   Future<void> dispose() async {
     await scheduler.stop();
     await sync.dispose();
+    await offlinePlan.dispose();
     await session.dispose();
     await _onDispose?.call();
     await db.close();

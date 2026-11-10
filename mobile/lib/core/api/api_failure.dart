@@ -36,7 +36,23 @@ class ValidationFailure extends ApiFailure {
 
 /// Any other non-success response, including 403, 404, 409 and 5xx.
 class ServerFailure extends ApiFailure {
-  const ServerFailure(super.message, {this.statusCode});
+  const ServerFailure(super.message, {this.statusCode, this.code, this.data});
 
   final int? statusCode;
+
+  /// The reply's machine-readable `code`, when it has one.
+  final String? code;
+
+  /// The whole reply, for a caller that needs more than the [code].
+  final Map<String, dynamic>? data;
+}
+
+/// HTTP 403 with code `offline_plan`: this company keeps its data on the phone.
+///
+/// Not a [ServerFailure], on purpose. The sync engine moves a row to attention
+/// on an ordinary 403, and this one says nothing about the row.
+class OfflinePlanRefused extends ApiFailure {
+  const OfflinePlanRefused(super.message, {this.upgradeUrl});
+
+  final String? upgradeUrl;
 }
