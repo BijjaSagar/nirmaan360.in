@@ -133,7 +133,7 @@
                 </div>
             </fieldset>
 
-            <p class="hint">{{ __('People can switch announcements off in their notification settings. Someone who may not see money is not pushed a message with a rupee amount in it.') }}</p>
+            <p class="hint">{{ __('People can switch announcements off in their notification settings. A message with a rupee amount reaches only people who may see money, by push and in the app.') }}</p>
         </div>
 
         <div class="border-t border-rule px-4 py-3">
@@ -191,6 +191,7 @@
                                     @case('sending') {{ __('Sending') }} @break
                                     @case('sent') {{ __('Last sent :date', ['date' => $announcement->last_sent_at?->format('d M Y, H:i')]) }} @break
                                     @case('cancelled') {{ __('Stopped on :date', ['date' => $announcement->cancelled_at?->format('d M Y, H:i')]) }} @break
+                                    @case('failed') <span class="text-laterite">{{ __('Could not be sent. Write it again to retry.') }}</span> @break
                                 @endswitch
                                 @if ($announcement->repeats() && $announcement->runs > 0) · {{ __('Sent :count times', ['count' => $announcement->runs]) }} @endif
                             </p>

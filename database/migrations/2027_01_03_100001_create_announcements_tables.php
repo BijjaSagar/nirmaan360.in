@@ -32,8 +32,10 @@ return new class extends Migration
             $table->string('repeat_time', 5)->nullable();
             $table->unsignedTinyInteger('repeat_weekday')->nullable();
             $table->date('repeat_until')->nullable();
+            // When it was set to go: the chosen time, or a reminder's first run. Kept for the history list.
+            $table->timestamp('scheduled_for')->nullable();
             $table->timestamp('next_run_at')->nullable();
-            // scheduled, sending, sent or cancelled.
+            // scheduled, sending, sent, cancelled, or failed when a run could not be started after its retries.
             $table->string('status', 12);
             $table->unsignedInteger('runs')->default(0);
             $table->timestamp('last_sent_at')->nullable();

@@ -11,7 +11,7 @@ Route::delete('/devices', [NotifyApiController::class, 'destroyDevice']);
 Route::get('/notification-preferences', [NotifyApiController::class, 'preferences']);
 Route::put('/notification-preferences', [NotifyApiController::class, 'updatePreferences']);
 // What was announced to this person, which a push of type "announcement" opens.
-Route::get('/announcements', [AnnouncementApiController::class, 'index']);
+Route::get('/announcements', [AnnouncementApiController::class, 'index'])->name('api.announcements');
 
 // The same five for a contractor login, whose gate lets through nothing outside /contractor-portal.
 Route::middleware(['feature:contractor_portal', 'can:contractor_portal.view'])->prefix('contractor-portal')->group(function () {
@@ -19,7 +19,7 @@ Route::middleware(['feature:contractor_portal', 'can:contractor_portal.view'])->
     Route::delete('/devices', [NotifyApiController::class, 'destroyDevice']);
     Route::get('/notification-preferences', [NotifyApiController::class, 'preferences']);
     Route::put('/notification-preferences', [NotifyApiController::class, 'updatePreferences']);
-    Route::get('/announcements', [AnnouncementApiController::class, 'index']);
+    Route::get('/announcements', [AnnouncementApiController::class, 'index'])->name('api.contractor-portal.announcements');
 });
 
 Route::middleware(['feature:labour', 'can:attendance.manage'])->group(function () {
