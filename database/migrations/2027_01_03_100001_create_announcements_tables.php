@@ -19,6 +19,8 @@ return new class extends Migration
             $table->text('body');
             // {"mr": {"title": ..., "body": ...}, "hi": {...}}. A language left out is sent in English.
             $table->json('translations')->nullable();
+            // A rupee figure in any language, or the writer said so. Such a message reaches, and is shown to, only people with money.view.
+            $table->boolean('mentions_money')->default(false);
             $table->string('image_path')->nullable();
             // The picture is fetched by Firebase and by the phones without signing in, so its address is this unguessable token.
             $table->string('image_token', 48)->nullable()->unique();
@@ -35,9 +37,20 @@ return new class extends Migration
             // When it was set to go: the chosen time, or a reminder's first run. Kept for the history list.
             $table->timestamp('scheduled_for')->nullable();
             $table->timestamp('next_run_at')->nullable();
-            // scheduled, sending, sent, cancelled, or failed when a run could not be started after its retries.
+            // scheduled, sending, sent, cancelled; failed when a run queued nobody after its retries, partial when it queued some.
+            // The run in progress or last run, so a retry of a failed one-off pushes nobody twice.
+            $table->string('last_run_key', 16)->nullable();
+            // Each run has a token, and each queued copy of its job an id of its own. The first copy to start takes
+            // the run (started_by); any other copy of it, queued again by the sweep, then does nothing.
+            $table->uuid('run_token')->nullable();
+            $table->uuid('started_by')->nullable();
+            $table->timestamp('run_started_at')->nullable();
+            // When this one-off first queued phones. People's claims on it run from then, so "Send again" is offered
+            // only while they hold, and nobody it reached is pushed twice.
+            $table->timestamp('first_batch_at')->nullable();
             $table->string('status', 12);
             $table->unsignedInteger('runs')->default(0);
+            $table->unsignedInteger('batches_count')->default(0);
             $table->timestamp('last_sent_at')->nullable();
             // Totals over every run. Sent and failed are counted as each phone's push is delivered or refused.
             $table->unsignedInteger('recipients_count')->default(0);

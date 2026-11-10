@@ -39,6 +39,10 @@ class DeliverNotification implements ShouldQueue
         $user = User::find($this->userId);
 
         if (! $user || ! $user->is_active) {
+            if ($this->channel === 'push') {
+                AnnouncementTally::count($this->message, AnnouncementTally::SKIPPED);
+            }
+
             return;
         }
 

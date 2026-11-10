@@ -61,13 +61,14 @@ class PushDispatcher
 
         $key = $target?->dedupeKey;
 
+        // Null by day and for a critical push. Otherwise the job waits in the queue until quiet hours end.
+        // (The sync queue of local development cannot wait, so there it is sent at once.)
+        // Worked out before the claim, so nothing between the claim and the queueing can fail outside the rollback below.
+        $until = QuietHours::heldUntil($preference, $own->critical);
+
         if ($key !== null && ! $this->claim($user, $key, $own->event)) {
             return 0;
         }
-
-        // Null by day and for a critical push. Otherwise the job waits in the queue until quiet hours end.
-        // (The sync queue of local development cannot wait, so there it is sent at once.)
-        $until = QuietHours::heldUntil($preference, $own->critical);
 
         try {
             foreach ($messages as $deviceId => $message) {
@@ -222,8 +223,13 @@ class PushDispatcher
     private function stillMatters(User $user, NotificationMessage $message, PushTarget $target): bool
     {
         // An announcement that was stopped, or removed, sends nothing more: not even copies held for quiet hours.
+        // One with a rupee figure is checked again against money.view, which can be lost while it waits.
         if ($target->type === 'announcement') {
-            return Announcement::whereKey($target->id)->where('status', '!=', Announcement::CANCELLED)->exists();
+            $announcement = Announcement::find($target->id, ['id', 'status', 'mentions_money']);
+
+            return $announcement !== null
+                && $announcement->status !== Announcement::CANCELLED
+                && (! $announcement->mentions_money || Money::visible($user));
         }
 
         $alertId = $target->type === 'alert' ? $target->id : ($target->extra['alert_id'] ?? null);
@@ -243,12 +249,6 @@ class PushDispatcher
         return $approval !== null
             && (int) $approval->current_level === (int) ($target->extra['level'] ?? $approval->current_level)
             && app(ApprovalService::class)->canAct($approval, $user);
-    }
-
-    /** Whether the words carry a rupee figure, which nobody without money.view may be sent. */
-    public static function mentionsMoney(string $text): bool
-    {
-        return (bool) preg_match(self::MONEY, $text);
     }
 
     /**
