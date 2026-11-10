@@ -44,6 +44,7 @@ class MoneyVisibilityTest extends TestCase
         'notify.selfie.photo' => 'serves a stored selfie',
         'crm.documents.download' => 'serves a stored tender document',
         'api/v1/attendance-selfies/{selfie}/photo' => 'serves a stored selfie',
+        'api.contractor-control.tenders.bids.quotation' => 'serves a stored contractor quotation',
     ];
 
     /** Query strings a route needs before it answers with a page. */
@@ -93,14 +94,15 @@ class MoneyVisibilityTest extends TestCase
         'auto-boq.show' => ['library_rate'],
         'alerts.index' => ['alert_money'],
         'api/v1/contractor-payments/{payment}' => ['payment'],
-        'api/v1/boq-items/{item}/tenders' => ['boq_rate', 'bid'],
+        'api.boq.tenders.show' => ['boq_rate', 'bid'],
+        'api.contractor-control.tenders.show' => ['boq_rate', 'bid'],
         'api/v1/projects/{project}/alerts' => ['alert_money'],
         'price-watch.index' => ['watch_price'],
         'price-watch.materials.show' => ['watch_price'],
         'price-watch.project' => ['watch_price', 'watch_boq'],
         'api/v1/price-watch' => ['watch_price'],
         'api/v1/projects/{project}/price-watch' => ['watch_price', 'watch_boq'],
-        'api/v1/projects/{project}/boq' => ['boq_rate'],
+        'api/v1/projects/{project}/boq' => ['boq_rate', 'bid'],
         'api/v1/sync/pull' => ['boq_rate', 'other_wallet'],
         'api/v1/projects/{project}/petty-cash' => ['other_wallet'],
         'api/v1/approvals' => ['bill_net'],

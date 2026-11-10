@@ -23,15 +23,15 @@ class BoqLineTenderController extends Controller
     {
         $user = $request->user();
         $money = Money::visible($user);
-        $canQuote = $money && $user->can('contractor.tender');
+        $can = $this->lines->abilities($user);
 
         return view('modules.contractor_control.tenders.line', [
             'project' => $item->project,
             'line' => ContractorControlPresenter::lineTenders($this->lines->forLine($item), $money),
             'money' => $money,
-            'canQuote' => $canQuote,
-            'canAward' => $money && $user->can('contractor.award'),
-            'contractors' => $canQuote ? Party::where('type', 'subcontractor')->orderBy('name')->get(['id', 'name']) : collect(),
+            'canQuote' => $can['quote'],
+            'canAward' => $can['award'],
+            'contractors' => $can['quote'] ? Party::where('type', 'subcontractor')->orderBy('name')->get(['id', 'name']) : collect(),
         ]);
     }
 

@@ -52,13 +52,9 @@ class BoqController extends Controller
      */
     private function tenderMarkers(Request $request, Project $project): ?array
     {
-        if (! $this->lineTenders->visibleTo($request->user())) {
-            return null;
-        }
+        $user = $request->user();
 
-        $money = Money::visible($request->user());
-
-        return array_map(fn (array $marker) => ContractorControlPresenter::tenderMarker($marker, $money), $this->lineTenders->markers($project));
+        return ContractorControlPresenter::tenderMarkers($this->lineTenders->markersFor($user, $project), Money::visible($user));
     }
 
     /**

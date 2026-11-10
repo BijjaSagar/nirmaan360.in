@@ -5,18 +5,21 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\PlanLimitReachedException;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\BoqItemPresenter;
+use App\Http\Presenters\ContractorControlPresenter;
 use App\Http\Presenters\ProjectPresenter;
 use App\Models\BoqItem;
 use App\Models\Project;
 use App\Services\BoqService;
+use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ProjectService;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class ProjectApiController extends Controller
 {
-    public function __construct(private ProjectService $projects, private BoqService $boq) {}
+    public function __construct(private ProjectService $projects, private BoqService $boq, private BoqLineTenders $lineTenders) {}
 
     public function index(): JsonResponse
     {
@@ -44,11 +47,19 @@ class ProjectApiController extends Controller
         return response()->json(['data' => ProjectPresenter::present($project)], $project->wasRecentlyCreated ? 201 : 200);
     }
 
-    public function boq(Project $project): JsonResponse
+    /**
+     * Each line also carries the marker the web BOQ table shows: how many tenders it is in and how many
+     * quotes came in, with the lowest rate for money.view. Null for a line with no tender, and on every
+     * line for someone who may not see tenders.
+     */
+    public function boq(Request $request, Project $project): JsonResponse
     {
+        $user = $request->user();
+        $tenders = ContractorControlPresenter::tenderMarkers($this->lineTenders->markersFor($user, $project), Money::visible($user));
+
         return response()->json([
             'data' => BoqItem::withLedger()->with('section')->where('project_id', $project->id)->orderBy('sort')->orderBy('id')->get()
-                ->map(BoqItemPresenter::present(...)),
+                ->map(fn (BoqItem $item) => [...BoqItemPresenter::present($item), 'tenders' => $tenders[$item->id] ?? null]),
         ]);
     }
 

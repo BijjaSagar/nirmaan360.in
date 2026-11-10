@@ -5,6 +5,7 @@ namespace App\Services\ContractorControl;
 use App\Models\AuditLog;
 use App\Models\BoqItem;
 use App\Models\ContractorBid;
+use App\Models\ContractorBidItem;
 use App\Models\ContractorTender;
 use App\Models\Party;
 use App\Models\Project;
@@ -17,6 +18,7 @@ use App\Support\Dec;
 use App\Support\Idempotent;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -63,7 +65,10 @@ class ContractorTenderService
         ];
     }
 
-    /** For the popup that adds a contractor while a quote is being entered. */
+    /**
+     * For the popup that adds a contractor while a quote is being entered. The app sends a client_uuid
+     * with every write. A repeat is known by the name, which already returns the contractor first saved.
+     */
     public function contractorRules(): array
     {
         return [
@@ -73,9 +78,11 @@ class ContractorTenderService
             'email' => ['nullable', 'email', 'max:190'],
             'gstin' => ['nullable', 'string', 'size:15'],
             'address' => ['nullable', 'string', 'max:500'],
+            'client_uuid' => ['nullable', 'uuid'],
         ];
     }
 
+    /** A repeat is known by the tender itself: choosing the quote already chosen returns its work order. */
     public function awardRules(ContractorTender $tender): array
     {
         return [
@@ -90,6 +97,7 @@ class ContractorTenderService
             'deduction_basis' => ['required', Rule::in(['gross', 'running'])],
             'deduction_order' => ['required', Rule::in(array_keys(config('buildos.deduction_orders')))],
             'award_note' => ['nullable', 'string', 'max:500'],
+            'client_uuid' => ['nullable', 'uuid'],
         ];
     }
 
@@ -234,6 +242,26 @@ class ContractorTenderService
     }
 
     /**
+     * The company's subcontractors for the quote form's picker, by name. A search matches part
+     * of the name in any case, or part of the phone number, and reads % and _ as themselves.
+     *
+     * @return Builder<Party>
+     */
+    public function contractors(int $organizationId, ?string $search = null): Builder
+    {
+        $like = filled($search) ? '%'.addcslashes(mb_strtolower(trim($search)), '%_\\').'%' : null;
+
+        return Party::where('organization_id', $organizationId)
+            ->where('type', 'subcontractor')
+            ->when($like, fn (Builder $query) => $query->where(fn (Builder $match) => $match
+                ->whereRaw("lower(name) like ? escape '\\'", [$like])
+                ->orWhereRaw("phone like ? escape '\\'", [$like])))
+            ->orderBy('name')
+            ->orderBy('id')
+            ->select(['id', 'name', 'phone']);
+    }
+
+    /**
      * Every quote against the BOQ, the current ones first and cheapest first, then the older ones.
      *
      * @return array{boq_amount: string, lowest: ?string, bids: list<array<string, mixed>>}
@@ -355,6 +383,14 @@ class ContractorTenderService
             'lowest' => $bid->isCurrent() && $lowest !== null && $amount->isEqualTo($lowest),
             'selected' => $bid->is_selected,
             'current' => $bid->isCurrent(),
+            // Each line's rate set against the BOQ rate the tender was made at.
+            'lines' => $bid->items->map(fn (ContractorBidItem $line) => [
+                'tender_item_id' => $line->contractor_tender_item_id,
+                'boq_item_id' => $line->tenderItem?->boq_item_id,
+                'rate' => Dec::money($line->rate),
+                'amount' => Dec::money($line->amount),
+                'diff' => Dec::money(Dec::of($line->rate)->minus(Dec::of($line->tenderItem?->boq_rate ?? 0))),
+            ])->values()->all(),
         ];
     }
 

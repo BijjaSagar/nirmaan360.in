@@ -13,6 +13,7 @@ use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ContractorControl\ContractorLedgerService;
 use App\Services\ContractorControl\ContractorPaymentService;
 use App\Services\ContractorControl\WorkPaymentRatio;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -88,11 +89,19 @@ class ContractorControlApiController extends Controller
         return response()->json(['data' => ContractorControlPresenter::payment($payment, $money, $money ? $this->ratio->impact($payment) : null)]);
     }
 
-    /** The tenders a BOQ line is in. Without money.view: that they exist and who quoted, with no prices. */
+    /**
+     * The tenders a BOQ line is in. Without money.view: that they exist and who quoted, with no prices.
+     * "can" says whether this person may start a tender or add quotes, and choose a winner.
+     */
     public function lineTenders(Request $request, BoqItem $item): JsonResponse
     {
+        $user = $request->user();
+
         return response()->json([
-            'data' => ContractorControlPresenter::lineTenders($this->lineTenders->forLine($item), $request->user()->can('money.view')),
+            'data' => [
+                ...ContractorControlPresenter::lineTenders($this->lineTenders->forLine($item), Money::visible($user)),
+                'can' => $this->lineTenders->abilities($user),
+            ],
         ]);
     }
 
