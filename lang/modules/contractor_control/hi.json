@@ -193,5 +193,7 @@
     "The quote you chose is not in this tender. Choose a quotation.": "आपने जो कोटेशन चुना था, वह इस टेंडर में नहीं है। एक कोटेशन चुनें।",
     "These BOQ lines have no quantity yet. Enter the quantity in the BOQ first, so the quotes can be compared.": "इन BOQ लाइनों में अभी मात्रा नहीं है। पहले BOQ में मात्रा डालें, ताकि कोटेशन की तुलना हो सके।",
     "This line has no quantity yet. Enter its quantity in the BOQ before asking contractors for quotes.": "इस लाइन में अभी मात्रा नहीं है। ठेकेदारों से कोटेशन मांगने से पहले BOQ में इसकी मात्रा डालें।",
-    "Get quotes from contractors": "ठेकेदारों से कोटेशन मंगवाएं"
+    "Add tender": "टेंडर जोड़ें",
+    "Next you add each contractor's quote for this line.": "इसके बाद इस लाइन के लिए हर ठेकेदार का कोटेशन जोड़ें।",
+    "Put several BOQ lines in one tender": "एक टेंडर में कई BOQ लाइनें रखें"
 }

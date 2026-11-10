@@ -1,8 +1,12 @@
 @extends('layouts.app')
 @section('title', __('BOQ & ledger'))
 @section('content')
-    @php $setup = auth()->user()->organization->allowsFeature('site_control'); @endphp
-    <div x-data="{ add: false, edit: null }">
+    @php
+        $setup = auth()->user()->organization->allowsFeature('site_control');
+        // Starting a tender from a BOQ line needs the same as the form it posts to.
+        $canTender = $tenders !== null && auth()->user()->can('money.view') && auth()->user()->can('contractor.tender');
+    @endphp
+    <div x-data="{ add: false, edit: null, tender: null }">
         <x-page-header :title="__('BOQ & ledger')" :subtitle="$project->name.($total !== null ? ' · '.__('Total').' '.inr($total) : '')">
             <a href="{{ route('boq.export', $project) }}" class="btn btn-ghost">{{ __('Export CSV') }}</a>
             @include('modules.reports._boq-buttons', ['project' => $project])
@@ -91,7 +95,7 @@
                             <td>
                                 {{ $item->description }}
                                 @include('modules.project_setup.boq._line-meta', ['item' => $item])
-                                @includeWhen($tenders !== null, 'modules.contractor_control.boq._marker', ['item' => $item, 'marker' => $tenders[$item->id] ?? null])
+                                @includeWhen($tenders !== null, 'modules.contractor_control.boq._marker', ['item' => $item, 'marker' => $tenders[$item->id] ?? null, 'canTender' => $canTender])
                                 {{-- The table scrolls sideways on a phone, so the actions are repeated here where a thumb can reach them. --}}
                                 <div class="mt-1 flex gap-5 text-sm sm:hidden">
                                     @can('boq.manage')<button type="button" class="link py-2" @click="edit = @js($editPayload)">{{ __('Edit') }}</button>@endcan
@@ -137,6 +141,8 @@
                 </table>
             @endif
         </div>
+
+        @includeWhen($canTender, 'modules.contractor_control.boq._add-tender', ['project' => $project, 'items' => $items])
 
         @can('boq.manage')
             <div x-show="edit" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-ink/50 p-4" @keydown.escape.window="edit = null">

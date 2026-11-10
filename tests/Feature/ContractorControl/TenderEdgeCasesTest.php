@@ -153,15 +153,52 @@ class TenderEdgeCasesTest extends TestCase
         $this->tender();
     }
 
-    public function test_a_line_with_no_tender_offers_one_under_its_description_on_a_wide_screen(): void
+    public function test_the_boq_list_offers_add_tender_on_each_line_that_can_take_one(): void
     {
+        $empty = $this->makeBoqItem($this->project, '0.000', '450.00');
+
+        $page = $this->get(route('boq.index', $this->project))->assertOk();
+
+        $this->assertSame(1, substr_count($page->getContent(), '+ '.__('Add tender')), 'One button, on the line with a quantity.');
+        $page->assertSee($this->payloadFor($this->item->id), false)->assertDontSee($this->payloadFor($empty->id), false);
+
+        $site = $this->actingAs($this->supervisor)->get(route('boq.index', $this->project))->assertOk();
+        $site->assertDontSee('+ '.__('Add tender'))->assertDontSee($this->payloadFor($this->item->id), false);
+    }
+
+    /** How a line's Add tender data appears in the page, as written by @js for Alpine. */
+    private function payloadFor(int $itemId): string
+    {
+        return '\u0022item\u0022:'.$itemId.',';
+    }
+
+    public function test_a_tender_added_from_the_boq_list_goes_on_to_the_quotes(): void
+    {
+        $this->from(route('boq.index', $this->project))
+            ->post(route('boq.tenders.store', $this->item), ['form' => 'boq-tender', 'tender_item' => $this->item->id, 'title' => 'Slab concrete', 'client_uuid' => '7d1f6a52-3b8c-4c55-9d5e-0b6b2f1d9a11'])
+            ->assertRedirect(route('boq.tenders.show', $this->item));
+
+        $this->assertSame(['Slab concrete'], ContractorTender::pluck('title')->all());
+        $this->assertSame([$this->item->id], ContractorTender::first()->items()->pluck('boq_item_id')->all());
+    }
+
+    public function test_a_refused_tender_from_the_boq_list_opens_again_on_the_boq_page_for_its_own_line(): void
+    {
+        $this->from(route('boq.index', $this->project))
+            ->post(route('boq.tenders.store', $this->item), ['form' => 'boq-tender', 'tender_item' => $this->item->id, 'title' => '', 'due_on' => 'not a date'])
+            ->assertRedirect(route('boq.index', $this->project));
+
         $this->get(route('boq.index', $this->project))
             ->assertOk()
-            ->assertSee(route('boq.tenders.show', $this->item), false)
-            ->assertSee(__('Get quotes from contractors'));
+            ->assertSee('x-init="tender = JSON.parse(', false)
+            ->assertSee($this->payloadFor($this->item->id), false)
+            ->assertSee(__('validation.required', ['attribute' => 'title']));
 
-        $this->actingAs($this->supervisor)->get(route('boq.index', $this->project))
+        // A line from another project named in the form never opens it.
+        $other = $this->makeBoqItem($this->makeProject($this->organization), '10.000', '100.00');
+        $this->withSession(['_old_input' => ['form' => 'boq-tender', 'tender_item' => $other->id, 'title' => 'x']])
+            ->get(route('boq.index', $this->project))
             ->assertOk()
-            ->assertDontSee(__('Get quotes from contractors'));
+            ->assertSee('x-init="tender = null"', false);
     }
 }
