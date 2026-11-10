@@ -32,7 +32,7 @@ void main() {
     expect(app.services.push.state, PushState.askFirst);
   });
 
-  test('a contractor login is never offered push, and never asked', () async {
+  test('a contractor login gets push for its own payments and bills, under its portal', () async {
     final FakePushMessaging phone = FakePushMessaging(permissionNow: PushPermission.granted);
     final TestApp withPush = await TestApp.create(
       seed: false,
@@ -46,11 +46,12 @@ void main() {
     await pumpEventQueue();
 
     expect(withPush.services.session.user!.isContractor, isTrue);
-    expect(withPush.services.push.state, PushState.unavailable);
-    expect(phone.permissionReads, 0);
-    expect(phone.permissionRequests, 0);
-    expect(phone.enabledCalls, isEmpty);
-    expect(withPush.api.deviceRegistrations, isEmpty);
+    expect(withPush.services.push.state, PushState.on);
+    expect(phone.permissionRequests, 0, reason: 'the phone already allows it');
+    final registration = withPush.api.deviceRegistrations.single;
+    expect(registration.portal, isTrue);
+    expect(registration.appVersion, isNotEmpty);
+    expect(<String>['en', 'mr', 'hi'], contains(registration.locale));
   });
 
   test('a company on the offline plan is never offered push', () async {

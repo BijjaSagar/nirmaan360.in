@@ -3879,8 +3879,125 @@ class AppLocalizationsHi extends AppLocalizations {
   String get progressWorkDone => 'हुआ काम';
 
   @override
+  String get pushPrefsAlerts => 'साइट अलर्ट';
+
+  @override
+  String get pushPrefsAlertsHint =>
+      'आपके प्रोजेक्ट पर नए अलर्ट, जैसे काम पिछड़ना। ज़रूरी अलर्ट किसी भी समय आते हैं।';
+
+  @override
+  String get pushPrefsApprovals => 'मंज़ूरी';
+
+  @override
+  String get pushPrefsApprovalsHint =>
+      'कुछ आपकी मंज़ूरी के लिए रुका है, या आपके भेजे पर फ़ैसला हुआ।';
+
+  @override
+  String get pushPrefsContractor => 'मेरे भुगतान और बिल';
+
+  @override
+  String get pushPrefsContractorHint =>
+      'आपको होने वाला भुगतान मंज़ूर हुआ, या आपका बिल चुकाया गया।';
+
+  @override
+  String get pushPrefsEmail => 'ईमेल';
+
+  @override
+  String get pushPrefsEmailHint => 'यही जानकारी ईमेल पर।';
+
+  @override
+  String get pushPrefsFailedMessage => 'थोड़ी देर में फिर से कोशिश करें।';
+
+  @override
+  String get pushPrefsFailedTitle => 'सेटिंग पढ़ी नहीं जा सकी';
+
+  @override
+  String get pushPrefsIssues => 'मुद्दे';
+
+  @override
+  String get pushPrefsIssuesHint =>
+      'कोई मुद्दा आपको सौंपा गया, ज़रूरी बताया गया, या उसकी स्थिति बदली।';
+
+  @override
+  String get pushPrefsLoading => 'आपकी सूचना सेटिंग पढ़ रहे हैं';
+
+  @override
+  String get pushPrefsMaterial => 'सामान की जाँच';
+
+  @override
+  String get pushPrefsMaterialHint =>
+      'सामान के अंतर या कम आई डिलीवरी के लिए लिखित कारण चाहिए।';
+
+  @override
+  String get pushPrefsNotConnected =>
+      'ऑफ़िस ने अभी सूचनाएँ नहीं जोड़ी हैं। तब तक आपकी पसंद सँभालकर रखी जाएगी।';
+
+  @override
+  String get pushPrefsOfflineMessage =>
+      'आपकी सूचना सेटिंग सर्वर पर रहती है। इंटरनेट जोड़ें और फिर से कोशिश करें।';
+
+  @override
+  String get pushPrefsOfflineTitle => 'इंटरनेट चाहिए';
+
+  @override
+  String get pushPrefsOtherSection => 'आप तक पहुँचने के दूसरे तरीके';
+
+  @override
+  String get pushPrefsPayments => 'ठेकेदार भुगतान';
+
+  @override
+  String get pushPrefsPaymentsHint =>
+      'ठेकेदार का भुगतान आपकी मंज़ूरी के लिए है, या आपके माँगे भुगतान पर फ़ैसला हुआ।';
+
+  @override
+  String get pushPrefsPush => 'पुश सूचनाएँ';
+
+  @override
+  String get pushPrefsPushHint =>
+      'आपके सभी फ़ोन के लिए। बंद करने पर नीचे के सभी प्रकार रुक जाते हैं।';
+
+  @override
+  String get pushPrefsQuiet => 'रात में सूचनाएँ रोकें';
+
+  @override
+  String get pushPrefsQuietFrom => 'से';
+
+  @override
+  String get pushPrefsQuietHint =>
+      'इन घंटों में सूचनाएँ सुबह तक रुकती हैं। साइट के ज़रूरी अलर्ट फिर भी तुरंत आते हैं।';
+
+  @override
+  String get pushPrefsQuietSection => 'शांत समय';
+
+  @override
+  String get pushPrefsQuietUntil => 'तक';
+
+  @override
+  String get pushPrefsRetry => 'फिर से कोशिश करें';
+
+  @override
+  String get pushPrefsSaveFailed =>
+      'सहेजा नहीं गया। इंटरनेट देखें और फिर से कोशिश करें।';
+
+  @override
+  String get pushPrefsSection => 'आपके फ़ोन पर';
+
+  @override
+  String get pushPrefsTitle => 'सूचनाएँ';
+
+  @override
+  String get pushPrefsWhatsapp => 'व्हाट्सऐप';
+
+  @override
+  String get pushPrefsWhatsappHint => 'यही जानकारी व्हाट्सऐप पर।';
+
+  @override
   String get pushPromptBody =>
       'जब कोई चीज़ आपकी मंज़ूरी के लिए रुकी हो, कोई रिपोर्ट या माप आपके पास वापस आए, या साइट का नया अलर्ट खुले, तब हम बताएँगे। इसे आप कभी भी सेटिंग्स में बदल सकते हैं।';
+
+  @override
+  String get pushPromptBodyContractor =>
+      'आपको होने वाला भुगतान मंज़ूर होने पर या आपका बिल चुकाए जाने पर हम बताएँगे। सेटिंग में इसे कभी भी बदल सकते हैं।';
 
   @override
   String get pushPromptNotNow => 'अभी नहीं';
@@ -3906,6 +4023,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get pushSettingsOn => 'चालू। मंज़ूरी और अलर्ट इस फ़ोन पर आएँगे।';
+
+  @override
+  String get pushSettingsOnContractor =>
+      'चालू। भुगतान और बिल की जानकारी इस फ़ोन पर आती है।';
 
   @override
   String get pushSettingsTitle => 'फ़ोन के अलर्ट';

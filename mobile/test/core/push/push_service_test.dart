@@ -13,7 +13,7 @@ import '../../support/test_app.dart';
 
 /// Push on its own: a fake phone, a fake server and a real in-memory database.
 class _Rig {
-  _Rig._(this.db, this.api, this.messaging, this.connectivity, this.push);
+  _Rig._(this.db, this.api, this.messaging, this.connectivity, this.push, this.languages);
 
   final AppDatabase db;
   final FakeApi api;
@@ -21,25 +21,40 @@ class _Rig {
   final FakeConnectivity connectivity;
   final PushService push;
 
-  static _Rig build({FakePushMessaging? messaging, AppDatabase? db, FakeApi? api, FakeConnectivity? connectivity}) {
+  /// The app's language: change [language] and add to [languages] to switch it.
+  final StreamController<String> languages;
+  static String language = 'mr';
+
+  static _Rig build({
+    FakePushMessaging? messaging,
+    AppDatabase? db,
+    FakeApi? api,
+    FakeConnectivity? connectivity,
+    bool contractor = false,
+  }) {
     final AppDatabase database = db ?? newTestDatabase();
     final FakeApi server = api ?? FakeApi();
     final FakePushMessaging phone = messaging ?? FakePushMessaging();
     final FakeConnectivity network = connectivity ?? FakeConnectivity();
+    final StreamController<String> languages = StreamController<String>.broadcast();
     final PushService push = PushService(
       messaging: phone,
-      devices: ApiDeviceRegistry(server),
+      devices: ApiDeviceRegistry(server, portal: () => contractor),
       db: database,
       platform: 'android',
       deviceName: 'Test phone',
+      appVersion: '1.0.0 (14)',
+      locale: () async => language,
+      localeChanges: languages.stream,
       connectivity: network,
       patience: const Duration(milliseconds: 200),
     );
-    return _Rig._(database, server, phone, network, push);
+    return _Rig._(database, server, phone, network, push, languages);
   }
 
   Future<void> dispose() async {
     await push.dispose();
+    await languages.close();
     await db.close();
   }
 }
@@ -50,14 +65,17 @@ Future<_Rig> _started({
   AppDatabase? db,
   FakeApi? api,
   FakeConnectivity? connectivity,
+  bool contractor = false,
 }) async {
-  final _Rig rig = _Rig.build(messaging: messaging, db: db, api: api, connectivity: connectivity);
+  final _Rig rig = _Rig.build(messaging: messaging, db: db, api: api, connectivity: connectivity, contractor: contractor);
   await rig.push.start();
   if (eligible) await rig.push.setEligible(true);
   return rig;
 }
 
 void main() {
+  setUp(() => _Rig.language = 'mr');
+
   group('asking for permission', () {
     test('a person never asked is offered the explanation, and the phone is not asked yet', () async {
       final _Rig rig = await _started();
@@ -174,10 +192,14 @@ void main() {
       expect(registration.token, 'fake-fcm-token-1');
       expect(registration.platform, 'android');
       expect(registration.deviceName, 'Test phone');
+      expect(registration.appVersion, '1.0.0 (14)');
+      expect(registration.locale, 'mr');
+      expect(registration.previousToken, isNull);
+      expect(registration.portal, isFalse);
       expect(await rig.db.readMeta(MetaKey.pushToken), 'fake-fcm-token-1');
     });
 
-    test('a renewed token is sent, and the old one is taken off the server', () async {
+    test('a renewed token is sent with the one it replaces, which the server retires', () async {
       final _Rig rig = await _started(messaging: FakePushMessaging(permissionNow: PushPermission.granted));
       addTearDown(rig.dispose);
 
@@ -185,9 +207,59 @@ void main() {
       await pumpEventQueue();
 
       expect(rig.api.deviceRegistrations.map((r) => r.token), <String>['fake-fcm-token-1', 'fake-fcm-token-2']);
-      expect(rig.api.deviceRemovals, <String>['fake-fcm-token-1']);
+      expect(rig.api.deviceRegistrations.last.previousToken, 'fake-fcm-token-1');
+      expect(rig.api.deviceRemovals, isEmpty, reason: 'one call does both');
       expect(rig.api.pushTokens, <String>['fake-fcm-token-2']);
       expect(await rig.db.readMeta(MetaKey.pushToken), 'fake-fcm-token-2');
+    });
+
+    test('every start of the app registers again, as the server asks', () async {
+      final AppDatabase db = newTestDatabase();
+      final FakeApi api = FakeApi();
+      final _Rig first = await _started(messaging: FakePushMessaging(permissionNow: PushPermission.granted), db: db, api: api);
+      await first.push.dispose();
+      await first.languages.close();
+
+      final _Rig second = await _started(messaging: FakePushMessaging(permissionNow: PushPermission.granted), db: db, api: api);
+      addTearDown(second.dispose);
+
+      expect(api.deviceRegistrations.map((r) => r.token), <String>['fake-fcm-token-1', 'fake-fcm-token-1']);
+      expect(api.deviceRegistrations.last.previousToken, isNull, reason: 'the same token replaces nothing');
+    });
+
+    test('a new language is sent at once, so push text follows it', () async {
+      final _Rig rig = await _started(messaging: FakePushMessaging(permissionNow: PushPermission.granted));
+      addTearDown(rig.dispose);
+
+      _Rig.language = 'hi';
+      rig.languages.add('hi');
+      await pumpEventQueue();
+
+      expect(rig.api.deviceRegistrations.map((r) => r.locale), <String?>['mr', 'hi']);
+      expect(rig.api.deviceRegistrations.last.previousToken, isNull);
+
+      // The same language again sends nothing.
+      rig.languages.add('hi');
+      await pumpEventQueue();
+      expect(rig.api.deviceRegistrations, hasLength(2));
+    });
+
+    test('a language change before push is on sends nothing', () async {
+      final _Rig rig = await _started();
+      addTearDown(rig.dispose);
+
+      rig.languages.add('hi');
+      await pumpEventQueue();
+      expect(rig.api.deviceRegistrations, isEmpty);
+    });
+
+    test('a contractor login registers and signs out under its portal', () async {
+      final _Rig rig = await _started(messaging: FakePushMessaging(permissionNow: PushPermission.granted), contractor: true);
+      addTearDown(rig.dispose);
+
+      expect(rig.api.deviceRegistrations.single.portal, isTrue);
+      await rig.push.forgetThisPhone();
+      expect(rig.api.deviceRemovals, <String>['fake-fcm-token-1']);
     });
 
     test('a token that arrives before the person agreed is ignored', () async {

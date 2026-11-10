@@ -43,12 +43,17 @@ class PushService {
     required this._db,
     required this._platform,
     this._deviceName = AppConfig.deviceName,
+    this._appVersion,
+    this._locale,
+    Stream<Object?>? localeChanges,
     ConnectivityMonitor? connectivity,
     this._patience = const Duration(seconds: 4),
   }) {
     _connectivity = connectivity?.changes.listen((online) {
       if (online) unawaited(retryPending());
     });
+    // Push text is written in the person's language, so a new choice is sent at once.
+    _localeChanges = localeChanges?.listen((_) => unawaited(_registerCurrent()), onError: _ignore);
   }
 
   final PushMessaging _messaging;
@@ -56,9 +61,12 @@ class PushService {
   final AppDatabase _db;
   final String _platform;
   final String _deviceName;
+  final String? _appVersion;
+  final Future<String?> Function()? _locale;
   final Duration _patience;
 
   StreamSubscription<bool>? _connectivity;
+  StreamSubscription<Object?>? _localeChanges;
   final List<StreamSubscription<Object?>> _subscriptions = <StreamSubscription<Object?>>[];
   final StreamController<PushState> _states = StreamController<PushState>.broadcast();
   final StreamController<PushMessage> _foreground = StreamController<PushMessage>.broadcast();
@@ -77,7 +85,8 @@ class PushService {
   /// A token the server has not accepted yet, to send again when it can.
   String? _pending;
 
-  /// The token the server took in this run, so the same one is not sent twice.
+  /// The token and language the server took in this run, so the same pair is
+  /// not sent twice. Each start of the app sends it once, as the server asks.
   String? _registered;
 
   /// This build has Firebase settings and Firebase started.
@@ -216,6 +225,13 @@ class PushService {
     }
   }
 
+  /// Sends this phone's current token again, when push is on.
+  Future<void> _registerCurrent() async {
+    if (!_ready || !_eligible || _state != PushState.on) return;
+    final String? token = await _messaging.token();
+    if (token != null) await _register(token);
+  }
+
   Future<void> _activate() async {
     if (!_eligible) return;
     try {
@@ -238,9 +254,21 @@ class PushService {
   }
 
   Future<void> _send(String token) async {
-    if (!_eligible || _state != PushState.on || token == _registered) return;
+    if (!_eligible || _state != PushState.on) return;
+    final String? locale = await _readLocale();
+    final String sent = '$token|${locale ?? ''}';
+    if (sent == _registered) return;
+    final String? before = await _db.readMeta(MetaKey.pushToken);
     try {
-      await _devices.register(token: token, platform: _platform, deviceName: _deviceName);
+      await _devices.register(
+        token: token,
+        platform: _platform,
+        // A renewed token: the server retires the old one in the same call.
+        previousToken: before != null && before != token ? before : null,
+        appVersion: _appVersion,
+        locale: locale,
+        deviceName: _deviceName,
+      );
     } on ApiFailure catch (failure) {
       switch (failure) {
         case OfflineFailure() || ServerFailure() || RateLimited():
@@ -252,11 +280,16 @@ class PushService {
       return;
     }
     _pending = null;
-    _registered = token;
-    final String? before = await _db.readMeta(MetaKey.pushToken);
+    _registered = sent;
     await _db.writeMeta(MetaKey.pushToken, token);
-    // A renewed token replaces the old one, which would only pile up on the server.
-    if (before != null && before != token) await _quietly(() => _devices.unregister(before));
+  }
+
+  Future<String?> _readLocale() async {
+    try {
+      return await _locale?.call();
+    } on Object {
+      return null;
+    }
   }
 
   Future<void> _quietly(Future<void> Function() action) async {
@@ -300,6 +333,7 @@ class PushService {
 
   Future<void> dispose() async {
     await _connectivity?.cancel();
+    await _localeChanges?.cancel();
     for (final StreamSubscription<Object?> subscription in _subscriptions) {
       await subscription.cancel();
     }

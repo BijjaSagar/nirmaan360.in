@@ -135,13 +135,32 @@ abstract interface class NirmaanApi {
 
   Future<void> logout();
 
-  /// `POST /devices` with `{token, platform, device_name}`: this phone's FCM
-  /// token, for the signed-in person. Registering the same token again updates
-  /// the row, even for a new owner. [platform] is `android` or `ios`.
-  Future<DeviceRegistration> registerDevice({required String token, required String platform, String? deviceName});
+  /// `POST /devices`: this phone's FCM token, for the signed-in person.
+  /// Registering the same token again updates the row, even for a new owner.
+  /// [platform] is `android` or `ios`; [locale] is the language push text is
+  /// written in; [previousToken] is the token this one replaces, which the
+  /// server retires. A contractor login ([portal]) calls the same route under
+  /// `/contractor-portal`, the only part of the API its gate lets through.
+  Future<DeviceRegistration> registerDevice({
+    required String token,
+    required String platform,
+    String? previousToken,
+    String? appVersion,
+    String? locale,
+    String? deviceName,
+    bool portal = false,
+  });
 
   /// `DELETE /devices` with `{token}`: forgets this phone for the signed-in person.
-  Future<void> unregisterDevice(String token);
+  Future<void> unregisterDevice(String token, {bool portal = false});
+
+  /// `GET /notification-preferences`: the signed-in person's own switches,
+  /// `{in_app?, email?, whatsapp?, push: {enabled, connected, categories, quiet_hours}}`.
+  Future<Map<String, dynamic>> notificationPreferences({bool portal = false});
+
+  /// `PUT /notification-preferences`: changes only what [changes] names, and
+  /// answers with every switch as it now stands.
+  Future<Map<String, dynamic>> updateNotificationPreferences(Map<String, Object?> changes, {bool portal = false});
 
   /// The `user` object of `GET /me`.
   Future<Map<String, dynamic>> me();

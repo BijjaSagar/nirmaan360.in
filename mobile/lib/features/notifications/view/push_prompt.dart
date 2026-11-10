@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../app/app_gate.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../core/push/push_service.dart';
@@ -20,6 +21,7 @@ class PushPromptSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final String body = context.select((AppGate gate) => gate.state.isContractor) ? t.pushPromptBodyContractor : t.pushPromptBody;
     return SafeArea(
       top: false,
       child: Padding(
@@ -32,8 +34,8 @@ class PushPromptSheet extends StatelessWidget {
               Text(t.pushPromptTitle, style: N360Type.fit(N360Type.title, t.pushPromptTitle)),
               const SizedBox(height: N360Space.xs),
               Text(
-                t.pushPromptBody,
-                style: N360Type.fit(N360Type.body, t.pushPromptBody).copyWith(color: N360Colors.ink2),
+                body,
+                style: N360Type.fit(N360Type.body, body).copyWith(color: N360Colors.ink2),
               ),
               const SizedBox(height: N360Space.lg),
               GloveButton(
@@ -62,8 +64,8 @@ class PushPromptSheet extends StatelessWidget {
 /// offered, a moment after the person arrives. It draws nothing itself.
 ///
 /// It waits until push says the person has not been asked, and it never shows
-/// on the sign-in screen, the contractor portal or the offline plan, because
-/// push is not offered there. Asking is recorded as soon as the sheet answers,
+/// on the sign-in screen or the offline plan, because push is not offered
+/// there. It sits in Home's shell and on the contractor portal's home. Asking is recorded as soon as the sheet answers,
 /// so the sheet appears once.
 class PushPromptHost extends StatefulWidget {
   const PushPromptHost({super.key, this.delay = const Duration(milliseconds: 1500)});

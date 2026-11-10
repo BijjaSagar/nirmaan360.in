@@ -382,7 +382,7 @@ class AppGate extends Cubit<GateState> {
     if (s.isContractor) {
       // No project picker, no tabs, no site screens: the portal, and settings
       // so the language can change and the person can sign out.
-      return Routes.isPortal(path) || path == Routes.settings ? null : Routes.portal;
+      return Routes.isPortal(path) || Routes.isSettings(path) ? null : Routes.portal;
     }
     final OfflinePlanState? offline = s.offline;
     if (offline != null) {
@@ -394,7 +394,7 @@ class AppGate extends Cubit<GateState> {
     if (!s.hasProject) {
       // Settings stays open so someone on the wrong account can sign out
       // instead of being stuck on "ask your office".
-      if (path == Routes.projects || path == Routes.settings) return null;
+      if (path == Routes.projects || Routes.isSettings(path)) return null;
       if (path == Routes.projectForm && s.canManageProjects) return null;
       return Routes.projects;
     }

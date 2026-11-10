@@ -17,6 +17,12 @@ abstract final class Routes {
   static const outbox = '/outbox';
   static const settings = '/settings';
 
+  /// The person's own switches: which kinds of push, quiet hours, email and WhatsApp.
+  static const notificationSettings = '/settings/notifications';
+
+  /// Settings and its one sub-page, open whenever Settings is.
+  static bool isSettings(String path) => path == settings || path == notificationSettings;
+
   static const dprList = '/dpr';
 
   /// New or draft report. Optional query: `date`, `uuid`.

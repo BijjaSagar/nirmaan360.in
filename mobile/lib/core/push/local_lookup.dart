@@ -15,7 +15,8 @@ Future<String?> localUuidFor(AppDatabase db, PushKind kind, int serverId) async 
     case PushKind.issue:
       final IssueRow? row = await (db.select(db.issues)..where((t) => t.serverId.equals(serverId))).getSingleOrNull();
       return row?.clientUuid;
-    case PushKind.approval || PushKind.alert:
+    default:
+      // Opened by their server id, or by a list.
       return null;
   }
 }

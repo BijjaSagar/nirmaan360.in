@@ -99,20 +99,48 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
-  Future<DeviceRegistration> registerDevice({required String token, required String platform, String? deviceName}) async {
+  Future<DeviceRegistration> registerDevice({
+    required String token,
+    required String platform,
+    String? previousToken,
+    String? appVersion,
+    String? locale,
+    String? deviceName,
+    bool portal = false,
+  }) async {
     final body = await _call(
       () => _dio.post(
-        '/devices',
-        data: {'token': token, 'platform': platform, 'device_name': ?deviceName},
+        _notify('/devices', portal),
+        data: {
+          'token': token,
+          'platform': platform,
+          'previous_token': ?previousToken,
+          'app_version': ?appVersion,
+          'locale': ?locale,
+          'device_name': ?deviceName,
+        },
       ),
     );
     return DeviceRegistration(pushConnected: body['push_connected'] == true);
   }
 
   @override
-  Future<void> unregisterDevice(String token) async {
-    await _call(() => _dio.delete('/devices', data: {'token': token}));
+  Future<void> unregisterDevice(String token, {bool portal = false}) async {
+    await _call(() => _dio.delete(_notify('/devices', portal), data: {'token': token}));
   }
+
+  @override
+  Future<Map<String, dynamic>> notificationPreferences({bool portal = false}) =>
+      _getData(_notify('/notification-preferences', portal));
+
+  @override
+  Future<Map<String, dynamic>> updateNotificationPreferences(Map<String, Object?> changes, {bool portal = false}) async {
+    final body = await _call(() => _dio.put(_notify('/notification-preferences', portal), data: changes));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  /// A contractor login reaches the notification routes under its portal.
+  static String _notify(String path, bool portal) => portal ? '/contractor-portal$path' : path;
 
   @override
   Future<Map<String, dynamic>> me() async {

@@ -6934,11 +6934,221 @@ abstract class AppLocalizations {
   /// **'Work done'**
   String get progressWorkDone;
 
+  /// No description provided for @pushPrefsAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Site alerts'**
+  String get pushPrefsAlerts;
+
+  /// No description provided for @pushPrefsAlertsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New alerts on your projects, such as work falling behind. Critical ones reach you at any hour.'**
+  String get pushPrefsAlertsHint;
+
+  /// No description provided for @pushPrefsApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get pushPrefsApprovals;
+
+  /// No description provided for @pushPrefsApprovalsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Something waits for your approval, or a decision was made on what you sent.'**
+  String get pushPrefsApprovalsHint;
+
+  /// No description provided for @pushPrefsContractor.
+  ///
+  /// In en, this message translates to:
+  /// **'My payments and bills'**
+  String get pushPrefsContractor;
+
+  /// No description provided for @pushPrefsContractorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A payment to you was approved, or one of your bills was paid.'**
+  String get pushPrefsContractorHint;
+
+  /// No description provided for @pushPrefsEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get pushPrefsEmail;
+
+  /// No description provided for @pushPrefsEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The same updates by email.'**
+  String get pushPrefsEmailHint;
+
+  /// No description provided for @pushPrefsFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in a moment.'**
+  String get pushPrefsFailedMessage;
+
+  /// No description provided for @pushPrefsFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read your settings'**
+  String get pushPrefsFailedTitle;
+
+  /// No description provided for @pushPrefsIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'Issues'**
+  String get pushPrefsIssues;
+
+  /// No description provided for @pushPrefsIssuesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'An issue was assigned to you, raised as urgent, or changed status.'**
+  String get pushPrefsIssuesHint;
+
+  /// No description provided for @pushPrefsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading your notification settings'**
+  String get pushPrefsLoading;
+
+  /// No description provided for @pushPrefsMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Material checks'**
+  String get pushPrefsMaterial;
+
+  /// No description provided for @pushPrefsMaterialHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A material gap or a short delivery needs a written reason.'**
+  String get pushPrefsMaterialHint;
+
+  /// No description provided for @pushPrefsNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'The office has not connected notifications yet. Your choices are kept for when it does.'**
+  String get pushPrefsNotConnected;
+
+  /// No description provided for @pushPrefsOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your notification settings are kept on the server. Connect and try again.'**
+  String get pushPrefsOfflineMessage;
+
+  /// No description provided for @pushPrefsOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs the internet'**
+  String get pushPrefsOfflineTitle;
+
+  /// No description provided for @pushPrefsOtherSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Other ways to reach you'**
+  String get pushPrefsOtherSection;
+
+  /// No description provided for @pushPrefsPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractor payments'**
+  String get pushPrefsPayments;
+
+  /// No description provided for @pushPrefsPaymentsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A contractor payment needs your approval, or one you raised was decided.'**
+  String get pushPrefsPaymentsHint;
+
+  /// No description provided for @pushPrefsPush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications'**
+  String get pushPrefsPush;
+
+  /// No description provided for @pushPrefsPushHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For all your phones. Off stops every kind below.'**
+  String get pushPrefsPushHint;
+
+  /// No description provided for @pushPrefsQuiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold notifications at night'**
+  String get pushPrefsQuiet;
+
+  /// No description provided for @pushPrefsQuietFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get pushPrefsQuietFrom;
+
+  /// No description provided for @pushPrefsQuietHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Between these hours they wait for the morning. Critical site alerts still come at once.'**
+  String get pushPrefsQuietHint;
+
+  /// No description provided for @pushPrefsQuietSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours'**
+  String get pushPrefsQuietSection;
+
+  /// No description provided for @pushPrefsQuietUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Until'**
+  String get pushPrefsQuietUntil;
+
+  /// No description provided for @pushPrefsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get pushPrefsRetry;
+
+  /// No description provided for @pushPrefsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved. Check the internet and try again.'**
+  String get pushPrefsSaveFailed;
+
+  /// No description provided for @pushPrefsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'On your phones'**
+  String get pushPrefsSection;
+
+  /// No description provided for @pushPrefsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get pushPrefsTitle;
+
+  /// No description provided for @pushPrefsWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get pushPrefsWhatsapp;
+
+  /// No description provided for @pushPrefsWhatsappHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The same updates on WhatsApp.'**
+  String get pushPrefsWhatsappHint;
+
   /// No description provided for @pushPromptBody.
   ///
   /// In en, this message translates to:
   /// **'We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.'**
   String get pushPromptBody;
+
+  /// No description provided for @pushPromptBodyContractor.
+  ///
+  /// In en, this message translates to:
+  /// **'We tell you when a payment to you is approved and when one of your bills is paid. You can change this any time in Settings.'**
+  String get pushPromptBodyContractor;
 
   /// No description provided for @pushPromptNotNow.
   ///
@@ -6987,6 +7197,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On. Approvals and alerts reach this phone.'**
   String get pushSettingsOn;
+
+  /// No description provided for @pushSettingsOnContractor.
+  ///
+  /// In en, this message translates to:
+  /// **'On. Payments and bills reach this phone.'**
+  String get pushSettingsOnContractor;
 
   /// No description provided for @pushSettingsTitle.
   ///

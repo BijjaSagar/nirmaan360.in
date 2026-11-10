@@ -110,8 +110,8 @@ class SettingsScreen extends StatelessWidget {
                           initialData: context.read<AppServices>().push.state,
                           builder: (context, push) => LedgerList(
                             children: <Widget>[
-                              // Only where push is offered: never on a build without Firebase,
-                              // a contractor login or the offline plan.
+                              // Only where push is offered: never on a build without Firebase
+                              // or on the offline plan.
                               if (push.data != null && push.data != PushState.unavailable)
                                 PushSettingsTile(state: push.data!),
                               if (context.select((AppGate gate) => gate.state.isLocalOnly))

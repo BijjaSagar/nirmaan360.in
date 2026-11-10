@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="notification_channel_name">मंज़ूरी और अलर्ट</string>
-    <string name="notification_channel_description">आपकी मंज़ूरी के लिए रुका काम, आपके पास लौटी रिपोर्टें और साइट के अलर्ट।</string>
+    <string name="notification_channel_critical_name">ज़रूरी अलर्ट</string>
+    <string name="notification_channel_critical_description">साइट के ऐसे अलर्ट जिन पर अभी कुछ करना है।</string>
+    <string name="notification_channel_updates_name">मंज़ूरी और अपडेट</string>
+    <string name="notification_channel_updates_description">आपकी मंज़ूरी के लिए रुका काम, भुगतान, सामान की जाँच और मुद्दे।</string>
 </resources>

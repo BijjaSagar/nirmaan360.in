@@ -8,6 +8,7 @@ import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../site_progress/view/widgets/progress_widgets.dart' show ProgressBarTile;
+import '../../notifications/view/push_prompt.dart';
 import '../bloc/portal_cubit.dart';
 import '../data/portal_models.dart';
 import 'widgets/portal_kit.dart';
@@ -33,6 +34,8 @@ class PortalHomeScreen extends StatelessWidget {
           return firm == null || firm.isEmpty ? null : firm;
         },
         body: _body,
+        // Asks once whether payments and bills may reach this phone. Draws nothing.
+        footer: const PushPromptHost(),
       ),
     );
   }

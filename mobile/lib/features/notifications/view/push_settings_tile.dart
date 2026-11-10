@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/app_gate.dart';
+import '../../../app/routes.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../core/push/push_service.dart';
@@ -8,7 +11,8 @@ import '../../../l10n/generated/app_localizations.dart';
 import 'push_prompt.dart';
 
 /// The row in Settings that says whether alerts reach this phone, and turns
-/// them on. This is the only way back after "Not now".
+/// them on. This is the only way back after "Not now". Once on, it opens the
+/// person's own switches: which kinds, quiet hours, email and WhatsApp.
 class PushSettingsTile extends StatelessWidget {
   const PushSettingsTile({super.key, required this.state});
 
@@ -33,8 +37,9 @@ class PushSettingsTile extends StatelessWidget {
     final t = AppLocalizations.of(context);
     final bool on = state == PushState.on;
     final bool blocked = state == PushState.blocked;
+    final bool contractor = context.select((AppGate gate) => gate.state.isContractor);
     final String subtitle = on
-        ? t.pushSettingsOn
+        ? (contractor ? t.pushSettingsOnContractor : t.pushSettingsOn)
         : blocked
         ? t.pushSettingsBlockedShort
         : t.pushSettingsOff;
@@ -52,7 +57,7 @@ class PushSettingsTile extends StatelessWidget {
           title: t.pushSettingsTitle,
           subtitle: subtitle,
           trailing: Text(on ? t.pushSettingsIsOn : t.pushSettingsTurnOn, style: N360Type.bodyStrong),
-          onTap: on ? null : () => _turnOn(context),
+          onTap: on ? () => context.push(Routes.notificationSettings) : () => _turnOn(context),
         ),
         if (blocked)
           Padding(

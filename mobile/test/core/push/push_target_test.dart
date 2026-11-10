@@ -7,8 +7,10 @@ PushRouter _router({
   bool Function(Uri)? allows,
   Map<(PushKind, int), String> known = const <(PushKind, int), String>{},
   bool lookupThrows = false,
+  String home = Routes.home,
 }) {
   return PushRouter(
+    home: home,
     allows: allows ?? (_) => true,
     lookup: (kind, id) async {
       if (lookupThrows) throw StateError('database closed');
@@ -117,6 +119,227 @@ void main() {
       }).pathFor(const PushTarget(PushKind.alert));
       expect(asked.single.path, Routes.siteDashboard);
       expect(asked.single.queryParameters['tab'], 'alerts');
+    });
+  });
+
+  group('what the live server sends', () {
+    // The payloads FcmGateway builds: every value text, type and id always there.
+    Map<String, String> payload(
+      String type,
+      String id, [
+      Map<String, String> extra = const <String, String>{},
+    ]) => <String, String>{
+      'type': type,
+      'id': id,
+      'category': 'x',
+      'event': 'e',
+      'critical': '0',
+      'url': 'https://example.test',
+      ...extra,
+    };
+
+    test('a waiting approval opens it to act on', () async {
+      final PushTarget? target = PushTarget.parse(
+        payload('approval', '41', <String, String>{
+          'approval_id': '41',
+          'level': '1',
+          'status': 'waiting',
+          'doc_type': 'measurement',
+          'doc_id': '8',
+          'project_id': '3',
+        }),
+      );
+      expect(target?.projectId, 3);
+      expect(await _router().pathFor(target), Routes.approvalDetail(41));
+    });
+
+    test('a decided approval opens the document it was about', () async {
+      final PushRouter router = _router(
+        known: <(PushKind, int), String>{
+          (PushKind.measurement, 8): 'm-uuid',
+          (PushKind.report, 5): 'dpr-uuid',
+        },
+      );
+      expect(
+        await router.pathFor(
+          PushTarget.parse(
+            payload('approval', '41', <String, String>{
+              'status': 'returned',
+              'doc_type': 'measurement',
+              'doc_id': '8',
+            }),
+          ),
+        ),
+        Routes.measurementDetail('m-uuid'),
+      );
+      expect(
+        await router.pathFor(
+          PushTarget.parse(
+            payload('approval', '42', <String, String>{
+              'status': 'approved',
+              'doc_type': 'dpr',
+              'doc_id': '5',
+            }),
+          ),
+        ),
+        Routes.dprDetail('dpr-uuid'),
+      );
+      // Not pulled yet: the list it belongs to.
+      expect(
+        await _router().pathFor(
+          PushTarget.parse(
+            payload('approval', '42', <String, String>{
+              'status': 'approved',
+              'doc_type': 'dpr',
+              'doc_id': '5',
+            }),
+          ),
+        ),
+        Routes.dprList,
+      );
+      // A bill is not shown on this phone: Home.
+      expect(
+        await _router().pathFor(
+          PushTarget.parse(
+            payload('approval', '43', <String, String>{
+              'status': 'approved',
+              'doc_type': 'ra_bill',
+              'doc_id': '2',
+            }),
+          ),
+        ),
+        Routes.home,
+      );
+    });
+
+    test(
+      'a contractor payment waiting on this person opens its approval, otherwise its contract',
+      () async {
+        expect(
+          await _router().pathFor(
+            PushTarget.parse(
+              payload('contractor_payment', '17', <String, String>{
+                'approval_id': '50',
+                'status': 'waiting',
+              }),
+            ),
+          ),
+          Routes.approvalDetail(50),
+        );
+        expect(
+          await _router().pathFor(
+            PushTarget.parse(
+              payload('contractor_payment', '17', <String, String>{
+                'status': 'approved',
+                'work_order_id': '6',
+              }),
+            ),
+          ),
+          Routes.contractorDetail(6),
+        );
+        expect(
+          await _router().pathFor(
+            PushTarget.parse(
+              payload('contractor_payment', '17', <String, String>{
+                'status': 'rejected',
+              }),
+            ),
+          ),
+          Routes.contractors,
+        );
+      },
+    );
+
+    test('a material gap and a short delivery open material control', () async {
+      expect(
+        await _router().pathFor(
+          PushTarget.parse(
+            payload('material_flag', '12', <String, String>{
+              'flag': 'over_used',
+              'alert_id': '4',
+              'project_id': '3',
+            }),
+          ),
+        ),
+        Routes.material,
+      );
+      expect(
+        await _router().pathFor(
+          PushTarget.parse(
+            payload('delivery_challan', '9', <String, String>{
+              'material_id': '12',
+              'flag': 'short_delivery',
+            }),
+          ),
+        ),
+        Routes.material,
+      );
+    });
+
+    test('an alert and an issue open as before', () async {
+      expect(
+        await _router().pathFor(
+          PushTarget.parse(
+            payload('alert', '3', <String, String>{
+              'project_id': '3',
+              'severity': 'critical',
+            }),
+          ),
+        ),
+        '${Routes.siteDashboard}?tab=alerts',
+      );
+      expect(
+        await _router(
+          known: <(PushKind, int), String>{(PushKind.issue, 9): 'i-uuid'},
+        ).pathFor(
+          PushTarget.parse(
+            payload('issue', '9', <String, String>{
+              'uuid': 'i-uuid',
+              'status': 'open',
+            }),
+          ),
+        ),
+        Routes.issueDetail('i-uuid'),
+      );
+    });
+
+    test(
+      'a contractor login opens its portal pages, and lands on the portal otherwise',
+      () async {
+        final PushRouter router = _router(
+          home: Routes.portal,
+          allows: (uri) => Routes.isPortal(uri.path),
+        );
+        expect(
+          await router.pathFor(
+            PushTarget.parse(
+              payload('portal_payment', '30', <String, String>{
+                'work_order_id': '6',
+              }),
+            ),
+          ),
+          Routes.portalPayments,
+        );
+        expect(
+          await router.pathFor(PushTarget.parse(payload('portal_bill', '31'))),
+          Routes.portalBill(31),
+        );
+        expect(
+          await router.pathFor(PushTarget.parse(payload('approval', '41'))),
+          Routes.portal,
+        );
+        expect(await router.pathFor(null), Routes.portal);
+      },
+    );
+
+    test('the test push and a plain link open nothing', () {
+      expect(
+        PushTarget.parse(
+          payload('test', '0', <String, String>{'event': 'approval.waiting'}),
+        ),
+        isNull,
+      );
+      expect(PushTarget.parse(payload('link', '')), isNull);
     });
   });
 }

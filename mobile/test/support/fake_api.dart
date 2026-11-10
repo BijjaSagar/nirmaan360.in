@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert' show base64, base64Decode, base64Url, jsonEncode, utf8;
+import 'dart:convert' show base64, base64Decode, base64Url, jsonDecode, jsonEncode, utf8;
 import 'dart:math' show atan2, cos, max, min, pi, sin, sqrt;
 import 'dart:typed_data';
 
@@ -17,6 +17,17 @@ typedef Row = Map<String, dynamic>;
 /// Idempotent on `client_uuid`, follows the `client_updated_at` rules, and
 /// lets a test script failures: offline, lost responses, hung requests, 401s,
 /// 429s and per-item results.
+/// One `POST /devices`, as the fake server saw it.
+typedef DeviceCall = ({
+  String token,
+  String platform,
+  String? deviceName,
+  String? previousToken,
+  String? appVersion,
+  String? locale,
+  bool portal,
+});
+
 class FakeApi implements NirmaanApi {
   FakeApi({DateTime? serverTime})
     : _now = serverTime ?? DateTime.utc(2026, 11, 9, 4, 30);
@@ -206,14 +217,69 @@ class FakeApi implements NirmaanApi {
   final List<String> pushTokens = <String>[];
 
   /// Every `POST /devices` that reached the server, newest last.
-  final List<({String token, String platform, String? deviceName})> deviceRegistrations =
-      <({String token, String platform, String? deviceName})>[];
+  final List<DeviceCall> deviceRegistrations = <DeviceCall>[];
 
   /// Every `DELETE /devices` that reached the server.
   final List<String> deviceRemovals = <String>[];
 
   /// What `push_connected` says in the reply.
   bool pushConnected = false;
+
+  /// What `GET /notification-preferences` answers. Each PUT merges into it.
+  Map<String, dynamic> notificationSwitches = <String, dynamic>{
+    'push': <String, dynamic>{
+      'enabled': true,
+      'connected': true,
+      'categories': <Map<String, dynamic>>[
+        <String, dynamic>{'key': 'alerts', 'label': 'Site alerts', 'hint': '', 'enabled': true},
+        <String, dynamic>{'key': 'approvals', 'label': 'Approvals', 'hint': '', 'enabled': true},
+      ],
+      'quiet_hours': <String, dynamic>{'enabled': false, 'from': '22:00', 'until': '07:00', 'timezone': 'Asia/Kolkata'},
+    },
+  };
+
+  /// Every `PUT /notification-preferences` body, and whether it went to the portal.
+  final List<({Map<String, Object?> changes, bool portal})> preferenceChanges = <({Map<String, Object?> changes, bool portal})>[];
+
+  /// The next `PUT /notification-preferences` throws this.
+  ApiFailure? failNextPreferenceChange;
+
+  @override
+  Future<Map<String, dynamic>> notificationPreferences({bool portal = false}) async {
+    if (offline) throw const OfflineFailure();
+    return _copy(notificationSwitches);
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateNotificationPreferences(Map<String, Object?> changes, {bool portal = false}) async {
+    if (offline) throw const OfflineFailure();
+    final ApiFailure? failure = failNextPreferenceChange;
+    if (failure != null) {
+      failNextPreferenceChange = null;
+      throw failure;
+    }
+    preferenceChanges.add((changes: changes, portal: portal));
+    final Map<String, dynamic> push = notificationSwitches['push'] as Map<String, dynamic>;
+    for (final MapEntry<String, Object?> change in changes.entries) {
+      switch (change.key) {
+        case 'categories':
+          for (final MapEntry<Object?, Object?> category in (change.value! as Map).entries) {
+            for (final Map<String, dynamic> row in (push['categories'] as List).cast<Map<String, dynamic>>()) {
+              if (row['key'] == category.key) row['enabled'] = category.value;
+            }
+          }
+        case 'quiet_hours':
+          (push['quiet_hours'] as Map<String, dynamic>).addAll((change.value! as Map).cast<String, dynamic>());
+        default:
+          final Object? channel = notificationSwitches[change.key];
+          if (channel is Map<String, dynamic>) channel['enabled'] = change.value;
+      }
+    }
+    return _copy(notificationSwitches);
+  }
+
+  static Map<String, dynamic> _copy(Map<String, dynamic> value) =>
+      (jsonDecode(jsonEncode(value)) as Map).cast<String, dynamic>();
 
   /// Sign-outs that reached the server. After one, the token is no longer good.
   int logoutCalls = 0;
@@ -222,20 +288,38 @@ class FakeApi implements NirmaanApi {
   ApiFailure? failNextDeviceRegistration;
 
   @override
-  Future<DeviceRegistration> registerDevice({required String token, required String platform, String? deviceName}) async {
+  Future<DeviceRegistration> registerDevice({
+    required String token,
+    required String platform,
+    String? previousToken,
+    String? appVersion,
+    String? locale,
+    String? deviceName,
+    bool portal = false,
+  }) async {
     if (offline) throw const OfflineFailure();
     final ApiFailure? failure = failNextDeviceRegistration;
     if (failure != null) {
       failNextDeviceRegistration = null;
       throw failure;
     }
-    deviceRegistrations.add((token: token, platform: platform, deviceName: deviceName));
+    deviceRegistrations.add((
+      token: token,
+      platform: platform,
+      deviceName: deviceName,
+      previousToken: previousToken,
+      appVersion: appVersion,
+      locale: locale,
+      portal: portal,
+    ));
+    // As the server does: the token it replaces is retired.
+    if (previousToken != null && previousToken != token) pushTokens.remove(previousToken);
     if (!pushTokens.contains(token)) pushTokens.add(token);
     return DeviceRegistration(pushConnected: pushConnected);
   }
 
   @override
-  Future<void> unregisterDevice(String token) async {
+  Future<void> unregisterDevice(String token, {bool portal = false}) async {
     if (offline) throw const OfflineFailure();
     // The real route needs the person's token, which a sign-out has already ended.
     if (logoutCalls > 0) throw const AuthExpired();

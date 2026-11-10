@@ -20,6 +20,21 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // `flutter build apk --android-project-arg phoneApk=true --android-project-arg disable-abi-filtering=true`
+        // (the second stops Flutter resetting these filters) builds the one APK
+        // shared from phone to phone. Phones run ARM only, so x86_64 (emulators, Chromebooks) is left out.
+        if (project.hasProperty("phoneApk")) {
+            ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a") }
+        }
+    }
+
+    // The phone APK keeps its native libraries compressed, so the file is about half the size and
+    // fits a chat message. The phone unpacks them once at install. Store builds keep the default.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = project.hasProperty("phoneApk")
+        }
     }
 
     buildTypes {

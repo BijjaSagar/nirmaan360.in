@@ -1,5 +1,5 @@
 import 'dart:io' show Directory;
-import 'dart:ui' show Rect;
+import 'dart:ui' show PlatformDispatcher, Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -218,9 +218,12 @@ class AppServices {
     final projectImages = ProjectImageRepository(context);
     final push = PushService(
       messaging: pushMessaging,
-      devices: ApiDeviceRegistry(api),
+      devices: ApiDeviceRegistry(api, portal: () => session.user?.isContractor ?? false),
       db: db,
       platform: pushPlatform,
+      appVersion: AppInfo.label,
+      locale: () => _pushLocale(db, session),
+      localeChanges: db.watchMeta(MetaKey.locale).distinct().skip(1),
       connectivity: connectivity,
     );
     engine.afterPull = (sentSomething) async {
@@ -352,11 +355,26 @@ class AppServices {
     scheduler.start();
   }
 
-  /// Push is for a signed-in member of staff on a company that syncs. Never a
-  /// contractor login, and never the offline plan, which has no server to send it.
+  /// Push is for anyone signed in on a company that syncs: staff, and a
+  /// contractor login for its own payments and bills. Never the offline plan,
+  /// which has no server to send it.
   bool get _mayGetPush {
     final CurrentUser? user = session.user;
-    return session.current.isSignedIn && user != null && !user.isContractor && !offlinePlan.isLocalOnly;
+    return session.current.isSignedIn && user != null && !offlinePlan.isLocalOnly;
+  }
+
+  /// The language the app shows, which is the one push text is written in:
+  /// the person's choice on this phone, then their account's, then the phone's.
+  static Future<String?> _pushLocale(AppDatabase db, SessionController session) async {
+    const Set<String> written = <String>{'en', 'mr', 'hi'};
+    for (final String? code in <String?>[
+      await db.readMeta(MetaKey.locale),
+      session.user?.locale,
+      PlatformDispatcher.instance.locale.languageCode,
+    ]) {
+      if (written.contains(code)) return code;
+    }
+    return 'en';
   }
 
   void _watchPushEligibility() {

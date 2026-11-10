@@ -3925,8 +3925,125 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressWorkDone => 'Work done';
 
   @override
+  String get pushPrefsAlerts => 'Site alerts';
+
+  @override
+  String get pushPrefsAlertsHint =>
+      'New alerts on your projects, such as work falling behind. Critical ones reach you at any hour.';
+
+  @override
+  String get pushPrefsApprovals => 'Approvals';
+
+  @override
+  String get pushPrefsApprovalsHint =>
+      'Something waits for your approval, or a decision was made on what you sent.';
+
+  @override
+  String get pushPrefsContractor => 'My payments and bills';
+
+  @override
+  String get pushPrefsContractorHint =>
+      'A payment to you was approved, or one of your bills was paid.';
+
+  @override
+  String get pushPrefsEmail => 'Email';
+
+  @override
+  String get pushPrefsEmailHint => 'The same updates by email.';
+
+  @override
+  String get pushPrefsFailedMessage => 'Try again in a moment.';
+
+  @override
+  String get pushPrefsFailedTitle => 'Could not read your settings';
+
+  @override
+  String get pushPrefsIssues => 'Issues';
+
+  @override
+  String get pushPrefsIssuesHint =>
+      'An issue was assigned to you, raised as urgent, or changed status.';
+
+  @override
+  String get pushPrefsLoading => 'Reading your notification settings';
+
+  @override
+  String get pushPrefsMaterial => 'Material checks';
+
+  @override
+  String get pushPrefsMaterialHint =>
+      'A material gap or a short delivery needs a written reason.';
+
+  @override
+  String get pushPrefsNotConnected =>
+      'The office has not connected notifications yet. Your choices are kept for when it does.';
+
+  @override
+  String get pushPrefsOfflineMessage =>
+      'Your notification settings are kept on the server. Connect and try again.';
+
+  @override
+  String get pushPrefsOfflineTitle => 'Needs the internet';
+
+  @override
+  String get pushPrefsOtherSection => 'Other ways to reach you';
+
+  @override
+  String get pushPrefsPayments => 'Contractor payments';
+
+  @override
+  String get pushPrefsPaymentsHint =>
+      'A contractor payment needs your approval, or one you raised was decided.';
+
+  @override
+  String get pushPrefsPush => 'Push notifications';
+
+  @override
+  String get pushPrefsPushHint =>
+      'For all your phones. Off stops every kind below.';
+
+  @override
+  String get pushPrefsQuiet => 'Hold notifications at night';
+
+  @override
+  String get pushPrefsQuietFrom => 'From';
+
+  @override
+  String get pushPrefsQuietHint =>
+      'Between these hours they wait for the morning. Critical site alerts still come at once.';
+
+  @override
+  String get pushPrefsQuietSection => 'Quiet hours';
+
+  @override
+  String get pushPrefsQuietUntil => 'Until';
+
+  @override
+  String get pushPrefsRetry => 'Try again';
+
+  @override
+  String get pushPrefsSaveFailed =>
+      'Not saved. Check the internet and try again.';
+
+  @override
+  String get pushPrefsSection => 'On your phones';
+
+  @override
+  String get pushPrefsTitle => 'Notifications';
+
+  @override
+  String get pushPrefsWhatsapp => 'WhatsApp';
+
+  @override
+  String get pushPrefsWhatsappHint => 'The same updates on WhatsApp.';
+
+  @override
   String get pushPromptBody =>
       'We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.';
+
+  @override
+  String get pushPromptBodyContractor =>
+      'We tell you when a payment to you is approved and when one of your bills is paid. You can change this any time in Settings.';
 
   @override
   String get pushPromptNotNow => 'Not now';
@@ -3952,6 +4069,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pushSettingsOn => 'On. Approvals and alerts reach this phone.';
+
+  @override
+  String get pushSettingsOnContractor =>
+      'On. Payments and bills reach this phone.';
 
   @override
   String get pushSettingsTitle => 'Phone alerts';

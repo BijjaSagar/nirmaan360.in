@@ -3890,8 +3890,125 @@ class AppLocalizationsMr extends AppLocalizations {
   String get progressWorkDone => 'झालेले काम';
 
   @override
+  String get pushPrefsAlerts => 'साइटच्या सूचना';
+
+  @override
+  String get pushPrefsAlertsHint =>
+      'तुमच्या प्रकल्पांवरील नवीन सूचना, जसे काम मागे पडणे. तातडीच्या सूचना कोणत्याही वेळी येतात.';
+
+  @override
+  String get pushPrefsApprovals => 'मंजुरी';
+
+  @override
+  String get pushPrefsApprovalsHint =>
+      'काहीतरी तुमच्या मंजुरीसाठी थांबले आहे, किंवा तुम्ही पाठवलेल्यावर निर्णय झाला.';
+
+  @override
+  String get pushPrefsContractor => 'माझी पेमेंट आणि बिले';
+
+  @override
+  String get pushPrefsContractorHint =>
+      'तुम्हाला द्यायचे पेमेंट मंजूर झाले, किंवा तुमचे बिल भरले गेले.';
+
+  @override
+  String get pushPrefsEmail => 'ईमेल';
+
+  @override
+  String get pushPrefsEmailHint => 'हीच माहिती ईमेलवर.';
+
+  @override
+  String get pushPrefsFailedMessage => 'थोड्या वेळाने पुन्हा प्रयत्न करा.';
+
+  @override
+  String get pushPrefsFailedTitle => 'सेटिंग वाचता आली नाही';
+
+  @override
+  String get pushPrefsIssues => 'समस्या';
+
+  @override
+  String get pushPrefsIssuesHint =>
+      'समस्या तुम्हाला दिली गेली, तातडीची म्हणून नोंदवली गेली, किंवा तिची स्थिती बदलली.';
+
+  @override
+  String get pushPrefsLoading => 'तुमची सूचना सेटिंग वाचत आहोत';
+
+  @override
+  String get pushPrefsMaterial => 'साहित्य तपासणी';
+
+  @override
+  String get pushPrefsMaterialHint =>
+      'साहित्यातील तफावत किंवा कमी आलेल्या मालासाठी लेखी कारण हवे आहे.';
+
+  @override
+  String get pushPrefsNotConnected =>
+      'ऑफिसने अजून सूचना जोडलेल्या नाहीत. तुमची निवड तोपर्यंत जपून ठेवली जाईल.';
+
+  @override
+  String get pushPrefsOfflineMessage =>
+      'तुमची सूचना सेटिंग सर्व्हरवर ठेवलेली असते. इंटरनेट जोडा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get pushPrefsOfflineTitle => 'इंटरनेट लागेल';
+
+  @override
+  String get pushPrefsOtherSection => 'तुमच्यापर्यंत पोहोचण्याचे इतर मार्ग';
+
+  @override
+  String get pushPrefsPayments => 'कंत्राटदार पेमेंट';
+
+  @override
+  String get pushPrefsPaymentsHint =>
+      'कंत्राटदाराचे पेमेंट तुमच्या मंजुरीसाठी आहे, किंवा तुम्ही मागितलेल्या पेमेंटवर निर्णय झाला.';
+
+  @override
+  String get pushPrefsPush => 'पुश सूचना';
+
+  @override
+  String get pushPrefsPushHint =>
+      'तुमच्या सर्व फोनसाठी. बंद केल्यास खालील सर्व प्रकार थांबतात.';
+
+  @override
+  String get pushPrefsQuiet => 'रात्री सूचना थांबवा';
+
+  @override
+  String get pushPrefsQuietFrom => 'पासून';
+
+  @override
+  String get pushPrefsQuietHint =>
+      'या वेळेत सूचना सकाळपर्यंत थांबतात. साइटच्या तातडीच्या सूचना मात्र लगेच येतात.';
+
+  @override
+  String get pushPrefsQuietSection => 'शांत वेळ';
+
+  @override
+  String get pushPrefsQuietUntil => 'पर्यंत';
+
+  @override
+  String get pushPrefsRetry => 'पुन्हा प्रयत्न करा';
+
+  @override
+  String get pushPrefsSaveFailed =>
+      'जतन झाले नाही. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get pushPrefsSection => 'तुमच्या फोनवर';
+
+  @override
+  String get pushPrefsTitle => 'सूचना';
+
+  @override
+  String get pushPrefsWhatsapp => 'व्हॉट्सॲप';
+
+  @override
+  String get pushPrefsWhatsappHint => 'हीच माहिती व्हॉट्सॲपवर.';
+
+  @override
   String get pushPromptBody =>
       'एखादी गोष्ट तुमच्या मंजुरीसाठी थांबली, एखादा अहवाल किंवा मोजमाप तुमच्याकडे परत आले, किंवा साइटची नवीन सूचना आली की आम्ही कळवू. हे तुम्ही कधीही सेटिंग्जमध्ये बदलू शकता.';
+
+  @override
+  String get pushPromptBodyContractor =>
+      'तुम्हाला द्यायचे पेमेंट मंजूर झाले किंवा तुमचे बिल भरले गेले की आम्ही कळवू. सेटिंगमध्ये हे कधीही बदलता येते.';
 
   @override
   String get pushPromptNotNow => 'आत्ता नको';
@@ -3917,6 +4034,10 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get pushSettingsOn => 'चालू. मंजुरी आणि सूचना या फोनवर येतील.';
+
+  @override
+  String get pushSettingsOnContractor =>
+      'चालू. पेमेंट आणि बिलांची माहिती या फोनवर येते.';
 
   @override
   String get pushSettingsTitle => 'फोनवरील सूचना';

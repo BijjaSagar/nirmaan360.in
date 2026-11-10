@@ -54,6 +54,7 @@ import '../features/projects/view/boq_form_screen.dart';
 import '../features/projects/view/boq_screen.dart';
 import '../features/projects/view/project_form_screen.dart';
 import '../features/projects/view/project_picker_screen.dart';
+import '../features/notifications/view/notification_settings_screen.dart';
 import '../features/settings/view/settings_screen.dart';
 import '../features/site_tools/view/site_tools_screen.dart';
 import '../features/sync_center/view/sync_center_screen.dart';
@@ -94,7 +95,11 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         (_) => const BoqScreen(),
         routes: <RouteBase>[_route('form', (_) => const BoqFormScreen())],
       ),
-      _route(Routes.settings, (_) => const SettingsScreen()),
+      _route(
+        Routes.settings,
+        (_) => const SettingsScreen(),
+        routes: <RouteBase>[_route('notifications', (_) => const NotificationSettingsScreen())],
+      ),
       // The contractor portal: all a contractor login can open. `payments`,
       // `bills` and `contracts/:id` come before nothing that would swallow them.
       _route(

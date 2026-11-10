@@ -68,15 +68,18 @@ class PushNavigator {
   Future<void> _open(PushMessage message) async {
     final PushTarget? target = PushTarget.fromMessage(message);
     await _showProjectOf(target);
+    // A contractor login has no Home: its portal is where it starts.
+    final String home = gate.state.isContractor ? Routes.portal : Routes.home;
     final PushRouter pushRouter = PushRouter(
       allows: (location) => gate.redirect(location) == null,
       lookup: (kind, id) => localUuidFor(services.db, kind, id),
+      home: home,
     );
     final String path = await pushRouter.pathFor(target);
     if (_disposed) return;
     // From Home, so Back leads somewhere sensible whatever the app was doing.
-    router.go(Routes.home);
-    if (path != Routes.home) unawaited(router.push<void>(path));
+    router.go(home);
+    if (path != home) unawaited(router.push<void>(path));
     _syncSoon();
   }
 
