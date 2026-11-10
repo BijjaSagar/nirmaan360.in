@@ -982,6 +982,12 @@ abstract class AppLocalizations {
   /// **'That mark was not saved. Tap it again.'**
   String get attendanceSaveFailed;
 
+  /// No description provided for @attendanceScanCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan card'**
+  String get attendanceScanCard;
+
   /// No description provided for @attendanceSheetDone.
   ///
   /// In en, this message translates to:
@@ -6748,6 +6754,132 @@ abstract class AppLocalizations {
   /// **'Work done'**
   String get progressWorkDone;
 
+  /// No description provided for @scanAlready.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already marked {status} today'**
+  String scanAlready(String name, String status);
+
+  /// No description provided for @scanAlreadyUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Already marked today'**
+  String get scanAlreadyUnknown;
+
+  /// No description provided for @scanCameraFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Close this page and open it again. You can still mark attendance by hand.'**
+  String get scanCameraFailedMessage;
+
+  /// No description provided for @scanCameraFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera did not start'**
+  String get scanCameraFailedTitle;
+
+  /// No description provided for @scanCameraOffMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow the camera for Nirmaan360 in your phone\'s settings, then come back. You can still mark attendance by hand.'**
+  String get scanCameraOffMessage;
+
+  /// No description provided for @scanCameraOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera is off'**
+  String get scanCameraOffTitle;
+
+  /// No description provided for @scanCameraStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting the camera'**
+  String get scanCameraStarting;
+
+  /// No description provided for @scanCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} scanned in this sitting'**
+  String scanCount(int count);
+
+  /// No description provided for @scanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not marked. Try again.'**
+  String get scanFailed;
+
+  /// No description provided for @scanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the camera over the QR on a worker\'s card.'**
+  String get scanHint;
+
+  /// No description provided for @scanMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} marked present'**
+  String scanMarked(String name);
+
+  /// No description provided for @scanMarkedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked present'**
+  String get scanMarkedUnknown;
+
+  /// No description provided for @scanNotACard.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a worker card.'**
+  String get scanNotACard;
+
+  /// No description provided for @scanQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. {name} will be marked when you are online.'**
+  String scanQueued(String name);
+
+  /// No description provided for @scanQueuedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A saved scan is sent today only. After today, mark that day by hand.'**
+  String get scanQueuedNote;
+
+  /// No description provided for @scanQueuedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. It will be marked when you are online.'**
+  String get scanQueuedUnknown;
+
+  /// No description provided for @scanStatusAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'absent'**
+  String get scanStatusAbsent;
+
+  /// No description provided for @scanStatusHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'half day'**
+  String get scanStatusHalf;
+
+  /// No description provided for @scanStatusOvertime.
+  ///
+  /// In en, this message translates to:
+  /// **'overtime'**
+  String get scanStatusOvertime;
+
+  /// No description provided for @scanStatusPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'present'**
+  String get scanStatusPresent;
+
+  /// No description provided for @scanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan worker card'**
+  String get scanTitle;
+
   /// No description provided for @shellCaptionMarked.
   ///
   /// In en, this message translates to:
@@ -7761,6 +7893,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attendance'**
   String get syncTypeAttendance;
+
+  /// No description provided for @syncTypeAttendanceScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Card scan'**
+  String get syncTypeAttendanceScan;
 
   /// No description provided for @syncTypeContractorPayment.
   ///

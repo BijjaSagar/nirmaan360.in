@@ -46,5 +46,6 @@
   "syncTypeInspection": { "en": "Inspection", "mr": "पाहणी", "hi": "निरीक्षण" },
   "syncTypeMachineLog": { "en": "Machine log", "mr": "यंत्र नोंद", "hi": "मशीन लॉग" },
   "syncTypeGoodsReceipt": { "en": "Goods receipt", "mr": "माल स्वीकृती", "hi": "माल की प्राप्ति" },
+  "syncTypeAttendanceScan": { "en": "Card scan", "mr": "कार्ड स्कॅन", "hi": "कार्ड स्कैन" },
   "syncTypeMaterialIssue": { "en": "Store issue", "mr": "स्टोअरमधून वितरण", "hi": "स्टोर से निकासी" }
 }

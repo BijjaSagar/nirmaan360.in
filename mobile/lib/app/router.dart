@@ -5,6 +5,7 @@ import '../core/design/design.dart';
 import '../features/approvals/view/approval_detail_screen.dart';
 import '../features/approvals/view/approvals_inbox_screen.dart';
 import '../features/attendance/view/attendance_screen.dart';
+import '../features/attendance/view/scan_attendance_screen.dart';
 import '../features/auth/view/sign_in_screen.dart';
 import '../features/dpr/view/dpr_detail_screen.dart';
 import '../features/dpr/view/dpr_form_screen.dart';
@@ -160,7 +161,13 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
           _route(':uuid', (s) => DprDetailScreen(clientUuid: s.pathParameters['uuid']!)),
         ],
       ),
-      _route(Routes.attendance, (_) => const AttendanceScreen()),
+      _route(
+        Routes.attendance,
+        (_) => const AttendanceScreen(),
+        routes: <RouteBase>[
+          _route('scan', (_) => const ScanAttendanceScreen()),
+        ],
+      ),
       _route(Routes.offlinePlan, (_) => const OfflinePlanScreen()),
       _route(Routes.offlineUpload, (_) => const OfflineUploadScreen()),
       _route(

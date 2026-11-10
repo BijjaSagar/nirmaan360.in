@@ -33,6 +33,7 @@ extension SyncLabels on AppLocalizations {
         OutboxType.machineLog => syncTypeMachineLog,
         OutboxType.goodsReceipt => syncTypeGoodsReceipt,
         OutboxType.materialIssue => syncTypeMaterialIssue,
+        OutboxType.attendanceScan => syncTypeAttendanceScan,
       };
 
   String syncReasonFor(OutboxItem item) => switch (item.attentionCode) {
@@ -76,4 +77,5 @@ IconData syncTypeIcon(OutboxType type) => switch (type) {
       OutboxType.machineLog => Icons.precision_manufacturing_outlined,
       OutboxType.goodsReceipt => Icons.assignment_turned_in_outlined,
       OutboxType.materialIssue => Icons.outbox_outlined,
+      OutboxType.attendanceScan => Icons.qr_code_scanner,
     };

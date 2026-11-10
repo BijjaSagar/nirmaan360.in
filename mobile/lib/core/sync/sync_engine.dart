@@ -514,6 +514,7 @@ class SyncEngine {
       case OutboxType.machineLog:
       case OutboxType.goodsReceipt:
       case OutboxType.materialIssue:
+      case OutboxType.attendanceScan:
         return null;
     }
   }
@@ -651,6 +652,7 @@ class SyncEngine {
       case OutboxType.machineLog:
       case OutboxType.goodsReceipt:
       case OutboxType.materialIssue:
+      case OutboxType.attendanceScan:
         break;
     }
   }
@@ -728,7 +730,9 @@ class SyncEngine {
     final serverId = (stored['id'] as num?)?.toInt();
     final PhotoOwner? owner = PhotoOwner.forType(row.type);
     await _db.transaction(() async {
-      if (!await _outbox.markDone(row.id, 'created', _clock.now())) return;
+      // A scan of a card already marked is the server saying nothing changed.
+      final String resultStatus = row.type == OutboxType.attendanceScan && stored['already_marked'] == true ? 'duplicate' : 'created';
+      if (!await _outbox.markDone(row.id, resultStatus, _clock.now())) return;
       if (serverId != null) await _outbox.setParentId(row.recordUuid, serverId);
       // The photo joins the record's list in the same moment its row is
       // finished, so a screen never sees it twice or not at all.
@@ -845,9 +849,24 @@ class SyncEngine {
         return _api.postGoodsReceipt(row.projectId, <String, dynamic>{...body}..remove('local'));
       case OutboxType.materialIssue:
         return _api.postMaterialIssue(row.projectId, <String, dynamic>{...body}..remove('local'));
+      case OutboxType.attendanceScan:
+        _checkScanIsToday(data);
+        return _api.postAttendanceScan(row.projectId, <String, dynamic>{'code': data['code'], 'client_uuid': row.wireUuid});
       default:
         throw StateError('${row.type} is not a direct row.');
     }
+  }
+
+  /// The server marks a scanned card present for the day it receives the scan, and
+  /// the call has no date. A scan made yesterday and sent after midnight would put
+  /// the worker, and a day's wage, on the wrong day. So a queued scan is sent only
+  /// on the day it was made; after that it waits for a person, who marks that day by hand.
+  void _checkScanIsToday(Map<String, dynamic> data) {
+    final Object? scanned = data['scan_date'];
+    if (scanned is! String || scanned == istDate(_clock.now())) return;
+    final String message =
+        'This scan was made on $scanned. The server marks a scan on the day it receives it, so it was not sent. Mark attendance for $scanned by hand.';
+    throw ValidationFailure(message, errors: {'code': [message]});
   }
 
   /// An inspection is marked by item position, and the server numbers the items

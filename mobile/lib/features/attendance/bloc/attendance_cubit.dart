@@ -215,6 +215,11 @@ class AttendanceCubit extends Cubit<AttendanceState> {
   final AppServices _services;
   StreamSubscription<ProjectRow?>? _projectSub;
   StreamSubscription<List<AttendanceLine>>? _daySub;
+  StreamSubscription<Set<int>>? _scanSub;
+
+  /// Workers whose card was scanned on the day shown and not yet sent. They read as
+  /// present, as the server will say, unless someone has marked them otherwise.
+  Set<int> _scanned = const <int>{};
 
   /// Marks as the database last reported them.
   Map<int, DayMark> _confirmed = const {};
@@ -280,11 +285,18 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     _held.clear();
     _optimistic.clear();
     _confirmed = const {};
+    _scanned = const <int>{};
   }
 
   void _subscribeDay(int projectId) {
     _daySub?.cancel();
+    _scanSub?.cancel();
     final date = state.date;
+    _scanSub = _services.attendance.watchUnsentScans(projectId, date).listen((ids) {
+      if (date != state.date) return;
+      _scanned = ids;
+      _show();
+    }, onError: _onStreamError);
     _daySub = _services.attendance
         .watchDay(projectId, date)
         .listen((lines) => _onDay(lines, date), onError: _onStreamError);
@@ -366,6 +378,10 @@ class AttendanceCubit extends Cubit<AttendanceState> {
 
   Map<int, DayMark> _merged() {
     final merged = Map<int, DayMark>.of(_confirmed);
+    for (final id in _scanned) {
+      final DayMark? now = merged[id];
+      if (now == null || now.value == HajiriValue.absent) merged[id] = DayMark(HajiriValue.present, Hours.zero);
+    }
     _optimistic.forEach((id, mark) => merged[id] = mark);
     _held.forEach(merged.remove);
     return merged;
@@ -521,6 +537,7 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     _waveTimer?.cancel();
     await _projectSub?.cancel();
     await _daySub?.cancel();
+    await _scanSub?.cancel();
     return super.close();
   }
 }

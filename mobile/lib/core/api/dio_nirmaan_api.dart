@@ -584,6 +584,10 @@ class DioNirmaanApi implements NirmaanApi {
       _postData('/projects/$projectId/material-control/stock-checks', body);
 
   @override
+  Future<Map<String, dynamic>> postAttendanceScan(int projectId, Map<String, dynamic> body) =>
+      _call(() => _dio.post('/projects/$projectId/attendance/scan', data: body));
+
+  @override
   Future<List<Map<String, dynamic>>> procurementReceipts(int projectId) => _getRows('/projects/$projectId/grns');
 
   @override

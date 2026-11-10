@@ -50,7 +50,7 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Take site photos for daily reports and bill photos for expenses.</string>
+	<string>Take site photos and bill photos, and scan a worker's attendance card.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Attach an existing photo to a daily report or an expense.</string>
 	<key>NSAppTransportSecurity</key>

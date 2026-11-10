@@ -497,6 +497,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'वह प्रविष्टि सेव नहीं हुई। फिर से टैप करें।';
 
   @override
+  String get attendanceScanCard => 'कार्ड स्कैन';
+
+  @override
   String attendanceSheetDone(String name) {
     return '$name हाज़िरी में जोड़े गए';
   }
@@ -3762,6 +3765,81 @@ class AppLocalizationsHi extends AppLocalizations {
   String get progressWorkDone => 'हुआ काम';
 
   @override
+  String scanAlready(String name, String status) {
+    return '$name की आज पहले से $status दर्ज है';
+  }
+
+  @override
+  String get scanAlreadyUnknown => 'आज पहले से दर्ज है';
+
+  @override
+  String get scanCameraFailedMessage =>
+      'यह पन्ना बंद करके फिर खोलें। हाज़िरी हाथ से भी लगाई जा सकती है।';
+
+  @override
+  String get scanCameraFailedTitle => 'कैमरा शुरू नहीं हुआ';
+
+  @override
+  String get scanCameraOffMessage =>
+      'फ़ोन की सेटिंग में Nirmaan360 के लिए कैमरा चालू करें और वापस आएँ। हाज़िरी हाथ से भी लगाई जा सकती है।';
+
+  @override
+  String get scanCameraOffTitle => 'कैमरा बंद है';
+
+  @override
+  String get scanCameraStarting => 'कैमरा शुरू हो रहा है';
+
+  @override
+  String scanCount(int count) {
+    return 'इस बार $count स्कैन हुए';
+  }
+
+  @override
+  String get scanFailed => 'दर्ज नहीं हुआ। फिर कोशिश करें।';
+
+  @override
+  String get scanHint => 'मज़दूर के कार्ड के QR पर कैमरा रखें।';
+
+  @override
+  String scanMarked(String name) {
+    return '$name की हाज़िरी लगी';
+  }
+
+  @override
+  String get scanMarkedUnknown => 'हाज़िरी लगी';
+
+  @override
+  String get scanNotACard => 'यह मज़दूर का कार्ड नहीं है।';
+
+  @override
+  String scanQueued(String name) {
+    return 'इस फ़ोन पर सेव हुआ। इंटरनेट आने पर $name की हाज़िरी लगेगी।';
+  }
+
+  @override
+  String get scanQueuedNote =>
+      'सेव किया स्कैन सिर्फ़ आज ही भेजा जाता है। आज के बाद उस दिन की हाज़िरी हाथ से लगाएँ।';
+
+  @override
+  String get scanQueuedUnknown =>
+      'इस फ़ोन पर सेव हुआ। इंटरनेट आने पर हाज़िरी लगेगी।';
+
+  @override
+  String get scanStatusAbsent => 'गैरहाज़िर';
+
+  @override
+  String get scanStatusHalf => 'आधा दिन';
+
+  @override
+  String get scanStatusOvertime => 'ओवरटाइम';
+
+  @override
+  String get scanStatusPresent => 'हाज़िर';
+
+  @override
+  String get scanTitle => 'मज़दूर का कार्ड स्कैन करें';
+
+  @override
   String get shellCaptionMarked => 'दर्ज';
 
   @override
@@ -4320,6 +4398,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get syncTypeAttendance => 'हाज़िरी';
+
+  @override
+  String get syncTypeAttendanceScan => 'कार्ड स्कैन';
 
   @override
   String get syncTypeContractorPayment => 'ठेकेदार भुगतान अनुरोध';

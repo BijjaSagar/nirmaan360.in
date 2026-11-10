@@ -507,6 +507,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceSaveFailed => 'That mark was not saved. Tap it again.';
 
   @override
+  String get attendanceScanCard => 'Scan card';
+
+  @override
   String attendanceSheetDone(String name) {
     return '$name added to the muster';
   }
@@ -3808,6 +3811,81 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressWorkDone => 'Work done';
 
   @override
+  String scanAlready(String name, String status) {
+    return '$name is already marked $status today';
+  }
+
+  @override
+  String get scanAlreadyUnknown => 'Already marked today';
+
+  @override
+  String get scanCameraFailedMessage =>
+      'Close this page and open it again. You can still mark attendance by hand.';
+
+  @override
+  String get scanCameraFailedTitle => 'The camera did not start';
+
+  @override
+  String get scanCameraOffMessage =>
+      'Allow the camera for Nirmaan360 in your phone\'s settings, then come back. You can still mark attendance by hand.';
+
+  @override
+  String get scanCameraOffTitle => 'The camera is off';
+
+  @override
+  String get scanCameraStarting => 'Starting the camera';
+
+  @override
+  String scanCount(int count) {
+    return '$count scanned in this sitting';
+  }
+
+  @override
+  String get scanFailed => 'Not marked. Try again.';
+
+  @override
+  String get scanHint => 'Hold the camera over the QR on a worker\'s card.';
+
+  @override
+  String scanMarked(String name) {
+    return '$name marked present';
+  }
+
+  @override
+  String get scanMarkedUnknown => 'Marked present';
+
+  @override
+  String get scanNotACard => 'This is not a worker card.';
+
+  @override
+  String scanQueued(String name) {
+    return 'Saved on this phone. $name will be marked when you are online.';
+  }
+
+  @override
+  String get scanQueuedNote =>
+      'A saved scan is sent today only. After today, mark that day by hand.';
+
+  @override
+  String get scanQueuedUnknown =>
+      'Saved on this phone. It will be marked when you are online.';
+
+  @override
+  String get scanStatusAbsent => 'absent';
+
+  @override
+  String get scanStatusHalf => 'half day';
+
+  @override
+  String get scanStatusOvertime => 'overtime';
+
+  @override
+  String get scanStatusPresent => 'present';
+
+  @override
+  String get scanTitle => 'Scan worker card';
+
+  @override
   String get shellCaptionMarked => 'marked';
 
   @override
@@ -4379,6 +4457,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeAttendance => 'Attendance';
+
+  @override
+  String get syncTypeAttendanceScan => 'Card scan';
 
   @override
   String get syncTypeContractorPayment => 'Contractor payment request';

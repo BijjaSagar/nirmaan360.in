@@ -375,6 +375,24 @@ What the phone does with that:
 - Units: the line is typed in its order unit by default, with chips for the material's other units. The still-due figure is shown in the unit being typed.
 - 422, 403 and 404 go to the Sync Center. A 500 is sent again.
 
+### Attendance by QR card
+
+On the attendance screen, as a "Scan card" button under the muster. Needs `attendance.manage` in the `can` list and the `labour` plan feature (`GateState.canCaptureAttendance`, `AttendanceRepository.canCapture`). A contractor login and a phone on the offline plan are never offered it, and the route sends them back to the muster or Home.
+
+The server's rules, from `QrAttendanceService`, `WorkerCardService` and `QrAttendanceTest`:
+
+- `POST /projects/{project}/attendance/scan` takes `code` (100) and an optional `client_uuid`. It answers `{already_marked, worker, attendance}` with no `data` wrapper: 201 for a new mark, 200 when nothing changed. A card is `N360W-<worker id>-<card version>-<20 hex>`, signed with the server's app key, so only the server can check it. A code that is not a card of this company, a replaced card ("This card was replaced by a newer one") and an inactive worker are 422 on `code`. A worker already marked present on another project today is a 422 on `code` too.
+- **The date is the server's today, taken when the scan arrives. The call has no date.** A scan never changes a mark someone already made, except `absent`, which it turns to present. The mark is stored with `method: qr`. A repeated `client_uuid` returns the first mark with `already_marked: true`, even if the card in the repeat is another one.
+
+What the phone does with that:
+
+- It reads only the shape of the code (`WorkerCard`), to turn away what is not a card without a call and to show whose it is from its own workers. It never treats a code as proven.
+- **Decision: a scan can be queued offline, but only for the day it was made.** With a network the call is made at once and its answer is shown: "Ramesh marked present", "already marked", or the server's own refusal, which is never queued because the person is standing there. Without a network, or when the reply does not come, the scan is kept as an outbox row of type `attendance_scan` under the same `client_uuid`, so a reply lost after the server marked the worker comes back as "already marked" and makes no second mark. It is posted on its own to the scan endpoint and finishes as `duplicate` when the server says it was already marked. Because the server dates a scan by the day it receives it, a kept scan that is still waiting after midnight (India time) is not sent: it goes to the Sync Center with a note to mark that day by hand (`SyncEngine._checkScanIsToday`). Sending it would put a worker, and a day's wage, on the wrong day. The scan page says so when it saves one.
+- A mark already on the phone for today (not absent) is answered at once, with no call. A worker whose scan is waiting reads as present on the muster until the server's mark arrives, unless someone has marked them otherwise since.
+- The card text is the only thing kept in the outbox row that identifies a card, and it is never shown or used as a title. The same card in front of the camera for four seconds is one scan.
+- A 403 or 404 is shown at once; a 422 on a kept scan (a card replaced meanwhile) and a 500 are as for any direct row: the first goes to the Sync Center, the second is sent again.
+- Camera: `mobile_scanner` (BSD-3-Clause), QR codes only. iOS uses the Vision framework and needs iOS 12, the app builds for 15. Android needs minSdk 23, the app has 26. A camera that is off or fails shows a calm page and the muster still works by hand.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

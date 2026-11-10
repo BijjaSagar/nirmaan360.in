@@ -427,6 +427,24 @@ class _BottomActions extends StatelessWidget {
                     ),
                 ],
               ),
+              // Marking with the camera. It needs workers, whose cards are scanned.
+              if (total > 0 && context.read<AppServices>().attendance.canCapture) ...<Widget>[
+                const SizedBox(height: N360Space.sm),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: GloveButton(
+                        key: const ValueKey<String>('attendance-scan'),
+                        label: l.attendanceScanCard,
+                        icon: Icons.qr_code_scanner,
+                        kind: GloveButtonKind.secondary,
+                        fullWidth: true,
+                        onPressed: () => context.push(Routes.attendanceScan),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         );

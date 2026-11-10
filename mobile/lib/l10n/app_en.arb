@@ -230,6 +230,7 @@
   "attendanceOtLess": "Half hour less",
   "attendanceOtMore": "Half hour more",
   "attendanceSaveFailed": "That mark was not saved. Tap it again.",
+  "attendanceScanCard": "Scan card",
   "attendanceSheetDone": "{name} added to the muster",
   "@attendanceSheetDone": {
     "placeholders": {
@@ -1908,6 +1909,58 @@
   },
   "progressTitle": "Site progress",
   "progressWorkDone": "Work done",
+  "scanAlready": "{name} is already marked {status} today",
+  "@scanAlready": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "scanAlreadyUnknown": "Already marked today",
+  "scanCameraFailedMessage": "Close this page and open it again. You can still mark attendance by hand.",
+  "scanCameraFailedTitle": "The camera did not start",
+  "scanCameraOffMessage": "Allow the camera for Nirmaan360 in your phone's settings, then come back. You can still mark attendance by hand.",
+  "scanCameraOffTitle": "The camera is off",
+  "scanCameraStarting": "Starting the camera",
+  "scanCount": "{count} scanned in this sitting",
+  "@scanCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanFailed": "Not marked. Try again.",
+  "scanHint": "Hold the camera over the QR on a worker's card.",
+  "scanMarked": "{name} marked present",
+  "@scanMarked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanMarkedUnknown": "Marked present",
+  "scanNotACard": "This is not a worker card.",
+  "scanQueued": "Saved on this phone. {name} will be marked when you are online.",
+  "@scanQueued": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanQueuedNote": "A saved scan is sent today only. After today, mark that day by hand.",
+  "scanQueuedUnknown": "Saved on this phone. It will be marked when you are online.",
+  "scanStatusAbsent": "absent",
+  "scanStatusHalf": "half day",
+  "scanStatusOvertime": "overtime",
+  "scanStatusPresent": "present",
+  "scanTitle": "Scan worker card",
   "shellCaptionMarked": "marked",
   "shellCaptionOpen": "open",
   "shellCaptionToAnswer": "to answer",
@@ -2204,6 +2257,7 @@
   "syncSignInAgain": "Sign in again to keep sending. Your work is safe.",
   "syncStaleLog": "A newer change was already on the server, so this one was not applied.",
   "syncTypeAttendance": "Attendance",
+  "syncTypeAttendanceScan": "Card scan",
   "syncTypeContractorPayment": "Contractor payment request",
   "syncTypeDpr": "Daily report",
   "syncTypeDprPhoto": "Report photo",

@@ -34,6 +34,15 @@ abstract final class Routes {
 
   static const attendance = '/attendance';
 
+  /// Marking present by scanning a worker's QR card. Needs `attendance.manage` and `labour`.
+  static const attendanceScan = '/attendance/scan';
+
+  /// True for the two ways to mark attendance with the camera, and no other path.
+  static bool isAttendanceCapture(String path) => path == attendanceScan || path == attendanceSelfie;
+
+  /// Marking present with a photo taken at the site. Same rule as the scan.
+  static const attendanceSelfie = '/attendance/selfie';
+
   static const issues = '/issues';
   static const issueForm = '/issues/form';
   static String issueDetail(String uuid) => '/issues/$uuid';

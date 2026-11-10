@@ -2871,6 +2871,94 @@ class FakeApi implements NirmaanApi {
   Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body) async =>
       _storeProgress(stockCountPosts, body);
 
+  // Attendance by QR card ---------------------------------------------------------
+
+  /// Moves the server's clock, and so the day it dates a scan by.
+  void advanceServerTime(Duration by) => _now = _now.add(by);
+
+  /// Every body that reached `POST /attendance/scan`, replays included.
+  final List<Row> scanBodies = [];
+  final Map<String, Row> scanReplies = {};
+
+  /// Codes of cards a newer card has replaced.
+  final Set<String> replacedCards = {};
+
+  /// Workers the server says are on another project today: id to that project's name.
+  final Map<int, String> presentElsewhere = {};
+
+  /// A card the way `WorkerCardService::code` prints it. The fake knows the shape only.
+  String cardFor(int workerId, {int version = 1}) =>
+      'N360W-$workerId-$version-${workerId.toString().padLeft(2, '0')}${'a' * 18}';
+
+  /// `QrAttendanceService::scan`, in the order the server checks, dated by the server's day.
+  @override
+  Future<Map<String, dynamic>> postAttendanceScan(int projectId, Map<String, dynamic> body) async {
+    _guard();
+    scanBodies.add(body);
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    ValidationFailure refuse(String message) => ValidationFailure(message, errors: {'code': [message]});
+    final code = (body['code'] as String? ?? '').trim();
+    final match = RegExp(r'^N360W-(\d+)-(\d+)-([a-f0-9]{20})$').firstMatch(code);
+    final worker = match == null ? null : workers.where((w) => w['id'] == int.parse(match.group(1)!)).firstOrNull;
+    if (worker == null) throw refuse('This is not a worker card from your company.');
+    if (replacedCards.contains(code)) throw refuse('This card was replaced by a newer one. Use the new card.');
+    if (worker['is_active'] != true) throw refuse('${worker['name']} is not an active worker.');
+
+    final uuid = body['client_uuid'] as String?;
+    final replay = uuid == null ? null : scanReplies[uuid];
+    if (replay != null) {
+      if (loseNextProgressReply) {
+        loseNextProgressReply = false;
+        throw const OfflineFailure();
+      }
+      return {...replay, 'already_marked': true};
+    }
+    final today = _serverToday();
+    final elsewhere = presentElsewhere[worker['id']];
+    if (elsewhere != null) throw refuse('${worker['name']} is already marked present today at $elsewhere.');
+
+    Row? mark;
+    for (final candidate in attendance) {
+      if (candidate['project_id'] == projectId && candidate['worker_id'] == worker['id'] && candidate['attendance_date'] == today) {
+        mark = candidate;
+      }
+    }
+    var already = true;
+    if (mark == null) {
+      mark = {
+        'id': _nextId++,
+        'client_uuid': uuid,
+        'project_id': projectId,
+        'worker_id': worker['id'],
+        'attendance_date': today,
+        'status': 'present',
+        'ot_hours': '0.0',
+        'marked_by': user['id'],
+        'client_updated_at': null,
+        'updated_at': _stampNow(),
+      };
+      attendance.add(mark);
+      already = false;
+    } else if (mark['status'] == 'absent') {
+      mark
+        ..['status'] = 'present'
+        ..['ot_hours'] = '0.0'
+        ..['updated_at'] = _stampNow();
+      already = false;
+    }
+    final reply = {'already_marked': already, 'worker': {'id': worker['id'], 'name': worker['name']}, 'attendance': mark};
+    if (uuid != null) scanReplies[uuid] = reply;
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return reply;
+  }
+
   // Goods receipts and store issues -------------------------------------------
 
   /// Receipts already on the server, newest first, as `GET /grns` lists them.

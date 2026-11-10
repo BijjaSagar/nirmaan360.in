@@ -368,6 +368,12 @@ abstract interface class NirmaanApi {
 
   Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body);
 
+  /// `POST /projects/{project}/attendance/scan` with `{code, client_uuid}`. The reply
+  /// is not wrapped in `data`: `{already_marked, worker, attendance}`. The server
+  /// marks the worker present for the day it receives the scan, and a repeated
+  /// `client_uuid` returns the first mark with `already_marked` true.
+  Future<Map<String, dynamic>> postAttendanceScan(int projectId, Map<String, dynamic> body);
+
   // Goods receipts against a purchase order, and issues from a store. They are
   // posted one at a time to their own endpoints, not through
   // `/procurement/push`: see docs/CONTRACT.md for why.

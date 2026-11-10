@@ -114,6 +114,12 @@ class GateState extends Equatable {
   bool get canStockProcure =>
       can('procurement.stock') && (user?.features.contains('procurement') ?? false) && !isContractor && !isLocalOnly;
 
+  /// Marking attendance with the camera, by a worker's QR card or by a photo:
+  /// `attendance.manage` on a plan with `labour`. Never offered to a contractor
+  /// login or a phone that keeps its data local.
+  bool get canCaptureAttendance =>
+      can('attendance.manage') && (user?.features.contains('labour') ?? false) && !isContractor && !isLocalOnly;
+
   /// Site tools has a row on Home when at least one of its tools is open.
   bool get hasSiteTools => canInspect || canLogMachines;
 
@@ -296,6 +302,7 @@ class AppGate extends Cubit<GateState> {
       a.canInspect != b.canInspect ||
       a.canLogMachines != b.canLogMachines ||
       a.canStockProcure != b.canStockProcure ||
+      a.canCaptureAttendance != b.canCaptureAttendance ||
       a.hasSiteTools != b.hasSiteTools ||
       a.ready != b.ready ||
       a.offline?.mode != b.offline?.mode ||
@@ -357,6 +364,7 @@ class AppGate extends Cubit<GateState> {
     if (Routes.isPrices(path) && !s.canSeePrices) return Routes.home;
     if (Routes.isInspections(path) && !s.canInspect) return Routes.home;
     if (Routes.isMachines(path) && !s.canLogMachines) return Routes.home;
+    if (Routes.isAttendanceCapture(path) && !s.canCaptureAttendance) return Routes.attendance;
     if (Routes.isStockEntry(path) && !(s.canStockProcure && s.can('material_control.view'))) return Routes.home;
     if (path == Routes.siteTools && !s.hasSiteTools) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
