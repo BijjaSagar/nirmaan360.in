@@ -268,6 +268,78 @@ abstract class AppLocalizations {
   /// **'Site overview'**
   String get alertsTitle;
 
+  /// No description provided for @announcementsEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'News and reminders from your company show here.'**
+  String get announcementsEmptyMessage;
+
+  /// No description provided for @announcementsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No announcements yet'**
+  String get announcementsEmptyTitle;
+
+  /// No description provided for @announcementsFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again in a moment.'**
+  String get announcementsFailedMessage;
+
+  /// No description provided for @announcementsFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read announcements'**
+  String get announcementsFailedTitle;
+
+  /// No description provided for @announcementsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading announcements'**
+  String get announcementsLoading;
+
+  /// No description provided for @announcementsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show older'**
+  String get announcementsMore;
+
+  /// No description provided for @announcementsOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements are kept on the server. Connect and try again.'**
+  String get announcementsOfflineMessage;
+
+  /// No description provided for @announcementsOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs the internet'**
+  String get announcementsOfflineTitle;
+
+  /// No description provided for @announcementsReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get announcementsReminder;
+
+  /// No description provided for @announcementsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get announcementsRetry;
+
+  /// No description provided for @announcementsSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'News and reminders sent to you'**
+  String get announcementsSettingsSubtitle;
+
+  /// No description provided for @announcementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get announcementsTitle;
+
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
@@ -6981,6 +7053,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New alerts on your projects, such as work falling behind. Critical ones reach you at any hour.'**
   String get pushPrefsAlertsHint;
+
+  /// No description provided for @pushPrefsAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements and reminders'**
+  String get pushPrefsAnnouncements;
+
+  /// No description provided for @pushPrefsAnnouncementsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'News and reminders from your company or from Nirmaan360. They wait for quiet hours to end.'**
+  String get pushPrefsAnnouncementsHint;
 
   /// No description provided for @pushPrefsApprovals.
   ///

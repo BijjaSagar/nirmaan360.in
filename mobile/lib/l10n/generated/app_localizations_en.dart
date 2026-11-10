@@ -113,6 +113,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alertsTitle => 'Site overview';
 
   @override
+  String get announcementsEmptyMessage =>
+      'News and reminders from your company show here.';
+
+  @override
+  String get announcementsEmptyTitle => 'No announcements yet';
+
+  @override
+  String get announcementsFailedMessage => 'Try again in a moment.';
+
+  @override
+  String get announcementsFailedTitle => 'Could not read announcements';
+
+  @override
+  String get announcementsLoading => 'Reading announcements';
+
+  @override
+  String get announcementsMore => 'Show older';
+
+  @override
+  String get announcementsOfflineMessage =>
+      'Announcements are kept on the server. Connect and try again.';
+
+  @override
+  String get announcementsOfflineTitle => 'Needs the internet';
+
+  @override
+  String get announcementsReminder => 'Reminder';
+
+  @override
+  String get announcementsRetry => 'Try again';
+
+  @override
+  String get announcementsSettingsSubtitle => 'News and reminders sent to you';
+
+  @override
+  String get announcementsTitle => 'Announcements';
+
+  @override
   String get appName => 'Nirmaan360';
 
   @override
@@ -3948,6 +3986,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pushPrefsAlertsHint =>
       'New alerts on your projects, such as work falling behind. Critical ones reach you at any hour.';
+
+  @override
+  String get pushPrefsAnnouncements => 'Announcements and reminders';
+
+  @override
+  String get pushPrefsAnnouncementsHint =>
+      'News and reminders from your company or from Nirmaan360. They wait for quiet hours to end.';
 
   @override
   String get pushPrefsApprovals => 'Approvals';

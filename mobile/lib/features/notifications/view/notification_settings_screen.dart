@@ -177,6 +177,7 @@ class _NotificationSettingsView extends StatelessWidget {
     'material' => l.pushPrefsMaterial,
     'issues' => l.pushPrefsIssues,
     'contractor' => l.pushPrefsContractor,
+    'announcements' => l.pushPrefsAnnouncements,
     _ => category.label,
   };
 
@@ -187,6 +188,7 @@ class _NotificationSettingsView extends StatelessWidget {
     'material' => l.pushPrefsMaterialHint,
     'issues' => l.pushPrefsIssuesHint,
     'contractor' => l.pushPrefsContractorHint,
+    'announcements' => l.pushPrefsAnnouncementsHint,
     _ => category.hint,
   };
 }

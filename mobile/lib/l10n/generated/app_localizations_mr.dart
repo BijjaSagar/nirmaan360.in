@@ -113,6 +113,45 @@ class AppLocalizationsMr extends AppLocalizations {
   String get alertsTitle => 'साइटचा आढावा';
 
   @override
+  String get announcementsEmptyMessage =>
+      'तुमच्या कंपनीच्या बातम्या आणि आठवणी येथे दिसतील.';
+
+  @override
+  String get announcementsEmptyTitle => 'अजून कोणतीही घोषणा नाही';
+
+  @override
+  String get announcementsFailedMessage => 'थोड्या वेळाने पुन्हा प्रयत्न करा.';
+
+  @override
+  String get announcementsFailedTitle => 'घोषणा वाचता आल्या नाहीत';
+
+  @override
+  String get announcementsLoading => 'घोषणा वाचत आहोत';
+
+  @override
+  String get announcementsMore => 'जुन्या दाखवा';
+
+  @override
+  String get announcementsOfflineMessage =>
+      'घोषणा सर्व्हरवर ठेवलेल्या असतात. इंटरनेट जोडा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get announcementsOfflineTitle => 'इंटरनेट लागेल';
+
+  @override
+  String get announcementsReminder => 'आठवण';
+
+  @override
+  String get announcementsRetry => 'पुन्हा प्रयत्न करा';
+
+  @override
+  String get announcementsSettingsSubtitle =>
+      'तुम्हाला पाठवलेल्या बातम्या आणि आठवणी';
+
+  @override
+  String get announcementsTitle => 'घोषणा';
+
+  @override
   String get appName => 'निर्माण360';
 
   @override
@@ -3913,6 +3952,13 @@ class AppLocalizationsMr extends AppLocalizations {
   @override
   String get pushPrefsAlertsHint =>
       'तुमच्या प्रकल्पांवरील नवीन सूचना, जसे काम मागे पडणे. तातडीच्या सूचना कोणत्याही वेळी येतात.';
+
+  @override
+  String get pushPrefsAnnouncements => 'घोषणा आणि आठवणी';
+
+  @override
+  String get pushPrefsAnnouncementsHint =>
+      'तुमच्या कंपनीकडून किंवा Nirmaan360 कडून बातम्या आणि आठवणी. शांत वेळ संपेपर्यंत त्या थांबतात.';
 
   @override
   String get pushPrefsApprovals => 'मंजुरी';

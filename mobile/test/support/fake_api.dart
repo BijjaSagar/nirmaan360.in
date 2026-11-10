@@ -281,6 +281,25 @@ class FakeApi implements NirmaanApi {
   static Map<String, dynamic> _copy(Map<String, dynamic> value) =>
       (jsonDecode(jsonEncode(value)) as Map).cast<String, dynamic>();
 
+  /// What `GET /announcements` lists, newest first, as the server would send it.
+  List<Map<String, dynamic>> announcementRows = <Map<String, dynamic>>[];
+
+  /// Rows per page, as the server pages them.
+  int announcementsPerPage = 20;
+
+  /// Every `GET /announcements`: the page, the language asked for, and whether it went to the portal.
+  final List<({int page, String? locale, bool portal})> announcementCalls = <({int page, String? locale, bool portal})>[];
+
+  @override
+  Future<Map<String, dynamic>> announcements({int page = 1, String? locale, bool portal = false}) async {
+    announcementCalls.add((page: page, locale: locale, portal: portal));
+    if (offline) throw const OfflineFailure();
+    final int last = announcementRows.isEmpty ? 1 : (announcementRows.length / announcementsPerPage).ceil();
+    final List<Map<String, dynamic>> rows =
+        announcementRows.skip((page - 1) * announcementsPerPage).take(announcementsPerPage).toList();
+    return _copy(<String, dynamic>{'data': rows, 'current_page': page, 'last_page': last});
+  }
+
   /// Sign-outs that reached the server. After one, the token is no longer good.
   int logoutCalls = 0;
 

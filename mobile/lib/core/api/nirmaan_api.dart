@@ -162,6 +162,12 @@ abstract interface class NirmaanApi {
   /// answers with every switch as it now stands.
   Future<Map<String, dynamic>> updateNotificationPreferences(Map<String, Object?> changes, {bool portal = false});
 
+  /// `GET /announcements` (under `/contractor-portal` for a contractor login):
+  /// what was sent to this person, newest first, as Laravel's page body
+  /// (`data`, `current_page`, `last_page`). [locale] asks for the text in the
+  /// language the app shows; the server falls back to English.
+  Future<Map<String, dynamic>> announcements({int page = 1, String? locale, bool portal = false});
+
   /// The `user` object of `GET /me`.
   Future<Map<String, dynamic>> me();
 

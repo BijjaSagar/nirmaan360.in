@@ -29,6 +29,10 @@ abstract final class AppFormat {
     return _pattern('d MMM yyyy', locale).format(parsed);
   }
 
+  /// A moment as "10 Nov 2026, 18:30" in [locale], on the phone's clock.
+  static String dayMonthYearTime(DateTime moment, String locale) =>
+      _pattern('d MMM yyyy, HH:mm', locale).format(moment.toLocal());
+
   /// Rupees without paise when the paise are zero, for narrow strips.
   static String rupees(Money amount) =>
       amount.value.isInteger ? '₹${amount.indian(scale: 0)}' : amount.inr();

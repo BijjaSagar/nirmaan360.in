@@ -21,7 +21,8 @@ class ChannelSwitch extends Equatable {
 }
 
 /// One kind of push the person can turn off: `alerts`, `approvals`, `payments`,
-/// `material`, `issues`, or `contractor` for a contractor login.
+/// `material`, `issues`, or `contractor` for a contractor login, and
+/// `announcements` for everyone.
 class PushCategorySwitch extends Equatable {
   const PushCategorySwitch({required this.key, required this.label, required this.hint, required this.enabled});
 
