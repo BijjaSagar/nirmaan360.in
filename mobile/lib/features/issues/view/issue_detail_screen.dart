@@ -43,7 +43,9 @@ class _IssueDetailView extends StatelessWidget {
     N360Haptics.success();
     showPaperToast(
       context,
-      state.photoSavedWhileOffline ? l.issuesPhotoSavedOffline : l.issuesPhotoSavedOnline,
+      context.read<AppServices>().offlinePlan.isLocalOnly
+          ? l.offlineSavedOnPhone
+          : (state.photoSavedWhileOffline ? l.issuesPhotoSavedOffline : l.issuesPhotoSavedOnline),
       kind: state.photoSavedWhileOffline ? PaperToastKind.info : PaperToastKind.success,
       icon: state.photoSavedWhileOffline ? Icons.phone_android : null,
       duration: const Duration(seconds: 3),

@@ -82,7 +82,11 @@ class _DetailView extends StatelessWidget {
     switch (result) {
       case DetailPhotoResult.saved:
         N360Haptics.success();
-        showPaperToast(context, l.measurementPhotoSaved, kind: PaperToastKind.success);
+        showPaperToast(
+          context,
+          services.offlinePlan.isLocalOnly ? l.offlineSavedOnPhone : l.measurementPhotoSaved,
+          kind: PaperToastKind.success,
+        );
       case DetailPhotoResult.savedOffline:
         N360Haptics.success();
         showPaperToast(context, l.measurementPhotoSavedOffline, kind: PaperToastKind.info, icon: Icons.phone_android);
@@ -621,6 +625,19 @@ class _Actions extends StatelessWidget {
       );
     }
     if (!state.canChange) return const SizedBox.shrink();
+    // One person on the offline plan: an entry is finished when it is saved.
+    if (context.read<AppServices>().offlinePlan.isLocalOnly) {
+      return N360ActionBar(
+        child: GloveButton(
+          key: const ValueKey<String>('measurement-edit'),
+          label: l.measurementEdit,
+          icon: Icons.edit,
+          large: true,
+          fullWidth: true,
+          onPressed: onEdit,
+        ),
+      );
+    }
     return N360ActionBar(
       child: Row(
         children: <Widget>[

@@ -55,7 +55,9 @@ class _IssueFormViewState extends State<_IssueFormView> {
     N360Haptics.success();
     showPaperToast(
       context,
-      online ? l.issuesSavedOnline : l.issuesSavedOffline,
+      context.read<AppServices>().offlinePlan.isLocalOnly
+          ? l.offlineSavedOnPhone
+          : (online ? l.issuesSavedOnline : l.issuesSavedOffline),
       kind: PaperToastKind.success,
       duration: const Duration(seconds: 3),
     );

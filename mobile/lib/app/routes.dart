@@ -82,6 +82,28 @@ abstract final class Routes {
   static const portalBills = '/portal/bills';
   static String portalBill(int billId) => '/portal/bills/$billId';
 
+  /// The offline plan: what is on this phone, the licence, the export.
+  static const offlinePlan = '/offline-plan';
+
+  /// Asks the owner before anything goes to the server.
+  static const offlineUpload = '/offline-plan/upload';
+
+  static bool isOfflinePlan(String path) => path == offlinePlan || path == offlineUpload;
+
+  /// What a company on the offline plan has: site, measurement, labour and
+  /// petty cash, and the screens that set a project up. Approvals, the outbox
+  /// and every other module are not part of it.
+  static bool isLocalFeature(String path) =>
+      const <String>{home, projects, projectForm, boq, boqForm, settings, attendance}.contains(path) ||
+      path == dprList ||
+      path.startsWith('$dprList/') ||
+      path == measurements ||
+      path.startsWith('$measurements/') ||
+      path == issues ||
+      path.startsWith('$issues/') ||
+      path == pettyCash ||
+      path.startsWith('$pettyCash/');
+
   /// True for the portal's own pages, and no other path.
   static bool isPortal(String path) => path == portal || path.startsWith('$portal/');
 }

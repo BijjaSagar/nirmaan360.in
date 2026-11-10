@@ -19,6 +19,16 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _signOut(BuildContext context) async {
     final auth = context.read<AppServices>().auth;
+    if (context.read<AppServices>().offlinePlan.isLocalOnly) {
+      final t = AppLocalizations.of(context);
+      final bool? yes = await showLedgerSheet<bool>(
+        context,
+        isScrollControlled: true,
+        builder: (context) => _SignOutSheet(online: true, title: t.offlineSignOutTitle, body: t.offlineSignOutBody),
+      );
+      if (yes == true) await auth.signOut();
+      return;
+    }
     final bool online = context.read<SyncStatusCubit>().state.online;
     final int unsent = await auth.unsentWorkCount();
     if (!context.mounted) return;
@@ -95,6 +105,14 @@ class SettingsScreen extends StatelessWidget {
                         const SizedBox(height: N360Space.lg),
                         LedgerList(
                           children: <Widget>[
+                            if (context.select((AppGate gate) => gate.state.isLocalOnly))
+                              LedgerListTile(
+                                key: const ValueKey<String>('settings-offline-plan'),
+                                leading: const Icon(Icons.phone_android, size: N360IconSize.lg, color: N360Colors.ink2),
+                                title: t.offlinePlanTitle,
+                                subtitle: t.offlineOnPhoneTitle,
+                                onTap: () => context.push(Routes.offlinePlan),
+                              ),
                             LedgerListTile(
                               leading: const Icon(Icons.info_outline, size: N360IconSize.lg, color: N360Colors.ink2),
                               title: t.shellSettingsVersion,
@@ -161,13 +179,17 @@ class _WhoList extends StatelessWidget {
 }
 
 class _SignOutSheet extends StatelessWidget {
-  const _SignOutSheet({required this.online});
+  const _SignOutSheet({required this.online, this.title, this.body});
 
   final bool online;
+  final String? title;
+  final String? body;
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    final String heading = title ?? t.shellSignOutConfirmTitle;
+    final String text = body ?? t.shellSignOutConfirmBody;
     return SafeArea(
       top: false,
       child: Padding(
@@ -176,11 +198,11 @@ class _SignOutSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(t.shellSignOutConfirmTitle, style: N360Type.fit(N360Type.title, t.shellSignOutConfirmTitle)),
+            Text(heading, style: N360Type.fit(N360Type.title, heading)),
             const SizedBox(height: N360Space.xs),
             Text(
-              t.shellSignOutConfirmBody,
-              style: N360Type.fit(N360Type.body, t.shellSignOutConfirmBody).copyWith(color: N360Colors.ink2),
+              text,
+              style: N360Type.fit(N360Type.body, text).copyWith(color: N360Colors.ink2),
             ),
             const SizedBox(height: N360Space.lg),
             GloveButton(

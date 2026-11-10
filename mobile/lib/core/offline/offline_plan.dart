@@ -313,7 +313,7 @@ class OfflinePlan {
     await markLocal(_db, upgradeUrl: upgradeUrl);
     _state = await readStored(_db);
     await _seedLocal();
-    _changes.add(_state);
+    _emit();
     unawaited(check(force: true));
   }
 
@@ -453,7 +453,7 @@ class OfflinePlan {
   Future<void> leave() async {
     await _db.deleteMeta(MetaKey.offlinePlan);
     _state = null;
-    _changes.add(null);
+    _emit();
   }
 
   /// A request the server would refuse on this plan. The sync engine already
@@ -514,7 +514,11 @@ class OfflinePlan {
     if (next == _state && await _db.readMeta(MetaKey.offlinePlan) != null) return;
     await _db.writeMeta(MetaKey.offlinePlan, jsonEncode(next.toJson()));
     _state = next;
-    _changes.add(next);
+    _emit();
+  }
+
+  void _emit() {
+    if (!_changes.isClosed) _changes.add(_state);
   }
 
   /// Where the owner frees phones. The server names it with `device_limit`

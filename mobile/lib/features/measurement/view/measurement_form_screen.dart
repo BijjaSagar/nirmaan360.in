@@ -574,6 +574,15 @@ class _ActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final int rows = state.saved.length + (state.hasAnyDims ? 1 : 0);
+    // One person on the offline plan, so nothing goes for approval.
+    if (context.read<AppServices>().offlinePlan.isLocalOnly) {
+      return GloveButton(
+        key: const ValueKey<String>('measurement-save'),
+        label: l.commonSave,
+        fullWidth: true,
+        onPressed: onSave,
+      );
+    }
     final String sendLabel = state.originalStatus == DocStatus.returned
         ? l.measurementSendAgain
         : (rows > 1 && !state.isEditing ? l.measurementSendCount(rows) : l.measurementSendForApproval);

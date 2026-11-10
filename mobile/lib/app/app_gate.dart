@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/app_services.dart';
 import '../core/db/app_database.dart';
+import '../core/offline/offline_plan.dart';
 import '../core/session/current_user.dart';
 import '../core/session/session_controller.dart';
 import 'routes.dart';
@@ -25,6 +26,7 @@ class GateState extends Equatable {
     this.localeKnown = false,
     this.signingIn = false,
     this.bootFailed = false,
+    this.offline,
   });
 
   final SessionStatus status;
@@ -43,6 +45,17 @@ class GateState extends Equatable {
 
   /// `AppServices.start` threw: the sign-in screen is the safe place to land.
   final bool bootFailed;
+
+  /// Null for a company on any normal plan, which is nearly every company.
+  final OfflinePlanState? offline;
+
+  /// This company keeps its data on the phone. One person: no approvals.
+  bool get isLocalOnly => offline != null;
+
+  /// Another phone holds the licence and this one has nothing of its own yet.
+  /// With data here the app stays open, because data is never hidden.
+  bool get licenceBlocked =>
+      offline != null && !offline!.hasToken && offline!.issue == LicenceIssue.deviceLimit && (projects?.isEmpty ?? true);
 
   /// Everything the first frame of the real app needs is known.
   bool get ready =>
@@ -73,7 +86,7 @@ class GateState extends Equatable {
   bool can(String permission) => user?.can(permission) ?? false;
 
   bool get canApprove =>
-      can('measurement.approve') || can('dpr.approve') || can('ra_bill.approve');
+      !isLocalOnly && (can('measurement.approve') || can('dpr.approve') || can('ra_bill.approve'));
 
   bool get canManageProjects => can('project.manage');
 
@@ -105,6 +118,8 @@ class GateState extends Equatable {
     bool? localeKnown,
     bool? signingIn,
     bool? bootFailed,
+    OfflinePlanState? offline,
+    bool clearOffline = false,
   }) {
     return GateState(
       status: status ?? this.status,
@@ -116,6 +131,7 @@ class GateState extends Equatable {
       localeKnown: localeKnown ?? this.localeKnown,
       signingIn: signingIn ?? this.signingIn,
       bootFailed: bootFailed ?? this.bootFailed,
+      offline: clearOffline ? null : (offline ?? this.offline),
     );
   }
 
@@ -130,6 +146,7 @@ class GateState extends Equatable {
         localeKnown,
         signingIn,
         bootFailed,
+        offline,
       ];
 }
 
@@ -146,6 +163,7 @@ class AppGate extends Cubit<GateState> {
       _services.projects.watchProjects().listen(_onProjects),
       db.watchMeta(MetaKey.selectedProject).listen(_onSelected),
       _services.auth.watchLocale().listen(_onLocale),
+      _services.offlinePlan.changes.listen(_onOffline),
     ]);
   }
 
@@ -155,6 +173,10 @@ class AppGate extends Cubit<GateState> {
 
   /// Tells the router to run its redirect again.
   Listenable get refreshListenable => _refresh;
+
+  void _onOffline(OfflinePlanState? offline) {
+    emit(state.copyWith(offline: offline, clearOffline: offline == null));
+  }
 
   void _onSession(SessionState session) {
     emit(
@@ -248,7 +270,9 @@ class AppGate extends Cubit<GateState> {
       a.canManageProjects != b.canManageProjects ||
       a.isContractor != b.isContractor ||
       a.canSeePrices != b.canSeePrices ||
-      a.ready != b.ready;
+      a.ready != b.ready ||
+      a.offline?.mode != b.offline?.mode ||
+      a.licenceBlocked != b.licenceBlocked;
 
   /// Exact paths that need a permission. Anything else is open once signed in.
   static const Map<String, String> _pathPermissions = <String, String>{
@@ -284,6 +308,13 @@ class AppGate extends Cubit<GateState> {
       // so the language can change and the person can sign out.
       return Routes.isPortal(path) || path == Routes.settings ? null : Routes.portal;
     }
+    final OfflinePlanState? offline = s.offline;
+    if (offline != null) {
+      final String? local = _localRedirect(s, offline, path);
+      if (local != null) return local == path ? null : local;
+    } else if (Routes.isOfflinePlan(path)) {
+      return s.hasProject ? Routes.home : Routes.projects;
+    }
     if (!s.hasProject) {
       // Settings stays open so someone on the wrong account can sign out
       // instead of being stuck on "ask your office".
@@ -301,6 +332,18 @@ class AppGate extends Cubit<GateState> {
     if (Routes.isPortal(path)) return Routes.home;
     final String? needed = _pathPermissions[path];
     if (needed != null && !s.can(needed)) return Routes.home;
+    return null;
+  }
+
+  /// Where a phone on the offline plan belongs. Returns [path] to stay there
+  /// whatever else is true, or null to carry on with the usual checks.
+  String? _localRedirect(GateState s, OfflinePlanState offline, String path) {
+    if (offline.mode == OfflineMode.asking || offline.mode == OfflineMode.uploading) {
+      return path == Routes.settings ? path : Routes.offlineUpload;
+    }
+    if (s.licenceBlocked) return path == Routes.settings ? path : Routes.offlinePlan;
+    if (Routes.isOfflinePlan(path)) return path;
+    if (!Routes.isLocalFeature(path)) return s.hasProject ? Routes.home : Routes.projects;
     return null;
   }
 

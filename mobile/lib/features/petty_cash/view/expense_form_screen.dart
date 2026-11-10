@@ -41,7 +41,9 @@ class _ExpenseFormView extends StatelessWidget {
     N360Haptics.success();
     showPaperToast(
       context,
-      state.savedWhileOffline
+      context.read<AppServices>().offlinePlan.isLocalOnly
+          ? l.offlineSavedOnPhone
+          : state.savedWhileOffline
           ? l.pettyCashSavedOffline
           : l.pettyCashSavedOnline,
       kind: PaperToastKind.success,

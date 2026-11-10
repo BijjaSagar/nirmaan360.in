@@ -936,6 +936,58 @@
     }
   },
   "measurementYesterday": "Yesterday",
+  "offlineActivateAgain": "Activate this phone",
+  "offlineCopyLink": "Copy link",
+  "offlineDeviceLimitBody": "Your plan allows a set number of phones and they are all in use. Free one on the website, then try again.",
+  "offlineDeviceLimitTitle": "Another phone holds your licence",
+  "offlineFreeBody": "Your data does not move by itself. Export a copy first. This phone keeps its data and works until its licence ends.",
+  "offlineFreeConfirm": "Free it",
+  "offlineFreeFailed": "That did not work. Check your internet and try again.",
+  "offlineFreeThisPhone": "Move to a new phone",
+  "offlineFreeTitle": "Free this phone's licence?",
+  "offlineHereEntries": "Entries and photos",
+  "offlineHereProjects": "Projects made here",
+  "offlineHomeEnded": "Your licence has ended. See how to renew.",
+  "offlineHomeHint": "Your data is only here. Keep a copy.",
+  "offlineInvalidTitle": "The licence could not be checked",
+  "offlineLicenceActive": "Good until {date}",
+  "@offlineLicenceActive": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineLicenceEndedBody": "Nothing is lost and you can still read, add and export. To renew, connect to the internet and open this app. If it stays like this, check your plan on the Nirmaan360 website.",
+  "offlineLicenceEndedTitle": "Your licence has ended",
+  "offlineLicenceEndingBody": "Ends on {date}. Connect to the internet once and it renews by itself.",
+  "@offlineLicenceEndingBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineLicenceHeading": "Licence",
+  "offlineLicenceNone": "Not ready yet. Connect to the internet once.",
+  "offlineLinkCopied": "Link copied",
+  "offlineManageLink": "Free a phone here",
+  "offlineNeedsInternet": "This needs the internet. Your data here is not affected.",
+  "offlineNeedsSignInBody": "Nothing is lost. Your work continues here. The licence can only renew after you sign in.",
+  "offlineNeedsSignInTitle": "Sign in again to renew",
+  "offlineOnPhoneTag": "On this phone",
+  "offlineOnPhoneTitle": "Only on this phone",
+  "offlineOnlyHereBody": "Nothing is kept on our server. If this phone is lost or reset, the data is gone. Export a copy and keep it safe.",
+  "offlineOnlyHereTitle": "Your data is only on this phone",
+  "offlinePlanTitle": "Offline plan",
+  "offlineReviewTitle": "Check and save",
+  "offlineRevokedBody": "Your data is safe here and the app keeps working until the licence ends. To use this phone again, free a slot on the website, then activate it.",
+  "offlineRevokedTitle": "This phone was freed",
+  "offlineSaveReport": "Save report",
+  "offlineSavedOnPhone": "Saved on this phone",
+  "offlineSignInButton": "Sign in",
+  "offlineSignOutBody": "Your data stays on this phone. You will need internet to sign in again.",
+  "offlineSignOutTitle": "Sign out?",
   "pettyCashAddExpense": "Add expense",
   "pettyCashAddMoney": "Add money",
   "pettyCashAmount": "Amount",

@@ -2139,6 +2139,134 @@ class AppLocalizationsEn extends AppLocalizations {
   String get measurementYesterday => 'Yesterday';
 
   @override
+  String get offlineActivateAgain => 'Activate this phone';
+
+  @override
+  String get offlineCopyLink => 'Copy link';
+
+  @override
+  String get offlineDeviceLimitBody =>
+      'Your plan allows a set number of phones and they are all in use. Free one on the website, then try again.';
+
+  @override
+  String get offlineDeviceLimitTitle => 'Another phone holds your licence';
+
+  @override
+  String get offlineFreeBody =>
+      'Your data does not move by itself. Export a copy first. This phone keeps its data and works until its licence ends.';
+
+  @override
+  String get offlineFreeConfirm => 'Free it';
+
+  @override
+  String get offlineFreeFailed =>
+      'That did not work. Check your internet and try again.';
+
+  @override
+  String get offlineFreeThisPhone => 'Move to a new phone';
+
+  @override
+  String get offlineFreeTitle => 'Free this phone\'s licence?';
+
+  @override
+  String get offlineHereEntries => 'Entries and photos';
+
+  @override
+  String get offlineHereProjects => 'Projects made here';
+
+  @override
+  String get offlineHomeEnded => 'Your licence has ended. See how to renew.';
+
+  @override
+  String get offlineHomeHint => 'Your data is only here. Keep a copy.';
+
+  @override
+  String get offlineInvalidTitle => 'The licence could not be checked';
+
+  @override
+  String offlineLicenceActive(String date) {
+    return 'Good until $date';
+  }
+
+  @override
+  String get offlineLicenceEndedBody =>
+      'Nothing is lost and you can still read, add and export. To renew, connect to the internet and open this app. If it stays like this, check your plan on the Nirmaan360 website.';
+
+  @override
+  String get offlineLicenceEndedTitle => 'Your licence has ended';
+
+  @override
+  String offlineLicenceEndingBody(String date) {
+    return 'Ends on $date. Connect to the internet once and it renews by itself.';
+  }
+
+  @override
+  String get offlineLicenceHeading => 'Licence';
+
+  @override
+  String get offlineLicenceNone =>
+      'Not ready yet. Connect to the internet once.';
+
+  @override
+  String get offlineLinkCopied => 'Link copied';
+
+  @override
+  String get offlineManageLink => 'Free a phone here';
+
+  @override
+  String get offlineNeedsInternet =>
+      'This needs the internet. Your data here is not affected.';
+
+  @override
+  String get offlineNeedsSignInBody =>
+      'Nothing is lost. Your work continues here. The licence can only renew after you sign in.';
+
+  @override
+  String get offlineNeedsSignInTitle => 'Sign in again to renew';
+
+  @override
+  String get offlineOnPhoneTag => 'On this phone';
+
+  @override
+  String get offlineOnPhoneTitle => 'Only on this phone';
+
+  @override
+  String get offlineOnlyHereBody =>
+      'Nothing is kept on our server. If this phone is lost or reset, the data is gone. Export a copy and keep it safe.';
+
+  @override
+  String get offlineOnlyHereTitle => 'Your data is only on this phone';
+
+  @override
+  String get offlinePlanTitle => 'Offline plan';
+
+  @override
+  String get offlineReviewTitle => 'Check and save';
+
+  @override
+  String get offlineRevokedBody =>
+      'Your data is safe here and the app keeps working until the licence ends. To use this phone again, free a slot on the website, then activate it.';
+
+  @override
+  String get offlineRevokedTitle => 'This phone was freed';
+
+  @override
+  String get offlineSaveReport => 'Save report';
+
+  @override
+  String get offlineSavedOnPhone => 'Saved on this phone';
+
+  @override
+  String get offlineSignInButton => 'Sign in';
+
+  @override
+  String get offlineSignOutBody =>
+      'Your data stays on this phone. You will need internet to sign in again.';
+
+  @override
+  String get offlineSignOutTitle => 'Sign out?';
+
+  @override
   String get pettyCashAddExpense => 'Add expense';
 
   @override

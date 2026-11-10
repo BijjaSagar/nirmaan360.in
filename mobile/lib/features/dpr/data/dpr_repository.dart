@@ -265,6 +265,10 @@ class DprRepository {
         );
       }
 
+      // One person on the offline plan: a saved report waits for no approver,
+      // and stays open to edit.
+      if (_ctx.offlinePlan.isLocalOnly) return;
+
       await _ctx.outbox.enqueue(
         type: OutboxType.dprSubmit,
         wireUuid: newUuid(),

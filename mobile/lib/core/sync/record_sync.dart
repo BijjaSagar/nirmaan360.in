@@ -38,6 +38,9 @@ class SyncStates {
   SyncStates._(this._byGroup);
 
   static Future<SyncStates> load(AppDatabase db) async {
+    // On the offline plan a queued row is not waiting for anything, so no
+    // record should say "not sent yet".
+    if (await db.readMeta(MetaKey.offlinePlan) != null) return SyncStates._(const {});
     final byGroup = <String, _GroupState>{};
     for (final row in await OutboxDao(db).unfinished()) {
       final current = byGroup[row.groupUuid] ?? const _GroupState();

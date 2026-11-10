@@ -8,6 +8,7 @@ import '../api/api_failure.dart';
 import '../api/nirmaan_api.dart';
 import '../db/app_database.dart';
 import '../db/outbox_dao.dart';
+import '../offline/offline_plan.dart';
 import '../session/current_user.dart';
 import '../session/session_controller.dart';
 import 'attachment_store.dart';
@@ -59,6 +60,9 @@ class SyncEngine {
   /// Runs after a successful pull. Failures here never fail the sync. The
   /// argument is true when this run sent something.
   Future<void> Function(bool sentSomething)? afterPull;
+
+  /// Told when the server answers `offline_plan` to a sync.
+  Future<void> Function(String? upgradeUrl)? onOfflinePlanRefused;
 
   /// Used when a 429 has no usable `Retry-After`: the limit's one-minute window.
   static const _defaultRateLimitWait = Duration(seconds: 60);
@@ -171,6 +175,10 @@ class SyncEngine {
 
   Future<SyncRunResult> _runOnce() async {
     if (await _isContractorLogin()) return const SyncRunResult(SyncOutcome.success);
+    // Every way in to a sync ends here, the background task included, so this
+    // one line is what keeps a phone on the offline plan off `/sync`. Its
+    // queued rows stay exactly as they are, for an upload the owner may want.
+    if (await _db.readMeta(MetaKey.offlinePlan) != null) return const SyncRunResult(SyncOutcome.success);
 
     final wait = await _rateLimitRemaining();
     if (wait != null) {
@@ -228,6 +236,12 @@ class SyncEngine {
         error: e,
         retryAfter: wait,
       );
+    } on OfflinePlanRefused catch (e) {
+      // Rows in flight went back to pending as this came up through them. It
+      // says nothing about any row, so none has moved to attention.
+      await OfflinePlan.markLocal(_db, upgradeUrl: e.upgradeUrl);
+      await onOfflinePlanRefused?.call(e.upgradeUrl);
+      return SyncRunResult(SyncOutcome.success, sent: _sentThisRun);
     } on AuthExpired catch (e) {
       _issue = SyncIssue.authExpired;
       await _session?.markExpired();

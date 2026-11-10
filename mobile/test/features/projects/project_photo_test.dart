@@ -60,14 +60,14 @@ void main() {
     });
 
     test('with no network and nothing kept there is no photo', () async {
-      (app.services.connectivity as FakeConnectivity).setOnline(false);
+      app.connectivity.setOnline(false);
       expect(await app.services.projectImages.bytesFor(1, firstUrl), isNull);
       expect(app.api.projectImageCalls, isEmpty);
     });
 
     test('a photo kept earlier still shows with no network', () async {
       await app.services.projectImages.bytesFor(1, firstUrl);
-      (app.services.connectivity as FakeConnectivity).setOnline(false);
+      app.connectivity.setOnline(false);
       expect(await app.services.projectImages.bytesFor(1, firstUrl), pixel);
     });
 
@@ -80,7 +80,7 @@ void main() {
 
     test('until a new photo arrives the old one stays', () async {
       await app.services.projectImages.bytesFor(1, firstUrl);
-      (app.services.connectivity as FakeConnectivity).setOnline(false);
+      app.connectivity.setOnline(false);
       expect(await app.services.projectImages.bytesFor(1, secondUrl), pixel);
     });
 

@@ -52,6 +52,8 @@ class AuthRepository {
 
     final previous = _ctx.session.user;
     if (previous != null && previous.id != user.id) {
+      // On the offline plan everything here exists nowhere else, sent or not.
+      if (_ctx.offlinePlan.isLocalOnly) throw DifferentUserFailure(await _localRecordCount());
       final unsent = await unsentWorkCount();
       if (unsent > 0) throw DifferentUserFailure(unsent);
       await _wipeLocalData();
@@ -61,6 +63,10 @@ class AuthRepository {
     // Before the first pull: a company on the offline plan must not make one.
     // A failure here changes nothing, and the first pull goes ahead as ever.
     if (!user.isContractor) await _ctx.offlinePlan.check(force: true);
+    await _ctx.offlinePlan.noteSignedIn();
+    if (_ctx.offlinePlan.isLocalOnly) {
+      return SignInResult(user: user, firstSync: const SyncRunResult(SyncOutcome.success));
+    }
     // A contractor login has no sites to pull and nothing to send: the portal
     // is its first read. The site team's first pull is exactly as it was.
     final firstSync = user.isContractor ? await _readPortal() : await _ctx.sync.syncNow();
@@ -87,7 +93,20 @@ class AuthRepository {
   /// Refuses with [UnsentWorkFailure] when work has not reached the server,
   /// unless [discardUnsent] is true, which a screen must only pass after the
   /// user has confirmed losing that work.
+  ///
+  /// On the offline plan nothing is ever cleared: this phone holds the only
+  /// copy. The sign-in goes, and the same person can sign back in to it.
   Future<void> signOut({bool discardUnsent = false}) async {
+    if (_ctx.offlinePlan.isLocalOnly) {
+      try {
+        await _ctx.api.logout();
+      } on Exception {
+        // Signing out must work offline.
+      }
+      await _ctx.offlinePlan.noteSignedOut();
+      await _ctx.session.endKeepingUser();
+      return;
+    }
     final unsent = await unsentWorkCount();
     if (unsent > 0 && !discardUnsent) throw UnsentWorkFailure(unsent);
 
@@ -109,6 +128,11 @@ class AuthRepository {
       ..where(_ctx.db.dprs.localDraft.equals(true));
     final drafts = (await query.getSingle()).read(count) ?? 0;
     return queued + drafts;
+  }
+
+  Future<int> _localRecordCount() async {
+    final work = await _ctx.offlinePlan.work();
+    return work.projects + work.boqLines + work.workers + work.wallets + work.entries;
   }
 
   Stream<String?> watchLocale() => _ctx.db.watchMeta(MetaKey.locale);

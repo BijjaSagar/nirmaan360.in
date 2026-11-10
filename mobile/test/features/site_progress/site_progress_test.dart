@@ -121,7 +121,7 @@ void main() {
     });
 
     test('work not yet sent already counts against the balance', () async {
-      await app.services.connectivityOffline();
+      app.connectivity.setOnline(false);
       await addWork(app, qty: '5.000');
 
       final ProgressOverview seen = await overview();
@@ -131,7 +131,7 @@ void main() {
     });
 
     test('a stage waiting to send shows, and an earlier pending stage warns', () async {
-      await app.services.connectivityOffline();
+      app.connectivity.setOnline(false);
       await app.services.progress.setStage(
         projectId: 1,
         floorId: 21,
@@ -149,7 +149,7 @@ void main() {
     });
 
     test('a resolved item leaves the pending list before it is sent', () async {
-      await app.services.connectivityOffline();
+      app.connectivity.setOnline(false);
       await app.services.progress.resolvePending(projectId: 1, entryId: 70, title: 'RCC slab');
       expect((await overview()).pending, isEmpty);
     });
@@ -230,12 +230,12 @@ void main() {
     });
 
     test('the newest change to a stage replaces one still waiting', () async {
-      await app.services.connectivityOffline();
+      app.connectivity.setOnline(false);
       await setDone(app, status: 'in_progress');
       await setDone(app, status: 'done');
       expect(await outbox(app), hasLength(1));
 
-      app.services.connectivityOnline();
+      app.connectivity.setOnline(true);
       await app.sync();
       expect(app.api.stagePosts.values.single['status'], 'done');
     });
@@ -512,10 +512,4 @@ void main() {
       }
     });
   });
-}
-
-extension on AppServices {
-  Future<void> connectivityOffline() async => (connectivity as FakeConnectivity).setOnline(false);
-
-  void connectivityOnline() => (connectivity as FakeConnectivity).setOnline(true);
 }

@@ -57,7 +57,7 @@ class _WalletFormViewState extends State<_WalletFormView> {
       context,
       moneyLost
           ? l.pettyCashWalletMoneyFailed
-          : opening == null
+          : opening == null || context.read<AppServices>().offlinePlan.isLocalOnly
           ? l.pettyCashWalletCreated
           : state.savedWhileOffline
           ? l.pettyCashWalletCreatedOffline(opening.inr())

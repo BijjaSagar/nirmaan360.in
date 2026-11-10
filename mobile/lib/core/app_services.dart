@@ -53,6 +53,7 @@ class AppServices {
     required this.sync,
     required this.scheduler,
     required this.connectivity,
+    required this._rawConnectivity,
     required this.context,
     required this.offlinePlan,
     this._onDispose,
@@ -134,6 +135,10 @@ class AppServices {
       appVersion: AppInfo.label,
     );
     if (api is DioNirmaanApi) api.blocksPath = offlinePlan.blocksPath;
+    session.keepSessionOn401 = () => offlinePlan.isLocalOnly;
+    // Screens and repositories see this. The plan, the engine and the
+    // scheduler keep the real one, because they are the ones who ask.
+    final ConnectivityMonitor screens = _PlanConnectivity(connectivity, offlinePlan);
     final engine = SyncEngine(
       db: db,
       api: api,
@@ -148,12 +153,13 @@ class AppServices {
       connectivity: connectivity,
       observeLifecycle: observeLifecycle,
     )..beforeRun = offlinePlan.check;
+    engine.onOfflinePlanRefused = (url) => offlinePlan.adoptRefusal(upgradeUrl: url);
     final context = DataContext(
       db: db,
       api: api,
       clock: clock,
       attachments: attachments,
-      connectivity: connectivity,
+      connectivity: screens,
       session: session,
       sync: engine,
       offlinePlan: offlinePlan,
@@ -195,7 +201,8 @@ class AppServices {
       session: session,
       sync: engine,
       scheduler: scheduler,
-      connectivity: connectivity,
+      connectivity: screens,
+      rawConnectivity: connectivity,
       context: context,
       offlinePlan: offlinePlan,
       onDispose: onDispose,
@@ -207,7 +214,10 @@ class AppServices {
   final SessionController session;
   final SyncEngine sync;
   final SyncScheduler scheduler;
+
+  /// What screens and repositories should go by: see [_PlanConnectivity].
   final ConnectivityMonitor connectivity;
+  final ConnectivityMonitor _rawConnectivity;
 
   /// Whether this company keeps its data on the phone, and its licence.
   final OfflinePlan offlinePlan;
@@ -246,11 +256,12 @@ class AppServices {
   /// Rows stuck in `sending` from a killed process go back to `pending` here.
   Future<void> start() async {
     await sync.recoverInterrupted();
-    if (connectivity is ConnectivityPlusMonitor) {
-      await (connectivity as ConnectivityPlusMonitor).start();
-    }
+    final ConnectivityMonitor raw = _rawConnectivity;
+    if (raw is ConnectivityPlusMonitor) await raw.start();
     await offlinePlan.load();
     await auth.restoreSession();
+    final OfflinePlanState? local = offlinePlan.state;
+    if (local != null && !local.signedOut) session.resumeLocally();
     unawaited(offlinePlan.check());
     scheduler.start();
   }
@@ -264,6 +275,21 @@ class AppServices {
     await _onDispose?.call();
     await db.close();
   }
+}
+
+/// On the offline plan there is no server to wait for, so no screen should
+/// say "no network" or hold a form back. Anywhere else, the real answer.
+class _PlanConnectivity implements ConnectivityMonitor {
+  const _PlanConnectivity(this._inner, this._plan);
+
+  final ConnectivityMonitor _inner;
+  final OfflinePlan _plan;
+
+  @override
+  bool get isOnline => _plan.isLocalOnly || _inner.isOnline;
+
+  @override
+  Stream<bool> get changes => _inner.changes.map((online) => _plan.isLocalOnly || online);
 }
 
 class _AlwaysOnline implements ConnectivityMonitor {

@@ -15,6 +15,7 @@ import '../../../app/widgets/press_row.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
+import '../../../core/offline/offline_plan.dart';
 import '../../../core/session/current_user.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/data/project_repository.dart';
@@ -69,7 +70,9 @@ class _HomeView extends StatelessWidget {
           final bool siteControl = user?.features.contains('site_control') ?? false;
           // Two lines above the figures rather than a ninth and tenth tile:
           // a sentence fits here, and the grid is already full.
+          final OfflinePlanState? offline = context.select((AppGate gate) => gate.state.offline);
           final List<Widget> siteRows = <Widget>[
+            if (offline != null) _OnThisPhoneRow(offline: offline),
             if (siteControl && (user?.can('progress.view') ?? false) && !(state.site?.refused ?? false))
               _SiteAlertsRow(site: state.site),
             if (siteControl && (user?.can('contractor.view') ?? false) && !(state.contractors?.refused ?? false))
@@ -135,9 +138,13 @@ class _HomeView extends StatelessWidget {
 
   void _openReport(BuildContext context, HomeSummary? data, bool canWrite) {
     final String? uuid = data?.dprClientUuid;
+    final bool localOnly = context.read<AppGate>().state.isLocalOnly;
     switch (data?.dprState) {
       case DprDayState.notStarted when canWrite:
         context.push(Routes.dprForm);
+      // With no approver a saved report stays open to its one author.
+      case DprDayState.saved when uuid != null && canWrite && localOnly:
+        context.push(Uri(path: Routes.dprForm, queryParameters: <String, String>{'uuid': uuid}).toString());
       case DprDayState.draft || DprDayState.returned when uuid != null && canWrite:
         context.push(Uri(path: Routes.dprForm, queryParameters: <String, String>{'uuid': uuid}).toString());
       case _ when uuid != null:
@@ -153,7 +160,7 @@ class _HomeView extends StatelessWidget {
     final t = AppLocalizations.of(context);
     final CurrentUser? user = context.select((AppGate gate) => gate.state.user);
     bool can(String permission) => user?.can(permission) ?? false;
-    final bool canApprove = can('measurement.approve') || can('dpr.approve') || can('ra_bill.approve');
+    final bool canApprove = context.select((AppGate gate) => gate.state.canApprove);
     final HomeSummary? data = state.summary;
     final report = _report(t, data?.dprState ?? DprDayState.notStarted);
     final int marked = data?.attendanceMarked ?? 0;
@@ -330,6 +337,13 @@ class _SyncTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
+    if (context.select((AppGate gate) => gate.state.isLocalOnly)) {
+      return SyncPill(
+        state: SyncVisualState.offline,
+        label: t.offlineOnPhoneTag,
+        onTap: () => context.push(Routes.offlinePlan),
+      );
+    }
     return BlocBuilder<SyncStatusCubit, SyncStatus>(
       builder: (context, status) {
         final (SyncVisualState state, int? count, String label) = switch (status) {
@@ -346,6 +360,31 @@ class _SyncTag extends StatelessWidget {
           onTap: () => context.go(Routes.outbox),
         );
       },
+    );
+  }
+}
+
+/// Says, every day, that this phone holds the only copy, and leads to the export.
+class _OnThisPhoneRow extends StatelessWidget {
+  const _OnThisPhoneRow({required this.offline});
+
+  final OfflinePlanState offline;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final DateTime now = context.read<AppServices>().context.clock.now();
+    final bool ended = offline.standing(now) == LicenceStanding.ended;
+    return LedgerListTile(
+      key: const ValueKey<String>('home-on-this-phone'),
+      leading: Icon(
+        ended ? Icons.error_outline : Icons.phone_android,
+        size: N360IconSize.lg,
+        color: ended ? N360Colors.stampRed : N360Colors.ink2,
+      ),
+      title: t.offlineOnPhoneTitle,
+      subtitle: ended ? t.offlineHomeEnded : t.offlineHomeHint,
+      onTap: () => context.push(Routes.offlinePlan),
     );
   }
 }

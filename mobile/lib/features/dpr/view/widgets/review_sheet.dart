@@ -71,6 +71,7 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
     final DprFormState state = cubit.state;
     final String? weather = state.weather;
     final bool offline = !widget.services.connectivity.isOnline;
+    final bool localOnly = widget.services.offlinePlan.isLocalOnly;
     final List<WorkLine> work = state.work;
     const int shownRows = 3;
 
@@ -84,7 +85,7 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Expanded(child: Text(l.dprReviewTitle, style: N360Type.title)),
+                Expanded(child: Text(localOnly ? l.offlineReviewTitle : l.dprReviewTitle, style: N360Type.title)),
                 DprTapPad(
                   onTap: () => Navigator.of(context).pop(),
                   semanticsLabel: l.dprEdit,
@@ -183,7 +184,7 @@ class _DprReviewSheetState extends State<DprReviewSheet> {
               const SizedBox(height: N360Space.sm),
             ],
             GloveButton(
-              label: state.isReturned ? l.dprSendAgain : l.dprSend,
+              label: localOnly ? l.commonSave : (state.isReturned ? l.dprSendAgain : l.dprSend),
               icon: Icons.send,
               large: true,
               fullWidth: true,
