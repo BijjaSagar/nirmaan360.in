@@ -49,6 +49,7 @@ class AnnouncementsTest extends NotifyTestCase
             'body' => 'Wear helmets on every site from Monday.',
             'audience' => 'all',
             'schedule' => 'now',
+            'mentions_money' => 'no',
             ...$overrides,
         ];
     }

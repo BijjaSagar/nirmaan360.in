@@ -6,6 +6,7 @@ use App\Jobs\Notify\DeliverNotification;
 use App\Jobs\Notify\SendAnnouncement;
 use App\Jobs\Notify\SendAnnouncementBatch;
 use App\Models\Announcement;
+use App\Models\AnnouncementRecipient;
 use App\Models\AuditLog;
 use App\Models\CustomRole;
 use App\Models\Organization;
@@ -16,8 +17,11 @@ use App\Services\Notify\MoneyMention;
 use App\Services\Notify\PushDispatcher;
 use App\Support\PlatformSettings;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use RuntimeException;
@@ -34,6 +38,7 @@ class AnnouncementReviewFixesTest extends NotifyTestCase
             'body' => 'Wear helmets on every site from Monday.',
             'audience' => 'all',
             'schedule' => 'now',
+            'mentions_money' => 'no',
             ...$overrides,
         ];
     }
@@ -90,15 +95,83 @@ class AnnouncementReviewFixesTest extends NotifyTestCase
             'पाँच हजार रुपये', 'Rupees five thousand only', '₹ (five thousand)',
             'Har mazdoor ko 500 rupaya bonus milega', '500 rupaiyaa', 'Diwali bonus Rs. one thousand for every worker', 'रु. पाच हजार फक्त',
             'रु. पाँच हजार बोनस', 'INR five lakh', '2 crs', '५ लक्ष', 'रु० 500', '500 रु',
+            // Amounts in words beside a mark or a scale word.
+            'Rs. Fifteen Thousand Only', 'forty lakh', 'रु. पंचवीस हजार', 'दीड लाख', 'पच्चीस लाख', 'डेढ़ लाख', 'ढाई लाख', 'अडीच लाख', 'रु. पाचशे', 'Rs paanch hazaar', 'ek lakh',
+            // Other spellings of rupees, bare amounts beside a money word, full-width letters and filler words.
+            'रुपिया 500', 'रूपिया दो', 'रुपइया', 'रूपैया', 'रुपीये', 'Diwali bonus 5000', '5k bonus', 'दिवाळी बोनस ५ हजार', 'cement rate 380 per bag', 'पगार 15000',
+            'Ｒｓ 500', 'ＩＮＲ 300', 'Rs approx 5000', 'रु. लगभग 500',
+            // Figures written right against the mark, and an invisible character before Rs.
+            'Overtime 500Rs per day', '500rs extra for Sunday', 'Each worker gets 5000INR', 'Sunday duty 500rupees extra', 'रविवारी ५००रुपये जास्त',
+            '५००रु. जास्त', '500रू मिलेंगे', 'Flat booking 25lakh', 'Project of 2cr started', '10crore project', '5लाख चा प्रकल्प', "Total\u{200B}Rs 500 each", "Total\u{00AD}Rs 500 each",
         ] as $text) {
             $this->assertTrue(MoneyMention::in($text), $text);
         }
 
         foreach (['Floor 3 crane', 'Wear helmets from Monday 16 November.', 'RSVP by 5 pm', 'Block 2 is ready', 'crore of people', 'Meeting at 10:30', '5 thousand workers on site', 'रूप बदला', 'सोमवारपासून हेल्मेट घाला.',
             // Words that end or start with रु or रू are not rupees.
-            'टॉवर B मध्ये स्लॅबचे काम सुरू. 2 दिवस लिफ्ट बंद राहील.', 'काम सुरू: 10 नोव्हेंबर', 'कल से काम शुरू। 2 दिन छुट्टी के बाद', 'फ्लैट 302 रूम की सफाई करें', '3 रूफ शीट बदलो', 'गुरु 5 बजे आएंगे', 'लक्ष द्या: 3 नंबर गेट बंद'] as $text) {
+            'टॉवर B मध्ये स्लॅबचे काम सुरू. 2 दिवस लिफ्ट बंद राहील.', 'काम सुरू: 10 नोव्हेंबर', 'कल से काम शुरू। 2 दिन छुट्टी के बाद', 'फ्लैट 302 रूम की सफाई करें', '3 रूफ शीट बदलो', 'गुरु 5 बजे आएंगे', 'लक्ष द्या: 3 नंबर गेट बंद',
+            'लू के 5 लक्षण', 'नियम ५ लक्षात ठेवा', 'दरवाजा 3 बंद ठेवा', 'दर सोमवारी बैठक', 'Concrete pour on slab 4 at 7 am', 'Gate 5 closed for 3 days',
+            // लक्ष is attention, CR the railway, and doubled scale words are greetings.
+            'सर्व कामगारांनी कृपया लक्ष द्या', 'सुरक्षेकडे लक्ष द्या', 'हेल्मेटकडे लक्ष ठेवा', 'Sunday mega block on CR, come by 9', 'सभी को दिवाली की लाख-लाख बधाई', 'सर्वांना कोटी कोटी धन्यवाद',
+            // A number beside a money word that is a date, a time or a size.
+            'उन्हाळा आहे, दर 2 तासांनी पाणी प्या', '10 फीट गहरा गड्ढा है, सावधान रहें', '2 फील्ड इंजीनियर आएंगे', 'पगार ७ तारखेला होईल', 'इस महीने वेतन 7 तारीख को मिलेगा', 'Salary: 7th December', 'Apply for leave in advance, 2 days before', 'Paid leave on 15 Aug',
+            // Words with रु or रू inside them.
+            'काम गुरुवारपासून सुरू होईल', 'सुरक्षा सबसे ज़रूरी', 'हेल्मेट ज़रूर पहनें', 'आपण सर्व मिळून काम करू', 'रूम खाली करें'] as $text) {
             $this->assertFalse(MoneyMention::in($text), $text);
         }
+    }
+
+    public function test_the_form_guesses_with_the_same_patterns_the_server_runs(): void
+    {
+        $owner = $this->member($this->tenant(), 'owner');
+
+        $page = $this->actingAs($owner)->get(route('notify.announcements'))->assertOk()->assertSee('moneyPatterns', false);
+        foreach (MoneyMention::patterns() as $pattern) {
+            $this->assertNotFalse(@preg_match('/'.$pattern.'/iu', ''), $pattern);
+        }
+        $this->assertSame('Diwali bonus 5000', MoneyMention::evidence('Diwali bonus 5000 for everyone') !== null ? 'Diwali bonus 5000' : null);
+        $this->assertFalse(MoneyMention::inAnnouncement('गेट बंद', 'लक्ष द्या: 3 नंबर गेट बंद'));
+    }
+
+    public function test_a_mark_in_the_title_and_its_number_in_the_message_are_read_together(): void
+    {
+        $this->assertFalse(MoneyMention::in('Cement rate'));
+        $this->assertFalse(MoneyMention::in('380 per bag from Monday'));
+        $this->assertTrue(MoneyMention::inAnnouncement('Cement rate', '380 per bag from Monday'));
+
+        // A Marathi title with the English message, as a Marathi phone would show it.
+        $this->assertFalse(MoneyMention::inAnnouncement('Cement update', '380 per bag from Monday'));
+        $this->assertTrue(MoneyMention::inAnnouncement('Cement update', '380 per bag from Monday', ['mr' => ['title' => 'सिमेंट दर']]));
+
+        // Never narrower than the push channel's own guard.
+        $this->assertTrue(MoneyMention::in('₹-5'));
+    }
+
+    public function test_the_writer_must_say_whether_it_mentions_money_and_a_no_is_not_taken_when_the_words_show_money(): void
+    {
+        $this->connectFcm();
+        Queue::fake([DeliverNotification::class]);
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $engineer = $this->member($organization, 'engineer');
+        $this->phone($engineer);
+        $admin = $this->member($this->tenant('Platform Staff'), 'owner');
+        $admin->forceFill(['is_platform_admin' => true])->save();
+
+        $unanswered = $this->form();
+        unset($unanswered['mentions_money']);
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $unanswered)->assertSessionHasErrors('mentions_money');
+        $this->actingAs($admin)->post(route('admin.announcements.store'), $unanswered)->assertSessionHasErrors('mentions_money');
+        $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form(['mentions_money' => 'maybe']))->assertSessionHasErrors('mentions_money');
+        $this->assertSame(0, Announcement::count());
+
+        $no = $this->send($owner, ['title' => 'Helmet check on Monday']);
+        $yes = $this->send($owner, ['title' => 'Bonus list on the notice board', 'mentions_money' => 'yes']);
+        $overruled = $this->send($owner, ['title' => 'Diwali bonus 5000', 'mentions_money' => 'no']);
+
+        $this->assertSame([false, true, true], [$no->mentions_money, $yes->mentions_money, $overruled->mentions_money]);
+        $this->assertCount(1, $this->pushesFor($engineer));
+        $this->assertSame('Helmet check on Monday', $this->pushesFor($engineer)[0]->message->title);
     }
 
     public function test_money_in_any_language_or_ticked_by_hand_keeps_it_from_people_without_money_view(): void
@@ -112,7 +185,7 @@ class AnnouncementReviewFixesTest extends NotifyTestCase
         $this->phone($engineer, 'phone-engineer');
 
         $marathi = $this->send($owner, ['body_mr' => 'बोनस ५,००० रुपये मिळेल.']);
-        $ticked = $this->send($owner, ['title' => 'Bonus chart in the picture', 'has_money' => '1']);
+        $ticked = $this->send($owner, ['title' => 'Bonus chart in the picture', 'mentions_money' => 'yes']);
         $plain = $this->send($owner, ['title' => 'No figures here']);
 
         $this->assertSame([true, true, false], [$marathi->mentions_money, $ticked->mentions_money, $plain->mentions_money]);
@@ -121,7 +194,7 @@ class AnnouncementReviewFixesTest extends NotifyTestCase
 
         // The writer is told, so a message taken for money is not a surprise.
         $this->actingAs($owner)->post(route('notify.announcements.store'), $this->form(['title' => 'Rs 500 each']))
-            ->assertSessionHas('success', fn (string $text) => str_contains($text, __('It has money figures, so it goes only to people who may see money.')));
+            ->assertSessionHas('success', fn (string $text) => str_contains($text, __('It looks like it mentions money (":words"), so it goes only to people who may see money. Write it again without the amount for everyone.', ['words' => 'Rs 500'])));
     }
 
     // 3
@@ -390,6 +463,91 @@ class AnnouncementReviewFixesTest extends NotifyTestCase
         $this->phone($freeContractor, 'phone-free');
         $this->actingAs($freeOwner)->post(route('notify.announcements.store'), $this->form(['audience' => 'roles', 'roles' => ['contractor']]))->assertSessionHasNoErrors();
         $this->assertCount(0, $this->pushesFor($freeContractor));
+    }
+
+    public function test_a_contractor_push_waiting_for_quiet_hours_is_dropped_when_the_portal_or_its_subcontractor_goes(): void
+    {
+        $this->connectFcm();
+        Queue::fake([DeliverNotification::class]);
+        $this->at('2026-11-10 23:00');
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $planLapses = $this->contractorLogin($organization);
+        $partyGoes = $this->contractorLogin($organization);
+        $this->phone($planLapses, 'phone-plan');
+        $this->phone($partyGoes, 'phone-party');
+        $this->send($owner, ['audience' => 'roles', 'roles' => ['contractor']]);
+        [$heldForPlan] = $this->pushesFor($planLapses);
+        [$heldForParty] = $this->pushesFor($partyGoes);
+
+        Party::whereKey($partyGoes->contractor_party_id)->delete();
+        $this->fakeFcm();
+        $this->at('2026-11-11 07:00');
+        app()->call([$heldForParty, 'handle']);
+        Http::assertNothingSent();
+
+        $organization->forceFill(['plan' => 'free'])->save();
+        app()->call([$heldForPlan, 'handle']);
+        Http::assertNothingSent();
+    }
+
+    public function test_a_contractor_list_shows_only_what_was_written_for_contractors(): void
+    {
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $contractor = $this->contractorLogin($organization);
+        $forTeam = $this->send($owner, ['title' => 'For the team']);
+        $this->send($owner, ['title' => 'For contractors', 'audience' => 'roles', 'roles' => ['contractor', 'engineer']]);
+
+        // A row left from before contractors were kept out of "Everyone".
+        AnnouncementRecipient::withoutGlobalScopes()->create([
+            'organization_id' => $organization->id, 'announcement_id' => $forTeam->id, 'user_id' => $contractor->id, 'first_sent_at' => now(), 'last_sent_at' => now(),
+        ]);
+
+        Sanctum::actingAs($contractor);
+        $this->getJson(self::API.'/contractor-portal/announcements')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.title', 'For contractors');
+    }
+
+    public function test_the_picture_of_a_message_with_money_is_only_on_signed_addresses_and_moves_on_stop(): void
+    {
+        Storage::fake();
+        URL::forceRootUrl('https://nirmaan360.test');
+        URL::forceScheme('https');
+        $this->connectFcm();
+        Queue::fake([DeliverNotification::class]);
+        $organization = $this->tenant();
+        $owner = $this->member($organization, 'owner');
+        $this->phone($owner);
+        $plain = $this->send($owner, ['image' => UploadedFile::fake()->image('safety.png', 800, 400)]);
+        $money = $this->send($owner, ['title' => 'Bonus chart', 'mentions_money' => 'yes', 'image' => UploadedFile::fake()->image('bonus.png', 800, 400)]);
+
+        $bare = route('announcements.image', $money->image_token);
+        $signed = $money->imageUrl();
+        $this->assertStringContainsString('signature=', $signed);
+        $this->assertStringNotContainsString('signature=', (string) $plain->imageUrl());
+
+        // Firebase is given a signed address that lasts as long as its copy, even after the longest quiet hours.
+        $pushed = collect($this->pushesFor($owner))->first(fn ($job) => $job->message->title === 'Bonus chart');
+        parse_str((string) parse_url((string) $pushed->message->image, PHP_URL_QUERY), $query);
+        $this->assertArrayHasKey('signature', $query);
+        $this->assertGreaterThanOrEqual(now()->addHours(72)->timestamp, (int) $query['expires']);
+
+        auth()->logout();
+        $this->get($bare)->assertNotFound();
+        $this->get($signed)->assertOk()->assertHeader('Cache-Control', 'max-age=300, private');
+        $this->get($plain->imageUrl())->assertOk()->assertHeader('Cache-Control', 'max-age=604800, public');
+        // The same address for the rest of the hour, so the app does not fetch the picture again on each refresh.
+        $this->assertSame($signed, $money->imageUrl());
+        $this->travel(3)->hours();
+        $this->get($signed)->assertNotFound();
+
+        // Stop moves the picture, so addresses already handed out stop working.
+        $fresh = $money->refresh()->imageUrl();
+        $this->get($fresh)->assertOk();
+        $this->actingAs($owner)->post(route('notify.announcements.cancel', $money))->assertSessionHasNoErrors();
+        auth()->logout();
+        $this->get($fresh)->assertNotFound();
+        $this->get($money->refresh()->imageUrl())->assertOk();
     }
 
     // 7

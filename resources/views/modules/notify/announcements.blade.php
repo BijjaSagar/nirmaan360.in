@@ -11,7 +11,26 @@
     @endunless
 
     <form method="POST" action="{{ route($routes['store']) }}" enctype="multipart/form-data" class="card max-w-3xl"
-          x-data="{ audience: @js(old('audience', 'all')), schedule: @js(old('schedule', 'now')), busy: false }" @submit="busy = true">
+          x-data="{
+              audience: @js(old('audience', 'all')), schedule: @js(old('schedule', 'now')), busy: false,
+              money: @js(old('mentions_money')), moneyChosen: @js(old('mentions_money') !== null),
+              moneyPatterns: @js(\App\Services\Notify\MoneyMention::patterns()),
+              // A first guess, kept up to date until the writer chooses, with the same patterns the server runs.
+              guess() {
+                  if (this.moneyChosen) return;
+                  let patterns;
+                  try { patterns = this.moneyPatterns.map((source) => new RegExp(source, 'iu')); } catch (error) { return; }
+                  const field = (name) => this.$root.querySelector(`[name=${name}]`)?.value || '';
+                  const plain = (text) => text.normalize('NFKC').replace(/\p{Cf}/gu, '').replace(/\s+/gu, ' ').trim();
+                  const title = field('title'), body = field('body');
+                  const texts = [title, body, title + '\n' + body];
+                  for (const locale of ['mr', 'hi']) {
+                      const localTitle = field('title_' + locale) || title, localBody = field('body_' + locale) || body;
+                      texts.push(localTitle, localBody, localTitle + '\n' + localBody);
+                  }
+                  this.money = texts.some((text) => patterns.some((pattern) => pattern.test(text) || pattern.test(plain(text)))) ? 'yes' : null;
+              },
+          }" @input="guess()" @submit="busy = true">
         @csrf
         <input type="hidden" name="client_uuid" value="{{ old('client_uuid', $clientUuid) }}">
         <div class="card-head"><h2 class="card-title">{{ __('New announcement') }}</h2></div>
@@ -46,10 +65,15 @@
                 <input id="image" name="image" type="file" accept="image/jpeg,image/png" class="input">
             </x-field>
 
-            <div>
-                <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="has_money" value="1" class="mt-1" @checked(old('has_money'))> <span>{{ __('Contains money figures') }}</span></label>
-                <p class="hint">{{ __('Then it goes only to people who may see money. Amounts written with ₹, Rs, rupees, lakh or crore are found on their own. Tick this for any other figure, or one in the picture.') }}</p>
-            </div>
+            <fieldset class="space-y-2">
+                <legend class="label">{{ __('Does this message mention money?') }}</legend>
+                <div class="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                    <label class="flex items-center gap-2"><input type="radio" name="mentions_money" value="yes" x-model="money" @change="moneyChosen = true" required> {{ __('Yes') }}</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="mentions_money" value="no" x-model="money" @change="moneyChosen = true"> {{ __('No') }}</label>
+                </div>
+                <p class="hint">{{ __('Amounts, rates, prices, wages or bonuses, in the words or in the picture. Yes sends it only to people who may see money. When the words show an amount, it is taken as yes.') }}</p>
+                @error('mentions_money')<p class="error">{{ $message }}</p>@enderror
+            </fieldset>
 
             <fieldset class="space-y-2">
                 <legend class="label">{{ __('Send to') }}</legend>

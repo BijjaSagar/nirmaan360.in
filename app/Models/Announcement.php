@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\URL;
 
 /**
  * A broadcast or reminder pushed to the field app. See App\Services\Notify\AnnouncementService.
@@ -156,9 +157,23 @@ class Announcement extends Model
         return filled($text = $this->translations[$locale]['body'] ?? null) ? (string) $text : $this->body;
     }
 
-    /** The public address of the picture, which Firebase and the app fetch without signing in. */
-    public function imageUrl(): ?string
+    /**
+     * The address of the picture, which Firebase and the app fetch without signing in. For a message
+     * with money it is signed: it is only handed to people who may see money, and stops working after
+     * $hours, counted from the start of this hour so the address stays the same for an hour and the
+     * app does not fetch the picture again on every refresh. The signature leaves out the host, so it
+     * holds behind Laravel Cloud's proxy.
+     */
+    public function imageUrl(int $hours = 2): ?string
     {
-        return $this->image_token === null ? null : route('announcements.image', $this->image_token);
+        if ($this->image_token === null) {
+            return null;
+        }
+
+        if (! $this->mentions_money) {
+            return route('announcements.image', $this->image_token);
+        }
+
+        return url(URL::temporarySignedRoute('announcements.image', now()->startOfHour()->addHours($hours), ['token' => $this->image_token], absolute: false));
     }
 }

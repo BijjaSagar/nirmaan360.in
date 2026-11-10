@@ -11,6 +11,7 @@ use App\Models\NotificationPreference;
 use App\Models\PushReceipt;
 use App\Models\User;
 use App\Services\ApprovalService;
+use App\Services\ContractorPortal\ContractorPortalService;
 use App\Support\Money;
 use Closure;
 use Illuminate\Support\Facades\Log;
@@ -28,8 +29,8 @@ use Throwable;
  */
 class PushDispatcher
 {
-    /** A rupee sign, Rs or INR in front of a number. */
-    private const MONEY = '/(₹|\bRs\.?|\bINR)\s*-?\d/iu';
+    /** A rupee sign, Rs or INR in front of a number. MoneyMention, for words people write, is never narrower than this. */
+    public const MONEY = '/(₹|\bRs\.?|\bINR)\s*-?\d/iu';
 
     public function __construct(private FcmGateway $fcm) {}
 
@@ -212,7 +213,19 @@ class PushDispatcher
         return (int) $user->organization_id === $target->organizationId
             && ($target->category === null || $preference->allowsCategory($target->category))
             && Audience::holds($user, $target->permissions)
-            && Audience::seesProject($user, $target->projectId);
+            && Audience::seesProject($user, $target->projectId)
+            && $this->contractorStillLinked($user);
+    }
+
+    /**
+     * A contractor login hears nothing once its company no longer has the portal (a plan or trial
+     * ended) or it no longer leads to a subcontractor, checked when the push is written and again when
+     * it is sent, which can be hours later after quiet hours.
+     */
+    private function contractorStillLinked(User $user): bool
+    {
+        return ! $user->isContractor()
+            || ((bool) $user->organization?->allowsFeature('contractor_portal') && app(ContractorPortalService::class)->partyFor($user) !== null);
     }
 
     /**

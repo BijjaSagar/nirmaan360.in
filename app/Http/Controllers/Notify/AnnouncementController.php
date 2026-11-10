@@ -7,6 +7,7 @@ use App\Models\Announcement;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Services\Notify\AnnouncementService;
+use App\Services\Notify\MoneyMention;
 use App\Services\Notify\Notifier;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
@@ -67,9 +68,14 @@ class AnnouncementController extends Controller
             default => __('Reminder saved. The first one goes on :date.', ['date' => $announcement->scheduled_for?->format('d M Y, H:i')]),
         };
 
-        // Said out loud, so a writer whose words were taken for money knows who it went to.
+        // Said out loud, so a writer whose "no" was not taken knows who it went to, and why.
         if ($announcement->mentions_money) {
-            $saved .= ' '.__('It has money figures, so it goes only to people who may see money.');
+            $saved .= ' '.($data['mentions_money'] === 'no'
+                ? __('It looks like it mentions money (":words"), so it goes only to people who may see money. Write it again without the amount for everyone.', [
+                    'words' => (string) MoneyMention::evidenceInAnnouncement((string) $data['title'], (string) $data['body'], collect(AnnouncementService::TRANSLATED)
+                        ->mapWithKeys(fn (string $locale) => [$locale => ['title' => (string) ($data['title_'.$locale] ?? ''), 'body' => (string) ($data['body_'.$locale] ?? '')]])->all()),
+                ])
+                : __('It mentions money, so it goes only to people who may see money.'));
         }
 
         return redirect()->route($this->routes($company)['index'])->with('success', $saved);
@@ -104,15 +110,22 @@ class AnnouncementController extends Controller
 
     /**
      * The picture, for Firebase and the phones, which fetch it without signing in. The token in the
-     * address is the only way to it: 40 random letters, not the announcement's id.
+     * address is the only way to it: 40 random letters, not the announcement's id, replaced on Stop.
      */
-    public function image(string $token): StreamedResponse
+    public function image(Request $request, string $token): StreamedResponse
     {
-        $announcement = Announcement::where('image_token', $token)->first(['id', 'image_path', 'status']);
+        $announcement = Announcement::where('image_token', $token)->first(['id', 'image_path', 'status', 'mentions_money']);
 
         abort_unless($announcement?->image_path !== null && Storage::exists($announcement->image_path), 404);
 
-        return Storage::response($announcement->image_path, null, ['Cache-Control' => 'public, max-age=604800', 'X-Content-Type-Options' => 'nosniff']);
+        // A message with money: only through a signed address, handed out to people who may see money, and not kept by shared caches.
+        if ($announcement->mentions_money) {
+            abort_unless($request->hasValidRelativeSignature(), 404);
+        }
+
+        $cache = $announcement->mentions_money ? 'private, max-age=300' : 'public, max-age=604800';
+
+        return Storage::response($announcement->image_path, null, ['Cache-Control' => $cache, 'X-Content-Type-Options' => 'nosniff']);
     }
 
     /** Null on the platform admin's page. */

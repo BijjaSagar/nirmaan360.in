@@ -92,7 +92,8 @@ class AnnouncementService
                 'body_'.$locale => ['nullable', 'string', 'max:'.self::BODY_MAX],
             ])->all(),
             'image' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:'.self::IMAGE_MAX_KB],
-            'has_money' => ['nullable', 'boolean'],
+            // Asked every time: only an explicit "no" lets it reach people without money.view.
+            'mentions_money' => ['required', Rule::in(['yes', 'no'])],
             'audience' => ['required', Rule::in($company === null ? Announcement::AUDIENCES : ['all', 'roles', 'project'])],
             'organization_id' => $company === null
                 ? ['nullable', 'required_if:audience,company', 'integer', Rule::exists('organizations', 'id')]
@@ -157,9 +158,8 @@ class AnnouncementService
 
         $translations = $this->translations($data);
         // The writer can say so for a figure the words do not show, such as one in the picture.
-        // Each field on its own, so a number ending one field and a word starting the next are not read as an amount.
-        $mentionsMoney = (bool) ($data['has_money'] ?? false)
-            || collect([$data['title'], $data['body']])->merge(collect($translations ?? [])->flatten())->contains(fn ($text) => MoneyMention::in((string) $text));
+        // The writer's answer, unless the words plainly show money: then a "no" is not taken.
+        $mentionsMoney = $data['mentions_money'] === 'yes' || MoneyMention::inAnnouncement((string) $data['title'], (string) $data['body'], $translations ?? []);
 
         $path = $image === null ? null : $this->storeImage($image);
 
@@ -295,6 +295,8 @@ class AnnouncementService
                 'next_run_at' => null,
                 'cancelled_at' => now(),
                 'cancelled_by' => $by->id,
+                // Addresses already handed out for the picture stop working. The app's list asks for a new one.
+                'image_token' => $announcement->image_token === null ? null : Str::random(40),
                 'updated_at' => now(),
             ]) === 1;
 
@@ -641,8 +643,11 @@ class AnnouncementService
             ->where('organization_id', $user->organization_id)
             ->where('user_id', $user->id)
             ->with('announcement.organization:id,name')
-            // Checked again when read: someone who has lost money.view no longer sees a rupee figure.
-            ->whereHas('announcement', fn ($query) => $query->when(! Money::visible($user), fn ($query) => $query->where('mentions_money', false)))
+            // Checked again when read: someone who has lost money.view no longer sees a rupee figure, and a
+            // contractor login sees only what was written for contractors.
+            ->whereHas('announcement', fn ($query) => $query
+                ->when(! Money::visible($user), fn ($query) => $query->where('mentions_money', false))
+                ->when($user->isContractor(), fn ($query) => $query->where('audience', 'roles')->whereJsonContains('roles', User::CONTRACTOR_ROLE)))
             ->orderByDesc('last_sent_at')
             ->orderByDesc('id')
             ->paginate(20)
@@ -747,7 +752,9 @@ class AnnouncementService
             return 0;
         }
 
-        $image = $announcement->imageUrl();
+        // A picture of a message with money goes out on an address that lasts as long as Firebase keeps its copy,
+        // counted from the end of the longest quiet hours the push can be held for, and not much longer.
+        $image = $announcement->imageUrl((int) config('modules.notify.push.ttl_hours', 48) + 24 + 1);
 
         return $this->push->queue($user, fn (string $locale) => new NotificationMessage(
             event: $announcement->repeats() ? 'announcement.reminder' : 'announcement.sent',
