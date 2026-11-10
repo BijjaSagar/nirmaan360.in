@@ -228,5 +228,10 @@
     "Could not save. Check your connection and try again.": "सेव्ह झाले नाही. इंटरनेट तपासून पुन्हा प्रयत्न करा.",
     "Your plan project limit has been reached. Upgrade to add more.": "तुमच्या योजनेतील प्रकल्पांची मर्यादा पूर्ण झाली आहे. आणखी जोडण्यासाठी योजना वाढवा.",
     "Change language": "भाषा बदला",
-    "Balance value": "शिल्लक मूल्य"
+    "Balance value": "शिल्लक मूल्य",
+    "Checking…": "तपासत आहे…",
+    "Sending…": "पाठवत आहे…",
+    "Too many tries in a short time. Wait a minute and try again.": "थोड्या वेळात खूप वेळा प्रयत्न झाले. एक मिनिट थांबून पुन्हा प्रयत्न करा.",
+    "This page opens from a button": "हे पान बटणावरून उघडते",
+    "It cannot be opened directly or reloaded. Go back and use the button on the page.": "हे थेट किंवा रीलोड करून उघडता येत नाही. मागे जा आणि पानावरील बटण वापरा."
 }

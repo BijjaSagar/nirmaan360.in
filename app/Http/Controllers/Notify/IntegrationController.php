@@ -58,6 +58,12 @@ class IntegrationController extends Controller
             : back()->withErrors([$integration => $error]);
     }
 
+    /** The test addresses only take a form post. Anyone who reloads one lands back on the page. */
+    public function backToPage(): RedirectResponse
+    {
+        return redirect()->route('admin.integrations');
+    }
+
     /** A real push to the admin's own phones, sent at once so the answer is on the page. */
     public function sendTestPush(Request $request, Notifier $notifier, PushDispatcher $push): RedirectResponse
     {

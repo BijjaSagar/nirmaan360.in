@@ -50,23 +50,24 @@
                     <div class="border-t border-rule px-4 py-3"><button class="btn btn-primary">{{ __('Save') }}</button></div>
                 </form>
 
-                <form method="POST" action="{{ route('admin.integrations.test', $card['name']) }}" class="border-t border-rule p-4">
+                <form method="POST" action="{{ route('admin.integrations.test', $card['name']) }}" class="border-t border-rule p-4" x-data="{ busy: false }" @submit="busy = true">
                     @csrf
                     <p class="text-sm text-ink-3">{{ $card['testNote'] }}</p>
                     @error($card['name'])<p class="error">{{ $message }}</p>@enderror
                     @if ($card['name'] === 'sms')
                         <x-field :label="__('Mobile number to test')" name="phone" class="mt-2"><input id="phone" name="phone" type="tel" value="{{ old('phone') }}" class="input num" placeholder="98XXXXXXXX" @disabled(! $card['live'])></x-field>
                     @endif
-                    <button class="btn btn-ghost mt-3" @disabled(! $card['live'])>{{ __('Test') }}</button>
+                    {{-- A test can take a few seconds. One tap is enough, so the button stays off until the answer comes. --}}
+                    <button class="btn btn-ghost mt-3" @disabled(! $card['live']) x-bind:disabled="busy || {{ $card['live'] ? 'false' : 'true' }}"><span x-show="! busy">{{ __('Test') }}</span><span x-show="busy" x-cloak>{{ __('Checking…') }}</span></button>
                     @unless ($card['live'])<p class="hint">{{ __('Save all the details above to test.') }}</p>@endunless
                 </form>
 
                 @if ($card['name'] === 'fcm')
-                    <form method="POST" action="{{ route('admin.integrations.push-test') }}" class="border-t border-rule p-4">
+                    <form method="POST" action="{{ route('admin.integrations.push-test') }}" class="border-t border-rule p-4" x-data="{ busy: false }" @submit="busy = true">
                         @csrf
                         <p class="text-sm text-ink-3">{{ __('Sends a real notification to the phones you are signed in on in the mobile app. Yours now: :count.', ['count' => $ownPhones]) }}</p>
                         @error('push_test')<p class="error">{{ $message }}</p>@enderror
-                        <button class="btn btn-ghost mt-3" @disabled(! $card['live'])>{{ __('Send a test notification to me') }}</button>
+                        <button class="btn btn-ghost mt-3" @disabled(! $card['live']) x-bind:disabled="busy || {{ $card['live'] ? 'false' : 'true' }}"><span x-show="! busy">{{ __('Send a test notification to me') }}</span><span x-show="busy" x-cloak>{{ __('Sending…') }}</span></button>
                     </form>
                 @endif
             </section>

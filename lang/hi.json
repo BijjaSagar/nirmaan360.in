@@ -228,5 +228,10 @@
     "Could not save. Check your connection and try again.": "सेव नहीं हो पाया। इंटरनेट जांचकर फिर कोशिश करें।",
     "Your plan project limit has been reached. Upgrade to add more.": "आपके प्लान की प्रोजेक्ट सीमा पूरी हो गई है। और जोड़ने के लिए अपग्रेड करें।",
     "Change language": "भाषा बदलें",
-    "Balance value": "शेष मूल्य"
+    "Balance value": "शेष मूल्य",
+    "Checking…": "जाँच हो रही है…",
+    "Sending…": "भेजा जा रहा है…",
+    "Too many tries in a short time. Wait a minute and try again.": "कम समय में बहुत बार कोशिश हुई। एक मिनट रुककर फिर से कोशिश करें।",
+    "This page opens from a button": "यह पेज बटन से खुलता है",
+    "It cannot be opened directly or reloaded. Go back and use the button on the page.": "इसे सीधे या रीलोड करके नहीं खोला जा सकता। वापस जाएँ और पेज पर दिए बटन का उपयोग करें।"
 }

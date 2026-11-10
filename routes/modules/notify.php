@@ -24,6 +24,9 @@ Route::prefix('admin')->name('admin.')->middleware(EnsurePlatformAdmin::class)->
     Route::post('/integrations/{integration}/test', 'test')->whereIn('integration', Integrations::NAMES)->name('integrations.test')->middleware('throttle:10,1');
     // A real push to the admin's own phones, to prove the whole path once the dry run passes.
     Route::post('/integrations/fcm/send-to-me', 'sendTestPush')->name('integrations.push-test')->middleware('throttle:6,1');
+    // Reloading a test result, or a browser restoring the tab, asks for these addresses with GET. Send it back to the page.
+    Route::get('/integrations/{integration}/test', 'backToPage')->whereIn('integration', Integrations::NAMES);
+    Route::get('/integrations/fcm/send-to-me', 'backToPage');
 });
 
 // Selfies are personal data, so viewing one needs the manage permission and not just attendance.view.
