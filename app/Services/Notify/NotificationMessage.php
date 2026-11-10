@@ -31,9 +31,10 @@ final readonly class NotificationMessage
      */
     public function __serialize(): array
     {
+        // get_object_vars leaves out a field never set, as on a message an older release queued.
         $data = get_object_vars($this);
 
-        if ($this->image === null) {
+        if (($data['image'] ?? null) === null) {
             unset($data['image']);
         }
 
