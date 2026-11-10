@@ -1381,6 +1381,193 @@ class AppLocalizationsHi extends AppLocalizations {
   String get dprYesterdayTag => 'कल';
 
   @override
+  String get inspectionCategoryGeneral => 'सामान्य';
+
+  @override
+  String get inspectionCategoryPourCard => 'पोर कार्ड';
+
+  @override
+  String get inspectionCategoryPpe => 'PPE';
+
+  @override
+  String get inspectionCategoryReinforcement => 'सरिया';
+
+  @override
+  String get inspectionCategorySafety => 'सुरक्षा';
+
+  @override
+  String get inspectionCategoryShuttering => 'शटरिंग';
+
+  @override
+  String get inspectionDiscard => 'रद्द करें';
+
+  @override
+  String get inspectionDiscardBody => 'अब तक दर्ज किया हुआ सब मिट जाएगा।';
+
+  @override
+  String get inspectionDiscardTitle => 'यह निरीक्षण रद्द करें?';
+
+  @override
+  String get inspectionFillChoose => 'पास, फेल या लागू नहीं चुनें';
+
+  @override
+  String get inspectionFillDate => 'निरीक्षण की तारीख';
+
+  @override
+  String get inspectionFillLocation => 'स्थान';
+
+  @override
+  String get inspectionFillLocationHint => 'जैसे स्लैब L3 या गेट 2। वैकल्पिक।';
+
+  @override
+  String get inspectionFillLockedNote =>
+      'पूरा होने के बाद निरीक्षण बदला नहीं जा सकता।';
+
+  @override
+  String inspectionFillMarked(int done, int total) {
+    return '$total में से $done दर्ज';
+  }
+
+  @override
+  String inspectionFillNeedRemark(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'फेल $count बिंदुओं का कारण लिखें',
+      one: 'फेल 1 बिंदु का कारण लिखें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inspectionFillUnmarked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count बिंदुओं का नतीजा अभी दर्ज नहीं',
+      one: '1 बिंदु का नतीजा अभी दर्ज नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inspectionFillWrong => 'क्या गड़बड़ है?';
+
+  @override
+  String get inspectionFillWrongRequired =>
+      'लिखें कि क्या गड़बड़ है। फेल बिंदु के लिए यह ज़रूरी है।';
+
+  @override
+  String get inspectionFinish => 'निरीक्षण पूरा करें';
+
+  @override
+  String get inspectionGoneMessage =>
+      'यह निरीक्षण पूरा हो गया या रद्द कर दिया गया।';
+
+  @override
+  String get inspectionGoneTitle => 'यह इस फ़ोन पर नहीं है';
+
+  @override
+  String get inspectionItemsNotLoaded =>
+      'बिंदु अभी इस फ़ोन पर नहीं हैं। लोड करने के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String get inspectionNotOnPhone => 'लोड करने के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String get inspectionOpenNote =>
+      'यह निरीक्षण वेबसाइट पर शुरू हुआ और अधूरा है। इसे वहीं पूरा करें।';
+
+  @override
+  String get inspectionOpenOutbox => 'भेजने की सूची खोलें';
+
+  @override
+  String get inspectionResultFail => 'फेल';
+
+  @override
+  String get inspectionResultNa => 'लागू नहीं';
+
+  @override
+  String get inspectionResultPass => 'पास';
+
+  @override
+  String get inspectionResultPending => 'नतीजा नहीं';
+
+  @override
+  String get inspectionStatusFailed => 'फेल हुआ';
+
+  @override
+  String get inspectionStatusOpen => 'चल रहा है';
+
+  @override
+  String get inspectionStatusPassed => 'पास हुआ';
+
+  @override
+  String get inspectionWaitingNote =>
+      'इस फ़ोन पर सेव है। इंटरनेट आने पर भेजा जाएगा, उसके बाद बदला नहीं जा सकेगा।';
+
+  @override
+  String get inspectionsChecklistSearch => 'चेकलिस्ट खोजें';
+
+  @override
+  String get inspectionsDraftWord => 'अधूरा';
+
+  @override
+  String get inspectionsDraftsHeading => 'भरे जा रहे हैं';
+
+  @override
+  String get inspectionsEmptyMessage =>
+      'चेकलिस्ट से एक शुरू करें। यह इस फ़ोन पर सेव रहता है और इंटरनेट आने पर भेज दिया जाता है।';
+
+  @override
+  String get inspectionsEmptyTitle => 'अभी कोई निरीक्षण नहीं';
+
+  @override
+  String inspectionsFailedCount(int count) {
+    return '$count फेल';
+  }
+
+  @override
+  String inspectionsItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count बिंदु',
+      one: '1 बिंदु',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inspectionsLatestOnly => 'नए 25 दिखाए हैं। बाकी वेबसाइट पर हैं।';
+
+  @override
+  String get inspectionsLoading => 'निरीक्षण लोड हो रहे हैं';
+
+  @override
+  String get inspectionsNoDataMessage =>
+      'इस प्रोजेक्ट की चेकलिस्ट लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद ऑफ़लाइन भी खुलेंगी।';
+
+  @override
+  String get inspectionsRecentHeading => 'हाल के';
+
+  @override
+  String get inspectionsRefusedMessage =>
+      'चेकलिस्ट आपकी भूमिका के लिए उपलब्ध नहीं हैं। ज़रूरत हो तो ऑफ़िस से पूछें।';
+
+  @override
+  String get inspectionsRefusedTitle => 'यह आपकी भूमिका में नहीं है';
+
+  @override
+  String get inspectionsSearchNone => 'कोई चेकलिस्ट नहीं मिली';
+
+  @override
+  String get inspectionsStart => 'निरीक्षण शुरू करें';
+
+  @override
+  String get inspectionsTitle => 'निरीक्षण';
+
+  @override
   String get issuesActionClose => 'समस्या बंद करें';
 
   @override
@@ -3675,6 +3862,13 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get siteToolsInspectionsHint =>
+      'पोर, शटरिंग या सुरक्षा राउंड की चेकलिस्ट भरें';
+
+  @override
+  String get siteToolsTitle => 'साइट टूल्स';
+
+  @override
   String get statusApproved => 'मंज़ूर';
 
   @override
@@ -3801,6 +3995,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get syncTypeDprSubmit => 'रिपोर्ट जमा करना';
+
+  @override
+  String get syncTypeInspection => 'निरीक्षण';
 
   @override
   String get syncTypeIssue => 'समस्या';

@@ -7,6 +7,7 @@ import '../../../core/session/current_user.dart';
 import '../../../core/session/session_controller.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/failures.dart';
+import '../../../core/sync/inspection_cache.dart';
 import '../../../core/sync/sync_status.dart';
 import '../../contractor_portal/data/portal_repository.dart';
 
@@ -119,9 +120,10 @@ class AuthRepository {
     await _ctx.session.clear();
   }
 
-  /// Outbox items not finished, plus DPR drafts not yet queued.
+  /// Outbox items not finished, plus DPR drafts not yet queued and inspections
+  /// still being filled in.
   Future<int> unsentWorkCount() async {
-    final queued = await _ctx.outbox.unsentCount();
+    final queued = await _ctx.outbox.unsentCount() + await InspectionCache.draftCount(_ctx.db);
     final count = _ctx.db.dprs.clientUuid.count();
     final query = _ctx.db.selectOnly(_ctx.db.dprs)
       ..addColumns([count])

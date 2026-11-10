@@ -94,6 +94,16 @@ class GateState extends Equatable {
   /// Nobody else is shown them, or a way to them.
   bool get canSeePrices => can('money.view') && (user?.features.contains('price_watch') ?? false) && !isContractor;
 
+  /// Checklists and inspections: `checklist.fill` on a plan with `qhs`. The
+  /// server's `checklist.view` does not reach the app, but every role that fills
+  /// a checklist also sees them. A plan that lacks it, such as the offline plan,
+  /// is never shown them or a way to them.
+  bool get canInspect =>
+      can('checklist.fill') && (user?.features.contains('qhs') ?? false) && !isContractor && !isLocalOnly;
+
+  /// Site tools has a row on Home when at least one of its tools is open.
+  bool get hasSiteTools => canInspect;
+
   /// A subcontractor's login: the portal and settings, and nothing else.
   bool get isContractor => user?.isContractor ?? false;
 
@@ -270,6 +280,8 @@ class AppGate extends Cubit<GateState> {
       a.canManageProjects != b.canManageProjects ||
       a.isContractor != b.isContractor ||
       a.canSeePrices != b.canSeePrices ||
+      a.canInspect != b.canInspect ||
+      a.hasSiteTools != b.hasSiteTools ||
       a.ready != b.ready ||
       a.offline?.mode != b.offline?.mode ||
       a.licenceBlocked != b.licenceBlocked;
@@ -328,6 +340,8 @@ class AppGate extends Cubit<GateState> {
     }
     if (!s.canApprove && path.startsWith(Routes.approvals)) return Routes.home;
     if (Routes.isPrices(path) && !s.canSeePrices) return Routes.home;
+    if (Routes.isInspections(path) && !s.canInspect) return Routes.home;
+    if (path == Routes.siteTools && !s.hasSiteTools) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;
     final String? needed = _pathPermissions[path];

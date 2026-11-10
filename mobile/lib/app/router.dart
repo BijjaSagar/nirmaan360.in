@@ -10,6 +10,9 @@ import '../features/dpr/view/dpr_detail_screen.dart';
 import '../features/dpr/view/dpr_form_screen.dart';
 import '../features/dpr/view/dpr_list_screen.dart';
 import '../features/home/view/home_screen.dart';
+import '../features/inspections/view/inspection_detail_screen.dart';
+import '../features/inspections/view/inspection_fill_screen.dart';
+import '../features/inspections/view/inspections_screen.dart';
 import '../features/issues/view/issue_detail_screen.dart';
 import '../features/issues/view/issue_form_screen.dart';
 import '../features/issues/view/issue_list_screen.dart';
@@ -45,6 +48,7 @@ import '../features/projects/view/boq_screen.dart';
 import '../features/projects/view/project_form_screen.dart';
 import '../features/projects/view/project_picker_screen.dart';
 import '../features/settings/view/settings_screen.dart';
+import '../features/site_tools/view/site_tools_screen.dart';
 import '../features/sync_center/view/sync_center_screen.dart';
 import 'app_gate.dart';
 import 'routes.dart';
@@ -161,6 +165,15 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         routes: <RouteBase>[
           _route('request', (s) => PaymentFormScreen(workOrderId: int.tryParse(s.uri.queryParameters['work_order'] ?? ''))),
           _route(':id', (s) => ContractDetailScreen(workOrderId: int.parse(s.pathParameters['id']!))),
+        ],
+      ),
+      _route(Routes.siteTools, (_) => const SiteToolsScreen()),
+      _route(
+        Routes.inspections,
+        (_) => const InspectionsScreen(),
+        routes: <RouteBase>[
+          _route('fill', (s) => InspectionFillScreen(uuid: s.uri.queryParameters['uuid'] ?? '')),
+          _route(':key', (s) => InspectionDetailScreen(inspectionKey: s.pathParameters['key']!)),
         ],
       ),
       _route(

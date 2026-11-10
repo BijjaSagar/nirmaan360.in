@@ -1727,6 +1727,238 @@ class FakeApi implements NirmaanApi {
     return _presentContractor(stored);
   }
 
+  // Inspections ---------------------------------------------------------------
+
+  /// Gives the signed-in user the plan feature and the permission to fill in
+  /// a checklist, as an engineer on a plan with `qhs` has them.
+  void grantInspections() {
+    final features = (user['organization'] as Map)['features'] as List;
+    if (!features.contains('qhs')) features.add('qhs');
+    grant('checklist.fill');
+  }
+
+  /// The company's active checklists, as `InspectionPresenter::template` sends them.
+  List<Row> checklistTemplateRows = [
+    {
+      'id': 1,
+      'name': 'Pour card',
+      'category': 'pour_card',
+      'description': null,
+      'items': ['Level checked', 'Cover blocks fixed', 'Cubes cast'],
+      'updated_at': '2026-11-01T09:00:00+05:30',
+    },
+    {
+      'id': 2,
+      'name': 'PPE checklist',
+      'category': 'ppe',
+      'description': null,
+      'items': ['Helmets worn', 'Safety shoes worn', 'Harness used for work at height', 'Gloves used'],
+      'updated_at': '2026-11-01T09:00:00+05:30',
+    },
+  ];
+
+  Row _inspectionItem(int id, int position, String text, String result, [String? remark]) =>
+      {'id': id, 'position': position, 'text': text, 'result': result, 'remark': remark};
+
+  /// Inspections made on the website, as `InspectionPresenter::detail` sends them.
+  late final Map<int, Row> inspectionStore = {
+    11: {
+      'id': 11,
+      'client_uuid': null,
+      'project_id': 1,
+      'site_id': null,
+      'checklist_template_id': 1,
+      'title': 'Pour card',
+      'category': 'pour_card',
+      'location': 'Slab L2',
+      'inspected_on': '2026-11-07',
+      'status': 'passed',
+      'completed_at': '2026-11-07T11:00:00+05:30',
+      'updated_at': '2026-11-07T11:00:00+05:30',
+      'items': [
+        _inspectionItem(101, 1, 'Level checked', 'pass'),
+        _inspectionItem(102, 2, 'Cover blocks fixed', 'pass'),
+        _inspectionItem(103, 3, 'Cubes cast', 'na'),
+      ],
+    },
+    12: {
+      'id': 12,
+      'client_uuid': null,
+      'project_id': 1,
+      'site_id': null,
+      'checklist_template_id': 2,
+      'title': 'PPE checklist',
+      'category': 'ppe',
+      'location': 'Gate 2',
+      'inspected_on': '2026-11-08',
+      'status': 'failed',
+      'completed_at': '2026-11-08T10:00:00+05:30',
+      'updated_at': '2026-11-08T10:00:00+05:30',
+      'items': [
+        _inspectionItem(111, 1, 'Helmets worn', 'pass'),
+        _inspectionItem(112, 2, 'Safety shoes worn', 'pass'),
+        _inspectionItem(113, 3, 'Harness used for work at height', 'fail', 'No harness on the 3rd floor edge'),
+        _inspectionItem(114, 4, 'Gloves used', 'pass'),
+      ],
+    },
+    13: {
+      'id': 13,
+      'client_uuid': null,
+      'project_id': 1,
+      'site_id': null,
+      'checklist_template_id': 1,
+      'title': 'Pour card',
+      'category': 'pour_card',
+      'location': null,
+      'inspected_on': '2026-11-09',
+      'status': 'in_progress',
+      'completed_at': null,
+      'updated_at': '2026-11-09T08:00:00+05:30',
+      'items': [
+        _inspectionItem(121, 1, 'Level checked', 'pass'),
+        _inspectionItem(122, 2, 'Cover blocks fixed', 'pending'),
+        _inspectionItem(123, 3, 'Cubes cast', 'pending'),
+      ],
+    },
+  };
+
+  /// Whole inspections posted from the phone, by `client_uuid`.
+  final Map<String, Row> inspectionPosts = {};
+  int inspectionPostCalls = 0;
+
+  /// Sees the body of every post, as the server would.
+  void Function(Map<String, dynamic> body)? onInspectionPost;
+  int checklistTemplateReads = 0;
+  int inspectionDetailReads = 0;
+
+  /// Every read of the checklists or the list throws this.
+  ApiFailure? inspectionReadFailure;
+
+  /// Every read of the list alone throws this, so the checklists still come.
+  ApiFailure? inspectionListFailure;
+  var _inspectionSerial = 500;
+
+  Row _inspectionSummary(Row detail) => {
+    for (final entry in detail.entries)
+      if (entry.key != 'items') entry.key: entry.value,
+  };
+
+  @override
+  Future<List<Map<String, dynamic>>> checklistTemplates() async {
+    _guard();
+    checklistTemplateReads++;
+    final failure = inspectionReadFailure;
+    if (failure != null) throw failure;
+    return checklistTemplateRows;
+  }
+
+  @override
+  Future<Map<String, dynamic>> inspections(int projectId, {int page = 1}) async {
+    _guard();
+    final failure = inspectionReadFailure ?? inspectionListFailure;
+    if (failure != null) throw failure;
+    final rows = [
+      ...inspectionStore.values,
+      ...inspectionPosts.values,
+    ].where((row) => row['project_id'] == projectId).toList()
+      ..sort((a, b) {
+        final byDay = (b['inspected_on'] as String).compareTo(a['inspected_on'] as String);
+        return byDay != 0 ? byDay : (b['id'] as int).compareTo(a['id'] as int);
+      });
+    return {
+      'data': [for (final row in rows.take(25)) _inspectionSummary(row)],
+      'current_page': 1,
+      'last_page': rows.length > 25 ? 2 : 1,
+      'total': rows.length,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> inspection(int inspectionId) async {
+    _guard();
+    inspectionDetailReads++;
+    final row = inspectionStore[inspectionId] ?? inspectionPosts.values.firstWhere((r) => r['id'] == inspectionId, orElse: () => {});
+    if (row.isEmpty) throw const ServerFailure('Not found.', statusCode: 404);
+    return row;
+  }
+
+  @override
+  Future<Map<String, dynamic>> postInspection(int projectId, Map<String, dynamic> body) async {
+    _guard();
+    inspectionPostCalls++;
+    onInspectionPost?.call(body);
+    final failure = failNextProgressPost;
+    if (failure != null) {
+      failNextProgressPost = null;
+      throw failure;
+    }
+    final uuid = body['client_uuid'] as String;
+    var stored = inspectionPosts[uuid];
+    if (stored == null) {
+      // ChecklistService::start. The whole call is one transaction: a refusal stores nothing.
+      Row? template;
+      for (final row in checklistTemplateRows) {
+        if (row['id'] == body['checklist_template_id']) template = row;
+      }
+      if (template == null) {
+        throw const ValidationFailure('The selected checklist template id is invalid.', errors: {
+          'checklist_template_id': ['The selected checklist template id is invalid.'],
+        });
+      }
+      final texts = [for (final text in template['items'] as List) text as String];
+      final items = [for (final (i, text) in texts.indexed) _inspectionItem(_inspectionSerial * 10 + i, i + 1, text, 'pending')];
+      for (final raw in (body['results'] as List?) ?? const []) {
+        final result = raw as Map;
+        final position = result['position'] as int;
+        if (position < 1 || position > items.length) {
+          throw ValidationFailure('Item $position is not on this checklist.', errors: {
+            'results': ['Item $position is not on this checklist.'],
+          });
+        }
+        final remark = result['remark'] as String?;
+        if (result['result'] == 'fail' && (remark == null || remark.trim().isEmpty)) {
+          throw const ValidationFailure('Say what is wrong with a failed item.', errors: {
+            'results': ['Say what is wrong with a failed item.'],
+          });
+        }
+        items[position - 1]['result'] = result['result'];
+        items[position - 1]['remark'] = remark;
+      }
+      var status = 'in_progress';
+      if (body['complete'] == true) {
+        final pending = items.where((item) => item['result'] == 'pending').length;
+        if (pending > 0) {
+          throw ValidationFailure('$pending item(s) still have no result.', errors: {
+            'items': ['$pending item(s) still have no result.'],
+          });
+        }
+        status = items.any((item) => item['result'] == 'fail') ? 'failed' : 'passed';
+      }
+      final id = _inspectionSerial++;
+      stored = {
+        'id': id,
+        'client_uuid': uuid,
+        'project_id': projectId,
+        'site_id': null,
+        'checklist_template_id': template['id'],
+        'title': (body['title'] as String?) ?? template['name'],
+        'category': template['category'],
+        'location': body['location'],
+        'inspected_on': (body['inspected_on'] as String?) ?? '2026-11-09',
+        'status': status,
+        'completed_at': status == 'in_progress' ? null : '2026-11-09T10:00:00+05:30',
+        'updated_at': '2026-11-09T10:00:00+05:30',
+        'items': items,
+      };
+      inspectionPosts[uuid] = stored;
+    }
+    if (loseNextProgressReply) {
+      loseNextProgressReply = false;
+      throw const OfflineFailure();
+    }
+    return stored;
+  }
+
   // Price watch ---------------------------------------------------------------
 
   /// Gives the signed-in user the plan feature and the money permissions of an

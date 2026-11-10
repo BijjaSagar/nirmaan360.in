@@ -1,0 +1,103 @@
+// Inspections and machine logs against a real local Laravel server.
+//
+// Skipped by default. Use only against local demo data, never production:
+//   php artisan migrate --seed && php artisan serve --port=8361
+//   (the company needs checklists and machines; ChecklistService::installStandard
+//    and AssetService::create make them from tinker)
+//   flutter test test/integration/field_tools_real_api_test.dart \
+//     --dart-define=REAL_API_URL=http://127.0.0.1:8361/api/v1
+import 'package:dio/dio.dart';
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nirmaan360/core/api/dio_nirmaan_api.dart';
+import 'package:nirmaan360/core/app_services.dart';
+import 'package:nirmaan360/core/db/app_database.dart';
+import 'package:nirmaan360/core/session/token_store.dart';
+import 'package:nirmaan360/core/sync/attachment_store.dart';
+import 'package:nirmaan360/core/sync/sync_status.dart';
+import 'package:nirmaan360/features/inspections/data/inspection_repository.dart';
+
+const _url = String.fromEnvironment('REAL_API_URL');
+const _unreachable = 'http://127.0.0.1:9/api/v1';
+
+void main() {
+  test(
+    'an inspection filled in offline reaches the real server once, though the reply is lost',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final tokens = InMemoryTokenStore();
+      final dio = Dio();
+      final api = DioNirmaanApi(readToken: tokens.read, baseUrl: _url, dio: dio);
+      final services = AppServices.forTesting(
+        db: db,
+        api: api,
+        tokens: tokens,
+        attachments: InMemoryAttachmentStore(),
+      );
+      addTearDown(services.dispose);
+
+      final signIn = await services.auth.signIn(email: 'engineer@demo.test', password: 'password');
+      expect(signIn.firstSync.outcome, SyncOutcome.success);
+      final project = (await services.projects.watchProjects().first).first;
+      await services.projects.selectProject(project.id);
+      await services.syncCenter.syncNow();
+
+      final seen = (await services.inspections.readOverview(project.id))!;
+      expect(seen.refused, isFalse);
+      final template = seen.templates.firstWhere((t) => t.name == 'PPE checklist');
+      expect(template.items, isNotEmpty);
+
+      // Network off. The inspection is made and finished with the server unreachable.
+      dio.options.baseUrl = _unreachable;
+      var draft = await services.inspections.startDraft(projectId: project.id, template: template);
+      for (var position = 1; position <= draft.items.length; position++) {
+        draft = draft.withMark(position, result: position == 2 ? ItemResult.fail : ItemResult.pass, remark: position == 2 ? 'Real API test: no shoes' : null);
+      }
+      draft = draft.copyWith(location: 'Real API gate');
+      await services.inspections.saveDraft(draft);
+      await services.inspections.finish(draft);
+      await services.syncCenter.syncNow();
+      expect((await db.select(db.outbox).get()).single.status, OutboxStatus.pending);
+
+      // Network back, but the reply to the post is lost: the server has the
+      // inspection and the phone does not know it.
+      dio.options.baseUrl = _url;
+      var dropNextReply = true;
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onResponse: (response, handler) {
+            if (dropNextReply && response.requestOptions.method == 'POST' && response.requestOptions.path.endsWith('/inspections')) {
+              dropNextReply = false;
+              handler.reject(DioException(requestOptions: response.requestOptions, type: DioExceptionType.connectionError));
+              return;
+            }
+            handler.next(response);
+          },
+        ),
+      );
+      for (var i = 0; i < 6; i++) {
+        await services.syncCenter.syncNow();
+        if ((await db.select(db.outbox).get()).every((r) => r.status == OutboxStatus.done)) break;
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+
+      expect(dropNextReply, isFalse, reason: 'the lost reply must happen');
+      final row = (await db.select(db.outbox).get()).single;
+      expect(row.status, OutboxStatus.done, reason: '${row.attentionReason}');
+
+      final page = await api.inspections(project.id);
+      final mine = (page['data'] as List).cast<Map<String, dynamic>>().where((r) => r['client_uuid'] == draft.uuid).toList();
+      expect(mine, hasLength(1));
+      expect(mine.single['status'], 'failed');
+      expect(mine.single['location'], 'Real API gate');
+
+      final detail = (await services.inspections.readOverview(project.id))!.find(draft.uuid)!;
+      expect(detail.items, hasLength(draft.items.length));
+      expect(detail.items[1].result, ItemResult.fail);
+      expect(detail.items[1].remark, 'Real API test: no shoes');
+      expect(detail.notSent, isFalse);
+    },
+    skip: _url.isEmpty ? 'set REAL_API_URL to run against a local server' : null,
+    timeout: const Timeout(Duration(minutes: 3)),
+  );
+}

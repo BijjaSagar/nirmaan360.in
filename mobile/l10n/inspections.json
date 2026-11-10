@@ -1,0 +1,280 @@
+{
+  "inspectionsTitle": {
+    "en": "Inspections",
+    "mr": "पाहणी",
+    "hi": "निरीक्षण"
+  },
+  "inspectionsLoading": {
+    "en": "Loading inspections",
+    "mr": "पाहणी लोड होत आहे",
+    "hi": "निरीक्षण लोड हो रहे हैं"
+  },
+  "inspectionsNoDataMessage": {
+    "en": "Connect to the internet once to load this project's checklists. After that they open offline.",
+    "mr": "या प्रकल्पाच्या चेकलिस्ट लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर ऑफलाइनही उघडतील.",
+    "hi": "इस प्रोजेक्ट की चेकलिस्ट लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद ऑफ़लाइन भी खुलेंगी।"
+  },
+  "inspectionsRefusedTitle": {
+    "en": "Not part of your role",
+    "mr": "तुमच्या भूमिकेत हे नाही",
+    "hi": "यह आपकी भूमिका में नहीं है"
+  },
+  "inspectionsRefusedMessage": {
+    "en": "Checklists are not open to your role. Ask your office if you need them.",
+    "mr": "चेकलिस्ट तुमच्या भूमिकेसाठी उपलब्ध नाहीत. गरज असल्यास ऑफिसला विचारा.",
+    "hi": "चेकलिस्ट आपकी भूमिका के लिए उपलब्ध नहीं हैं। ज़रूरत हो तो ऑफ़िस से पूछें।"
+  },
+  "inspectionsEmptyTitle": {
+    "en": "No inspections yet",
+    "mr": "अजून पाहणी नाही",
+    "hi": "अभी कोई निरीक्षण नहीं"
+  },
+  "inspectionsEmptyMessage": {
+    "en": "Start one from a checklist. It is saved on this phone and sent when you are online.",
+    "mr": "चेकलिस्टमधून एक सुरू करा. ती या फोनवर जतन होते आणि इंटरनेट आल्यावर पाठवली जाते.",
+    "hi": "चेकलिस्ट से एक शुरू करें। यह इस फ़ोन पर सेव रहता है और इंटरनेट आने पर भेज दिया जाता है।"
+  },
+  "inspectionsStart": {
+    "en": "Start an inspection",
+    "mr": "पाहणी सुरू करा",
+    "hi": "निरीक्षण शुरू करें"
+  },
+  "inspectionsChecklistSearch": {
+    "en": "Search checklists",
+    "mr": "चेकलिस्ट शोधा",
+    "hi": "चेकलिस्ट खोजें"
+  },
+  "inspectionsSearchNone": {
+    "en": "No checklist matches",
+    "mr": "एकही चेकलिस्ट जुळत नाही",
+    "hi": "कोई चेकलिस्ट नहीं मिली"
+  },
+  "inspectionsItemCount": {
+    "en": "{count, plural, =1{1 item} other{{count} items}}",
+    "mr": "{count, plural, =1{1 मुद्दा} other{{count} मुद्दे}}",
+    "hi": "{count, plural, =1{1 बिंदु} other{{count} बिंदु}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionsDraftsHeading": {
+    "en": "Being filled in",
+    "mr": "भरणे सुरू आहे",
+    "hi": "भरे जा रहे हैं"
+  },
+  "inspectionsRecentHeading": {
+    "en": "Recent",
+    "mr": "अलीकडील",
+    "hi": "हाल के"
+  },
+  "inspectionsLatestOnly": {
+    "en": "Showing the latest 25. The rest are on the website.",
+    "mr": "नवीन 25 दाखवल्या आहेत. बाकीच्या वेबसाइटवर आहेत.",
+    "hi": "नए 25 दिखाए हैं। बाकी वेबसाइट पर हैं।"
+  },
+  "inspectionsDraftWord": {
+    "en": "Not finished",
+    "mr": "अपूर्ण",
+    "hi": "अधूरा"
+  },
+  "inspectionsFailedCount": {
+    "en": "{count} failed",
+    "mr": "{count} अनुत्तीर्ण",
+    "hi": "{count} फेल",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionResultPass": {
+    "en": "Pass",
+    "mr": "उत्तीर्ण",
+    "hi": "पास"
+  },
+  "inspectionResultFail": {
+    "en": "Fail",
+    "mr": "अनुत्तीर्ण",
+    "hi": "फेल"
+  },
+  "inspectionResultNa": {
+    "en": "Not applicable",
+    "mr": "लागू नाही",
+    "hi": "लागू नहीं"
+  },
+  "inspectionResultPending": {
+    "en": "No result yet",
+    "mr": "निकाल नाही",
+    "hi": "नतीजा नहीं"
+  },
+  "inspectionStatusPassed": {
+    "en": "Passed",
+    "mr": "उत्तीर्ण",
+    "hi": "पास हुआ"
+  },
+  "inspectionStatusFailed": {
+    "en": "Failed",
+    "mr": "अनुत्तीर्ण",
+    "hi": "फेल हुआ"
+  },
+  "inspectionStatusOpen": {
+    "en": "In progress",
+    "mr": "सुरू आहे",
+    "hi": "चल रहा है"
+  },
+  "inspectionCategoryPourCard": {
+    "en": "Pour card",
+    "mr": "पोअर कार्ड",
+    "hi": "पोर कार्ड"
+  },
+  "inspectionCategoryShuttering": {
+    "en": "Shuttering",
+    "mr": "शटरिंग",
+    "hi": "शटरिंग"
+  },
+  "inspectionCategoryReinforcement": {
+    "en": "Reinforcement",
+    "mr": "सळई",
+    "hi": "सरिया"
+  },
+  "inspectionCategoryPpe": {
+    "en": "PPE",
+    "mr": "PPE",
+    "hi": "PPE"
+  },
+  "inspectionCategorySafety": {
+    "en": "Safety",
+    "mr": "सुरक्षा",
+    "hi": "सुरक्षा"
+  },
+  "inspectionCategoryGeneral": {
+    "en": "General",
+    "mr": "सर्वसाधारण",
+    "hi": "सामान्य"
+  },
+  "inspectionFillMarked": {
+    "en": "{done} of {total} marked",
+    "mr": "{total} पैकी {done} नोंदवले",
+    "hi": "{total} में से {done} दर्ज",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillLocation": {
+    "en": "Location",
+    "mr": "ठिकाण",
+    "hi": "स्थान"
+  },
+  "inspectionFillLocationHint": {
+    "en": "For example Slab L3 or Gate 2. Optional.",
+    "mr": "उदा. स्लॅब L3 किंवा गेट 2. ऐच्छिक.",
+    "hi": "जैसे स्लैब L3 या गेट 2। वैकल्पिक।"
+  },
+  "inspectionFillDate": {
+    "en": "Inspection date",
+    "mr": "पाहणीचा दिनांक",
+    "hi": "निरीक्षण की तारीख"
+  },
+  "inspectionFillChoose": {
+    "en": "Choose Pass, Fail or Not applicable",
+    "mr": "उत्तीर्ण, अनुत्तीर्ण किंवा लागू नाही निवडा",
+    "hi": "पास, फेल या लागू नहीं चुनें"
+  },
+  "inspectionFillWrong": {
+    "en": "What is wrong?",
+    "mr": "काय चुकले आहे?",
+    "hi": "क्या गड़बड़ है?"
+  },
+  "inspectionFillWrongRequired": {
+    "en": "Write what is wrong. A failed item needs this.",
+    "mr": "काय चुकले ते लिहा. अनुत्तीर्ण मुद्द्यासाठी हे आवश्यक आहे.",
+    "hi": "लिखें कि क्या गड़बड़ है। फेल बिंदु के लिए यह ज़रूरी है।"
+  },
+  "inspectionFillUnmarked": {
+    "en": "{count, plural, =1{1 item still has no result} other{{count} items still have no result}}",
+    "mr": "{count, plural, =1{1 मुद्द्याचा निकाल अजून नोंदवलेला नाही} other{{count} मुद्द्यांचा निकाल अजून नोंदवलेला नाही}}",
+    "hi": "{count, plural, =1{1 बिंदु का नतीजा अभी दर्ज नहीं} other{{count} बिंदुओं का नतीजा अभी दर्ज नहीं}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillNeedRemark": {
+    "en": "{count, plural, =1{1 failed item needs a reason} other{{count} failed items need a reason}}",
+    "mr": "{count, plural, =1{अनुत्तीर्ण 1 मुद्द्याचे कारण लिहा} other{अनुत्तीर्ण {count} मुद्द्यांचे कारण लिहा}}",
+    "hi": "{count, plural, =1{फेल 1 बिंदु का कारण लिखें} other{फेल {count} बिंदुओं का कारण लिखें}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFinish": {
+    "en": "Finish inspection",
+    "mr": "पाहणी पूर्ण करा",
+    "hi": "निरीक्षण पूरा करें"
+  },
+  "inspectionFillLockedNote": {
+    "en": "Once finished, an inspection cannot be changed.",
+    "mr": "पूर्ण झाल्यावर पाहणी बदलता येत नाही.",
+    "hi": "पूरा होने के बाद निरीक्षण बदला नहीं जा सकता।"
+  },
+  "inspectionDiscard": {
+    "en": "Discard",
+    "mr": "रद्द करा",
+    "hi": "रद्द करें"
+  },
+  "inspectionDiscardTitle": {
+    "en": "Discard this inspection?",
+    "mr": "ही पाहणी रद्द करायची?",
+    "hi": "यह निरीक्षण रद्द करें?"
+  },
+  "inspectionDiscardBody": {
+    "en": "What you marked so far will be lost.",
+    "mr": "आतापर्यंत नोंदवलेले सर्व जाईल.",
+    "hi": "अब तक दर्ज किया हुआ सब मिट जाएगा।"
+  },
+  "inspectionGoneTitle": {
+    "en": "Not on this phone",
+    "mr": "हे या फोनवर नाही",
+    "hi": "यह इस फ़ोन पर नहीं है"
+  },
+  "inspectionGoneMessage": {
+    "en": "This inspection was finished or discarded.",
+    "mr": "ही पाहणी पूर्ण झाली किंवा रद्द केली.",
+    "hi": "यह निरीक्षण पूरा हो गया या रद्द कर दिया गया।"
+  },
+  "inspectionNotOnPhone": {
+    "en": "Connect to the internet to load it.",
+    "mr": "लोड करण्यासाठी इंटरनेटशी जोडा.",
+    "hi": "लोड करने के लिए इंटरनेट से जुड़ें।"
+  },
+  "inspectionOpenOutbox": {
+    "en": "Open the sending list",
+    "mr": "पाठवण्याची यादी उघडा",
+    "hi": "भेजने की सूची खोलें"
+  },
+  "inspectionWaitingNote": {
+    "en": "Saved on this phone. It will be sent when you are online, and cannot be changed after that.",
+    "mr": "या फोनवर जतन झाली. इंटरनेट आल्यावर पाठवली जाईल, त्यानंतर बदलता येणार नाही.",
+    "hi": "इस फ़ोन पर सेव है। इंटरनेट आने पर भेजा जाएगा, उसके बाद बदला नहीं जा सकेगा।"
+  },
+  "inspectionOpenNote": {
+    "en": "This inspection was started on the website and is not finished. Finish it there.",
+    "mr": "ही पाहणी वेबसाइटवर सुरू झाली आणि अपूर्ण आहे. ती तिथेच पूर्ण करा.",
+    "hi": "यह निरीक्षण वेबसाइट पर शुरू हुआ और अधूरा है। इसे वहीं पूरा करें।"
+  },
+  "inspectionItemsNotLoaded": {
+    "en": "The items are not on this phone yet. Connect to the internet to load them.",
+    "mr": "मुद्दे अजून या फोनवर नाहीत. लोड करण्यासाठी इंटरनेटशी जोडा.",
+    "hi": "बिंदु अभी इस फ़ोन पर नहीं हैं। लोड करने के लिए इंटरनेट से जुड़ें।"
+  }
+}

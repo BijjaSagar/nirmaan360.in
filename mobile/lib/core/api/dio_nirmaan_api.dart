@@ -469,6 +469,21 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> checklistTemplates() => _getRows('/checklist-templates');
+
+  @override
+  Future<Map<String, dynamic>> inspections(int projectId, {int page = 1}) => _call(
+    () => _dio.get('/projects/$projectId/inspections', queryParameters: <String, dynamic>{'page': page}),
+  );
+
+  @override
+  Future<Map<String, dynamic>> inspection(int inspectionId) => _getData('/inspections/$inspectionId');
+
+  @override
+  Future<Map<String, dynamic>> postInspection(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/inspections', body);
+
+  @override
   Future<Map<String, dynamic>> siteDashboard(int projectId) => _getData('/projects/$projectId/site-dashboard');
 
   @override

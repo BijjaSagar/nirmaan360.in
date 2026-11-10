@@ -16,6 +16,7 @@ import '../features/attendance/data/attendance_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/dpr/data/dpr_repository.dart';
 import '../features/home/data/home_repository.dart';
+import '../features/inspections/data/inspection_repository.dart';
 import '../features/issues/data/issue_repository.dart';
 import '../features/measurement/data/measurement_repository.dart';
 import '../features/petty_cash/data/petty_cash_repository.dart';
@@ -54,6 +55,7 @@ class AppServices {
     required this.material,
     required this.siteAlerts,
     required this.contractors,
+    required this.inspections,
     required this.portal,
     required this.priceWatch,
     required this.projectImages,
@@ -190,6 +192,7 @@ class AppServices {
     final material = MaterialRepository(context);
     final siteAlerts = SiteAlertsRepository(context);
     final contractors = ContractorRepository(context);
+    final inspections = InspectionRepository(context);
     final portal = PortalRepository(context);
     final priceWatch = PriceWatchRepository(context);
     final projectImages = ProjectImageRepository(context);
@@ -201,6 +204,7 @@ class AppServices {
         siteAlerts.refreshCurrent,
         contractors.refreshCurrent,
         priceWatch.refreshCurrent,
+        inspections.refreshCurrent,
       ]) {
         try {
           await refresh(force: sentSomething);
@@ -215,6 +219,7 @@ class AppServices {
       material: material,
       siteAlerts: siteAlerts,
       contractors: contractors,
+      inspections: inspections,
       portal: portal,
       priceWatch: priceWatch,
       projectImages: projectImages,
@@ -276,6 +281,9 @@ class AppServices {
   final MaterialRepository material;
   final SiteAlertsRepository siteAlerts;
   final ContractorRepository contractors;
+
+  /// Checklists and the inspections filled in from them.
+  final InspectionRepository inspections;
 
   /// The contractor portal: all a contractor login reads.
   final PortalRepository portal;

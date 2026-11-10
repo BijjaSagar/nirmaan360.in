@@ -1392,6 +1392,193 @@ class AppLocalizationsMr extends AppLocalizations {
   String get dprYesterdayTag => 'काल';
 
   @override
+  String get inspectionCategoryGeneral => 'सर्वसाधारण';
+
+  @override
+  String get inspectionCategoryPourCard => 'पोअर कार्ड';
+
+  @override
+  String get inspectionCategoryPpe => 'PPE';
+
+  @override
+  String get inspectionCategoryReinforcement => 'सळई';
+
+  @override
+  String get inspectionCategorySafety => 'सुरक्षा';
+
+  @override
+  String get inspectionCategoryShuttering => 'शटरिंग';
+
+  @override
+  String get inspectionDiscard => 'रद्द करा';
+
+  @override
+  String get inspectionDiscardBody => 'आतापर्यंत नोंदवलेले सर्व जाईल.';
+
+  @override
+  String get inspectionDiscardTitle => 'ही पाहणी रद्द करायची?';
+
+  @override
+  String get inspectionFillChoose =>
+      'उत्तीर्ण, अनुत्तीर्ण किंवा लागू नाही निवडा';
+
+  @override
+  String get inspectionFillDate => 'पाहणीचा दिनांक';
+
+  @override
+  String get inspectionFillLocation => 'ठिकाण';
+
+  @override
+  String get inspectionFillLocationHint => 'उदा. स्लॅब L3 किंवा गेट 2. ऐच्छिक.';
+
+  @override
+  String get inspectionFillLockedNote => 'पूर्ण झाल्यावर पाहणी बदलता येत नाही.';
+
+  @override
+  String inspectionFillMarked(int done, int total) {
+    return '$total पैकी $done नोंदवले';
+  }
+
+  @override
+  String inspectionFillNeedRemark(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'अनुत्तीर्ण $count मुद्द्यांचे कारण लिहा',
+      one: 'अनुत्तीर्ण 1 मुद्द्याचे कारण लिहा',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inspectionFillUnmarked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count मुद्द्यांचा निकाल अजून नोंदवलेला नाही',
+      one: '1 मुद्द्याचा निकाल अजून नोंदवलेला नाही',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inspectionFillWrong => 'काय चुकले आहे?';
+
+  @override
+  String get inspectionFillWrongRequired =>
+      'काय चुकले ते लिहा. अनुत्तीर्ण मुद्द्यासाठी हे आवश्यक आहे.';
+
+  @override
+  String get inspectionFinish => 'पाहणी पूर्ण करा';
+
+  @override
+  String get inspectionGoneMessage => 'ही पाहणी पूर्ण झाली किंवा रद्द केली.';
+
+  @override
+  String get inspectionGoneTitle => 'हे या फोनवर नाही';
+
+  @override
+  String get inspectionItemsNotLoaded =>
+      'मुद्दे अजून या फोनवर नाहीत. लोड करण्यासाठी इंटरनेटशी जोडा.';
+
+  @override
+  String get inspectionNotOnPhone => 'लोड करण्यासाठी इंटरनेटशी जोडा.';
+
+  @override
+  String get inspectionOpenNote =>
+      'ही पाहणी वेबसाइटवर सुरू झाली आणि अपूर्ण आहे. ती तिथेच पूर्ण करा.';
+
+  @override
+  String get inspectionOpenOutbox => 'पाठवण्याची यादी उघडा';
+
+  @override
+  String get inspectionResultFail => 'अनुत्तीर्ण';
+
+  @override
+  String get inspectionResultNa => 'लागू नाही';
+
+  @override
+  String get inspectionResultPass => 'उत्तीर्ण';
+
+  @override
+  String get inspectionResultPending => 'निकाल नाही';
+
+  @override
+  String get inspectionStatusFailed => 'अनुत्तीर्ण';
+
+  @override
+  String get inspectionStatusOpen => 'सुरू आहे';
+
+  @override
+  String get inspectionStatusPassed => 'उत्तीर्ण';
+
+  @override
+  String get inspectionWaitingNote =>
+      'या फोनवर जतन झाली. इंटरनेट आल्यावर पाठवली जाईल, त्यानंतर बदलता येणार नाही.';
+
+  @override
+  String get inspectionsChecklistSearch => 'चेकलिस्ट शोधा';
+
+  @override
+  String get inspectionsDraftWord => 'अपूर्ण';
+
+  @override
+  String get inspectionsDraftsHeading => 'भरणे सुरू आहे';
+
+  @override
+  String get inspectionsEmptyMessage =>
+      'चेकलिस्टमधून एक सुरू करा. ती या फोनवर जतन होते आणि इंटरनेट आल्यावर पाठवली जाते.';
+
+  @override
+  String get inspectionsEmptyTitle => 'अजून पाहणी नाही';
+
+  @override
+  String inspectionsFailedCount(int count) {
+    return '$count अनुत्तीर्ण';
+  }
+
+  @override
+  String inspectionsItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count मुद्दे',
+      one: '1 मुद्दा',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inspectionsLatestOnly =>
+      'नवीन 25 दाखवल्या आहेत. बाकीच्या वेबसाइटवर आहेत.';
+
+  @override
+  String get inspectionsLoading => 'पाहणी लोड होत आहे';
+
+  @override
+  String get inspectionsNoDataMessage =>
+      'या प्रकल्पाच्या चेकलिस्ट लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर ऑफलाइनही उघडतील.';
+
+  @override
+  String get inspectionsRecentHeading => 'अलीकडील';
+
+  @override
+  String get inspectionsRefusedMessage =>
+      'चेकलिस्ट तुमच्या भूमिकेसाठी उपलब्ध नाहीत. गरज असल्यास ऑफिसला विचारा.';
+
+  @override
+  String get inspectionsRefusedTitle => 'तुमच्या भूमिकेत हे नाही';
+
+  @override
+  String get inspectionsSearchNone => 'एकही चेकलिस्ट जुळत नाही';
+
+  @override
+  String get inspectionsStart => 'पाहणी सुरू करा';
+
+  @override
+  String get inspectionsTitle => 'पाहणी';
+
+  @override
   String get issuesActionClose => 'समस्या बंद करा';
 
   @override
@@ -3685,6 +3872,13 @@ class AppLocalizationsMr extends AppLocalizations {
   }
 
   @override
+  String get siteToolsInspectionsHint =>
+      'पोअर, शटरिंग किंवा सुरक्षा फेरीसाठी चेकलिस्ट भरा';
+
+  @override
+  String get siteToolsTitle => 'साइट साधने';
+
+  @override
   String get statusApproved => 'मंजूर';
 
   @override
@@ -3811,6 +4005,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get syncTypeDprSubmit => 'अहवाल सादर करणे';
+
+  @override
+  String get syncTypeInspection => 'पाहणी';
 
   @override
   String get syncTypeIssue => 'समस्या';

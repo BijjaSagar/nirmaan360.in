@@ -17,6 +17,7 @@ import 'connectivity.dart';
 import 'contractor_payments.dart';
 import 'floor_entries.dart';
 import 'ids.dart';
+import 'inspection_cache.dart';
 import 'pull_applier.dart';
 import 'record_photos.dart';
 import 'sync_status.dart';
@@ -76,6 +77,7 @@ class SyncEngine {
   late final RecordPhotos _photos = RecordPhotos(db: _db, api: _api, attachments: _attachments, clock: _clock);
   late final FloorEntries _floorEntries = FloorEntries(db: _db, api: _api);
   late final ContractorPayments _contractorPayments = ContractorPayments(_db);
+  late final InspectionCache _inspectionCache = InspectionCache(_db);
   final String _instanceId;
 
   late final StreamSubscription<bool> _connectivitySub;
@@ -504,6 +506,7 @@ class SyncEngine {
       case OutboxType.measurementPhoto:
       case OutboxType.progressCorrection:
       case OutboxType.contractorPayment:
+      case OutboxType.inspection:
         return null;
     }
   }
@@ -637,6 +640,7 @@ class SyncEngine {
       case OutboxType.measurementPhoto:
       case OutboxType.progressCorrection:
       case OutboxType.contractorPayment:
+      case OutboxType.inspection:
         break;
     }
   }
@@ -728,6 +732,10 @@ class SyncEngine {
       if (row.type == OutboxType.contractorPayment) {
         await _contractorPayments.remember(row.projectId, stored);
       }
+      // An inspection too: it is locked on the server, so it must stay in the list.
+      if (row.type == OutboxType.inspection) {
+        await _inspectionCache.remember(row.projectId, stored);
+      }
     });
     _sentThisRun++;
     _notifyProgress();
@@ -804,9 +812,40 @@ class SyncEngine {
           <String, dynamic>{...body}..remove('work_order_id'),
           filePath: file == null ? null : await _attachments.absolutePath(file),
         );
+      case OutboxType.inspection:
+        await _checkChecklistUnchanged(data);
+        // `local` is what the phone shows while it waits. The server needs the rest.
+        return _api.postInspection(row.projectId, <String, dynamic>{...body}..remove('local'));
       default:
         throw StateError('${row.type} is not a direct row.');
     }
+  }
+
+  /// An inspection is marked by item position, and the server numbers the items
+  /// of whatever the checklist says when the call arrives. If the checklist was
+  /// edited after the phone copied it, position 3 may now be another check, and a
+  /// pass would be recorded against the wrong thing. A completed inspection cannot
+  /// be corrected afterwards, so this is checked before anything is sent.
+  Future<void> _checkChecklistUnchanged(Map<String, dynamic> data) async {
+    final Object? local = data['local'];
+    final Object? kept = local is Map ? local['items'] : null;
+    if (kept is! List) return;
+    final Object? id = data['checklist_template_id'];
+    final templates = await _api.checklistTemplates();
+    Map<String, dynamic>? current;
+    for (final template in templates) {
+      if (template['id'] == id) current = template;
+    }
+    const String gone = 'This checklist is no longer available. Nothing was sent.';
+    const String changed = 'This checklist was changed after you filled it in, so nothing was sent. Fill it in again.';
+    if (current == null) {
+      throw const ValidationFailure(gone, errors: {'checklist_template_id': [gone]});
+    }
+    final Object? now = current['items'];
+    final bool same = now is List && now.length == kept.length && <bool>[
+      for (var i = 0; i < kept.length; i++) now[i].toString() == kept[i].toString(),
+    ].every((bool equal) => equal);
+    if (!same) throw const ValidationFailure(changed, errors: {'checklist_template_id': [changed]});
   }
 
   /// Set when the parent row was accepted, which the group order guarantees

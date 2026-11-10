@@ -647,6 +647,94 @@
   "dprWriteToday": "Write today's report",
   "dprYesterdayLabel": "Yesterday",
   "dprYesterdayTag": "Yesterday",
+  "inspectionCategoryGeneral": "General",
+  "inspectionCategoryPourCard": "Pour card",
+  "inspectionCategoryPpe": "PPE",
+  "inspectionCategoryReinforcement": "Reinforcement",
+  "inspectionCategorySafety": "Safety",
+  "inspectionCategoryShuttering": "Shuttering",
+  "inspectionDiscard": "Discard",
+  "inspectionDiscardBody": "What you marked so far will be lost.",
+  "inspectionDiscardTitle": "Discard this inspection?",
+  "inspectionFillChoose": "Choose Pass, Fail or Not applicable",
+  "inspectionFillDate": "Inspection date",
+  "inspectionFillLocation": "Location",
+  "inspectionFillLocationHint": "For example Slab L3 or Gate 2. Optional.",
+  "inspectionFillLockedNote": "Once finished, an inspection cannot be changed.",
+  "inspectionFillMarked": "{done} of {total} marked",
+  "@inspectionFillMarked": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillNeedRemark": "{count, plural, =1{1 failed item needs a reason} other{{count} failed items need a reason}}",
+  "@inspectionFillNeedRemark": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillUnmarked": "{count, plural, =1{1 item still has no result} other{{count} items still have no result}}",
+  "@inspectionFillUnmarked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillWrong": "What is wrong?",
+  "inspectionFillWrongRequired": "Write what is wrong. A failed item needs this.",
+  "inspectionFinish": "Finish inspection",
+  "inspectionGoneMessage": "This inspection was finished or discarded.",
+  "inspectionGoneTitle": "Not on this phone",
+  "inspectionItemsNotLoaded": "The items are not on this phone yet. Connect to the internet to load them.",
+  "inspectionNotOnPhone": "Connect to the internet to load it.",
+  "inspectionOpenNote": "This inspection was started on the website and is not finished. Finish it there.",
+  "inspectionOpenOutbox": "Open the sending list",
+  "inspectionResultFail": "Fail",
+  "inspectionResultNa": "Not applicable",
+  "inspectionResultPass": "Pass",
+  "inspectionResultPending": "No result yet",
+  "inspectionStatusFailed": "Failed",
+  "inspectionStatusOpen": "In progress",
+  "inspectionStatusPassed": "Passed",
+  "inspectionWaitingNote": "Saved on this phone. It will be sent when you are online, and cannot be changed after that.",
+  "inspectionsChecklistSearch": "Search checklists",
+  "inspectionsDraftWord": "Not finished",
+  "inspectionsDraftsHeading": "Being filled in",
+  "inspectionsEmptyMessage": "Start one from a checklist. It is saved on this phone and sent when you are online.",
+  "inspectionsEmptyTitle": "No inspections yet",
+  "inspectionsFailedCount": "{count} failed",
+  "@inspectionsFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionsItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@inspectionsItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionsLatestOnly": "Showing the latest 25. The rest are on the website.",
+  "inspectionsLoading": "Loading inspections",
+  "inspectionsNoDataMessage": "Connect to the internet once to load this project's checklists. After that they open offline.",
+  "inspectionsRecentHeading": "Recent",
+  "inspectionsRefusedMessage": "Checklists are not open to your role. Ask your office if you need them.",
+  "inspectionsRefusedTitle": "Not part of your role",
+  "inspectionsSearchNone": "No checklist matches",
+  "inspectionsStart": "Start an inspection",
+  "inspectionsTitle": "Inspections",
   "issuesActionClose": "Close issue",
   "issuesActionReopen": "Reopen",
   "issuesActionResolve": "Mark resolved",
@@ -1861,6 +1949,8 @@
       }
     }
   },
+  "siteToolsInspectionsHint": "Fill a checklist for a pour, shuttering or a safety round",
+  "siteToolsTitle": "Site tools",
   "statusApproved": "Approved",
   "statusDraft": "Draft",
   "statusInReview": "In review",
@@ -1929,6 +2019,7 @@
   "syncTypeDpr": "Daily report",
   "syncTypeDprPhoto": "Report photo",
   "syncTypeDprSubmit": "Report submission",
+  "syncTypeInspection": "Inspection",
   "syncTypeIssue": "Issue",
   "syncTypeIssuePhoto": "Issue photo",
   "syncTypeIssueStatus": "Issue status",

@@ -2608,6 +2608,306 @@ abstract class AppLocalizations {
   /// **'Yesterday'**
   String get dprYesterdayTag;
 
+  /// No description provided for @inspectionCategoryGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get inspectionCategoryGeneral;
+
+  /// No description provided for @inspectionCategoryPourCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Pour card'**
+  String get inspectionCategoryPourCard;
+
+  /// No description provided for @inspectionCategoryPpe.
+  ///
+  /// In en, this message translates to:
+  /// **'PPE'**
+  String get inspectionCategoryPpe;
+
+  /// No description provided for @inspectionCategoryReinforcement.
+  ///
+  /// In en, this message translates to:
+  /// **'Reinforcement'**
+  String get inspectionCategoryReinforcement;
+
+  /// No description provided for @inspectionCategorySafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get inspectionCategorySafety;
+
+  /// No description provided for @inspectionCategoryShuttering.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuttering'**
+  String get inspectionCategoryShuttering;
+
+  /// No description provided for @inspectionDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get inspectionDiscard;
+
+  /// No description provided for @inspectionDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'What you marked so far will be lost.'**
+  String get inspectionDiscardBody;
+
+  /// No description provided for @inspectionDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard this inspection?'**
+  String get inspectionDiscardTitle;
+
+  /// No description provided for @inspectionFillChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Pass, Fail or Not applicable'**
+  String get inspectionFillChoose;
+
+  /// No description provided for @inspectionFillDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspection date'**
+  String get inspectionFillDate;
+
+  /// No description provided for @inspectionFillLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get inspectionFillLocation;
+
+  /// No description provided for @inspectionFillLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example Slab L3 or Gate 2. Optional.'**
+  String get inspectionFillLocationHint;
+
+  /// No description provided for @inspectionFillLockedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Once finished, an inspection cannot be changed.'**
+  String get inspectionFillLockedNote;
+
+  /// No description provided for @inspectionFillMarked.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} marked'**
+  String inspectionFillMarked(int done, int total);
+
+  /// No description provided for @inspectionFillNeedRemark.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 failed item needs a reason} other{{count} failed items need a reason}}'**
+  String inspectionFillNeedRemark(int count);
+
+  /// No description provided for @inspectionFillUnmarked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item still has no result} other{{count} items still have no result}}'**
+  String inspectionFillUnmarked(int count);
+
+  /// No description provided for @inspectionFillWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'What is wrong?'**
+  String get inspectionFillWrong;
+
+  /// No description provided for @inspectionFillWrongRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write what is wrong. A failed item needs this.'**
+  String get inspectionFillWrongRequired;
+
+  /// No description provided for @inspectionFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish inspection'**
+  String get inspectionFinish;
+
+  /// No description provided for @inspectionGoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This inspection was finished or discarded.'**
+  String get inspectionGoneMessage;
+
+  /// No description provided for @inspectionGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not on this phone'**
+  String get inspectionGoneTitle;
+
+  /// No description provided for @inspectionItemsNotLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'The items are not on this phone yet. Connect to the internet to load them.'**
+  String get inspectionItemsNotLoaded;
+
+  /// No description provided for @inspectionNotOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to load it.'**
+  String get inspectionNotOnPhone;
+
+  /// No description provided for @inspectionOpenNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This inspection was started on the website and is not finished. Finish it there.'**
+  String get inspectionOpenNote;
+
+  /// No description provided for @inspectionOpenOutbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the sending list'**
+  String get inspectionOpenOutbox;
+
+  /// No description provided for @inspectionResultFail.
+  ///
+  /// In en, this message translates to:
+  /// **'Fail'**
+  String get inspectionResultFail;
+
+  /// No description provided for @inspectionResultNa.
+  ///
+  /// In en, this message translates to:
+  /// **'Not applicable'**
+  String get inspectionResultNa;
+
+  /// No description provided for @inspectionResultPass.
+  ///
+  /// In en, this message translates to:
+  /// **'Pass'**
+  String get inspectionResultPass;
+
+  /// No description provided for @inspectionResultPending.
+  ///
+  /// In en, this message translates to:
+  /// **'No result yet'**
+  String get inspectionResultPending;
+
+  /// No description provided for @inspectionStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get inspectionStatusFailed;
+
+  /// No description provided for @inspectionStatusOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get inspectionStatusOpen;
+
+  /// No description provided for @inspectionStatusPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed'**
+  String get inspectionStatusPassed;
+
+  /// No description provided for @inspectionWaitingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. It will be sent when you are online, and cannot be changed after that.'**
+  String get inspectionWaitingNote;
+
+  /// No description provided for @inspectionsChecklistSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search checklists'**
+  String get inspectionsChecklistSearch;
+
+  /// No description provided for @inspectionsDraftWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Not finished'**
+  String get inspectionsDraftWord;
+
+  /// No description provided for @inspectionsDraftsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Being filled in'**
+  String get inspectionsDraftsHeading;
+
+  /// No description provided for @inspectionsEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Start one from a checklist. It is saved on this phone and sent when you are online.'**
+  String get inspectionsEmptyMessage;
+
+  /// No description provided for @inspectionsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No inspections yet'**
+  String get inspectionsEmptyTitle;
+
+  /// No description provided for @inspectionsFailedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} failed'**
+  String inspectionsFailedCount(int count);
+
+  /// No description provided for @inspectionsItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String inspectionsItemCount(int count);
+
+  /// No description provided for @inspectionsLatestOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the latest 25. The rest are on the website.'**
+  String get inspectionsLatestOnly;
+
+  /// No description provided for @inspectionsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading inspections'**
+  String get inspectionsLoading;
+
+  /// No description provided for @inspectionsNoDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet once to load this project\'s checklists. After that they open offline.'**
+  String get inspectionsNoDataMessage;
+
+  /// No description provided for @inspectionsRecentHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get inspectionsRecentHeading;
+
+  /// No description provided for @inspectionsRefusedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklists are not open to your role. Ask your office if you need them.'**
+  String get inspectionsRefusedMessage;
+
+  /// No description provided for @inspectionsRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not part of your role'**
+  String get inspectionsRefusedTitle;
+
+  /// No description provided for @inspectionsSearchNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No checklist matches'**
+  String get inspectionsSearchNone;
+
+  /// No description provided for @inspectionsStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start an inspection'**
+  String get inspectionsStart;
+
+  /// No description provided for @inspectionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspections'**
+  String get inspectionsTitle;
+
   /// No description provided for @issuesActionClose.
   ///
   /// In en, this message translates to:
@@ -6664,6 +6964,18 @@ abstract class AppLocalizations {
   /// **'{label}: {value}'**
   String shellTodaySemantics(String label, String value);
 
+  /// No description provided for @siteToolsInspectionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill a checklist for a pour, shuttering or a safety round'**
+  String get siteToolsInspectionsHint;
+
+  /// No description provided for @siteToolsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Site tools'**
+  String get siteToolsTitle;
+
   /// No description provided for @statusApproved.
   ///
   /// In en, this message translates to:
@@ -6885,6 +7197,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report submission'**
   String get syncTypeDprSubmit;
+
+  /// No description provided for @syncTypeInspection.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspection'**
+  String get syncTypeInspection;
 
   /// No description provided for @syncTypeIssue.
   ///

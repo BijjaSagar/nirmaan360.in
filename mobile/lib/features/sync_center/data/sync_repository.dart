@@ -220,6 +220,7 @@ class SyncRepository {
       case OutboxType.measurementPhoto:
       case OutboxType.progressCorrection:
       case OutboxType.contractorPayment:
+      case OutboxType.inspection:
         break;
     }
   }

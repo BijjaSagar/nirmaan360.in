@@ -305,6 +305,29 @@ Needs the `price_watch` plan feature. `money.view` reads the board and a materia
 - A 403 or 404 is kept as "refused" and the screen says so calmly. A failed read keeps the last copy. Impact is `(latest recorded price - BOQ rate) x quantity still to buy` and is shown in words ("more" or "less"), never as a bare sign. A material with no effect says why (`why`).
 - The way in is a labelled tile on the Material page's top bar, only for `money.view` on a plan that has it. Home has no room for a third line.
 
+### Inspections and checklists
+
+Needs the `qhs` plan feature and `checklist.fill` in the `can` list. `checklist.view`, which the server asks for on every read, does not reach the app, so the phone gates on `checklist.fill` alone (a 403 on a read is kept as "refused" and the screen says so calmly). Every role that fills a checklist also sees them. A company on the offline plan has no `qhs`, and the gate also keeps the screens away from any phone that keeps its data local.
+
+The server's rules, from `ChecklistService` and `InspectionApiTest`:
+
+- An item's result is `pending`, `pass`, `fail` or `na` ("Not applicable"). An inspection is `in_progress`, `passed` or `failed`. `pending` is the start state and cannot be sent as a result by the phone.
+- A `fail` needs a written `remark` (at most 255 characters), or the call is a 422 on `results`. There is no photo route on the inspection API, so a failure has words and no picture.
+- Completing needs a result on every item (`na` counts), or 422 on `items`. Any `fail` makes the inspection `failed`, otherwise `passed`.
+- A completed inspection is locked. `PATCH /inspections/{id}` and `POST /inspections/{id}/complete` on one both answer 409, "A completed inspection cannot be changed."
+- `POST /projects/{project}/inspections` takes `checklist_template_id`, optional `title`, `location` (160), `site_id` and `inspected_on` (not in the future), the `results` as `[{position, result, remark}]` by item position starting at 1, and `complete: true`, with a `client_uuid`. It is one transaction: a refusal stores nothing. A repeated `client_uuid` returns the first inspection with 200 and applies nothing. Items are copied from the checklist when the call arrives, so a position means whatever the checklist says at that moment.
+
+What the phone does with that:
+
+- It reads `GET /checklist-templates`, `GET /projects/{project}/inspections` (the first page, 25, newest first) and `GET /inspections/{id}` for the latest 15, and keeps them per project under `inspections.<projectId>`, on the same schedule as site progress. A kept inspection is read again only when its `updated_at` changes. The key goes with the project, and is dropped on the next sync when someone loses the permission or the plan.
+- An inspection is filled in on the phone as a draft under `inspection.drafts.<projectId>`, written at every mark, so it survives the app closing. A draft is work the server has never seen, so sign-out counts it as unsent.
+- Finishing queues one outbox row of type `inspection`, posted on its own to `POST /projects/{project}/inspections` with every result and `complete: true`, and removes the draft in the same transaction. This is the only safe way to queue an inspection offline. The pieces are not: `complete` has no `client_uuid`, and one whose reply was lost is answered 409 on the retry because the inspection is by then locked. So the phone never queues a `PATCH` or a separate `complete`.
+- Before it sends, the engine reads `GET /checklist-templates` and compares the checklist's items with the copy the draft was made from. A checklist that was edited or removed in between goes to the Sync Center with the reason and nothing is sent, because a pass could otherwise be recorded against a different check and a completed inspection cannot be corrected.
+- The reply is added to the kept list in the transaction that finishes the outbox row, with its items. A finished inspection waiting to send is laid over the list, marked "Not sent yet", and opens from its uuid. Its status there is a preview.
+- An inspection started on the website and left `in_progress` is shown read only, with a note to finish it there. The phone offers no way to continue one, for the reason above.
+- 422, 403 and 404 go to the Sync Center, in the server's own words for a 422.
+- Item states are shown in words with a mark beside them (Pass, Fail, Not applicable, No result yet), never by colour alone.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

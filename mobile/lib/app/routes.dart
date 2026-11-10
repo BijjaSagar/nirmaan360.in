@@ -60,6 +60,22 @@ abstract final class Routes {
   static const contractorRequest = '/contractors/request';
   static String contractorDetail(int workOrderId) => '/contractors/$workOrderId';
 
+  /// The short list of site tools: inspections, and the machine log. Home has one
+  /// row for it, so two more tiles do not crowd the page.
+  static const siteTools = '/tools';
+
+  /// Checklists filled in on site, and the inspections made from them.
+  static const inspections = '/inspections';
+
+  /// An inspection being filled in on this phone. Query: `uuid`.
+  static const inspectionFill = '/inspections/fill';
+
+  /// By the server's id, or by the uuid of one finished here and not yet sent.
+  static String inspectionDetail(String key) => '/inspections/$key';
+
+  /// True for the inspection pages, and no other path.
+  static bool isInspections(String path) => path == inspections || path.startsWith('$inspections/');
+
   static const material = '/material';
 
   /// Optional query: `material`.

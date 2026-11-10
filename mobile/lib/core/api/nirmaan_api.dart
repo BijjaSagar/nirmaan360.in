@@ -241,6 +241,24 @@ abstract interface class NirmaanApi {
   /// `client_uuid` in [body].
   Future<Map<String, dynamic>> postContractorPayment(int workOrderId, Map<String, dynamic> body, {String? filePath});
 
+  // Inspections. Reads fill a cache on the phone. A finished inspection is sent
+  // whole, from the outbox, because that is the one call the server repeats safely.
+
+  /// `GET /checklist-templates`: the company's active checklists with their items.
+  Future<List<Map<String, dynamic>>> checklistTemplates();
+
+  /// One page of `GET /projects/{project}/inspections`, newest first, in Laravel's page shape.
+  Future<Map<String, dynamic>> inspections(int projectId, {int page = 1});
+
+  /// `GET /inspections/{inspection}`: the inspection with its items and their results.
+  Future<Map<String, dynamic>> inspection(int inspectionId);
+
+  /// `POST /projects/{project}/inspections` with the results by item position
+  /// and `complete: true`, so one call starts it, marks it and locks it. A
+  /// repeated `client_uuid` returns the first inspection and applies nothing.
+  /// Returns the inspection with its items.
+  Future<Map<String, dynamic>> postInspection(int projectId, Map<String, dynamic> body);
+
   // Site dashboard and alerts. Read only.
 
   /// `GET /projects/{project}/site-dashboard`: the cards the server worked out

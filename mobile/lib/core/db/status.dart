@@ -70,6 +70,16 @@ abstract final class MetaKey {
   /// One project's budget effect from the recorded prices, as JSON. Needs `money.overview`.
   static String priceWatchProject(int projectId) => 'price_watch.project.$projectId';
 
+  /// The checklists and recent inspections this phone read for a project, as JSON.
+  static String inspections(int projectId) => 'inspections.$projectId';
+
+  /// Inspections being filled in on this phone and not finished, by their uuid, as JSON.
+  /// They are work the server has never seen, so a sign-out counts them.
+  static String inspectionDrafts(int projectId) => 'inspection.drafts.$projectId';
+
+  /// Prefix of every draft key, so they can be counted together.
+  static const inspectionDraftsPrefix = 'inspection.drafts.';
+
   /// The recent progress entries the server listed for each floor of a project, as JSON.
   static String floorEntries(int projectId) => 'floor_entries.$projectId';
 

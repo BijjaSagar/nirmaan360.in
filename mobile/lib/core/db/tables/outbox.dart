@@ -26,7 +26,8 @@ enum OutboxType {
   issuePhoto('issue_photo'),
   measurementPhoto('measurement_photo'),
   progressCorrection('progress_correction'),
-  contractorPayment('contractor_payment');
+  contractorPayment('contractor_payment'),
+  inspection('inspection');
 
   const OutboxType(this.wire);
 
@@ -35,7 +36,7 @@ enum OutboxType {
   /// File uploads go through `/sync/upload`, one at a time.
   bool get isFile => this == OutboxType.dprPhoto || this == OutboxType.pettyBill;
 
-  /// Site progress, material, contractor payments and the photos on issues and measurements have their own endpoints. Each row is
+  /// Site progress, material, contractor payments, inspections and the photos on issues and measurements have their own endpoints. Each row is
   /// posted on its own, with the same `client_uuid` on every attempt.
   bool get isDirect => switch (this) {
     OutboxType.progressEntry ||
@@ -49,7 +50,8 @@ enum OutboxType {
     OutboxType.issuePhoto ||
     OutboxType.measurementPhoto ||
     OutboxType.progressCorrection ||
-    OutboxType.contractorPayment => true,
+    OutboxType.contractorPayment ||
+    OutboxType.inspection => true,
     _ => false,
   };
 }

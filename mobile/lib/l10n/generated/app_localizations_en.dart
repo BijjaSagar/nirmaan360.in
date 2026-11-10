@@ -1418,6 +1418,195 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprYesterdayTag => 'Yesterday';
 
   @override
+  String get inspectionCategoryGeneral => 'General';
+
+  @override
+  String get inspectionCategoryPourCard => 'Pour card';
+
+  @override
+  String get inspectionCategoryPpe => 'PPE';
+
+  @override
+  String get inspectionCategoryReinforcement => 'Reinforcement';
+
+  @override
+  String get inspectionCategorySafety => 'Safety';
+
+  @override
+  String get inspectionCategoryShuttering => 'Shuttering';
+
+  @override
+  String get inspectionDiscard => 'Discard';
+
+  @override
+  String get inspectionDiscardBody => 'What you marked so far will be lost.';
+
+  @override
+  String get inspectionDiscardTitle => 'Discard this inspection?';
+
+  @override
+  String get inspectionFillChoose => 'Choose Pass, Fail or Not applicable';
+
+  @override
+  String get inspectionFillDate => 'Inspection date';
+
+  @override
+  String get inspectionFillLocation => 'Location';
+
+  @override
+  String get inspectionFillLocationHint =>
+      'For example Slab L3 or Gate 2. Optional.';
+
+  @override
+  String get inspectionFillLockedNote =>
+      'Once finished, an inspection cannot be changed.';
+
+  @override
+  String inspectionFillMarked(int done, int total) {
+    return '$done of $total marked';
+  }
+
+  @override
+  String inspectionFillNeedRemark(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count failed items need a reason',
+      one: '1 failed item needs a reason',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inspectionFillUnmarked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items still have no result',
+      one: '1 item still has no result',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inspectionFillWrong => 'What is wrong?';
+
+  @override
+  String get inspectionFillWrongRequired =>
+      'Write what is wrong. A failed item needs this.';
+
+  @override
+  String get inspectionFinish => 'Finish inspection';
+
+  @override
+  String get inspectionGoneMessage =>
+      'This inspection was finished or discarded.';
+
+  @override
+  String get inspectionGoneTitle => 'Not on this phone';
+
+  @override
+  String get inspectionItemsNotLoaded =>
+      'The items are not on this phone yet. Connect to the internet to load them.';
+
+  @override
+  String get inspectionNotOnPhone => 'Connect to the internet to load it.';
+
+  @override
+  String get inspectionOpenNote =>
+      'This inspection was started on the website and is not finished. Finish it there.';
+
+  @override
+  String get inspectionOpenOutbox => 'Open the sending list';
+
+  @override
+  String get inspectionResultFail => 'Fail';
+
+  @override
+  String get inspectionResultNa => 'Not applicable';
+
+  @override
+  String get inspectionResultPass => 'Pass';
+
+  @override
+  String get inspectionResultPending => 'No result yet';
+
+  @override
+  String get inspectionStatusFailed => 'Failed';
+
+  @override
+  String get inspectionStatusOpen => 'In progress';
+
+  @override
+  String get inspectionStatusPassed => 'Passed';
+
+  @override
+  String get inspectionWaitingNote =>
+      'Saved on this phone. It will be sent when you are online, and cannot be changed after that.';
+
+  @override
+  String get inspectionsChecklistSearch => 'Search checklists';
+
+  @override
+  String get inspectionsDraftWord => 'Not finished';
+
+  @override
+  String get inspectionsDraftsHeading => 'Being filled in';
+
+  @override
+  String get inspectionsEmptyMessage =>
+      'Start one from a checklist. It is saved on this phone and sent when you are online.';
+
+  @override
+  String get inspectionsEmptyTitle => 'No inspections yet';
+
+  @override
+  String inspectionsFailedCount(int count) {
+    return '$count failed';
+  }
+
+  @override
+  String inspectionsItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inspectionsLatestOnly =>
+      'Showing the latest 25. The rest are on the website.';
+
+  @override
+  String get inspectionsLoading => 'Loading inspections';
+
+  @override
+  String get inspectionsNoDataMessage =>
+      'Connect to the internet once to load this project\'s checklists. After that they open offline.';
+
+  @override
+  String get inspectionsRecentHeading => 'Recent';
+
+  @override
+  String get inspectionsRefusedMessage =>
+      'Checklists are not open to your role. Ask your office if you need them.';
+
+  @override
+  String get inspectionsRefusedTitle => 'Not part of your role';
+
+  @override
+  String get inspectionsSearchNone => 'No checklist matches';
+
+  @override
+  String get inspectionsStart => 'Start an inspection';
+
+  @override
+  String get inspectionsTitle => 'Inspections';
+
+  @override
   String get issuesActionClose => 'Close issue';
 
   @override
@@ -3731,6 +3920,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get siteToolsInspectionsHint =>
+      'Fill a checklist for a pour, shuttering or a safety round';
+
+  @override
+  String get siteToolsTitle => 'Site tools';
+
+  @override
   String get statusApproved => 'Approved';
 
   @override
@@ -3857,6 +4053,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncTypeDprSubmit => 'Report submission';
+
+  @override
+  String get syncTypeInspection => 'Inspection';
 
   @override
   String get syncTypeIssue => 'Issue';

@@ -77,6 +77,8 @@ class _HomeView extends StatelessWidget {
               _SiteAlertsRow(site: state.site),
             if (siteControl && (user?.can('contractor.view') ?? false) && !(state.contractors?.refused ?? false))
               _ContractorsRow(overview: state.contractors),
+            // One row for the field tools that are open to this person, rather than a tile each.
+            if (context.select((AppGate gate) => gate.state.hasSiteTools)) const _SiteToolsRow(),
           ];
 
           return Column(
@@ -531,6 +533,25 @@ class _ContractorsRow extends StatelessWidget {
       title: t.contractorTitle,
       subtitle: subtitle,
       onTap: () => context.push(Routes.contractors),
+    );
+  }
+}
+
+/// The way in to the tools that are not part of the day's figures: checklists,
+/// and later others. A row, not a tile, because the grid is already full.
+class _SiteToolsRow extends StatelessWidget {
+  const _SiteToolsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final bool inspect = context.select((AppGate gate) => gate.state.canInspect);
+    return LedgerListTile(
+      key: const ValueKey<String>('home-site-tools'),
+      leading: const Icon(Icons.handyman_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+      title: t.siteToolsTitle,
+      subtitle: <String>[if (inspect) t.inspectionsTitle].join(' · '),
+      onTap: () => context.push(Routes.siteTools),
     );
   }
 }

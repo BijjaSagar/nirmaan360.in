@@ -552,6 +552,8 @@ class PullApplier {
       await _db.deleteMeta(MetaKey.materialOverview(id));
       await _db.deleteMeta(MetaKey.siteOverview(id));
       await _db.deleteMeta(MetaKey.contractorOverview(id));
+      await _db.deleteMeta(MetaKey.inspections(id));
+      await _db.deleteMeta(MetaKey.inspectionDrafts(id));
       await _db.deleteMeta(MetaKey.priceWatchProject(id));
       await _db.deleteMeta(MetaKey.recordPhotos(id));
       await _db.deleteMeta(MetaKey.floorEntries(id));
