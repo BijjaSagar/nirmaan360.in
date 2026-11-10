@@ -3,6 +3,7 @@
 namespace App\Services\Notify;
 
 use App\Jobs\Notify\SendAnnouncement;
+use App\Jobs\Notify\SendAnnouncementBatch;
 use App\Models\Announcement;
 use App\Models\AnnouncementRecipient;
 use App\Models\AuditLog;
@@ -11,6 +12,7 @@ use App\Models\NotificationPreference;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\User;
+use App\Support\Money;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
@@ -46,6 +48,12 @@ class AnnouncementService
     public const IMAGE_MAX_KB = 1024;
 
     public const TRANSLATED = ['mr', 'hi'];
+
+    /** People per push batch job. Kept small so each job ends well inside the queue's retry window. */
+    public const BATCH = 200;
+
+    /** Pixels. Wider pictures are scaled down: phones show a notification picture at about this width. */
+    public const IMAGE_WIDTH = 1200;
 
     public function __construct(private Notifier $notifier, private PushDispatcher $push) {}
 
@@ -128,7 +136,7 @@ class AnnouncementService
             throw ValidationException::withMessages(['repeat_until' => __('The last day comes before the first reminder. Choose a later last day.')]);
         }
 
-        $path = $image?->store('announcements');
+        $path = $image === null ? null : $this->storeImage($image);
 
         try {
             $announcement = DB::transaction(function () use ($by, $data, $company, $schedule, $next, $path) {
@@ -149,6 +157,7 @@ class AnnouncementService
                     'repeat_time' => in_array($schedule, ['daily', 'weekly'], true) ? $data['repeat_time'] : null,
                     'repeat_weekday' => $schedule === 'weekly' ? (int) $data['repeat_weekday'] : null,
                     'repeat_until' => in_array($schedule, ['daily', 'weekly'], true) ? ($data['repeat_until'] ?? null) : null,
+                    'scheduled_for' => $next ?? now(),
                     'next_run_at' => $next,
                     'status' => $schedule === 'now' ? Announcement::SENDING : Announcement::SCHEDULED,
                 ]);
@@ -216,9 +225,17 @@ class AnnouncementService
                 ->where('next_run_at', $runAt)
                 ->update(['next_run_at' => $next, 'status' => $next === null ? Announcement::SENDING : Announcement::SCHEDULED, 'updated_at' => now()]);
 
-            if ($claimed === 1) {
+            if ($claimed !== 1) {
+                continue;
+            }
+
+            try {
                 SendAnnouncement::dispatch($announcement->id, $this->runKey($announcement, $runAt));
                 $started++;
+            } catch (Throwable $exception) {
+                // Not queued, so it is due again: the next minute's run tries once more.
+                Announcement::whereKey($announcement->id)->update(['next_run_at' => $runAt, 'status' => Announcement::SCHEDULED]);
+                Log::warning('Announcement run not queued', ['announcement_id' => $announcement->id, 'error' => $exception->getMessage()]);
             }
         }
 
@@ -226,41 +243,36 @@ class AnnouncementService
     }
 
     /**
-     * One run: pushes to everyone it is meant for and remembers them. Runs on the queue.
-     * Safe to run again for the same run: a person already pushed under this run's key is not pushed twice.
+     * One run, on the queue: remembers everyone it is meant for, so their app lists it, and hands
+     * their phones to batch jobs of BATCH people each. Each job is short, well inside the queue's
+     * retry window, and a retried run or batch pushes nobody twice: each person is claimed once
+     * under the run's key.
      *
-     * @return array{recipients: int, phones: int}
+     * @return array{recipients: int, batches: int}
      */
-    public function send(Announcement $announcement, string $runKey): array
+    public function startRun(Announcement $announcement, string $runKey): array
     {
         if ($announcement->status === Announcement::CANCELLED) {
-            return ['recipients' => 0, 'phones' => 0];
+            return ['recipients' => 0, 'batches' => 0];
         }
 
         $now = now();
         $connected = $this->notifier->connected('push');
         $recipients = 0;
-        $phones = 0;
+        $batches = 0;
 
-        foreach ($this->audience($announcement)->chunk(200) as $people) {
-            $this->remember($announcement, $people->values()->all(), $now);
-            $recipients += $people->count();
+        foreach ($this->audience($announcement)->chunk(self::BATCH) as $people) {
+            $people = $people->values()->all();
+            $this->remember($announcement, $people, $now);
+            $recipients += count($people);
 
-            if (! $connected) {
-                continue;
-            }
-
-            foreach ($people as $user) {
-                try {
-                    $phones += $this->pushTo($announcement, $user, $runKey);
-                } catch (Throwable $exception) {
-                    // One person's phone must not stop everyone else's.
-                    Log::warning('Announcement not queued for a person', ['announcement_id' => $announcement->id, 'user_id' => $user->id, 'error' => $exception->getMessage()]);
-                }
+            if ($connected) {
+                SendAnnouncementBatch::dispatch($announcement->id, $runKey, array_map(fn (User $user) => $user->id, $people));
+                $batches++;
             }
         }
 
-        Announcement::whereKey($announcement->id)->incrementEach(['runs' => 1, 'phones_count' => $phones], [
+        Announcement::whereKey($announcement->id)->incrementEach(['runs' => 1], [
             'last_sent_at' => $now,
             // People, not sends: a reminder that reaches the same team every day still counts each person once.
             'recipients_count' => AnnouncementRecipient::withoutGlobalScopes()->where('announcement_id', $announcement->id)->count(),
@@ -270,11 +282,56 @@ class AnnouncementService
         AuditLog::record('announcement.sent', $announcement, null, [
             'run' => $runKey,
             'recipients' => $recipients,
-            'phones' => $phones,
+            'batches' => $batches,
             'push_connected' => $connected,
         ]);
 
-        return ['recipients' => $recipients, 'phones' => $phones];
+        return ['recipients' => $recipients, 'batches' => $batches];
+    }
+
+    /**
+     * Queues the push for one batch of a run. People who left, were switched off or lost the
+     * permission since the run started are passed over by the usual push rules.
+     *
+     * @param  list<int>  $userIds
+     * @return int Phones a push was queued for.
+     */
+    public function sendBatch(Announcement $announcement, string $runKey, array $userIds): int
+    {
+        if ($announcement->status === Announcement::CANCELLED || ! $this->notifier->connected('push')) {
+            return 0;
+        }
+
+        $phones = 0;
+
+        foreach (User::query()->whereKey($userIds)->where('is_active', true)->orderBy('id')->get() as $user) {
+            try {
+                $phones += $this->pushTo($announcement, $user, $runKey);
+            } catch (Throwable $exception) {
+                // One person's phone must not stop everyone else's.
+                Log::warning('Announcement not queued for a person', ['announcement_id' => $announcement->id, 'user_id' => $user->id, 'error' => $exception->getMessage()]);
+            }
+        }
+
+        if ($phones > 0) {
+            Announcement::whereKey($announcement->id)->increment('phones_count', $phones);
+        }
+
+        return $phones;
+    }
+
+    /** A run that could not be started after its retries. A one-off is marked failed; a reminder keeps its next time. */
+    public function runFailed(int $announcementId, string $runKey, ?Throwable $exception): void
+    {
+        $announcement = Announcement::find($announcementId);
+
+        if ($announcement === null) {
+            return;
+        }
+
+        Announcement::whereKey($announcementId)->where('status', Announcement::SENDING)->update(['status' => Announcement::FAILED]);
+
+        AuditLog::record('announcement.failed', $announcement, null, ['run' => $runKey, 'error' => Str::limit((string) $exception?->getMessage(), 200)]);
     }
 
     /**
@@ -293,12 +350,16 @@ class AnnouncementService
             return LazyCollection::empty();
         }
 
+        $mentionsMoney = PushDispatcher::mentionsMoney($announcement->allText());
+
         return User::query()
             ->where('is_active', true)
             ->whereHas('organization')
             ->when($company, fn ($query, $id) => $query->where('organization_id', $id))
             ->when($project, fn ($query, Project $project) => $query->where('organization_id', $project->organization_id))
             ->lazyById(200)
+            // The money rule holds here too: nobody without money.view is sent, or shown in the app, a rupee figure.
+            ->filter(fn (User $user) => ! $mentionsMoney || Money::visible($user))
             ->filter(fn (User $user) => match ($announcement->audience) {
                 'roles' => in_array($user->roleKey(), $announcement->roles ?? [], true),
                 // The people who can open the project: assigned to it, or seeing every project.
@@ -364,7 +425,7 @@ class AnnouncementService
 
         return match ($announcement->schedule) {
             'now' => __('Sent at once'),
-            'once' => __('Once, on :date', ['date' => ($announcement->last_sent_at ?? $announcement->next_run_at ?? $announcement->created_at)->format('d M Y, H:i')]),
+            'once' => __('Once, on :date', ['date' => ($announcement->scheduled_for ?? $announcement->created_at)->format('d M Y, H:i')]),
             'daily' => __('Every day at :time', ['time' => $announcement->repeat_time]).$until,
             'weekly' => __('Every :day at :time', ['day' => $this->weekdayName((int) $announcement->repeat_weekday), 'time' => $announcement->repeat_time]).$until,
             default => $announcement->schedule,
@@ -459,6 +520,63 @@ class AnnouncementService
             ['announcement_id', 'user_id'],
             ['last_sent_at'],
         );
+    }
+
+    /**
+     * Keeps the picture as a JPEG redrawn from its pixels, at most IMAGE_WIDTH wide. What the camera
+     * wrote into the file, such as where it was taken, does not travel with it to every phone, and the
+     * file stays small enough for Android's notification picture.
+     */
+    private function storeImage(UploadedFile $image): string
+    {
+        $bytes = (string) file_get_contents($image->getRealPath());
+
+        if (! function_exists('imagecreatefromstring')) {
+            // Without GD the file is kept as sent. Laravel Cloud's PHP has GD.
+            return $image->store('announcements');
+        }
+
+        $picture = @imagecreatefromstring($bytes);
+
+        if ($picture === false) {
+            throw ValidationException::withMessages(['image' => __('This picture could not be read. Use a JPG or PNG file.')]);
+        }
+
+        $picture = $this->upright($picture, $bytes);
+        [$width, $height] = [imagesx($picture), imagesy($picture)];
+        $scale = min(1, self::IMAGE_WIDTH / $width);
+        [$toWidth, $toHeight] = [max(1, (int) round($width * $scale)), max(1, (int) round($height * $scale))];
+
+        // Onto white: JPEG has no transparency, and phones would show a transparent PNG's background black.
+        $canvas = imagecreatetruecolor($toWidth, $toHeight);
+        imagefill($canvas, 0, 0, imagecolorallocate($canvas, 255, 255, 255));
+        imagecopyresampled($canvas, $picture, 0, 0, 0, 0, $toWidth, $toHeight, $width, $height);
+
+        ob_start();
+        imagejpeg($canvas, null, 85);
+        $jpeg = (string) ob_get_clean();
+
+        $path = 'announcements/'.Str::random(40).'.jpg';
+        Storage::put($path, $jpeg);
+
+        return $path;
+    }
+
+    /** A phone photo can be stored sideways with a note to turn it. The note is dropped on redrawing, so turn it here. */
+    private function upright(\GdImage $picture, string $bytes): \GdImage
+    {
+        if (! function_exists('exif_read_data') || ! str_starts_with($bytes, "\xFF\xD8")) {
+            return $picture;
+        }
+
+        $orientation = (int) (@exif_read_data('data://image/jpeg;base64,'.base64_encode($bytes))['Orientation'] ?? 1);
+
+        return match ($orientation) {
+            3 => imagerotate($picture, 180, 0),
+            6 => imagerotate($picture, -90, 0),
+            8 => imagerotate($picture, 90, 0),
+            default => $picture,
+        };
     }
 
     /** @param  array<string, mixed>  $data */
