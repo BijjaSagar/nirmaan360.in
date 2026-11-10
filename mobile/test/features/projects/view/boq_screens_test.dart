@@ -311,6 +311,78 @@ void main() {
       expect(find.byType(RuledDivider), findsWidgets);
     });
 
+    testWidgets('each line, its section and the whole BOQ show their value', (tester) async {
+      setPhone(tester);
+      final app = await twoLines();
+      addTearDown(app.dispose);
+
+      await _openBoq(tester, app);
+
+      expect(find.text('620.000 cum × ₹500.00 = ₹3,10,000.00'), findsOneWidget);
+      expect(find.text('Balance value'), findsNWidgets(4), reason: 'two lines, the section and the total');
+      expect(find.text('₹3,10,000.00'), findsOneWidget, reason: 'the first line has nothing measured');
+      final Finder total = find.byKey(const ValueKey<String>('boq-total'));
+      expect(find.descendant(of: total, matching: find.text('BOQ total')), findsOneWidget);
+      expect(find.descendant(of: total, matching: find.text('₹3,16,000.00')), findsNWidgets(2));
+      // The section heading carries the same two figures as the total.
+      expect(find.text('₹3,16,000.00'), findsNWidgets(4));
+    });
+
+    testWidgets('a line measured past its quantity shows the value over the BOQ', (tester) async {
+      setPhone(tester);
+      final app = await twoLines();
+      addTearDown(app.dispose);
+      await app.services.measurements.create(
+        MeasurementInput(
+          projectId: 1,
+          boqItemId: 2,
+          measuredOn: '2026-11-09',
+          nos: Qty.parse('1.000'),
+          length: Qty.parse('14.000'),
+        ),
+      );
+
+      await _openBoq(tester, app);
+
+      expect(find.text('Value over BOQ'), findsOneWidget);
+      expect(find.text('₹1,000.00'), findsOneWidget);
+      // 3,10,000 left on the first line, less the 1,000 over on the second.
+      expect(find.text('₹3,09,000.00'), findsNWidgets(2));
+    });
+
+    testWidgets('a search totals only the lines found, and says so', (tester) async {
+      setPhone(tester);
+      final app = await twoLines();
+      addTearDown(app.dispose);
+
+      await _openBoq(tester, app);
+      await tester.enterText(find.byType(TextField), 'FIN');
+      await tester.pump();
+
+      expect(find.text('Total of lines shown'), findsOneWidget);
+      expect(find.text('BOQ total'), findsNothing);
+      final Finder total = find.byKey(const ValueKey<String>('boq-total'));
+      expect(find.descendant(of: total, matching: find.text('₹6,000.00')), findsNWidgets(2));
+    });
+
+    testWidgets('without money.view there is no rate, value or total', (tester) async {
+      setPhone(tester);
+      final api = FakeApi();
+      (api.user['can'] as Map)['money.view'] = false;
+      final app = await TestApp.create(seed: false, api: api);
+      addTearDown(app.dispose);
+      api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      await api.addBoqItem(id: 1, projectId: 1, code: '2.1', qty: '620.000');
+      await app.sync();
+
+      await _openBoq(tester, app);
+
+      expect(find.text('620.000 cum'), findsOneWidget);
+      expect(find.textContaining('₹'), findsNothing);
+      expect(find.byKey(const ValueKey<String>('boq-total')), findsNothing);
+      expect(find.text('Balance value'), findsNothing);
+    });
+
     testWidgets('a BOQ of 2,000 lines builds only the rows on screen', (tester) async {
       setPhone(tester);
       final api = FakeApi();
@@ -329,7 +401,8 @@ void main() {
       await _openBoq(tester, app);
 
       final int built = tester.widgetList(find.byType(SquarePercent)).length;
-      expect(built, greaterThan(3), reason: 'the first lines are there');
+      // Lines with their values are taller, so fewer fit on the phone.
+      expect(built, greaterThanOrEqualTo(3), reason: 'the first lines are there');
       expect(built, lessThan(30), reason: 'one per visible line, not one per BOQ line');
       expect(find.text('Item 1'), findsOneWidget);
       expect(find.text('Item 2000'), findsNothing);

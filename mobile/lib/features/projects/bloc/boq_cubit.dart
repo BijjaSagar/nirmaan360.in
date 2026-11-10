@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/api/api_failure.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart' show ProjectRow;
+import '../../../core/money/money.dart';
 import '../../../core/sync/sync_status.dart' show SyncOutcome, SyncRunResult;
 import '../../tenders/data/tender_repository.dart';
 import '../data/project_repository.dart';
@@ -35,13 +36,45 @@ MeasuredShare measuredShareOf(BoqLine line) {
   );
 }
 
+/// What BOQ lines are worth: the BOQ value (quantity × rate) and the value of
+/// what is still to be measured (balance × rate).
+///
+/// Worked out the way the web BOQ does it, so the two agree to the paisa: each
+/// line's value is rounded to paise and then added up, while the balance values
+/// are added unrounded and the total rounded once. The balance counts entries
+/// still on the phone, like the balance quantity beside it.
+class BoqValue {
+  const BoqValue({required this.amount, required this.balance});
+
+  final Money amount;
+  final Money balance;
+
+  factory BoqValue.ofLine(BoqLine line) => BoqValue(
+    amount: Money.fromQtyRate(line.item.qty, line.item.rate),
+    balance: Money.of(line.previewBalance.value * line.item.rate.value),
+  );
+
+  factory BoqValue.ofLines(Iterable<BoqLine> lines) {
+    Decimal amount = Decimal.zero;
+    Decimal balance = Decimal.zero;
+    for (final BoqLine line in lines) {
+      amount += Money.fromQtyRate(line.item.qty, line.item.rate).value;
+      balance += line.previewBalance.value * line.item.rate.value;
+    }
+    return BoqValue(amount: Money.of(amount), balance: Money.of(balance));
+  }
+}
+
 /// The lines of one BOQ section, in BOQ order. A null [name] is lines with no
 /// section.
 class BoqSectionLines {
-  const BoqSectionLines({required this.name, required this.lines});
+  BoqSectionLines({required this.name, required this.lines}) : value = BoqValue.ofLines(lines);
 
   final String? name;
   final List<BoqLine> lines;
+
+  /// What the lines listed here are worth.
+  final BoqValue value;
 }
 
 enum BoqLoad { loading, ready, noProject }
@@ -53,6 +86,7 @@ class BoqState {
     this.all = const [],
     this.query = '',
     this.sections = const [],
+    this.total,
     this.markers = const <int, TenderMarker>{},
   });
 
@@ -63,6 +97,10 @@ class BoqState {
 
   /// [all] narrowed to [query] and grouped by section.
   final List<BoqSectionLines> sections;
+
+  /// What every line in [sections] is worth, added up line by line rather than
+  /// section by section so the rounding matches the web total.
+  final BoqValue? total;
 
   /// Lines in a tender, by BOQ item id, as the office last said. Read live and
   /// kept only while the screen is open, so offline the lines show without them.
@@ -75,6 +113,7 @@ class BoqState {
     List<BoqLine>? all,
     String? query,
     List<BoqSectionLines>? sections,
+    BoqValue? total,
     Map<int, TenderMarker>? markers,
   }) {
     return BoqState(
@@ -83,6 +122,7 @@ class BoqState {
       all: all ?? this.all,
       query: query ?? this.query,
       sections: sections ?? this.sections,
+      total: total ?? this.total,
       markers: markers ?? this.markers,
     );
   }
@@ -128,18 +168,24 @@ class BoqCubit extends Cubit<BoqState> {
   }
 
   void _onLines(List<BoqLine> lines) {
+    final List<BoqSectionLines> sections = _group(lines, state.query);
     emit(
       state.copyWith(
         load: BoqLoad.ready,
         all: lines,
-        sections: _group(lines, state.query),
+        sections: sections,
+        total: _total(sections),
       ),
     );
   }
 
   void search(String query) {
-    emit(state.copyWith(query: query, sections: _group(state.all, query)));
+    final List<BoqSectionLines> sections = _group(state.all, query);
+    emit(state.copyWith(query: query, sections: sections, total: _total(sections)));
   }
+
+  static BoqValue _total(List<BoqSectionLines> sections) =>
+      BoqValue.ofLines(sections.expand((section) => section.lines));
 
   /// Pulls what the office has changed. The lines update themselves from the
   /// database, so this only reports whether the server was reached: false

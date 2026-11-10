@@ -297,6 +297,7 @@
   "attendanceTitle": "Attendance",
   "attendanceTodayTitle": "Today's attendance",
   "boqAddItem": "Add item",
+  "boqAmountLabel": "Amount",
   "boqBalance": "Balance {qty} {unit}",
   "@boqBalance": {
     "placeholders": {
@@ -309,6 +310,7 @@
     }
   },
   "boqBalanceLabel": "Balance",
+  "boqBalanceValueLabel": "Balance value",
   "boqEmptyAsk": "A BOQ is the list of work on this project. Ask the office to add it.",
   "boqEmptyExplain": "A BOQ is the list of work on this project, with quantity and rate.",
   "boqEmptyTitle": "No BOQ lines yet",
@@ -379,10 +381,13 @@
     }
   },
   "boqOverLabel": "Over by",
+  "boqOverValueLabel": "Value over BOQ",
   "boqRefreshFailed": "Could not update. Showing what is on this phone.",
   "boqSearchHint": "Code or work",
   "boqSearchLabel": "Search lines",
+  "boqShownTotalTitle": "Total of lines shown",
   "boqTitle": "BOQ",
+  "boqTotalTitle": "BOQ total",
   "commonBack": "Back",
   "commonCancel": "Cancel",
   "commonDone": "Done",

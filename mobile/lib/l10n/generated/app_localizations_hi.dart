@@ -590,12 +590,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get boqAddItem => 'आइटम जोड़ें';
 
   @override
+  String get boqAmountLabel => 'रकम';
+
+  @override
   String boqBalance(String qty, String unit) {
     return 'शेष $qty $unit';
   }
 
   @override
   String get boqBalanceLabel => 'शेष';
+
+  @override
+  String get boqBalanceValueLabel => 'शेष मूल्य';
 
   @override
   String get boqEmptyAsk =>
@@ -726,6 +732,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get boqOverLabel => 'ज़्यादा';
 
   @override
+  String get boqOverValueLabel => 'BOQ से ज़्यादा मूल्य';
+
+  @override
   String get boqRefreshFailed =>
       'अपडेट नहीं हो सका। फ़ोन पर जो है वही दिखा रहे हैं।';
 
@@ -736,7 +745,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get boqSearchLabel => 'लाइनें खोजें';
 
   @override
+  String get boqShownTotalTitle => 'दिखाई गई लाइनों का कुल';
+
+  @override
   String get boqTitle => 'BOQ';
+
+  @override
+  String get boqTotalTitle => 'BOQ कुल';
 
   @override
   String get commonBack => 'वापस';

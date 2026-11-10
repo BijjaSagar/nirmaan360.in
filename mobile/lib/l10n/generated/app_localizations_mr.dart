@@ -602,12 +602,18 @@ class AppLocalizationsMr extends AppLocalizations {
   String get boqAddItem => 'आयटम जोडा';
 
   @override
+  String get boqAmountLabel => 'रक्कम';
+
+  @override
   String boqBalance(String qty, String unit) {
     return 'शिल्लक $qty $unit';
   }
 
   @override
   String get boqBalanceLabel => 'शिल्लक';
+
+  @override
+  String get boqBalanceValueLabel => 'शिल्लक मूल्य';
 
   @override
   String get boqEmptyAsk =>
@@ -738,6 +744,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get boqOverLabel => 'जास्त';
 
   @override
+  String get boqOverValueLabel => 'BOQ पेक्षा जास्त मूल्य';
+
+  @override
   String get boqRefreshFailed =>
       'अपडेट करता आले नाही. फोनवर आहे तेच दाखवत आहे.';
 
@@ -748,7 +757,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get boqSearchLabel => 'ओळी शोधा';
 
   @override
+  String get boqShownTotalTitle => 'दाखवलेल्या ओळींचे एकूण';
+
+  @override
   String get boqTitle => 'BOQ';
+
+  @override
+  String get boqTotalTitle => 'BOQ एकूण';
 
   @override
   String get commonBack => 'मागे';

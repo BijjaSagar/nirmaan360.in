@@ -1138,6 +1138,12 @@ abstract class AppLocalizations {
   /// **'Add item'**
   String get boqAddItem;
 
+  /// No description provided for @boqAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get boqAmountLabel;
+
   /// No description provided for @boqBalance.
   ///
   /// In en, this message translates to:
@@ -1149,6 +1155,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Balance'**
   String get boqBalanceLabel;
+
+  /// No description provided for @boqBalanceValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance value'**
+  String get boqBalanceValueLabel;
 
   /// No description provided for @boqEmptyAsk.
   ///
@@ -1384,6 +1396,12 @@ abstract class AppLocalizations {
   /// **'Over by'**
   String get boqOverLabel;
 
+  /// No description provided for @boqOverValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Value over BOQ'**
+  String get boqOverValueLabel;
+
   /// No description provided for @boqRefreshFailed.
   ///
   /// In en, this message translates to:
@@ -1402,11 +1420,23 @@ abstract class AppLocalizations {
   /// **'Search lines'**
   String get boqSearchLabel;
 
+  /// No description provided for @boqShownTotalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Total of lines shown'**
+  String get boqShownTotalTitle;
+
   /// No description provided for @boqTitle.
   ///
   /// In en, this message translates to:
   /// **'BOQ'**
   String get boqTitle;
+
+  /// No description provided for @boqTotalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ total'**
+  String get boqTotalTitle;
 
   /// No description provided for @commonBack.
   ///

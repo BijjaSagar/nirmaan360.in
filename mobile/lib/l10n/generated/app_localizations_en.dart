@@ -600,12 +600,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boqAddItem => 'Add item';
 
   @override
+  String get boqAmountLabel => 'Amount';
+
+  @override
   String boqBalance(String qty, String unit) {
     return 'Balance $qty $unit';
   }
 
   @override
   String get boqBalanceLabel => 'Balance';
+
+  @override
+  String get boqBalanceValueLabel => 'Balance value';
 
   @override
   String get boqEmptyAsk =>
@@ -742,6 +748,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boqOverLabel => 'Over by';
 
   @override
+  String get boqOverValueLabel => 'Value over BOQ';
+
+  @override
   String get boqRefreshFailed =>
       'Could not update. Showing what is on this phone.';
 
@@ -752,7 +761,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boqSearchLabel => 'Search lines';
 
   @override
+  String get boqShownTotalTitle => 'Total of lines shown';
+
+  @override
   String get boqTitle => 'BOQ';
+
+  @override
+  String get boqTotalTitle => 'BOQ total';
 
   @override
   String get commonBack => 'Back';

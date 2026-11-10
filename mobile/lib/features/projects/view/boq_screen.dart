@@ -92,6 +92,8 @@ class _BoqScroll extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
+    // Site staff are sent quantities only, so their rates read as zero.
+    final bool money = context.read<AppServices>().auth.can('money.view');
     return LedgerRefresh(
       onRefresh: () => _refresh(context),
       semanticsLabel: l.boqLoading,
@@ -121,7 +123,7 @@ class _BoqScroll extends StatelessWidget {
                     ),
                   ),
                 ),
-              _body(l, state),
+              _body(l, state, money: money),
             ],
           );
         },
@@ -129,7 +131,7 @@ class _BoqScroll extends StatelessWidget {
     );
   }
 
-  Widget _body(AppLocalizations l, BoqState state) {
+  Widget _body(AppLocalizations l, BoqState state, {required bool money}) {
     switch (state.load) {
       case BoqLoad.loading:
         return SliverToBoxAdapter(
@@ -167,16 +169,18 @@ class _BoqScroll extends StatelessWidget {
             ),
           );
         }
-        return _lines(l, state);
+        return _lines(l, state, money: money);
     }
   }
 
   /// Every heading and every line in one lazily built list, so a BOQ of
   /// thousands of lines builds only the rows on screen.
-  Widget _lines(AppLocalizations l, BoqState state) {
+  Widget _lines(AppLocalizations l, BoqState state, {required bool money}) {
+    final BoqValue? total = state.total;
     final List<_Entry> entries = <_Entry>[
+      if (money && total != null) _TotalEntry(total, searching: state.query.trim().isNotEmpty),
       for (final section in state.sections) ...<_Entry>[
-        _HeadEntry(section.name ?? l.boqNoSection, section.lines.length),
+        _HeadEntry(section.name ?? l.boqNoSection, section.lines.length, money ? section.value : null),
         for (final (index, line) in section.lines.indexed)
           _LineEntry(line, indexInSection: index, last: index == section.lines.length - 1),
       ],
@@ -185,7 +189,9 @@ class _BoqScroll extends StatelessWidget {
       itemCount: entries.length,
       itemBuilder: (context, index) {
         return switch (entries[index]) {
-          _HeadEntry(:final name, :final count) => _SectionHead(name: name, count: count),
+          _TotalEntry(:final value, :final searching) => _BoqTotal(value: value, searching: searching),
+          _HeadEntry(:final name, :final count, :final value) =>
+            _SectionHead(name: name, count: count, value: value),
           _LineEntry(:final line, :final indexInSection, :final last) => StaggeredRise(
             key: ValueKey<int>(line.item.id),
             index: index,
@@ -198,7 +204,7 @@ class _BoqScroll extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   if (indexInSection > 0) const RuledDivider(indent: N360Space.card),
-                  _BoqRow(line: line),
+                  _BoqRow(line: line, money: money),
                 ],
               ),
             ),
@@ -213,12 +219,25 @@ sealed class _Entry {
   const _Entry();
 }
 
+/// The whole BOQ's value, above the first section.
+class _TotalEntry extends _Entry {
+  const _TotalEntry(this.value, {required this.searching});
+
+  final BoqValue value;
+
+  /// A search is narrowing the lines, so the total is of the lines found.
+  final bool searching;
+}
+
 /// A section heading: the first slice of its group.
 class _HeadEntry extends _Entry {
-  const _HeadEntry(this.name, this.count);
+  const _HeadEntry(this.name, this.count, this.value);
 
   final String name;
   final int count;
+
+  /// Null for those who may not see money.
+  final BoqValue? value;
 }
 
 class _LineEntry extends _Entry {
@@ -231,16 +250,107 @@ class _LineEntry extends _Entry {
   final bool last;
 }
 
-/// The heading of a section: its name and its line count, over a full-width
-/// hairline. It is the top slice of the section's white group.
-class _SectionHead extends StatelessWidget {
-  const _SectionHead({required this.name, required this.count});
+/// A rupee figure, with a true minus sign when it is below zero.
+String _rupees(Money value) => value.isNegative ? '−${value.abs().inr()}' : value.inr();
 
-  final String name;
-  final int count;
+/// The value of the whole BOQ and of what is still to be measured, the same
+/// figures as the Total row of the web BOQ. While a search narrows the list it
+/// adds up the lines found, and says so.
+class _BoqTotal extends StatelessWidget {
+  const _BoqTotal({required this.value, required this.searching});
+
+  final BoqValue value;
+  final bool searching;
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String title = searching ? l.boqShownTotalTitle : l.boqTotalTitle;
+    return Padding(
+      key: const ValueKey<String>('boq-total'),
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.cardGap),
+      child: LedgerCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            _MoneyLine(
+              label: title,
+              labelStyle: N360Type.fit(N360Type.heading, title),
+              value: value.amount,
+              style: N360Type.figure,
+            ),
+            const SizedBox(height: N360Space.xs),
+            _MoneyLine(label: l.boqBalanceValueLabel, value: value.balance, style: N360Type.figure),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A label on the left and a rupee figure on the right edge, read out as one.
+/// The figure keeps its size and the label wraps beside it; only a figure
+/// wider than most of the row, at a very large text size, shrinks to fit.
+class _MoneyLine extends StatelessWidget {
+  const _MoneyLine({
+    required this.label,
+    required this.value,
+    required this.style,
+    this.labelStyle,
+    this.color = N360Colors.ink,
+  });
+
+  final String label;
+  final Money value;
+  final TextStyle style;
+
+  /// [N360Type.label] when not given.
+  final TextStyle? labelStyle;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return MergeSemantics(
+      child: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                label,
+                style: (labelStyle ?? N360Type.fit(N360Type.label, label)).copyWith(color: color),
+              ),
+            ),
+            const SizedBox(width: N360Space.sm),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.7),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerEnd,
+                child: Text(_rupees(value), style: style.copyWith(color: color)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The heading of a section: its name and its line count, over a full-width
+/// hairline, with the section's value under the name for those who may see
+/// money. It is the top slice of the section's white group.
+class _SectionHead extends StatelessWidget {
+  const _SectionHead({required this.name, required this.count, required this.value});
+
+  final String name;
+  final int count;
+  final BoqValue? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final BoqValue? value = this.value;
     return GroupSlice(
       first: true,
       last: false,
@@ -262,6 +372,23 @@ class _SectionHead extends StatelessWidget {
               ],
             ),
           ),
+          if (value != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(N360Space.card, 0, N360Space.card, N360Space.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  _MoneyLine(label: l.boqAmountLabel, value: value.amount, style: N360Type.figureSmall),
+                  const SizedBox(height: N360Space.xxs),
+                  _MoneyLine(
+                    label: l.boqBalanceValueLabel,
+                    value: value.balance,
+                    style: N360Type.figureSmall,
+                  ),
+                ],
+              ),
+            ),
           const RuledDivider(),
         ],
       ),
@@ -273,9 +400,12 @@ class _SectionHead extends StatelessWidget {
 /// measure, with the left-over as a figure on the right edge so the balances of
 /// every line line up under each other.
 class _BoqRow extends StatelessWidget {
-  const _BoqRow({required this.line});
+  const _BoqRow({required this.line, required this.money});
 
   final BoqLine line;
+
+  /// May see rates and values.
+  final bool money;
 
   @override
   Widget build(BuildContext context) {
@@ -290,6 +420,7 @@ class _BoqRow extends StatelessWidget {
         ? l.boqOver(figure, item.unit)
         : l.boqBalance(figure, item.unit);
     final String code = l.boqItemCode(item.code);
+    final BoqValue? value = money ? BoqValue.ofLine(line) : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: N360Space.card, vertical: N360Space.md),
@@ -327,9 +458,8 @@ class _BoqRow extends StatelessWidget {
           ),
           const SizedBox(height: N360Space.xxs),
           Text(
-            // Site staff are sent quantities only, so a rate would read as zero.
-            context.read<AppServices>().auth.can('money.view')
-                ? '${item.qty.format()} ${item.unit} × ${item.rate.inr()}'
+            value != null
+                ? '${item.qty.format()} ${item.unit} × ${item.rate.inr()} = ${value.amount.inr()}'
                 : '${item.qty.format()} ${item.unit}',
             style: N360Type.caption,
           ),
@@ -363,6 +493,19 @@ class _BoqRow extends StatelessWidget {
               ),
             ),
           ),
+          if (value != null) ...<Widget>[
+            const SizedBox(height: N360Space.xxs),
+            Padding(
+              // Ends where the unit room ends, under the balance figure.
+              padding: const EdgeInsetsDirectional.only(end: N360Space.xs + N360Space.xxl),
+              child: _MoneyLine(
+                label: over ? l.boqOverValueLabel : l.boqBalanceValueLabel,
+                value: value.balance.abs(),
+                style: N360Type.figureSmall,
+                color: over ? N360Colors.stampRed : N360Colors.ink2,
+              ),
+            ),
+          ],
           if (context.read<BoqCubit>().tenders.canView) _TenderLink(boqItemId: item.id, unit: item.unit),
         ],
       ),

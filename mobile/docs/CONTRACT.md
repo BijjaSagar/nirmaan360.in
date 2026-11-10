@@ -127,6 +127,7 @@ Single records and plain lists are wrapped in `data`. Paginated lists use `?page
 
 - `boq_balances` holds lines whose ledger moved since `since`, because a measurement does not touch `boq_items.updated_at`. With no `since` it is empty, because `boq_items` is then complete. `deleted` is also empty with no `since`. `deleted.measurements` lists drafts deleted on the web. `wallets` is always the full list. `approvals` is always the full current inbox, in the same shape as `GET /approvals`.
 - `return_remark` is the remark on the latest `return` step of the current approval.
+- The BOQ screen shows each line's value (quantity × rate) and balance value (balance × rate), the same two for each section, and a BOQ total, only with `money.view`. The phone works them out from `qty`, `rate` and `balance_qty` with decimal arithmetic, the way `BoqController::values` does: each line's amount rounded to paise and then added, balance values added unrounded and rounded once. That way they show offline and the balance value counts entries still on the phone, like the balance beside it. The app does not read the `amount`, `balance_amount` or `totals` the server sends.
 
 ### `POST /sync/push`
 

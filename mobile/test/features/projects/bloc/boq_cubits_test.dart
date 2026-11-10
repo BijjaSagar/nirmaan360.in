@@ -24,6 +24,23 @@ BoqLine _line(String qty, String balance) => BoqLine(
   unsentQty: Qty.zero,
 );
 
+BoqLine _priced(String qty, String rate, {String? balance, String unsent = '0'}) => BoqLine(
+  item: BoqItemRow(
+    id: 1,
+    projectId: 1,
+    code: '1',
+    description: 'Line',
+    unit: 'cum',
+    qty: Qty.parse(qty),
+    rate: Money.parse(rate),
+    sort: 1,
+    measuredQty: Qty.zero,
+    approvedQty: Qty.zero,
+    balanceQty: Qty.parse(balance ?? qty),
+  ),
+  unsentQty: Qty.parse(unsent),
+);
+
 /// The server rejects every new line with [errors].
 class _RejectingApi extends FakeApi {
   _RejectingApi(this.errors);
@@ -82,6 +99,58 @@ void main() {
       final share = measuredShareOf(_line('10', '-3'));
       expect(share.fraction, 1);
       expect(share.percent, 130);
+    });
+  });
+
+  group('BOQ value', () {
+    test('a line is its quantity times its rate, to the paisa', () {
+      final value = BoqValue.ofLine(_priced('672.000', '350.00'));
+      expect(value.amount.toWire(), '235200.00');
+      expect(value.balance.toWire(), '235200.00');
+    });
+
+    test('the balance value counts entries still on the phone', () {
+      final value = BoqValue.ofLine(_priced('10.000', '100.00', balance: '10.000', unsent: '4.000'));
+      expect(value.amount.toWire(), '1000.00');
+      expect(value.balance.toWire(), '600.00');
+    });
+
+    test('totals round like the web BOQ: amounts per line, balances once', () {
+      // 0.333 × 10.05 = 3.34665. Each line's amount rounds to 3.35 before it
+      // is added, so two make 6.70; the balances add to 6.6933 and round once.
+      final lines = [_priced('0.333', '10.05'), _priced('0.333', '10.05')];
+      final value = BoqValue.ofLines(lines);
+      expect(value.amount.toWire(), '6.70');
+      expect(value.balance.toWire(), '6.69');
+    });
+
+    test('a line measured past its quantity takes value off the balance', () {
+      final value = BoqValue.ofLines([
+        _priced('10.000', '100.00', balance: '-2.000'),
+        _priced('5.000', '100.00'),
+      ]);
+      expect(value.amount.toWire(), '1500.00');
+      expect(value.balance.toWire(), '300.00');
+    });
+
+    test('the cubit totals the lines shown, by section and overall', () async {
+      final api = FakeApi();
+      final app = await TestApp.create(seed: false, api: api);
+      addTearDown(app.dispose);
+      api.addProject(id: 1, code: 'KT-B', name: 'Kalyani Tower B');
+      await api.addBoqItem(id: 1, projectId: 1, code: '2.1', qty: '620.000');
+      await api.addBoqItem(id: 2, projectId: 1, code: 'FIN-4.1', qty: '12.000');
+      await app.sync();
+      final cubit = BoqCubit(app.services);
+      addTearDown(cubit.close);
+      await cubit.stream.firstWhere((s) => s.load == BoqLoad.ready);
+
+      expect(cubit.state.total!.amount.toWire(), '316000.00');
+      expect(cubit.state.sections.single.value.amount.toWire(), '316000.00');
+
+      cubit.search('FIN');
+      expect(cubit.state.total!.amount.toWire(), '6000.00');
+      expect(cubit.state.sections.single.value.balance.toWire(), '6000.00');
     });
   });
 

@@ -259,5 +259,30 @@
     "en": "Over by",
     "mr": "जास्त",
     "hi": "ज़्यादा"
+  },
+  "boqTotalTitle": {
+    "en": "BOQ total",
+    "mr": "BOQ एकूण",
+    "hi": "BOQ कुल"
+  },
+  "boqShownTotalTitle": {
+    "en": "Total of lines shown",
+    "mr": "दाखवलेल्या ओळींचे एकूण",
+    "hi": "दिखाई गई लाइनों का कुल"
+  },
+  "boqAmountLabel": {
+    "en": "Amount",
+    "mr": "रक्कम",
+    "hi": "रकम"
+  },
+  "boqBalanceValueLabel": {
+    "en": "Balance value",
+    "mr": "शिल्लक मूल्य",
+    "hi": "शेष मूल्य"
+  },
+  "boqOverValueLabel": {
+    "en": "Value over BOQ",
+    "mr": "BOQ पेक्षा जास्त मूल्य",
+    "hi": "BOQ से ज़्यादा मूल्य"
   }
 }
