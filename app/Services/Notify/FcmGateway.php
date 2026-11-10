@@ -4,18 +4,40 @@ namespace App\Services\Notify;
 
 use App\Support\PlatformSettings;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
 
-/** Firebase Cloud Messaging HTTP v1, signed in with a Google service account. */
+/**
+ * Firebase Cloud Messaging HTTP v1, signed in with a Google service account.
+ *
+ * The service account is the file saved under Platform admin > Integrations, encrypted at rest
+ * like every other integration secret. With nothing saved there, the FIREBASE_CREDENTIALS_BASE64
+ * environment variable is used instead. With neither, push is off and nothing is sent. The key
+ * is never shown, logged or put in an error message: identity() is all any screen may read.
+ */
 class FcmGateway
 {
+    public const SAVED = 'saved';
+
+    public const ENVIRONMENT = 'environment';
+
     private const SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
 
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
+
+    /** Android notification channels the app creates. A critical push uses the loud one. */
+    private const CHANNEL_CRITICAL = 'critical';
+
+    private const CHANNEL_UPDATES = 'updates';
+
+    /** @var array<string, array<string, mixed>|null> Parsed accounts by a hash of their text, so the key is not read again for every message. */
+    private array $parsed = [];
 
     public function __construct(private PlatformSettings $settings) {}
 
@@ -36,9 +58,51 @@ class FcmGateway
             && openssl_pkey_get_private($account['private_key']) !== false;
     }
 
+    /** Where the account in use comes from: the admin screen, the environment, or null when there is none. */
+    public function source(): ?string
+    {
+        if ($this->saved() !== null) {
+            return self::SAVED;
+        }
+
+        return $this->fromEnvironment() !== null ? self::ENVIRONMENT : null;
+    }
+
+    /**
+     * The parts of the account in use that may be shown. Never the key.
+     *
+     * @return array{project_id: string, client_email: string}|null
+     */
+    public function identity(): ?array
+    {
+        $account = $this->account();
+
+        return $account === null ? null : ['project_id' => (string) $account['project_id'], 'client_email' => (string) $account['client_email']];
+    }
+
+    /** Names the account in use without holding anything secret, so a passed test can be tied to the account that passed it. */
+    public function fingerprint(): ?string
+    {
+        $account = $this->account();
+
+        return $account === null ? null : sha1($account['project_id'].'|'.$account['client_email'].'|'.($account['private_key_id'] ?? ''));
+    }
+
+    /** "missing", "usable" or "unreadable": the state of the environment variable, whether or not it is the one in use. */
+    public function environmentState(): string
+    {
+        if (blank(config('modules.notify.push.credentials_base64'))) {
+            return 'missing';
+        }
+
+        return $this->fromEnvironment() !== null ? 'usable' : 'unreadable';
+    }
+
     /**
      * Checks the account can sign in and reach its Firebase project, without sending anything.
-     * The dry run uses a made-up device, so Firebase answering "bad token" (400) means everything else worked.
+     * Firebase runs the real message as a dry run (validate_only) addressed to a made-up phone.
+     * So an answer that refuses only that phone means the account, the project, the Cloud
+     * Messaging API and the shape of the message all passed. Any other refusal fails the check.
      */
     public function keysWork(): bool
     {
@@ -49,13 +113,21 @@ class FcmGateway
         }
 
         $response = Http::withToken($this->accessToken($account))
+            ->acceptJson()
             ->timeout(10)
-            ->post($this->sendUrl($account), ['validate_only' => true, 'message' => ['token' => 'connection-test']]);
+            ->post($this->sendUrl($account), ['validate_only' => true, ...$this->payload('connection-test', new NotificationMessage('push.test', 'Connection test', 'Nothing is sent.'))]);
 
-        return $response->successful() || $response->status() === 400;
+        if ($response->successful() || $this->refusesOnlyTheMadeUpPhone($response)) {
+            return true;
+        }
+
+        // Google's own words say what is wrong (API switched off, no permission, wrong project). They never repeat the key.
+        Log::warning('FCM dry run refused', ['status' => $response->status(), 'code' => $this->errorCode($response), 'message' => Str::limit((string) $response->json('error.message'), 200)]);
+
+        return false;
     }
 
-    /** @return bool False when the device has uninstalled the app, so its token should be forgotten. */
+    /** @return bool False when the phone has uninstalled the app or its token is not valid, so the token should be forgotten. */
     public function send(string $deviceToken, NotificationMessage $message): bool
     {
         $account = $this->account() ?? throw new RuntimeException('Push is not connected.');
@@ -63,20 +135,15 @@ class FcmGateway
         $response = Http::withToken($this->accessToken($account))
             ->acceptJson()
             ->timeout(15)
-            ->post($this->sendUrl($account), ['message' => [
-                'token' => $deviceToken,
-                'notification' => array_filter(['title' => $message->title, 'body' => Str::limit($message->body, 1000)]),
-                'data' => ['event' => $message->event, 'url' => (string) $message->url],
-                'android' => ['priority' => 'HIGH'],
-            ]]);
+            ->post($this->sendUrl($account), $this->payload($deviceToken, $message));
 
         if ($response->successful()) {
             return true;
         }
 
-        $code = collect($response->json('error.details', []))->pluck('errorCode')->filter()->first() ?? $response->json('error.status');
+        $code = $this->errorCode($response);
 
-        if ($code === 'UNREGISTERED') {
+        if ($code === 'UNREGISTERED' || $this->refusesToken($response, $code)) {
             return false;
         }
 
@@ -91,12 +158,114 @@ class FcmGateway
             : new PermanentDeliveryFailure($error);
     }
 
-    /** @return array{project_id:string, client_email:string, private_key:string}|null */
+    /**
+     * The HTTP v1 request body for one phone. The app reads "data": type and id say what to open,
+     * the rest are the ids that screen needs. Every data value is a string, as FCM requires.
+     *
+     * @return array{message: array<string, mixed>}
+     */
+    public function payload(string $deviceToken, NotificationMessage $message): array
+    {
+        $target = $message->push ?? null;
+        $ttl = max(1, (int) config('modules.notify.push.ttl_hours', 48)) * 3600;
+        // A later push about the same record replaces the earlier one on the phone instead of stacking up.
+        $tag = $target === null ? null : Str::limit($target->type.'-'.$target->id, 60, '');
+
+        $data = [
+            ...($target?->extra ?? []),
+            'type' => $target?->type ?? 'link',
+            'id' => $target?->id ?? '',
+            'category' => $target?->category ?? '',
+            'project_id' => $target?->projectId,
+            'event' => $message->event,
+            'critical' => $message->critical ? '1' : '0',
+            'url' => $message->url,
+        ];
+
+        return ['message' => [
+            'token' => $deviceToken,
+            'notification' => array_filter(['title' => Str::limit($message->title, 120), 'body' => Str::limit($message->body, 300)]),
+            'data' => array_map(strval(...), array_filter($data, fn ($value) => $value !== null)),
+            'android' => [
+                'priority' => 'HIGH',
+                'ttl' => $ttl.'s',
+                'notification' => array_filter(['channel_id' => $message->critical ? self::CHANNEL_CRITICAL : self::CHANNEL_UPDATES, 'tag' => $tag]),
+            ],
+            'apns' => [
+                'headers' => array_filter(['apns-priority' => '10', 'apns-expiration' => (string) (now()->timestamp + $ttl), 'apns-collapse-id' => $tag]),
+                // Time-sensitive lets a critical push through a Focus mode when the app holds that capability; without it iOS shows it as usual.
+                'payload' => ['aps' => array_filter(['sound' => 'default', 'interruption-level' => $message->critical ? 'time-sensitive' : null])],
+            ],
+        ]];
+    }
+
+    /** The saved file wins over the environment, as every setting saved in /admin does. */
     private function account(): ?array
     {
-        $json = (string) $this->settings->get('fcm_service_account', '');
+        return $this->saved() ?? $this->fromEnvironment();
+    }
 
-        return self::isServiceAccount($json) ? json_decode($json, true) : null;
+    private function saved(): ?array
+    {
+        return $this->parse((string) $this->settings->get('fcm_service_account', ''));
+    }
+
+    /** The variable holds the JSON file in base64, so its line breaks and quotes survive any host's settings screen. */
+    private function fromEnvironment(): ?array
+    {
+        $value = preg_replace('/\s+/', '', (string) config('modules.notify.push.credentials_base64', ''));
+        $json = $value === '' ? false : base64_decode(strtr($value, '-_', '+/'), true);
+
+        return $json === false ? null : $this->parse($json);
+    }
+
+    private function parse(string $json): ?array
+    {
+        if ($json === '') {
+            return null;
+        }
+
+        return $this->parsed[sha1($json)] ??= self::isServiceAccount($json) ? json_decode($json, true) : null;
+    }
+
+    private function errorCode(Response $response): ?string
+    {
+        return collect($response->json('error.details', []))->pluck('errorCode')->filter()->first() ?? $response->json('error.status');
+    }
+
+    /** A 400 can also mean the message itself is wrong. Only one that blames the token costs the phone its registration. */
+    private function refusesToken(Response $response, ?string $code): bool
+    {
+        if ($response->status() !== 400 || $code !== 'INVALID_ARGUMENT') {
+            return false;
+        }
+
+        return $this->fieldsRefused($response)->contains('message.token') || str_contains(strtolower((string) $response->json('error.message')), 'registration token');
+    }
+
+    /**
+     * For the dry run, whose made-up phone is meant to be refused. Firebase does not always name the
+     * token when it refuses one, but it does name any part of the message it cannot accept, so a
+     * 400 that names nothing in the message is the answer a working account gives.
+     */
+    private function refusesOnlyTheMadeUpPhone(Response $response): bool
+    {
+        if ($response->status() !== 400 || $this->errorCode($response) !== 'INVALID_ARGUMENT') {
+            return false;
+        }
+
+        if ($this->refusesToken($response, 'INVALID_ARGUMENT')) {
+            return true;
+        }
+
+        return $this->fieldsRefused($response)->isEmpty()
+            && ! preg_match('/payload|invalid value|unknown name|too big/i', (string) $response->json('error.message'));
+    }
+
+    /** @return Collection<int, string> The request fields Firebase says are wrong, such as message.token. */
+    private function fieldsRefused(Response $response): Collection
+    {
+        return collect($response->json('error.details', []))->flatMap(fn ($detail) => $detail['fieldViolations'] ?? [])->pluck('field')->filter()->values();
     }
 
     private function sendUrl(array $account): string

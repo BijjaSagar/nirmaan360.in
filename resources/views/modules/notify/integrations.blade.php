@@ -25,6 +25,9 @@
                         @if ($card['testedAt'])
                             <p class="text-sm text-moss">{{ __('Last test passed on :date.', ['date' => $card['testedAt']->timezone(config('app.timezone'))->format('d M Y, H:i')]) }}</p>
                         @endif
+                        @if ($card['name'] === 'fcm')
+                            @include('modules.notify._push-account', ['card' => $card])
+                        @endif
                         @foreach ($card['fields'] as $field)
                             <x-field :label="$field['label']" :name="$field['key']" :hint="$field['saved'] ? __('Saved. Leave blank to keep it.') : ($field['hint'] ?? null)">
                                 @if ($field['type'] === 'select')
@@ -57,6 +60,15 @@
                     <button class="btn btn-ghost mt-3" @disabled(! $card['live'])>{{ __('Test') }}</button>
                     @unless ($card['live'])<p class="hint">{{ __('Save all the details above to test.') }}</p>@endunless
                 </form>
+
+                @if ($card['name'] === 'fcm')
+                    <form method="POST" action="{{ route('admin.integrations.push-test') }}" class="border-t border-rule p-4">
+                        @csrf
+                        <p class="text-sm text-ink-3">{{ __('Sends a real notification to the phones you are signed in on in the mobile app. Yours now: :count.', ['count' => $ownPhones]) }}</p>
+                        @error('push_test')<p class="error">{{ $message }}</p>@enderror
+                        <button class="btn btn-ghost mt-3" @disabled(! $card['live'])>{{ __('Send a test notification to me') }}</button>
+                    </form>
+                @endif
             </section>
         @endforeach
 

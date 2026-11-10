@@ -12,10 +12,18 @@ use Illuminate\Support\Facades\Route;
 Route::get('/notification-settings', [NotificationPreferenceController::class, 'edit'])->name('notify.preferences');
 Route::patch('/notification-settings', [NotificationPreferenceController::class, 'update'])->name('notify.preferences.update');
 
+// The same page for a contractor login. Its gate lets through only routes named contractor-portal.*, so it lives there.
+Route::middleware(['feature:contractor_portal', 'can:contractor_portal.view'])->prefix('contractor-portal')->name('contractor-portal.')->group(function () {
+    Route::get('/notification-settings', [NotificationPreferenceController::class, 'edit'])->name('notifications');
+    Route::patch('/notification-settings', [NotificationPreferenceController::class, 'update'])->name('notifications.update');
+});
+
 Route::prefix('admin')->name('admin.')->middleware(EnsurePlatformAdmin::class)->controller(IntegrationController::class)->group(function () {
     Route::get('/integrations', 'index')->name('integrations');
     Route::patch('/integrations/{integration}', 'update')->whereIn('integration', Integrations::NAMES)->name('integrations.update');
     Route::post('/integrations/{integration}/test', 'test')->whereIn('integration', Integrations::NAMES)->name('integrations.test')->middleware('throttle:10,1');
+    // A real push to the admin's own phones, to prove the whole path once the dry run passes.
+    Route::post('/integrations/fcm/send-to-me', 'sendTestPush')->name('integrations.push-test')->middleware('throttle:6,1');
 });
 
 // Selfies are personal data, so viewing one needs the manage permission and not just attendance.view.

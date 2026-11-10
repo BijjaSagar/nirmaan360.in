@@ -49,25 +49,28 @@ class AlertEngine
     {
         $totals = ['projects' => 0, 'new' => 0, 'resolved' => 0];
 
-        Organization::query()->chunkById(100, function ($organizations) use ($today, &$totals) {
-            foreach ($organizations as $organization) {
-                if (! $organization->allowsFeature('site_control')) {
-                    continue;
-                }
+        // People are told once every project has been scanned, so critical alerts go out first across all of them.
+        $this->notifier->batch(function () use ($today, &$totals) {
+            Organization::query()->chunkById(100, function ($organizations) use ($today, &$totals) {
+                foreach ($organizations as $organization) {
+                    if (! $organization->allowsFeature('site_control')) {
+                        continue;
+                    }
 
-                $projects = Project::withoutGlobalScopes()
-                    ->where('organization_id', $organization->id)
-                    ->whereIn('status', ['planning', 'active'])
-                    ->whereNull('deleted_at')
-                    ->get();
+                    $projects = Project::withoutGlobalScopes()
+                        ->where('organization_id', $organization->id)
+                        ->whereIn('status', ['planning', 'active'])
+                        ->whereNull('deleted_at')
+                        ->get();
 
-                foreach ($projects as $project) {
-                    $result = $this->scanProject($project, $today);
-                    $totals['projects']++;
-                    $totals['new'] += $result['new'];
-                    $totals['resolved'] += $result['resolved'];
+                    foreach ($projects as $project) {
+                        $result = $this->scanProject($project, $today);
+                        $totals['projects']++;
+                        $totals['new'] += $result['new'];
+                        $totals['resolved'] += $result['resolved'];
+                    }
                 }
-            }
+            });
         });
 
         return $totals;

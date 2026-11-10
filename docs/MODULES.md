@@ -72,6 +72,18 @@ The `site_alerts` module runs other modules' checks and shows their cards withou
 
 A `Finding` with a rupee figure must set `needs` to `money.view` or `money.overview`; it is then hidden from, and never sent to, anyone without that permission. Its `notify` names the permission of the people told when it opens, or is null when your module has already told them itself. A card shows money only when `$viewer->can('money.overview')`. Work percentages come from `App\Services\SiteControl\WorkProgress`.
 
+## Pushing to the mobile app
+
+Tell people through `App\Services\Notify\Notifier`, after commit (`whenCommitted`). `send()` reaches the bell, email, WhatsApp and the person's phones; `pushOnly()` reaches the phones alone, for people the other channels were never told about. Pass a closure that takes a language and returns the `NotificationMessage`, so each phone is pushed in the language its app is set to.
+
+Give the message a `PushTarget` so the app can open the record: a `category` from `PushCategory` (the switch in the person's profile), a `type` and `id` (the types the app knows are listed on `PushTarget`; a new one needs the app to learn it), the company, the project, the permissions the reader must hold, and a `dedupeKey` when the same thing could be found twice. Set `critical` only for something worth waking a person for.
+
+A site alert needs none of this: the engine pushes every new alert to everyone who can see it (`alerts.view`, the project, and `needs` when set), critical ones first. `notify` decides who also gets the bell and the email, and an alert whose `notify` is null stays on the dashboard and is pushed to nobody.
+
+`PushDispatcher` then applies the rules for you, when the message is written and again when it is sent: the person's switches, quiet hours (10 pm to 7 am India time unless changed; a critical push is not held), one push per key per person per day, the company, the permissions and the project limit, and no rupee figure to anyone without `money.view`. Write the words without amounts for such a reader, as `approvalTitleFor()` does; a push that still carries one is withheld and logged.
+
+Firebase's service account is saved under Platform admin > Integrations, encrypted like the other integration secrets. The `FIREBASE_CREDENTIALS_BASE64` environment variable (the same file in base64) is used only while nothing is saved there. With neither, push is off and nothing else changes.
+
 ## Contractor logins
 
 A role marked `'portal' => true` in `config/buildos.php` (today only `contractor`) is an outside login, not a team member. `User::isContractor()` names it, `App\Http\Middleware\ContractorPortalGate` turns it away from every signed-in route outside `contractor-portal.*` and `api/v1/contractor-portal/*`, the team screens never offer or edit it, and it takes no seat on the plan. It is handed out from the contractor's page by whoever holds the role's `managed_by` permission, through the ordinary invitation flow with `contractor_party_id` set. A new module needs nothing for this: the gate refuses a contractor before the module's routes run. `tests/Feature/ContractorPortal/ContractorPortalBoundaryTest` walks every route to prove it.
