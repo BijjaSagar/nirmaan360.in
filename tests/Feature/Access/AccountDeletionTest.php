@@ -2,6 +2,10 @@
 
 namespace Tests\Feature\Access;
 
+use App\Jobs\ResolveAgentAction;
+use App\Jobs\RunAgentStep;
+use App\Jobs\ScrubDeletedAccount;
+use App\Mail\Notify\WorkflowNotificationMail;
 use App\Models\Agent;
 use App\Models\AgentConversation;
 use App\Models\AgentRun;
@@ -22,6 +26,7 @@ use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Notifications\ApprovalUpdate;
 use App\Services\Access\InvitationService;
+use App\Services\Access\TeamAccessService;
 use App\Services\Agents\AgentRegistry;
 use App\Services\ApprovalService;
 use App\Services\ContractorPortal\ContractorAccessService;
@@ -31,8 +36,10 @@ use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\Notifier;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\Feature\Api\ApiTestCase;
@@ -112,6 +119,15 @@ class AccountDeletionTest extends ApiTestCase
         return $this->requestDeletion($this->token($owner), ['mode' => 'company', 'password' => 'password', 'confirm_name' => $name]);
     }
 
+    /** The address a deleted account is given: theirs alone, and impossible to guess. */
+    private function assertPlaceholder(User $user, ?string $email = null): string
+    {
+        $email ??= (string) $user->fresh()->email;
+        $this->assertMatchesRegularExpression('/^deleted-'.$user->id.'-[a-z0-9]{24}@deleted\.invalid$/', $email);
+
+        return $email;
+    }
+
     private function iso(\DateTimeInterface $at): string
     {
         return Carbon::instance($at)->setTimezone('Asia/Kolkata')->toIso8601String();
@@ -182,7 +198,7 @@ class AccountDeletionTest extends ApiTestCase
 
         $row = DB::table('users')->where('id', $member->id)->first();
         $this->assertSame('Deleted user', $row->name);
-        $this->assertSame("deleted-{$member->id}@deleted.invalid", $row->email);
+        $this->assertPlaceholder($member, $row->email);
         $this->assertNull($row->phone);
         $this->assertFalse((bool) $row->is_active);
         $this->assertNull($row->email_verified_at);
@@ -225,7 +241,6 @@ class AccountDeletionTest extends ApiTestCase
     public function test_copies_of_their_email_and_name_are_scrubbed(): void
     {
         $member = $this->person('qs', ['name' => 'Ravi Patil', 'email' => 'ravi@example.com', 'phone' => '9800000001']);
-        $placeholder = "deleted-{$member->id}@deleted.invalid";
 
         // An older invitation to the same address, the one they joined with, one they sent that is still open,
         // and a colleague's. Each is audited the way InvitationService does it.
@@ -261,6 +276,7 @@ class AccountDeletionTest extends ApiTestCase
         app(ApprovalService::class)->act($approval->refresh(), $pm, 'approve');
 
         $this->deleteMember($member)->assertOk();
+        $placeholder = $this->assertPlaceholder($member);
 
         $this->assertSame([$placeholder, null], [$joined->fresh()->email, $joined->fresh()->phone]);
         $this->assertSame($placeholder, $old->fresh()->email);
@@ -371,7 +387,8 @@ class AccountDeletionTest extends ApiTestCase
         app(Notifier::class)->send($member->fresh(), new NotificationMessage(event: 'approval.decided', title: 'Approved', body: 'Your entry was approved.', critical: true));
 
         $this->assertSame(0, DB::table('notifications')->where('notifiable_id', $member->id)->count());
-        Queue::assertNothingPushed();
+        // Only the deletion's own second scrub is queued; nothing goes to them.
+        $this->assertSame([ScrubDeletedAccount::class], array_keys(Queue::pushedJobs()));
     }
 
     public function test_the_old_token_stops_working_and_the_email_can_start_again(): void
@@ -394,7 +411,7 @@ class AccountDeletionTest extends ApiTestCase
             'company' => 'Ravi Works', 'name' => 'Ravi Patil', 'email' => 'Ravi@Example.com', 'phone' => '9800000001',
             'password' => 'a-long-password', 'password_confirmation' => 'a-long-password', 'device_name' => 'Pixel 8',
         ])->assertCreated();
-        $this->assertSame(2, User::whereIn('email', ['ravi@example.com', "deleted-{$member->id}@deleted.invalid"])->count());
+        $this->assertSame(2, User::whereIn('email', ['ravi@example.com', $this->assertPlaceholder($member)])->count());
     }
 
     public function test_the_deletion_is_audited_without_personal_values(): void
@@ -593,7 +610,8 @@ class AccountDeletionTest extends ApiTestCase
 
         $requester = $this->owner->fresh();
         $this->assertNotNull($requester->anonymised_at);
-        $this->assertSame(["deleted-{$requester->id}@deleted.invalid", false], [$requester->email, $requester->is_active]);
+        $this->assertPlaceholder($requester);
+        $this->assertFalse($requester->is_active);
         $this->assertSame('cancelled', CompanyDeletionRequest::sole()->status);
         $this->assertNull($colleague->fresh()->anonymised_at);
 
@@ -763,6 +781,304 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertNull($member->fresh()->anonymised_at);
 
         $this->artisan('account:delete', ['email' => 'nobody@example.com', '--force' => true])->assertFailed();
+    }
+
+    // The placeholder address
+
+    public function test_a_member_is_deleted_even_when_someone_holds_the_old_placeholder_address(): void
+    {
+        $member = $this->person('engineer', ['email' => 'ravi@example.com']);
+        // Before sign-up refused .invalid addresses, anyone could take the address a deletion would give.
+        $squatter = $this->member($this->tenant('Squatters'), 'owner');
+        $squatter->forceFill(['email' => "deleted-{$member->id}@deleted.invalid"])->save();
+
+        $this->deleteMember($member)->assertOk()->assertExactJson(['data' => ['result' => 'deleted']]);
+
+        $this->assertNotNull($member->fresh()->anonymised_at);
+        $this->assertPlaceholder($member);
+        $this->assertSame("deleted-{$member->id}@deleted.invalid", $squatter->fresh()->email);
+    }
+
+    public function test_another_owner_can_cancel_even_when_someone_holds_the_requesters_old_placeholder_address(): void
+    {
+        $colleague = $this->person('pm');
+        $this->deleteCompany($this->owner)->assertOk();
+        $this->member($this->tenant('Squatters'), 'owner')->forceFill(['email' => "deleted-{$this->owner->id}@deleted.invalid"])->save();
+        $colleague->forceFill(['role' => 'owner'])->save();
+
+        $this->cancel($this->token($colleague))->assertOk()->assertJsonPath('data.result', 'cancelled');
+
+        $this->assertSame('cancelled', CompanyDeletionRequest::sole()->status);
+        $this->assertNotNull($this->owner->fresh()->anonymised_at);
+        $this->assertPlaceholder($this->owner);
+    }
+
+    public function test_an_invalid_domain_address_can_neither_sign_up_nor_be_invited(): void
+    {
+        $taken = 'This email already has an account.';
+
+        foreach (['deleted-7@deleted.invalid', 'Someone@Site.INVALID', 'someone@invalid'] as $email) {
+            $this->app['auth']->forgetGuards();
+            $this->postJson(self::API.'/auth/register', [
+                'company' => 'Squat Works', 'name' => 'Stranger', 'email' => $email,
+                'password' => 'a-long-password', 'password_confirmation' => 'a-long-password', 'device_name' => 'Pixel 8',
+            ])->assertUnprocessable()->assertJsonPath('errors.email', [$taken]);
+
+            $this->app['auth']->forgetGuards();
+            $this->post('/register', ['company' => 'Squat Works', 'name' => 'Stranger', 'email' => $email, 'password' => 'a-long-password', 'password_confirmation' => 'a-long-password'])
+                ->assertSessionHasErrors(['email' => $taken]);
+
+            $this->actingAs($this->owner)->post('/team', ['email' => $email, 'role' => 'engineer', 'project_access' => 'all'])->assertSessionHasErrors(['email' => $taken]);
+        }
+
+        $this->assertSame(0, User::whereRaw('lower(email) like ?', ['%invalid'])->count());
+        $this->assertSame(0, TeamInvitation::withoutGlobalScopes()->count());
+
+        // An open invitation a deletion has rewritten to its placeholder does not open either.
+        $this->actingAs($this->owner)->post('/team', ['email' => 'ravi@example.com', 'role' => 'engineer', 'project_access' => 'all'])->assertSessionHasNoErrors();
+        $link = session('invite_link');
+        TeamInvitation::withoutGlobalScopes()->update(['email' => 'deleted-7-abcdefghijklmnopqrstuvwx@deleted.invalid']);
+        $this->flushSession();
+        $this->app['auth']->forgetGuards();
+        $this->post($link, ['name' => 'Someone', 'password' => 'a-long-password', 'password_confirmation' => 'a-long-password']);
+
+        $this->assertSame(0, User::where('email', 'deleted-7-abcdefghijklmnopqrstuvwx@deleted.invalid')->count());
+        $this->assertNull(TeamInvitation::withoutGlobalScopes()->sole()->accepted_at);
+        $this->assertGuest();
+    }
+
+    // When the request is not the one this person made
+
+    public function test_a_requester_another_owner_deactivated_is_still_deleted_when_that_owner_cancels(): void
+    {
+        $this->owner->forceFill(['name' => 'Asha Deshmukh', 'email' => 'asha@example.com'])->save();
+        $colleague = $this->person('pm');
+        $this->deleteCompany($this->owner)->assertOk();
+
+        // Asha makes a colleague an owner, who then switches Asha off on the Team page.
+        $colleague->forceFill(['role' => 'owner'])->save();
+        app(TeamAccessService::class)->update($colleague->fresh(), $this->owner->fresh(), 'owner', false);
+        $this->assertFalse($this->owner->fresh()->is_active);
+
+        $this->cancel($this->token($colleague))->assertOk()->assertJsonPath('data.result', 'cancelled');
+
+        $requester = $this->owner->fresh();
+        $this->assertNotNull($requester->anonymised_at);
+        $this->assertSame('Deleted user', $requester->name);
+        $this->assertPlaceholder($requester);
+        $this->assertNull($colleague->fresh()->anonymised_at);
+    }
+
+    public function test_the_only_owner_takes_over_a_request_an_owner_who_left_made(): void
+    {
+        $this->owner->forceFill(['email' => 'asha@example.com'])->save();
+        $second = $this->person('owner');
+        app(CompanyDeletionService::class)->request($this->company, $second, 'Deccan Builders');
+
+        // The owner who asked deletes their own account, so Asha is the only owner left, and asks too.
+        $this->deleteMember($second)->assertOk()->assertJsonPath('data.result', 'deleted');
+        $first = $this->iso(CompanyDeletionRequest::sole()->purge_after);
+        $this->deleteCompany($this->owner)->assertOk()->assertJsonPath('data.result', 'scheduled')->assertJsonPath('data.erase_after', $first);
+
+        $request = CompanyDeletionRequest::sole();
+        $this->assertSame([$this->owner->id, 'account', 'pending'], [(int) $request->requested_by, $request->requested_via, $request->status]);
+        $this->assertSame($second->id, AuditLog::withoutGlobalScopes()->where('action', 'company.deletion_requested')->sole()->new_values['requested_by'], 'Whoever asked first stays on record.');
+
+        // A new owner keeps the company, so Asha's own account goes as she asked.
+        $newOwner = $this->person('pm');
+        $newOwner->forceFill(['role' => 'owner'])->save();
+        $this->cancel($this->token($newOwner))->assertOk()->assertJsonPath('data.result', 'cancelled');
+
+        $this->assertNotNull($this->owner->fresh()->anonymised_at);
+        $this->assertNull($newOwner->fresh()->anonymised_at);
+    }
+
+    public function test_support_scheduling_for_the_only_owner_takes_over_the_request_and_the_purge_emails_them(): void
+    {
+        Storage::fake();
+        $this->owner->forceFill(['email' => 'asha@example.com'])->save();
+        $second = $this->person('owner', ['email' => 'kiran@example.com']);
+        app(CompanyDeletionService::class)->request($this->company, $second, 'Deccan Builders');
+        // The owner who asked is made a project manager again.
+        $second->forceFill(['role' => 'pm'])->save();
+        $this->app['auth']->forgetGuards();
+
+        $this->artisan('account:delete', ['email' => 'asha@example.com', '--force' => true])->expectsOutputToContain('Scheduled.')->assertSuccessful();
+
+        $request = CompanyDeletionRequest::sole();
+        $this->assertSame([$this->owner->id, 'account'], [(int) $request->requested_by, $request->requested_via]);
+
+        Mail::fake();
+        $this->travel(CompanyDeletionService::GRACE_DAYS + 1)->days();
+        $this->artisan('company-data:housekeeping')->assertSuccessful();
+
+        $this->assertDatabaseMissing('organizations', ['id' => $this->company->id]);
+        $sent = Mail::sent(WorkflowNotificationMail::class, fn (WorkflowNotificationMail $mail) => $mail->notice->event === 'company.erased');
+        $this->assertCount(1, $sent);
+        $this->assertTrue($sent->first()->hasTo('asha@example.com'));
+        $this->assertFalse($sent->first()->hasTo('kiran@example.com'));
+    }
+
+    // Agent work that ends after the deletion
+
+    public function test_an_agent_step_that_ends_after_the_deletion_is_scrubbed_again(): void
+    {
+        $project = $this->makeProject($this->company);
+        $member = $this->person('engineer', ['name' => 'Ravi Patil']);
+        $colleague = $this->person('pm');
+        $this->traces($member, $project);
+        $this->traces($colleague, $project);
+        $run = AgentRun::withoutGlobalScopes()->where('user_id', $member->id)->sole();
+        // The worker loaded the run before the deletion and is still waiting on the model.
+        $held = AgentRun::withoutGlobalScopes()->findOrFail($run->id);
+
+        $this->deleteMember($member)->assertOk();
+
+        $job = Queue::pushed(ScrubDeletedAccount::class)->sole();
+        $this->assertSame([$this->company->id, $member->id], [$job->organizationId, $job->userId]);
+        $this->assertGreaterThan((new RunAgentStep(0))->timeout, $job->delay, 'It must wait out the longest agent step.');
+        $this->assertGreaterThan((new ResolveAgentAction(0))->timeout, $job->delay);
+
+        // The model answers after the scrub and the worker saves what it held, as AgentOrchestrator::record
+        // and finish() do: a new step, the whole message list, the answer, and the daily brief's bell.
+        DB::table('agent_steps')->insert(['organization_id' => $this->company->id, 'agent_run_id' => $run->id, 'number' => 2, 'model' => 'claude-sonnet-5-5', 'text' => 'Ravi asked about the slab.', 'created_at' => now(), 'updated_at' => now()]);
+        $held->forceFill([
+            'messages' => [...$held->messages, ['role' => 'assistant', 'content' => 'Ravi asked about the slab.']],
+            'answer' => 'Ravi asked about the slab.',
+            'output' => ['answer' => 'Ravi asked about the slab.'],
+        ])->save();
+        $member->notify(new ApprovalUpdate('Your daily brief is ready.', ''));
+        $this->assertSame('Ravi asked about the slab.', $run->fresh()->answer);
+
+        app()->call([$job, 'handle']);
+
+        $run->refresh();
+        $this->assertSame(['', [], null, null], [$run->input, $run->messages, $run->answer, $run->output]);
+        $this->assertSame([null, null], DB::table('agent_steps')->where('agent_run_id', $run->id)->orderBy('number')->pluck('text')->all(), 'The steps stay for the credits, without their words.');
+        $this->assertSame(0, DB::table('notifications')->where('notifiable_type', $member->getMorphClass())->where('notifiable_id', $member->id)->count());
+
+        // Running it again changes nothing, and the colleague's run and bell are untouched throughout.
+        app()->call([$job, 'handle']);
+        $this->assertSame([], $run->fresh()->messages);
+        $this->assertSame('Half the slab is cast.', AgentRun::withoutGlobalScopes()->where('user_id', $colleague->id)->value('answer'));
+        $this->assertSame('Half the slab is cast.', DB::table('agent_steps')->whereIn('agent_run_id', AgentRun::withoutGlobalScopes()->where('user_id', $colleague->id)->select('id'))->value('text'));
+        $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $colleague->id)->count());
+    }
+
+    public function test_the_second_scrub_touches_only_a_person_that_company_deleted(): void
+    {
+        $project = $this->makeProject($this->company);
+        $colleague = $this->person('pm');
+        $member = $this->person();
+        $this->traces($colleague, $project);
+        $this->traces($member, $project);
+        $this->deleteMember($member)->assertOk();
+        // Written back after the deletion, as an agent step still running would.
+        DB::table('agent_runs')->where('user_id', $member->id)->update(['answer' => 'Late answer.']);
+        $rival = $this->tenant('Rival Constructions');
+
+        // Someone not deleted, a deleted person named under the wrong company, and a person whose row has gone with their company.
+        foreach ([[$this->company->id, $colleague->id], [$rival->id, $member->id], [$this->company->id, $member->id + 1000]] as [$organizationId, $userId]) {
+            app()->call([new ScrubDeletedAccount($organizationId, $userId), 'handle']);
+        }
+
+        $this->assertSame('Half the slab is cast.', AgentRun::withoutGlobalScopes()->where('user_id', $colleague->id)->value('answer'));
+        $this->assertSame(1, DB::table('notifications')->where('notifiable_id', $colleague->id)->count());
+        $this->assertSame('Late answer.', AgentRun::withoutGlobalScopes()->where('user_id', $member->id)->value('answer'));
+
+        app()->call([new ScrubDeletedAccount($this->company->id, $member->id), 'handle']);
+        $this->assertNull(AgentRun::withoutGlobalScopes()->where('user_id', $member->id)->value('answer'));
+    }
+
+    // Holding the company lock
+
+    public function test_members_are_told_only_once_the_callers_transaction_commits(): void
+    {
+        $engineer = $this->person();
+        $companies = app(CompanyDeletionService::class);
+
+        // As an account deletion asks, from inside its own transaction holding the company row.
+        DB::transaction(function () use ($companies, $engineer) {
+            $companies->request($this->company, $this->owner, 'Deccan Builders', 'account');
+            $this->assertSame(0, $engineer->notifications()->count(), 'Nobody is told while the company row is still locked.');
+        });
+        $this->assertSame(1, $engineer->notifications()->count());
+
+        // A cancel that is rolled back tells nobody.
+        try {
+            DB::transaction(function () use ($companies) {
+                $companies->cancel($this->company, $this->owner);
+
+                throw new \RuntimeException('Rolled back.');
+            });
+        } catch (\RuntimeException) {
+        }
+
+        $this->assertSame('pending', CompanyDeletionRequest::sole()->status);
+        $this->assertSame(1, $engineer->notifications()->count());
+
+        $this->assertTrue($companies->cancel($this->company, $this->owner));
+        $this->assertSame(2, $engineer->notifications()->count());
+    }
+
+    public function test_the_lookup_indexes_roll_back_and_serve_the_lookups(): void
+    {
+        $indexes = [
+            '2027_01_06_100001_add_organization_user_index_to_audit_logs.php' => 'audit_logs_organization_id_user_id_id_index',
+            '2027_01_06_100002_add_lower_email_index_to_users.php' => 'users_email_lower_index',
+        ];
+
+        foreach ($indexes as $file => $index) {
+            $this->assertTrue($this->indexExists($index), $index);
+
+            $migration = require database_path('migrations/'.$file);
+            $migration->down();
+            $this->assertFalse($this->indexExists($index), $index);
+
+            $migration->up();
+            $this->assertTrue($this->indexExists($index), $index);
+        }
+
+        // Sign-in's lower(email) lookup is served by the index, so its expression matches the query.
+        $lookup = User::whereRaw('lower(email) = ?', ['ravi@example.com'])->toRawSql();
+        $plan = match (DB::getDriverName()) {
+            'pgsql' => (function () use ($lookup) {
+                DB::statement('SET LOCAL enable_seqscan = off');
+
+                return json_encode(DB::select('EXPLAIN '.$lookup));
+            })(),
+            default => json_encode(DB::select('EXPLAIN QUERY PLAN '.$lookup)),
+        };
+        $this->assertStringContainsString('users_email_lower_index', $plan);
+    }
+
+    // Console audit
+
+    public function test_a_deletion_support_schedules_is_on_the_companys_own_audit_trail(): void
+    {
+        $this->owner->forceFill(['email' => 'asha@example.com'])->save();
+        $admin = $this->person('admin');
+        $this->app['auth']->forgetGuards();
+
+        $this->artisan('account:delete', ['email' => 'asha@example.com', '--force' => true])->expectsOutputToContain('Scheduled.')->assertSuccessful();
+
+        $requested = AuditLog::withoutGlobalScopes()->where('action', 'company.deletion_requested')->sole();
+        $this->assertSame([$this->company->id, null], [(int) $requested->organization_id, $requested->user_id]);
+
+        // A cancel run with nobody signed in is filed under the company as well.
+        app(CompanyDeletionService::class)->cancel($this->company, $admin);
+        $this->assertSame($this->company->id, (int) AuditLog::withoutGlobalScopes()->where('action', 'company.deletion_cancelled')->sole()->organization_id);
+
+        $this->actingAs($admin)->get('/audit')->assertOk()->assertSee('company.deletion_requested')->assertSee('company.deletion_cancelled');
+    }
+
+    /** Whether an index of this name exists, read from the database's own catalogue. */
+    private function indexExists(string $name): bool
+    {
+        return match (DB::getDriverName()) {
+            'pgsql' => DB::table('pg_indexes')->where('indexname', $name)->exists(),
+            default => DB::table('sqlite_master')->where('type', 'index')->where('name', $name)->exists(),
+        };
     }
 
     /** Rows of every kind the deletion removes, so a test can show they go for one person only. */

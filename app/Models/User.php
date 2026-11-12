@@ -206,6 +206,17 @@ class User extends Authenticatable
         return in_array(static::normaliseEmail($email), config('buildos.platform_admins'), true);
     }
 
+    /**
+     * An address at a .invalid domain, which can never receive mail. A deleted account's email is replaced
+     * with one, so nobody can sign up or be invited with one and get in the way of a deletion.
+     */
+    public static function emailOnReservedDomain(string $email): bool
+    {
+        $domain = rtrim(Str::afterLast(static::normaliseEmail($email), '@'), '.');
+
+        return $domain === 'invalid' || str_ends_with($domain, '.invalid');
+    }
+
     public function isApprovalOverride(): bool
     {
         return $this->custom_role_id === null && in_array($this->role, config('buildos.approver_override_roles'), true);

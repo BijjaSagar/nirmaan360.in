@@ -39,13 +39,16 @@ class AuditLog extends Model
     /**
      * $actor names who did it when nobody is signed in, such as a sign-up through the API or a console run.
      * Otherwise it is the signed-in person, and nobody on a client's signed link.
+     *
+     * $organizationId files the row under that company. Without it the row goes to the model's company, or
+     * the signed-in person's; a model with no organization_id of its own, written from the console, needs it.
      */
-    public static function record(string $action, Model $model, ?array $old = null, ?array $new = null, ?User $actor = null): self
+    public static function record(string $action, Model $model, ?array $old = null, ?array $new = null, ?User $actor = null, ?int $organizationId = null): self
     {
         $hidden = ['password', 'remember_token'];
 
         return static::withoutGlobalScopes()->create([
-            'organization_id' => $model->getAttribute('organization_id') ?? Auth::user()?->organization_id,
+            'organization_id' => $organizationId ?? $model->getAttribute('organization_id') ?? Auth::user()?->organization_id,
             'user_id' => $actor?->id ?? (Request::routeIs('client.*') ? null : Auth::id()),
             'action' => $action,
             'auditable_type' => $model->getMorphClass(),

@@ -132,10 +132,11 @@ class SignupService
      * Why this normalised email cannot start a company, or null when it can.
      * Platform staff are recognised by email alone, so a listed address is never handed to a new company.
      * It reads exactly like a taken email, so the answer never tells a stranger which addresses run the platform.
+     * A .invalid address is what a deleted account is given, so it is refused the same way.
      */
     private function emailProblem(string $email): ?string
     {
-        if (User::emailTaken($email) || User::emailReservedForPlatform($email)) {
+        if (User::emailTaken($email) || User::emailReservedForPlatform($email) || User::emailOnReservedDomain($email)) {
             return __('This email already has an account.');
         }
 

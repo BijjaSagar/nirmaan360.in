@@ -57,13 +57,16 @@ class CompanyDeletionService
                 'purge_after' => now()->addDays(self::GRACE_DAYS),
             ]);
 
-            AuditLog::record('company.deletion_requested', $organization, null, ['requested_by' => $by->id, 'purge_after' => $request->purge_after->toIso8601String()]);
+            // Named outright: an Organization has no organization_id, and support's console run has nobody signed in.
+            AuditLog::record('company.deletion_requested', $organization, null, ['requested_by' => $by->id, 'purge_after' => $request->purge_after->toIso8601String()], organizationId: $organization->id);
 
             return $request;
         });
 
         if ($request->wasRecentlyCreated) {
-            $this->tellEveryone($organization, 'company.deletion_requested', function (string $locale, bool $leader) use ($organization, $request) {
+            // After the caller's transaction too: an account deletion asks from inside its own, which holds
+            // the company row locked, and telling every member must not keep the whole company waiting.
+            $this->notifier->whenCommitted(fn () => $this->tellEveryone($organization, 'company.deletion_requested', function (string $locale, bool $leader) use ($organization, $request) {
                 $when = __('All data will be erased on :date unless an owner cancels before then.', ['date' => $request->purge_after->format('d M Y')], $locale);
 
                 return [
@@ -71,7 +74,7 @@ class CompanyDeletionService
                     // Members cannot open the Company data page, so they are told what it means for them instead.
                     $leader ? $when : $when.' '.__('Your access ends then, because all of the company\'s data will be erased.', [], $locale),
                 ];
-            });
+            }));
         }
 
         return $request;
@@ -95,7 +98,7 @@ class CompanyDeletionService
             }
 
             $request->update(['status' => 'cancelled', 'cancelled_by' => $by->id, 'cancelled_at' => now()]);
-            AuditLog::record('company.deletion_cancelled', $organization, null, ['cancelled_by' => $by->id]);
+            AuditLog::record('company.deletion_cancelled', $organization, null, ['cancelled_by' => $by->id], organizationId: $organization->id);
 
             // An only owner who asked to delete their own account is deleted now that someone else keeps the company.
             // Resolved here rather than injected, because that service builds on this one.
@@ -108,10 +111,11 @@ class CompanyDeletionService
             return false;
         }
 
-        $this->tellEveryone($organization, 'company.deletion_cancelled', fn (string $locale) => [
+        // Never under a caller's transaction, which may hold the company row locked.
+        $this->notifier->whenCommitted(fn () => $this->tellEveryone($organization, 'company.deletion_cancelled', fn (string $locale) => [
             __('Company deletion cancelled for :company', ['company' => $organization->name], $locale),
             __('Your data is safe and will not be erased.', [], $locale),
-        ]);
+        ]));
 
         return true;
     }

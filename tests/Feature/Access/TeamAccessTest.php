@@ -199,12 +199,17 @@ class TeamAccessTest extends TestCase
 
     public function test_the_migration_can_be_rolled_back(): void
     {
+        // In order, as a real rollback goes: the later lower(email) index on users first. SQLite rebuilds the
+        // table to drop custom_role_id and cannot carry an expression index across.
+        $emailIndex = 'database/migrations/2027_01_06_100002_add_lower_email_index_to_users.php';
+        $this->artisan('migrate:rollback', ['--path' => $emailIndex])->assertSuccessful();
         $this->artisan('migrate:rollback', ['--path' => 'database/migrations/2026_12_03_100001_create_access_tables.php'])->assertSuccessful();
 
         $this->assertFalse(Schema::hasTable('custom_roles'));
         $this->assertFalse(Schema::hasColumn('users', 'custom_role_id'));
 
         $this->artisan('migrate', ['--path' => 'database/migrations/2026_12_03_100001_create_access_tables.php'])->assertSuccessful();
+        $this->artisan('migrate', ['--path' => $emailIndex])->assertSuccessful();
 
         $this->assertTrue(Schema::hasColumn('users', 'limited_to_projects'));
     }

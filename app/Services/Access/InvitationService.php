@@ -60,7 +60,8 @@ class InvitationService
 
         $email = Str::lower(trim($data['email']));
 
-        if (User::emailTaken($email) || User::emailReservedForPlatform($email)) {
+        // A .invalid address is what a deleted account is given, so it is refused like a taken one.
+        if (User::emailTaken($email) || User::emailReservedForPlatform($email) || User::emailOnReservedDomain($email)) {
             throw ValidationException::withMessages(['email' => __('This email already has an account.')]);
         }
 
@@ -172,8 +173,9 @@ class InvitationService
                 throw new InvitationClosedException(__('This company has reached its plan user limit. Ask them to upgrade and send a new invitation.'));
             }
 
-            // An invitation sent before an address joined the platform admin list must not open now.
-            if (User::emailTaken($invitation->email) || User::emailReservedForPlatform($invitation->email)) {
+            // An invitation sent before an address joined the platform admin list must not open now, nor one
+            // a deletion has rewritten to its .invalid placeholder.
+            if (User::emailTaken($invitation->email) || User::emailReservedForPlatform($invitation->email) || User::emailOnReservedDomain($invitation->email)) {
                 throw new InvitationClosedException(__('This email already has an account. Please sign in.'));
             }
 

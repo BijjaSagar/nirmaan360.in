@@ -3,6 +3,7 @@
 namespace App\Services\Access;
 
 use App\Exceptions\AccountDeletionChanged;
+use App\Jobs\ScrubDeletedAccount;
 use App\Models\AuditLog;
 use App\Models\CompanyDeletionRequest;
 use App\Models\DeviceLicence;
@@ -171,7 +172,8 @@ class AccountDeletionService
 
         $requester = User::where('organization_id', $request->organization_id)->find($request->requested_by);
 
-        if ($requester === null || ! $requester->is_active || $requester->anonymised_at !== null || $this->modeFor($requester) !== self::MODE_ACCOUNT) {
+        // A requester another owner has since deactivated still asked to go, and can no longer sign in to ask again.
+        if ($requester === null || $requester->anonymised_at !== null || $this->modeFor($requester) !== self::MODE_ACCOUNT) {
             return;
         }
 
@@ -191,10 +193,11 @@ class AccountDeletionService
     {
         $request = $this->companies->request($organization, $user, $confirmName, 'account');
 
-        // Asked first on the Company data page, now for their account as well: a later cancel by
-        // another owner must then delete this person.
-        if (! $request->wasRecentlyCreated && (int) $request->requested_by === (int) $user->id && $request->requested_via !== 'account') {
-            $request->update(['requested_via' => 'account']);
+        // A request already pending, from the Company data page or by an owner who has since gone, now
+        // stands for this person's account: a later cancel by another owner must delete them, and the
+        // purge must email them. Whoever asked first stays on record in the company.deletion_requested audit row.
+        if (! $request->wasRecentlyCreated && ((int) $request->requested_by !== (int) $user->id || $request->requested_via !== 'account')) {
+            $request->update(['requested_by' => $user->id, 'requested_via' => 'account']);
         }
 
         $this->signOutEverywhere($user);
@@ -236,9 +239,38 @@ class AccountDeletionService
 
         if ($user->organization_id !== null) {
             $this->scrubCopies($user, $oldEmail, $placeholder);
+
+            // An agent step already waiting on the model writes its question and answer back when it ends.
+            ScrubDeletedAccount::dispatch($user->organization_id, $user->id)->delay(ScrubDeletedAccount::DELAY_SECONDS)->afterCommit();
         }
 
         AuditLog::record('account.deleted', $user, null, ['mode' => self::MODE_ACCOUNT, 'via' => $via], actor: $via === 'support' ? null : $user);
+    }
+
+    /**
+     * Run by ScrubDeletedAccount once every agent step that was running at the deletion has ended. Such a
+     * step saves the question and the model's answer back onto the run, and a scheduled brief that finishes
+     * then rings the bell again; both are cleared once more. Only a person this company has deleted is
+     * touched, so a second run, or one after the company itself was erased, changes nothing.
+     */
+    public function scrubLateWrites(int $organizationId, int $userId): void
+    {
+        $user = User::where('organization_id', $organizationId)->whereKey($userId)->whereNotNull('anonymised_at')->first();
+
+        if ($user === null) {
+            return;
+        }
+
+        $this->scrubAgentRuns($organizationId, $userId);
+        DB::table('notifications')->where('notifiable_type', $user->getMorphClass())->where('notifiable_id', $userId)->delete();
+    }
+
+    /** What they asked the company's agents and what came back. The runs stay for the credits spent. */
+    private function scrubAgentRuns(int $organizationId, int $userId): void
+    {
+        $runs = DB::table('agent_runs')->where('organization_id', $organizationId)->where('user_id', $userId);
+        DB::table('agent_steps')->where('organization_id', $organizationId)->whereIn('agent_run_id', (clone $runs)->select('id'))->update(['text' => null]);
+        (clone $runs)->update(['input' => '', 'messages' => '[]', 'answer' => null, 'output' => null]);
     }
 
     /** Ways in, ways to reach them, and what was only theirs. Plain queries, so nothing writes audit rows full of the old values. */
@@ -269,9 +301,7 @@ class AccountDeletionService
         $organizationId = $user->organization_id;
         $email = User::normaliseEmail($oldEmail);
 
-        $runs = DB::table('agent_runs')->where('organization_id', $organizationId)->where('user_id', $user->id);
-        DB::table('agent_steps')->whereIn('agent_run_id', (clone $runs)->select('id'))->update(['text' => null]);
-        (clone $runs)->update(['input' => '', 'messages' => '[]', 'answer' => null, 'output' => null]);
+        $this->scrubAgentRuns($organizationId, $user->id);
 
         // Their own invitation, and any earlier one sent to the same address in this company.
         $invitations = DB::table('team_invitations')
@@ -409,8 +439,13 @@ class AccountDeletionService
         $user->forceFill(['remember_token' => Str::random(60)])->save();
     }
 
+    /**
+     * Unique to this deletion and impossible to guess, so nobody can hold the address first and make the
+     * deletion fail on the unique email index. Lower case, as every stored email is. Sign-up and
+     * invitations refuse every .invalid address as well.
+     */
     private function placeholderEmail(User $user): string
     {
-        return "deleted-{$user->id}@deleted.invalid";
+        return 'deleted-'.$user->id.'-'.Str::lower(Str::random(24)).'@deleted.invalid';
     }
 }
