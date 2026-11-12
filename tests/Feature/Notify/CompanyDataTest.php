@@ -16,8 +16,11 @@ use App\Services\Notify\CompanyDeletionService;
 use App\Services\Notify\CompanyExportService;
 use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\TenantData;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -96,7 +99,7 @@ class CompanyDataTest extends NotifyTestCase
 
         $this->get('/company-data')->assertOk()->assertSee('Only a company owner')->assertDontSee('Export all company data');
         $this->post('/company-data/export')->assertForbidden();
-        $this->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders'])->assertForbidden();
+        $this->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders', 'password' => 'password'])->assertForbidden();
         $this->delete('/company-data/deletion')->assertForbidden();
         $this->assertSame(0, CompanyDeletionRequest::count());
     }
@@ -266,7 +269,7 @@ class CompanyDataTest extends NotifyTestCase
         $this->actingAs($this->owner);
 
         foreach (['DELETE', 'sahyadri builders', 'Sahyadri'] as $wrong) {
-            $this->post('/company-data/deletion', ['confirm_name' => $wrong])->assertSessionHasErrors('confirm_name');
+            $this->post('/company-data/deletion', ['confirm_name' => $wrong, 'password' => 'password'])->assertSessionHasErrors('confirm_name');
         }
 
         $this->post('/company-data/deletion', [])->assertSessionHasErrors('confirm_name');
@@ -277,7 +280,7 @@ class CompanyDataTest extends NotifyTestCase
     {
         $this->actingAs($this->owner);
 
-        $this->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders'])->assertRedirect()->assertSessionHas('success');
+        $this->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders', 'password' => 'password'])->assertRedirect()->assertSessionHas('success');
 
         $request = CompanyDeletionRequest::sole();
         $this->assertSame('pending', $request->status);
@@ -286,6 +289,54 @@ class CompanyDataTest extends NotifyTestCase
 
         $this->get('/dashboard')->assertOk();
         $this->get('/company-data')->assertOk()->assertSee('Cancel the deletion');
+    }
+
+    public function test_deletion_needs_the_owners_password(): void
+    {
+        $this->actingAs($this->owner)->get('/company-data')->assertOk()
+            ->assertSeeInOrder(['Type Sahyadri Builders to confirm', 'Your password', 'Delete this company'])
+            ->assertSee('name="password" type="password"', false)
+            ->assertSee('autocomplete="current-password"', false);
+
+        $this->from('/company-data')->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders', 'password' => 'not-it'])
+            ->assertRedirect('/company-data')
+            ->assertSessionHasErrors(['password' => 'That password is not right.']);
+        $this->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders'])->assertSessionHasErrors('password');
+
+        // As on Delete my account, a wrong name is refused before the password is looked at.
+        $this->post('/company-data/deletion', ['confirm_name' => 'Sahyadri', 'password' => 'not-it'])
+            ->assertSessionHasErrors(['confirm_name' => 'Type the company name exactly as shown.'])
+            ->assertSessionDoesntHaveErrors('password');
+
+        $this->assertSame(0, CompanyDeletionRequest::count());
+        $this->assertSame(0, AuditLog::withoutGlobalScopes()->where('action', 'company.deletion_requested')->count());
+        $this->assertSame(0, $this->owner->notifications()->count());
+        $this->assertAuthenticatedAs($this->owner);
+    }
+
+    public function test_the_sixth_deletion_request_in_a_minute_is_refused_and_the_cancel_counts_apart(): void
+    {
+        $this->actingAs($this->owner);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders', 'password' => 'not-it'])->assertSessionHasErrors('password');
+        }
+
+        // Refused with 429; the website turns that into the page's own message, even with the right password.
+        $this->postJson('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders', 'password' => 'password'])->assertTooManyRequests()->assertHeader('Retry-After');
+        $this->from('/company-data')->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders', 'password' => 'password'])
+            ->assertRedirect('/company-data')
+            ->assertSessionHasErrors(['throttle' => 'Too many tries in a short time. Wait a minute and try again.']);
+        $this->assertSame(0, CompanyDeletionRequest::count());
+
+        // Deleting an account has a counter of its own, and so does the cancel, with room for ten a minute.
+        $this->post('/account/delete', ['mode' => 'company', 'password' => 'not-it', 'confirm_name' => 'Sahyadri Builders'])->assertSessionHasErrors('password');
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->delete('/company-data/deletion')->assertRedirect()->assertSessionDoesntHaveErrors('throttle');
+        }
+
+        $this->deleteJson('/company-data/deletion')->assertTooManyRequests();
     }
 
     public function test_every_active_person_is_told_even_with_email_off(): void
@@ -352,7 +403,7 @@ class CompanyDataTest extends NotifyTestCase
 
     public function test_a_request_records_where_it_was_made(): void
     {
-        $this->actingAs($this->owner)->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders'])->assertRedirect();
+        $this->actingAs($this->owner)->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders', 'password' => 'password'])->assertRedirect();
         $this->assertSame('company', CompanyDeletionRequest::sole()->requested_via);
 
         $other = $this->tenant('Solo Infra');
@@ -489,6 +540,57 @@ class CompanyDataTest extends NotifyTestCase
         $this->assertSame('completed', CompanyDeletionRequest::withoutGlobalScopes()->sole()->status);
         Log::shouldHaveReceived('warning')->once()->withArgs(fn (string $message, array $context = []) => $message === 'The erasure confirmation email could not be sent'
             && str_contains($context['error'], '[hidden]') && ! str_contains($context['error'], $email));
+    }
+
+    public function test_files_that_could_not_be_removed_are_counted_in_the_log_without_their_paths(): void
+    {
+        $id = $this->organization->id;
+        $this->photoFor($this->organization, "org-{$id}/dprs/1/Asha Deshmukh site.jpg");
+        $this->photoFor($this->organization, "org-{$id}/dprs/2/Kiran Patil site.jpg");
+        $this->photoFor($this->organization, "org-{$id}/dprs/3/gate.jpg");
+        $this->schedule();
+        Mail::fake();
+
+        // Most disks report a failed delete by returning false; one set to throw raises instead. Both happen here.
+        $fake = Storage::disk();
+        Storage::set(config('filesystems.default'), new class($fake->getDriver(), $fake->getAdapter(), $fake->getConfig()) extends FilesystemAdapter
+        {
+            public function delete($paths)
+            {
+                $path = (string) (is_array($paths) ? $paths[0] : $paths);
+
+                return match (true) {
+                    str_contains($path, 'Asha') => false,
+                    str_contains($path, 'Kiran') => throw new RuntimeException("Unable to delete file located at: {$path}"),
+                    default => parent::delete($paths),
+                };
+            }
+        });
+
+        $logged = [];
+        Event::listen(MessageLogged::class, function (MessageLogged $log) use (&$logged) {
+            $logged[] = $log;
+        });
+
+        $this->travel(CompanyDeletionService::GRACE_DAYS + 1)->days();
+        $this->runHousekeeping();
+
+        $this->assertDatabaseMissing('organizations', ['id' => $id]);
+        Storage::assertMissing("org-{$id}/dprs/3/gate.jpg");
+        Storage::assertExists("org-{$id}/dprs/1/Asha Deshmukh site.jpg");
+
+        $warnings = array_values(array_filter($logged, fn (MessageLogged $log) => $log->message === 'Files from a deleted company could not be removed'));
+        $this->assertCount(1, $warnings);
+        $this->assertSame('warning', $warnings[0]->level);
+        $this->assertSame(['organization_id' => $id, 'files' => 2], $warnings[0]->context);
+
+        foreach ($logged as $log) {
+            $this->assertStringNotContainsString('Asha', $log->message.json_encode($log->context));
+            $this->assertStringNotContainsString('Kiran', $log->message.json_encode($log->context));
+        }
+
+        // The requester is still told the company is gone.
+        $this->assertCount(1, Mail::sent(WorkflowNotificationMail::class, fn (WorkflowNotificationMail $mail) => $mail->notice->event === 'company.erased'));
     }
 
     public function test_no_confirmation_is_sent_when_mail_is_only_logged(): void

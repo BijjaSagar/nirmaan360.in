@@ -5,12 +5,16 @@ namespace Tests\Feature\Access;
 use App\Models\Organization;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use App\Services\Access\AccountDeletionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\BuildsTenant;
 use Tests\TestCase;
 
-/** The platform admin list holds addresses. Nobody else may come to own one of them, in any letter case. */
+/**
+ * The platform admin list holds addresses. Nobody else may come to own one of them, in any letter case,
+ * and only an account stored with the address exactly is an admin by it.
+ */
 class PlatformAdminEmailTest extends TestCase
 {
     use BuildsTenant, RefreshDatabase;
@@ -71,25 +75,57 @@ class PlatformAdminEmailTest extends TestCase
         $this->assertSame(1, User::where('name', 'Stranger')->count());
     }
 
-    public function test_only_the_first_account_with_a_listed_address_is_an_admin(): void
+    public function test_the_exact_listed_address_is_an_admin(): void
     {
-        // As a copy made before this fix would sit in the database.
-        $copy = User::factory()->create(['organization_id' => $this->tenant('Copycat')->id, 'role' => 'owner', 'email' => 'OPS@example.com', 'is_active' => true]);
-
         $this->assertTrue($this->admin->isPlatformAdmin());
-        $this->assertFalse($copy->isPlatformAdmin());
-
-        $this->actingAs($copy)->get('/admin/seo')->assertNotFound();
         $this->actingAs($this->admin)->get('/admin/seo')->assertOk();
+    }
+
+    public function test_a_copy_in_other_letter_case_is_never_an_admin_even_once_the_original_is_gone(): void
+    {
+        // As a copy made before sign-up refused other letter cases would sit in the database.
+        $copy = User::factory()->create(['organization_id' => $this->tenant('Copycat')->id, 'role' => 'owner', 'email' => 'OPS@example.com', 'is_active' => true]);
+        $this->assertFalse($copy->isPlatformAdmin());
+        $this->actingAs($copy)->get('/admin/seo')->assertNotFound();
+
+        // The real admin deletes their account, so the copy is now the oldest account with that address in any case.
+        $this->assertSame(['result' => 'deleted'], app(AccountDeletionService::class)->deleteBySupport($this->admin));
+        $this->assertNotNull($this->admin->fresh()->anonymised_at);
+        $this->assertFalse($copy->fresh()->isPlatformAdmin());
+        $this->actingAs($copy->fresh())->get('/admin/seo')->assertNotFound();
+
+        // Or the row goes altogether, as when its company is erased.
+        $this->admin->delete();
+        $this->assertSame(['OPS@example.com'], User::whereRaw('lower(email) = ?', ['ops@example.com'])->pluck('email')->all());
+        $this->assertFalse($copy->fresh()->isPlatformAdmin());
+        $this->actingAs($copy->fresh())->get('/admin/seo')->assertNotFound();
     }
 
     public function test_the_admin_flag_still_works_on_its_own(): void
     {
         $flagged = User::factory()->create(['organization_id' => $this->organization->id, 'email' => 'staff@example.com', 'is_platform_admin' => true]);
+        // An address stored before emails were kept in small letters, granted by the flag rather than the list.
+        $older = User::factory()->create(['organization_id' => $this->organization->id, 'role' => 'owner', 'email' => 'Boss@Example.com', 'is_platform_admin' => true, 'is_active' => true]);
         $plain = User::factory()->create(['organization_id' => $this->organization->id, 'email' => 'plain@example.com']);
 
         $this->assertTrue($flagged->isPlatformAdmin());
+        $this->assertTrue($older->isPlatformAdmin());
         $this->assertFalse($plain->isPlatformAdmin());
+        $this->actingAs($older)->get('/admin/seo')->assertOk();
+    }
+
+    public function test_the_command_finds_an_account_whatever_case_the_address_is_typed_in(): void
+    {
+        $priya = User::factory()->create(['organization_id' => $this->organization->id, 'email' => 'priya.rane@example.com']);
+        $older = User::factory()->create(['organization_id' => $this->organization->id, 'email' => 'Kiran.Patil@Example.com']);
+
+        $this->artisan('platform:admin', ['email' => 'Priya.Rane@EXAMPLE.com'])->assertSuccessful();
+        $this->artisan('platform:admin', ['email' => ' kiran.patil@example.com '])->assertSuccessful();
+
+        $this->assertTrue($priya->fresh()->is_platform_admin);
+        $this->assertTrue($older->fresh()->is_platform_admin);
+        $this->assertTrue($older->fresh()->isPlatformAdmin());
+        $this->artisan('platform:admin', ['email' => 'nobody@example.com'])->assertFailed();
     }
 
     public function test_a_company_cannot_invite_a_listed_address(): void

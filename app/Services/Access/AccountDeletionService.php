@@ -109,6 +109,11 @@ class AccountDeletionService
                 throw new AccountDeletionChanged;
             }
 
+            // The name comes before the password, so a wrong name says nothing about whether the password was right.
+            if ($mode === self::MODE_COMPANY) {
+                $this->companies->assertConfirmName($organization, (string) $confirmName);
+            }
+
             if (! Hash::check($password, $user->password)) {
                 throw ValidationException::withMessages(['password' => __('That password is not right.')]);
             }
@@ -160,7 +165,7 @@ class AccountDeletionService
     /**
      * Called by CompanyDeletionService::cancel inside its transaction. The only owner asked for their own
      * account to go; another owner kept the company, so the company no longer needs the requester and
-     * their wish is carried out now.
+     * their wish is carried out now, on record as that owner's doing.
      */
     public function afterCompanyDeletionCancelled(CompanyDeletionRequest $request, User $by): void
     {
@@ -170,34 +175,50 @@ class AccountDeletionService
 
         Organization::whereKey($request->organization_id)->lockForUpdate()->first();
 
-        $requester = User::where('organization_id', $request->organization_id)->find($request->requested_by);
-
-        // A requester another owner has since deactivated still asked to go, and can no longer sign in to ask again.
-        if ($requester === null || $requester->anonymised_at !== null || $this->modeFor($requester) !== self::MODE_ACCOUNT) {
-            return;
+        if ($requester = $this->earlierRequester($request, $by)) {
+            $this->anonymise($requester, 'owner', $by);
         }
+    }
 
-        $this->anonymise($requester, 'support');
+    /** Who a cancel by this person would delete, for the pages to say so before the cancel is pressed. */
+    public function deletedIfCancelledBy(User $by): ?User
+    {
+        $pending = $by->organization_id === null ? null : $this->companies->pending($by->organization_id);
+
+        return $pending === null ? null : $this->earlierRequester($pending, $by);
     }
 
     /**
      * Someone who asked through their own account before this person took the request over. The company
      * no longer needs them, since this person is now its only owner, so their wish is carried out now:
-     * once the request names someone else, nothing would ever delete them.
+     * once the request names someone else, nothing would ever delete them. On record as the new only
+     * owner's doing, or support's when support ran the takeover from the console.
      */
-    private function honourEarlierRequester(CompanyDeletionRequest $request, User $successor): void
+    private function honourEarlierRequester(CompanyDeletionRequest $request, User $successor, string $via): void
     {
-        if ($request->requested_via !== 'account' || $request->requested_by === null || (int) $request->requested_by === (int) $successor->id) {
-            return;
+        if ($earlier = $this->earlierRequester($request, $successor)) {
+            $this->anonymise($earlier, $via === 'support' ? 'support' : 'owner', $successor);
+        }
+    }
+
+    /**
+     * The person behind an 'account' request, when that is not $other, they are still here, and the company
+     * can do without them. A cancel by $other, or $other taking the request over, deletes them. A requester
+     * another owner has since deactivated still asked to go, and can no longer sign in to ask again.
+     */
+    private function earlierRequester(CompanyDeletionRequest $request, User $other): ?User
+    {
+        if ($request->requested_via !== 'account' || $request->requested_by === null || (int) $request->requested_by === (int) $other->id) {
+            return null;
         }
 
-        $earlier = User::where('organization_id', $request->organization_id)->find($request->requested_by);
+        $requester = User::where('organization_id', $request->organization_id)->find($request->requested_by);
 
-        if ($earlier === null || $earlier->anonymised_at !== null || $this->modeFor($earlier) !== self::MODE_ACCOUNT) {
-            return;
+        if ($requester === null || $requester->anonymised_at !== null || $this->modeFor($requester) !== self::MODE_ACCOUNT) {
+            return null;
         }
 
-        $this->anonymise($earlier, 'support');
+        return $requester;
     }
 
     private function lockCompany(User $user): ?Organization
@@ -217,7 +238,7 @@ class AccountDeletionService
         // stands for this person's account: a later cancel by another owner must delete them, and the
         // purge must email them. Whoever asked first stays on record in the company.deletion_requested audit row.
         if (! $request->wasRecentlyCreated && ((int) $request->requested_by !== (int) $user->id || $request->requested_via !== 'account')) {
-            $this->honourEarlierRequester($request, $user);
+            $this->honourEarlierRequester($request, $user, $via);
             $request->update(['requested_by' => $user->id, 'requested_via' => 'account']);
         }
 
@@ -229,8 +250,14 @@ class AccountDeletionService
         return $request;
     }
 
-    /** Recipe B.2 of the deletion spec. Only the users row and rows about this person change; no business record is touched. */
-    private function anonymise(User $user, string $via): void
+    /**
+     * Recipe B.2 of the deletion spec. Only the users row and rows about this person change; no business record is touched.
+     *
+     * @param  string  $via  'app' or 'web' when they asked themselves, 'owner' when another owner's action carried out
+     *                       their earlier request, 'support' from the console
+     * @param  User|null  $owner  the owner whose action it was, for 'owner'
+     */
+    private function anonymise(User $user, string $via, ?User $owner = null): void
     {
         $oldEmail = (string) $user->email;
         $oldPhone = $user->phone;
@@ -265,7 +292,11 @@ class AccountDeletionService
             ScrubDeletedAccount::dispatch($user->organization_id, $user->id)->delay(ScrubDeletedAccount::DELAY_SECONDS)->afterCommit();
         }
 
-        AuditLog::record('account.deleted', $user, null, ['mode' => self::MODE_ACCOUNT, 'via' => $via], actor: $via === 'support' ? null : $user);
+        AuditLog::record('account.deleted', $user, null, ['mode' => self::MODE_ACCOUNT, 'via' => $via], actor: match ($via) {
+            'support' => null,
+            'owner' => $owner,
+            default => $user,
+        });
     }
 
     /**

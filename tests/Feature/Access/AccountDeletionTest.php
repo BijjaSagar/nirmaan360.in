@@ -552,6 +552,28 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame(2, $this->owner->tokens()->count());
     }
 
+    /** A token on its own must not be a way to try passwords: only the right company name reaches the password check. */
+    public function test_the_company_name_is_checked_before_the_password(): void
+    {
+        $token = $this->token($this->owner);
+        $errors = fn (array $body) => array_keys($this->requestDeletion($token, ['mode' => 'company', ...$body])->assertUnprocessable()->json('errors'));
+
+        $this->assertSame(['confirm_name'], $errors(['password' => 'not-it', 'confirm_name' => 'Deccan']));
+        $this->assertSame(['confirm_name'], $errors(['password' => 'password', 'confirm_name' => 'Deccan']));
+        $this->assertSame(['confirm_name'], $errors(['password' => 'not-it']));
+        $this->assertSame(['password'], $errors(['password' => 'not-it', 'confirm_name' => 'Deccan Builders']));
+
+        $this->requestDeletion($token, ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'deccan builders'])
+            ->assertJsonPath('errors.confirm_name', ['Type the company name exactly as shown.']);
+
+        // Every try counts towards the limit, whichever check refused it.
+        $this->requestDeletion($token, ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'Deccan Builders'])->assertTooManyRequests();
+
+        $this->assertSame(0, CompanyDeletionRequest::count());
+        $this->assertSame(0, AuditLog::where('action', 'account.deleted')->count());
+        $this->assertSame(1, $this->owner->tokens()->count());
+    }
+
     public function test_the_only_owner_schedules_the_company_and_is_signed_out_everywhere(): void
     {
         $this->owner->forceFill(['name' => 'Asha Deshmukh', 'email' => 'asha@example.com'])->save();
@@ -659,9 +681,11 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame('cancelled', CompanyDeletionRequest::sole()->status);
         $this->assertNull($colleague->fresh()->anonymised_at);
 
+        // Another owner's cancel did it, not support.
         $log = AuditLog::withoutGlobalScopes()->where('action', 'account.deleted')->latest('id')->first();
-        $this->assertSame(['mode' => 'account', 'via' => 'support'], $log->new_values);
+        $this->assertSame(['mode' => 'account', 'via' => 'owner'], $log->new_values);
         $this->assertSame($colleague->id, $log->user_id, 'The person whose cancel carried it out is on record.');
+        $this->assertSame($requester->id, $log->auditable_id);
 
         // Nobody tells the deleted person that the company stays.
         $this->assertSame(0, DB::table('notifications')->where('notifiable_id', $requester->id)->count());
@@ -952,12 +976,34 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame([$kiran->id, 'account'], [(int) CompanyDeletionRequest::sole()->requested_by, CompanyDeletionRequest::sole()->requested_via]);
         $this->assertNull($kiran->fresh()->anonymised_at, 'The only owner stays until the purge, so the company can still be cancelled.');
 
+        // Kiran's takeover deleted Asha: on record as an owner's doing, by Kiran.
+        $asha = $this->anonymisedLog($this->owner);
+        $this->assertSame([['mode' => 'account', 'via' => 'owner'], $kiran->id], [$asha->new_values, $asha->user_id]);
+
         // A new owner keeps the company, and Kiran goes as he asked.
         $newOwner = $this->person('pm');
         $newOwner->forceFill(['role' => 'owner'])->save();
         $this->cancel($this->token($newOwner))->assertOk()->assertJsonPath('data.result', 'cancelled');
         $this->assertNotNull($kiran->fresh()->anonymised_at);
         $this->assertNull($newOwner->fresh()->anonymised_at);
+
+        $kiranLog = $this->anonymisedLog($kiran);
+        $this->assertSame([['mode' => 'account', 'via' => 'owner'], $newOwner->id], [$kiranLog->new_values, $kiranLog->user_id]);
+    }
+
+    public function test_a_takeover_support_runs_from_the_console_is_on_record_as_support(): void
+    {
+        // Asha, the only owner, asks through her account; then Kiran is the only active owner and writes to support.
+        $this->deleteCompany($this->owner)->assertOk()->assertJsonPath('data.result', 'scheduled');
+        $kiran = $this->person('owner', ['email' => 'kiran@example.com']);
+        $this->owner->forceFill(['is_active' => false])->save();
+        $this->app['auth']->forgetGuards();
+
+        $this->artisan('account:delete', ['email' => 'kiran@example.com', '--force' => true])->expectsOutputToContain('Scheduled.')->assertSuccessful();
+
+        $this->assertNotNull($this->owner->fresh()->anonymised_at);
+        $asha = $this->anonymisedLog($this->owner);
+        $this->assertSame([['mode' => 'account', 'via' => 'support'], null], [$asha->new_values, $asha->user_id]);
     }
 
     public function test_an_offline_plan_owner_is_pointed_at_delete_my_account_to_cancel(): void
@@ -1149,6 +1195,13 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame($this->company->id, (int) AuditLog::withoutGlobalScopes()->where('action', 'company.deletion_cancelled')->sole()->organization_id);
 
         $this->actingAs($admin)->get('/audit')->assertOk()->assertSee('company.deletion_requested')->assertSee('company.deletion_cancelled');
+    }
+
+    /** The audit row written when this person's account itself was anonymised, not when their company was scheduled. */
+    private function anonymisedLog(User $user): AuditLog
+    {
+        return AuditLog::withoutGlobalScopes()->where('action', 'account.deleted')->where('auditable_id', $user->id)->get()
+            ->filter(fn (AuditLog $log) => $log->new_values['mode'] === 'account')->sole();
     }
 
     /** Whether an index of this name exists, read from the database's own catalogue. */

@@ -22,6 +22,9 @@
                 <div class="space-y-3 p-4 text-sm">
                     <p>{{ __(':company will be erased after :date.', ['company' => $company, 'date' => $pending['erase_after']->format('d M Y')]) }}</p>
                     @if ($pending['can_cancel'])
+                        @if ($deletedOnCancel)
+                            <p class="rounded-[3px] border border-laterite bg-laterite/10 px-3 py-2 font-medium text-laterite-dark" role="alert">{{ __('Cancelling keeps the company. :name asked for their own account to be deleted, so it is deleted when you cancel.', ['name' => $deletedOnCancel->name]) }}</p>
+                        @endif
                         {{-- Cancelled here rather than on Company data, which the offline plan does not open. --}}
                         <form method="POST" action="{{ route('account.cancel') }}">
                             @csrf

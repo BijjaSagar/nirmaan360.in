@@ -182,22 +182,15 @@ class User extends Authenticatable
     /**
      * Staff who run the platform. Separate from company roles, which all grant '*' to owners.
      *
-     * A listed address counts only for the first account that holds it, whatever its letter case,
-     * so a later sign-up as OPS@ or Ops@ for ops@ never reaches the admin screens.
+     * A listed address counts only when the stored email is that address letter for letter. The list is in
+     * small letters, so a copy such as OPS@ or Ops@ made before sign-up refused them is never an admin, even
+     * after the real account is deleted. Anyone whose stored email differs holds the flag instead,
+     * set with `php artisan platform:admin`.
      */
     public function isPlatformAdmin(): bool
     {
-        if ($this->is_platform_admin) {
-            return true;
-        }
-
-        $email = static::normaliseEmail((string) $this->email);
-
-        if (! self::emailReservedForPlatform($email)) {
-            return false;
-        }
-
-        return ! static::query()->whereRaw('lower(email) = ?', [$email])->where('id', '<', $this->id)->exists();
+        return $this->is_platform_admin
+            || in_array((string) $this->email, config('buildos.platform_admins'), true);
     }
 
     /** An address on the platform admin list. Nobody can sign up or be invited with one. */

@@ -38,9 +38,7 @@ class CompanyDeletionService
      */
     public function request(Organization $organization, User $by, string $typedName, string $via = 'company'): CompanyDeletionRequest
     {
-        if (trim($typedName) !== $organization->name) {
-            throw ValidationException::withMessages(['confirm_name' => __('Type the company name exactly as shown.')]);
-        }
+        $this->assertConfirmName($organization, $typedName);
 
         $request = DB::transaction(function () use ($organization, $by, $via) {
             Organization::whereKey($organization->id)->lockForUpdate()->first();
@@ -79,6 +77,18 @@ class CompanyDeletionService
         }
 
         return $request;
+    }
+
+    /**
+     * The company's name, typed exactly, confirms a deletion wherever it is asked for.
+     *
+     * @throws ValidationException under confirm_name
+     */
+    public function assertConfirmName(Organization $organization, string $typedName): void
+    {
+        if (trim($typedName) !== $organization->name) {
+            throw ValidationException::withMessages(['confirm_name' => __('Type the company name exactly as shown.')]);
+        }
     }
 
     /**
@@ -144,15 +154,16 @@ class CompanyDeletionService
     {
         $files = null;
         $confirmation = null;
+        $organizationId = null;
 
-        DB::transaction(function () use ($requestId, &$files, &$confirmation) {
+        DB::transaction(function () use ($requestId, &$files, &$confirmation, &$organizationId) {
             $request = CompanyDeletionRequest::withoutGlobalScopes()->whereKey($requestId)->lockForUpdate()->first();
 
             if (! $request || $request->status !== 'pending' || Carbon::parse($request->purge_after)->isFuture()) {
                 return;
             }
 
-            $organizationId = $request->organization_id;
+            $organizationId = (int) $request->organization_id;
             $files = $this->data->storedFiles($organizationId);
             $confirmation = $this->confirmationFor($request);
 
@@ -177,19 +188,42 @@ class CompanyDeletionService
         }
 
         // Files go last, so a failed database delete leaves the company whole.
-        foreach ($files as $path) {
-            try {
-                Storage::delete($path);
-            } catch (Throwable $exception) {
-                Log::warning('A file from a deleted company could not be removed', ['path' => $path, 'error' => $exception->getMessage()]);
-            }
-        }
+        $this->deleteFiles($organizationId, $files);
 
         $this->confirmErased($requestId, $confirmation);
 
         Log::info('Company purged', ['request_id' => $requestId]);
 
         return true;
+    }
+
+    /**
+     * A disk reports most failures by returning false, and throws only when configured to, so both count.
+     * The completion email still goes, since every record is gone; the files left behind are logged for
+     * staff to remove by hand. Only the company id and a count are logged: a path can carry a person's
+     * or a site's name, and an error message can repeat the path.
+     *
+     * @param  list<string>  $files
+     */
+    private function deleteFiles(int $organizationId, array $files): void
+    {
+        $failed = 0;
+
+        foreach ($files as $path) {
+            try {
+                $deleted = Storage::delete($path);
+            } catch (Throwable) {
+                $deleted = false;
+            }
+
+            if (! $deleted) {
+                $failed++;
+            }
+        }
+
+        if ($failed > 0) {
+            Log::warning('Files from a deleted company could not be removed', ['organization_id' => $organizationId, 'files' => $failed]);
+        }
     }
 
     /**

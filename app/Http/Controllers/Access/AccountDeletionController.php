@@ -21,9 +21,12 @@ class AccountDeletionController extends Controller
     public function show(Request $request, ContractorPortalService $portal, OfflinePlanPolicy $offlinePlan): View
     {
         $user = $request->user();
+        $preview = $this->deletions->preview($user);
 
         return view('modules.access.account-delete', [
-            'preview' => $this->deletions->preview($user),
+            'preview' => $preview,
+            // Whose account the cancel button deletes, so the owner is told before pressing it.
+            'deletedOnCancel' => ($preview['pending']['can_cancel'] ?? false) ? $this->deletions->deletedIfCancelledBy($user) : null,
             // A contractor login sees the page in its own portal frame, without the company menu.
             'party' => $portal->partyFor($user),
             // The offline plan opens neither Company data nor Team, so the page does not send people there.

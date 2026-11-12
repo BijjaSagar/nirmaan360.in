@@ -59,6 +59,7 @@ Route::middleware('can:settings.manage')->group(function () {
     Route::get('/company-data', [CompanyDataController::class, 'index'])->name('notify.data.index');
     Route::post('/company-data/export', [CompanyDataController::class, 'export'])->name('notify.data.export')->middleware('throttle:5,60');
     Route::get('/company-data/exports/{export}', [CompanyDataController::class, 'download'])->name('notify.data.download');
-    Route::post('/company-data/deletion', [CompanyDataController::class, 'requestDeletion'])->name('notify.data.delete')->middleware('throttle:10,1');
-    Route::delete('/company-data/deletion', [CompanyDataController::class, 'cancelDeletion'])->name('notify.data.cancel');
+    // Each on its own counter: the request asks for the password, so guesses are limited apart from other forms.
+    Route::post('/company-data/deletion', [CompanyDataController::class, 'requestDeletion'])->name('notify.data.delete')->middleware('throttle:5,1,company-deletion');
+    Route::delete('/company-data/deletion', [CompanyDataController::class, 'cancelDeletion'])->name('notify.data.cancel')->middleware('throttle:10,1,company-deletion-cancel');
 });

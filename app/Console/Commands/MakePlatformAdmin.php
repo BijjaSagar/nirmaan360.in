@@ -14,7 +14,8 @@ class MakePlatformAdmin extends Command
     public function handle(): int
     {
         // Emails are not verified at sign-up, so access is only ever granted to an account that already exists.
-        $user = User::where('email', $this->argument('email'))->first();
+        // It is found as sign-in finds it: any letter case, and the exact spelling when old rows differ only by case.
+        $user = User::findByEmail((string) $this->argument('email'));
 
         if (! $user) {
             $this->error('No account uses that email. Register on the website first, then run this again.');

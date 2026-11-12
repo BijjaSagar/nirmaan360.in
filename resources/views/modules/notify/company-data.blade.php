@@ -50,6 +50,9 @@
                 @if ($deletion)
                     <p class="text-sm">{{ __('Everything will be erased on :date. The company keeps working until then.', ['date' => $deletion->purge_after->format('d M Y')]) }}</p>
                     @if ($isOwner)
+                        @if ($deletedOnCancel)
+                            <p class="rounded-[3px] border border-laterite bg-laterite/10 px-3 py-2 text-sm font-medium text-laterite-dark" role="alert">{{ __('Cancelling keeps the company. :name asked for their own account to be deleted, so it is deleted when you cancel.', ['name' => $deletedOnCancel->name]) }}</p>
+                        @endif
                         <form method="POST" action="{{ route('notify.data.cancel') }}">
                             @csrf @method('DELETE')
                             <button class="btn btn-primary">{{ __('Cancel the deletion') }}</button>
@@ -61,6 +64,7 @@
                         <form method="POST" action="{{ route('notify.data.delete') }}" autocomplete="off" class="space-y-3">
                             @csrf
                             <x-field :label="__('Type :name to confirm', ['name' => $organization->name])" name="confirm_name"><input id="confirm_name" name="confirm_name" class="input" autocomplete="off" required></x-field>
+                            <x-field :label="__('Your password')" name="password"><input id="password" name="password" type="password" class="input" required autocomplete="current-password"></x-field>
                             <button class="btn btn-danger">{{ __('Delete this company') }}</button>
                         </form>
                     @endif

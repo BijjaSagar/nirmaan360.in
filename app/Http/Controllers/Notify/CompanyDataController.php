@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Notify;
 
 use App\Http\Controllers\Controller;
 use App\Models\CompanyDataExport;
+use App\Services\Access\AccountDeletionService;
 use App\Services\Notify\CompanyDeletionService;
 use App\Services\Notify\CompanyExportService;
 use Illuminate\Http\RedirectResponse;
@@ -16,16 +17,20 @@ class CompanyDataController extends Controller
 {
     public function __construct(private CompanyExportService $exports, private CompanyDeletionService $deletions) {}
 
-    public function index(Request $request): View
+    public function index(Request $request, AccountDeletionService $accounts): View
     {
         $organization = $request->user()->organization;
+        $isOwner = $request->user()->role === 'owner';
+        $deletion = $this->deletions->pending($organization->id);
 
         return view('modules.notify.company-data', [
             'organization' => $organization,
-            'isOwner' => $request->user()->role === 'owner',
+            'isOwner' => $isOwner,
             'exports' => CompanyDataExport::latest('id')->limit(5)->get(),
             'exportInProgress' => $this->exports->inProgress($organization->id),
-            'deletion' => $this->deletions->pending($organization->id),
+            'deletion' => $deletion,
+            // Whose account the cancel button deletes, so the owner is told before pressing it.
+            'deletedOnCancel' => $isOwner && $deletion !== null ? $accounts->deletedIfCancelledBy($request->user()) : null,
             'graceDays' => CompanyDeletionService::GRACE_DAYS,
         ]);
     }
@@ -45,11 +50,22 @@ class CompanyDataController extends Controller
         return $this->exports->download($export, $request->user());
     }
 
+    /**
+     * A signed-in session left open is not enough to erase the company: the owner's own password is asked for too.
+     * As on Delete my account, the name is checked first, so a wrong name says nothing about the password.
+     */
     public function requestDeletion(Request $request): RedirectResponse
     {
         $this->ownerOnly($request);
-        $typed = $request->validate(['confirm_name' => ['required', 'string', 'max:255']])['confirm_name'];
-        $deletion = $this->deletions->request($request->user()->organization, $request->user(), $typed);
+        $organization = $request->user()->organization;
+        $typed = $request->validate([
+            'confirm_name' => ['required', 'string', 'max:255'],
+            'password' => ['required', 'string'],
+        ])['confirm_name'];
+        $this->deletions->assertConfirmName($organization, $typed);
+        $request->validate(['password' => ['current_password:web']], ['password.current_password' => __('That password is not right.')]);
+
+        $deletion = $this->deletions->request($organization, $request->user(), $typed);
 
         return back()->with('success', __('This company will be erased on :date. You can cancel until then.', ['date' => $deletion->purge_after->format('d M Y')]));
     }

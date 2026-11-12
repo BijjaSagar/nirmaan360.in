@@ -7,6 +7,7 @@ use App\Models\CompanyDeletionRequest;
 use App\Models\Organization;
 use App\Models\Party;
 use App\Models\User;
+use App\Services\Access\AccountDeletionService;
 use App\Services\Notify\CompanyDeletionService;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -89,6 +90,54 @@ class AccountDeletionPageTest extends TestCase
             ->assertDontSee('Cancel the deletion')
             ->assertDontSee('name="_method" value="DELETE"', false)
             ->assertSee('name="mode" value="account"', false);
+    }
+
+    public function test_another_owner_is_told_before_cancelling_that_it_deletes_the_requester(): void
+    {
+        // Asha, the only owner, asks to delete her account, so the company is scheduled. Then Kiran is made an owner.
+        $this->owner->forceFill(['name' => 'Asha Deshmukh'])->save();
+        app(AccountDeletionService::class)->deleteAccount($this->owner->fresh(), 'company', 'password', 'Deccan Builders', 'web');
+        $kiran = $this->member($this->company, 'owner');
+        $member = $this->member($this->company);
+        $warning = 'Cancelling keeps the company. Asha Deshmukh asked for their own account to be deleted, so it is deleted when you cancel.';
+
+        $this->actingAs($kiran)->get('/account/delete')->assertOk()->assertSeeInOrder([$warning, 'Cancel the deletion']);
+        $this->get('/company-data')->assertOk()->assertSeeInOrder([$warning, 'Cancel the deletion']);
+
+        foreach (['hi', 'mr'] as $locale) {
+            $translated = __('Cancelling keeps the company. :name asked for their own account to be deleted, so it is deleted when you cancel.', ['name' => 'Asha Deshmukh'], $locale);
+            $this->withSession(['locale' => $locale])->get('/account/delete')->assertOk()->assertSee($translated)->assertDontSee($warning);
+            $this->withSession(['locale' => $locale])->get('/company-data')->assertOk()->assertSee($translated)->assertDontSee($warning);
+        }
+
+        // Asha herself, signed in again, keeps her account by cancelling, so she is not warned.
+        $this->actingAs($this->owner->fresh())->withSession(['locale' => 'en']);
+        $this->get('/account/delete')->assertOk()->assertSee('Cancel the deletion')->assertDontSee('asked for their own account');
+        $this->get('/company-data')->assertOk()->assertSee('Cancel the deletion')->assertDontSee('asked for their own account');
+
+        // Someone who cannot cancel sees no cancel and no warning.
+        $this->actingAs($member)->get('/account/delete')->assertOk()->assertDontSee('asked for their own account');
+
+        // As warned, Kiran's cancel deletes Asha.
+        $this->actingAs($kiran)->delete('/account/delete')->assertRedirect(route('account.delete'));
+        $this->assertNotNull($this->owner->fresh()->anonymised_at);
+    }
+
+    public function test_no_warning_when_the_cancel_deletes_nobody(): void
+    {
+        $kiran = $this->member($this->company, 'owner');
+
+        // A request from the Company data page deletes nobody when it is cancelled.
+        app(CompanyDeletionService::class)->request($this->company, $this->owner, 'Deccan Builders');
+        $this->actingAs($kiran)->get('/account/delete')->assertOk()->assertSee('Cancel the deletion')->assertDontSee('asked for their own account');
+        $this->get('/company-data')->assertOk()->assertSee('Cancel the deletion')->assertDontSee('asked for their own account');
+
+        // Nor does one whose requester has already been deleted.
+        CompanyDeletionRequest::sole()->update(['requested_via' => 'account']);
+        app(AccountDeletionService::class)->deleteBySupport($this->owner->fresh());
+        $this->assertNotNull($this->owner->fresh()->anonymised_at);
+        $this->get('/account/delete')->assertOk()->assertSee('Cancel the deletion')->assertDontSee('asked for their own account');
+        $this->get('/company-data')->assertOk()->assertDontSee('asked for their own account');
     }
 
     public function test_an_owner_cancels_on_this_page_and_everyone_is_told(): void
