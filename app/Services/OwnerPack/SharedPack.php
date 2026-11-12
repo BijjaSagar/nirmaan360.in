@@ -7,7 +7,10 @@ use App\Models\ClientQuotation;
 use App\Models\ClientQuotationItem;
 use App\Models\Concerns\OrganizationScope;
 use App\Models\Concerns\ProjectAccessScope;
+use App\Models\Dpr;
+use App\Models\DprPhoto;
 use App\Models\Organization;
+use App\Models\OwnerUpdate;
 use App\Models\Project;
 use App\Services\Wording\FactSheet;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,7 +31,7 @@ final class SharedPack
     /** The plan feature a company needs for its shared pages to open. */
     public const FEATURE = 'owner_pack';
 
-    public function __construct(private QuotationDocument $document) {}
+    public function __construct(private QuotationDocument $document, private OwnerUpdateDocument $updates) {}
 
     public function quotation(int $id, string $token): ?SharedQuotation
     {
@@ -77,6 +80,88 @@ final class SharedPack
             $lines(ClientQuotationItem::class),
             $replacedBy === null ? $lines(ClientPaymentStage::class) : collect(),
             $document,
+            $replacedBy,
+        );
+    }
+
+    /**
+     * A weekly update as it was approved: the text a named person approved, the work rows and the
+     * photos of the facts kept with it. Nothing is read from the daily reports again for a visitor.
+     */
+    public function update(int $id, string $token): ?SharedUpdate
+    {
+        /** @var ?OwnerUpdate $update */
+        $update = $this->open(OwnerUpdate::class)->find($id);
+
+        if ($update === null || $update->status !== OwnerUpdate::SHARED || $update->approved_at === null || ! $this->linkIsLive($update, $token)) {
+            return null;
+        }
+
+        $company = $this->company($update->organization_id);
+        $project = $this->project($update->organization_id, $update->project_id);
+        $body = array_values(array_filter((array) $update->body_rendered, fn ($slot) => is_array($slot) && is_string($slot['id'] ?? null) && is_string($slot['text'] ?? null)));
+
+        if ($company === null || $project === null || $body === []) {
+            return null;
+        }
+
+        try {
+            // The facts a person ticked when the update was approved, not figures read again for a visitor.
+            $sheet = FactSheet::fromArray($update->facts ?? []);
+
+            if (! $sheet->matches($update->fact_fingerprint)) {
+                return null;
+            }
+
+            $work = $this->updates->workLines($sheet, $update->language);
+            $listed = $this->updates->photos($sheet, $update->language);
+        } catch (Throwable $e) {
+            report($e);
+
+            return null;
+        }
+
+        $replacedBy = null;
+
+        if ($update->show_money) {
+            /** @var ?ClientQuotation $quotation */
+            $quotation = $update->quotation_id === null ? null : $this->within(ClientQuotation::class, $update)->whereKey($update->quotation_id)->first();
+
+            // A payment position without its quotation has nothing to stand on.
+            if ($quotation === null || ! $quotation->isIssued()) {
+                return null;
+            }
+
+            $newer = $this->within(ClientQuotation::class, $update)
+                ->where('number', $quotation->number)
+                ->where('status', ClientQuotation::ISSUED)
+                ->where('revision', '>', $quotation->revision)
+                ->max('revision');
+            $replacedBy = $newer === null ? null : (int) $newer;
+        }
+
+        // Once the quotation was replaced, the payment position stated on the old revision is no longer shown.
+        if ($replacedBy !== null) {
+            $body = array_values(array_filter($body, fn (array $slot) => ! OwnerUpdateDocument::isMoneySlot($slot['id'])));
+        }
+
+        // A photo is shown only while it is one the update names, and its row still belongs to a report of this project.
+        $reports = $this->within(Dpr::class, $update)->select('id');
+        $kept = $this->open(DprPhoto::class)
+            ->where('organization_id', $update->organization_id)
+            ->whereIn('id', array_intersect($update->photoIds(), array_column($listed, 'id')))
+            ->whereIn('dpr_id', $reports)
+            ->get(['id', 'path'])
+            ->keyBy('id');
+
+        return new SharedUpdate(
+            $update,
+            (string) $company->name,
+            (string) $project->name,
+            $body,
+            $work,
+            array_values(array_filter($listed, fn (array $photo) => isset($kept[$photo['id']]))),
+            $kept->map(fn (DprPhoto $photo) => (string) $photo->path)->all(),
             $replacedBy,
         );
     }

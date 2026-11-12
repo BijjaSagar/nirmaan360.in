@@ -3,6 +3,8 @@
 namespace Tests\Feature\OwnerPack;
 
 use App\Models\ClientQuotation;
+use App\Models\OwnerUpdate;
+use App\Services\OwnerPack\OwnerUpdateDocument;
 use App\Services\OwnerPack\QuotationDocument;
 use App\Services\Wording\DocumentType;
 use App\Services\Wording\FactSheet;
@@ -14,13 +16,13 @@ use Tests\Feature\Website\BannedWording;
 use Tests\TestCase;
 
 /**
- * Everything the quotation screens, the shared page and the cover note say has a Hindi and a Marathi
- * line, the sentences of the cover note are complete and state no figure of their own, and none of
- * it uses wording the product may not use.
+ * Everything the quotation and weekly-update screens, the shared pages, the cover note and the update
+ * say has a Hindi and a Marathi line, the sentences of both documents are complete and state no
+ * figure of their own, and none of it uses wording the product may not use.
  */
 class TranslationsTest extends TestCase
 {
-    use BuildsOwnerPack, RefreshDatabase;
+    use BuildsOwnerUpdates, RefreshDatabase;
 
     /** The amount in words is written in English only, so its sentence has no other language. */
     private const ENGLISH_ONLY = ['In words: {{words}}.'];
@@ -33,6 +35,7 @@ class TranslationsTest extends TestCase
             ...File::allFiles(app_path('Http/Controllers/OwnerPack')),
             ...File::allFiles(resource_path('views/modules/owner_pack')),
             app_path('Models/ClientQuotation.php'),
+            app_path('Models/OwnerUpdate.php'),
         ];
     }
 
@@ -55,7 +58,7 @@ class TranslationsTest extends TestCase
     {
         $sentences = [];
 
-        foreach ($this->documentTypes('hi') as $type) {
+        foreach ([...$this->documentTypes('hi'), ...$this->updateTypes('hi')] as $type) {
             foreach ($type->slots as $slot) {
                 if (preg_match('/\p{L}/u', (string) preg_replace('/\{\{[a-z0-9_]+\}\}/', '', $slot->english())) === 1) {
                     $sentences[] = $slot->english();
@@ -95,6 +98,20 @@ class TranslationsTest extends TestCase
             $document->type($language, $sheets['bare']),
             $document->type($language, $sheets['full'], withSchedule: false),
         ];
+    }
+
+    /** @return list<DocumentType> The weekly update in every shape it can take, with and without the contractor's own text and the payment position. */
+    private function updateTypes(string $language): array
+    {
+        $document = app(OwnerUpdateDocument::class);
+        $types = [];
+
+        foreach ($this->everySentenceSheets() as $sheet) {
+            $types[] = $document->type($language, $sheet, withNextWeek: true);
+            $types[] = $document->type($language, $sheet, withNextWeek: false, withMoney: false);
+        }
+
+        return $types;
     }
 
     /** @return array<string, string> */
@@ -181,7 +198,7 @@ class TranslationsTest extends TestCase
         $guard = app(SlotGuard::class);
 
         foreach (ClientQuotation::LANGUAGES as $language) {
-            foreach ($this->documentTypes($language) as $type) {
+            foreach ([...$this->documentTypes($language), ...$this->updateTypes($language)] as $type) {
                 // Throws when a sentence is missing, drops or adds a token, or carries a numeral, a month or a number word.
                 $templates = $loader->load($type, $language);
 
@@ -223,6 +240,68 @@ class TranslationsTest extends TestCase
         app()->setLocale('en');
         $this->assertSame('Line 27', QuotationDocument::label('line_27'));
         $this->assertSame('Stage 2: amount', QuotationDocument::label('stage_2_amount'));
+    }
+
+    public function test_the_update_has_its_sentences_for_what_the_week_held_and_no_others(): void
+    {
+        $document = app(OwnerUpdateDocument::class);
+        $ids = fn (string $sheet, bool $nextWeek = false, bool $money = true) => array_map(
+            fn ($slot) => $slot->id,
+            $document->type('en', $this->everySentenceSheets()[$sheet], $nextWeek, $money)->slots,
+        );
+
+        $this->assertSame(OwnerUpdate::LANGUAGES, ClientQuotation::LANGUAGES);
+        $this->assertSame(['opening', 'period', 'reports', 'closing'], $ids('bare'));
+        $this->assertSame(
+            ['opening', 'period', 'reports', 'work', 'work_more', 'workers', 'progress', 'progress_basis', 'photos', 'pay_quotation', 'pay_stage_1', 'pay_stage_2', 'pay_reached', 'pay_received', 'pay_due', 'next_week_intro', 'next_week', 'closing'],
+            $ids('full', true),
+        );
+        // Without the payment position, and without the contractor's own text.
+        $this->assertSame(['opening', 'period', 'reports', 'work', 'work_more', 'workers', 'progress', 'progress_basis', 'photos', 'closing'], $ids('full', false, false));
+        // Nothing is said about what is due unless a person typed what was received.
+        $this->assertSame(['opening', 'period', 'reports', 'pay_quotation', 'pay_stage_1', 'pay_reached', 'closing'], $ids('nothing typed'));
+
+        // The sentence about what is due follows the figures: due, received ahead of the stages, or neither.
+        $sentence = fn (string $sheet, string $slot) => $document->render('en', $this->everySentenceSheets()[$sheet], null, null)->slot($slot)?->text;
+        $this->assertSame('Due on the stages reached, after what was received: ₹50,000.00.', $sentence('full', 'pay_due'));
+        $this->assertSame('What was received is more than the stages reached so far by ₹20,000.00.', $sentence('none reached', 'pay_due'));
+        $this->assertSame('No payment stage has been reached yet.', $sentence('none reached', 'pay_reached'));
+        $this->assertSame('Nothing is due on the stages reached so far.', $sentence('settled', 'pay_due'));
+        $this->assertSame('No daily report of that week has been approved yet, so no work is listed here.', $sentence('bare', 'reports'));
+        $this->assertSame('Work measured and approved so far: 25.88% of the value of the bill of quantities, as on 14 November 2026.', $sentence('full', 'progress'));
+
+        // Only the opening and the closing may be rewritten; the contractor's own text is a slot of its own and is left out of what a model would be briefed on.
+        $this->assertSame(['opening', 'closing'], OwnerUpdateDocument::FREE_SLOTS);
+        $this->assertSame(['opening', 'closing'], $document->type('en', $this->everySentenceSheets()['full'])->freeIds());
+        $this->assertSame(['opening', 'next_week', 'closing'], $document->type('en', $this->everySentenceSheets()['full'], true)->freeIds());
+
+        foreach ($ids('full', true) as $id) {
+            $this->assertSame(str_starts_with($id, 'pay_'), OwnerUpdateDocument::isMoneySlot($id), $id);
+        }
+    }
+
+    public function test_every_figure_of_an_update_has_a_label_a_person_can_read_in_each_language(): void
+    {
+        $keys = [...$this->everySentenceSheets()['full']->keys(), 'pay_ahead', 'work_1', 'work_14', 'photo_1', 'photo_12'];
+
+        foreach (['en', 'hi', 'mr'] as $locale) {
+            app()->setLocale($locale);
+
+            foreach ($keys as $key) {
+                $label = OwnerUpdateDocument::label($key);
+                $this->assertNotSame($key, $label, "No label for {$key}.");
+                $this->assertStringNotContainsString(':n', $label);
+
+                if ($locale !== 'en') {
+                    $this->assertMatchesRegularExpression('/\p{Devanagari}/u', $label, "The {$locale} label of {$key} is not translated.");
+                }
+            }
+        }
+
+        app()->setLocale('en');
+        $this->assertSame('Work row 14', OwnerUpdateDocument::label('work_14'));
+        $this->assertSame('Photo 12', OwnerUpdateDocument::label('photo_12'));
+        $this->assertSame('Stage reached 2: amount', OwnerUpdateDocument::label('pay_stage_2_amount'));
     }
 
     public function test_nothing_the_module_says_uses_wording_the_product_may_not_use(): void
