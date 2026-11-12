@@ -24,13 +24,13 @@ use Tests\TestCase;
  * unmistakable amounts, so anything personal that reached analytics would show up here.
  *
  * Screens added later are covered without any change. The walk and its fixtures are the ones
- * MoneyVisibilityTest uses.
+ * MoneyVisibilityTest uses, with whatever each module added in its file in SiteControl/MoneyWorld.
  */
 class EveryAppScreenTest extends TestCase
 {
     use BuildsMoneyWorld, ReadsPageHead, RefreshDatabase;
 
-    /** Routes that serve a stored file or hand off to an outside service, so there is no page to read. */
+    /** Routes that serve a stored file or hand off to an outside service, so there is no page to read. Modules add theirs through $this->skippedRoutes. */
     private const SKIPPED = ['storage.local', 'sso.redirect', 'sso.callback', 'notify.data.download', 'notify.selfie.photo', 'crm.documents.download'];
 
     /** Query strings a route needs before it answers with a page. */
@@ -78,7 +78,7 @@ class EveryAppScreenTest extends TestCase
             if (! in_array('GET', $route->methods(), true)
                 || str_starts_with($route->uri(), 'api/')
                 || ! in_array('auth', $route->gatherMiddleware(), true)
-                || in_array($label, self::SKIPPED, true)) {
+                || $this->skipsRoute($route, self::SKIPPED)) {
                 continue;
             }
 
@@ -96,7 +96,7 @@ class EveryAppScreenTest extends TestCase
                 $uri = (string) preg_replace('/\{'.preg_quote($name, '/').'\??\}/', (string) $value, $uri);
             }
 
-            $response = $this->get('/'.$uri.(isset(self::QUERY[$label]) ? '?'.http_build_query(self::QUERY[$label]) : ''));
+            $response = $this->get('/'.$uri.$this->queryFor($route, self::QUERY));
 
             if (! $this->isPage($response)) {
                 continue;
@@ -139,7 +139,7 @@ class EveryAppScreenTest extends TestCase
             $this->assertSame([], $config['events'], "{$label} sends no event by itself.");
         }
 
-        $this->assertSame([], $unfilled, 'These routes could not be visited. Add a row for their model to BuildsMoneyWorld: '.implode(', ', $unfilled));
+        $this->assertSame([], $unfilled, $this->unfilledRoutes($unfilled));
         $this->assertGreaterThan(150, $pages, 'The walk reached the signed-in pages.');
     }
 
@@ -171,7 +171,7 @@ class EveryAppScreenTest extends TestCase
         $values = [];
 
         foreach ($route->parameterNames() as $name) {
-            $value = $this->params[$name] ?? null;
+            $value = $this->givenParameter($route, $name);
             $class = $classes[$name] ?? null;
 
             if ($value === null && $class !== null && is_subclass_of($class, Model::class)) {
