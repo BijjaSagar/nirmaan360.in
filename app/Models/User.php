@@ -135,10 +135,37 @@ class User extends Authenticatable
             ->where('organization_id', $this->organization_id);
     }
 
-    /** Staff who run the platform. Separate from company roles, which all grant '*' to owners. */
+    /**
+     * Staff who run the platform. Separate from company roles, which all grant '*' to owners.
+     *
+     * A listed address counts only for the first account that holds it, whatever its letter case,
+     * so a later sign-up as OPS@ or Ops@ for ops@ never reaches the admin screens.
+     */
     public function isPlatformAdmin(): bool
     {
-        return (bool) $this->is_platform_admin || in_array(strtolower($this->email), config('buildos.platform_admins'), true);
+        if ($this->is_platform_admin) {
+            return true;
+        }
+
+        $email = Str::lower(trim((string) $this->email));
+
+        if (! self::emailReservedForPlatform($email)) {
+            return false;
+        }
+
+        return ! static::query()->whereRaw('lower(email) = ?', [$email])->where('id', '<', $this->id)->exists();
+    }
+
+    /** An address on the platform admin list. Nobody can sign up or be invited with one. */
+    public static function emailReservedForPlatform(string $email): bool
+    {
+        return in_array(Str::lower(trim($email)), config('buildos.platform_admins'), true);
+    }
+
+    /** Someone already signs in with this address, in any letter case. */
+    public static function emailTaken(string $email): bool
+    {
+        return static::query()->whereRaw('lower(email) = ?', [Str::lower(trim($email))])->exists();
     }
 
     public function isApprovalOverride(): bool

@@ -60,7 +60,7 @@ class InvitationService
 
         $email = Str::lower(trim($data['email']));
 
-        if ($this->emailTaken($email)) {
+        if ($this->emailTaken($email) || User::emailReservedForPlatform($email)) {
             throw ValidationException::withMessages(['email' => __('This email already has an account.')]);
         }
 
@@ -172,7 +172,8 @@ class InvitationService
                 throw new InvitationClosedException(__('This company has reached its plan user limit. Ask them to upgrade and send a new invitation.'));
             }
 
-            if ($this->emailTaken($invitation->email)) {
+            // An invitation sent before an address joined the platform admin list must not open now.
+            if ($this->emailTaken($invitation->email) || User::emailReservedForPlatform($invitation->email)) {
                 throw new InvitationClosedException(__('This email already has an account. Please sign in.'));
             }
 
@@ -242,7 +243,7 @@ class InvitationService
 
     private function emailTaken(string $email): bool
     {
-        return User::whereRaw('lower(email) = ?', [$email])->exists();
+        return User::emailTaken($email);
     }
 
     /** Someone else may have taken this number since the invitation was sent. */

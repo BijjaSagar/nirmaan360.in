@@ -55,7 +55,13 @@ class AuthController extends Controller
             'plan' => ['nullable', Rule::in($this->selfServePlans())],
             'company' => ['required', 'string', 'max:120'],
             'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:190', 'unique:users,email'],
+            // Taken in any letter case, or kept for the platform's own staff. Both read the same, so the
+            // message never tells a stranger which addresses run the platform.
+            'email' => ['required', 'email', 'max:190', function (string $attribute, mixed $value, \Closure $fail) {
+                if (User::emailTaken((string) $value) || User::emailReservedForPlatform((string) $value)) {
+                    $fail(__('This email already has an account.'));
+                }
+            }],
             'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone'],
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
@@ -76,7 +82,7 @@ class AuthController extends Controller
             return User::create([
                 'organization_id' => $organization->id,
                 'name' => $data['name'],
-                'email' => $data['email'],
+                'email' => Str::lower(trim($data['email'])),
                 'phone' => $data['phone'] ?? null,
                 'role' => 'owner',
                 'password' => $data['password'],
