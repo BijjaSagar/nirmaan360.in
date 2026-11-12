@@ -17,10 +17,12 @@ This repository covers the foundation and most of the first release, "Site to Bi
 - REST API with offline sync for measurements (`/api/v1`)
 - Public website and free calculators in English, Marathi (`/mr`) and Hindi (`/hi`)
 - Search engine tags, `/sitemap.xml`, `/robots.txt` and Google Analytics 4 behind a consent question, all set from `/admin/seo`
+- Four AI agents on the Business and Enterprise plans, paid for with AI credits: Site Reporter (a draft daily report from a typed site message), Measurement and Billing (draft RA bills from approved measurements), Project Brain (answers from a project's records, with links) and Owner's Copilot (a morning brief). An agent advises, saves a draft, or acts after a person approves; none acts unsupervised. They report "not connected" until an Anthropic API key is saved at `/admin/ai-agents`
+- The website describes AI from one class, `App\Services\Website\AiOffer`: the agents are named as live and as part of a plan only while that key is saved, and a reader or helper gets a card only once its route is deployed and, where it needs the AI model, released by the platform admin
 
 ## Not built yet
 
-Procurement and stock, Tally sync, GST reports and e-invoicing, WhatsApp, the Flutter field app, AI takeoff and agents, Gantt planning, assets and QHS. Payments are limited to marking a bill paid. OTP sign-in needs a real SMS driver in `app/Services/SmsGateway.php`, and stays hidden in production until then.
+Procurement and stock, Tally sync, GST reports and e-invoicing, WhatsApp, the Flutter field app, AI takeoff, Gantt planning, assets and QHS. Payments are limited to marking a bill paid. OTP sign-in needs a real SMS driver in `app/Services/SmsGateway.php`, and stays hidden in production until then.
 
 ## Run locally
 
