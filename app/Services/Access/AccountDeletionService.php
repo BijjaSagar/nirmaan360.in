@@ -180,6 +180,26 @@ class AccountDeletionService
         $this->anonymise($requester, 'support');
     }
 
+    /**
+     * Someone who asked through their own account before this person took the request over. The company
+     * no longer needs them, since this person is now its only owner, so their wish is carried out now:
+     * once the request names someone else, nothing would ever delete them.
+     */
+    private function honourEarlierRequester(CompanyDeletionRequest $request, User $successor): void
+    {
+        if ($request->requested_via !== 'account' || $request->requested_by === null || (int) $request->requested_by === (int) $successor->id) {
+            return;
+        }
+
+        $earlier = User::where('organization_id', $request->organization_id)->find($request->requested_by);
+
+        if ($earlier === null || $earlier->anonymised_at !== null || $this->modeFor($earlier) !== self::MODE_ACCOUNT) {
+            return;
+        }
+
+        $this->anonymise($earlier, 'support');
+    }
+
     private function lockCompany(User $user): ?Organization
     {
         return $user->organization_id === null ? null : Organization::lockForUpdate()->findOrFail($user->organization_id);
@@ -197,6 +217,7 @@ class AccountDeletionService
         // stands for this person's account: a later cancel by another owner must delete them, and the
         // purge must email them. Whoever asked first stays on record in the company.deletion_requested audit row.
         if (! $request->wasRecentlyCreated && ((int) $request->requested_by !== (int) $user->id || $request->requested_via !== 'account')) {
+            $this->honourEarlierRequester($request, $user);
             $request->update(['requested_by' => $user->id, 'requested_via' => 'account']);
         }
 

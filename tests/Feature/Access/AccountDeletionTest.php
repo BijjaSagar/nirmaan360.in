@@ -937,6 +937,41 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertNull($newOwner->fresh()->anonymised_at);
     }
 
+    public function test_an_earlier_account_requester_is_deleted_when_the_only_owner_takes_the_request_over(): void
+    {
+        // Asha, the only owner, asks through her account, so the company is scheduled and her row waits.
+        $this->deleteCompany($this->owner)->assertOk()->assertJsonPath('data.result', 'scheduled');
+
+        // Kiran is made an owner and Asha is switched off; Kiran is now the only owner and asks too.
+        $kiran = $this->person('owner');
+        $this->owner->forceFill(['is_active' => false])->save();
+        $this->deleteCompany($kiran)->assertOk()->assertJsonPath('data.result', 'scheduled');
+
+        $this->assertNotNull($this->owner->fresh()->anonymised_at, 'Once the request names Kiran, nothing else would ever delete Asha.');
+        $this->assertPlaceholder($this->owner->fresh());
+        $this->assertSame([$kiran->id, 'account'], [(int) CompanyDeletionRequest::sole()->requested_by, CompanyDeletionRequest::sole()->requested_via]);
+        $this->assertNull($kiran->fresh()->anonymised_at, 'The only owner stays until the purge, so the company can still be cancelled.');
+
+        // A new owner keeps the company, and Kiran goes as he asked.
+        $newOwner = $this->person('pm');
+        $newOwner->forceFill(['role' => 'owner'])->save();
+        $this->cancel($this->token($newOwner))->assertOk()->assertJsonPath('data.result', 'cancelled');
+        $this->assertNotNull($kiran->fresh()->anonymised_at);
+        $this->assertNull($newOwner->fresh()->anonymised_at);
+    }
+
+    public function test_an_offline_plan_owner_is_pointed_at_delete_my_account_to_cancel(): void
+    {
+        $offline = $this->offlineTenant('Phone Co');
+        $owner = $this->member($offline, 'owner');
+        $member = $this->member($offline, 'engineer');
+
+        $this->requestDeletion($this->token($owner), ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'Phone Co'])->assertOk();
+
+        $this->assertSame(route('account.delete'), $owner->notifications()->sole()->data['url'], 'Company data is closed on the offline plan.');
+        $this->assertNull($member->notifications()->sole()->data['url']);
+    }
+
     public function test_support_scheduling_for_the_only_owner_takes_over_the_request_and_the_purge_emails_them(): void
     {
         Storage::fake();
