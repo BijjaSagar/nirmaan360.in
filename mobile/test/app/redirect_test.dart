@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
 import 'package:nirmaan360/core/session/current_user.dart';
 import 'package:nirmaan360/core/session/session_controller.dart';
+import 'package:nirmaan360/app/app_gate.dart';
 import 'package:nirmaan360/features/auth/view/sign_in_screen.dart';
+import 'package:nirmaan360/features/auth/view/sign_up_screen.dart';
+import 'package:nirmaan360/features/contractor_portal/view/portal_home_screen.dart';
+import 'package:nirmaan360/features/settings/view/account_deletion_screen.dart';
 import 'package:nirmaan360/features/home/view/home_screen.dart';
 import 'package:nirmaan360/features/petty_cash/view/top_up_screen.dart';
 import 'package:nirmaan360/features/petty_cash/view/wallet_form_screen.dart';
@@ -214,5 +219,55 @@ void main() {
     await pumpShellApp(tester, app);
 
     expect(find.text('होम'), findsOneWidget);
+  });
+
+  group('signing up and deleting an account', () {
+    testWidgets('sign-up is open while signed out', (tester) async {
+      final app = await TestApp.create(seed: false, signedIn: false);
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.signUp);
+      expect(find.byType(SignUpScreen), findsOneWidget);
+    });
+
+    testWidgets('signed in, sign-up goes on to the app', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.signUp);
+      expect(find.byType(SignUpScreen), findsNothing);
+      expect(find.byType(ProjectPickerScreen), findsOneWidget);
+    });
+
+    testWidgets('a sign-up in flight holds the screen through the first pull', (tester) async {
+      final app = await TestApp.create(seed: false, signedIn: false);
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.signUp);
+      final AppGate gate = tester.element(find.byType(SignUpScreen)).read<AppGate>();
+
+      gate.beginSignIn();
+      await app.services.session.startSession('t', CurrentUser.fromJson(app.api.user));
+      await settle(tester);
+      expect(find.byType(SignUpScreen), findsOneWidget);
+
+      gate.endSignIn();
+      await settle(tester);
+      expect(find.byType(SignUpScreen), findsNothing);
+      expect(find.byType(ProjectPickerScreen), findsOneWidget);
+    });
+
+    testWidgets('deleting the account is open with no project yet', (tester) async {
+      final app = await TestApp.create(seed: false);
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, location: Routes.deleteAccount);
+      expect(find.byType(AccountDeletionScreen), findsOneWidget);
+    });
+
+    testWidgets('a contractor login can delete its account too', (tester) async {
+      final app = await TestApp.create(seed: false, signedIn: false, api: FakeApi()..becomeContractor());
+      addTearDown(app.dispose);
+      await app.services.auth.signIn(email: 'contractor@demo.test', password: 'password');
+      await pumpShellApp(tester, app, location: Routes.deleteAccount);
+      expect(find.byType(AccountDeletionScreen), findsOneWidget);
+      expect(find.byType(PortalHomeScreen), findsNothing);
+    });
   });
 }

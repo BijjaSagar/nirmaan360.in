@@ -729,4 +729,177 @@ void main() {
       expect((reply['data'] as Map)['status'], 'AWARDED');
     });
   });
+
+  group('signing up', () {
+    Future<LoginResult> register({String? phone}) => api.register(
+          company: 'Deccan Builders',
+          name: 'Asha Patil',
+          email: 'asha@deccan.test',
+          phone: phone,
+          password: 'site-office-8',
+          passwordConfirmation: 'site-office-8',
+          deviceName: AppConfig.deviceName,
+          locale: 'mr',
+        );
+
+    test('posts the form to /auth/register and reads the reply as a login', () async {
+      answer((_) => json({'token': 'new-token', 'user': {'id': 9, 'role': 'owner'}}, status: 201));
+
+      final LoginResult result = await register(phone: '98200 11111');
+
+      final request = adapter.requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/auth/register');
+      expect(request.data, <String, Object?>{
+        'company': 'Deccan Builders',
+        'name': 'Asha Patil',
+        'email': 'asha@deccan.test',
+        'phone': '98200 11111',
+        'password': 'site-office-8',
+        'password_confirmation': 'site-office-8',
+        'device_name': AppConfig.deviceName,
+        'locale': 'mr',
+      });
+      expect(result.token, 'new-token');
+      expect(result.user['role'], 'owner');
+    });
+
+    test('sends no plan, and no phone when none was given', () async {
+      answer((_) => json({'token': 't', 'user': {'id': 9}}, status: 201));
+      await register();
+      final Map<String, dynamic> body = adapter.requests.single.data as Map<String, dynamic>;
+      expect(body.containsKey('phone'), isFalse);
+      expect(body.containsKey('plan'), isFalse);
+    });
+
+    test('a taken email is a ValidationFailure on email', () async {
+      answer((_) => json({
+            'message': 'This email already has an account.',
+            'errors': {
+              'email': ['This email already has an account.'],
+            },
+          }, status: 422));
+      await expectLater(
+        register(),
+        throwsA(isA<ValidationFailure>().having((e) => e.errors.keys, 'fields', ['email'])),
+      );
+    });
+
+    test('a 401 is not taken as an expired session', () async {
+      answer((_) => json({'message': 'Unauthenticated.'}, status: 401));
+      await expectLater(register(), throwsA(isA<ServerFailure>()));
+      expect(unauthorizedCalls, 0);
+    });
+  });
+
+  group('deleting an account', () {
+    test('reads what would happen', () async {
+      answer((_) => json({
+            'data': {
+              'mode': 'company',
+              'company_name': 'Deccan Builders',
+              'other_people': 3,
+              'requires_confirm_name': true,
+              'grace_days': 30,
+              'erase_after': '2026-12-12T15:04:05+05:30',
+              'pending': {'erase_after': '2026-12-12T15:04:05+05:30', 'can_cancel': true},
+            },
+          }));
+
+      final AccountDeletionPreview preview = await api.accountDeletionPreview();
+
+      expect(adapter.requests.single.method, 'GET');
+      expect(adapter.requests.single.path, '/auth/account/deletion');
+      expect(preview.mode, AccountDeletionMode.company);
+      expect(preview.companyName, 'Deccan Builders');
+      expect(preview.otherPeople, 3);
+      expect(preview.requiresConfirmName, isTrue);
+      expect(preview.graceDays, 30);
+      expect(preview.eraseAfter, DateTime.utc(2026, 12, 12, 9, 34, 5));
+      expect(preview.pending!.canCancel, isTrue);
+    });
+
+    test('a member with nothing pending', () async {
+      answer((_) => json({
+            'data': {
+              'mode': 'account',
+              'company_name': 'Deccan Builders',
+              'other_people': 0,
+              'requires_confirm_name': false,
+              'grace_days': 30,
+              'erase_after': null,
+              'pending': null,
+            },
+          }));
+      final AccountDeletionPreview preview = await api.accountDeletionPreview();
+      expect(preview.mode, AccountDeletionMode.account);
+      expect(preview.eraseAfter, isNull);
+      expect(preview.pending, isNull);
+    });
+
+    test('a member is deleted with the password alone', () async {
+      answer((_) => json({'data': {'result': 'deleted'}}));
+      final AccountDeletionResult result =
+          await api.deleteAccount(mode: AccountDeletionMode.account, password: 'pw', confirmName: 'ignored');
+
+      final request = adapter.requests.single;
+      expect(request.method, 'POST');
+      expect(request.path, '/auth/account/deletion');
+      expect(request.data, <String, Object?>{'mode': 'account', 'password': 'pw'});
+      expect(result.scheduled, isFalse);
+    });
+
+    test('the only owner sends the company name and gets the date', () async {
+      answer((_) => json({'data': {'result': 'scheduled', 'erase_after': '2026-12-12T15:04:05+05:30'}}));
+      final AccountDeletionResult result =
+          await api.deleteAccount(mode: AccountDeletionMode.company, password: 'pw', confirmName: 'Deccan Builders');
+
+      expect(adapter.requests.single.data, <String, Object?>{
+        'mode': 'company',
+        'password': 'pw',
+        'confirm_name': 'Deccan Builders',
+      });
+      expect(result.scheduled, isTrue);
+      expect(result.eraseAfter, DateTime.utc(2026, 12, 12, 9, 34, 5));
+    });
+
+    test('a changed mode is a 409 with its code', () async {
+      answer((_) => json({'message': 'Changed.', 'code': 'deletion_mode_changed'}, status: 409));
+      await expectLater(
+        api.deleteAccount(mode: AccountDeletionMode.account, password: 'pw'),
+        throwsA(isA<ServerFailure>()
+            .having((e) => e.statusCode, 'status', 409)
+            .having((e) => e.code, 'code', 'deletion_mode_changed')),
+      );
+    });
+
+    test('a wrong password is a ValidationFailure on password', () async {
+      answer((_) => json({
+            'message': 'That password is not right.',
+            'errors': {
+              'password': ['That password is not right.'],
+            },
+          }, status: 422));
+      await expectLater(
+        api.deleteAccount(mode: AccountDeletionMode.account, password: 'pw'),
+        throwsA(isA<ValidationFailure>().having((e) => e.errors.keys, 'fields', ['password'])),
+      );
+    });
+
+    test('cancelling uses DELETE and says whether anything was pending', () async {
+      answer((_) => json({'data': {'result': 'cancelled'}}));
+      expect(await api.cancelCompanyDeletion(), isTrue);
+      expect(adapter.requests.single.method, 'DELETE');
+      expect(adapter.requests.single.path, '/auth/account/deletion');
+
+      answer((_) => json({'data': {'result': 'none'}}));
+      expect(await api.cancelCompanyDeletion(), isFalse);
+    });
+
+    test('a non-owner cancelling is refused with a 403', () async {
+      answer((_) => json({'message': 'Only a company owner can do this.'}, status: 403));
+      await expectLater(api.cancelCompanyDeletion(), throwsA(isA<ServerFailure>().having((e) => e.statusCode, 'status', 403)));
+    });
+  });
 }
+

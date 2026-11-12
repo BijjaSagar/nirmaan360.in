@@ -86,7 +86,7 @@ void main() {
     expect(find.byType(ProjectFormScreen), findsOneWidget);
   });
 
-  testWidgets("the plan limit shows the server's own words", (tester) async {
+  testWidgets('the plan limit is said in the app\'s words, with no invitation to upgrade', (tester) async {
     final app = await owner();
     addTearDown(app.dispose);
     app.api.planProjectLimit = 0;
@@ -97,7 +97,10 @@ void main() {
     await tapCreate(tester);
 
     expect(find.text(en.shellProjectPlanTitle), findsOneWidget);
-    expect(find.text(FakeApi.planLimitMessage), findsOneWidget);
+    expect(find.text(en.shellProjectPlanBody), findsOneWidget);
+    // The server's text says "Upgrade to add more"; the app never shows it (Apple 3.1.1).
+    expect(find.text(FakeApi.planLimitMessage), findsNothing);
+    expect(find.textContaining('Upgrade'), findsNothing);
     expect(find.byType(ProjectFormScreen), findsOneWidget);
   });
 

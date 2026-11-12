@@ -1,6 +1,12 @@
 /// Every path in the app. Screens navigate with these, never with string literals.
 abstract final class Routes {
   static const signIn = '/sign-in';
+
+  /// A new company with this person as its owner. Open only while signed out.
+  static const signUp = '/sign-up';
+
+  /// True for the two pages a signed-out person may be on.
+  static bool isAuth(String path) => path == signIn || path == signUp;
   static const projects = '/projects';
 
   /// The picker, opened on purpose from Home. An owner with a single project
@@ -31,8 +37,13 @@ abstract final class Routes {
   static const announcements = '/settings/announcements';
   static String announcementsAt(int id) => '$announcements?id=$id';
 
+  /// Deleting this person's account. Open to everyone who can open Settings,
+  /// contractor logins and the offline plan included.
+  static const deleteAccount = '/settings/delete-account';
+
   /// Settings and its sub-pages, open whenever Settings is.
-  static bool isSettings(String path) => path == settings || path == notificationSettings || path == announcements;
+  static bool isSettings(String path) =>
+      path == settings || path == notificationSettings || path == announcements || path == deleteAccount;
 
   static const dprList = '/dpr';
 
@@ -185,7 +196,7 @@ abstract final class Routes {
   /// petty cash, and the screens that set a project up. Approvals, the outbox
   /// and every other module are not part of it.
   static bool isLocalFeature(String path) =>
-      const <String>{home, projects, projectForm, boq, boqForm, settings, attendance}.contains(path) ||
+      const <String>{home, projects, projectForm, boq, boqForm, settings, deleteAccount, attendance}.contains(path) ||
       path == dprList ||
       path.startsWith('$dprList/') ||
       path == measurements ||

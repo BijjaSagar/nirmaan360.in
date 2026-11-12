@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nirmaan360/core/api/api_failure.dart';
+import 'package:nirmaan360/core/api/nirmaan_api.dart';
 import 'package:nirmaan360/core/db/app_database.dart';
 import 'package:nirmaan360/core/push/push_messaging.dart';
 import 'package:nirmaan360/core/push/push_service.dart';
+import 'package:nirmaan360/core/session/session_controller.dart';
 
 import '../../support/fake_push.dart';
 import '../../support/test_app.dart';
@@ -101,6 +104,46 @@ void main() {
     expect(phone.deleteCalls, 1);
     expect(phone.enabled, isFalse);
     expect(app.services.push.state, PushState.unavailable);
+  });
+
+  test('deleting the account forgets push here without asking the server, which already dropped it', () async {
+    final FakePushMessaging phone = FakePushMessaging(permissionNow: PushPermission.granted);
+    final TestApp app = await TestApp.create(pushMessaging: phone);
+    addTearDown(app.dispose);
+    await app.services.startPush();
+    await pumpEventQueue();
+    expect(app.api.pushTokens, <String>['fake-fcm-token-1']);
+
+    await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+
+    // No DELETE /devices: the token is revoked, and a 401 would only mark the session expired.
+    expect(app.api.deviceRemovals, isEmpty);
+    expect(app.api.logoutCalls, 0);
+    expect(await app.db.readMeta(MetaKey.pushToken), isNull);
+    expect(phone.deleteCalls, 1);
+    expect(phone.enabled, isFalse);
+    expect(app.services.push.state, PushState.unavailable);
+    expect(app.services.session.current.status, SessionStatus.signedOut);
+  });
+
+  test('a refused deletion keeps push as it was', () async {
+    final FakePushMessaging phone = FakePushMessaging(permissionNow: PushPermission.granted);
+    final TestApp app = await TestApp.create(pushMessaging: phone);
+    addTearDown(app.dispose);
+    await app.services.startPush();
+    await pumpEventQueue();
+    final PushState before = app.services.push.state;
+
+    await expectLater(
+      app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'wrong'),
+      throwsA(isA<ValidationFailure>()),
+    );
+
+    expect(await app.db.readMeta(MetaKey.pushToken), 'fake-fcm-token-1');
+    expect(phone.deleteCalls, 0);
+    expect(phone.enabled, isTrue);
+    expect(app.services.push.state, before);
+    expect(app.services.session.current.isSignedIn, isTrue);
   });
 
   test('signing out with no network still signs out', () async {

@@ -822,11 +822,7 @@ class OfflinePlan {
 
   /// Where the owner frees phones when the server did not say. Built from the
   /// address the app talks to.
-  static String get _defaultManageUrl {
-    final String base = AppConfig.apiBaseUrl;
-    final int cut = base.indexOf('/api/');
-    return '${cut < 0 ? base : base.substring(0, cut)}/offline/devices';
-  }
+  static String get _defaultManageUrl => '${AppConfig.siteUrl}/offline/devices';
 
   String get _platform => Platform.isAndroid
       ? 'android'

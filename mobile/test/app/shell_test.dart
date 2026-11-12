@@ -120,6 +120,8 @@ void main() {
       Routes.pettyCash,
       Routes.expenseForm,
       Routes.settings,
+      Routes.deleteAccount,
+      Routes.signUp,
       Routes.boq,
       Routes.walletForm,
       Routes.topUp,

@@ -166,14 +166,21 @@ class PushService {
   /// Takes this phone off the server and off Firebase. Call it while the person
   /// is still signed in, just before the sign-out reaches the server. It waits
   /// a few seconds at most and never throws, so signing out works offline.
-  Future<void> forgetThisPhone() async {
+  Future<void> forgetThisPhone() => _forget(tellServer: true);
+
+  /// The same, once the account is already gone: the server has dropped this
+  /// phone with it, and asking it to would only be refused, because the token
+  /// no longer works.
+  Future<void> forgetLocally() => _forget(tellServer: false);
+
+  Future<void> _forget({required bool tellServer}) async {
     _eligible = false;
     _pending = null;
     _registered = null;
     if (!_ready) return;
     final String? token = await _db.readMeta(MetaKey.pushToken);
     if (token != null) {
-      await _quietly(() => _devices.unregister(token));
+      if (tellServer) await _quietly(() => _devices.unregister(token));
       await _db.deleteMeta(MetaKey.pushToken);
     }
     await _quietly(_messaging.deleteToken);

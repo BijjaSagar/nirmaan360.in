@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/app.dart';
 import 'package:nirmaan360/app/routes.dart';
+import 'package:nirmaan360/core/design/design.dart';
 import 'package:nirmaan360/core/session/current_user.dart';
 
 import '../core/design/test_helpers.dart';
@@ -50,6 +51,52 @@ void main() {
       addTearDown(app.dispose);
       await pumpShellApp(tester, app, locale: locale, location: Routes.signIn, pixelRatio: 2.5);
       await shoot(tester, '${locale}_signin');
+    });
+
+    testWidgets('sign up ($locale)', (tester) async {
+      final app = await TestApp.create(seed: false, signedIn: false);
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, locale: locale, location: Routes.signUp, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_signup');
+      await tester.tap(find.byType(GloveButton).last);
+      await settle(tester);
+      await shoot(tester, '${locale}_signup_errors');
+    });
+
+    testWidgets('delete account, member ($locale)', (tester) async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      await seedToday(app);
+      await pumpShellApp(tester, app, locale: locale, location: Routes.deleteAccount, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_delete_member');
+    });
+
+    testWidgets('delete account, only owner ($locale)', (tester) async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      app.api.deletionPreview = {
+        ...app.api.deletionPreview,
+        'mode': 'company',
+        'requires_confirm_name': true,
+        'erase_after': '2026-12-09T10:00:00+05:30',
+      };
+      await pumpShellApp(tester, app, locale: locale, location: Routes.deleteAccount, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_delete_owner');
+    });
+
+    testWidgets('delete account, pending ($locale)', (tester) async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      app.api.scheduleCompanyDeletion();
+      await pumpShellApp(tester, app, locale: locale, location: Routes.deleteAccount, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_delete_pending');
+    });
+
+    testWidgets('settings ($locale), with privacy and delete', (tester) async {
+      final app = await TestApp.create();
+      addTearDown(app.dispose);
+      await pumpShellApp(tester, app, locale: locale, location: Routes.settings, pixelRatio: 2.5);
+      await shoot(tester, '${locale}_settings_account');
     });
 
     testWidgets('expired sign in ($locale)', (tester) async {

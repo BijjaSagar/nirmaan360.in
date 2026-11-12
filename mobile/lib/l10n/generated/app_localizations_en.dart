@@ -9,6 +9,147 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get accountDeleteBusy => 'Deleting your account…';
+
+  @override
+  String get accountDeleteCancelButton => 'Cancel the deletion';
+
+  @override
+  String get accountDeleteCancelled =>
+      'Deletion cancelled. Your company stays as it is.';
+
+  @override
+  String get accountDeleteChanged =>
+      'Something changed in your company. Check what will happen, then try again.';
+
+  @override
+  String accountDeleteCompanyErases(String company) {
+    return 'You are the only owner of $company, so deleting your account erases the company: every project, bill, photo, worker and user.';
+  }
+
+  @override
+  String get accountDeleteCompanyTitle => 'Delete your account and company';
+
+  @override
+  String accountDeleteCompanyWhen(String date) {
+    return 'It is erased after $date. Until then the company keeps working, and you can cancel by signing in again and opening Settings, Delete account.';
+  }
+
+  @override
+  String accountDeleteConfirmName(String company) {
+    return 'Type $company to confirm';
+  }
+
+  @override
+  String get accountDeleteExport =>
+      'Want a copy first? An owner can export the company\'s data on the website, under Account, Company data.';
+
+  @override
+  String get accountDeleteHandOver =>
+      'To keep the company going without you, make another member an owner on the website (Team) first, then delete your account here.';
+
+  @override
+  String get accountDeleteHold => 'Hold to delete my account';
+
+  @override
+  String get accountDeleteLoading => 'Checking what will happen';
+
+  @override
+  String accountDeleteLocalOnly(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count records exist only on this phone. They will be erased.',
+      one: '1 record exists only on this phone. It will be erased.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountDeleteMemberNow =>
+      'Your sign-in, name, email and mobile number are removed now. You cannot undo this.';
+
+  @override
+  String accountDeleteMemberWork(String company) {
+    return 'Work you recorded for $company — reports, measurements, bills, attendance and photos — stays with the company, shown as “Deleted user”.';
+  }
+
+  @override
+  String get accountDeleteOfflineBody => 'Connect and try again.';
+
+  @override
+  String get accountDeleteOfflineTitle =>
+      'Deleting an account needs the internet.';
+
+  @override
+  String accountDeleteOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count other people will lose access.',
+      one: '1 other person will lose access.',
+      zero: 'No one else uses this company.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountDeletePassword => 'Your password';
+
+  @override
+  String accountDeletePendingBody(String company, String date) {
+    return '$company will be erased after $date.';
+  }
+
+  @override
+  String get accountDeletePendingTitle => 'Your company is set to be erased';
+
+  @override
+  String get accountDeletePhoneCleared =>
+      'This phone is signed out and its Nirmaan360 data is cleared.';
+
+  @override
+  String get accountDeleteSpoken => 'Delete my account';
+
+  @override
+  String get accountDeleteTaxRecords =>
+      'Records of payments your company made to Nirmaan360 are kept, as Indian tax law requires.';
+
+  @override
+  String get accountDeleteTile => 'Delete account';
+
+  @override
+  String get accountDeleteTileSubtitle =>
+      'Remove your sign-in and personal details';
+
+  @override
+  String accountDeleteUnsent(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count items on this phone have not reached the server. They will be lost.',
+      one: '1 item on this phone has not reached the server. It will be lost.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountDeleteWrongName =>
+      'Type the company name exactly as shown.';
+
+  @override
+  String get accountDeleteWrongPassword => 'That password is not right.';
+
+  @override
+  String accountDeletedCompanyToast(String date) {
+    return 'Your company will be erased after $date. Sign in before then to cancel.';
+  }
+
+  @override
+  String get accountDeletedToast => 'Your account has been deleted.';
+
+  @override
   String get alertsDashboardEmpty => 'No figures for this project yet.';
 
   @override
@@ -1935,7 +2076,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenceResultNoLicence =>
-      'Connected, but this phone could not be given a licence. Check your plan on the Nirmaan360 website, then try again.';
+      'Connected, but this phone could not be given a licence. Your company\'s owner can check the plan.';
 
   @override
   String get licenceResultOffline =>
@@ -1947,7 +2088,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenceResultStillEnded =>
-      'Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.';
+      'Connected, but the licence is still ended. Your company\'s owner can check the plan.';
 
   @override
   String get licenceScreenTitle => 'Renew licence';
@@ -4365,6 +4506,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellDiscardTitle => 'Throw away this entry?';
 
   @override
+  String get shellLinkFailedBody =>
+      'Copy the link and open it in your browser.';
+
+  @override
+  String get shellLinkFailedTitle => 'The page did not open';
+
+  @override
   String get shellOfflineApprovals => 'Approvals need network.';
 
   @override
@@ -4519,6 +4667,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'A project can only be created with network. Try again when you have signal.';
 
   @override
+  String get shellProjectPlanBody =>
+      'This company has reached the number of projects its plan allows.';
+
+  @override
   String get shellProjectPlanTitle => 'Project limit reached';
 
   @override
@@ -4621,6 +4773,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellSignInNetworkTitle => 'No network';
 
   @override
+  String get shellSignInNewCompany => 'New company? Create an account';
+
+  @override
   String shellSignInOtherUserBody(int count) {
     return 'This phone has $count unsent entries from another person. They must sign in and send them first.';
   }
@@ -4691,6 +4846,83 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 entry not sent',
     );
     return '$_temp0';
+  }
+
+  @override
+  String get shellSignUpBusy => 'Creating your account…';
+
+  @override
+  String get shellSignUpButton => 'Create account';
+
+  @override
+  String get shellSignUpCompany => 'Company name';
+
+  @override
+  String get shellSignUpCompanyMissing => 'Enter the company name';
+
+  @override
+  String get shellSignUpConfirm => 'Confirm password';
+
+  @override
+  String shellSignUpConsent(String terms, String privacy) {
+    return 'By creating an account you agree to the $terms and the $privacy.';
+  }
+
+  @override
+  String get shellSignUpEmailInvalid => 'Enter an email like name@example.com';
+
+  @override
+  String get shellSignUpEmailTakenBody =>
+      'Sign in with it instead, or use another email.';
+
+  @override
+  String get shellSignUpEmailTakenTitle => 'This email already has an account';
+
+  @override
+  String get shellSignUpFieldInvalid => 'Check this and try again';
+
+  @override
+  String get shellSignUpHaveAccount => 'Already have an account? Sign in';
+
+  @override
+  String get shellSignUpIntro =>
+      'This starts a new company on Nirmaan360 with you as its owner. If your company already uses Nirmaan360, ask your office to invite you instead.';
+
+  @override
+  String get shellSignUpName => 'Your name';
+
+  @override
+  String get shellSignUpNameMissing => 'Enter your name';
+
+  @override
+  String get shellSignUpPasswordHelper => 'At least 8 characters.';
+
+  @override
+  String get shellSignUpPasswordMismatch =>
+      'The two passwords are not the same';
+
+  @override
+  String get shellSignUpPasswordShort => 'Use at least 8 characters';
+
+  @override
+  String get shellSignUpPhone => 'Mobile number (optional)';
+
+  @override
+  String get shellSignUpPhoneTaken =>
+      'This mobile number is used by another account.';
+
+  @override
+  String get shellSignUpPrivacy => 'Privacy policy';
+
+  @override
+  String get shellSignUpTerms => 'Terms';
+
+  @override
+  String get shellSignUpTitle => 'Create an account';
+
+  @override
+  String shellSignUpTooLong(int max) {
+    return 'Keep it to $max characters or fewer';
   }
 
   @override

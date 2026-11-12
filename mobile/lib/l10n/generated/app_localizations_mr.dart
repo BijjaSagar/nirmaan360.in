@@ -9,6 +9,146 @@ class AppLocalizationsMr extends AppLocalizations {
   AppLocalizationsMr([String locale = 'mr']) : super(locale);
 
   @override
+  String get accountDeleteBusy => 'तुमचे खाते हटवत आहोत…';
+
+  @override
+  String get accountDeleteCancelButton => 'हटवणे रद्द करा';
+
+  @override
+  String get accountDeleteCancelled =>
+      'हटवणे रद्द झाले. तुमची कंपनी जशी आहे तशीच राहील.';
+
+  @override
+  String get accountDeleteChanged =>
+      'तुमच्या कंपनीत काहीतरी बदलले आहे. काय होईल ते पाहा, मग पुन्हा प्रयत्न करा.';
+
+  @override
+  String accountDeleteCompanyErases(String company) {
+    return 'तुम्ही $company चे एकमेव मालक आहात, त्यामुळे तुमचे खाते हटवल्यास कंपनी पुसली जाते: प्रत्येक प्रकल्प, बिल, फोटो, कामगार आणि वापरकर्ता.';
+  }
+
+  @override
+  String get accountDeleteCompanyTitle => 'तुमचे खाते आणि कंपनी हटवा';
+
+  @override
+  String accountDeleteCompanyWhen(String date) {
+    return 'ती $date नंतर पुसली जाते. तोपर्यंत कंपनीचे काम चालू राहते, आणि पुन्हा साइन इन करून सेटिंग्ज, खाते हटवा उघडून तुम्ही ते रद्द करू शकता.';
+  }
+
+  @override
+  String accountDeleteConfirmName(String company) {
+    return 'खात्रीसाठी $company लिहा';
+  }
+
+  @override
+  String get accountDeleteExport =>
+      'आधी प्रत हवी आहे? मालक वेबसाइटवर Account, Company data मध्ये कंपनीचा डेटा एक्सपोर्ट करू शकतात.';
+
+  @override
+  String get accountDeleteHandOver =>
+      'तुमच्याशिवाय कंपनी चालू ठेवायची असल्यास, आधी वेबसाइटवर (Team) दुसऱ्या सदस्याला मालक करा, मग इथे तुमचे खाते हटवा.';
+
+  @override
+  String get accountDeleteHold => 'खाते हटवण्यासाठी दाबून ठेवा';
+
+  @override
+  String get accountDeleteLoading => 'काय होईल ते तपासत आहोत';
+
+  @override
+  String accountDeleteLocalOnly(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count नोंदी फक्त या फोनवर आहेत. त्या पुसल्या जातील.',
+      one: '1 नोंद फक्त या फोनवर आहे. ती पुसली जाईल.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountDeleteMemberNow =>
+      'तुमचे साइन-इन, नाव, ईमेल आणि मोबाइल नंबर आत्ताच काढून टाकले जातात. हे परत करता येत नाही.';
+
+  @override
+  String accountDeleteMemberWork(String company) {
+    return '$company साठी तुम्ही नोंदवलेले काम — अहवाल, मोजमापे, बिले, हजेरी आणि फोटो — कंपनीकडेच राहते, “हटवलेला वापरकर्ता” म्हणून दिसते.';
+  }
+
+  @override
+  String get accountDeleteOfflineBody => 'इंटरनेट जोडा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get accountDeleteOfflineTitle => 'खाते हटवण्यासाठी इंटरनेट लागते.';
+
+  @override
+  String accountDeleteOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आणखी $count व्यक्तींचा प्रवेश जाईल.',
+      one: 'आणखी 1 व्यक्तीचा प्रवेश जाईल.',
+      zero: 'ही कंपनी दुसरे कोणी वापरत नाही.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountDeletePassword => 'तुमचा पासवर्ड';
+
+  @override
+  String accountDeletePendingBody(String company, String date) {
+    return '$company $date नंतर पुसली जाईल.';
+  }
+
+  @override
+  String get accountDeletePendingTitle => 'तुमची कंपनी पुसली जाणार आहे';
+
+  @override
+  String get accountDeletePhoneCleared =>
+      'हा फोन साइन आउट होतो आणि त्यावरील Nirmaan360 चा डेटा पुसला जातो.';
+
+  @override
+  String get accountDeleteSpoken => 'माझे खाते हटवा';
+
+  @override
+  String get accountDeleteTaxRecords =>
+      'तुमच्या कंपनीने Nirmaan360 ला केलेल्या पेमेंटच्या नोंदी भारतीय कर कायद्यानुसार ठेवल्या जातात.';
+
+  @override
+  String get accountDeleteTile => 'खाते हटवा';
+
+  @override
+  String get accountDeleteTileSubtitle =>
+      'तुमचे साइन-इन आणि वैयक्तिक माहिती काढून टाका';
+
+  @override
+  String accountDeleteUnsent(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'या फोनवरील $count नोंदी सर्व्हरवर पोहोचलेल्या नाहीत. त्या हरवतील.',
+      one: 'या फोनवरील 1 नोंद सर्व्हरवर पोहोचलेली नाही. ती हरवेल.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountDeleteWrongName =>
+      'कंपनीचे नाव दाखवल्याप्रमाणेच अचूक लिहा.';
+
+  @override
+  String get accountDeleteWrongPassword => 'हा पासवर्ड बरोबर नाही.';
+
+  @override
+  String accountDeletedCompanyToast(String date) {
+    return 'तुमची कंपनी $date नंतर पुसली जाईल. रद्द करण्यासाठी त्याआधी साइन इन करा.';
+  }
+
+  @override
+  String get accountDeletedToast => 'तुमचे खाते हटवले आहे.';
+
+  @override
   String get alertsDashboardEmpty => 'या प्रकल्पासाठी अजून आकडे नाहीत.';
 
   @override
@@ -1904,7 +2044,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get licenceResultNoLicence =>
-      'जोडले गेले, पण या फोनला परवाना देता आला नाही. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.';
+      'जोडले गेले, पण या फोनला परवाना देता आला नाही. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.';
 
   @override
   String get licenceResultOffline =>
@@ -1916,7 +2056,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get licenceResultStillEnded =>
-      'जोडले गेले, पण परवाना अजूनही संपलेला आहे. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.';
+      'जोडले गेले, पण परवाना अजूनही संपलेला आहे. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.';
 
   @override
   String get licenceScreenTitle => 'परवाना नूतनीकरण';
@@ -4331,6 +4471,12 @@ class AppLocalizationsMr extends AppLocalizations {
   String get shellDiscardTitle => 'ही नोंद काढून टाकायची?';
 
   @override
+  String get shellLinkFailedBody => 'लिंक कॉपी करा आणि ब्राउझरमध्ये उघडा.';
+
+  @override
+  String get shellLinkFailedTitle => 'पान उघडले नाही';
+
+  @override
   String get shellOfflineApprovals => 'मंजुरीसाठी नेटवर्क हवे.';
 
   @override
@@ -4478,6 +4624,10 @@ class AppLocalizationsMr extends AppLocalizations {
       'नेटवर्क असतानाच प्रकल्प तयार करता येतो. सिग्नल आल्यावर पुन्हा प्रयत्न करा.';
 
   @override
+  String get shellProjectPlanBody =>
+      'या कंपनीने तिच्या प्लॅनमध्ये परवानगी असलेल्या प्रकल्पांची संख्या गाठली आहे.';
+
+  @override
   String get shellProjectPlanTitle => 'प्रकल्पांची मर्यादा पूर्ण झाली';
 
   @override
@@ -4580,6 +4730,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get shellSignInNetworkTitle => 'नेटवर्क नाही';
 
   @override
+  String get shellSignInNewCompany => 'नवीन कंपनी? खाते तयार करा';
+
+  @override
   String shellSignInOtherUserBody(int count) {
     return 'या फोनवर दुसऱ्या व्यक्तीच्या $count नोंदी पाठवायच्या बाकी आहेत. त्यांनी आधी साइन इन करून त्या पाठवाव्यात.';
   }
@@ -4643,6 +4796,82 @@ class AppLocalizationsMr extends AppLocalizations {
   @override
   String shellSignOutUnsentTitle(int count) {
     return '$count नोंदी पाठवलेल्या नाहीत';
+  }
+
+  @override
+  String get shellSignUpBusy => 'तुमचे खाते तयार होत आहे…';
+
+  @override
+  String get shellSignUpButton => 'खाते बनवा';
+
+  @override
+  String get shellSignUpCompany => 'कंपनीचे नाव';
+
+  @override
+  String get shellSignUpCompanyMissing => 'कंपनीचे नाव लिहा';
+
+  @override
+  String get shellSignUpConfirm => 'पासवर्ड पुन्हा लिहा';
+
+  @override
+  String shellSignUpConsent(String terms, String privacy) {
+    return 'खाते तयार करून तुम्ही $terms आणि $privacy मान्य करता.';
+  }
+
+  @override
+  String get shellSignUpEmailInvalid => 'name@example.com सारखा ईमेल लिहा';
+
+  @override
+  String get shellSignUpEmailTakenBody =>
+      'त्याऐवजी त्याने साइन इन करा, किंवा दुसरा ईमेल वापरा.';
+
+  @override
+  String get shellSignUpEmailTakenTitle => 'या ईमेलचे खाते आधीच आहे';
+
+  @override
+  String get shellSignUpFieldInvalid => 'हे तपासा आणि पुन्हा प्रयत्न करा';
+
+  @override
+  String get shellSignUpHaveAccount => 'आधीच खाते आहे? साइन इन करा';
+
+  @override
+  String get shellSignUpIntro =>
+      'यामुळे Nirmaan360 वर नवीन कंपनी सुरू होते आणि तुम्ही तिचे मालक असता. तुमची कंपनी आधीच Nirmaan360 वापरत असेल, तर त्याऐवजी तुमच्या ऑफिसला तुम्हाला आमंत्रित करायला सांगा.';
+
+  @override
+  String get shellSignUpName => 'तुमचे नाव';
+
+  @override
+  String get shellSignUpNameMissing => 'तुमचे नाव लिहा';
+
+  @override
+  String get shellSignUpPasswordHelper => 'किमान 8 अक्षरे.';
+
+  @override
+  String get shellSignUpPasswordMismatch => 'दोन्ही पासवर्ड सारखे नाहीत';
+
+  @override
+  String get shellSignUpPasswordShort => 'किमान 8 अक्षरे वापरा';
+
+  @override
+  String get shellSignUpPhone => 'मोबाइल नंबर (ऐच्छिक)';
+
+  @override
+  String get shellSignUpPhoneTaken =>
+      'हा मोबाइल नंबर दुसऱ्या खात्यासाठी वापरला आहे.';
+
+  @override
+  String get shellSignUpPrivacy => 'गोपनीयता धोरण';
+
+  @override
+  String get shellSignUpTerms => 'अटी';
+
+  @override
+  String get shellSignUpTitle => 'खाते तयार करा';
+
+  @override
+  String shellSignUpTooLong(int max) {
+    return 'जास्तीत जास्त $max अक्षरे ठेवा';
   }
 
   @override

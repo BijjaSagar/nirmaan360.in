@@ -4,6 +4,8 @@ import 'package:nirmaan360/app/routes.dart';
 import 'package:nirmaan360/core/api/api_failure.dart';
 import 'package:nirmaan360/core/api/nirmaan_api.dart';
 import 'package:nirmaan360/core/design/design.dart';
+import 'package:nirmaan360/features/auth/view/sign_in_screen.dart';
+import 'package:nirmaan360/features/auth/view/sign_up_screen.dart';
 import 'package:nirmaan360/features/home/view/home_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
@@ -52,7 +54,11 @@ void main() {
     addTearDown(app.dispose);
     await pumpShellApp(tester, app, location: Routes.signIn);
 
-    expect(tester.getSize(find.byType(GloveButton)).height, greaterThanOrEqualTo(N360Size.tap));
+    // Sign in, and the new-company button under the card.
+    expect(find.byType(GloveButton), findsNWidgets(2));
+    for (final Element button in find.byType(GloveButton).evaluate()) {
+      expect(tester.getSize(find.byWidget(button.widget)).height, greaterThanOrEqualTo(N360Size.tap));
+    }
     expect(tester.getSize(find.text('मराठी')).height, lessThan(N360Size.tap));
     expect(
       tester.getSize(find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'मराठी')).height,
@@ -169,6 +175,65 @@ void main() {
     await settle(tester);
     expect(tester.widget<TextField>(find.byType(TextField).at(1)).obscureText, isFalse);
     expect(find.text(en.shellSignInHide), findsOneWidget);
+  });
+
+  testWidgets('a new company is one tap away', (tester) async {
+    final app = await create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app, location: Routes.signIn);
+
+    await tester.tap(find.byKey(const ValueKey<String>('sign-in-new-company')));
+    await settle(tester);
+
+    expect(find.byType(SignUpScreen), findsOneWidget);
+  });
+
+  testWidgets('the new-company button keeps the graphic out of the way of the keyboard', (tester) async {
+    final app = await create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app, location: Routes.signIn, size: const Size(360, 640));
+
+    expect(find.text(en.shellSignInNewCompany), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    final double screen = tester.view.physicalSize.height / tester.view.devicePixelRatio;
+    expect(tester.getBottomLeft(find.text(en.shellSignInButton)).dy, lessThan(screen));
+  });
+
+  testWidgets('after a deletion it says so once', (tester) async {
+    final app = await TestApp.create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app, location: Routes.settings);
+
+    await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+    await settle(tester);
+
+    expect(find.byType(SignInScreen), findsOneWidget);
+    expect(find.text(en.accountDeletedToast), findsOneWidget);
+    // Not the "signed out, nothing is lost" note: that would be untrue.
+    expect(find.text(en.shellSignInExpired), findsNothing);
+
+    // The screen took it: a sign-in screen opened later says nothing.
+    expect(app.services.auth.takeDeletedNotice(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await pumpShellApp(tester, app, location: Routes.signIn);
+    expect(find.byType(SignInScreen), findsOneWidget);
+    expect(find.text(en.accountDeletedToast), findsNothing);
+  });
+
+  testWidgets('a company set to be erased gives the date to sign in by', (tester) async {
+    final app = await TestApp.create();
+    addTearDown(app.dispose);
+    app.api.scheduleCompanyDeletion(eraseAfter: '2026-12-09T23:30:00+05:30');
+    await pumpShellApp(tester, app, location: Routes.settings);
+
+    await app.services.auth.deleteAccount(
+      mode: AccountDeletionMode.company,
+      password: 'secret',
+      confirmName: 'Sahyadri Infra Pvt Ltd',
+    );
+    await settle(tester);
+
+    expect(find.text(en.accountDeletedCompanyToast('9 Dec 2026')), findsOneWidget);
   });
 
   testWidgets('success goes to home through the first pull', (tester) async {

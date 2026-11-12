@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../core/api/account_models.dart';
 import '../core/app_services.dart';
 import '../core/db/app_database.dart';
 import '../core/offline/offline_plan.dart';
@@ -311,6 +312,10 @@ class AppGate extends Cubit<GateState> {
     );
   }
 
+  /// The account deletion that just signed this phone out, once. The sign-in
+  /// screen reads it as it opens and says what happened.
+  AccountDeletionResult? takeAccountDeletedNotice() => _services.auth.takeDeletedNotice();
+
   void beginSignIn() => emit(state.copyWith(signingIn: true));
 
   void endSignIn() {
@@ -372,9 +377,9 @@ class AppGate extends Cubit<GateState> {
   String? redirect(Uri uri) {
     final s = state;
     final String path = uri.path;
-    final atSignIn = path == Routes.signIn;
-    if (!s.isSignedIn) return atSignIn ? null : Routes.signIn;
-    if (atSignIn) {
+    final bool atAuth = Routes.isAuth(path);
+    if (!s.isSignedIn) return atAuth ? null : Routes.signIn;
+    if (atAuth) {
       if (s.signingIn) return null;
       if (s.isContractor) return Routes.portal;
       return s.hasProject ? Routes.home : Routes.projects;
@@ -420,11 +425,13 @@ class AppGate extends Cubit<GateState> {
   /// Where a phone on the offline plan belongs. Returns [path] to stay there
   /// whatever else is true, or null to carry on with the usual checks.
   String? _localRedirect(GateState s, OfflinePlanState offline, String path) {
+    // Settings, and deleting the account from it, stay open whatever the plan says.
+    final bool atSettings = path == Routes.settings || path == Routes.deleteAccount;
     if (offline.mode == OfflineMode.asking || offline.mode == OfflineMode.uploading) {
-      return path == Routes.settings ? path : Routes.offlineUpload;
+      return atSettings ? path : Routes.offlineUpload;
     }
     // The renewal page stays open here: it is where a full plan is explained.
-    if (s.licenceBlocked) return path == Routes.settings || path == Routes.licenceEnded ? path : Routes.offlinePlan;
+    if (s.licenceBlocked) return atSettings || path == Routes.licenceEnded ? path : Routes.offlinePlan;
     // Upload is offered only once the server stops saying offline.
     if (path == Routes.offlineUpload && offline.mode == OfflineMode.local) return Routes.offlinePlan;
     if (Routes.isOfflinePlan(path)) return path;

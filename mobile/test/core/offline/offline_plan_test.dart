@@ -379,7 +379,16 @@ void main() {
       for (final path in <String>['/sync/pull', '/sync/push', '/sync/upload', '/projects', '/workers', '/approvals', 'https://example.test/x']) {
         expect(plan.blocksPath(path), isTrue, reason: path);
       }
-      for (final path in <String>['/me', '/auth/login', '/auth/logout', '/offline/status', '/offline/devices/refresh']) {
+      // Deleting the account, and signing up anew, must work from an offline-plan phone.
+      for (final path in <String>[
+        '/me',
+        '/auth/login',
+        '/auth/logout',
+        '/auth/register',
+        '/auth/account/deletion',
+        '/offline/status',
+        '/offline/devices/refresh',
+      ]) {
         expect(plan.blocksPath(path), isFalse, reason: path);
       }
     });

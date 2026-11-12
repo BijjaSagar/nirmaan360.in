@@ -1,5 +1,102 @@
 {
   "@@locale": "en",
+  "accountDeleteBusy": "Deleting your account…",
+  "accountDeleteCancelButton": "Cancel the deletion",
+  "accountDeleteCancelled": "Deletion cancelled. Your company stays as it is.",
+  "accountDeleteChanged": "Something changed in your company. Check what will happen, then try again.",
+  "accountDeleteCompanyErases": "You are the only owner of {company}, so deleting your account erases the company: every project, bill, photo, worker and user.",
+  "@accountDeleteCompanyErases": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteCompanyTitle": "Delete your account and company",
+  "accountDeleteCompanyWhen": "It is erased after {date}. Until then the company keeps working, and you can cancel by signing in again and opening Settings, Delete account.",
+  "@accountDeleteCompanyWhen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteConfirmName": "Type {company} to confirm",
+  "@accountDeleteConfirmName": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteExport": "Want a copy first? An owner can export the company's data on the website, under Account, Company data.",
+  "accountDeleteHandOver": "To keep the company going without you, make another member an owner on the website (Team) first, then delete your account here.",
+  "accountDeleteHold": "Hold to delete my account",
+  "accountDeleteLoading": "Checking what will happen",
+  "accountDeleteLocalOnly": "{count, plural, =1{1 record exists only on this phone. It will be erased.} other{{count} records exist only on this phone. They will be erased.}}",
+  "@accountDeleteLocalOnly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeleteMemberNow": "Your sign-in, name, email and mobile number are removed now. You cannot undo this.",
+  "accountDeleteMemberWork": "Work you recorded for {company} — reports, measurements, bills, attendance and photos — stays with the company, shown as “Deleted user”.",
+  "@accountDeleteMemberWork": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteOfflineBody": "Connect and try again.",
+  "accountDeleteOfflineTitle": "Deleting an account needs the internet.",
+  "accountDeleteOthers": "{count, plural, =0{No one else uses this company.} =1{1 other person will lose access.} other{{count} other people will lose access.}}",
+  "@accountDeleteOthers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeletePassword": "Your password",
+  "accountDeletePendingBody": "{company} will be erased after {date}.",
+  "@accountDeletePendingBody": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletePendingTitle": "Your company is set to be erased",
+  "accountDeletePhoneCleared": "This phone is signed out and its Nirmaan360 data is cleared.",
+  "accountDeleteSpoken": "Delete my account",
+  "accountDeleteTaxRecords": "Records of payments your company made to Nirmaan360 are kept, as Indian tax law requires.",
+  "accountDeleteTile": "Delete account",
+  "accountDeleteTileSubtitle": "Remove your sign-in and personal details",
+  "accountDeleteUnsent": "{count, plural, =1{1 item on this phone has not reached the server. It will be lost.} other{{count} items on this phone have not reached the server. They will be lost.}}",
+  "@accountDeleteUnsent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeleteWrongName": "Type the company name exactly as shown.",
+  "accountDeleteWrongPassword": "That password is not right.",
+  "accountDeletedCompanyToast": "Your company will be erased after {date}. Sign in before then to cancel.",
+  "@accountDeletedCompanyToast": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletedToast": "Your account has been deleted.",
   "alertsDashboardEmpty": "No figures for this project yet.",
   "alertsHomeCriticalCount": "{count} critical",
   "@alertsHomeCriticalCount": {
@@ -888,10 +985,10 @@
   "licenceRenewedBody": "You can add and change things again.",
   "licenceRenewedTitle": "Licence renewed",
   "licenceResultNoAnswer": "The server did not answer. Try again in a minute.",
-  "licenceResultNoLicence": "Connected, but this phone could not be given a licence. Check your plan on the Nirmaan360 website, then try again.",
+  "licenceResultNoLicence": "Connected, but this phone could not be given a licence. Your company's owner can check the plan.",
   "licenceResultOffline": "No internet found. Connect to Wi-Fi or mobile data, then try again.",
   "licenceResultPlanSyncs": "Your plan keeps data on the server now, so there is no licence to renew. Upload your data to carry on.",
-  "licenceResultStillEnded": "Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.",
+  "licenceResultStillEnded": "Connected, but the licence is still ended. Your company's owner can check the plan.",
   "licenceScreenTitle": "Renew licence",
   "licenceTryNow": "Try renewing now",
   "licenceTrying": "Asking the server…",
@@ -2195,6 +2292,8 @@
   "shellDiscardConfirm": "Yes, throw away",
   "shellDiscardKeep": "Keep it",
   "shellDiscardTitle": "Throw away this entry?",
+  "shellLinkFailedBody": "Copy the link and open it in your browser.",
+  "shellLinkFailedTitle": "The page did not open",
   "shellOfflineApprovals": "Approvals need network.",
   "shellOfflineDetail": "Entries wait on phone.",
   "shellOfflineLabel": "Offline",
@@ -2255,6 +2354,7 @@
   "shellProjectName": "Project name",
   "shellProjectNameRequired": "Enter a name for the project",
   "shellProjectOffline": "A project can only be created with network. Try again when you have signal.",
+  "shellProjectPlanBody": "This company has reached the number of projects its plan allows.",
   "shellProjectPlanTitle": "Project limit reached",
   "shellProjectStart": "Start date",
   "shellProjectValue": "Contract value (optional)",
@@ -2323,6 +2423,7 @@
   "shellSignInHide": "Hide",
   "shellSignInNetworkBody": "Check your signal and try again.",
   "shellSignInNetworkTitle": "No network",
+  "shellSignInNewCompany": "New company? Create an account",
   "shellSignInOtherUserBody": "This phone has {count} unsent entries from another person. They must sign in and send them first.",
   "@shellSignInOtherUserBody": {
     "placeholders": {
@@ -2353,6 +2454,46 @@
   "@shellSignOutUnsentTitle": {
     "placeholders": {
       "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSignUpBusy": "Creating your account…",
+  "shellSignUpButton": "Create account",
+  "shellSignUpCompany": "Company name",
+  "shellSignUpCompanyMissing": "Enter the company name",
+  "shellSignUpConfirm": "Confirm password",
+  "shellSignUpConsent": "By creating an account you agree to the {terms} and the {privacy}.",
+  "@shellSignUpConsent": {
+    "placeholders": {
+      "terms": {
+        "type": "String"
+      },
+      "privacy": {
+        "type": "String"
+      }
+    }
+  },
+  "shellSignUpEmailInvalid": "Enter an email like name@example.com",
+  "shellSignUpEmailTakenBody": "Sign in with it instead, or use another email.",
+  "shellSignUpEmailTakenTitle": "This email already has an account",
+  "shellSignUpFieldInvalid": "Check this and try again",
+  "shellSignUpHaveAccount": "Already have an account? Sign in",
+  "shellSignUpIntro": "This starts a new company on Nirmaan360 with you as its owner. If your company already uses Nirmaan360, ask your office to invite you instead.",
+  "shellSignUpName": "Your name",
+  "shellSignUpNameMissing": "Enter your name",
+  "shellSignUpPasswordHelper": "At least 8 characters.",
+  "shellSignUpPasswordMismatch": "The two passwords are not the same",
+  "shellSignUpPasswordShort": "Use at least 8 characters",
+  "shellSignUpPhone": "Mobile number (optional)",
+  "shellSignUpPhoneTaken": "This mobile number is used by another account.",
+  "shellSignUpPrivacy": "Privacy policy",
+  "shellSignUpTerms": "Terms",
+  "shellSignUpTitle": "Create an account",
+  "shellSignUpTooLong": "Keep it to {max} characters or fewer",
+  "@shellSignUpTooLong": {
+    "placeholders": {
+      "max": {
         "type": "int"
       }
     }

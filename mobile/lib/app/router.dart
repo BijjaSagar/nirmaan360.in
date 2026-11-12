@@ -9,6 +9,7 @@ import '../features/attendance/view/attendance_screen.dart';
 import '../features/attendance/view/scan_attendance_screen.dart';
 import '../features/attendance/view/selfie_screen.dart';
 import '../features/auth/view/sign_in_screen.dart';
+import '../features/auth/view/sign_up_screen.dart';
 import '../features/contractor_control/view/contract_detail_screen.dart';
 import '../features/contractor_control/view/contractor_screen.dart';
 import '../features/contractor_control/view/payment_form_screen.dart';
@@ -50,6 +51,7 @@ import '../features/projects/view/boq_form_screen.dart';
 import '../features/projects/view/boq_screen.dart';
 import '../features/projects/view/project_form_screen.dart';
 import '../features/projects/view/project_picker_screen.dart';
+import '../features/settings/view/account_deletion_screen.dart';
 import '../features/settings/view/settings_screen.dart';
 import '../features/site_alerts/bloc/site_alerts_cubit.dart';
 import '../features/site_alerts/view/site_dashboard_screen.dart';
@@ -89,6 +91,7 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
     redirect: (context, state) => gate.redirect(state.uri),
     routes: <RouteBase>[
       _route(Routes.signIn, (_) => const SignInScreen()),
+      _route(Routes.signUp, (_) => const SignUpScreen()),
       _route(
         Routes.projects,
         (_) => const ProjectPickerScreen(),
@@ -128,6 +131,7 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         routes: <RouteBase>[
           _route('notifications', (_) => const NotificationSettingsScreen()),
           _route('announcements', (s) => AnnouncementsScreen(highlightId: int.tryParse(s.uri.queryParameters['id'] ?? ''))),
+          _route('delete-account', (_) => const AccountDeletionScreen()),
         ],
       ),
       // The contractor portal: all a contractor login can open. `payments`,

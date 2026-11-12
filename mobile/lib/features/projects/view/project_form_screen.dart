@@ -115,7 +115,8 @@ class _ProjectFormViewState extends State<_ProjectFormView> {
   ({String title, String body})? _message(ProjectFormState state, bool online, AppLocalizations t) {
     return switch (state.problem) {
       ProjectFormProblem.offline => (title: t.shellSignInNetworkTitle, body: t.shellProjectOffline),
-      ProjectFormProblem.planLimit => (title: t.shellProjectPlanTitle, body: state.planMessage ?? ''),
+      // In the app's own words: the server's text invites an upgrade, which the app never does.
+      ProjectFormProblem.planLimit => (title: t.shellProjectPlanTitle, body: t.shellProjectPlanBody),
       ProjectFormProblem.server => (title: t.shellSignInServerTitle, body: t.shellSignInServerBody),
       null => online ? null : (title: t.shellSignInNetworkTitle, body: t.shellProjectOffline),
     };

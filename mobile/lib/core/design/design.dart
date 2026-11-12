@@ -15,6 +15,7 @@ export 'controls/glove_keypad.dart';
 export 'controls/glove_stepper.dart' show GloveStepper;
 export 'controls/glove_text_field.dart';
 export 'controls/hajiri_segment.dart';
+export 'controls/hold_to_confirm.dart';
 export 'controls/n360_chip.dart';
 export 'controls/picto_choice.dart';
 export 'controls/top_bar.dart';

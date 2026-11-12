@@ -60,10 +60,12 @@ things it does not yet say: the location read when an attendance photo is taken,
 notification token sent for alerts. The text can be changed in Platform admin without a deploy
 (site setting `privacy_text`).
 
-**App access:** All functionality is behind sign-in. Give reviewers a working email and
-password for a demo company on nirmaan360.in, with at least one project, and note:
-"Choose a project, then open Daily report, Measure and Approvals." Create that demo company on
-the live site yourself; it must stay working while the app is in review and afterwards.
+**App access:** All functionality is behind sign-in. A new company can also be created in the
+app (Sign in → "New company? Create an account"). Give reviewers a working email and password
+for a demo company on nirmaan360.in, with at least one project, and note: "Choose a project,
+then open Daily report, Measure and Approvals. To try account deletion, create a new company in
+the app first; please do not delete the demo login." Create that demo company on the live site
+yourself; it must stay working while the app is in review and afterwards.
 
 **Ads:** No ads.
 
@@ -81,15 +83,19 @@ contractor payments for a company's own books; it does not lend, pay, trade or h
 sync library (WorkManager) declares the "short service" type. If Play asks, answer that it is
 used by WorkManager for background upload of saved entries.
 
-**Data safety.** Data is encrypted in transit (HTTPS). Users can ask for deletion through
-`https://nirmaan360.in/contact` (the privacy policy says so). No data is sold or shared with
-third parties; Firebase delivers notifications as a service provider, which Play does not count
-as sharing.
+**Data safety.** Data is encrypted in transit (HTTPS). The app lets people create an account,
+so it also lets them delete it: Settings → Delete account. The web link for deletion is
+`https://nirmaan360.in/delete-account` (it must be live before submitting). A member's account
+is deleted at once; the only owner's company is erased after 30 days. Some data is kept for
+legal reasons: records of payments to Nirmaan360, as Indian tax law requires. No data is sold or
+shared with third parties; Firebase delivers notifications as a service provider, which Play
+does not count as sharing.
 
 | Data type | Collected | Why | Required |
 |---|---|---|---|
 | Name | Yes | Account management, App functionality | Required |
 | Email address | Yes | Account management (sign-in) | Required |
+| Phone number | Yes, if given at sign-up | Account management | Optional |
 | Precise location | Yes, once per attendance photo, never in the background | App functionality (where an attendance photo was taken) | Required for photo attendance |
 | Photos | Yes | App functionality (site, report, bill and attendance photos) | Optional |
 | Other user-generated content | Yes (reports, measurements, remarks, bills) | App functionality | Required |
@@ -116,7 +122,7 @@ is never read in the background and the app does not request background location
 
 > Nirmaan360 puts your construction site in your pocket: from the day's work to the bill.
 >
-> Made for site engineers, project managers and contractors who already use Nirmaan360 on the web. Sign in with the account your company gives you.
+> Made for site engineers, project managers and contractors who already use Nirmaan360 on the web. Sign in with the account your company gives you, or start a new company in the app.
 >
 > DAILY REPORT IN A MINUTE
 > Weather, workers by trade, work done against BOQ lines, and photos. Copy yesterday's labour with one tap.
@@ -151,7 +157,7 @@ is never read in the background and the app does not request background location
 
 > Nirmaan360 मुळे तुमची बांधकाम साइट तुमच्या खिशात येते: दिवसाच्या कामापासून बिलापर्यंत.
 >
-> वेबवर Nirmaan360 वापरणाऱ्या साइट इंजिनियर, प्रोजेक्ट मॅनेजर आणि ठेकेदारांसाठी. तुमच्या कंपनीने दिलेल्या खात्याने साइन इन करा.
+> वेबवर Nirmaan360 वापरणाऱ्या साइट इंजिनियर, प्रोजेक्ट मॅनेजर आणि ठेकेदारांसाठी. तुमच्या कंपनीने दिलेल्या खात्याने साइन इन करा, किंवा ॲपमध्येच नवीन कंपनी सुरू करा.
 >
 > एका मिनिटात दैनिक अहवाल
 > हवामान, कामानुसार मजूर, BOQ नुसार झालेले काम आणि फोटो. कालची मजूर संख्या एका टॅपमध्ये.
@@ -186,7 +192,7 @@ is never read in the background and the app does not request background location
 
 > Nirmaan360 से आपकी कंस्ट्रक्शन साइट आपकी जेब में: दिन के काम से बिल तक।
 >
-> वेब पर Nirmaan360 इस्तेमाल करने वाले साइट इंजीनियर, प्रोजेक्ट मैनेजर और ठेकेदारों के लिए। अपनी कंपनी से मिले खाते से साइन इन करें।
+> वेब पर Nirmaan360 इस्तेमाल करने वाले साइट इंजीनियर, प्रोजेक्ट मैनेजर और ठेकेदारों के लिए। अपनी कंपनी से मिले खाते से साइन इन करें, या ऐप में ही नई कंपनी शुरू करें।
 >
 > एक मिनट में दैनिक रिपोर्ट
 > मौसम, काम के हिसाब से मज़दूर, BOQ के हिसाब से हुआ काम और फ़ोटो। कल की मज़दूर संख्या एक टैप में।

@@ -2,13 +2,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/app_gate.dart';
+import '../../../app/routes.dart';
 import '../../../app/widgets/brand_mark.dart';
 import '../../../app/widgets/language_switch.dart';
+import '../../../app/widgets/show_password.dart';
+import '../../../core/api/account_models.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../offline_plan/view/widgets/licence_card.dart' show licenceDate;
 import '../bloc/sign_in_cubit.dart';
 
 /// The first screen anyone sees. Language first, in each language's own
@@ -44,9 +49,19 @@ class _SignInViewState extends State<_SignInView> {
   bool _showPassword = false;
   int _shakeTick = 0;
 
-  /// Height of everything except the graphic: language switch, brand row and
-  /// the form card, at normal text size.
-  static const double _fixedHeight = 450;
+  /// Set when this screen opens because the account was just deleted: it says
+  /// so once, and never again.
+  AccountDeletionResult? _deleted;
+
+  /// Height of everything except the graphic: language switch, brand row, the
+  /// form card and the new-company button under it, at normal text size.
+  static const double _fixedHeight = 450 + N360Size.tap + N360Space.md;
+
+  @override
+  void initState() {
+    super.initState();
+    _deleted = context.read<AppGate>().takeAccountDeletedNotice();
+  }
 
   @override
   void dispose() {
@@ -111,7 +126,13 @@ class _SignInViewState extends State<_SignInView> {
     final MediaQueryData media = MediaQuery.of(context);
     final double usable =
         media.size.height - media.padding.top - media.viewPadding.bottom;
-    final double room = usable - _fixedHeight - (expired ? 110 : 0);
+    final String? deletedText = switch (_deleted) {
+      null => null,
+      AccountDeletionResult(scheduled: true, :final DateTime eraseAfter?) =>
+        t.accountDeletedCompanyToast(licenceDate(eraseAfter, locale)),
+      _ => t.accountDeletedToast,
+    };
+    final double room = usable - _fixedHeight - (expired ? 110 : 0) - (deletedText != null ? 110 : 0);
 
     return BlocConsumer<SignInCubit, SignInState>(
       listenWhen: (previous, next) =>
@@ -157,7 +178,15 @@ class _SignInViewState extends State<_SignInView> {
                               t.shellSignInWelcome,
                             ),
                           ),
-                          if (expired) ...<Widget>[
+                          if (deletedText != null) ...<Widget>[
+                            const SizedBox(height: N360Space.sm),
+                            PaperToast(
+                              key: const ValueKey<String>('sign-in-account-deleted'),
+                              message: deletedText,
+                              kind: PaperToastKind.success,
+                            ),
+                          ],
+                          if (expired && deletedText == null) ...<Widget>[
                             const SizedBox(height: N360Space.sm),
                             PaperToast(
                               message: t.shellSignInExpired,
@@ -191,7 +220,7 @@ class _SignInViewState extends State<_SignInView> {
                                 ? t.shellSignInPasswordRequired
                                 : null,
                             onSubmitted: (_) => _submit(),
-                            suffix: _ShowPassword(
+                            suffix: ShowPasswordToggle(
                               shown: _showPassword,
                               showLabel: t.shellSignInShow,
                               hideLabel: t.shellSignInHide,
@@ -224,6 +253,14 @@ class _SignInViewState extends State<_SignInView> {
                         ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: N360Space.md),
+                  GloveButton(
+                    key: const ValueKey<String>('sign-in-new-company'),
+                    label: t.shellSignInNewCompany,
+                    kind: GloveButtonKind.ghost,
+                    fullWidth: true,
+                    onPressed: state.submitting ? null : () => context.push(Routes.signUp),
                   ),
                 ],
               ),
@@ -263,63 +300,6 @@ class _Graphic extends StatelessWidget {
             height: height - N360Space.lg,
             child: const ExcludeSemantics(
               child: BuildingProgressArt(fraction: 0.62),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The eye and its word, as wide as a thumb.
-class _ShowPassword extends StatelessWidget {
-  const _ShowPassword({
-    required this.shown,
-    required this.showLabel,
-    required this.hideLabel,
-    required this.onToggle,
-  });
-
-  final bool shown;
-  final String showLabel;
-  final String hideLabel;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final String label = shown ? hideLabel : showLabel;
-    return Semantics(
-      container: true,
-      button: true,
-      label: label,
-      onTap: onToggle,
-      child: ExcludeSemantics(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (_) => N360Haptics.select(),
-          onTap: onToggle,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: 72,
-              minHeight: N360Size.tap,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: N360Space.sm),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(
-                    shown
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    size: N360IconSize.button,
-                    color: N360Colors.ink2,
-                  ),
-                  const SizedBox(width: N360Space.xs),
-                  Text(label, style: N360Type.fit(N360Type.label, label)),
-                ],
-              ),
             ),
           ),
         ),

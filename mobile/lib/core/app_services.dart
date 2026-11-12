@@ -4,6 +4,7 @@ import 'dart:ui' show PlatformDispatcher, Rect;
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'api/api_failure.dart';
 import 'dart:async';
@@ -53,6 +54,17 @@ import 'session/current_user.dart';
 /// Offers a file to the person: the file, a subject, and where the button is.
 typedef ShareFile = Future<void> Function(String path, String subject, Rect? origin);
 
+/// Opens a web page outside the app. False when the phone could not.
+typedef OpenLink = Future<bool> Function(Uri uri);
+
+Future<bool> _openInBrowser(Uri uri) async {
+  try {
+    return await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } on Object {
+    return false;
+  }
+}
+
 /// Composition root for the data layer.
 ///
 /// Call [start] once at app start-up. Nothing there needs the network.
@@ -95,6 +107,7 @@ class AppServices {
     offlineUploader = OfflineUploader(context, dpr);
     auth.beforeSignOut = push.forgetThisPhone;
     auth.afterLocaleChange = push.languageChanged;
+    auth.afterAccountDeleted = push.forgetLocally;
   }
 
   /// Production wiring: real database, secure token storage, Dio.
@@ -294,6 +307,10 @@ class AppServices {
 
   /// Hands a file to the system share sheet.
   final ShareFile shareFile;
+
+  /// Opens the terms, the privacy policy and other pages of the website.
+  /// Tests swap it to see what was opened.
+  OpenLink openLink = _openInBrowser;
 
   /// Repositories' shared context, for code that needs the raw pieces.
   final DataContext context;

@@ -591,7 +591,8 @@ class FakeApi implements NirmaanApi {
     required String deviceName,
   }) async {
     if (offline) throw const OfflineFailure();
-    if (password == 'wrong') {
+    final String? registered = _registered[email.trim().toLowerCase()];
+    if (password == 'wrong' || (registered != null && registered != password)) {
       throw const ValidationFailure(
         'These details do not match our records.',
         errors: {
@@ -606,6 +607,187 @@ class FakeApi implements NirmaanApi {
   Future<void> logout() async {
     _guard();
     logoutCalls++;
+  }
+
+  // Signing up ----------------------------------------------------------------
+
+  /// Every `POST /auth/register` body that reached the server.
+  final List<Map<String, Object?>> registerCalls = [];
+
+  /// Emails and mobile numbers that already have an account, lowercased.
+  final Set<String> takenEmails = {};
+  final Set<String> takenPhones = {};
+
+  /// The next `register` throws this without touching server state.
+  ApiFailure? failNextRegister;
+
+  /// The next `register` creates the account, then the response is lost.
+  bool loseNextRegisterResponse = false;
+
+  /// Passwords of accounts made here, by email, so a login after a lost
+  /// response finds the account.
+  final Map<String, String> _registered = {};
+
+  @override
+  Future<LoginResult> register({
+    required String company,
+    required String name,
+    required String email,
+    String? phone,
+    required String password,
+    required String passwordConfirmation,
+    required String deviceName,
+    required String locale,
+  }) async {
+    if (offline) throw const OfflineFailure();
+    final ApiFailure? failure = failNextRegister;
+    if (failure != null) {
+      failNextRegister = null;
+      throw failure;
+    }
+    registerCalls.add(<String, Object?>{
+      'company': company,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+      'device_name': deviceName,
+      'locale': locale,
+    });
+    final String key = email.trim().toLowerCase();
+    if (takenEmails.contains(key)) {
+      throw const ValidationFailure('The given data was invalid.', errors: {
+        'email': ['This email already has an account.'],
+      });
+    }
+    if (phone != null && takenPhones.contains(phone)) {
+      throw const ValidationFailure('The given data was invalid.', errors: {
+        'phone': ['This mobile number already has an account.'],
+      });
+    }
+    takenEmails.add(key);
+    if (phone != null) takenPhones.add(phone);
+    _registered[key] = password;
+    user = _ownerOf(company: company, name: name, email: key, locale: locale);
+    if (loseNextRegisterResponse) {
+      loseNextRegisterResponse = false;
+      throw const OfflineFailure('Response lost');
+    }
+    return LoginResult(token: 'fake-signup-token', user: user);
+  }
+
+  /// A brand-new company's only owner: every permission, no projects yet.
+  Row _ownerOf({required String company, required String name, required String email, required String locale}) {
+    final Map<String, bool> can = {
+      for (final String key in (user['can'] as Map).keys.cast<String>()) key: true,
+    };
+    return {
+      'id': 900 + _registered.length,
+      'name': name,
+      'email': email,
+      'role': 'owner',
+      'role_label': 'Owner',
+      'locale': locale,
+      'organization': {
+        'id': 90,
+        'name': company,
+        'features': ['site', 'measurement', 'labour', 'petty_cash'],
+      },
+      'can': can,
+    };
+  }
+
+  // Deleting an account -------------------------------------------------------
+
+  /// What `GET /auth/account/deletion` answers. A member of a company of four by default.
+  Row deletionPreview = {
+    'mode': 'account',
+    'company_name': 'Sahyadri Infra Pvt Ltd',
+    'other_people': 3,
+    'requires_confirm_name': false,
+    'grace_days': 30,
+    'erase_after': null,
+    'pending': null,
+  };
+
+  int deletionPreviewReads = 0;
+
+  /// Every `POST /auth/account/deletion` that reached the server.
+  final List<({AccountDeletionMode mode, String password, String? confirmName})> deleteAccountCalls = [];
+
+  /// The password the server checks deletion against.
+  String accountPassword = 'secret';
+
+  /// The next `deleteAccount` throws this without deleting anything.
+  ApiFailure? failNextDeleteAccount;
+
+  int cancelDeletionCalls = 0;
+
+  /// The company is the only owner's and a deletion is set for this instant.
+  void scheduleCompanyDeletion({String eraseAfter = '2026-12-09T10:00:00+05:30', bool canCancel = true}) {
+    deletionPreview = {
+      ...deletionPreview,
+      'mode': 'company',
+      'requires_confirm_name': true,
+      'erase_after': eraseAfter,
+      'pending': {'erase_after': eraseAfter, 'can_cancel': canCancel},
+    };
+  }
+
+  @override
+  Future<AccountDeletionPreview> accountDeletionPreview() async {
+    _guard();
+    deletionPreviewReads++;
+    return AccountDeletionPreview.fromJson(_copy(deletionPreview));
+  }
+
+  @override
+  Future<AccountDeletionResult> deleteAccount({
+    required AccountDeletionMode mode,
+    required String password,
+    String? confirmName,
+  }) async {
+    _guard();
+    final ApiFailure? failure = failNextDeleteAccount;
+    if (failure != null) {
+      failNextDeleteAccount = null;
+      throw failure;
+    }
+    deleteAccountCalls.add((mode: mode, password: password, confirmName: confirmName));
+    if (mode.name != deletionPreview['mode']) {
+      throw const ServerFailure('Something changed.', statusCode: 409, code: 'deletion_mode_changed');
+    }
+    if (password != accountPassword) {
+      throw const ValidationFailure('The given data was invalid.', errors: {
+        'password': ['That password is not right.'],
+      });
+    }
+    if (mode == AccountDeletionMode.company && confirmName != deletionPreview['company_name']) {
+      throw const ValidationFailure('The given data was invalid.', errors: {
+        'confirm_name': ['Type the company name exactly as shown.'],
+      });
+    }
+    // Every token of this person is revoked: whatever the phone asks next is a 401.
+    unauthorized = true;
+    if (mode == AccountDeletionMode.company) {
+      final String eraseAfter = (deletionPreview['erase_after'] as String?) ?? '2026-12-09T10:00:00+05:30';
+      return AccountDeletionResult.fromJson({'result': 'scheduled', 'erase_after': eraseAfter});
+    }
+    return const AccountDeletionResult(scheduled: false);
+  }
+
+  @override
+  Future<bool> cancelCompanyDeletion() async {
+    _guard();
+    cancelDeletionCalls++;
+    final Object? pending = deletionPreview['pending'];
+    if (pending is! Map) return false;
+    if (pending['can_cancel'] != true) {
+      throw const ServerFailure('Only a company owner can do this.', statusCode: 403);
+    }
+    deletionPreview = {...deletionPreview, 'pending': null};
+    return true;
   }
 
   @override

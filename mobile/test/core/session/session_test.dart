@@ -1,10 +1,14 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/core/api/api_failure.dart';
+import 'package:nirmaan360/core/api/nirmaan_api.dart';
+import 'package:nirmaan360/core/config/app_config.dart';
 import 'package:nirmaan360/core/db/app_database.dart';
 import 'package:nirmaan360/core/session/current_user.dart';
 import 'package:nirmaan360/core/session/session_controller.dart';
 import 'package:nirmaan360/core/session/token_store.dart';
 import 'package:nirmaan360/core/sync/failures.dart';
+import 'package:nirmaan360/features/auth/data/auth_repository.dart';
 import 'package:nirmaan360/features/dpr/data/dpr_repository.dart';
 
 import '../../support/test_app.dart';
@@ -209,6 +213,163 @@ void main() {
       await app.services.issues.raise(projectId: 1, title: 'Crack');
       await app.services.auth.signOut(discardUnsent: true);
       expect(await app.db.select(app.db.outbox).get(), isEmpty);
+    });
+  });
+
+  group('sign up', () {
+    Future<SignInResult> signUp(TestApp on) => on.services.auth.signUp(
+          company: 'Deccan Builders',
+          name: 'Asha Patil',
+          email: 'asha@deccan.test',
+          password: 'site-office-8',
+          passwordConfirmation: 'site-office-8',
+          locale: 'hi',
+        );
+
+    test('starts the session as the new owner and runs the first pull', () async {
+      final fresh = await TestApp.create(seed: false, signedIn: false);
+      addTearDown(fresh.dispose);
+
+      final SignInResult result = await signUp(fresh);
+
+      expect(result.user.role, 'owner');
+      expect(result.user.organizationName, 'Deccan Builders');
+      expect(result.firstSync.isSuccess, isTrue);
+      expect(fresh.services.session.current.isSignedIn, isTrue);
+      expect(await fresh.tokens.read(), 'fake-signup-token');
+      expect(fresh.api.pullCalls, isNotEmpty);
+      expect(fresh.api.registerCalls.single['device_name'], AppConfig.deviceName);
+    });
+
+    test("clears the last person's data when nothing of theirs is unsent", () async {
+      await app.sync();
+      expect(await app.db.select(app.db.projects).get(), isNotEmpty);
+      app.services.session.markExpired();
+      // The new company has no project on the server yet.
+      app.api.projects.clear();
+
+      await signUp(app);
+
+      expect(app.services.auth.currentUser!.email, 'asha@deccan.test');
+      // The demo company's projects belonged to the last person, not this new company.
+      expect(await app.db.select(app.db.projects).get(), isEmpty);
+    });
+
+    test("refuses, before asking the server, while another person's work is unsent", () async {
+      await app.services.issues.raise(projectId: 1, title: 'Crack');
+      app.services.session.markExpired();
+
+      await expectLater(signUp(app), throwsA(isA<DifferentUserFailure>().having((e) => e.unsentCount, 'count', 1)));
+
+      expect(app.api.registerCalls, isEmpty);
+      expect(await app.db.select(app.db.issues).get(), hasLength(1));
+    });
+
+    test('a refusal from the server changes nothing here', () async {
+      final fresh = await TestApp.create(seed: false, signedIn: false);
+      addTearDown(fresh.dispose);
+      fresh.api.takenEmails.add('asha@deccan.test');
+
+      await expectLater(signUp(fresh), throwsA(isA<ValidationFailure>()));
+      expect(fresh.services.session.current.isSignedIn, isFalse);
+      expect(await fresh.tokens.read(), isNull);
+    });
+  });
+
+  group('delete account', () {
+    test('clears every table, the files, the token and the user, and keeps the language', () async {
+      await app.services.auth.setLocale('mr');
+      await app.services.issues.raise(projectId: 1, title: 'Crack');
+      await app.sync();
+      final attachments = app.services.context.attachments;
+
+      final result = await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+
+      expect(result.scheduled, isFalse);
+      expect(app.services.session.current.status, SessionStatus.signedOut);
+      expect(app.services.session.current.user, isNull);
+      expect(await app.tokens.read(), isNull);
+      expect(await app.db.readMeta(MetaKey.sessionUser), isNull);
+      for (final table in app.db.allTables) {
+        if (table == app.db.keyValues) continue;
+        expect(await app.db.select(table).get(), isEmpty, reason: table.actualTableName);
+      }
+      expect(await app.db.readMeta(MetaKey.locale), 'mr');
+      expect(attachments, isNotNull);
+      expect(app.api.logoutCalls, 0);
+    });
+
+    test('refuses while work is unsent, unless losing it was confirmed', () async {
+      await app.services.issues.raise(projectId: 1, title: 'Crack');
+
+      await expectLater(
+        app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret'),
+        throwsA(isA<UnsentWorkFailure>().having((e) => e.count, 'count', 1)),
+      );
+      expect(app.api.deleteAccountCalls, isEmpty);
+      expect(app.services.session.current.isSignedIn, isTrue);
+
+      await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret', discardUnsent: true);
+      expect(await app.db.select(app.db.issues).get(), isEmpty);
+      expect(app.services.session.current.status, SessionStatus.signedOut);
+    });
+
+    test('a refusal from the server leaves everything as it was', () async {
+      await expectLater(
+        app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'wrong'),
+        throwsA(isA<ValidationFailure>()),
+      );
+      app.api.offline = true;
+      await expectLater(
+        app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret'),
+        throwsA(isA<OfflineFailure>()),
+      );
+
+      expect(app.services.session.current.isSignedIn, isTrue);
+      expect(await app.tokens.read(), 'fake-token');
+      expect(await app.db.select(app.db.projects).get(), isNotEmpty);
+    });
+
+    test('the only owner gets the date the company goes', () async {
+      app.api.scheduleCompanyDeletion();
+      app.api.deletionPreview = {...app.api.deletionPreview, 'pending': null};
+
+      final result = await app.services.auth.deleteAccount(
+        mode: AccountDeletionMode.company,
+        password: 'secret',
+        confirmName: 'Sahyadri Infra Pvt Ltd',
+      );
+
+      expect(result.scheduled, isTrue);
+      expect(result.eraseAfter, DateTime.parse('2026-12-09T10:00:00+05:30'));
+      expect(app.services.session.current.status, SessionStatus.signedOut);
+    });
+
+    test('a background 401 in between still ends signed out, not expired', () async {
+      await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+      // Anything the phone asks with the old token is refused now.
+      await expectLater(app.api.me(), throwsA(isA<AuthExpired>()));
+      expect(app.services.session.current.status, SessionStatus.signedOut);
+    });
+
+    test('on the offline plan the local records go too, and the plan is left', () async {
+      final local = await TestApp.create(seed: false, signedIn: false, api: FakeApi()..offlineCompany = true);
+      addTearDown(local.dispose);
+      await local.services.auth.signIn(email: 'owner@example.test', password: 'secret');
+      await local.db.into(local.db.projects).insert(ProjectsCompanion.insert(id: const Value(-1), code: 'L1', name: 'Local site'));
+      expect(local.services.offlinePlan.isLocalOnly, isTrue);
+
+      await expectLater(
+        local.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret'),
+        throwsA(isA<UnsentWorkFailure>().having((e) => e.count, 'count', 1)),
+      );
+      await local.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret', discardUnsent: true);
+
+      expect(await local.db.select(local.db.projects).get(), isEmpty);
+      expect(local.services.offlinePlan.isLocalOnly, isFalse);
+      expect(await local.db.readMeta(MetaKey.offlinePlan), isNull);
+      expect(local.services.session.current.status, SessionStatus.signedOut);
+      expect(local.services.session.current.user, isNull);
     });
   });
 

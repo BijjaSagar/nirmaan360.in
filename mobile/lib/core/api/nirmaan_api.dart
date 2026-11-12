@@ -1,5 +1,9 @@
 import 'dart:typed_data';
 
+import 'account_models.dart';
+
+export 'account_models.dart';
+
 /// One item in `POST /sync/push`.
 class PushItem {
   const PushItem({
@@ -134,6 +138,35 @@ abstract interface class NirmaanApi {
   });
 
   Future<void> logout();
+
+  /// `POST /auth/register`: starts a new company with this person as its
+  /// owner and signs them in. The reply is the same `{token, user}` as login.
+  /// No plan is sent: the server picks it.
+  Future<LoginResult> register({
+    required String company,
+    required String name,
+    required String email,
+    String? phone,
+    required String password,
+    required String passwordConfirmation,
+    required String deviceName,
+    required String locale,
+  });
+
+  /// `GET /auth/account/deletion`: what deleting this account would do.
+  Future<AccountDeletionPreview> accountDeletionPreview();
+
+  /// `POST /auth/account/deletion`. On success the token is already revoked.
+  /// A 409 with code `deletion_mode_changed` means [mode] is no longer right.
+  Future<AccountDeletionResult> deleteAccount({
+    required AccountDeletionMode mode,
+    required String password,
+    String? confirmName,
+  });
+
+  /// `DELETE /auth/account/deletion`: calls off a pending company deletion.
+  /// True when one was cancelled, false when nothing was pending.
+  Future<bool> cancelCompanyDeletion();
 
   /// `POST /devices`: this phone's FCM token, for the signed-in person.
   /// Registering the same token again updates the row, even for a new owner.

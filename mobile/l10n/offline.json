@@ -438,9 +438,9 @@
     "hi": "सर्वर ने जवाब नहीं दिया। एक मिनट बाद फिर कोशिश करें।"
   },
   "licenceResultStillEnded": {
-    "en": "Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.",
-    "mr": "जोडले गेले, पण परवाना अजूनही संपलेला आहे. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.",
-    "hi": "जुड़ गया, पर लाइसेंस अभी भी समाप्त है। Nirmaan360 वेबसाइट पर अपना प्लान जाँचें, फिर दोबारा कोशिश करें।"
+    "en": "Connected, but the licence is still ended. Your company's owner can check the plan.",
+    "mr": "जोडले गेले, पण परवाना अजूनही संपलेला आहे. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.",
+    "hi": "जुड़ गया, पर लाइसेंस अभी भी समाप्त है। आपकी कंपनी के मालिक प्लान जाँच सकते हैं।"
   },
   "licenceRenewedTitle": {
     "en": "Licence renewed",
@@ -498,8 +498,8 @@
     "hi": "आपका प्लान अब सर्वर पर डेटा रखता है, इसलिए नवीनीकरण के लिए कोई लाइसेंस नहीं है। आगे बढ़ने के लिए अपना डेटा अपलोड करें।"
   },
   "licenceResultNoLicence": {
-    "en": "Connected, but this phone could not be given a licence. Check your plan on the Nirmaan360 website, then try again.",
-    "mr": "जोडले गेले, पण या फोनला परवाना देता आला नाही. Nirmaan360 वेबसाइटवर तुमचा प्लॅन तपासा आणि पुन्हा प्रयत्न करा.",
-    "hi": "जुड़ गया, पर इस फ़ोन को लाइसेंस नहीं दिया जा सका। Nirmaan360 वेबसाइट पर अपना प्लान जाँचें, फिर दोबारा कोशिश करें।"
+    "en": "Connected, but this phone could not be given a licence. Your company's owner can check the plan.",
+    "mr": "जोडले गेले, पण या फोनला परवाना देता आला नाही. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.",
+    "hi": "जुड़ गया, पर इस फ़ोन को लाइसेंस नहीं दिया जा सका। आपकी कंपनी के मालिक प्लान जाँच सकते हैं।"
   }
 }

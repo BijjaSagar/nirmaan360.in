@@ -33,6 +33,26 @@ Single records and plain lists are wrapped in `data`. Paginated lists use `?page
 
 `POST /auth/login` `{email, password, device_name}` returns `{token, user}`. `GET /me` returns `{user}`.
 
+`POST /auth/register` `{company, name, email, phone?, password, password_confirmation, device_name, locale}` starts a new company with this person as its only owner and returns 201 `{token, user}`, the same shape as login. It sits outside `auth:sanctum` with its own throttle (`throttle:5,1,signup`), so a refused sign-up never uses up the login counter. The app sends no plan and shows no plan, price or trial: the server picks the plan. 422 `errors.email` means the email is taken or may not start a company; `errors.phone` means the mobile number is taken. The app sends the email trimmed and lowercased.
+
+A lost reply is not retried blindly: when an attempt got no answer (offline, or a 5xx) and the next attempt with the same email is told the email is taken, the app signs in with the same email and password instead, which is how it finds out the first attempt went through. There is no `client_uuid` for sign-up; the email is the key.
+
+#### Deleting an account
+
+All three are inside `auth:sanctum` and under `/auth/`, so a phone on the offline plan reaches them, and the server lets a contractor login through. The server decides the mode; the app shows it and sends it back.
+
+- `GET /auth/account/deletion` returns `{data: {mode: "account"|"company", company_name, other_people, requires_confirm_name, grace_days, erase_after, pending: null|{erase_after, can_cancel}}}`. `account` is a member, or an owner while another active owner remains: the sign-in and personal details go at once and the work stays with the company as "Deleted user". `company` is the only active owner: the company is erased after `grace_days`, cancellable by signing in again.
+- `POST /auth/account/deletion` `{mode, password, confirm_name when mode is company}`.
+  - 200 `{data: {result: "deleted"}}`: the bearer token is already revoked. The app never calls `/auth/logout` after it.
+  - 200 `{data: {result: "scheduled", erase_after}}`: every token of this person is revoked.
+  - 409 `{code: "deletion_mode_changed"}`: the mode is no longer the one sent. The app says so and reads the preview again.
+  - 422 `errors.password` or `errors.confirm_name`. 429 after 5 a minute, on its own counter.
+- `DELETE /auth/account/deletion` cancels a pending company deletion: 200 `{data: {result: "cancelled"|"none"}}`, 403 for anyone but an owner.
+
+The sign-up consent line and Settings → Privacy policy open `/terms` and `/privacy` on the site the API belongs to (`AppConfig.siteUrl`), in the phone's browser, through `url_launcher` (BSD-3-Clause) pinned at 6.3.3. The Android manifest declares the `https` VIEW query. When the phone cannot open it, the address is shown with a Copy button.
+
+After a deletion the app drops its push token locally only (the server already removed `device_tokens`, and `DELETE /devices` would get a 401), wipes every table and file, the offline plan's data included, and clears the session, keeping only the language.
+
 ```json
 {
   "id": 4, "name": "Sachin More", "email": "engineer@demo.test",
@@ -42,7 +62,7 @@ Single records and plain lists are wrapped in `data`. Paginated lists use `?page
 }
 ```
 
-`can` lists exactly: `project.view, boq.view, dpr.view, dpr.create, dpr.approve, issue.view, issue.manage, attendance.view, attendance.manage, worker.view, worker.manage, petty_cash.view, petty_cash.manage, measurement.view, measurement.create, measurement.approve, ra_bill.view, ra_bill.approve`.
+`can` is the server's `UserPresenter` list: 46 permission keys, each `true` or `false`. The app reads only the keys it uses and treats a missing key as `false`.
 
 ### REST endpoints
 

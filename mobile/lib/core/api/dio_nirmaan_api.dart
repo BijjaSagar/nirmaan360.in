@@ -99,6 +99,76 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
+  Future<LoginResult> register({
+    required String company,
+    required String name,
+    required String email,
+    String? phone,
+    required String password,
+    required String passwordConfirmation,
+    required String deviceName,
+    required String locale,
+  }) async {
+    final body = await _call(
+      () => _dio.post(
+        '/auth/register',
+        data: {
+          'company': company,
+          'name': name,
+          'email': email,
+          'phone': ?phone,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+          'device_name': deviceName,
+          'locale': locale,
+        },
+      ),
+      treat401AsExpired: false,
+    );
+    return LoginResult(
+      token: body['token'] as String,
+      user: (body['user'] as Map).cast<String, dynamic>(),
+    );
+  }
+
+  @override
+  Future<AccountDeletionPreview> accountDeletionPreview() async {
+    final body = await _call(() => _dio.get('/auth/account/deletion'));
+    return AccountDeletionPreview.fromJson(_data(body));
+  }
+
+  @override
+  Future<AccountDeletionResult> deleteAccount({
+    required AccountDeletionMode mode,
+    required String password,
+    String? confirmName,
+  }) async {
+    final body = await _call(
+      () => _dio.post(
+        '/auth/account/deletion',
+        data: {
+          'mode': mode.name,
+          'password': password,
+          if (mode == AccountDeletionMode.company) 'confirm_name': confirmName ?? '',
+        },
+      ),
+    );
+    return AccountDeletionResult.fromJson(_data(body));
+  }
+
+  @override
+  Future<bool> cancelCompanyDeletion() async {
+    final body = await _call(() => _dio.delete('/auth/account/deletion'));
+    return _data(body)['result'] == 'cancelled';
+  }
+
+  /// The `data` object of a reply, or an empty map.
+  static Map<String, dynamic> _data(Map<String, dynamic> body) {
+    final Object? data = body['data'];
+    return data is Map ? data.cast<String, dynamic>() : const <String, dynamic>{};
+  }
+
+  @override
   Future<DeviceRegistration> registerDevice({
     required String token,
     required String platform,

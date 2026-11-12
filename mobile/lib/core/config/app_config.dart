@@ -5,6 +5,14 @@ abstract final class AppConfig {
     defaultValue: 'https://nirmaan360.in/api/v1',
   );
 
+  /// The website the API belongs to, from [apiBaseUrl]: where the terms, the
+  /// privacy policy and the web screens are.
+  static String get siteUrl {
+    const String base = apiBaseUrl;
+    final int cut = base.indexOf('/api/');
+    return cut < 0 ? base : base.substring(0, cut);
+  }
+
   /// Name of the sqlite file in the app documents directory.
   static const String databaseName = 'nirmaan360';
 

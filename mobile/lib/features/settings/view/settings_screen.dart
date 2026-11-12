@@ -8,6 +8,7 @@ import '../../../app/routes.dart';
 import '../../../app/shell/sync_status_cubit.dart';
 import '../../../app/widgets/back_header.dart';
 import '../../../app/widgets/language_switch.dart';
+import '../../../app/widgets/site_link.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../core/push/push_service.dart';
@@ -138,6 +139,26 @@ class SettingsScreen extends StatelessWidget {
                               ),
                             ],
                           ),
+                        ),
+                        const SizedBox(height: N360Space.lg),
+                        // For everyone, contractor logins and the offline plan included.
+                        LedgerList(
+                          children: <Widget>[
+                            LedgerListTile(
+                              key: const ValueKey<String>('settings-privacy'),
+                              leading: const Icon(Icons.privacy_tip_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+                              title: t.shellSignUpPrivacy,
+                              trailing: const Icon(Icons.open_in_new, size: N360IconSize.lg, color: N360Colors.ink2),
+                              onTap: () => openSitePage(context, kPrivacyPath),
+                            ),
+                            LedgerListTile(
+                              key: const ValueKey<String>('settings-delete-account'),
+                              leading: const Icon(Icons.person_remove_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+                              title: t.accountDeleteTile,
+                              subtitle: t.accountDeleteTileSubtitle,
+                              onTap: () => context.push(Routes.deleteAccount),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -282,7 +303,7 @@ class _UnsentSheet extends StatelessWidget {
             const SizedBox(height: N360Space.xs),
             Text(t.shellSignOutUnsentBody, style: N360Type.fit(N360Type.bodyLarge, t.shellSignOutUnsentBody)),
             const SizedBox(height: N360Space.lg),
-            _HoldToConfirm(
+            HoldToConfirm(
               label: t.shellSignOutHold,
               spokenLabel: t.shellSignOutDiscard,
               onConfirmed: () => Navigator.of(context).pop(_UnsentChoice.loseThem),
@@ -297,125 +318,6 @@ class _UnsentSheet extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// A red-edged bar that fills while pressed and fires only when full. Letting
-/// go early empties it again. With animations off it is a plain button,
-/// because the warning sheet is already a second step.
-class _HoldToConfirm extends StatefulWidget {
-  const _HoldToConfirm({required this.label, required this.spokenLabel, required this.onConfirmed});
-
-  final String label;
-  final String spokenLabel;
-  final VoidCallback onConfirmed;
-
-  @override
-  State<_HoldToConfirm> createState() => _HoldToConfirmState();
-}
-
-class _HoldToConfirmState extends State<_HoldToConfirm> with SingleTickerProviderStateMixin {
-  static const Duration _hold = Duration(milliseconds: 1400);
-
-  late final AnimationController _fill;
-
-  @override
-  void initState() {
-    super.initState();
-    _fill = AnimationController(vsync: this, duration: _hold)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          N360Haptics.thud();
-          widget.onConfirmed();
-        }
-      });
-  }
-
-  @override
-  void dispose() {
-    _fill.dispose();
-    super.dispose();
-  }
-
-  void _start() {
-    N360Haptics.tap();
-    _fill.forward();
-  }
-
-  void _stop() {
-    if (_fill.status != AnimationStatus.completed) _fill.reverse();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool reduced = context.motion.reduced;
-    final Widget label = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: N360Space.lg, vertical: N360Space.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Icon(Icons.touch_app_outlined, size: N360IconSize.button, color: N360Colors.stampRed),
-          const SizedBox(width: N360Space.sm),
-          Flexible(
-            child: Text(
-              widget.label,
-              textAlign: TextAlign.center,
-              style: N360Type.fit(N360Type.button, widget.label).copyWith(color: N360Colors.stampRed),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    final Widget face = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: N360Size.tap),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: N360Colors.sheet,
-          borderRadius: N360Radius.tileRadius,
-          border: Border.all(color: N360Colors.stampRed, width: 1.25),
-        ),
-        child: ClipRRect(
-          borderRadius: N360Radius.tileRadius,
-          child: Stack(
-            alignment: Alignment.center,
-            children: <Widget>[
-              if (!reduced)
-                Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: _fill,
-                    builder: (context, _) => FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: _fill.value,
-                      heightFactor: 1,
-                      child: ColoredBox(color: N360Colors.stampRed.withValues(alpha: 0.16)),
-                    ),
-                  ),
-                ),
-              label,
-            ],
-          ),
-        ),
-      ),
-    );
-
-    return Semantics(
-      container: true,
-      button: true,
-      label: widget.spokenLabel,
-      onTap: widget.onConfirmed,
-      child: ExcludeSemantics(
-        child: reduced
-            ? GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onConfirmed, child: face)
-            : Listener(
-                behavior: HitTestBehavior.opaque,
-                onPointerDown: (_) => _start(),
-                onPointerUp: (_) => _stop(),
-                onPointerCancel: (_) => _stop(),
-                child: face,
-              ),
       ),
     );
   }

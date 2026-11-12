@@ -100,6 +100,192 @@ abstract class AppLocalizations {
     Locale('mr'),
   ];
 
+  /// No description provided for @accountDeleteBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting your account…'**
+  String get accountDeleteBusy;
+
+  /// No description provided for @accountDeleteCancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel the deletion'**
+  String get accountDeleteCancelButton;
+
+  /// No description provided for @accountDeleteCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion cancelled. Your company stays as it is.'**
+  String get accountDeleteCancelled;
+
+  /// No description provided for @accountDeleteChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Something changed in your company. Check what will happen, then try again.'**
+  String get accountDeleteChanged;
+
+  /// No description provided for @accountDeleteCompanyErases.
+  ///
+  /// In en, this message translates to:
+  /// **'You are the only owner of {company}, so deleting your account erases the company: every project, bill, photo, worker and user.'**
+  String accountDeleteCompanyErases(String company);
+
+  /// No description provided for @accountDeleteCompanyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account and company'**
+  String get accountDeleteCompanyTitle;
+
+  /// No description provided for @accountDeleteCompanyWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'It is erased after {date}. Until then the company keeps working, and you can cancel by signing in again and opening Settings, Delete account.'**
+  String accountDeleteCompanyWhen(String date);
+
+  /// No description provided for @accountDeleteConfirmName.
+  ///
+  /// In en, this message translates to:
+  /// **'Type {company} to confirm'**
+  String accountDeleteConfirmName(String company);
+
+  /// No description provided for @accountDeleteExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Want a copy first? An owner can export the company\'s data on the website, under Account, Company data.'**
+  String get accountDeleteExport;
+
+  /// No description provided for @accountDeleteHandOver.
+  ///
+  /// In en, this message translates to:
+  /// **'To keep the company going without you, make another member an owner on the website (Team) first, then delete your account here.'**
+  String get accountDeleteHandOver;
+
+  /// No description provided for @accountDeleteHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to delete my account'**
+  String get accountDeleteHold;
+
+  /// No description provided for @accountDeleteLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking what will happen'**
+  String get accountDeleteLoading;
+
+  /// No description provided for @accountDeleteLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 record exists only on this phone. It will be erased.} other{{count} records exist only on this phone. They will be erased.}}'**
+  String accountDeleteLocalOnly(int count);
+
+  /// No description provided for @accountDeleteMemberNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sign-in, name, email and mobile number are removed now. You cannot undo this.'**
+  String get accountDeleteMemberNow;
+
+  /// No description provided for @accountDeleteMemberWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work you recorded for {company} — reports, measurements, bills, attendance and photos — stays with the company, shown as “Deleted user”.'**
+  String accountDeleteMemberWork(String company);
+
+  /// No description provided for @accountDeleteOfflineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect and try again.'**
+  String get accountDeleteOfflineBody;
+
+  /// No description provided for @accountDeleteOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting an account needs the internet.'**
+  String get accountDeleteOfflineTitle;
+
+  /// No description provided for @accountDeleteOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No one else uses this company.} =1{1 other person will lose access.} other{{count} other people will lose access.}}'**
+  String accountDeleteOthers(int count);
+
+  /// No description provided for @accountDeletePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password'**
+  String get accountDeletePassword;
+
+  /// No description provided for @accountDeletePendingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{company} will be erased after {date}.'**
+  String accountDeletePendingBody(String company, String date);
+
+  /// No description provided for @accountDeletePendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company is set to be erased'**
+  String get accountDeletePendingTitle;
+
+  /// No description provided for @accountDeletePhoneCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone is signed out and its Nirmaan360 data is cleared.'**
+  String get accountDeletePhoneCleared;
+
+  /// No description provided for @accountDeleteSpoken.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account'**
+  String get accountDeleteSpoken;
+
+  /// No description provided for @accountDeleteTaxRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Records of payments your company made to Nirmaan360 are kept, as Indian tax law requires.'**
+  String get accountDeleteTaxRecords;
+
+  /// No description provided for @accountDeleteTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get accountDeleteTile;
+
+  /// No description provided for @accountDeleteTileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove your sign-in and personal details'**
+  String get accountDeleteTileSubtitle;
+
+  /// No description provided for @accountDeleteUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item on this phone has not reached the server. It will be lost.} other{{count} items on this phone have not reached the server. They will be lost.}}'**
+  String accountDeleteUnsent(int count);
+
+  /// No description provided for @accountDeleteWrongName.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the company name exactly as shown.'**
+  String get accountDeleteWrongName;
+
+  /// No description provided for @accountDeleteWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'That password is not right.'**
+  String get accountDeleteWrongPassword;
+
+  /// No description provided for @accountDeletedCompanyToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company will be erased after {date}. Sign in before then to cancel.'**
+  String accountDeletedCompanyToast(String date);
+
+  /// No description provided for @accountDeletedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted.'**
+  String get accountDeletedToast;
+
   /// No description provided for @alertsDashboardEmpty.
   ///
   /// In en, this message translates to:
@@ -3499,7 +3685,7 @@ abstract class AppLocalizations {
   /// No description provided for @licenceResultNoLicence.
   ///
   /// In en, this message translates to:
-  /// **'Connected, but this phone could not be given a licence. Check your plan on the Nirmaan360 website, then try again.'**
+  /// **'Connected, but this phone could not be given a licence. Your company\'s owner can check the plan.'**
   String get licenceResultNoLicence;
 
   /// No description provided for @licenceResultOffline.
@@ -3517,7 +3703,7 @@ abstract class AppLocalizations {
   /// No description provided for @licenceResultStillEnded.
   ///
   /// In en, this message translates to:
-  /// **'Connected, but the licence is still ended. Check your plan on the Nirmaan360 website, then try again.'**
+  /// **'Connected, but the licence is still ended. Your company\'s owner can check the plan.'**
   String get licenceResultStillEnded;
 
   /// No description provided for @licenceScreenTitle.
@@ -7708,6 +7894,18 @@ abstract class AppLocalizations {
   /// **'Throw away this entry?'**
   String get shellDiscardTitle;
 
+  /// No description provided for @shellLinkFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy the link and open it in your browser.'**
+  String get shellLinkFailedBody;
+
+  /// No description provided for @shellLinkFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The page did not open'**
+  String get shellLinkFailedTitle;
+
   /// No description provided for @shellOfflineApprovals.
   ///
   /// In en, this message translates to:
@@ -7984,6 +8182,12 @@ abstract class AppLocalizations {
   /// **'A project can only be created with network. Try again when you have signal.'**
   String get shellProjectOffline;
 
+  /// No description provided for @shellProjectPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This company has reached the number of projects its plan allows.'**
+  String get shellProjectPlanBody;
+
   /// No description provided for @shellProjectPlanTitle.
   ///
   /// In en, this message translates to:
@@ -8170,6 +8374,12 @@ abstract class AppLocalizations {
   /// **'No network'**
   String get shellSignInNetworkTitle;
 
+  /// No description provided for @shellSignInNewCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'New company? Create an account'**
+  String get shellSignInNewCompany;
+
   /// No description provided for @shellSignInOtherUserBody.
   ///
   /// In en, this message translates to:
@@ -8289,6 +8499,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 entry not sent} other{{count} entries not sent}}'**
   String shellSignOutUnsentTitle(int count);
+
+  /// No description provided for @shellSignUpBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your account…'**
+  String get shellSignUpBusy;
+
+  /// No description provided for @shellSignUpButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get shellSignUpButton;
+
+  /// No description provided for @shellSignUpCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Company name'**
+  String get shellSignUpCompany;
+
+  /// No description provided for @shellSignUpCompanyMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the company name'**
+  String get shellSignUpCompanyMissing;
+
+  /// No description provided for @shellSignUpConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get shellSignUpConfirm;
+
+  /// No description provided for @shellSignUpConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'By creating an account you agree to the {terms} and the {privacy}.'**
+  String shellSignUpConsent(String terms, String privacy);
+
+  /// No description provided for @shellSignUpEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an email like name@example.com'**
+  String get shellSignUpEmailInvalid;
+
+  /// No description provided for @shellSignUpEmailTakenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with it instead, or use another email.'**
+  String get shellSignUpEmailTakenBody;
+
+  /// No description provided for @shellSignUpEmailTakenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This email already has an account'**
+  String get shellSignUpEmailTakenTitle;
+
+  /// No description provided for @shellSignUpFieldInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check this and try again'**
+  String get shellSignUpFieldInvalid;
+
+  /// No description provided for @shellSignUpHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Sign in'**
+  String get shellSignUpHaveAccount;
+
+  /// No description provided for @shellSignUpIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'This starts a new company on Nirmaan360 with you as its owner. If your company already uses Nirmaan360, ask your office to invite you instead.'**
+  String get shellSignUpIntro;
+
+  /// No description provided for @shellSignUpName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get shellSignUpName;
+
+  /// No description provided for @shellSignUpNameMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name'**
+  String get shellSignUpNameMissing;
+
+  /// No description provided for @shellSignUpPasswordHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters.'**
+  String get shellSignUpPasswordHelper;
+
+  /// No description provided for @shellSignUpPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The two passwords are not the same'**
+  String get shellSignUpPasswordMismatch;
+
+  /// No description provided for @shellSignUpPasswordShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 8 characters'**
+  String get shellSignUpPasswordShort;
+
+  /// No description provided for @shellSignUpPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile number (optional)'**
+  String get shellSignUpPhone;
+
+  /// No description provided for @shellSignUpPhoneTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'This mobile number is used by another account.'**
+  String get shellSignUpPhoneTaken;
+
+  /// No description provided for @shellSignUpPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get shellSignUpPrivacy;
+
+  /// No description provided for @shellSignUpTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms'**
+  String get shellSignUpTerms;
+
+  /// No description provided for @shellSignUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account'**
+  String get shellSignUpTitle;
+
+  /// No description provided for @shellSignUpTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it to {max} characters or fewer'**
+  String shellSignUpTooLong(int max);
 
   /// No description provided for @shellSlipSending.
   ///

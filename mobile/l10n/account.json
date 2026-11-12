@@ -1,0 +1,205 @@
+{
+  "accountDeleteTile": {
+    "en": "Delete account",
+    "mr": "खाते हटवा",
+    "hi": "खाता हटाएँ"
+  },
+  "accountDeleteTileSubtitle": {
+    "en": "Remove your sign-in and personal details",
+    "mr": "तुमचे साइन-इन आणि वैयक्तिक माहिती काढून टाका",
+    "hi": "अपना साइन-इन और निजी जानकारी हटाएँ"
+  },
+  "accountDeleteCompanyTitle": {
+    "en": "Delete your account and company",
+    "mr": "तुमचे खाते आणि कंपनी हटवा",
+    "hi": "अपना खाता और कंपनी हटाएँ"
+  },
+  "accountDeleteLoading": {
+    "en": "Checking what will happen",
+    "mr": "काय होईल ते तपासत आहोत",
+    "hi": "क्या होगा, जाँच रहे हैं"
+  },
+  "accountDeleteOfflineTitle": {
+    "en": "Deleting an account needs the internet.",
+    "mr": "खाते हटवण्यासाठी इंटरनेट लागते.",
+    "hi": "खाता हटाने के लिए इंटरनेट चाहिए।"
+  },
+  "accountDeleteOfflineBody": {
+    "en": "Connect and try again.",
+    "mr": "इंटरनेट जोडा आणि पुन्हा प्रयत्न करा.",
+    "hi": "इंटरनेट जोड़ें और फिर कोशिश करें।"
+  },
+  "accountDeletePendingTitle": {
+    "en": "Your company is set to be erased",
+    "mr": "तुमची कंपनी पुसली जाणार आहे",
+    "hi": "आपकी कंपनी मिटाई जानी तय है"
+  },
+  "accountDeletePendingBody": {
+    "en": "{company} will be erased after {date}.",
+    "mr": "{company} {date} नंतर पुसली जाईल.",
+    "hi": "{company} {date} के बाद मिटा दी जाएगी।",
+    "placeholders": {
+      "company": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteCancelButton": {
+    "en": "Cancel the deletion",
+    "mr": "हटवणे रद्द करा",
+    "hi": "हटाना रद्द करें"
+  },
+  "accountDeleteCancelled": {
+    "en": "Deletion cancelled. Your company stays as it is.",
+    "mr": "हटवणे रद्द झाले. तुमची कंपनी जशी आहे तशीच राहील.",
+    "hi": "हटाना रद्द हो गया। आपकी कंपनी जैसी है वैसी ही रहेगी।"
+  },
+  "accountDeleteMemberNow": {
+    "en": "Your sign-in, name, email and mobile number are removed now. You cannot undo this.",
+    "mr": "तुमचे साइन-इन, नाव, ईमेल आणि मोबाइल नंबर आत्ताच काढून टाकले जातात. हे परत करता येत नाही.",
+    "hi": "आपका साइन-इन, नाम, ईमेल और मोबाइल नंबर अभी हटा दिए जाते हैं। इसे वापस नहीं किया जा सकता।"
+  },
+  "accountDeleteMemberWork": {
+    "en": "Work you recorded for {company} — reports, measurements, bills, attendance and photos — stays with the company, shown as “Deleted user”.",
+    "mr": "{company} साठी तुम्ही नोंदवलेले काम — अहवाल, मोजमापे, बिले, हजेरी आणि फोटो — कंपनीकडेच राहते, “हटवलेला वापरकर्ता” म्हणून दिसते.",
+    "hi": "{company} के लिए आपका दर्ज किया काम — रिपोर्ट, माप, बिल, हाज़िरी और फ़ोटो — कंपनी के पास ही रहता है, “हटाया गया उपयोगकर्ता” के रूप में दिखता है।",
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletePhoneCleared": {
+    "en": "This phone is signed out and its Nirmaan360 data is cleared.",
+    "mr": "हा फोन साइन आउट होतो आणि त्यावरील Nirmaan360 चा डेटा पुसला जातो.",
+    "hi": "यह फ़ोन साइन आउट हो जाता है और इस पर Nirmaan360 का डेटा मिटा दिया जाता है।"
+  },
+  "accountDeleteCompanyErases": {
+    "en": "You are the only owner of {company}, so deleting your account erases the company: every project, bill, photo, worker and user.",
+    "mr": "तुम्ही {company} चे एकमेव मालक आहात, त्यामुळे तुमचे खाते हटवल्यास कंपनी पुसली जाते: प्रत्येक प्रकल्प, बिल, फोटो, कामगार आणि वापरकर्ता.",
+    "hi": "आप {company} के अकेले मालिक हैं, इसलिए आपका खाता हटाने से कंपनी मिट जाती है: हर परियोजना, बिल, फ़ोटो, मज़दूर और उपयोगकर्ता।",
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteOthers": {
+    "en": "{count, plural, =0{No one else uses this company.} =1{1 other person will lose access.} other{{count} other people will lose access.}}",
+    "mr": "{count, plural, =0{ही कंपनी दुसरे कोणी वापरत नाही.} =1{आणखी 1 व्यक्तीचा प्रवेश जाईल.} other{आणखी {count} व्यक्तींचा प्रवेश जाईल.}}",
+    "hi": "{count, plural, =0{इस कंपनी को कोई और इस्तेमाल नहीं करता।} =1{1 और व्यक्ति की पहुँच ख़त्म हो जाएगी।} other{{count} और लोगों की पहुँच ख़त्म हो जाएगी।}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeleteCompanyWhen": {
+    "en": "It is erased after {date}. Until then the company keeps working, and you can cancel by signing in again and opening Settings, Delete account.",
+    "mr": "ती {date} नंतर पुसली जाते. तोपर्यंत कंपनीचे काम चालू राहते, आणि पुन्हा साइन इन करून सेटिंग्ज, खाते हटवा उघडून तुम्ही ते रद्द करू शकता.",
+    "hi": "यह {date} के बाद मिटाई जाती है। तब तक कंपनी का काम चलता रहता है, और आप फिर से साइन इन करके सेटिंग्स, खाता हटाएँ खोलकर इसे रद्द कर सकते हैं।",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteTaxRecords": {
+    "en": "Records of payments your company made to Nirmaan360 are kept, as Indian tax law requires.",
+    "mr": "तुमच्या कंपनीने Nirmaan360 ला केलेल्या पेमेंटच्या नोंदी भारतीय कर कायद्यानुसार ठेवल्या जातात.",
+    "hi": "आपकी कंपनी द्वारा Nirmaan360 को किए गए भुगतानों के रिकॉर्ड भारतीय कर क़ानून के अनुसार रखे जाते हैं।"
+  },
+  "accountDeleteExport": {
+    "en": "Want a copy first? An owner can export the company's data on the website, under Account, Company data.",
+    "mr": "आधी प्रत हवी आहे? मालक वेबसाइटवर Account, Company data मध्ये कंपनीचा डेटा एक्सपोर्ट करू शकतात.",
+    "hi": "पहले कॉपी चाहिए? मालिक वेबसाइट पर Account, Company data में कंपनी का डेटा एक्सपोर्ट कर सकते हैं।"
+  },
+  "accountDeleteHandOver": {
+    "en": "To keep the company going without you, make another member an owner on the website (Team) first, then delete your account here.",
+    "mr": "तुमच्याशिवाय कंपनी चालू ठेवायची असल्यास, आधी वेबसाइटवर (Team) दुसऱ्या सदस्याला मालक करा, मग इथे तुमचे खाते हटवा.",
+    "hi": "आपके बिना कंपनी चलती रखनी हो, तो पहले वेबसाइट पर (Team) किसी और सदस्य को मालिक बनाएँ, फिर यहाँ अपना खाता हटाएँ।"
+  },
+  "accountDeleteConfirmName": {
+    "en": "Type {company} to confirm",
+    "mr": "खात्रीसाठी {company} लिहा",
+    "hi": "पुष्टि के लिए {company} लिखें",
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteUnsent": {
+    "en": "{count, plural, =1{1 item on this phone has not reached the server. It will be lost.} other{{count} items on this phone have not reached the server. They will be lost.}}",
+    "mr": "{count, plural, =1{या फोनवरील 1 नोंद सर्व्हरवर पोहोचलेली नाही. ती हरवेल.} other{या फोनवरील {count} नोंदी सर्व्हरवर पोहोचलेल्या नाहीत. त्या हरवतील.}}",
+    "hi": "{count, plural, =1{इस फ़ोन की 1 प्रविष्टि सर्वर तक नहीं पहुँची है। वह खो जाएगी।} other{इस फ़ोन की {count} प्रविष्टियाँ सर्वर तक नहीं पहुँची हैं। वे खो जाएँगी।}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeleteLocalOnly": {
+    "en": "{count, plural, =1{1 record exists only on this phone. It will be erased.} other{{count} records exist only on this phone. They will be erased.}}",
+    "mr": "{count, plural, =1{1 नोंद फक्त या फोनवर आहे. ती पुसली जाईल.} other{{count} नोंदी फक्त या फोनवर आहेत. त्या पुसल्या जातील.}}",
+    "hi": "{count, plural, =1{1 रिकॉर्ड सिर्फ़ इस फ़ोन पर है। वह मिटा दिया जाएगा।} other{{count} रिकॉर्ड सिर्फ़ इस फ़ोन पर हैं। वे मिटा दिए जाएँगे।}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeletePassword": {
+    "en": "Your password",
+    "mr": "तुमचा पासवर्ड",
+    "hi": "आपका पासवर्ड"
+  },
+  "accountDeleteHold": {
+    "en": "Hold to delete my account",
+    "mr": "खाते हटवण्यासाठी दाबून ठेवा",
+    "hi": "खाता हटाने के लिए दबाए रखें"
+  },
+  "accountDeleteSpoken": {
+    "en": "Delete my account",
+    "mr": "माझे खाते हटवा",
+    "hi": "मेरा खाता हटाएँ"
+  },
+  "accountDeleteBusy": {
+    "en": "Deleting your account…",
+    "mr": "तुमचे खाते हटवत आहोत…",
+    "hi": "आपका खाता हटा रहे हैं…"
+  },
+  "accountDeleteWrongPassword": {
+    "en": "That password is not right.",
+    "mr": "हा पासवर्ड बरोबर नाही.",
+    "hi": "यह पासवर्ड सही नहीं है।"
+  },
+  "accountDeleteWrongName": {
+    "en": "Type the company name exactly as shown.",
+    "mr": "कंपनीचे नाव दाखवल्याप्रमाणेच अचूक लिहा.",
+    "hi": "कंपनी का नाम ठीक वैसा ही लिखें जैसा दिखाया गया है।"
+  },
+  "accountDeleteChanged": {
+    "en": "Something changed in your company. Check what will happen, then try again.",
+    "mr": "तुमच्या कंपनीत काहीतरी बदलले आहे. काय होईल ते पाहा, मग पुन्हा प्रयत्न करा.",
+    "hi": "आपकी कंपनी में कुछ बदल गया है। क्या होगा यह देखें, फिर दोबारा कोशिश करें।"
+  },
+  "accountDeletedToast": {
+    "en": "Your account has been deleted.",
+    "mr": "तुमचे खाते हटवले आहे.",
+    "hi": "आपका खाता हटा दिया गया है।"
+  },
+  "accountDeletedCompanyToast": {
+    "en": "Your company will be erased after {date}. Sign in before then to cancel.",
+    "mr": "तुमची कंपनी {date} नंतर पुसली जाईल. रद्द करण्यासाठी त्याआधी साइन इन करा.",
+    "hi": "आपकी कंपनी {date} के बाद मिटा दी जाएगी। रद्द करने के लिए उससे पहले साइन इन करें।",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
+}

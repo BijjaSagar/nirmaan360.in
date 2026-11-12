@@ -630,5 +630,153 @@
     "en": "Approvals need network.",
     "mr": "मंजुरीसाठी नेटवर्क हवे.",
     "hi": "मंज़ूरी के लिए नेटवर्क चाहिए।"
+  },
+  "shellSignInNewCompany": {
+    "en": "New company? Create an account",
+    "mr": "नवीन कंपनी? खाते तयार करा",
+    "hi": "नई कंपनी? खाता बनाएँ"
+  },
+  "shellSignUpTitle": {
+    "en": "Create an account",
+    "mr": "खाते तयार करा",
+    "hi": "खाता बनाएँ"
+  },
+  "shellSignUpIntro": {
+    "en": "This starts a new company on Nirmaan360 with you as its owner. If your company already uses Nirmaan360, ask your office to invite you instead.",
+    "mr": "यामुळे Nirmaan360 वर नवीन कंपनी सुरू होते आणि तुम्ही तिचे मालक असता. तुमची कंपनी आधीच Nirmaan360 वापरत असेल, तर त्याऐवजी तुमच्या ऑफिसला तुम्हाला आमंत्रित करायला सांगा.",
+    "hi": "इससे Nirmaan360 पर एक नई कंपनी शुरू होती है और आप उसके मालिक होते हैं। अगर आपकी कंपनी पहले से Nirmaan360 इस्तेमाल करती है, तो इसके बजाय अपने ऑफ़िस से आपको आमंत्रित करने को कहें।"
+  },
+  "shellSignUpCompany": {
+    "en": "Company name",
+    "mr": "कंपनीचे नाव",
+    "hi": "कंपनी का नाम"
+  },
+  "shellSignUpName": {
+    "en": "Your name",
+    "mr": "तुमचे नाव",
+    "hi": "आपका नाम"
+  },
+  "shellSignUpPhone": {
+    "en": "Mobile number (optional)",
+    "mr": "मोबाइल नंबर (ऐच्छिक)",
+    "hi": "मोबाइल नंबर (वैकल्पिक)"
+  },
+  "shellSignUpPasswordHelper": {
+    "en": "At least 8 characters.",
+    "mr": "किमान 8 अक्षरे.",
+    "hi": "कम से कम 8 अक्षर।"
+  },
+  "shellSignUpConfirm": {
+    "en": "Confirm password",
+    "mr": "पासवर्ड पुन्हा लिहा",
+    "hi": "पासवर्ड दोबारा लिखें"
+  },
+  "shellSignUpConsent": {
+    "en": "By creating an account you agree to the {terms} and the {privacy}.",
+    "mr": "खाते तयार करून तुम्ही {terms} आणि {privacy} मान्य करता.",
+    "hi": "खाता बनाकर आप {terms} और {privacy} से सहमत होते हैं।",
+    "placeholders": {
+      "terms": {
+        "type": "String"
+      },
+      "privacy": {
+        "type": "String"
+      }
+    }
+  },
+  "shellSignUpTerms": {
+    "en": "Terms",
+    "mr": "अटी",
+    "hi": "शर्तें"
+  },
+  "shellSignUpPrivacy": {
+    "en": "Privacy policy",
+    "mr": "गोपनीयता धोरण",
+    "hi": "गोपनीयता नीति"
+  },
+  "shellSignUpButton": {
+    "en": "Create account",
+    "mr": "खाते बनवा",
+    "hi": "खाता बनाएँ"
+  },
+  "shellSignUpBusy": {
+    "en": "Creating your account…",
+    "mr": "तुमचे खाते तयार होत आहे…",
+    "hi": "आपका खाता बन रहा है…"
+  },
+  "shellSignUpHaveAccount": {
+    "en": "Already have an account? Sign in",
+    "mr": "आधीच खाते आहे? साइन इन करा",
+    "hi": "पहले से खाता है? साइन इन करें"
+  },
+  "shellSignUpCompanyMissing": {
+    "en": "Enter the company name",
+    "mr": "कंपनीचे नाव लिहा",
+    "hi": "कंपनी का नाम लिखें"
+  },
+  "shellSignUpNameMissing": {
+    "en": "Enter your name",
+    "mr": "तुमचे नाव लिहा",
+    "hi": "अपना नाम लिखें"
+  },
+  "shellSignUpTooLong": {
+    "en": "Keep it to {max} characters or fewer",
+    "mr": "जास्तीत जास्त {max} अक्षरे ठेवा",
+    "hi": "ज़्यादा से ज़्यादा {max} अक्षर रखें",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSignUpEmailInvalid": {
+    "en": "Enter an email like name@example.com",
+    "mr": "name@example.com सारखा ईमेल लिहा",
+    "hi": "name@example.com जैसा ईमेल लिखें"
+  },
+  "shellSignUpPasswordShort": {
+    "en": "Use at least 8 characters",
+    "mr": "किमान 8 अक्षरे वापरा",
+    "hi": "कम से कम 8 अक्षर रखें"
+  },
+  "shellSignUpPasswordMismatch": {
+    "en": "The two passwords are not the same",
+    "mr": "दोन्ही पासवर्ड सारखे नाहीत",
+    "hi": "दोनों पासवर्ड एक जैसे नहीं हैं"
+  },
+  "shellSignUpPhoneTaken": {
+    "en": "This mobile number is used by another account.",
+    "mr": "हा मोबाइल नंबर दुसऱ्या खात्यासाठी वापरला आहे.",
+    "hi": "यह मोबाइल नंबर किसी और खाते में इस्तेमाल हो रहा है।"
+  },
+  "shellSignUpFieldInvalid": {
+    "en": "Check this and try again",
+    "mr": "हे तपासा आणि पुन्हा प्रयत्न करा",
+    "hi": "इसे जाँचें और फिर कोशिश करें"
+  },
+  "shellSignUpEmailTakenTitle": {
+    "en": "This email already has an account",
+    "mr": "या ईमेलचे खाते आधीच आहे",
+    "hi": "इस ईमेल का खाता पहले से है"
+  },
+  "shellSignUpEmailTakenBody": {
+    "en": "Sign in with it instead, or use another email.",
+    "mr": "त्याऐवजी त्याने साइन इन करा, किंवा दुसरा ईमेल वापरा.",
+    "hi": "इसके बजाय उससे साइन इन करें, या कोई दूसरा ईमेल इस्तेमाल करें।"
+  },
+  "shellLinkFailedTitle": {
+    "en": "The page did not open",
+    "mr": "पान उघडले नाही",
+    "hi": "पेज नहीं खुला"
+  },
+  "shellLinkFailedBody": {
+    "en": "Copy the link and open it in your browser.",
+    "mr": "लिंक कॉपी करा आणि ब्राउझरमध्ये उघडा.",
+    "hi": "लिंक कॉपी करें और ब्राउज़र में खोलें।"
+  },
+  "shellProjectPlanBody": {
+    "en": "This company has reached the number of projects its plan allows.",
+    "mr": "या कंपनीने तिच्या प्लॅनमध्ये परवानगी असलेल्या प्रकल्पांची संख्या गाठली आहे.",
+    "hi": "इस कंपनी ने अपने प्लान में अनुमत परियोजनाओं की संख्या पूरी कर ली है।"
   }
 }
