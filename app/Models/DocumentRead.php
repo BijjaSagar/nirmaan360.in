@@ -57,6 +57,36 @@ class DocumentRead extends Model
     /** The company's wallet could not pay for a page. */
     public const PAUSE_WALLET = 'wallet';
 
+    /** The person who started the read is gone, inactive, or no longer allowed to use this reader. */
+    public const PAUSE_STARTER_GONE = 'starter_gone';
+
+    /** The company's consent is off, or was given to an older notice. */
+    public const PAUSE_CONSENT_OFF = 'consent_off';
+
+    /** The company's plan no longer includes the AI features. */
+    public const PAUSE_PLAN = 'plan';
+
+    /** No key is saved, or the provider is refusing every call for now. */
+    public const PAUSE_NOT_CONNECTED = 'not_connected';
+
+    /** The platform admin has switched the readers off again. */
+    public const PAUSE_NOT_RELEASED = 'not_released';
+
+    /** A platform-wide spending limit for the day or the month is reached. */
+    public const PAUSE_PLATFORM_CEILING = 'platform_ceiling';
+
+    /** One of this company's own limits is reached: its share of the day, its unpaid cost, its failures, its trial. */
+    public const PAUSE_COMPANY_LIMIT = 'company_limit';
+
+    /** The provider kept answering "too many requests". */
+    public const PAUSE_PROVIDER_LIMIT = 'provider_limit';
+
+    /** Calls keep failing for reasons that are nobody's fault here, or nothing has moved for a long time. */
+    public const PAUSE_INFRA = 'infra';
+
+    /** Too many pages came back unusable. The starter may continue such a read once. */
+    public const PAUSE_MANY_FAILURES = 'many_failures';
+
     protected $guarded = [];
 
     protected function casts(): array

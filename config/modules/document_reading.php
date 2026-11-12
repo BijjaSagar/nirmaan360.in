@@ -60,21 +60,26 @@ return [
      * that kind and pass have been read; after that the median of the last 200 is used. "then"
      * names the passes that normally follow on the same page, so a quote counts them before their
      * rows exist. "stronger" is the model a person may ask for on a second try.
+     *
+     * "queue" names the lane a kind's page jobs wait in (see "queues" below): a slip or a bill is
+     * read while someone waits at a form, a BOQ or a tender runs for a long time in the background.
+     * "notify" says whether the person who started a read is told when it finishes or pauses; a
+     * read that takes seconds is watched on the form itself.
      */
     'kinds' => [
-        'boq' => ['passes' => [
+        'boq' => ['queue' => 'pages', 'notify' => true, 'passes' => [
             'rows' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 9000, 'effort' => 'low', 'timeout' => 240, 'typical_output' => 4500, 'typical_seconds' => 75, 'then' => ['amounts'], 'stronger' => 'claude-opus-5-5'],
             'amounts' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1200, 'typical_seconds' => 20, 'stronger' => 'claude-sonnet-5-5'],
         ]],
-        'slip' => ['passes' => [
+        'slip' => ['queue' => 'interactive', 'notify' => false, 'passes' => [
             'main' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90, 'typical_output' => 700, 'typical_seconds' => 15, 'stronger' => 'claude-sonnet-5-5'],
             'recheck' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90, 'typical_output' => 700, 'typical_seconds' => 15],
         ]],
-        'bill' => ['passes' => [
+        'bill' => ['queue' => 'interactive', 'notify' => false, 'passes' => [
             'main' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1500, 'typical_seconds' => 30],
             'recheck' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1500, 'typical_seconds' => 30],
         ]],
-        'tender' => ['passes' => [
+        'tender' => ['queue' => 'pages', 'notify' => true, 'passes' => [
             'text' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 8000, 'effort' => 'low', 'timeout' => 240, 'typical_output' => 2500, 'typical_seconds' => 60],
             'image' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 6000, 'effort' => 'low', 'timeout' => 180, 'typical_output' => 1500, 'typical_seconds' => 40],
         ]],
@@ -103,6 +108,20 @@ return [
 
     // Pages of one read that may be with the model at the same time.
     'parallel_pages' => 1,
+
+    /*
+     * The queue each lane of jobs is sent to. "default" is the queue the worker already listens to,
+     * so nothing needs a new worker. The platform settings ai_queue_pages, ai_queue_interactive and
+     * ai_queue_prepare replace a name without a deploy; set one only after a worker listens to it,
+     * because a job sent to a queue with no worker never runs. docs/AI_READERS.md has the commands.
+     */
+    'queues' => ['pages' => 'default', 'interactive' => 'default', 'prepare' => 'default'],
+
+    // A read that was finished but never confirmed or discarded is closed after this many days.
+    'abandon_days' => 14,
+
+    // Page pictures, extracted text and what the reader returned are deleted this many days after a read ends.
+    'keep_days' => 30,
 
     /*
      * What one read may cost. The offered limit is the estimate times cap_factor, rounded up to a
