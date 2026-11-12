@@ -128,16 +128,15 @@ class SignupService
             : __('Welcome! Your :days-day trial has started.', ['days' => config('buildos.trial_days')]);
     }
 
-    /** Why this normalised email cannot start a company, or null when it can. */
+    /**
+     * Why this normalised email cannot start a company, or null when it can.
+     * Platform staff are recognised by email alone, so a listed address is never handed to a new company.
+     * It reads exactly like a taken email, so the answer never tells a stranger which addresses run the platform.
+     */
     private function emailProblem(string $email): ?string
     {
-        if (User::emailTaken($email)) {
+        if (User::emailTaken($email) || User::emailReservedForPlatform($email)) {
             return __('This email already has an account.');
-        }
-
-        // Platform staff are recognised by email alone, so a listed address is never handed to a new company.
-        if (in_array($email, config('buildos.platform_admins'), true)) {
-            return __('This email cannot be used to start a company.');
         }
 
         return null;

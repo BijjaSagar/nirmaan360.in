@@ -75,7 +75,7 @@ class SignupWebTest extends TestCase
         $this->register(['email' => 'OPS@Nirmaan360.test', 'company' => 'Stranger Co'])
             ->assertSessionHasErrors(['email' => 'This email already has an account.']);
         $this->register(['email' => 'Boss@NIRMAAN360.test', 'company' => 'Stranger Co'])
-            ->assertSessionHasErrors(['email' => 'This email cannot be used to start a company.']);
+            ->assertSessionHasErrors(['email' => 'This email already has an account.']);
 
         $this->assertGuest();
         $this->assertFalse(Organization::where('name', 'Stranger Co')->exists());

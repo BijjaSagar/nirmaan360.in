@@ -179,10 +179,31 @@ class User extends Authenticatable
         return static::whereRaw('lower(email) = ?', [static::normaliseEmail($email)])->exists();
     }
 
-    /** Staff who run the platform. Separate from company roles, which all grant '*' to owners. */
+    /**
+     * Staff who run the platform. Separate from company roles, which all grant '*' to owners.
+     *
+     * A listed address counts only for the first account that holds it, whatever its letter case,
+     * so a later sign-up as OPS@ or Ops@ for ops@ never reaches the admin screens.
+     */
     public function isPlatformAdmin(): bool
     {
-        return (bool) $this->is_platform_admin || in_array(strtolower($this->email), config('buildos.platform_admins'), true);
+        if ($this->is_platform_admin) {
+            return true;
+        }
+
+        $email = static::normaliseEmail((string) $this->email);
+
+        if (! self::emailReservedForPlatform($email)) {
+            return false;
+        }
+
+        return ! static::query()->whereRaw('lower(email) = ?', [$email])->where('id', '<', $this->id)->exists();
+    }
+
+    /** An address on the platform admin list. Nobody can sign up or be invited with one. */
+    public static function emailReservedForPlatform(string $email): bool
+    {
+        return in_array(static::normaliseEmail($email), config('buildos.platform_admins'), true);
     }
 
     public function isApprovalOverride(): bool

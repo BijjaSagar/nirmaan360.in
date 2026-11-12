@@ -60,7 +60,7 @@ class InvitationService
 
         $email = Str::lower(trim($data['email']));
 
-        if (User::emailTaken($email)) {
+        if (User::emailTaken($email) || User::emailReservedForPlatform($email)) {
             throw ValidationException::withMessages(['email' => __('This email already has an account.')]);
         }
 
@@ -172,7 +172,8 @@ class InvitationService
                 throw new InvitationClosedException(__('This company has reached its plan user limit. Ask them to upgrade and send a new invitation.'));
             }
 
-            if (User::emailTaken($invitation->email)) {
+            // An invitation sent before an address joined the platform admin list must not open now.
+            if (User::emailTaken($invitation->email) || User::emailReservedForPlatform($invitation->email)) {
                 throw new InvitationClosedException(__('This email already has an account. Please sign in.'));
             }
 

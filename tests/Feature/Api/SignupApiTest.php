@@ -164,7 +164,7 @@ class SignupApiTest extends ApiTestCase
         // A listed address that nobody has signed up with yet is not up for grabs either.
         foreach (['boss@nirmaan360.test', 'BOSS@Nirmaan360.test'] as $email) {
             $this->signUp(['email' => $email, 'company' => 'Stranger Co'])->assertUnprocessable()
-                ->assertJsonValidationErrors(['email' => 'This email cannot be used to start a company.']);
+                ->assertJsonValidationErrors(['email' => 'This email already has an account.']);
         }
 
         $this->assertFalse(Organization::where('name', 'Stranger Co')->exists());
@@ -271,7 +271,7 @@ class SignupApiTest extends ApiTestCase
         config(['buildos.platform_admins' => ['ops@nirmaan360.test']]);
         $data = ['company' => 'Deccan Builders', 'name' => 'Priya Rane', 'password' => 'a-long-password'];
 
-        foreach (['PRIYA@example.com' => 'This email already has an account.', 'OPS@nirmaan360.test' => 'This email cannot be used to start a company.'] as $email => $message) {
+        foreach (['PRIYA@example.com' => 'This email already has an account.', 'OPS@nirmaan360.test' => 'This email already has an account.'] as $email => $message) {
             try {
                 app(SignupService::class)->create([...$data, 'email' => $email], 'console');
                 $this->fail("{$email} was accepted without validation.");
