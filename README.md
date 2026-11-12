@@ -60,7 +60,7 @@ Set these in Laravel Cloud's environment variables:
 
 - `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`. Until both are set, plans can't be bought online.
 - `RAZORPAY_WEBHOOK_SECRET`, with a Razorpay webhook pointing at `https://nirmaan360.in/api/v1/webhooks/razorpay` for the `payment.captured` event.
-- `PLATFORM_ADMIN_EMAILS`, a comma-separated list of emails that can open `/admin`.
+- `PLATFORM_ADMIN_EMAILS`, a comma-separated list of emails that can open `/admin`. A listed email counts only when the account's stored email is exactly that address in lower case; for any other account run `php artisan platform:admin <email>`, which sets the admin flag and accepts any letter case. Nobody can sign up or be invited with a listed email.
 - A real mail driver (`MAIL_MAILER` and its settings). Password reset stays hidden in production until this is set.
 
 Plan prices live in `config/buildos.php`. Plans are prepaid per month or year and do not renew by themselves.
