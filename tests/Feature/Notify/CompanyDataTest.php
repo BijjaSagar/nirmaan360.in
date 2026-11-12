@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Notify;
 
+use App\Mail\Notify\WorkflowNotificationMail;
 use App\Models\AuditLog;
 use App\Models\CompanyDataExport;
 use App\Models\CompanyDeletionRequest;
@@ -16,9 +17,13 @@ use App\Services\Notify\CompanyExportService;
 use App\Services\Notify\TenantData;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use ZipArchive;
 
 class CompanyDataTest extends NotifyTestCase
@@ -282,17 +287,87 @@ class CompanyDataTest extends NotifyTestCase
         $this->get('/company-data')->assertOk()->assertSee('Cancel the deletion');
     }
 
-    public function test_every_owner_and_admin_is_told_even_with_email_off(): void
+    public function test_every_active_person_is_told_even_with_email_off(): void
     {
         Queue::fake();
         $admin = $this->member($this->organization, 'admin');
         $engineer = $this->member($this->organization);
+        $contractor = $this->member($this->organization, 'contractor');
+        $gone = $this->member($this->organization, 'pm');
+        $gone->forceFill(['is_active' => false])->save();
+        $outsider = $this->member($this->tenant('Rival Constructions'), 'owner');
 
-        $this->schedule();
+        $request = $this->schedule();
 
         $this->assertSame(1, $this->owner->notifications()->count());
         $this->assertSame(1, $admin->notifications()->count());
-        $this->assertSame(0, $engineer->notifications()->count());
+        $this->assertSame(1, $engineer->notifications()->count());
+        $this->assertSame(1, $contractor->notifications()->count());
+        $this->assertSame(0, $gone->notifications()->count());
+        $this->assertSame(0, $outsider->notifications()->count());
+
+        // Owners and admins get the Company data page, where they can cancel. Everyone else cannot open it.
+        foreach ([$this->owner, $admin] as $leader) {
+            $this->assertSame(route('notify.data.index'), $leader->notifications()->sole()->data['url']);
+            $this->assertStringNotContainsString('Your access ends then', $leader->notifications()->sole()->data['body']);
+        }
+
+        foreach ([$engineer, $contractor] as $member) {
+            $notice = $member->notifications()->sole()->data;
+            $this->assertNull($notice['url']);
+            $this->assertStringContainsString($request->purge_after->format('d M Y'), $notice['body']);
+            $this->assertStringContainsString("Your access ends then, because all of the company's data will be erased.", $notice['body']);
+        }
+    }
+
+    public function test_members_are_told_in_their_own_language(): void
+    {
+        Queue::fake();
+        $engineer = $this->member($this->organization);
+        $engineer->forceFill(['locale' => 'mr'])->save();
+
+        $this->schedule();
+
+        $body = $engineer->notifications()->sole()->data['body'];
+        $this->assertStringContainsString(__("Your access ends then, because all of the company's data will be erased.", [], 'mr'), $body);
+        $this->assertStringNotContainsString('Your access ends then', $body);
+    }
+
+    public function test_everyone_is_told_when_the_deletion_is_cancelled(): void
+    {
+        Queue::fake();
+        $engineer = $this->member($this->organization);
+        $this->schedule();
+
+        $this->actingAs($this->owner)->delete('/company-data/deletion')->assertRedirect();
+
+        $this->assertSame(2, $this->owner->notifications()->count());
+        $this->assertSame(2, $engineer->notifications()->count());
+        $cancelled = $engineer->notifications()->get()->firstWhere('data.title', 'Company deletion cancelled for Sahyadri Builders');
+        $this->assertNotNull($cancelled);
+        $this->assertNull($cancelled->data['url']);
+        $this->assertSame('Your data is safe and will not be erased.', $cancelled->data['body']);
+    }
+
+    public function test_a_request_records_where_it_was_made(): void
+    {
+        $this->actingAs($this->owner)->post('/company-data/deletion', ['confirm_name' => 'Sahyadri Builders'])->assertRedirect();
+        $this->assertSame('company', CompanyDeletionRequest::sole()->requested_via);
+
+        $other = $this->tenant('Solo Infra');
+        $request = app(CompanyDeletionService::class)->request($other, $this->member($other, 'owner'), 'Solo Infra', via: 'account');
+        $this->assertSame('account', $request->fresh()->requested_via);
+    }
+
+    public function test_the_requested_via_column_rolls_back(): void
+    {
+        $migration = require database_path('migrations/2027_01_04_100003_add_requested_via_to_company_deletion_requests.php');
+
+        $migration->down();
+        $this->assertFalse(Schema::hasColumn('company_deletion_requests', 'requested_via'));
+
+        $migration->up();
+        $this->assertTrue(Schema::hasColumn('company_deletion_requests', 'requested_via'));
     }
 
     public function test_asking_twice_does_not_extend_the_grace_period(): void
@@ -359,6 +434,61 @@ class CompanyDataTest extends NotifyTestCase
         $tombstone = CompanyDeletionRequest::withoutGlobalScopes()->sole();
         $this->assertSame('completed', $tombstone->status);
         $this->assertNull($tombstone->requested_by);
+    }
+
+    public function test_the_requester_is_emailed_once_the_company_has_been_erased(): void
+    {
+        $this->owner->forceFill(['locale' => 'hi'])->save();
+        $email = $this->owner->email;
+        $this->schedule();
+        Mail::fake();
+
+        $this->travel(CompanyDeletionService::GRACE_DAYS + 1)->days();
+        $this->runHousekeeping();
+
+        $this->assertDatabaseMissing('organizations', ['id' => $this->organization->id]);
+        $sent = Mail::sent(WorkflowNotificationMail::class, fn (WorkflowNotificationMail $mail) => $mail->notice->event === 'company.erased');
+        $this->assertCount(1, $sent);
+        $mail = $sent->first();
+        $this->assertTrue($mail->hasTo($email));
+        $this->assertSame('hi', $mail->locale);
+        $this->assertSame(__('Your company :company has been erased', ['company' => 'Sahyadri Builders'], 'hi'), $mail->notice->title);
+        $this->assertStringContainsString('Nirmaan360', $mail->notice->body);
+        $this->assertNull($mail->notice->url);
+
+        // The address was only ever held in memory: no table keeps it, not even the queue.
+        foreach (Schema::getTableListing(schemaQualified: false) as $table) {
+            $this->assertStringNotContainsStringIgnoringCase($email, (string) json_encode(DB::table($table)->get(), JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE), "{$table} still holds the requester's email.");
+        }
+    }
+
+    public function test_a_confirmation_email_that_fails_does_not_undo_the_purge(): void
+    {
+        $email = $this->owner->email;
+        $this->schedule();
+        Log::spy();
+        Mail::shouldReceive('to')->once()->with($email)->andThrow(new RuntimeException("Expected response code 250 but got 550: <{$email}> does not exist"));
+
+        $this->travel(CompanyDeletionService::GRACE_DAYS + 1)->days();
+        $this->runHousekeeping();
+
+        $this->assertDatabaseMissing('organizations', ['id' => $this->organization->id]);
+        $this->assertSame('completed', CompanyDeletionRequest::withoutGlobalScopes()->sole()->status);
+        Log::shouldHaveReceived('warning')->once()->withArgs(fn (string $message, array $context = []) => $message === 'The erasure confirmation email could not be sent'
+            && str_contains($context['error'], '[hidden]') && ! str_contains($context['error'], $email));
+    }
+
+    public function test_no_confirmation_is_sent_when_mail_is_only_logged(): void
+    {
+        $this->schedule();
+        config(['mail.default' => 'log']);
+        Mail::fake();
+
+        $this->travel(CompanyDeletionService::GRACE_DAYS + 1)->days();
+        $this->runHousekeeping();
+
+        $this->assertDatabaseMissing('organizations', ['id' => $this->organization->id]);
+        Mail::assertNothingSent();
     }
 
     public function test_tables_with_no_foreign_key_are_swept_too(): void
