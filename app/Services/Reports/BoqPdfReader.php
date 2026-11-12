@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use Illuminate\Support\Facades\Route;
 use Smalot\PdfParser\Config;
 use Smalot\PdfParser\Page;
 use Smalot\PdfParser\Parser;
@@ -13,7 +14,9 @@ use Throwable;
  * A PDF holds no cells, only pieces of text at positions and the lines ruled around them.
  * This class pulls both out of each page with smalot/pdfparser, pure PHP, and PdfTable puts
  * the table back together. The result is the same grid an Excel sheet gives, so the same
- * checks run on it. A scanned PDF is an image and has no text to read, so it is refused.
+ * checks run on it. A scanned PDF is an image and has no text to read, so it is refused. So is a
+ * PDF whose text was put there by a machine or by an old non-Unicode font (PdfTextLayer): that
+ * text is not what the page shows, and its figures must not be taken as typed.
  *
  * The file is untrusted: it is capped in size, pages and text, every stream is capped when
  * unpacked, the time spent is bounded, and any failure inside the parser is an ordinary error.
@@ -42,6 +45,11 @@ final class BoqPdfReader
     private const TOKEN = '/\((?:[^()\\\\]|\\\\.|\((?:[^()\\\\]|\\\\.)*\))*\)|<[0-9A-Fa-f\s]*>|<<|>>|[\[\]{}]|\/[^\s\/\[\]()<>{}%]*|%[^\r\n]*|[+-]?(?:\d+\.?\d*|\.\d+)|[A-Za-z\'"*][A-Za-z0-9\'"*]*/';
 
     private const PAINT = ['S', 's', 'f', 'F', 'f*', 'B', 'B*', 'b', 'b*'];
+
+    /** The route of the reader for scans and photos. It belongs to another module and may not be installed. */
+    private const SCAN_READER_ROUTE = 'boq-scans.create';
+
+    public function __construct(private PdfTextLayer $layer = new PdfTextLayer) {}
 
     public function read(string $path): BoqPdfRead
     {
@@ -86,6 +94,7 @@ final class BoqPdfReader
 
         $read = [];
         $pieces = 0;
+        $machineText = false;
 
         foreach ($pages as $page) {
             if (hrtime(true) > $deadline) {
@@ -94,11 +103,15 @@ final class BoqPdfReader
 
             try {
                 $text = $this->pieces($page);
-                $rules = $this->rules($page, $text['rotation']);
+                $tokens = self::tokens($page);
+                $rules = $this->rules($tokens, $text['rotation']);
+                $layer = $this->layer->inspect($page, $tokens);
             } catch (Throwable) {
                 return BoqPdfRead::failed($this->unreadable());
             }
 
+            unset($tokens);
+            $machineText = $machineText || $layer['invisible'] || $layer['legacy_font'];
             $pieces += count($text['pieces']);
 
             if ($pieces > self::MAX_PIECES) {
@@ -111,6 +124,11 @@ final class BoqPdfReader
         // A scan carries no text at all, or only a page number or a stamp on each page.
         if ($pieces <= 2 * count($read)) {
             return BoqPdfRead::failed(__('This PDF has no text in it, so it is a scanned copy or a picture. Its figures cannot be read. Please upload the Excel file of the estimate instead.'), scanned: true);
+        }
+
+        // Text is there, but on at least one page a machine wrote it or an old font draws it as other letters.
+        if ($machineText) {
+            return BoqPdfRead::failed($this->machineText(), scanned: true);
         }
 
         unset($document, $pages);
@@ -199,17 +217,12 @@ final class BoqPdfReader
      * operators, with the transformation matrix applied the way a viewer would. A path that is
      * only used to clip (W n) draws nothing and is dropped.
      *
+     * @param  list<string>  $tokens  The page's content stream, from tokens().
      * @return array{h: list<array{0: float, 1: float, 2: float}>, v: list<array{0: float, 1: float, 2: float}>} h: y, from x, to x. v: x, from y, to y.
      */
-    private function rules(Page $page, int $rotation): array
+    private function rules(array $tokens, int $rotation): array
     {
-        $stream = $this->stream($page);
         $rules = ['h' => [], 'v' => []];
-
-        if ($stream === '' || strlen($stream) > self::MAX_STREAM_BYTES || ! preg_match_all(self::TOKEN, $stream, $matches)) {
-            return $rules;
-        }
-
         $identity = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
         $ctm = $identity;
         $saved = [];
@@ -217,7 +230,6 @@ final class BoqPdfReader
         $current = $start = null;
         $pending = [];
         $kept = 0;
-        $tokens = $matches[0];
         $count = count($tokens);
 
         for ($i = 0; $i < $count && $kept < self::MAX_SEGMENTS; $i++) {
@@ -323,7 +335,34 @@ final class BoqPdfReader
         return $rules;
     }
 
-    private function stream(Page $page): string
+    /**
+     * The content stream of a page as tokens: strings, names, numbers and operators in the order written.
+     * Empty when the page draws nothing or its stream is over the size that is walked.
+     *
+     * @return list<string>
+     */
+    public static function tokens(Page $page): array
+    {
+        return self::tokenise(self::stream($page));
+    }
+
+    /** @return list<string> */
+    public static function tokenise(string $stream): array
+    {
+        if ($stream === '' || strlen($stream) > self::MAX_STREAM_BYTES || ! preg_match_all(self::TOKEN, $stream, $matches)) {
+            return [];
+        }
+
+        return $matches[0];
+    }
+
+    /** Whether the reader for scans and photos is part of this installation. A message names it only then. */
+    public static function hasScanReader(): bool
+    {
+        return Route::has(self::SCAN_READER_ROUTE);
+    }
+
+    private static function stream(Page $page): string
     {
         try {
             $contents = $page->get('Contents');
@@ -367,6 +406,14 @@ final class BoqPdfReader
     private function unreadable(): string
     {
         return __('This file could not be read as a PDF. It may be damaged or password-protected. Open it in a PDF viewer, save a fresh copy, or upload the Excel file instead.');
+    }
+
+    /** Said when the PDF has text that cannot be taken as typed. */
+    private function machineText(): string
+    {
+        return self::hasScanReader()
+            ? __('The text in this PDF was added by a scanner or uses an old Marathi or Hindi font, so its figures cannot be read as typed text. Read it as a scan, or upload the Excel file of the estimate instead.')
+            : __('The text in this PDF was added by a scanner or uses an old Marathi or Hindi font, so its figures cannot be read as typed text. Please upload the Excel file of the estimate instead.');
     }
 
     private function slow(): string

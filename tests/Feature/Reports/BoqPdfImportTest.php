@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\AuditLog;
 use App\Models\BoqItem;
 use App\Models\BoqRevision;
 use App\Models\BoqSection;
@@ -15,14 +16,24 @@ use App\Support\Dec;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Testing\TestResponse;
 
 /**
  * A BOQ read from a PDF. The PDFs are made here with dompdf, in the two layouts people upload:
  * the Excel template and an engineer's estimate. Every figure is invented.
+ *
+ * Confirming a preview is a statement by a person: the language the PDF is printed in, that the
+ * rows were compared with its pages, a tick against every line the reader repaired or left out,
+ * and a reason when the file's own total is not what the lines add up to. confirm() below sends
+ * those answers the way the preview page does, with the ticks read off the page it was shown.
  */
 class BoqPdfImportTest extends ReportsTestCase
 {
+    use WritesPdfByHand;
+
     private const ESTIMATE_HEADING = ['Sr. No.', 'Description of Items', 'Qty.', 'Rate', 'Unit', 'Amount in Rs.'];
 
     /** The same invented estimate as EstimateImportTest, as table rows. @return list<list<string>> */
@@ -152,6 +163,39 @@ class BoqPdfImportTest extends ReportsTestCase
         return session(BoqPdfImport::SESSION);
     }
 
+    /** @return list<string> The value of every tick box the preview page shows under "Please check these". */
+    private function ticks(Project $project): array
+    {
+        preg_match_all('/name="ack_notes\[\]" value="([0-9a-f]{40})"/', (string) $this->get(route('boq.pdf.preview', $project))->assertOk()->getContent(), $found);
+
+        return $found[1];
+    }
+
+    /**
+     * Confirm the staged PDF as a person does on the preview: the language, the pages tick and a tick for every note shown.
+     * $answers replaces any of them. A null takes that answer out.
+     */
+    private function confirm(Project $project, array $answers = [], ?string $token = null): TestResponse
+    {
+        $token ??= $this->token();
+
+        return $this->post(route('boq.pdf.confirm', $project), array_filter([
+            'token' => $token,
+            'printed_language' => 'en',
+            'pages_checked' => '1',
+            'ack_notes' => array_key_exists('ack_notes', $answers) ? null : $this->ticks($project),
+            ...$answers,
+        ], fn ($answer) => $answer !== null));
+    }
+
+    private function nothingWritten(Project $project): void
+    {
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
+        $this->assertSame(0, BoqSection::where('project_id', $project->id)->count());
+        $this->assertSame(0, BoqRevision::where('project_id', $project->id)->count());
+        $this->assertSame(0, AuditLog::where('action', 'boq.pdf_import_confirmed')->where('auditable_id', $project->id)->count());
+    }
+
     /** @return list<array<string, ?string>> The lines of a project as plain values, in BOQ order. */
     private function lines(Project $project): array
     {
@@ -194,7 +238,11 @@ class BoqPdfImportTest extends ReportsTestCase
         $pdf = $this->makeProject($this->org, ['code' => 'PDF1']);
         $this->uploadAs($this->pm, $pdf, $this->pdf($this->estimate()))->assertRedirect(route('boq.pdf.preview', $pdf));
 
-        $this->post(route('boq.pdf.confirm', $pdf), ['token' => $this->token()])
+        // The estimate has four places where the import is not what the file says: a quantity worked out, a rate
+        // changed to keep the amount, a unit taken as nos, and the "Add %" rows. Each is ticked on its own line.
+        $this->assertCount(4, $this->ticks($pdf));
+
+        $this->confirm($pdf)
             ->assertRedirect(route('boq.excel.index', $pdf))
             ->assertSessionHas('success', '10 BOQ rows imported from the PDF.');
 
@@ -219,8 +267,10 @@ class BoqPdfImportTest extends ReportsTestCase
         $project = $this->makeProject($this->org);
 
         $this->uploadAs($this->pm, $project, $this->pdf($this->template(), ['words' => false]))->assertRedirect(route('boq.pdf.preview', $project));
-        $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('Import these 3 rows')->assertSee('Superstructure');
-        $this->post(route('boq.pdf.confirm', $project), ['token' => $this->token()])->assertRedirect(route('boq.excel.index', $project));
+        $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('Import these 3 rows')->assertSee('Superstructure')->assertDontSee('Please check these');
+        // The template layout is read as it is written, so there is nothing to tick. The language and the pages are still asked.
+        $this->assertSame([], $this->ticks($project));
+        $this->confirm($project)->assertRedirect(route('boq.excel.index', $project))->assertSessionHas('success');
 
         $lines = $this->lines($project);
         $this->assertSame(['C1', 'C2', 'C3'], array_column($lines, 'code'));
@@ -234,8 +284,12 @@ class BoqPdfImportTest extends ReportsTestCase
         $rows = $this->template(2);
         $rows[2][1] = '';
         $this->uploadAs($this->pm, $other, $this->pdf($rows, ['words' => false]));
-        $this->get(route('boq.pdf.preview', $other))->assertOk()->assertSee('This PDF cannot be imported as it is')->assertSee('Item code is missing')->assertDontSee('Import these');
-        $this->post(route('boq.pdf.confirm', $other), ['token' => $this->token()])->assertRedirect(route('boq.excel.index', $other));
+        $this->get(route('boq.pdf.preview', $other))->assertOk()->assertSee('This PDF cannot be imported as it is')->assertSee('Item code is missing')->assertDontSee('Import these')->assertDontSee('Before you import');
+        // The answers are not asked for a file that cannot be imported, and giving them changes nothing.
+        $token = $this->token();
+        $this->confirm($other, ['ack_notes' => []], $token)->assertRedirect(route('boq.excel.index', $other))->assertSessionMissing('success');
+        $this->assertSame('Item code is missing.', session('boq_import.errors.0.message'));
+        $this->post(route('boq.pdf.confirm', $other), ['token' => $token])->assertRedirect(route('boq.excel.index', $other));
         $this->assertSame(0, BoqItem::where('project_id', $other->id)->count());
         $this->get(route('boq.excel.index', $other))->assertOk()->assertSee('Nothing was imported')->assertSee('Item code is missing');
     }
@@ -245,7 +299,7 @@ class BoqPdfImportTest extends ReportsTestCase
         $project = $this->makeProject($this->org);
 
         $this->uploadAs($this->pm, $project, $this->pdf($this->estimate(), ['borders' => false]))->assertRedirect(route('boq.pdf.preview', $project));
-        $this->post(route('boq.pdf.confirm', $project), ['token' => $this->token()])->assertSessionHas('success');
+        $this->confirm($project)->assertSessionHas('success');
 
         $lines = $this->lines($project);
         $this->assertSame(['1', '2', '3a', '3b', '4', '4.1', '5', '6', '7', '7.1'], array_column($lines, 'code'));
@@ -263,7 +317,7 @@ class BoqPdfImportTest extends ReportsTestCase
 
         $this->uploadAs($this->pm, $project, $file)->assertRedirect(route('boq.pdf.preview', $project));
         $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('Import these 90 rows');
-        $this->post(route('boq.pdf.confirm', $project), ['token' => $this->token()])->assertSessionHas('success');
+        $this->confirm($project)->assertSessionHas('success');
 
         $codes = array_column($this->lines($project), 'code');
         $this->assertCount(90, $codes);
@@ -281,7 +335,337 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->get(route('boq.pdf.preview', $project))->assertOk()
             ->assertSee('Does not match the lines')
             ->assertSee('Please check these')
-            ->assertSee('add up to');
+            ->assertSee('add up to')
+            ->assertSee('Why the total does not match')
+            ->assertSee('name="total_reason"', false);
+
+        // A file whose total agrees is not asked for a reason.
+        $agrees = $this->makeProject($this->org);
+        $this->uploadAs($this->pm, $agrees, $this->pdf($this->estimate()));
+        $this->get(route('boq.pdf.preview', $agrees))->assertOk()->assertSee('Matches the lines.')->assertDontSee('Why the total does not match')->assertDontSee('name="total_reason"', false);
+    }
+
+    public function test_confirming_needs_every_answer_and_writes_nothing_without_them(): void
+    {
+        $project = $this->makeProject($this->org);
+        $this->uploadAs($this->pm, $project, $this->pdf($this->estimate()));
+        $token = $this->token();
+        $ticks = $this->ticks($project);
+        $preview = route('boq.pdf.preview', $project);
+        $this->assertCount(4, $ticks);
+
+        // The bare press of the button, which used to be enough.
+        $this->post(route('boq.pdf.confirm', $project), ['token' => $token])
+            ->assertRedirect($preview)
+            ->assertSessionHasErrors(['printed_language', 'pages_checked', 'ack_notes'])
+            ->assertSessionDoesntHaveErrors(['total_reason']);
+        $this->nothingWritten($project);
+
+        $refused = [
+            'printed_language' => [['printed_language' => null], ['printed_language' => ''], ['printed_language' => 'gu'], ['printed_language' => ['en']]],
+            'pages_checked' => [['pages_checked' => null], ['pages_checked' => '0'], ['pages_checked' => 'no'], ['pages_checked' => ['1']]],
+            // None ticked, one left out, one swapped for a made-up tick, and a single "all" in place of the ticks.
+            'ack_notes' => [['ack_notes' => []], ['ack_notes' => array_slice($ticks, 1)], ['ack_notes' => [...array_slice($ticks, 0, 3), sha1('not a note')]], ['ack_notes' => 'all'], ['ack_notes' => [$ticks]]],
+        ];
+
+        foreach ($refused as $field => $cases) {
+            foreach ($cases as $answers) {
+                $this->confirm($project, $answers, $token)
+                    ->assertRedirect($preview)
+                    ->assertSessionHasErrors([$field])
+                    ->assertSessionDoesntHaveErrors(array_values(array_diff(array_keys($refused), [$field])));
+                $this->nothingWritten($project);
+                $this->assertSame($token, $this->token(), 'The preview stays staged after a refusal.');
+            }
+        }
+
+        // The refusal says how many lines are still to tick, and the preview comes back with what was answered.
+        $this->confirm($project, ['ack_notes' => array_slice($ticks, 2)], $token)
+            ->assertSessionHasErrors(['ack_notes' => 'Every line under "Please check these" needs its own tick. Not ticked yet: 2.']);
+        // (Looking into the session from a test starts it a second time, which empties the errors, so this one is only followed.)
+        $this->confirm($project, ['ack_notes' => array_slice($ticks, 1)], $token)->assertRedirect($preview);
+        $page = $this->get($preview)->assertOk()->assertSee('needs its own tick. Not ticked yet: 1.')->getContent();
+        $this->assertSame(2, substr_count($page, 'Not ticked yet: 1.'), 'Once at the head of the page and once above the lines.');
+        $this->assertSame(3, preg_match_all('/name="ack_notes\[\]" value="[0-9a-f]{40}"[^>]*\schecked/', $page));
+        $this->assertMatchesRegularExpression('/<option value="en" selected/', $page);
+        $this->assertMatchesRegularExpression('/name="pages_checked"[^>]*\schecked/', $page);
+        $this->nothingWritten($project);
+
+        // With every answer it is written, and who answered what is kept.
+        $this->confirm($project, ['total_reason' => 'Not asked for, so not kept.'], $token)->assertRedirect(route('boq.excel.index', $project))->assertSessionHas('success');
+        $this->assertSame(10, BoqItem::where('project_id', $project->id)->count());
+        $this->assertSame(['Imported from a PDF file'], BoqRevision::where('project_id', $project->id)->pluck('reason')->unique()->values()->all());
+
+        $log = AuditLog::where('action', 'boq.pdf_import_confirmed')->sole();
+        $this->assertSame([$this->org->id, $this->pm->id, $project->id], [$log->organization_id, $log->user_id, $log->auditable_id]);
+        $this->assertSame($project->getMorphClass(), $log->auditable_type);
+        $this->assertEquals(['file' => 'estimate.pdf', 'pages' => 1, 'rows' => 10, 'printed_language' => 'en', 'pages_checked' => true, 'notes_ticked' => 4, 'total_matches' => true, 'total_reason' => null], $log->new_values);
+    }
+
+    public function test_the_preview_asks_for_the_language_the_pages_and_a_tick_on_every_note(): void
+    {
+        $project = $this->makeProject($this->org);
+        $this->uploadAs($this->pm, $project, $this->pdf($this->estimate()));
+
+        $page = $this->get(route('boq.pdf.preview', $project))->assertOk()
+            ->assertSee('Before you import')
+            ->assertSee('Language the PDF is printed in')
+            ->assertSee('I compared these rows with the pages of the PDF')
+            ->assertSee('Open the PDF beside this page and compare each row with it.')
+            ->assertSee('No quantity in the file. It was worked out as amount divided by rate.')
+            ->assertSee('Quantity times rate does not match the amount in the file.')
+            ->assertSee('No unit in the file. It was taken as nos.')
+            ->getContent();
+
+        // No language is chosen for the person, and each of the three can be.
+        $this->assertSame(1, preg_match_all('/<select[^>]*name="printed_language"[^>]*required/', $page));
+        $this->assertSame(0, preg_match_all('/<option[^>]*selected/', $page));
+        $this->assertSame(['', 'en', 'mr', 'hi'], $this->found('/<option value="([a-z]*)"/', $page));
+
+        // One box for each note, each needed and none ticked, and nothing that ticks them together.
+        $this->assertSame(4, preg_match_all('/<input type="checkbox" name="ack_notes\[\]" value="[0-9a-f]{40}" form="boq-pdf-confirm"[^>]*required>/', $page));
+        $this->assertSame(1, preg_match_all('/<input type="checkbox" name="pages_checked" value="1" form="boq-pdf-confirm"[^>]*required>/', $page));
+        $this->assertSame(5, preg_match_all('/type="checkbox"/', $page));
+        $this->assertSame(0, preg_match_all('/type="checkbox"[^>]*\schecked/', $page));
+        $this->assertCount(4, array_unique($this->ticks($project)));
+
+        // Every answer is sent with the confirm form and none with the discard form.
+        $this->assertSame(1, preg_match_all('/<form id="boq-pdf-confirm" method="POST" action="'.preg_quote(route('boq.pdf.confirm', $project), '/').'"/', $page));
+    }
+
+    /** @return list<string> */
+    private function found(string $pattern, string $page): array
+    {
+        preg_match_all($pattern, $page, $found);
+
+        return $found[1];
+    }
+
+    public function test_a_total_that_does_not_match_needs_a_reason_and_the_history_keeps_it(): void
+    {
+        $project = $this->makeProject($this->org);
+        $this->uploadAs($this->pm, $project, $this->pdf($this->estimate(civilTotal: '1000000')));
+        $token = $this->token();
+        $preview = route('boq.pdf.preview', $project);
+
+        // The difference is itself one of the lines to tick.
+        $this->assertCount(5, $this->ticks($project));
+
+        foreach ([null, '', '          ', 'too short', "nine\n\n\n\n\nchar", str_repeat('x', BoqPdfImport::REASON_MAX + 1), ['a reason in a list']] as $reason) {
+            $this->confirm($project, ['total_reason' => $reason], $token)
+                ->assertRedirect($preview)
+                ->assertSessionHasErrors(['total_reason'])
+                ->assertSessionDoesntHaveErrors(['printed_language', 'pages_checked', 'ack_notes']);
+            $this->nothingWritten($project);
+        }
+
+        $this->confirm($project, [], $token)->assertSessionHasErrors(['total_reason' => 'The total written in the file does not match the lines. To import it as it is, write why in at least 10 characters.']);
+        $this->nothingWritten($project);
+
+        // The reason alone is not enough: the other answers are still needed.
+        $this->post(route('boq.pdf.confirm', $project), ['token' => $token, 'total_reason' => 'The civil total in the file is an old figure.'])
+            ->assertSessionHasErrors(['printed_language', 'pages_checked', 'ack_notes'])
+            ->assertSessionDoesntHaveErrors(['total_reason']);
+        $this->nothingWritten($project);
+
+        $this->confirm($project, ['total_reason' => "  The civil total in the file\n is an old figure.  "], $token)
+            ->assertRedirect(route('boq.excel.index', $project))
+            ->assertSessionHas('success', '10 BOQ rows imported from the PDF.');
+
+        $this->assertSame(10, BoqItem::where('project_id', $project->id)->count());
+        $this->assertSame(
+            ['Imported from a PDF file. The total written in the file does not match the lines. Reason given: The civil total in the file is an old figure.'],
+            BoqRevision::where('project_id', $project->id)->pluck('reason')->unique()->values()->all(),
+        );
+        $this->assertSame(10, BoqRevision::where('project_id', $project->id)->where('source', 'pdf_import')->count());
+
+        $log = AuditLog::where('action', 'boq.pdf_import_confirmed')->sole();
+        $this->assertFalse($log->new_values['total_matches']);
+        $this->assertSame('The civil total in the file is an old figure.', $log->new_values['total_reason']);
+        $this->assertSame(5, $log->new_values['notes_ticked']);
+
+        $this->get(route('project-setup.history', $project))->assertOk()->assertSee('Reason given: The civil total in the file is an old figure.');
+    }
+
+    /** The template layout with the descriptions in Marathi, as a contractor's own sheet often has them. @return list<list<string>> */
+    private function marathiTemplate(): array
+    {
+        return [
+            $this->boqHeading(),
+            ['Substructure', 'M1', 'पायासाठी मऊ मुरुमात खोदकाम करणे', 'cum', '10', '350'],
+            ['Substructure', 'M2', 'सिमेंट काँक्रीट M-20 टाकणे', 'cum', '4', '4000'],
+            ['Superstructure', 'M3', 'विटांचे बांधकाम करणे', 'cum', '6', '5200'],
+        ];
+    }
+
+    public function test_a_pdf_said_to_be_in_marathi_or_hindi_must_read_as_devanagari(): void
+    {
+        // An English estimate said to be Marathi or Hindi: what was read is not in that script, as with an old font.
+        $english = $this->makeProject($this->org);
+        $this->uploadAs($this->pm, $english, $this->pdf($this->estimate()));
+        $token = $this->token();
+
+        foreach (['mr', 'hi'] as $language) {
+            $this->confirm($english, ['printed_language' => $language], $token)
+                ->assertRedirect(route('boq.pdf.preview', $english))
+                ->assertSessionHasErrors(['printed_language' => "This PDF's text does not read as Marathi or Hindi. Upload the Excel file of the estimate instead."])
+                ->assertSessionDoesntHaveErrors(['pages_checked', 'ack_notes']);
+            $this->nothingWritten($english);
+        }
+
+        // Typed Marathi comes out of the PDF as Devanagari, and is accepted as Marathi or as Hindi.
+        foreach (['mr', 'hi'] as $language) {
+            $marathi = $this->makeProject($this->org);
+            $this->uploadAs($this->pm, $marathi, $this->pdf($this->marathiTemplate(), ['words' => false]))->assertRedirect(route('boq.pdf.preview', $marathi));
+            $this->get(route('boq.pdf.preview', $marathi))->assertOk()->assertSee('विटांचे बांधकाम करणे');
+            $this->confirm($marathi, ['printed_language' => $language])->assertSessionHas('success');
+
+            $lines = $this->lines($marathi);
+            $this->assertSame(['M1', 'M2', 'M3'], array_column($lines, 'code'));
+            $this->assertSame('सिमेंट काँक्रीट M-20 टाकणे', $lines[1]['description']);
+            $this->assertSame($language, AuditLog::where('action', 'boq.pdf_import_confirmed')->where('auditable_id', $marathi->id)->sole()->new_values['printed_language']);
+        }
+
+        // A sheet in both languages counts as Marathi from 30 Devanagari letters in 100, and not below that.
+        // Vowel signs are not letters: the Marathi line has 33, the English one 77 or 78, so 33 in 110 or in 111.
+        $this->assertSame(30, BoqPdfImport::DEVANAGARI_SHARE);
+        $marathiLine = 'पायासाठी खोदकाम काँक्रीट विटांचे बांधकाम प्लास्टर आणि रंगकाम करणे';
+        $englishLine = 'Plain cement concrete in foundation and plinth with cement, sand and metal as directed ';
+        $this->assertSame(33, preg_match_all('/(?=\p{L})\p{Devanagari}/u', $marathiLine));
+        $this->assertSame([77, 78], [preg_match_all('/\p{L}/u', $englishLine.'fully'), preg_match_all('/\p{L}/u', $englishLine.'wholly')]);
+
+        foreach (['fully' => true, 'wholly' => false] as $lastWord => $accepted) {
+            $mixed = $this->makeProject($this->org);
+            $rows = [$this->boqHeading(), ['Substructure', 'B1', $marathiLine, 'cum', '10', '350'], ['Substructure', 'B2', $englishLine.$lastWord, 'cum', '4', '4000']];
+            $this->uploadAs($this->pm, $mixed, $this->pdf($rows, ['words' => false]))->assertRedirect(route('boq.pdf.preview', $mixed));
+            $this->get(route('boq.pdf.preview', $mixed))->assertOk()->assertSee($marathiLine)->assertSee($englishLine.$lastWord);
+            $response = $this->confirm($mixed, ['printed_language' => 'mr']);
+
+            if ($accepted) {
+                $response->assertSessionHas('success');
+                $this->assertSame(2, BoqItem::where('project_id', $mixed->id)->count());
+            } else {
+                $response->assertSessionHasErrors(['printed_language']);
+                $this->nothingWritten($mixed);
+            }
+        }
+    }
+
+    /** What a scanner app writes over the picture of an estimate page: its own reading, line by line. */
+    private const SCANNED_LINES = [
+        'Sr. No.   Description of Items   Qty.   Rate   Unit   Amount in Rs.',
+        '1   Excavation for foundation in soft murum   10   350   Rs/cu.m   3500',
+        '2   Providing and fixing flush door   3   4000   Rs/door   12000',
+        'Total Estimate Amount   15500',
+    ];
+
+    public function test_a_pdf_whose_text_a_scanner_laid_over_the_picture_is_refused(): void
+    {
+        $project = $this->makeProject($this->org);
+        $scan = $this->handPdf($this->pagePicture().$this->textLines(self::SCANNED_LINES, 3));
+
+        $this->uploadAs($this->pm, $project, $this->upload($scan, 'scanned-estimate.pdf'))->assertRedirect(route('boq.excel.index', $project));
+
+        $this->assertNull($this->token());
+        $this->assertTrue(session('boq_import.scanned'));
+        $message = session('boq_import.errors.0.message');
+        $this->assertSame('The text in this PDF was added by a scanner or uses an old Marathi or Hindi font, so its figures cannot be read as typed text. Please upload the Excel file of the estimate instead.', $message);
+        $this->assertDoesNotMatchRegularExpression('/\b(AI|OCR|recogni)/i', $message);
+        $this->get(route('boq.excel.index', $project))->assertOk()->assertSee('Nothing was imported')->assertSee('added by a scanner');
+        $this->nothingWritten($project);
+
+        // The same words typed on the page are taken as text. They fail later, and only for want of a table.
+        $this->uploadAs($this->pm, $project, $this->upload($this->handPdf($this->pagePicture().$this->textLines(self::SCANNED_LINES)), 'typed.pdf'));
+        $this->assertStringContainsString('Could not find the heading row in the PDF', session('boq_import.errors.0.message'));
+        $this->assertFalse(session('boq_import.scanned'));
+
+        // One such page among typed ones is enough: the whole file is refused, not read in part.
+        $typed = $this->textLines(self::SCANNED_LINES);
+        $read = app(BoqPdfReader::class)->read($this->upload($this->handPdf([$typed, $this->pagePicture().$this->textLines(self::SCANNED_LINES, 3), $typed]), 'mixed.pdf')->getRealPath());
+        $this->assertFalse($read->ok());
+        $this->assertTrue($read->scanned);
+        $this->assertSame($message, $read->error);
+        $this->assertSame([], $read->grid);
+
+        // A scan with next to no text keeps the plain message it always had.
+        $bare = app(BoqPdfReader::class)->read($this->upload($this->handPdf($this->pagePicture().$this->textLines(['Page 1'], 3)), 'bare.pdf')->getRealPath());
+        $this->assertTrue($bare->scanned);
+        $this->assertStringContainsString('This PDF has no text in it, so it is a scanned copy or a picture.', (string) $bare->error);
+    }
+
+    public function test_a_pdf_in_an_old_marathi_or_hindi_font_is_refused(): void
+    {
+        $project = $this->makeProject($this->org);
+        // The text shows on the page, but the file holds other letters than the font draws.
+        $old = $this->handPdf($this->textLines(self::SCANNED_LINES), ['font' => 'ABCDEF+Kruti#20Dev#20010', 'picture' => 'none']);
+
+        $this->uploadAs($this->pm, $project, $this->upload($old, 'old-font.pdf'))->assertRedirect(route('boq.excel.index', $project));
+
+        $this->assertNull($this->token());
+        $this->assertTrue(session('boq_import.scanned'));
+        $this->assertStringContainsString('uses an old Marathi or Hindi font', session('boq_import.errors.0.message'));
+        $this->nothingWritten($project);
+
+        // The same page in an ordinary font gets as far as looking for the table.
+        $this->uploadAs($this->pm, $project, $this->upload($this->handPdf($this->textLines(self::SCANNED_LINES), ['picture' => 'none']), 'plain.pdf'));
+        $this->assertStringContainsString('Could not find the heading row in the PDF', session('boq_import.errors.0.message'));
+    }
+
+    public function test_the_reader_for_scans_is_named_only_where_it_is_installed(): void
+    {
+        $project = $this->makeProject($this->org);
+        $scan = $this->handPdf($this->pagePicture().$this->textLines(self::SCANNED_LINES, 3));
+        $this->assertFalse(BoqPdfReader::hasScanReader());
+
+        $this->uploadAs($this->pm, $project, $this->upload($scan, 'scan.pdf'));
+        $this->assertStringNotContainsString('Read it as a scan', session('boq_import.errors.0.message'));
+
+        // The module that reads scans brings this route. Until it is there, nobody is sent to it.
+        Route::get('/projects/{project}/boq-scans/create', fn () => '')->name('boq-scans.create');
+        Route::getRoutes()->refreshNameLookups();
+        $this->assertTrue(BoqPdfReader::hasScanReader());
+
+        $this->uploadAs($this->pm, $project, $this->upload($scan, 'scan.pdf'));
+        $this->assertSame('The text in this PDF was added by a scanner or uses an old Marathi or Hindi font, so its figures cannot be read as typed text. Read it as a scan, or upload the Excel file of the estimate instead.', session('boq_import.errors.0.message'));
+
+        $this->uploadAs($this->pm, $project, $this->pdf($this->estimate()));
+        $this->confirm($project, ['printed_language' => 'mr'])->assertSessionHasErrors(['printed_language' => "This PDF's text does not read as Marathi or Hindi. Read it as a scan."]);
+        $this->nothingWritten($project);
+    }
+
+    public function test_the_scan_module_can_put_its_offer_and_the_pages_of_the_pdf_on_these_screens(): void
+    {
+        $project = $this->makeProject($this->org);
+
+        // Without that module there is no offer, and the person is told to open the PDF themselves.
+        $this->actingAs($this->pm)->get(route('boq.excel.index', $project))->assertOk()->assertDontSee('scan-offer');
+        $this->uploadAs($this->pm, $project, $this->pdf($this->estimate(), [], 'tower-estimate.pdf'));
+        $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('Open the PDF beside this page and compare each row with it.')->assertDontSee('pdf-pages');
+
+        $views = storage_path('framework/testing/boq-scan-views-'.uniqid());
+        File::ensureDirectoryExists($views.'/modules/boq_scan');
+        File::put($views.'/modules/boq_scan/_offer.blade.php', '<p id="scan-offer" data-project="{{ $project->id }}" data-scanned="{{ empty($import[\'scanned\']) ? \'no\' : \'yes\' }}"></p>');
+        File::put($views.'/modules/boq_scan/_pdf_pages.blade.php', '<aside id="pdf-pages" data-project="{{ $project->id }}" data-file="{{ $preview[\'file\'] }}" data-pages="{{ $preview[\'pages\'] }}"></aside>');
+        View::addLocation($views);
+
+        try {
+            // The pages are drawn beside the rows, and the line about opening the PDF by hand goes.
+            $this->get(route('boq.pdf.preview', $project))->assertOk()
+                ->assertSee('<aside id="pdf-pages" data-project="'.$project->id.'" data-file="tower-estimate.pdf" data-pages="1"></aside>', false)
+                ->assertDontSee('Open the PDF beside this page')
+                ->assertSee('I compared these rows with the pages of the PDF');
+
+            // The offer is on the import page always, and knows when a PDF has just been refused as a scan.
+            // The upload form and its file box keep the names that module's script looks for.
+            $this->get(route('boq.excel.index', $project))->assertOk()
+                ->assertSee('<p id="scan-offer" data-project="'.$project->id.'" data-scanned="no"></p>', false)
+                ->assertSee('<form id="boq-import-form" method="POST" action="'.route('boq.excel.import', $project).'"', false)
+                ->assertSee('<input id="file" name="file" type="file"', false);
+            $this->uploadAs($this->pm, $project, $this->textlessPdf(1));
+            $this->get(route('boq.excel.index', $project))->assertOk()->assertSee('Nothing was imported')->assertSee('<p id="scan-offer" data-project="'.$project->id.'" data-scanned="yes"></p>', false);
+        } finally {
+            File::deleteDirectory($views);
+        }
     }
 
     public function test_a_scanned_pdf_is_refused_with_a_plain_message(): void
@@ -371,8 +755,13 @@ class BoqPdfImportTest extends ReportsTestCase
             $this->actingAs($this->pm)->post(route('boq.pdf.confirm', $project), ['token' => $bad])->assertRedirect(route('boq.excel.index', $project));
         }
 
+        // A colleague's answers do not make the token theirs.
+        $this->actingAs($colleague)->post(route('boq.pdf.confirm', $project), ['token' => $token, 'printed_language' => 'en', 'pages_checked' => '1'])->assertRedirect(route('boq.excel.index', $project));
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
+
         // The rightful owner can still go ahead.
-        $this->actingAs($this->pm)->post(route('boq.pdf.confirm', $project), ['token' => $token])->assertSessionHas('success');
+        $this->actingAs($this->pm);
+        $this->confirm($project, [], $token)->assertSessionHas('success');
         $this->assertSame(10, BoqItem::where('project_id', $project->id)->count());
     }
 
@@ -444,7 +833,17 @@ class BoqPdfImportTest extends ReportsTestCase
 
         $this->uploadAs($this->pm, $project, $this->pdf($this->estimate()));
 
-        $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('इम्पोर्ट से पहले PDF जाँचें')->assertSee('ये 10 पंक्तियाँ इम्पोर्ट करें');
+        $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('इम्पोर्ट से पहले PDF जाँचें')->assertSee('ये 10 पंक्तियाँ इम्पोर्ट करें')
+            ->assertSee('इम्पोर्ट करने से पहले')
+            ->assertSee('PDF किस भाषा में छपी है')
+            ->assertSee('मैंने ये पंक्तियाँ PDF के पन्नों से मिलाकर देखी हैं');
+
+        // A refusal is said in the person's language too.
+        $this->post(route('boq.pdf.confirm', $project), ['token' => $this->token()])->assertRedirect(route('boq.pdf.preview', $project))
+            ->assertSessionHasErrors(['printed_language' => 'वह भाषा चुनें जिसमें PDF छपी है।']);
+
+        $this->pm->update(['locale' => 'mr']);
+        $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('इम्पोर्ट करण्यापूर्वी')->assertSee('मी या ओळी PDF च्या पानांशी ताडून पाहिल्या आहेत');
     }
 
     public function test_reading_a_pdf_gives_no_time_limit_to_a_process_that_has_none(): void

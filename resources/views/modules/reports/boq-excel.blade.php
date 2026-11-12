@@ -51,6 +51,9 @@
         </section>
     @endif
 
+    {{-- The offer to read a scanned copy or photos, when that module is installed. It sees $import, whose "scanned" entry is true after a PDF was refused as a scan. --}}
+    @includeIf('modules.boq_scan._offer', ['project' => $project])
+
     <div class="grid gap-5 lg:grid-cols-2">
         <section class="card">
             <div class="card-head"><h2 class="card-title">{{ __('Export') }}</h2></div>
@@ -62,7 +65,8 @@
         </section>
 
         @can('boq.manage')
-            <form method="POST" action="{{ route('boq.excel.import', $project) }}" enctype="multipart/form-data" class="card">
+            {{-- The id is for the scan module: it keeps a copy of an uploaded PDF in the browser to draw its pages beside the preview. --}}
+            <form id="boq-import-form" method="POST" action="{{ route('boq.excel.import', $project) }}" enctype="multipart/form-data" class="card">
                 @csrf
                 <div class="card-head"><h2 class="card-title">{{ __('Import') }}</h2></div>
                 <div class="space-y-3 p-4">
