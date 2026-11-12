@@ -95,6 +95,15 @@ class PriceTableTest extends AgentTestCase
         $this->assertSame('0.000000', $this->usd('claude-haiku-5-5'));
     }
 
+    public function test_one_hour_cache_writes_would_be_priced_and_counted_as_prompt_if_a_caller_reported_them(): void
+    {
+        $meter = app(CostMeter::class);
+
+        $this->assertSame('0.004000', $meter->usd('claude-sonnet-5-5', ['input' => 0, 'output' => 0, 'cache_read' => 0, 'cache_write' => 0, 'cache_write_1h' => 1000]));
+        $this->assertSame('0.020000', $meter->usd('claude-haiku-5-5', ['input' => 0, 'output' => 0, 'cache_read' => 0, 'cache_write' => 0, 'cache_write_1h' => 100000]));
+        $this->assertSame('0.100001', $meter->usd('claude-haiku-5-5', ['input' => 0, 'output' => 0, 'cache_read' => 0, 'cache_write' => 0, 'cache_write_1h' => 100001]));
+    }
+
     public function test_every_price_row_can_price_every_kind_of_token_a_reply_reports(): void
     {
         $kinds = ['input', 'output', 'cache_read', 'cache_write', 'cache_write_1h'];
