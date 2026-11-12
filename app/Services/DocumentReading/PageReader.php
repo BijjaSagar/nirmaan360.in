@@ -405,7 +405,7 @@ class PageReader
             return [...$plan, 'chargeable' => $kind->chargeable($probe), 'page' => [
                 ...$row, 'status' => DocumentReadPage::READ, 'fail_reason' => null, 'error_detail' => null,
                 'result' => json_encode($outcome->output, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
-                'needs_picture' => false, 'requeues' => 0,
+                'needs_picture' => false, 'requeues' => 0, 'auto_requeued' => 0,
             ]];
         }
 
@@ -441,7 +441,7 @@ class PageReader
                 'second_half' => ['page_no' => $middle + 1, 'page_to' => $to, 'text_chars' => $length($middle + 1, $to)],
                 'page' => [
                     ...$row, 'status' => DocumentReadPage::WAITING, 'fail_reason' => null, 'error_detail' => null, 'behaviour_failures' => $failures,
-                    'page_to' => $middle, 'text_chars' => $length($from, $middle), 'input_tokens' => 0, 'output_tokens' => 0, 'requeues' => 0, 'finished_at' => now(),
+                    'page_to' => $middle, 'text_chars' => $length($from, $middle), 'input_tokens' => 0, 'output_tokens' => 0, 'requeues' => 0, 'auto_requeued' => 0, 'finished_at' => now(),
                 ],
             ];
         }
@@ -449,7 +449,8 @@ class PageReader
         return [...$plan, 'page' => [
             ...$row, 'status' => DocumentReadPage::FAILED, 'fail_reason' => $reason,
             'error_detail' => $outcome->detail === null ? null : Str::limit($outcome->detail, 290, ''),
-            'behaviour_failures' => $failures, 'requeues' => 0,
+            // The page has an answer of its own now, so a later try starts with a clean slate: its own waits, its own second chance.
+            'behaviour_failures' => $failures, 'requeues' => 0, 'auto_requeued' => 0,
             // A single text page that does not fit is offered as a page picture instead.
             'needs_picture' => $cutOff === 'split_run' && blank($page->image_path),
         ]];

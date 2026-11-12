@@ -72,6 +72,27 @@ class ReadTendingTest extends PageReadingTestCase
         $this->assertSame(DocumentReadPage::QUEUED, DocumentReadPage::withoutGlobalScopes()->where('document_read_id', $read->id)->where('page_no', 2)->sole()->status);
     }
 
+    public function test_a_recovered_page_that_then_gets_an_answer_has_its_second_chance_back(): void
+    {
+        $read = $this->startedRead(overrides: ['last_dispatched_at' => now()->subSeconds(331)]);
+        $path = ReadFiles::page($read, 1, 'rows');
+        Storage::put($path, 'stored picture');
+        $page = $this->lostPage($read, 1, ['image_path' => $path, 'image_sha256' => hash('sha256', 'stored picture')]);
+        $this->makePage($read, 2);
+        $this->fakeReader([$this->answer()]);
+
+        $this->tending()->all();
+        $this->assertSame([DocumentReadPage::QUEUED, 1], [$page->fresh()->status, (int) $page->fresh()->auto_requeued]);
+
+        $this->readPage($page);
+
+        $page->refresh();
+        $this->assertSame([DocumentReadPage::READ, 0, 2], [$page->status, (int) $page->auto_requeued, $page->attempts]);
+        // Only the try that was answered is charged.
+        $this->assertCount(1, $this->usageLines($this->organization));
+        $this->assertSame("dr:{$read->id}:{$page->id}:2", $this->usageLines($this->organization)[0]->reference);
+    }
+
     public function test_a_page_that_is_only_slow_is_left_alone_and_a_late_worker_cannot_write_after_it_was_given_up(): void
     {
         $read = $this->startedRead(overrides: ['last_dispatched_at' => now()->subSeconds(300)]);
