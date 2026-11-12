@@ -388,6 +388,44 @@ class ReportScheduleTest extends ReportsTestCase
         $this->assertSame(0, $service->runDue()['sent']);
     }
 
+    public function test_a_schedule_with_nobody_left_to_send_to_is_skipped_rather_than_failing(): void
+    {
+        $this->emailConfigured();
+        $gateway = new class extends ReportMailGateway
+        {
+            public int $calls = 0;
+
+            public function configured(): bool
+            {
+                return true;
+            }
+
+            public function send(array $recipients, Mailable $mail): void
+            {
+                $this->calls++;
+            }
+        };
+        $this->app->instance(ReportMailGateway::class, $gateway);
+        $empty = $this->schedule(['name' => 'empty']);
+        $this->schedule(['name' => 'full']);
+        // As deleting the only person on the list leaves it, then resumed by hand.
+        $empty->forceFill(['recipients' => []])->saveQuietly();
+
+        $this->travelTo(Carbon::parse('2026-11-09 07:05:00'));
+        $service = app(ScheduleService::class);
+
+        $this->assertSame(['sent' => 1, 'waiting' => 0, 'skipped' => 1, 'failed' => 0], $service->runDue());
+        $this->assertSame(1, $gateway->calls, 'Only the schedule with addresses reached the mailer.');
+        $empty->refresh();
+        $this->assertSame('no_recipients', $empty->last_status);
+        $this->assertNotNull($empty->last_run_at);
+
+        // The slot is handled, and the schedules page says why nothing went.
+        $this->travelTo(Carbon::parse('2026-11-09 07:20:00'));
+        $this->assertSame(['sent' => 0, 'waiting' => 0, 'skipped' => 0, 'failed' => 0], $service->runDue());
+        $this->actingAs($this->pm)->get(route('reports.schedules.index'))->assertOk()->assertSee('Not sent: nobody is left on the list to send it to.');
+    }
+
     public function test_a_paused_schedule_is_left_alone(): void
     {
         Mail::fake();

@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Party;
 use App\Models\User;
 use App\Services\Notify\CompanyDeletionService;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\BuildsTenant;
@@ -54,7 +55,8 @@ class AccountDeletionPageTest extends TestCase
             ->assertSee('Delete your account and company')
             ->assertSee('You are the only owner of Deccan Builders')
             ->assertSee('2 other people will lose access.')
-            ->assertSee('It is erased after 12 Dec 2026.')
+            ->assertSee('It is erased after 12 Dec 2026. Until then the company keeps working, and you can cancel by signing in again and opening Account, Delete my account.')
+            ->assertDontSee('opening Company data')
             ->assertSee('Type Deccan Builders to confirm')
             ->assertSee('name="mode" value="company"', false)
             ->assertSee('name="confirm_name"', false)
@@ -72,17 +74,142 @@ class AccountDeletionPageTest extends TestCase
         $request = app(CompanyDeletionService::class)->request($this->company, $this->owner, 'Deccan Builders');
         $date = $request->purge_after->format('d M Y');
 
+        // The cancel is on this page itself, which every plan opens, not a link to Company data.
         $this->actingAs($this->owner)->get('/account/delete')->assertOk()
             ->assertSee('Your company is set to be erased')
             ->assertSee("Deccan Builders will be erased after {$date}.")
-            ->assertSee(route('notify.data.index'), false)
+            ->assertSee('action="'.route('account.cancel').'"', false)
+            ->assertSee('name="_method" value="DELETE"', false)
             ->assertSee('Cancel the deletion')
             ->assertDontSee('name="password"', false);
 
         $this->actingAs($member)->get('/account/delete')->assertOk()
             ->assertSee("Deccan Builders will be erased after {$date}.")
             ->assertSee('Only a company owner can cancel it.')
+            ->assertDontSee('Cancel the deletion')
+            ->assertDontSee('name="_method" value="DELETE"', false)
             ->assertSee('name="mode" value="account"', false);
+    }
+
+    public function test_an_owner_cancels_on_this_page_and_everyone_is_told(): void
+    {
+        $member = $this->member($this->company);
+        app(CompanyDeletionService::class)->request($this->company, $this->owner, 'Deccan Builders');
+
+        $this->actingAs($this->owner)->from('/account/delete')->delete('/account/delete')
+            ->assertRedirect(route('account.delete'))
+            ->assertSessionHas('success', 'Deletion cancelled. Your company stays as it is.');
+
+        $this->assertSame('cancelled', CompanyDeletionRequest::sole()->status);
+        $this->assertSame($this->owner->id, CompanyDeletionRequest::sole()->cancelled_by);
+        $this->assertNull($this->owner->fresh()->anonymised_at);
+        foreach ([$this->owner, $member] as $person) {
+            $this->assertCount(1, $person->notifications()->get()->where('data.title', 'Company deletion cancelled for Deccan Builders'));
+        }
+
+        // Back on the page, the deletion is gone and the owner is offered the company deletion again.
+        $this->get('/account/delete')->assertOk()
+            ->assertSee('Deletion cancelled. Your company stays as it is.')
+            ->assertDontSee('Your company is set to be erased')
+            ->assertSee('name="mode" value="company"', false);
+    }
+
+    public function test_an_offline_plan_only_owner_can_cancel_on_the_website(): void
+    {
+        $offline = $this->tenant('Phone Co', 'offline');
+        $owner = $this->member($offline, 'owner');
+
+        $this->actingAs($owner)->post('/account/delete', ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'Phone Co'])
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('success', fn (string $message) => str_ends_with($message, 'Sign in again before then to cancel.'));
+        $this->assertGuest();
+
+        // Signed in again, as the message says. Company data is closed on this plan, so the page neither links to it nor needs it.
+        $this->actingAs($owner->fresh());
+        $this->get('/company-data')->assertRedirect(route('offline.devices.index'));
+        $this->get('/account/delete')->assertOk()
+            ->assertSee('Cancel the deletion')
+            ->assertSee('action="'.route('account.cancel').'"', false)
+            ->assertSee('name="_method" value="DELETE"', false)
+            ->assertDontSee(route('notify.data.index'), false);
+
+        $this->delete('/account/delete')->assertRedirect(route('account.delete'))->assertSessionHas('success', 'Deletion cancelled. Your company stays as it is.');
+
+        $this->assertSame('cancelled', CompanyDeletionRequest::withoutGlobalScopes()->where('organization_id', $offline->id)->sole()->status);
+        $this->assertTrue($owner->fresh()->is_active);
+        $this->assertNull($owner->fresh()->anonymised_at);
+    }
+
+    public function test_the_offline_plan_page_does_not_send_the_owner_to_pages_the_plan_closes(): void
+    {
+        $offline = $this->tenant('Phone Co', 'offline');
+        $owner = $this->member($offline, 'owner');
+        $this->member($offline, 'engineer');
+
+        $this->actingAs($owner);
+        $this->get('/team')->assertRedirect(route('offline.devices.index'));
+        $this->get('/account/delete')->assertOk()
+            ->assertSee('You are the only owner of Phone Co')
+            ->assertSee('opening Account, Delete my account.')
+            ->assertDontSee('Want a copy first?')
+            ->assertDontSee('make another member an owner under Team first')
+            ->assertDontSee(route('notify.data.index'), false)
+            ->assertDontSee(route('team.index'), false);
+    }
+
+    public function test_only_an_owner_can_cancel(): void
+    {
+        $party = Party::create(['organization_id' => $this->company->id, 'type' => 'subcontractor', 'name' => 'Shree Formwork']);
+        $contractor = User::factory()->create(['organization_id' => $this->company->id, 'role' => User::CONTRACTOR_ROLE, 'contractor_party_id' => $party->id, 'is_active' => true]);
+        app(CompanyDeletionService::class)->request($this->company, $this->owner, 'Deccan Builders');
+
+        // An admin holds every permission but is not an owner; a contractor login reaches the service and is refused there too.
+        foreach ([$this->member($this->company, 'admin'), $this->member($this->company, 'engineer'), $contractor] as $person) {
+            $this->actingAs($person)->delete('/account/delete')->assertForbidden()->assertSee('Only a company owner can do this.');
+        }
+
+        $this->assertSame('pending', CompanyDeletionRequest::sole()->status);
+    }
+
+    public function test_an_owner_cancels_only_their_own_companys_deletion(): void
+    {
+        $other = $this->tenant('Rival Constructions');
+        $rivalOwner = $this->member($other, 'owner');
+        app(CompanyDeletionService::class)->request($this->company, $this->owner, 'Deccan Builders');
+
+        $this->actingAs($rivalOwner)->delete('/account/delete')->assertRedirect(route('account.delete'));
+
+        $this->assertSame('pending', CompanyDeletionRequest::withoutGlobalScopes()->where('organization_id', $this->company->id)->sole()->status);
+        $this->assertSame(0, CompanyDeletionRequest::withoutGlobalScopes()->where('organization_id', $other->id)->count());
+    }
+
+    public function test_the_cancel_is_a_form_post_with_its_csrf_token(): void
+    {
+        // Tests skip the CSRF check, so it is switched back on here, as the website runs it.
+        $this->app->bind(PreventRequestForgery::class, fn ($app) => new class($app, $app['encrypter']) extends PreventRequestForgery
+        {
+            protected function runningUnitTests()
+            {
+                return false;
+            }
+        });
+        app(CompanyDeletionService::class)->request($this->company, $this->owner, 'Deccan Builders');
+        $this->actingAs($this->owner)->withSession(['_token' => 'page-token']);
+
+        $this->delete('/account/delete')->assertStatus(419);
+        $this->delete('/account/delete', ['_token' => 'another-token'])->assertStatus(419);
+        $this->assertSame('pending', CompanyDeletionRequest::sole()->status);
+
+        $this->delete('/account/delete', ['_token' => 'page-token'])->assertRedirect(route('account.delete'));
+        $this->assertSame('cancelled', CompanyDeletionRequest::sole()->status);
+    }
+
+    public function test_signed_out_visitors_cannot_cancel(): void
+    {
+        app(CompanyDeletionService::class)->request($this->company, $this->owner, 'Deccan Builders');
+
+        $this->delete('/account/delete')->assertRedirect(route('login'));
+        $this->assertSame('pending', CompanyDeletionRequest::sole()->status);
     }
 
     public function test_a_member_deletes_their_account_and_is_signed_out(): void
@@ -156,9 +283,14 @@ class AccountDeletionPageTest extends TestCase
         $party = Party::create(['organization_id' => $this->company->id, 'type' => 'subcontractor', 'name' => 'Shree Formwork']);
         $contractor = User::factory()->create(['organization_id' => $this->company->id, 'role' => User::CONTRACTOR_ROLE, 'contractor_party_id' => $party->id, 'is_active' => true]);
 
+        // The portal's own menu leads there, as the public deletion page says.
+        $this->actingAs($contractor)->get(route('contractor-portal.home'))->assertOk()
+            ->assertSee('href="'.route('account.delete').'"', false)->assertSee('Delete my account');
+
         // Shown in the portal's own frame, with no company menu.
         $this->actingAs($contractor)->get('/account/delete')->assertOk()
             ->assertSee('Contractor portal')->assertSee('Shree Formwork')->assertDontSee(route('team.index'), false)
+            ->assertSee('href="'.route('account.delete').'" class="btn btn-ink"', false)
             ->assertSee('name="mode" value="account"', false);
 
         $this->post('/account/delete', ['mode' => 'account', 'password' => 'password'])->assertRedirect(route('login'));

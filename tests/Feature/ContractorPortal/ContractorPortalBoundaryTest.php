@@ -27,7 +27,7 @@ class ContractorPortalBoundaryTest extends TestCase
     use BuildsContractorPortal, RefreshDatabase;
 
     /** What a contractor login may still reach outside the portal. */
-    private const OPEN_NAMES = ['contractor-portal.*', 'logout', 'locale', 'account.delete', 'account.destroy'];
+    private const OPEN_NAMES = ['contractor-portal.*', 'logout', 'locale', 'account.delete', 'account.destroy', 'account.cancel'];
 
     private const OPEN_URIS = ['api/v1/me', 'api/v1/auth/logout', 'api/v1/auth/account/deletion', 'api/v1/contractor-portal', 'api/v1/contractor-portal/*'];
 

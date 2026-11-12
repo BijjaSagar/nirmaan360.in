@@ -22,7 +22,12 @@
                 <div class="space-y-3 p-4 text-sm">
                     <p>{{ __(':company will be erased after :date.', ['company' => $company, 'date' => $pending['erase_after']->format('d M Y')]) }}</p>
                     @if ($pending['can_cancel'])
-                        <a href="{{ route('notify.data.index') }}" class="btn btn-primary">{{ __('Cancel the deletion') }}</a>
+                        {{-- Cancelled here rather than on Company data, which the offline plan does not open. --}}
+                        <form method="POST" action="{{ route('account.cancel') }}">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-primary">{{ __('Cancel the deletion') }}</button>
+                        </form>
                     @else
                         <p class="text-ink-3">{{ __('Only a company owner can cancel it.') }}</p>
                     @endif
@@ -44,10 +49,12 @@
                                 {{ __(':count other people will lose access.', ['count' => $preview['other_people']]) }}
                             @endif
                         </p>
-                        <p>{{ __('It is erased after :date. Until then the company keeps working, and you can cancel by signing in again and opening Company data.', ['date' => $preview['erase_after']->format('d M Y')]) }}</p>
+                        <p>{{ __('It is erased after :date. Until then the company keeps working, and you can cancel by signing in again and opening Account, Delete my account.', ['date' => $preview['erase_after']->format('d M Y')]) }}</p>
                         <p>{{ __('Records of payments your company made to :brand are kept, as Indian tax law requires.', ['brand' => config('buildos.brand')]) }}</p>
-                        <p>{{ __('Want a copy first? Export it from the Company data page.') }} <a href="{{ route('notify.data.index') }}" class="link">{{ __('Company data') }}</a></p>
-                        <p>{{ __('To keep the company going without you, make another member an owner under Team first, then delete your account here.') }} <a href="{{ route('team.index') }}" class="link">{{ __('Team') }}</a></p>
+                        @unless ($offline)
+                            <p>{{ __('Want a copy first? Export it from the Company data page.') }} <a href="{{ route('notify.data.index') }}" class="link">{{ __('Company data') }}</a></p>
+                            <p>{{ __('To keep the company going without you, make another member an owner under Team first, then delete your account here.') }} <a href="{{ route('team.index') }}" class="link">{{ __('Team') }}</a></p>
+                        @endunless
                     @else
                         <p class="font-semibold">{{ __('Your sign-in, name, email and mobile number are removed now. You cannot undo this.') }}</p>
                         <p>{{ __('Work you recorded for :company — reports, measurements, bills, attendance and photos — stays with the company, shown as "Deleted user".', ['company' => $company]) }}</p>

@@ -364,7 +364,8 @@ class AccountDeletionService
     /**
      * Report schedules mail whatever addresses were typed in, so theirs is taken out of every list in
      * the company, and out of the audit copies of those lists. Saved quietly: the Auditable trait would
-     * otherwise write the old list, address and all, into a new audit row.
+     * otherwise write the old list, address and all, into a new audit row. A schedule that mailed only
+     * them is paused, and says why, since there is nobody left to send it to.
      */
     private function dropReportRecipient(int $organizationId, string $email): void
     {
@@ -378,6 +379,12 @@ class AccountDeletionService
 
                 if ($recipients !== $schedule->recipients) {
                     $schedule->recipients = $recipients;
+
+                    if ($recipients === []) {
+                        $schedule->active = false;
+                        $schedule->last_status = 'no_recipients';
+                    }
+
                     $schedule->saveQuietly();
                 }
             }

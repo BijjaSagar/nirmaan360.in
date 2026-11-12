@@ -134,6 +134,7 @@
     "No work items recorded.": "कोई काम दर्ज नहीं है।",
     "No.": "क्र.",
     "None recorded.": "कुछ दर्ज नहीं।",
+    "Not sent: nobody is left on the list to send it to.": "नहीं भेजा गया: सूची में भेजने के लिए कोई नहीं बचा है।",
     "Not sent yet": "अभी भेजा नहीं गया",
     "Nothing was imported": "कुछ भी इम्पोर्ट नहीं हुआ",
     "Only the first :max rows were read, and the totals cover only those rows. Narrow the dates or the project to see the rest.": "केवल पहली :max पंक्तियाँ पढ़ी गईं और कुल सिर्फ़ उन्हीं का है। बाकी देखने के लिए तारीख़ें या प्रोजेक्ट सीमित करें।",

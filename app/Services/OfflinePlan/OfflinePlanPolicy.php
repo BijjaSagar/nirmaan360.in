@@ -21,7 +21,10 @@ final class OfflinePlanPolicy
     /** API paths a phone on the offline plan may call. Everything under /sync and every other write is refused. */
     private const API_ALLOWED = ['api/v1/auth/*', 'api/v1/me', 'api/v1/offline/*'];
 
-    /** Web pages that stay open on the offline plan: account, billing, devices, deleting one's account and signing out. */
+    /**
+     * Web pages that stay open on the offline plan: account, billing, devices and signing out. account.* covers
+     * deleting one's account and cancelling a pending company deletion, the website's only cancel on this plan.
+     */
     private const WEB_ALLOWED = ['offline.*', 'billing.*', 'settings.*', 'devices.*', 'account.*', 'logout', 'locale', 'notifications.read', 'admin.*'];
 
     public static function plan(): string

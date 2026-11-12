@@ -121,7 +121,43 @@ class AccountDeletionPolicyTest extends TestCase
         $this->assertSame([$owner->name, $owner->email], [$owner->fresh()->name, $owner->fresh()->email]);
         $this->post('/login', ['email' => $owner->email, 'password' => 'password'])->assertRedirect();
         $this->assertAuthenticatedAs($owner);
-        $this->assertSame('cancelled', app(AccountDeletionService::class)->cancelCompanyDeletion($owner->fresh()));
+
+        // "On the website under Account, Delete my account."
+        $this->get(route('account.delete'))->assertOk()->assertSee('Cancel the deletion');
+        $this->delete(route('account.cancel'))->assertRedirect(route('account.delete'));
+        $this->assertNull(app(CompanyDeletionService::class)->pending($company->id));
+    }
+
+    public function test_the_website_cancel_the_pages_name_is_the_one_every_plan_opens(): void
+    {
+        $where = 'on the website under Account, Delete my account.';
+
+        $this->get('/delete-account')->assertOk()
+            ->assertSee('Until then any owner, you included, can cancel by signing in again: in the app under Settings, Delete account, or '.$where)
+            ->assertDontSee('on the website under Account, Company data');
+        $this->get('/privacy')->assertOk()
+            ->assertSee('any owner can cancel by signing in during that time: in the app under Settings, Delete account, or '.$where);
+
+        // The offline plan closes Company data but keeps the account pages, the cancel among them.
+        $offline = $this->tenant('Phone Co', 'offline');
+        $owner = $this->member($offline, 'owner');
+        app(CompanyDeletionService::class)->request($offline, $owner, 'Phone Co');
+        $this->actingAs($owner)->get('/company-data')->assertRedirect(route('offline.devices.index'));
+        $this->get(route('account.delete'))->assertOk()->assertSee('Cancel the deletion');
+        $this->delete(route('account.cancel'))->assertRedirect(route('account.delete'));
+        $this->assertNull(app(CompanyDeletionService::class)->pending($offline->id));
+    }
+
+    public function test_a_contractor_finds_delete_my_account_in_the_portal_menu_as_the_pages_say(): void
+    {
+        $this->get('/delete-account')->assertSee('A contractor sign-in finds <strong>Delete my account</strong> in the contractor portal\'s menu.', false);
+        $this->get('/privacy')->assertSee('a contractor sign-in finds Delete my account in the contractor portal\'s menu', false);
+
+        $company = $this->tenant('Deccan Builders');
+        $party = Party::create(['organization_id' => $company->id, 'type' => 'subcontractor', 'name' => 'Shree Formwork']);
+        $contractor = User::factory()->create(['organization_id' => $company->id, 'role' => User::CONTRACTOR_ROLE, 'contractor_party_id' => $party->id, 'is_active' => true]);
+
+        $this->actingAs($contractor)->get(route('contractor-portal.home'))->assertOk()->assertSee('href="'.route('account.delete').'"', false);
     }
 
     public function test_signed_in_people_can_read_it_too(): void

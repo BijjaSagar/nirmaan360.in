@@ -13,7 +13,7 @@
     <p>Open <strong>Settings</strong>, then <strong>Delete account</strong>. The app shows what will happen, then asks for your password.</p>
 
     <h2>On the website</h2>
-    <p>Sign in, then open <strong>Account</strong>, <strong>Delete my account</strong> in the menu, or go straight to <a href="{{ route('account.delete') }}" class="link">Delete my account</a>. The page shows what will happen, then asks for your password. If you are your company's only owner, you also type the company's name.</p>
+    <p>Sign in, then open <strong>Account</strong>, <strong>Delete my account</strong> in the menu. A contractor sign-in finds <strong>Delete my account</strong> in the contractor portal's menu. You can also go straight to <a href="{{ route('account.delete') }}" class="link">Delete my account</a>. The page shows what will happen, then asks for your password. If you are your company's only owner, you also type the company's name.</p>
     <p>If you sign in with a mobile OTP or with Microsoft and do not know your password, set one first with <a href="{{ route('password.request') }}" class="link">Forgot password</a>.</p>
 
     <h2>If you cannot sign in</h2>
@@ -41,7 +41,7 @@
     <p>A company cannot be left without an owner, so deleting your account deletes the company and everything in it.</p>
     <ul>
         <li>You are signed out everywhere straight away, and everyone in the company is told.</li>
-        <li>The company keeps working for {{ $graceDays }} days. Until then any owner, you included, can cancel by signing in again: in the app under Settings, Delete account, or on the website under Account, Company data. Your name, email address and mobile number stay until then, so that you can sign in.</li>
+        <li>The company keeps working for {{ $graceDays }} days. Until then any owner, you included, can cancel by signing in again: in the app under Settings, Delete account, or on the website under Account, Delete my account. Your name, email address and mobile number stay until then, so that you can sign in.</li>
         <li>If someone else is made an owner and cancels the deletion, the company stays and your own account is deleted then, as for a member.</li>
         <li>After the {{ $graceDays }} days, the company is erased: every project, record, photo and file, and the account of every person in it. We then email you to confirm it is done.</li>
     </ul>

@@ -10,7 +10,10 @@
         @if ($notice->url)
             <p style="margin:0 0 16px"><a href="{{ $notice->url }}" style="color:#1f3a68;font-weight:bold">{{ __('Open in :brand', ['brand' => config('buildos.brand')]) }}</a></p>
         @endif
-        <p style="margin:16px 0 0;font-size:12px;color:#6b6b6b">{{ __('You can choose how you get these updates under Notification settings.') }}</p>
+        {{-- The erasure confirmation is the last email: the account and its settings are already gone. --}}
+        @unless ($notice->event === 'company.erased')
+            <p style="margin:16px 0 0;font-size:12px;color:#6b6b6b">{{ __('You can choose how you get these updates under Notification settings.') }}</p>
+        @endunless
     </div>
 </body>
 </html>

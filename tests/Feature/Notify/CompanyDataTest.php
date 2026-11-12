@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\Notify\CompanyDeletionService;
 use App\Services\Notify\CompanyExportService;
+use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\TenantData;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -456,10 +457,22 @@ class CompanyDataTest extends NotifyTestCase
         $this->assertStringContainsString('Nirmaan360', $mail->notice->body);
         $this->assertNull($mail->notice->url);
 
+        // The last email of all: the account and its notification settings are already gone, so it does not point there.
+        $mail->assertSeeInHtml(__('Your company :company has been erased', ['company' => 'Sahyadri Builders'], 'hi'));
+        $mail->assertDontSeeInHtml(__('You can choose how you get these updates under Notification settings.', [], 'hi'));
+        $mail->assertDontSeeInHtml('You can choose how you get these updates under Notification settings.');
+
         // The address was only ever held in memory: no table keeps it, not even the queue.
         foreach (Schema::getTableListing(schemaQualified: false) as $table) {
             $this->assertStringNotContainsStringIgnoringCase($email, (string) json_encode(DB::table($table)->get(), JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE), "{$table} still holds the requester's email.");
         }
+    }
+
+    public function test_other_update_emails_still_say_where_to_choose_how_they_arrive(): void
+    {
+        $mail = new WorkflowNotificationMail(new NotificationMessage(event: 'company.deletion_requested', title: 'Company deletion requested for Sahyadri Builders', critical: true));
+
+        $mail->assertSeeInHtml('You can choose how you get these updates under Notification settings.');
     }
 
     public function test_a_confirmation_email_that_fails_does_not_undo_the_purge(): void

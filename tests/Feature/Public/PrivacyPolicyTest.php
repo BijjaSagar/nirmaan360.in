@@ -38,7 +38,7 @@ class PrivacyPolicyTest extends TestCase
             ->assertSee('If you are a member of a company, your account is deleted straight away')
             ->assertSee('show "Deleted user"', false)
             ->assertSee('with the network address each action came from')
-            ->assertSee('deleting your account deletes the company. It keeps working for '.CompanyDeletionService::GRACE_DAYS.' days, and any owner can cancel by signing in during that time.')
+            ->assertSee('deleting your account deletes the company. It keeps working for '.CompanyDeletionService::GRACE_DAYS.' days, and any owner can cancel by signing in during that time: in the app under Settings, Delete account, or on the website under Account, Delete my account.')
             ->assertSee('we email you when it is done')
             ->assertSee('are kept as Indian tax law requires')
             ->assertSee('Backup copies are overwritten on a rolling schedule.')

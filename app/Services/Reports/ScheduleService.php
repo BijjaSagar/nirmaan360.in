@@ -180,11 +180,17 @@ class ScheduleService
         return $counts;
     }
 
-    /** Send one schedule now. Returns sent, failed, no_mail, no_owner, no_access, no_project or skipped, and saves all but the last on the schedule. */
+    /** Send one schedule now. Returns sent, failed, no_mail, no_recipients, no_owner, no_access, no_project or skipped, and saves all but the last on the schedule. */
     public function run(ReportSchedule $schedule, CarbonInterface $now): string
     {
         if (! $this->mail->configured()) {
             return $this->mark($schedule, 'no_mail', false);
+        }
+
+        // Saving needs at least one address, but deleting an account takes that person off every list,
+        // and a schedule paused then may be resumed. A mail with nobody to send to would fail every time.
+        if (! $this->hasRecipients($schedule)) {
+            return $this->mark($schedule, 'no_recipients', true);
         }
 
         $organization = Organization::find($schedule->organization_id);
@@ -236,6 +242,12 @@ class ScheduleService
         } finally {
             App::setLocale($locale);
         }
+    }
+
+    private function hasRecipients(ReportSchedule $schedule): bool
+    {
+        return is_array($schedule->recipients)
+            && array_filter($schedule->recipients, fn (mixed $address) => is_string($address) && trim($address) !== '') !== [];
     }
 
     private function claim(ReportSchedule $schedule): bool

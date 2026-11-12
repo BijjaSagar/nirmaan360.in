@@ -30,7 +30,11 @@ class PasswordResetController extends Controller
     {
         abort_unless(self::available(), 404);
 
-        Password::sendResetLink($request->validate(['email' => ['required', 'email']]));
+        $email = $request->validate(['email' => ['required', 'email']])['email'];
+
+        // Found in any letter case, as sign-in is. The broker is asked either way, so its timebox keeps a
+        // known address and an unknown one equally slow.
+        Password::sendResetLink(['email' => $this->storedEmail($email)]);
 
         // The response is the same either way, so an email address can't be probed.
         return back()->with('success', __('If this email is registered, a reset link has been sent.'));
@@ -53,6 +57,9 @@ class PasswordResetController extends Controller
             'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
+        // The link carries the stored address, but someone may retype it in another letter case.
+        $data['email'] = $this->storedEmail($data['email']);
+
         $status = Password::reset($data, function (User $user, string $password) {
             $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
             $user->tokens()->delete();
@@ -63,5 +70,11 @@ class PasswordResetController extends Controller
         }
 
         return redirect()->route('login')->with('success', __('Password changed. Please sign in.'));
+    }
+
+    /** The address as stored for whoever signs in with the typed one, or the typed one when nobody does. */
+    private function storedEmail(string $typed): string
+    {
+        return User::findByEmail($typed)?->email ?? $typed;
     }
 }

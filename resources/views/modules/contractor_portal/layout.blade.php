@@ -33,6 +33,7 @@
             <a href="{{ route('contractor-portal.payments') }}" class="{{ $tab('contractor-portal.payments') }}">{{ __('My payments') }}</a>
             <a href="{{ route('contractor-portal.bills') }}" class="{{ $tab('contractor-portal.bills', 'contractor-portal.bills.*') }}">{{ __('My bills') }}</a>
             <a href="{{ route('contractor-portal.notifications') }}" class="{{ $tab('contractor-portal.notifications') }}">{{ __('Notifications') }}</a>
+            <a href="{{ route('account.delete') }}" class="{{ $tab('account.*') }}">{{ __('Delete my account') }}</a>
             <x-locale-switch class="ml-auto" />
         </div>
     </nav>

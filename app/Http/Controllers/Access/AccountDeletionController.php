@@ -6,6 +6,7 @@ use App\Exceptions\AccountDeletionChanged;
 use App\Http\Controllers\Controller;
 use App\Services\Access\AccountDeletionService;
 use App\Services\ContractorPortal\ContractorPortalService;
+use App\Services\OfflinePlan\OfflinePlanPolicy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,7 @@ class AccountDeletionController extends Controller
 {
     public function __construct(private AccountDeletionService $deletions) {}
 
-    public function show(Request $request, ContractorPortalService $portal): View
+    public function show(Request $request, ContractorPortalService $portal, OfflinePlanPolicy $offlinePlan): View
     {
         $user = $request->user();
 
@@ -25,6 +26,8 @@ class AccountDeletionController extends Controller
             'preview' => $this->deletions->preview($user),
             // A contractor login sees the page in its own portal frame, without the company menu.
             'party' => $portal->partyFor($user),
+            // The offline plan opens neither Company data nor Team, so the page does not send people there.
+            'offline' => $user->organization !== null && $offlinePlan->isOffline($user->organization),
         ]);
     }
 
@@ -49,5 +52,13 @@ class AccountDeletionController extends Controller
         return redirect()->route('login')->with('success', $result['result'] === 'scheduled'
             ? __('Your company will be erased after :date. Sign in again before then to cancel.', ['date' => $result['erase_after']->format('d M Y')])
             : __('Your account has been deleted.'));
+    }
+
+    /** Cancels a pending company deletion. The service refuses anyone but an owner with 403. */
+    public function cancel(Request $request): RedirectResponse
+    {
+        $this->deletions->cancelCompanyDeletion($request->user());
+
+        return redirect()->route('account.delete')->with('success', __('Deletion cancelled. Your company stays as it is.'));
     }
 }

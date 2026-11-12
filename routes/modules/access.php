@@ -15,6 +15,8 @@ Route::delete('/devices/{token}', [DeviceController::class, 'revokeMine'])->wher
 // Anyone signed in can delete their own account, contractor logins and the offline plan included.
 Route::get('/account/delete', [AccountDeletionController::class, 'show'])->name('account.delete');
 Route::post('/account/delete', [AccountDeletionController::class, 'destroy'])->middleware('throttle:5,1,account-deletion')->name('account.destroy');
+// The website's cancel of a pending company deletion, on every plan. Owners only, checked in the service.
+Route::delete('/account/delete', [AccountDeletionController::class, 'cancel'])->middleware('throttle:10,1,account-deletion-cancel')->name('account.cancel');
 
 Route::middleware('can:user.manage')->group(function () {
     Route::post('/team/invitations/{invitation}/reissue', [InvitationController::class, 'reissue'])->whereNumber('invitation')->middleware('throttle:20,1')->name('team.invitations.reissue');

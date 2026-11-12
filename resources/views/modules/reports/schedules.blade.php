@@ -7,6 +7,7 @@
             'sent' => __('Sent :date', ['date' => $schedule->last_run_at?->format('d M Y H:i')]),
             'failed' => __('Failed on :date. It will try again at the next time.', ['date' => $schedule->last_run_at?->format('d M Y H:i')]),
             'no_mail' => __('Waiting: email is not set up.'),
+            'no_recipients' => __('Not sent: nobody is left on the list to send it to.'),
             'no_owner' => __('Skipped: the person who saved it is no longer active.'),
             'no_access' => __('Skipped: that person can no longer open this report.'),
             'no_project' => __('Skipped: the project no longer exists.'),

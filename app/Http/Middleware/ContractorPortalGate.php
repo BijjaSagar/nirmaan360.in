@@ -19,8 +19,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ContractorPortalGate
 {
-    /** Route names a contractor still needs outside the portal: signing out, changing language and deleting their account. */
-    private const ALLOWED_NAMES = ['contractor-portal.*', 'logout', 'locale', 'account.delete', 'account.destroy'];
+    /**
+     * Route names a contractor still needs outside the portal: signing out, changing language and deleting their account.
+     * Named one by one, so a later account.* page is not opened to contractors by accident. account.cancel reaches
+     * the service, which refuses anyone but an owner, so a contractor gets the same 403 it would get here.
+     */
+    private const ALLOWED_NAMES = ['contractor-portal.*', 'logout', 'locale', 'account.delete', 'account.destroy', 'account.cancel'];
 
     /** The field app's own calls: who am I, sign out, delete my account, and the portal endpoints. */
     private const ALLOWED_URIS = ['api/v1/me', 'api/v1/auth/logout', 'api/v1/auth/account/deletion', 'api/v1/contractor-portal', 'api/v1/contractor-portal/*'];

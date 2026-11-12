@@ -34,6 +34,9 @@ use App\Services\MeasurementService;
 use App\Services\Notify\CompanyDeletionService;
 use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\Notifier;
+use App\Services\Reports\ReportMailGateway;
+use App\Services\Reports\ScheduleService;
+use Illuminate\Mail\Mailable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -319,12 +322,53 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame(['office@example.com', 'site@example.com'], $ours->fresh()->recipients);
         $this->assertSame([], $onlyTheirs->fresh()->recipients);
         $this->assertSame(['ravi@example.com', 'office@rival.example'], $theirs->fresh()->recipients);
+        // Nobody is left on that one list, so it is paused and says why. The others keep going.
+        $this->assertSame([false, 'no_recipients'], [$onlyTheirs->fresh()->active, $onlyTheirs->fresh()->last_status]);
+        $this->assertSame([true, true], [$ours->fresh()->active, $theirs->fresh()->active]);
 
         $ourAudit = json_encode(AuditLog::withoutGlobalScopes()->where('organization_id', $this->company->id)->get(['old_values', 'new_values'])->toArray());
         $this->assertStringNotContainsStringIgnoringCase('ravi@example.com', $ourAudit);
         $this->assertStringContainsString('site@example.com', $ourAudit);
         $this->assertStringContainsString('ravi@example.com', json_encode(AuditLog::withoutGlobalScopes()->where('organization_id', $rival->id)->get(['new_values'])->toArray()));
         $this->assertSame($audited, AuditLog::withoutGlobalScopes()->where('auditable_type', (new ReportSchedule)->getMorphClass())->count(), 'Scrubbing writes no new copy of the list.');
+    }
+
+    public function test_a_schedule_that_mailed_only_them_never_fails_at_its_next_time(): void
+    {
+        $member = $this->person('engineer', ['email' => 'ravi@example.com']);
+        $admin = $this->person('admin');
+        $schedule = ReportSchedule::withoutGlobalScopes()->create([
+            'organization_id' => $this->company->id, 'created_by' => $admin->id, 'report' => 'boq_ledger', 'format' => 'xlsx',
+            'period' => 'last_30_days', 'frequency' => 'daily', 'hour' => 7, 'recipients' => ['ravi@example.com'], 'active' => true,
+        ]);
+        $gateway = new class extends ReportMailGateway
+        {
+            public int $calls = 0;
+
+            public function configured(): bool
+            {
+                return true;
+            }
+
+            public function send(array $recipients, Mailable $mail): void
+            {
+                $this->calls++;
+            }
+        };
+        $this->app->instance(ReportMailGateway::class, $gateway);
+
+        $this->deleteMember($member)->assertOk();
+
+        $this->travel(2)->days();
+        $this->assertSame(['sent' => 0, 'waiting' => 0, 'skipped' => 0, 'failed' => 0], app(ScheduleService::class)->runDue(), 'Paused, so not even tried.');
+
+        // Resumed by an admin with the list still empty: skipped at its time instead of failing there.
+        $this->actingAs($admin)->patch(route('reports.schedules.toggle', $schedule))->assertRedirect();
+        $this->assertTrue($schedule->fresh()->active);
+        $this->travel(1)->days();
+        $this->assertSame(['sent' => 0, 'waiting' => 0, 'skipped' => 1, 'failed' => 0], app(ScheduleService::class)->runDue());
+        $this->assertSame(0, $gateway->calls);
+        $this->assertSame('no_recipients', $schedule->fresh()->last_status);
     }
 
     public function test_their_work_stays_with_the_company_and_shows_as_deleted_user(): void
