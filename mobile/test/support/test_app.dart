@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart'
     show DatabaseConnection, driftRuntimeOptions;
@@ -96,6 +97,7 @@ class TestApp {
     required this.connectivity,
     required this.tokens,
     required this.attachments,
+    required this.tempDirectory,
   });
 
   final AppServices services;
@@ -104,6 +106,10 @@ class TestApp {
   final FakeConnectivity connectivity;
   final InMemoryTokenStore tokens;
   final AttachmentStore attachments;
+
+  /// This app's own temporary folder, so a sign-out clearing its temporary
+  /// files never touches another test's.
+  final Directory tempDirectory;
 
   AppDatabase get db => services.db;
 
@@ -125,8 +131,10 @@ class TestApp {
     final fakeConnectivity = connectivity ?? FakeConnectivity();
     final store = attachments ?? InMemoryAttachmentStore();
     final tokens = InMemoryTokenStore();
+    final Directory temp = Directory.systemTemp.createTempSync('n360_app_');
 
     final services = AppServices.forTesting(
+      tempDirectory: () async => temp.path,
       db: db ?? newTestDatabase(),
       api: fakeApi,
       tokens: tokens,
@@ -143,6 +151,7 @@ class TestApp {
       connectivity: fakeConnectivity,
       tokens: tokens,
       attachments: store,
+      tempDirectory: temp,
     );
 
     if (signedIn) {
@@ -162,7 +171,14 @@ class TestApp {
   Future<void> sync() => services.sync.syncNow();
 
   /// Closes everything. Register with `addTearDown(app.dispose)`.
-  Future<void> dispose() => services.dispose();
+  Future<void> dispose() async {
+    await services.dispose();
+    try {
+      if (tempDirectory.existsSync()) tempDirectory.deleteSync(recursive: true);
+    } on FileSystemException {
+      // Already gone, or held by the OS for a moment: the system clears it later.
+    }
+  }
 }
 
 /// Lets Drift stream results reach widgets, without `pumpAndSettle` hanging

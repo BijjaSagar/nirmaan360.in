@@ -177,7 +177,8 @@ void main() {
       addTearDown(app.dispose);
       final int before = app.api.portalReads;
 
-      app.api.user = FakeApi().user;
+      // The same login, so the same id, now described as a member of staff.
+      app.api.user = <String, dynamic>{...FakeApi().user, 'id': app.api.user['id']};
       await app.services.portal.refresh();
 
       expect(app.services.session.user!.isContractor, isFalse);

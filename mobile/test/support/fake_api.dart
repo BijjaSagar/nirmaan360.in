@@ -722,6 +722,12 @@ class FakeApi implements NirmaanApi {
   /// The next `deleteAccount` throws this without deleting anything.
   ApiFailure? failNextDeleteAccount;
 
+  /// The next `deleteAccount` deletes, then its reply is lost on the way back.
+  bool loseNextDeleteAccountResponse = false;
+
+  /// With [loseNextDeleteAccountResponse]: the phone is offline from then on.
+  bool offlineAfterLostDelete = false;
+
   int cancelDeletionCalls = 0;
 
   /// The company is the only owner's and a deletion is set for this instant.
@@ -770,6 +776,11 @@ class FakeApi implements NirmaanApi {
     }
     // Every token of this person is revoked: whatever the phone asks next is a 401.
     unauthorized = true;
+    if (loseNextDeleteAccountResponse) {
+      loseNextDeleteAccountResponse = false;
+      if (offlineAfterLostDelete) offline = true;
+      throw const OfflineFailure('Response lost');
+    }
     if (mode == AccountDeletionMode.company) {
       final String eraseAfter = (deletionPreview['erase_after'] as String?) ?? '2026-12-09T10:00:00+05:30';
       return AccountDeletionResult.fromJson({'result': 'scheduled', 'erase_after': eraseAfter});

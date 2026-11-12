@@ -76,11 +76,13 @@ class SessionController {
   }
 
   /// Applies a fresh user object from a pull, e.g. changed permissions.
+  ///
+  /// Only for the person signed in now: a pull that was already on its way when
+  /// they signed out, or deleted their account, must not bring them back.
   Future<void> updateUser(CurrentUser user) async {
+    if (_state.status != SessionStatus.signedIn || _state.user?.id != user.id) return;
     await _writeCachedUser(user);
-    if (_state.status == SessionStatus.signedIn) {
-      _set(SessionState(SessionStatus.signedIn, user));
-    }
+    _set(SessionState(SessionStatus.signedIn, user));
   }
 
   /// A 401 was received. Drops the token only; nothing local is touched.

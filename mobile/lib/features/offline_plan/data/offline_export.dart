@@ -6,6 +6,7 @@ import 'package:archive/archive_io.dart';
 import 'package:drift/drift.dart' show StringExpressionOperators;
 import 'package:path/path.dart' as p;
 
+import '../../../core/config/app_config.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/sync/data_context.dart';
 
@@ -73,7 +74,7 @@ class OfflineExporter {
       for (final entry in tables.entries) 'csv/${entry.key}.csv': _csv(entry.value),
     };
 
-    final Directory folder = Directory(p.join(await _tempDirectory(), 'offline_exports'));
+    final Directory folder = Directory(p.join(await _tempDirectory(), AppConfig.offlineExportFolder));
     // Only earlier copies live here, and each was already handed over.
     if (await folder.exists()) await folder.delete(recursive: true);
     await folder.create(recursive: true);

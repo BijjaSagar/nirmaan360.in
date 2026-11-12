@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/core/api/api_failure.dart';
@@ -216,6 +218,33 @@ void main() {
     });
   });
 
+  test('signing in with nobody signed in clears what a late pull left behind', () async {
+    await app.sync();
+    await app.services.auth.signOut();
+    // A pull still on its way when the sign-out finished.
+    await app.db.writeMeta(MetaKey.watermark, '2026-11-09T04:30:00Z');
+    await app.db.into(app.db.issues).insert(IssuesCompanion.insert(
+          clientUuid: 'late-1',
+          projectId: 1,
+          title: 'From the last person',
+        ));
+    app.api.projects.clear();
+    app.api.issues.clear();
+
+    await app.services.auth.signIn(email: 'engineer@demo.test', password: 'secret');
+
+    expect(await app.db.select(app.db.issues).get(), isEmpty);
+  });
+
+  test('signing out clears the temporary backup and quotation files', () async {
+    final quotes = Directory('${app.tempDirectory.path}/quotations')..createSync();
+    File('${quotes.path}/quote.pdf').writeAsStringSync('pdf');
+
+    await app.services.auth.signOut(discardUnsent: true);
+
+    expect(quotes.existsSync(), isFalse);
+  });
+
   group('sign up', () {
     Future<SignInResult> signUp(TestApp on) => on.services.auth.signUp(
           company: 'Deccan Builders',
@@ -350,6 +379,97 @@ void main() {
       // Anything the phone asks with the old token is refused now.
       await expectLater(app.api.me(), throwsA(isA<AuthExpired>()));
       expect(app.services.session.current.status, SessionStatus.signedOut);
+    });
+
+    test('a sync under way finishes before the wipe, so nothing it pulls lands afterwards', () async {
+      await app.services.issues.raise(projectId: 1, title: 'Crack');
+      final gate = app.api.hangNextPush();
+      final Future<void> running = app.sync();
+      await pumpEventQueue();
+      expect(app.services.sync.isRunning, isTrue);
+
+      var done = false;
+      final Future<void> deleting = app.services.auth
+          .deleteAccount(mode: AccountDeletionMode.account, password: 'secret', discardUnsent: true)
+          .then((_) => done = true);
+      await pumpEventQueue();
+      expect(done, isFalse, reason: 'it waits for the sync');
+
+      gate.complete();
+      await running;
+      await deleting;
+
+      expect(app.services.sync.isRunning, isFalse);
+      expect(await app.db.select(app.db.projects).get(), isEmpty);
+      expect(await app.db.readMeta(MetaKey.watermark), isNull);
+      expect(app.services.session.current.status, SessionStatus.signedOut);
+    });
+
+    test('a pull for someone no longer signed in does not bring their user back', () async {
+      final user = app.services.session.user!;
+      await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+
+      await app.services.session.updateUser(user);
+
+      expect(await app.db.readMeta(MetaKey.sessionUser), isNull);
+      expect(app.services.session.current.user, isNull);
+    });
+
+    test('a reply lost on the way back still clears the phone when the server did delete', () async {
+      app.api.loseNextDeleteAccountResponse = true;
+
+      final result = await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+
+      expect(result.scheduled, isFalse);
+      expect(app.api.deleteAccountCalls, hasLength(1));
+      expect(app.services.session.current.status, SessionStatus.signedOut);
+      expect(await app.db.select(app.db.projects).get(), isEmpty);
+      expect(app.services.auth.takeDeletedNotice(), isNotNull);
+    });
+
+    test('a lost reply with no way to check is retried, and the retry finishes it', () async {
+      app.api.loseNextDeleteAccountResponse = true;
+      // The check after the lost reply cannot reach the server either.
+      app.api.offlineAfterLostDelete = true;
+
+      await expectLater(
+        app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret'),
+        throwsA(isA<OfflineFailure>()),
+      );
+      expect(app.services.session.current.isSignedIn, isTrue);
+      expect(await app.db.select(app.db.projects).get(), isNotEmpty);
+
+      // Back online: the token is gone, which shows the first request went through.
+      app.api.offline = false;
+      await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+
+      expect(app.api.deleteAccountCalls, hasLength(1));
+      expect(app.services.session.current.status, SessionStatus.signedOut);
+      expect(await app.db.select(app.db.projects).get(), isEmpty);
+    });
+
+    test('a 401 with no lost reply before it is not taken as a deletion', () async {
+      app.api.unauthorized = true;
+
+      await expectLater(
+        app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret'),
+        throwsA(isA<AuthExpired>()),
+      );
+      expect(await app.db.select(app.db.projects).get(), isNotEmpty);
+    });
+
+    test('the temporary backup and quotation files go too', () async {
+      final exports = Directory('${app.tempDirectory.path}/offline_exports')..createSync();
+      File('${exports.path}/nirmaan360-backup-1.zip').writeAsStringSync('zip');
+      final quotes = Directory('${app.tempDirectory.path}/quotations')..createSync();
+      File('${quotes.path}/quote.pdf').writeAsStringSync('pdf');
+      final other = File('${app.tempDirectory.path}/unrelated.txt')..writeAsStringSync('keep');
+
+      await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
+
+      expect(exports.existsSync(), isFalse);
+      expect(quotes.existsSync(), isFalse);
+      expect(other.existsSync(), isTrue);
     });
 
     test('on the offline plan the local records go too, and the plan is left', () async {

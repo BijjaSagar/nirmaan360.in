@@ -1,4 +1,4 @@
-import 'dart:io' show Directory;
+import 'dart:io' show Directory, Platform;
 import 'dart:ui' show PlatformDispatcher, Rect;
 
 import 'package:flutter/foundation.dart';
@@ -33,6 +33,7 @@ import '../features/offline_plan/data/offline_export.dart';
 import '../features/offline_plan/data/offline_upload.dart';
 import '../features/sync_center/data/sync_repository.dart';
 import 'api/dio_nirmaan_api.dart';
+import 'config/app_config.dart';
 import 'api/nirmaan_api.dart';
 import 'db/app_database.dart';
 import 'offline/offline_plan.dart';
@@ -53,6 +54,21 @@ import 'session/current_user.dart';
 
 /// Offers a file to the person: the file, a subject, and where the button is.
 typedef ShareFile = Future<void> Function(String path, String subject, Rect? origin);
+
+/// Deletes the temporary folders that hold company data: offline-plan backup
+/// zips and quotation files handed to another app. Never throws.
+Future<void> clearCompanyTempFiles(Future<String> Function() tempDirectory) async {
+  try {
+    final String root = await tempDirectory();
+    for (final String folder in <String>[AppConfig.offlineExportFolder, AppConfig.quotationFolder]) {
+      final Directory dir = Directory('$root${Platform.pathSeparator}$folder');
+      // Synchronous on purpose: two small folders, and it runs inside the sign-out.
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    }
+  } on Object {
+    // Best effort: the operating system clears the temporary folder too.
+  }
+}
 
 /// Opens a web page outside the app. False when the phone could not.
 typedef OpenLink = Future<bool> Function(Uri uri);
@@ -283,7 +299,7 @@ class AppServices {
       exportBackup: OfflineExporter(context, tempDirectory: tempDirectory).create,
       shareFile: shareFile,
       onDispose: onDispose,
-    );
+    )..auth.clearTemporaryFiles = () => clearCompanyTempFiles(tempDirectory);
   }
 
   final AppDatabase db;

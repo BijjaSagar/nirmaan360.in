@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/app_services.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/design/design.dart';
 import '../../../core/money/money.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -435,9 +436,11 @@ class QuotationSheet extends StatelessWidget {
   final String? name;
 
   Future<void> _openElsewhere(Uint8List bytes) async {
-    final String dir = (await getTemporaryDirectory()).path;
+    // Its own folder, which signing out and deleting the account clear.
+    final Directory dir = Directory(p.join((await getTemporaryDirectory()).path, AppConfig.quotationFolder));
+    await dir.create(recursive: true);
     final String fileName = name == null || name!.isEmpty ? 'quotation.pdf' : p.basename(name!);
-    final File file = File(p.join(dir, fileName));
+    final File file = File(p.join(dir.path, fileName));
     await file.writeAsBytes(bytes, flush: true);
     await SharePlus.instance.share(ShareParams(files: <XFile>[XFile(file.path)], title: fileName));
   }

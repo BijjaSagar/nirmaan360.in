@@ -41,7 +41,18 @@ class AuthRepository {
   /// has already dropped it and would refuse the revoked token. Never throws.
   Future<void> Function()? afterAccountDeleted;
 
+  /// Removes files this app left in the temporary folder: offline-plan backup
+  /// zips and quotation PDFs opened in another app. Never throws.
+  Future<void> Function()? clearTemporaryFiles;
+
   AccountDeletionResult? _deletedNotice;
+
+  /// The last deletion request got no reply, so the server may have done it.
+  bool _deletionReplyLost = false;
+
+  /// How long a wipe waits for a sync already under way. A pull can take
+  /// minutes on a poor link; past this the wipe goes ahead regardless.
+  static const Duration _syncSettle = Duration(seconds: 45);
 
   CurrentUser? get currentUser => _ctx.session.user;
 
@@ -71,6 +82,8 @@ class AuthRepository {
     if (previous != null && previous.id != user.id) {
       await _refuseOtherUsersWork();
       await _wipeLocalData();
+    } else if (previous == null) {
+      await _wipeLeftovers();
     }
     return _finishSignIn(login, user);
   }
@@ -103,8 +116,35 @@ class AuthRepository {
       locale: locale,
     );
     final user = CurrentUser.fromJson(login.user);
-    if (previous != null) await _wipeLocalData();
+    if (previous != null) {
+      await _wipeLocalData();
+    } else {
+      await _wipeLeftovers();
+    }
     return _finishSignIn(login, user);
+  }
+
+  /// With nobody signed in there should be nothing here. Anything that is was
+  /// written after a sign-out or a deletion by a pull already on its way, and
+  /// belongs to someone else.
+  Future<void> _wipeLeftovers() async {
+    final db = _ctx.db;
+    final bool leftovers = await db.readMeta(MetaKey.watermark) != null ||
+        (await (db.selectOnly(db.projects)..addColumns([db.projects.id.count()])).getSingle())
+                .read(db.projects.id.count()) !=
+            0;
+    if (leftovers) await _wipeLocalData();
+  }
+
+  /// Lets a sync that is already running finish, so nothing it pulled can land
+  /// after the wipe. Starts no new one.
+  Future<void> _settleSync() async {
+    if (!_ctx.sync.isRunning) return;
+    try {
+      await _ctx.sync.syncNow().timeout(_syncSettle);
+    } on Object {
+      // Whatever it ends in, the wipe goes ahead.
+    }
   }
 
   /// Throws [DifferentUserFailure] when this phone holds work that must never
@@ -174,6 +214,7 @@ class AuthRepository {
     } on Exception {
       // Signing out must work offline. The token is dropped locally anyway.
     }
+    await _settleSync();
     await _wipeLocalData();
     await _ctx.session.clear();
   }
@@ -205,17 +246,42 @@ class AuthRepository {
       final int count = _ctx.offlinePlan.isLocalOnly ? await _localRecordCount() : await unsentWorkCount();
       if (count > 0) throw UnsentWorkFailure(count);
     }
-    final AccountDeletionResult result = await _ctx.api.deleteAccount(
-      mode: mode,
-      password: password,
-      confirmName: confirmName,
-    );
+    AccountDeletionResult result;
+    try {
+      result = await _ctx.api.deleteAccount(mode: mode, password: password, confirmName: confirmName);
+    } on OfflineFailure {
+      // The request may have reached the server and only the reply been lost.
+      if (!await _deletionLanded()) {
+        _deletionReplyLost = true;
+        rethrow;
+      }
+      result = AccountDeletionResult(scheduled: mode == AccountDeletionMode.company);
+    } on AuthExpired {
+      // A revoked token right after a lost reply means that request went through.
+      if (!_deletionReplyLost) rethrow;
+      result = AccountDeletionResult(scheduled: mode == AccountDeletionMode.company);
+    }
+    _deletionReplyLost = false;
     _deletedNotice = result;
     await afterAccountDeleted?.call();
+    await _settleSync();
     if (_ctx.offlinePlan.isLocalOnly) await _ctx.offlinePlan.leave();
     await _wipeLocalData();
     await _ctx.session.clear();
     return result;
+  }
+
+  /// After a lost reply: the token is revoked exactly when the deletion went
+  /// through. False when the server still knows this person, or cannot be reached.
+  Future<bool> _deletionLanded() async {
+    try {
+      await _ctx.api.accountDeletionPreview();
+      return false;
+    } on AuthExpired {
+      return true;
+    } on Exception {
+      return false;
+    }
   }
 
   /// The deletion that just signed this phone out, once: the sign-in screen
@@ -268,5 +334,6 @@ class AuthRepository {
           .go();
     });
     await _ctx.attachments.deleteAll();
+    await clearTemporaryFiles?.call();
   }
 }

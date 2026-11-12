@@ -151,6 +151,8 @@ void main() {
       addTearDown(app.dispose);
 
       app.api.becomeContractor();
+      // The same login turned into a contractor login keeps its id.
+      app.api.user['id'] = app.services.session.user!.id;
       (app.api.user['can'] as Map)['money.view'] = true;
       await app.services.session.updateUser(CurrentUser.fromJson(app.api.user));
 
