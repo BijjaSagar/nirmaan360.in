@@ -47,4 +47,114 @@ return [
         11 => ['november', 'nov', 'नोव्हेंबर', 'नवंबर', 'नवम्बर'],
         12 => ['december', 'dec', 'डिसेंबर', 'दिसंबर', 'दिसम्बर'],
     ],
+
+    /*
+     * Each reader call, by kind and pass: the model, the most it may write, how hard it thinks and
+     * how long the HTTP call may take. A feature module registers the class for its kind in its own
+     * config file; the figures stay here so they can be read and changed together.
+     *
+     * max_tokens, timeout and assumed_tokens_per_second belong together: a call must be able to
+     * write max_tokens inside 80 percent of its timeout at the assumed speed. A test holds that.
+     *
+     * typical_output and typical_seconds are assumptions used for the estimate until 50 pages of
+     * that kind and pass have been read; after that the median of the last 200 is used. "then"
+     * names the passes that normally follow on the same page, so a quote counts them before their
+     * rows exist. "stronger" is the model a person may ask for on a second try.
+     */
+    'kinds' => [
+        'boq' => ['passes' => [
+            'rows' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 9000, 'effort' => 'low', 'timeout' => 240, 'typical_output' => 4500, 'typical_seconds' => 75, 'then' => ['amounts'], 'stronger' => 'claude-opus-5-5'],
+            'amounts' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1200, 'typical_seconds' => 20, 'stronger' => 'claude-sonnet-5-5'],
+        ]],
+        'slip' => ['passes' => [
+            'main' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90, 'typical_output' => 700, 'typical_seconds' => 15, 'stronger' => 'claude-sonnet-5-5'],
+            'recheck' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90, 'typical_output' => 700, 'typical_seconds' => 15],
+        ]],
+        'bill' => ['passes' => [
+            'main' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1500, 'typical_seconds' => 30],
+            'recheck' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1500, 'typical_seconds' => 30],
+        ]],
+        'tender' => ['passes' => [
+            'text' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 8000, 'effort' => 'low', 'timeout' => 240, 'typical_output' => 2500, 'typical_seconds' => 60],
+            'image' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 6000, 'effort' => 'low', 'timeout' => 180, 'typical_output' => 1500, 'typical_seconds' => 40],
+        ]],
+    ],
+
+    /* Text calls, by purpose. The same three figures belong together as for the kinds above. */
+    'purposes' => [
+        'wording' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90],
+        'hindrance_groups' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
+        'rate_match' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
+        'translate' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
+        'voice' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
+    ],
+
+    // An assumption: no speed is published or measured yet. The admin's dry run shows the real figure.
+    'assumed_tokens_per_second' => 50,
+
+    // Tokens of a call's fixed instructions and form, until they are counted once with a saved key.
+    'prompt_tokens' => 1200,
+
+    // A text page whose tokens were not counted beforehand is priced at this many tokens a character.
+    'text_tokens_per_character' => '1',
+
+    // The estimate switches from the assumed figures to the median of the last "window" read pages once "minimum" exist.
+    'typical' => ['window' => 200, 'minimum' => 50, 'cache_seconds' => 600],
+
+    // Pages of one read that may be with the model at the same time.
+    'parallel_pages' => 1,
+
+    /*
+     * What one read may cost. The offered limit is the estimate times cap_factor, rounded up to a
+     * whole credit, and never above the worst case or the company's maximum. A read whose estimate
+     * times floor_factor does not fit the maximum or the free balance is not started as it is.
+     * An owner may lower the maximum for the company; nobody may raise it above this figure.
+     */
+    'max_credits_per_read' => '650',
+    'cap_factor' => '1.6',
+    'floor_factor' => '1.2',
+
+    // Someone who is not an owner or admin may not push open holds above this share of the wallet.
+    'hold_share' => '0.50',
+
+    // The owners are told when the free balance drops below this many credits.
+    'low_balance_credits' => '100',
+
+    /*
+     * Credits a day (Asia/Kolkata), counted from what was charged today plus what is on hold.
+     * A feature is a reader kind or a text purpose. One that is not listed has no budget of its own:
+     * BOQ, bill and tender reads are bounded by the per-read limit and the hold share instead.
+     * "total" covers every feature together and is off until an owner sets it. Owners and admins
+     * change any of these for their company on the settings screen.
+     */
+    'budgets' => [
+        'user' => ['slip' => '30', 'voice' => '20', 'wording' => '30', 'rate_match' => '20', 'hindrance_groups' => '20', 'translate' => '20'],
+        'company' => ['slip' => '150', 'voice' => '100', 'wording' => '100', 'rate_match' => '60', 'hindrance_groups' => '60', 'translate' => '60', 'total' => null],
+    ],
+
+    // Owners are told once a day at each of these percentages of a company budget.
+    'budget_notice_percents' => [50, 80, 100],
+
+    // Unusable answers (pages and text calls together) a company may cause in 24 hours before its reads stop.
+    'failed_pages_per_day' => 40,
+
+    // Provider cost in US dollars a day that a company may cause without being charged for it.
+    'absorbed_usd_per_day' => ['paying' => '2.00', 'trial' => '0.50'],
+
+    // A company on a trial gets this much for the whole trial, unless the platform admin lifts it.
+    'trial' => ['pages' => 20, 'text_calls' => 30, 'max_credits_per_read' => '60'],
+
+    /*
+     * Platform limits on provider cost, in US dollars. daily_usd, month_share and trial_daily_usd
+     * are the defaults of the platform settings ai_reader_daily_usd, ai_reader_month_share and
+     * ai_trial_daily_usd. The monthly limit is month_share of ai_tier_monthly_cap_usd, which has no
+     * default: the platform admin types the cap shown in the provider's console.
+     */
+    'ceilings' => ['daily_usd' => '25', 'month_share' => '0.60', 'trial_daily_usd' => '10', 'cache_seconds' => 60],
+
+    // No single company may use more than this share of the daily limit.
+    'company_share_of_ceiling' => '0.40',
+
+    // The platform admins are told at these percentages of a limit, and again when it stops the readers.
+    'ceiling_notice_percents' => [50, 80],
 ];
