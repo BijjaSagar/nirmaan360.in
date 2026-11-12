@@ -33,6 +33,7 @@ class PageTagsTest extends TestCase
         'contact' => '/contact',
         'privacy' => '/privacy',
         'terms' => '/terms',
+        'refunds' => '/refund-policy',
         'login' => '/login',
         'register' => '/register',
     ];

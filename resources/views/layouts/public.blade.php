@@ -99,6 +99,7 @@
                 <li><a href="{{ route('contact') }}" class="hover:text-paper">{{ __('Contact') }}</a></li>
                 <li><a href="{{ route('privacy') }}" class="hover:text-paper">{{ __('Privacy') }}</a></li>
                 <li><a href="{{ route('terms') }}" class="hover:text-paper">{{ __('Terms') }}</a></li>
+                <li><a href="{{ route('refunds') }}" class="hover:text-paper">{{ __('Refunds') }}</a></li>
                 @if (app(\App\Services\Seo\Analytics::class)->measurementId())
                     {{-- Opens the analytics question again, so a choice can be changed at any time. --}}
                     <li><button type="button" data-consent-open class="cursor-pointer hover:text-paper">{{ __('Cookie settings') }}</button></li>

@@ -55,10 +55,11 @@
         </section>
 
         <section class="card lg:col-span-2">
-            <div class="card-head"><h2 class="card-title">{{ __('Privacy and terms') }}</h2></div>
+            <div class="card-head"><h2 class="card-title">{{ __('Privacy, terms and refunds') }}</h2></div>
             <div class="grid gap-3 p-4 lg:grid-cols-2">
                 <x-field :label="__('Privacy policy')" name="privacy_text" :hint="__('Leave blank to use the built-in text. Use ## for a heading.')"><textarea id="privacy_text" name="privacy_text" rows="10" class="input">{{ old('privacy_text', $values['privacy_text']) }}</textarea></x-field>
                 <x-field :label="__('Terms of service')" name="terms_text" :hint="__('Leave blank to use the built-in text. Use ## for a heading.')"><textarea id="terms_text" name="terms_text" rows="10" class="input">{{ old('terms_text', $values['terms_text']) }}</textarea></x-field>
+                <x-field :label="__('Refund and cancellation policy')" name="refund_text" :hint="__('Leave blank to use the built-in text. Use ## for a heading.')"><textarea id="refund_text" name="refund_text" rows="10" class="input">{{ old('refund_text', $values['refund_text']) }}</textarea></x-field>
             </div>
         </section>
 

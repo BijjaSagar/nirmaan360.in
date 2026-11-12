@@ -29,9 +29,10 @@ final class PublicPages
         'calculators' => ['route' => 'calculators', 'label' => 'Calculators', 'languages' => true, 'sitemap' => true],
         'ai' => ['route' => 'ai', 'label' => 'AI agents', 'languages' => true, 'sitemap' => true],
         'contact' => ['route' => 'contact', 'label' => 'Contact', 'languages' => true, 'sitemap' => true],
-        // The legal text is English only, so these two have one address.
+        // The legal text is English only, so these have one address.
         'privacy' => ['route' => 'privacy', 'label' => 'Privacy', 'languages' => false, 'sitemap' => true],
         'terms' => ['route' => 'terms', 'label' => 'Terms', 'languages' => false, 'sitemap' => true],
+        'refunds' => ['route' => 'refunds', 'label' => 'Refunds', 'languages' => false, 'sitemap' => true],
         // Listed so people searching for the sign-in page find it, but not worth a sitemap line.
         'login' => ['route' => 'login', 'label' => 'Sign in', 'languages' => false, 'sitemap' => false],
         'register' => ['route' => 'register', 'label' => 'Create account', 'languages' => false, 'sitemap' => false],

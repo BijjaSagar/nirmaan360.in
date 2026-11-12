@@ -50,7 +50,7 @@ class AdminSettingsController extends Controller
     private const WEBSITE_FIELDS = [
         'site_name', 'contact_email', 'info_email', 'contact_phone', 'contact_address',
         'social_facebook', 'social_instagram', 'social_linkedin', 'social_youtube', 'social_x',
-        'announcement', 'announcement_link', 'privacy_text', 'terms_text',
+        'announcement', 'announcement_link', 'privacy_text', 'terms_text', 'refund_text',
         'color_primary', 'color_primary_dark', 'color_accent',
     ];
 
@@ -250,6 +250,7 @@ class AdminSettingsController extends Controller
             'announcement_link' => $url,
             'privacy_text' => ['nullable', 'string', 'max:50000'],
             'terms_text' => ['nullable', 'string', 'max:50000'],
+            'refund_text' => ['nullable', 'string', 'max:50000'],
             'color_primary' => $color,
             'color_primary_dark' => $color,
             'color_accent' => $color,

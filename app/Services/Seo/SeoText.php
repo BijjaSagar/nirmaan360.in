@@ -47,6 +47,10 @@ final class SeoText
             'title' => 'Terms of service',
             'description' => 'The terms for using :brand: your account and data, plans and payment, acceptable use, availability and how to close your account.',
         ],
+        'refunds' => [
+            'title' => 'Refund and cancellation policy',
+            'description' => 'How :brand plans are paid for, how to stop a plan, when a payment is refunded and how long a refund takes.',
+        ],
         'login' => [
             'title' => 'Sign in to your account',
             'description' => 'Sign in to :brand to work on your BOQ, daily reports, measurement book and RA bills.',

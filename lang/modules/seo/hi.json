@@ -56,5 +56,7 @@
     "Search and analytics settings saved.": "सर्च और एनालिटिक्स की सेटिंग्स सेव हो गईं।",
     "Paste only the code from inside content=\"…\". It has letters, digits, - and _ only, and at most 100 characters.": "सिर्फ़ content=\"…\" के अंदर का कोड पेस्ट करें। इसमें केवल अक्षर, अंक, - और _ होते हैं, और ज़्यादा से ज़्यादा 100 अक्षर।",
     "Enter a GA4 measurement ID. It starts with G-, like G-XXXXXXXXXX.": "GA4 मेज़रमेंट ID डालें। यह G- से शुरू होती है, जैसे G-XXXXXXXXXX।",
-    "The share picture must be at least 600 × 315 pixels. 1200 × 630 works best.": "शेयर की तस्वीर कम से कम 600 × 315 पिक्सेल की होनी चाहिए। 1200 × 630 सबसे अच्छा रहता है।"
+    "The share picture must be at least 600 × 315 pixels. 1200 × 630 works best.": "शेयर की तस्वीर कम से कम 600 × 315 पिक्सेल की होनी चाहिए। 1200 × 630 सबसे अच्छा रहता है।",
+    "Refund and cancellation policy": "रिफंड और रद्द करने की नीति",
+    "How :brand plans are paid for, how to stop a plan, when a payment is refunded and how long a refund takes.": ":brand प्लान का भुगतान कैसे होता है, प्लान कैसे रोकें, भुगतान कब वापस होता है और रिफंड में कितना समय लगता है।"
 }

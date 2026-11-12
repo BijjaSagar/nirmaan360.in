@@ -14,7 +14,7 @@
     <p>Your project records belong to you. You give us permission to store and process them only to provide the service.</p>
 
     <h2>Plans and payment</h2>
-    <p>Paid plans are prepaid monthly or yearly and are charged in Indian rupees {{ ['included' => 'including GST', 'none' => ''][config('buildos.subscription_gst_mode')] ?? 'plus GST' }} through Razorpay. Plans do not renew automatically. If a paid period ends and is not renewed within {{ config('buildos.payment_grace_days') }} days, your company moves to the free plan and your data stays in place. Trials end after {{ config('buildos.trial_days') }} days and move to the free plan in the same way.</p>
+    <p>Paid plans are prepaid monthly or yearly and are charged in Indian rupees {{ ['included' => 'including GST', 'none' => ''][config('buildos.subscription_gst_mode')] ?? 'plus GST' }} through Razorpay. Plans do not renew automatically. If a paid period ends and is not renewed within {{ config('buildos.payment_grace_days') }} days, your company moves to the free plan and your data stays in place. Trials end after {{ config('buildos.trial_days') }} days and move to the free plan in the same way. When a payment is refunded is set out in our <a href="{{ route('refunds') }}" class="link">refund and cancellation policy</a>.</p>
 
     <h2>Check your figures</h2>
     <p>Nirmaan360 helps you prepare measurements, bills and calculations. You remain responsible for checking them against your contracts, drawings, codes and tax rules before you rely on them.</p>

@@ -84,4 +84,10 @@ class PublicController extends Controller
     {
         return view('public.terms');
     }
+
+    /** Refunds, cancelling a plan and how the service is delivered, as payment providers ask to see. */
+    public function refunds(): View
+    {
+        return view('public.refunds');
+    }
 }
