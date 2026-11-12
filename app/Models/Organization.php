@@ -67,12 +67,12 @@ class Organization extends Model
         return $max === null || Project::withoutGlobalScopes()->where('organization_id', $this->id)->whereNull('deleted_at')->count() < $max;
     }
 
-    /** Contractor logins reach only the contractor portal, so they never take a seat on the plan. */
+    /** Contractor logins reach only the contractor portal, so they never take a seat on the plan. Nor does a deleted account. */
     public function canAddUser(): bool
     {
         $max = $this->planConfig()['max_users'];
 
-        return $max === null || $this->users()->whereNot('role', User::CONTRACTOR_ROLE)->count() < $max;
+        return $max === null || $this->users()->whereNot('role', User::CONTRACTOR_ROLE)->whereNull('anonymised_at')->count() < $max;
     }
 
     /** Copy the default approval chains so they can be edited per organisation. */

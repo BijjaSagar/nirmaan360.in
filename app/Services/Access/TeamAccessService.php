@@ -115,9 +115,11 @@ class TeamAccessService
             && $this->catalog->coversAll($actor->grantedPermissions(), $target->grantedPermissions());
     }
 
+    /** A deleted account is gone for good, so it can never be given a role or switched back on. */
     public function assertCanManage(User $actor, User $target): void
     {
         abort_unless($actor->organization_id === $target->organization_id && ! $target->isContractor(), 404);
+        abort_if($target->anonymised_at !== null, 404);
         abort_unless($this->canManage($actor, $target), 403, __('This person has more access than you do.'));
     }
 
@@ -216,15 +218,19 @@ class TeamAccessService
             return;
         }
 
-        $otherOwners = User::where('organization_id', $target->organization_id)
+        if (! $this->hasOtherActiveOwner($target)) {
+            throw ValidationException::withMessages(['role' => __('A company must keep at least one active owner.')]);
+        }
+    }
+
+    /** Whether the company still has an active owner without this person. An inactive owner does not count. */
+    public function hasOtherActiveOwner(User $target): bool
+    {
+        return User::where('organization_id', $target->organization_id)
             ->where('role', 'owner')
             ->where('is_active', true)
             ->whereKeyNot($target->id)
             ->exists();
-
-        if (! $otherOwners) {
-            throw ValidationException::withMessages(['role' => __('A company must keep at least one active owner.')]);
-        }
     }
 
     /** @return array<string, mixed> */

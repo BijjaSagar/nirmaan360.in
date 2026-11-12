@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\CompanyDeletionRequest;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Access\AccountDeletionService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -76,21 +77,43 @@ class CompanyDeletionService
         return $request;
     }
 
-    public function cancel(Organization $organization, User $by): void
+    /**
+     * Whether a pending deletion was cancelled. The request row is locked first, as purge() locks it,
+     * so a cancel and the nightly purge never interleave.
+     */
+    public function cancel(Organization $organization, User $by): bool
     {
-        $request = $this->pending($organization->id);
+        $cancelled = DB::transaction(function () use ($organization, $by) {
+            $request = CompanyDeletionRequest::withoutGlobalScopes()
+                ->where('organization_id', $organization->id)
+                ->where('status', 'pending')
+                ->lockForUpdate()
+                ->first();
 
-        if (! $request) {
-            return;
+            if (! $request) {
+                return false;
+            }
+
+            $request->update(['status' => 'cancelled', 'cancelled_by' => $by->id, 'cancelled_at' => now()]);
+            AuditLog::record('company.deletion_cancelled', $organization, null, ['cancelled_by' => $by->id]);
+
+            // An only owner who asked to delete their own account is deleted now that someone else keeps the company.
+            // Resolved here rather than injected, because that service builds on this one.
+            app(AccountDeletionService::class)->afterCompanyDeletionCancelled($request, $by);
+
+            return true;
+        });
+
+        if (! $cancelled) {
+            return false;
         }
-
-        $request->update(['status' => 'cancelled', 'cancelled_by' => $by->id, 'cancelled_at' => now()]);
-        AuditLog::record('company.deletion_cancelled', $organization, null, ['cancelled_by' => $by->id]);
 
         $this->tellEveryone($organization, 'company.deletion_cancelled', fn (string $locale) => [
             __('Company deletion cancelled for :company', ['company' => $organization->name], $locale),
             __('Your data is safe and will not be erased.', [], $locale),
         ]);
+
+        return true;
     }
 
     /** One company's failure is logged and does not stop the others. */
@@ -172,9 +195,11 @@ class CompanyDeletionService
      */
     private function confirmationFor(CompanyDeletionRequest $request): ?array
     {
+        // Someone who deleted their own account has no address left to write to.
         $requester = $request->requested_by === null ? null : DB::table('users')
             ->where('organization_id', $request->organization_id)
             ->where('id', $request->requested_by)
+            ->whereNull('anonymised_at')
             ->first(['email', 'locale']);
         $company = DB::table('organizations')->where('id', $request->organization_id)->value('name');
 

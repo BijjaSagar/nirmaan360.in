@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -40,8 +41,23 @@ class User extends Authenticatable
             'is_platform_admin' => 'boolean',
             'limited_to_projects' => 'boolean',
             'access_changed_at' => 'datetime',
+            'anonymised_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Someone who deleted their account keeps their row, so the work they recorded keeps its author.
+     * It is shown in the reader's language rather than as the English text stored in the column.
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::get(fn ($value, array $attributes) => ($attributes['anonymised_at'] ?? null) !== null ? __('Deleted user') : $value);
+    }
+
+    public function isAnonymised(): bool
+    {
+        return $this->anonymised_at !== null;
     }
 
     public function organization(): BelongsTo

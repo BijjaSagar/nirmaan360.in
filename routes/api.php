@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AccountDeletionApiController;
 use App\Http\Controllers\Api\ApprovalApiController;
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\AuthApiController;
@@ -23,6 +24,11 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'active', 'locale', 'throttle:120,1'])->group(function () {
         Route::post('/auth/logout', [AuthApiController::class, 'logout']);
         Route::get('/me', [AuthApiController::class, 'me']);
+
+        // Deleting one's own account. Under /auth so the offline plan and contractor logins reach it; each step has its own counter.
+        Route::get('/auth/account/deletion', [AccountDeletionApiController::class, 'show']);
+        Route::post('/auth/account/deletion', [AccountDeletionApiController::class, 'store'])->middleware('throttle:5,1,account-deletion');
+        Route::delete('/auth/account/deletion', [AccountDeletionApiController::class, 'destroy'])->middleware('throttle:10,1,account-deletion-cancel');
 
         Route::get('/projects', [ProjectApiController::class, 'index'])->middleware('can:project.view');
         Route::get('/projects/{project}/image', [ProjectController::class, 'image'])->middleware('can:project.view');

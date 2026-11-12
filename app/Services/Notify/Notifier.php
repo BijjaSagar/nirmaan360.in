@@ -54,6 +54,11 @@ class Notifier
      */
     public function send(User $user, NotificationMessage|Closure $message): void
     {
+        // A deleted account keeps its row for the records it made, but is told nothing, not even in the bell.
+        if ($user->anonymised_at !== null) {
+            return;
+        }
+
         $write = $this->writer($message);
         $own = $this->written($write, $user);
 
@@ -103,7 +108,8 @@ class Notifier
     /** Runs on the queue worker. Throws when the message should be retried. */
     public function deliver(User $user, string $channel, NotificationMessage $message, ?int $deviceId): void
     {
-        if (! $this->connected($channel)) {
+        // Queued before the person deleted their account: their address, phone and phones are gone, so nothing is sent.
+        if ($user->anonymised_at !== null || ! $this->connected($channel)) {
             if ($channel === 'push') {
                 AnnouncementTally::count($message, AnnouncementTally::SKIPPED);
             }

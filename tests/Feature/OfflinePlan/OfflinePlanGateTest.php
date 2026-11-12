@@ -59,6 +59,10 @@ class OfflinePlanGateTest extends ApiTestCase
         $this->getJson(self::OFFLINE_API.'/status')->assertOk()->assertJsonPath('syncs', false);
         $this->activatePhone()->assertCreated();
         $this->getJson(self::OFFLINE_API.'/public-key')->assertOk();
+        // Deleting the account is reachable too. A wrong password stops it before anything changes.
+        $this->getJson(self::API.'/auth/account/deletion')->assertOk()->assertJsonPath('data.mode', 'company');
+        $this->postJson(self::API.'/auth/account/deletion', ['mode' => 'company', 'password' => 'not-it', 'confirm_name' => $organization->name])
+            ->assertUnprocessable()->assertJsonValidationErrors('password');
         $this->postJson(self::API.'/auth/logout')->assertOk();
 
         $this->app['auth']->forgetGuards();
@@ -140,6 +144,7 @@ class OfflinePlanGateTest extends ApiTestCase
         $this->get('/billing')->assertOk()->assertSee('Offline');
         $this->get('/settings')->assertOk();
         $this->get('/devices')->assertOk();
+        $this->get('/account/delete')->assertOk();
         $this->get('/pricing')->assertOk();
         $this->post('/logout')->assertRedirect('/');
     }
@@ -180,7 +185,7 @@ class OfflinePlanGateTest extends ApiTestCase
 
         $page = $this->get('/offline/devices')->assertOk();
 
-        foreach (['offline.devices.index', 'devices.index', 'billing.index', 'settings.edit'] as $open) {
+        foreach (['offline.devices.index', 'devices.index', 'billing.index', 'settings.edit', 'account.delete'] as $open) {
             $page->assertSee(route($open), false);
         }
 

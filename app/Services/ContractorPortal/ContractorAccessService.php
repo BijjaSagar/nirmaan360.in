@@ -40,6 +40,7 @@ class ContractorAccessService
             'logins' => User::where('organization_id', $party->organization_id)
                 ->where('role', User::CONTRACTOR_ROLE)
                 ->where('contractor_party_id', $party->id)
+                ->whereNull('anonymised_at')
                 ->orderBy('name')
                 ->get(),
             'invitations' => TeamInvitation::where('organization_id', $party->organization_id)

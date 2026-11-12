@@ -39,7 +39,7 @@ class InvitationService
             return true;
         }
 
-        $users = User::where('organization_id', $organization->id)->whereNot('role', User::CONTRACTOR_ROLE)->count();
+        $users = User::where('organization_id', $organization->id)->whereNot('role', User::CONTRACTOR_ROLE)->whereNull('anonymised_at')->count();
         $pending = TeamInvitation::withoutGlobalScopes()
             ->where('organization_id', $organization->id)
             ->pending()

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Access\AccountDeletionController;
 use App\Http\Controllers\Access\CustomRoleController;
 use App\Http\Controllers\Access\DeviceController;
 use App\Http\Controllers\Access\InvitationController;
@@ -10,6 +11,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/devices', [DeviceController::class, 'mine'])->name('devices.index');
 Route::delete('/devices', [DeviceController::class, 'revokeAllMine'])->name('devices.destroy-all');
 Route::delete('/devices/{token}', [DeviceController::class, 'revokeMine'])->whereNumber('token')->name('devices.destroy');
+
+// Anyone signed in can delete their own account, contractor logins and the offline plan included.
+Route::get('/account/delete', [AccountDeletionController::class, 'show'])->name('account.delete');
+Route::post('/account/delete', [AccountDeletionController::class, 'destroy'])->middleware('throttle:5,1,account-deletion')->name('account.destroy');
 
 Route::middleware('can:user.manage')->group(function () {
     Route::post('/team/invitations/{invitation}/reissue', [InvitationController::class, 'reissue'])->whereNumber('invitation')->middleware('throttle:20,1')->name('team.invitations.reissue');

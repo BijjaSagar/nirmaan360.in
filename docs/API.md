@@ -37,6 +37,63 @@ The same email is never accepted twice. If a reply is lost and the app sends the
 
 `/auth/login` finds the email in any letter case. If two old accounts differ only by case, only the exact spelling signs in.
 
+## Deleting an account
+
+Anyone signed in can delete their own account: staff of every role, contractor logins, and companies on the offline plan. There is no permission to check. The website has the same flow at `/account/delete`.
+
+The server decides what happens, under a lock on the company, and the app never chooses:
+- `account`: a member, or an owner while another **active** owner exists. The account is anonymised at once. Their name, email, mobile number, sign-ins, phones, notification settings and assistant chats are removed. Everything they recorded stays with the company and shows as "Deleted user".
+- `company`: the company's only active owner. The whole company is erased after the 30-day grace period, by the nightly job at 02:30, so up to a day later than the date given. Their account is not anonymised before that, because the company still needs an owner who can sign in and cancel. All of their sign-ins are ended now.
+
+### `GET /auth/account/deletion`
+
+What deleting would do, for the person to read first.
+
+```json
+{"data": {"mode": "company", "company_name": "Deccan Builders", "other_people": 3, "requires_confirm_name": true,
+  "grace_days": 30, "erase_after": "2026-12-12T15:04:05+05:30",
+  "pending": {"erase_after": "2026-12-12T15:04:05+05:30", "can_cancel": true}}}
+```
+
+- `mode`: `account` or `company`.
+- `other_people`: the company's other active users, contractor logins included.
+- `requires_confirm_name`: true only in `company` mode.
+- `erase_after`: only in `company` mode, otherwise `null`. If a deletion is already pending, it is that request's date. Otherwise it is now plus `grace_days`. Times are ISO 8601 in Asia/Kolkata.
+- `pending`: `null`, or the company's pending deletion, which anyone in the company sees. `can_cancel` is true only for owners.
+
+### `POST /auth/account/deletion`
+
+```json
+{"mode": "account", "password": "..."}
+{"mode": "company", "password": "...", "confirm_name": "Deccan Builders"}
+```
+
+| Field | Rules |
+| --- | --- |
+| `mode` | required, `account` or `company`: the mode the preview showed |
+| `password` | required. The account's password, always, even for people who signed in another way. |
+| `confirm_name` | required when `mode` is `company`, up to 255 characters, the company name exactly as shown |
+
+Answers:
+- **200** `{"data": {"result": "deleted"}}`. The token this call used is already revoked, so do not call `/auth/logout`.
+- **200** `{"data": {"result": "scheduled", "erase_after": "..."}}`. Every token this person holds is revoked. Asking again after signing back in returns the same `erase_after`.
+- **409** `{"message": "...", "code": "deletion_mode_changed"}`. The mode sent is no longer the one that applies, for example because the other owner left. Load the preview again.
+- **422** in Laravel's shape, on `password` ("That password is not right."), `confirm_name` or `mode`. Nothing changes.
+- **429** after 5 attempts a minute by one person, with `Retry-After`. This counter is used only by deletion.
+- **401** for a token that is not valid.
+
+### `DELETE /auth/account/deletion`
+
+Cancels the company's pending deletion. Owners only.
+
+- **200** `{"data": {"result": "cancelled"}}`, or `{"data": {"result": "none"}}` when nothing was pending.
+- **403** `{"message": "Only a company owner can do this."}`.
+- **429** after 10 a minute, on its own counter.
+
+If the only owner deleted their account and another owner then cancels, the company stays and the requester's account is anonymised as in `account` mode. If the requester cancels it themselves, nothing else happens.
+
+Support can do the same for someone who cannot sign in, after checking the request by email: `php artisan account:delete {email}`. It asks before it acts unless `--force` is given.
+
 ## Tender API
 
 The app's side of the web page "Tenders for this BOQ line": see which tenders a BOQ line is in, start a tender from the line, add contractors and their quotes, compare the quotes and choose one. Choosing a quote makes the work order at its rates.

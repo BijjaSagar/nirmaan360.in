@@ -27,9 +27,9 @@ class ContractorPortalBoundaryTest extends TestCase
     use BuildsContractorPortal, RefreshDatabase;
 
     /** What a contractor login may still reach outside the portal. */
-    private const OPEN_NAMES = ['contractor-portal.*', 'logout', 'locale'];
+    private const OPEN_NAMES = ['contractor-portal.*', 'logout', 'locale', 'account.delete', 'account.destroy'];
 
-    private const OPEN_URIS = ['api/v1/me', 'api/v1/auth/logout', 'api/v1/contractor-portal', 'api/v1/contractor-portal/*'];
+    private const OPEN_URIS = ['api/v1/me', 'api/v1/auth/logout', 'api/v1/auth/account/deletion', 'api/v1/contractor-portal', 'api/v1/contractor-portal/*'];
 
     protected function setUp(): void
     {
@@ -120,6 +120,8 @@ class ContractorPortalBoundaryTest extends TestCase
         $this->getJson('/api/v1/approvals')->assertForbidden();
         $this->getJson("/api/v1/projects/{$this->project->id}/contractor-control")->assertForbidden();
         $this->getJson('/api/v1/me')->assertOk()->assertJsonPath('user.kind', 'contractor');
+        // A contractor login can delete itself, as any account can.
+        $this->getJson('/api/v1/auth/account/deletion')->assertOk()->assertJsonPath('data.mode', 'account');
     }
 
     public function test_the_portal_lists_only_the_contractors_own_contracts(): void

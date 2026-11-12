@@ -19,11 +19,11 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ContractorPortalGate
 {
-    /** Route names a contractor still needs outside the portal: signing out and changing language. */
-    private const ALLOWED_NAMES = ['contractor-portal.*', 'logout', 'locale'];
+    /** Route names a contractor still needs outside the portal: signing out, changing language and deleting their account. */
+    private const ALLOWED_NAMES = ['contractor-portal.*', 'logout', 'locale', 'account.delete', 'account.destroy'];
 
-    /** The field app's own calls: who am I, sign out, and the portal endpoints. */
-    private const ALLOWED_URIS = ['api/v1/me', 'api/v1/auth/logout', 'api/v1/contractor-portal', 'api/v1/contractor-portal/*'];
+    /** The field app's own calls: who am I, sign out, delete my account, and the portal endpoints. */
+    private const ALLOWED_URIS = ['api/v1/me', 'api/v1/auth/logout', 'api/v1/auth/account/deletion', 'api/v1/contractor-portal', 'api/v1/contractor-portal/*'];
 
     public function handle(Request $request, Closure $next): Response
     {
