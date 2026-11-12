@@ -72,7 +72,7 @@ class SitemapTest extends TestCase
             }
         }
 
-        $expected = [...$expected, url('/privacy'), url('/terms'), url('/refund-policy')];
+        $expected = [...$expected, url('/privacy'), url('/terms'), url('/refund-policy'), url('/delete-account')];
 
         $this->assertEqualsCanonicalizing($expected, array_keys($this->sitemap()));
     }

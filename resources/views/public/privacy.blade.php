@@ -34,10 +34,16 @@
     <p>Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region.</p>
 
     <h2>Your rights</h2>
-    <p>Under India's Digital Personal Data Protection Act, 2023 you can ask to access, correct or delete your personal data, or withdraw consent. To make a request, use our <a href="{{ route('contact', ['type' => 'support']) }}" class="link">contact form</a>.</p>
+    <p>Under India's Digital Personal Data Protection Act, 2023 you can ask to access, correct or delete your personal data, or withdraw consent. You can delete your account yourself, as set out below. For any other request, use our <a href="{{ route('contact', ['type' => 'support']) }}" class="link">contact form</a>.</p>
 
-    <h2>How long we keep it</h2>
-    <p>We keep your records while your account is active. If you ask us to delete your account, we remove your data except where the law requires us to keep it.</p>
+    <h2 id="deleting-your-account">Deleting your account</h2>
+    <p>We keep your personal data while your account exists. You can delete your account at any time in the app, under Settings, Delete account, or on the website, under Account, Delete my account. If you cannot sign in, use our <a href="{{ route('contact', ['type' => 'support']) }}" class="link">contact form</a>. Our <a href="{{ route('account-deletion') }}" class="link">account deletion page</a> sets out each step.</p>
+    <ul>
+        <li>If you are a member of a company, your account is deleted straight away: your sign-in, name, email address, mobile number, notification settings, phone notification tokens and questions to the AI agents. The records you made for the company, such as reports, measurements, bills, attendance and photos, stay with the company and show "Deleted user". So does its audit trail of what was done, with the network address each action came from.</li>
+        <li>If you are your company's only owner, deleting your account deletes the company. It keeps working for {{ \App\Services\Notify\CompanyDeletionService::GRACE_DAYS }} days, and any owner can cancel by signing in during that time. After that the company and everything in it, including every person's account, is erased, and we email you when it is done.</li>
+        <li>Records of payments made to Nirmaan360 (company name, GSTIN, what was bought, amounts, dates and payment references) are kept as Indian tax law requires.</li>
+        <li>Some copies can remain for a while: notifications already delivered to other people, names held in the company's own records, company data exports for up to 7 days, our server logs and backup copies of the database. Backup copies are overwritten on a rolling schedule.</li>
+    </ul>
 
     <h2>Changes</h2>
     <p>If this policy changes in a way that matters, we will tell you in the product before it takes effect.</p>

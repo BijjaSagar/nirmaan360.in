@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContactRequest;
+use App\Services\Notify\CompanyDeletionService;
 use App\Services\Seo\Analytics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -89,5 +90,14 @@ class PublicController extends Controller
     public function refunds(): View
     {
         return view('public.refunds');
+    }
+
+    /**
+     * How to delete an account and what happens to the data, for anyone, signed in or not.
+     * Google Play links to it. The text is built in, with no admin override, so it always matches what the code does.
+     */
+    public function accountDeletion(): View
+    {
+        return view('public.account-deletion', ['graceDays' => CompanyDeletionService::GRACE_DAYS]);
     }
 }

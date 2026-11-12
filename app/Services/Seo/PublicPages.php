@@ -33,6 +33,7 @@ final class PublicPages
         'privacy' => ['route' => 'privacy', 'label' => 'Privacy', 'languages' => false, 'sitemap' => true],
         'terms' => ['route' => 'terms', 'label' => 'Terms', 'languages' => false, 'sitemap' => true],
         'refunds' => ['route' => 'refunds', 'label' => 'Refunds', 'languages' => false, 'sitemap' => true],
+        'account-deletion' => ['route' => 'account-deletion', 'label' => 'Delete account', 'languages' => false, 'sitemap' => true],
         // Listed so people searching for the sign-in page find it, but not worth a sitemap line.
         'login' => ['route' => 'login', 'label' => 'Sign in', 'languages' => false, 'sitemap' => false],
         'register' => ['route' => 'register', 'label' => 'Create account', 'languages' => false, 'sitemap' => false],

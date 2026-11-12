@@ -51,6 +51,10 @@ final class SeoText
             'title' => 'Refund and cancellation policy',
             'description' => 'How :brand plans are paid for, how to stop a plan, when a payment is refunded and how long a refund takes.',
         ],
+        'account-deletion' => [
+            'title' => 'Delete your account',
+            'description' => 'How to delete your :brand account in the app or on the website, what is removed at once, what your company keeps and when a company is erased.',
+        ],
         'login' => [
             'title' => 'Sign in to your account',
             'description' => 'Sign in to :brand to work on your BOQ, daily reports, measurement book and RA bills.',
