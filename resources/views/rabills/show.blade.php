@@ -80,6 +80,7 @@
                 @endif
             </section>
             @endcan
+            @include('modules.bill_check._card', ['bill' => $bill])
             @include('modules.billing_extras._bill-notes', ['bill' => $bill])
             <x-approval-trail :approvals="$bill->approvals" />
         </div>
