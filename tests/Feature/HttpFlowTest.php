@@ -63,6 +63,44 @@ class HttpFlowTest extends TestCase
         $this->assertSame(3, ApprovalRule::withoutGlobalScopes()->where('organization_id', $user->organization_id)->count());
     }
 
+    public function test_web_login_finds_the_email_in_any_letter_case(): void
+    {
+        $user = $this->member($this->tenant());
+        $user->forceFill(['email' => 'Priya.Rane@Example.com'])->save();
+
+        $this->post('/login', ['email' => 'priya.rane@EXAMPLE.com', 'password' => 'password'])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->fresh()->last_login_at);
+        $this->post('/logout');
+
+        $this->post('/login', ['email' => 'PRIYA.RANE@example.com', 'password' => 'wrong-password'])
+            ->assertSessionHasErrors(['email' => 'These details do not match our records.']);
+        $this->assertGuest();
+
+        $user->update(['is_active' => false]);
+        $this->post('/login', ['email' => 'priya.rane@example.com', 'password' => 'password'])->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_web_login_with_two_old_accounts_that_differ_only_by_case_takes_the_exact_spelling_only(): void
+    {
+        $upper = $this->member($this->tenant('First Co'));
+        $upper->forceFill(['email' => 'Twin@example.com'])->save();
+        $lower = $this->member($this->tenant('Second Co'));
+        $lower->forceFill(['email' => 'twin@example.com'])->save();
+
+        $this->post('/login', ['email' => 'Twin@example.com', 'password' => 'password'])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($upper);
+        $this->post('/logout');
+
+        $this->post('/login', ['email' => 'twin@example.com', 'password' => 'password'])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($lower);
+        $this->post('/logout');
+
+        $this->post('/login', ['email' => 'TWIN@example.com', 'password' => 'password'])->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
     public function test_every_app_page_renders_with_demo_data(): void
     {
         $this->seed(DemoSeeder::class);

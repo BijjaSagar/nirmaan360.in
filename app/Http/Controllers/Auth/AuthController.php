@@ -3,17 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Organization;
 use App\Models\User;
+use App\Services\Access\SignupService;
 use App\Services\Seo\Analytics;
 use App\Services\SmsGateway;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -30,7 +27,11 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt([...$credentials, 'is_active' => true], $request->boolean('remember'))) {
+        // Signed in by the stored spelling, so a different letter case still works. When nobody matches,
+        // the attempt still runs with what was typed, keeping its fixed-time failure and Failed event.
+        $user = User::findByEmail($credentials['email']);
+
+        if (! Auth::attempt(['email' => $user?->email ?? $credentials['email'], 'password' => $credentials['password'], 'is_active' => true], $request->boolean('remember'))) {
             return back()->withErrors(['email' => __('These details do not match our records.')])->onlyInput('email');
         }
 
@@ -40,67 +41,32 @@ class AuthController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
-    public function showRegister(Request $request): View
+    public function showRegister(Request $request, SignupService $signup): View
     {
         $plan = $request->query('plan');
 
         return view('auth.register', [
-            'plan' => in_array($plan, $this->selfServePlans(), true) ? $plan : 'contractor',
+            'plan' => in_array($plan, $signup->selfServePlans(), true) ? $plan : $signup->defaultPlan(),
         ]);
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, SignupService $signup): RedirectResponse
     {
         $data = $request->validate([
-            'plan' => ['nullable', Rule::in($this->selfServePlans())],
-            'company' => ['required', 'string', 'max:120'],
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:190', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:20', 'unique:users,phone'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-        ]);
+            'plan' => ['nullable', Rule::in($signup->selfServePlans())],
+            ...$signup->rules(),
+        ], $signup->messages());
 
-        $plan = $data['plan'] ?? 'contractor';
-        $isFree = $plan === 'free';
-
-        $user = DB::transaction(function () use ($data, $plan, $isFree) {
-            $organization = Organization::create([
-                'name' => $data['company'],
-                'slug' => Str::slug($data['company']).'-'.Str::lower(Str::random(6)),
-                'plan' => $plan,
-                'plan_status' => $isFree ? 'active' : 'trial',
-                'trial_ends_at' => $isFree ? null : now()->addDays(config('buildos.trial_days')),
-            ]);
-            $organization->seedDefaults();
-
-            return User::create([
-                'organization_id' => $organization->id,
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'phone' => $data['phone'] ?? null,
-                'role' => 'owner',
-                'password' => $data['password'],
-            ]);
-        });
+        $user = $signup->create($data, 'web');
+        $organization = $user->organization;
 
         Auth::login($user);
         $request->session()->regenerate();
 
         // Counted on the next page, and only the plan's key is sent: no name, email or company.
-        app(Analytics::class)->record($request, 'sign_up', ['method' => 'email', 'plan' => $plan]);
+        app(Analytics::class)->record($request, 'sign_up', ['method' => 'email', 'plan' => $organization->plan]);
 
-        return redirect()->route('dashboard')->with('success', $isFree ? __('Welcome! Your free plan is ready.') : __('Welcome! Your :days-day trial has started.', ['days' => config('buildos.trial_days')]));
-    }
-
-    /**
-     * Plans a company can start by itself: anything with a price, free included.
-     * Enterprise has none and is priced by conversation.
-     *
-     * @return list<string>
-     */
-    private function selfServePlans(): array
-    {
-        return array_keys(array_filter(config('buildos.plans'), fn (array $plan) => $plan['monthly'] !== null));
+        return redirect()->route('dashboard')->with('success', $signup->welcomeMessage($organization));
     }
 
     public function logout(Request $request): RedirectResponse

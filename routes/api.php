@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthApiController::class, 'login'])->middleware('throttle:10,1');
+    // Its own counter ("signup"), so sign-ups never use up the sign-in budget a shared mobile IP has.
+    Route::post('/auth/register', [AuthApiController::class, 'register'])->middleware('throttle:5,1,signup');
     Route::post('/webhooks/razorpay', RazorpayWebhookController::class)->middleware('throttle:120,1');
 
     Route::middleware(['auth:sanctum', 'active', 'locale', 'throttle:120,1'])->group(function () {

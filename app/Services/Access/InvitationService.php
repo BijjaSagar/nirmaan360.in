@@ -60,7 +60,7 @@ class InvitationService
 
         $email = Str::lower(trim($data['email']));
 
-        if ($this->emailTaken($email)) {
+        if (User::emailTaken($email)) {
             throw ValidationException::withMessages(['email' => __('This email already has an account.')]);
         }
 
@@ -172,7 +172,7 @@ class InvitationService
                 throw new InvitationClosedException(__('This company has reached its plan user limit. Ask them to upgrade and send a new invitation.'));
             }
 
-            if ($this->emailTaken($invitation->email)) {
+            if (User::emailTaken($invitation->email)) {
                 throw new InvitationClosedException(__('This email already has an account. Please sign in.'));
             }
 
@@ -238,11 +238,6 @@ class InvitationService
 
             return false;
         }
-    }
-
-    private function emailTaken(string $email): bool
-    {
-        return User::whereRaw('lower(email) = ?', [$email])->exists();
     }
 
     /** Someone else may have taken this number since the invitation was sent. */

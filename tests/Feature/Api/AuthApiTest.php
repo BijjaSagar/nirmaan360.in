@@ -41,6 +41,45 @@ class AuthApiTest extends ApiTestCase
         $this->assertFalse($can['dpr.approve']);
     }
 
+    public function test_login_finds_the_email_in_any_letter_case(): void
+    {
+        $user = $this->member($this->tenant());
+        $user->forceFill(['email' => 'priya@example.com'])->save();
+        $old = $this->member($this->tenant('Old Co'));
+        $old->forceFill(['email' => 'Old.Row@Example.com'])->save();
+
+        $this->postJson(self::API.'/auth/login', ['email' => ' PRIYA@Example.COM ', 'password' => 'password', 'device_name' => 'phone'])->assertOk()
+            ->assertJsonPath('user.id', $user->id)
+            ->assertJsonPath('user.email', 'priya@example.com');
+        $this->postJson(self::API.'/auth/login', ['email' => 'old.row@example.com', 'password' => 'password', 'device_name' => 'phone'])->assertOk()
+            ->assertJsonPath('user.id', $old->id);
+
+        // Still refused: a wrong password, and a deactivated account.
+        $this->postJson(self::API.'/auth/login', ['email' => 'PRIYA@example.com', 'password' => 'wrong-password', 'device_name' => 'phone'])
+            ->assertUnprocessable()->assertJsonValidationErrors(['email' => 'These details do not match our records.']);
+        $user->update(['is_active' => false]);
+        $this->postJson(self::API.'/auth/login', ['email' => 'Priya@example.com', 'password' => 'password', 'device_name' => 'phone'])
+            ->assertUnprocessable()->assertJsonValidationErrors('email');
+    }
+
+    public function test_two_old_accounts_that_differ_only_by_case_sign_in_by_the_exact_spelling_only(): void
+    {
+        $upper = $this->member($this->tenant('First Co'));
+        $upper->forceFill(['email' => 'Twin@example.com'])->save();
+        $lower = $this->member($this->tenant('Second Co'));
+        $lower->forceFill(['email' => 'twin@example.com'])->save();
+
+        $this->postJson(self::API.'/auth/login', ['email' => 'Twin@example.com', 'password' => 'password', 'device_name' => 'phone'])->assertOk()
+            ->assertJsonPath('user.id', $upper->id);
+        $this->postJson(self::API.'/auth/login', ['email' => 'twin@example.com', 'password' => 'password', 'device_name' => 'phone'])->assertOk()
+            ->assertJsonPath('user.id', $lower->id);
+
+        foreach (['TWIN@example.com', 'twin@Example.com'] as $email) {
+            $this->postJson(self::API.'/auth/login', ['email' => $email, 'password' => 'password', 'device_name' => 'phone'])
+                ->assertUnprocessable()->assertJsonValidationErrors('email');
+        }
+    }
+
     public function test_me_needs_a_token(): void
     {
         $this->getJson(self::API.'/me')->assertUnauthorized();

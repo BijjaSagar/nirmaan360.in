@@ -135,6 +135,34 @@ class User extends Authenticatable
             ->where('organization_id', $this->organization_id);
     }
 
+    /** How an email is stored: trimmed and in lower case. */
+    public static function normaliseEmail(string $email): string
+    {
+        return Str::lower(trim($email));
+    }
+
+    /**
+     * The person who signs in with this email, in whatever letter case it was typed.
+     * Rows from before emails were stored in lower case can differ only by case. Then only the
+     * exact spelling counts, and anything else finds nobody rather than a guess.
+     */
+    public static function findByEmail(string $typed): ?self
+    {
+        $rows = static::whereRaw('lower(email) = ?', [static::normaliseEmail($typed)])->limit(2)->get();
+
+        if ($rows->count() < 2) {
+            return $rows->first();
+        }
+
+        return static::where('email', trim($typed))->first();
+    }
+
+    /** Whether any account already has this email, in any letter case. */
+    public static function emailTaken(string $email): bool
+    {
+        return static::whereRaw('lower(email) = ?', [static::normaliseEmail($email)])->exists();
+    }
+
     /** Staff who run the platform. Separate from company roles, which all grant '*' to owners. */
     public function isPlatformAdmin(): bool
     {

@@ -36,13 +36,17 @@ class AuditLog extends Model
         return $this->morphTo();
     }
 
-    public static function record(string $action, Model $model, ?array $old = null, ?array $new = null): self
+    /**
+     * $actor names who did it when nobody is signed in, such as a sign-up through the API or a console run.
+     * Otherwise it is the signed-in person, and nobody on a client's signed link.
+     */
+    public static function record(string $action, Model $model, ?array $old = null, ?array $new = null, ?User $actor = null): self
     {
         $hidden = ['password', 'remember_token'];
 
         return static::withoutGlobalScopes()->create([
             'organization_id' => $model->getAttribute('organization_id') ?? Auth::user()?->organization_id,
-            'user_id' => Request::routeIs('client.*') ? null : Auth::id(),
+            'user_id' => $actor?->id ?? (Request::routeIs('client.*') ? null : Auth::id()),
             'action' => $action,
             'auditable_type' => $model->getMorphClass(),
             'auditable_id' => $model->getKey(),

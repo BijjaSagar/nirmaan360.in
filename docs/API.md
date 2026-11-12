@@ -2,6 +2,41 @@
 
 The field app's API lives under `/api/v1` and takes a Sanctum bearer token. The rules every endpoint follows (money and quantity as strings, dates, `client_uuid`, pagination) are in `mobile/docs/CONTRACT.md`. This file adds the endpoints built since then.
 
+## Sign-up
+
+### `POST /auth/register`
+
+Starts a new company with the person as its owner, and signs them in on this device. It takes no token.
+
+```json
+{"company": "Deccan Builders", "name": "Priya Rane", "email": "priya@example.com", "phone": "9876543210",
+ "password": "a-long-password", "password_confirmation": "a-long-password", "device_name": "Pixel 8", "locale": "mr"}
+```
+
+| Field | Rules |
+| --- | --- |
+| `company` | required, up to 120 characters |
+| `name` | required, up to 120 characters |
+| `email` | required, a valid email, up to 190 characters. Stored trimmed and in lower case. Refused if any account has it in any letter case, or if it is a platform admin's email. |
+| `phone` | optional, up to 20 characters, compared exactly as typed. Refused if an account has it. |
+| `password` | required, at least 8 characters, with a matching `password_confirmation` |
+| `device_name` | required, up to 120 characters. Names the token, as on `/auth/login`. |
+| `locale` | optional: `en`, `mr` or `hi`. Defaults to `en`. |
+
+**201** answers `{"token": "...", "user": {...}}`, the same keys and the same `user` as `/auth/login` gives for this person.
+
+- The company starts on the default plan, `contractor`, on a trial of the platform's trial length (30 days today). If that plan has been taken off sale, it starts on `free` instead.
+- The app does not choose a plan: a `plan` in the body is ignored.
+- The reply carries no plan, trial or price.
+
+Errors:
+- **422** in Laravel's shape. `errors.email` covers an email that is taken or cannot be used. `errors.phone` covers a mobile number that is taken. Any other field can also appear. The texts are for people, so read the field, not the wording.
+- **429** comes after 5 attempts a minute from one IP address. This counter is separate from the one `/auth/login` uses.
+
+The same email is never accepted twice. If a reply is lost and the app sends the same sign-up again, it gets 422 on `email`. Signing in with the same email and password then completes it. Sign-ups do not use `client_uuid`.
+
+`/auth/login` finds the email in any letter case. If two old accounts differ only by case, only the exact spelling signs in.
+
 ## Tender API
 
 The app's side of the web page "Tenders for this BOQ line": see which tenders a BOQ line is in, start a tender from the line, add contractors and their quotes, compare the quotes and choose one. Choosing a quote makes the work order at its rates.

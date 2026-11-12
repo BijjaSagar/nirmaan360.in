@@ -233,5 +233,11 @@
     "Sending…": "भेजा जा रहा है…",
     "Too many tries in a short time. Wait a minute and try again.": "कम समय में बहुत बार कोशिश हुई। एक मिनट रुककर फिर से कोशिश करें।",
     "This page opens from a button": "यह पेज बटन से खुलता है",
-    "It cannot be opened directly or reloaded. Go back and use the button on the page.": "इसे सीधे या रीलोड करके नहीं खोला जा सकता। वापस जाएँ और पेज पर दिए बटन का उपयोग करें।"
+    "It cannot be opened directly or reloaded. Go back and use the button on the page.": "इसे सीधे या रीलोड करके नहीं खोला जा सकता। वापस जाएँ और पेज पर दिए बटन का उपयोग करें।",
+    "Welcome! Your free plan is ready.": "स्वागत है! आपका फ़्री प्लान तैयार है।",
+    "Free plan: 1 project and 3 users.": "फ़्री प्लान: 1 प्रोजेक्ट और 3 उपयोगकर्ता।",
+    "Plan: :plan. No card needed. After the trial you move to the free plan.": "प्लान: :plan। कार्ड की ज़रूरत नहीं। ट्रायल के बाद आप फ़्री प्लान पर आ जाते हैं।",
+    "By creating an account you agree to our": "खाता बनाने पर आप इनसे सहमत होते हैं:",
+    "and": "और",
+    "Already registered?": "पहले से खाता है?"
 }
