@@ -1,0 +1,279 @@
+<?php
+
+namespace Tests\Feature\RateHelper;
+
+use App\Models\BoqItem;
+use App\Models\BoqMaterialNorm;
+use App\Models\CrmTender;
+use App\Models\CrmTenderBoqItem;
+use App\Models\CustomRole;
+use App\Models\DeliveryChallan;
+use App\Models\Material;
+use App\Models\MaterialStore;
+use App\Models\MaterialUnit;
+use App\Models\Organization;
+use App\Models\Party;
+use App\Models\Project;
+use App\Models\PurchaseOrder;
+use App\Models\RateLibraryItem;
+use App\Models\RateSuggestionLine;
+use App\Models\RateSuggestionRun;
+use App\Models\User;
+use App\Services\Access\TeamAccessService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
+use Tests\BuildsTenant;
+use Tests\TestCase;
+
+/**
+ * An invented company on the Business plan with one of every role, the project being priced, and a
+ * second project to take rates from. Every company, name and figure here is made up.
+ */
+abstract class RateHelperTestCase extends TestCase
+{
+    use BuildsTenant, RefreshDatabase;
+
+    protected Organization $org;
+
+    protected User $owner;
+
+    protected User $pm;
+
+    protected User $qs;
+
+    protected User $accounts;
+
+    protected User $engineer;
+
+    protected User $store;
+
+    protected User $viewer;
+
+    /** The project whose BOQ is being priced. */
+    protected Project $project;
+
+    /** Another project of the same company. */
+    protected Project $other;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite();
+
+        $this->org = $this->tenant('Acme Infra', 'business');
+
+        foreach (['owner', 'pm', 'qs', 'accounts', 'engineer', 'store', 'viewer'] as $role) {
+            $this->{$role} = $this->member($this->org, $role);
+        }
+
+        $this->project = $this->makeProject($this->org, ['code' => 'NB1', 'name' => 'North Block']);
+        $this->other = $this->makeProject($this->org, ['code' => 'GP2', 'name' => 'Maplewood Plaza']);
+    }
+
+    /** A BOQ line. Its rate is 0 unless given: that is the kind of line the helper is for. */
+    protected function line(string $description, string $unit = 'cum', string $rate = '0.00', ?Project $project = null, array $attributes = []): BoqItem
+    {
+        $project ??= $this->project;
+
+        return BoqItem::withoutGlobalScopes()->create([
+            'organization_id' => $project->organization_id,
+            'project_id' => $project->id,
+            'code' => 'L'.Str::upper(Str::random(6)),
+            'description' => $description,
+            'unit' => $unit,
+            'qty' => '100.000',
+            'rate' => $rate,
+            'sort' => (int) BoqItem::withoutGlobalScopes()->where('project_id', $project->id)->max('sort') + 1,
+            ...$attributes,
+        ]);
+    }
+
+    protected function libraryRate(string $item, string $unit, string $rate, ?Organization $organization = null, array $attributes = []): RateLibraryItem
+    {
+        return RateLibraryItem::withoutGlobalScopes()->create([
+            'organization_id' => ($organization ?? $this->org)->id,
+            'item' => $item,
+            'unit' => $unit,
+            'rate' => $rate,
+            ...$attributes,
+        ]);
+    }
+
+    /** A tender with one priced BOQ line. */
+    protected function tenderLine(string $description, string $unit, string $rate, string $stage = 'submitted', array $tender = [], ?Organization $organization = null): CrmTenderBoqItem
+    {
+        $organization ??= $this->org;
+
+        $row = CrmTender::withoutGlobalScopes()->create([
+            'organization_id' => $organization->id,
+            'title' => 'Ward office building',
+            'authority' => 'District Council',
+            'stage' => $stage,
+            ...$tender,
+        ]);
+
+        return CrmTenderBoqItem::withoutGlobalScopes()->create([
+            'organization_id' => $organization->id,
+            'tender_id' => $row->id,
+            'uuid' => (string) Str::uuid(),
+            'code' => 'T'.Str::upper(Str::random(4)),
+            'description' => $description,
+            'unit' => $unit,
+            'qty' => '10.000',
+            'rate' => $rate,
+        ]);
+    }
+
+    /** A material in the catalogue, with its base unit. */
+    protected function material(string $name, string $unit = 'bag', ?Organization $organization = null): Material
+    {
+        $organization ??= $this->org;
+        $baseUnit = MaterialUnit::withoutGlobalScopes()->firstOrCreate(['organization_id' => $organization->id, 'code' => $unit]);
+
+        return Material::withoutGlobalScopes()->create([
+            'organization_id' => $organization->id,
+            'code' => 'M'.Str::upper(Str::random(5)),
+            'name' => $name,
+            'base_unit_id' => $baseUnit->id,
+        ]);
+    }
+
+    protected function norm(BoqItem $item, Material $material, string $qtyPerUnit, string $wastagePct = '0'): BoqMaterialNorm
+    {
+        return BoqMaterialNorm::withoutGlobalScopes()->create([
+            'organization_id' => $item->organization_id,
+            'project_id' => $item->project_id,
+            'boq_item_id' => $item->id,
+            'material_id' => $material->id,
+            'qty_per_unit' => $qtyPerUnit,
+            'wastage_pct' => $wastagePct,
+        ]);
+    }
+
+    /** An issued purchase order with one line: $baseQty base units for $amount before GST. */
+    protected function purchase(Material $material, string $baseQty, string $amount, string $date, ?Project $project = null, string $status = 'ISSUED'): PurchaseOrder
+    {
+        $project ??= $this->project;
+        $org = $project->organization_id;
+        $vendor = Party::withoutGlobalScopes()->firstOrCreate(['organization_id' => $org, 'type' => 'vendor', 'name' => 'Sample Traders']);
+        $store = MaterialStore::withoutGlobalScopes()->firstOrCreate(['organization_id' => $org, 'project_id' => $project->id, 'name' => 'Main store']);
+
+        $order = PurchaseOrder::withoutGlobalScopes()->create([
+            'organization_id' => $org, 'project_id' => $project->id, 'party_id' => $vendor->id, 'store_id' => $store->id,
+            'number' => 'PO-'.Str::upper(Str::random(6)), 'po_date' => $date, 'status' => 'DRAFT',
+            'subtotal' => $amount, 'gst_amount' => '0.00', 'total' => $amount,
+        ]);
+
+        DB::table('purchase_order_items')->insert([
+            'organization_id' => $org, 'purchase_order_id' => $order->id, 'material_id' => $material->id,
+            'qty' => $baseQty, 'unit_id' => $material->base_unit_id, 'base_qty' => $baseQty,
+            'rate' => '0.00', 'gst_pct' => '18.00', 'amount' => $amount, 'gst_amount' => '0.00',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        // The status column is one a locked order may still change, so this is how an order is issued.
+        if ($status !== 'DRAFT') {
+            DB::table('purchase_orders')->where('id', $order->id)->update(['status' => $status]);
+        }
+
+        return $order->refresh();
+    }
+
+    /** A posted delivery challan whose bill was entered: $baseQty base units for $billAmount, as on the bill. */
+    protected function challanBill(Material $material, string $baseQty, string $billAmount, string $billDate, ?Project $project = null, string $status = 'POSTED'): DeliveryChallan
+    {
+        $project ??= $this->project;
+        $org = $project->organization_id;
+        $supplier = Party::withoutGlobalScopes()->firstOrCreate(['organization_id' => $org, 'type' => 'vendor', 'name' => 'Sample Traders']);
+
+        return DeliveryChallan::withoutGlobalScopes()->create([
+            'organization_id' => $org, 'project_id' => $project->id, 'party_id' => $supplier->id,
+            'material_id' => $material->id, 'unit_id' => $material->base_unit_id,
+            'number' => 'DC-'.Str::upper(Str::random(6)), 'challan_date' => $billDate,
+            'qty' => $baseQty, 'base_qty' => $baseQty,
+            'bill_status' => 'attached', 'bill_no' => 'B-'.Str::upper(Str::random(4)), 'bill_date' => $billDate, 'bill_amount' => $billAmount,
+            'status' => $status,
+        ]);
+    }
+
+    /** Someone holding exactly these permissions. */
+    protected function holding(array $permissions, ?Organization $organization = null): User
+    {
+        $organization ??= $this->org;
+        $role = CustomRole::withoutGlobalScopes()->create(['organization_id' => $organization->id, 'name' => 'Role '.uniqid(), 'permissions' => $permissions]);
+        $user = $this->member($organization, $role->baseRole());
+        $user->forceFill(['custom_role_id' => $role->id])->save();
+
+        return $user;
+    }
+
+    /** Someone with this role who may only see the given projects. */
+    protected function limited(string $role, Project ...$projects): User
+    {
+        $user = $this->member($this->org, $role);
+        app(TeamAccessService::class)->applyProjects($user, true, array_map(fn (Project $project) => $project->id, $projects));
+
+        return $user->refresh();
+    }
+
+    /** A second company with a project of its own. @return array{0: Organization, 1: User, 2: Project} */
+    protected function rival(): array
+    {
+        $org = $this->tenant('Rival Builders', 'business');
+        $owner = $this->member($org, 'owner');
+        $project = $this->makeProject($org, ['code' => 'TC1', 'name' => 'Rival Heights']);
+
+        return [$org, $owner, $project];
+    }
+
+    /** Presses "Suggest rates" for these lines as this person. */
+    protected function suggest(User $by, BoqItem ...$items): TestResponse
+    {
+        return $this->actingAs($by)->post(route('rate-suggestions.store', $items[0]->project_id), [
+            'client_uuid' => (string) Str::uuid(),
+            'boq_item_ids' => array_map(fn (BoqItem $item) => $item->id, $items),
+        ]);
+    }
+
+    /** The run a person just started for these lines. */
+    protected function startRun(User $by, BoqItem ...$items): RateSuggestionRun
+    {
+        $this->suggest($by, ...$items)->assertRedirect();
+
+        return RateSuggestionRun::withoutGlobalScopes()->latest('id')->firstOrFail();
+    }
+
+    protected function lineOf(RateSuggestionRun $run, BoqItem $item): RateSuggestionLine
+    {
+        return RateSuggestionLine::withoutGlobalScopes()->where('run_id', $run->id)->where('boq_item_id', $item->id)->firstOrFail();
+    }
+
+    /** @return list<array<string, mixed>> The stored shortlist of a line. */
+    protected function shortlist(RateSuggestionRun $run, BoqItem $item): array
+    {
+        return $this->lineOf($run, $item)->candidates;
+    }
+
+    /** The ref a source's row has on a line, or null when it is not on the list. */
+    protected function refOf(RateSuggestionRun $run, BoqItem $item, string $source, int $rowId): ?string
+    {
+        foreach ($this->shortlist($run, $item) as $candidate) {
+            if ($candidate['source'] === $source && (int) $candidate['row_id'] === $rowId) {
+                return $candidate['ref'];
+            }
+        }
+
+        return null;
+    }
+
+    protected function accept(User $by, RateSuggestionRun $run, BoqItem $item, string $ref, array $extra = []): TestResponse
+    {
+        return $this->actingAs($by)->post(route('rate-suggestions.lines.accept', [$run, $this->lineOf($run, $item)]), [
+            'candidate' => $ref,
+            'mode' => RateSuggestionLine::SET_BOQ_RATE,
+            ...$extra,
+        ]);
+    }
+}

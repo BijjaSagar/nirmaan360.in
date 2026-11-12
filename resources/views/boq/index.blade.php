@@ -10,6 +10,7 @@
         <x-page-header :title="__('BOQ & ledger')" :subtitle="$project->name.($total !== null ? ' · '.__('Total').' '.inr($total) : '')">
             <a href="{{ route('boq.export', $project) }}" class="btn btn-ghost">{{ __('Export CSV') }}</a>
             @include('modules.reports._boq-buttons', ['project' => $project])
+            @include('modules.rate_helper._boq-button', ['project' => $project, 'items' => $items])
             @includeWhen($setup, 'modules.project_setup.boq._header-links', ['project' => $project])
             @can('boq.manage')
                 <button type="button" class="btn btn-primary" @click="add = !add">{{ __('Add or import') }}</button>
