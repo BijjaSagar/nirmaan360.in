@@ -3905,6 +3905,80 @@ class AppLocalizationsHi extends AppLocalizations {
   String get pushSettingsTurnOn => 'चालू करें';
 
   @override
+  String get readerCompanyLimit =>
+      'आपकी कंपनी के लिए AI रीडर बंद है। कृपया सपोर्ट से संपर्क करें।';
+
+  @override
+  String get readerConsentRequired =>
+      'आपकी कंपनी ने AI सेवा को दस्तावेज़ भेजने की सूचना पर अभी सहमति नहीं दी है। मालिक या एडमिन वेबसाइट की सेटिंग्स में यह कर सकते हैं।';
+
+  @override
+  String get readerDailyBudget =>
+      'आपकी कंपनी का आज का AI बजट खत्म हो गया है। कल फिर से कोशिश करें।';
+
+  @override
+  String get readerNeedsInternet => 'दस्तावेज़ पढ़ने के लिए इंटरनेट चाहिए।';
+
+  @override
+  String get readerNoCredits => 'आपकी कंपनी के पास AI क्रेडिट नहीं बचे हैं।';
+
+  @override
+  String get readerNotConnected =>
+      'AI सेवा अभी उपलब्ध नहीं है। बाद में फिर से कोशिश करें।';
+
+  @override
+  String get readerNotReleased => 'AI रीडर अभी चालू नहीं किया गया है।';
+
+  @override
+  String readerOverLimit(int count) {
+    return 'सीमा में केवल $count पन्ने आते हैं। कम पन्ने चुनें।';
+  }
+
+  @override
+  String get readerPagesMissing =>
+      'कुछ पन्ने अभी भेजे नहीं गए हैं। उन्हें भेजें, फिर दोबारा शुरू करें।';
+
+  @override
+  String get readerPausedMonth => 'AI रीडर इस महीने के लिए रोका गया है।';
+
+  @override
+  String get readerPausedToday =>
+      'AI रीडर आज के लिए रोका गया है। कल फिर से कोशिश करें।';
+
+  @override
+  String get readerPhotoMirrored =>
+      'यह फ़ोटो उल्टी (आईने जैसी) सेव हुई है। फिर से लें।';
+
+  @override
+  String get readerPhotoTooSmall =>
+      'यह फ़ोटो पढ़ने के लिए बहुत छोटी है। पास से लें।';
+
+  @override
+  String get readerPhotoUnreadable => 'यह फ़ोटो पढ़ी नहीं जा सकती। फिर से लें।';
+
+  @override
+  String get readerProblem => 'कुछ गलत हो गया। फिर से कोशिश करें।';
+
+  @override
+  String get readerRetriesUsed => 'यह पन्ना दोबारा नहीं पढ़ा जा सकता।';
+
+  @override
+  String get readerServerBusy =>
+      'सर्वर अभी फ़ोटो प्रोसेस नहीं कर सकता। कुछ भी सेव नहीं हुआ। बाद में फिर से कोशिश करें।';
+
+  @override
+  String get readerStillWorking =>
+      'अभी भी काम चल रहा है। ताज़ा करने के लिए नीचे खींचें।';
+
+  @override
+  String get readerTooManyRequests =>
+      'बहुत ज़्यादा अनुरोध हुए। एक मिनट रुककर फिर से कोशिश करें।';
+
+  @override
+  String get readerWrongState =>
+      'दस्तावेज़ की अभी की स्थिति में यह नहीं हो सकता। ताज़ा करके फिर से कोशिश करें।';
+
+  @override
   String scanAlready(String name, String status) {
     return '$name की आज पहले से $status दर्ज है';
   }

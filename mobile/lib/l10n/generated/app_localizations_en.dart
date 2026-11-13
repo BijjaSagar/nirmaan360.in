@@ -3954,6 +3954,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pushSettingsTurnOn => 'Turn on';
 
   @override
+  String get readerCompanyLimit =>
+      'The AI reader is switched off for your company. Please contact support.';
+
+  @override
+  String get readerConsentRequired =>
+      'Your company has not agreed to the notice for sending documents to the AI service. An owner or admin can do that in Settings on the website.';
+
+  @override
+  String get readerDailyBudget =>
+      'Your company\'s AI budget for today is used up. Try again tomorrow.';
+
+  @override
+  String get readerNeedsInternet => 'Reading a document needs the internet.';
+
+  @override
+  String get readerNoCredits => 'Your company has no AI credits left.';
+
+  @override
+  String get readerNotConnected =>
+      'The AI service is not available right now. Try again later.';
+
+  @override
+  String get readerNotReleased => 'The AI reader is not switched on yet.';
+
+  @override
+  String readerOverLimit(int count) {
+    return 'Only $count pages fit the limit. Choose fewer pages.';
+  }
+
+  @override
+  String get readerPagesMissing =>
+      'Some pages are not sent yet. Send them, then start again.';
+
+  @override
+  String get readerPausedMonth => 'The AI reader is paused for this month.';
+
+  @override
+  String get readerPausedToday =>
+      'The AI reader is paused for today. Try again tomorrow.';
+
+  @override
+  String get readerPhotoMirrored =>
+      'This photo is saved mirrored. Take it again.';
+
+  @override
+  String get readerPhotoTooSmall =>
+      'This photo is too small to read. Take it closer.';
+
+  @override
+  String get readerPhotoUnreadable =>
+      'This photo cannot be read. Take it again.';
+
+  @override
+  String get readerProblem => 'Something went wrong. Try again.';
+
+  @override
+  String get readerRetriesUsed => 'This page cannot be read again.';
+
+  @override
+  String get readerServerBusy =>
+      'The server cannot process pictures right now. Nothing was stored. Try again later.';
+
+  @override
+  String get readerStillWorking => 'Still working. Pull to refresh.';
+
+  @override
+  String get readerTooManyRequests =>
+      'Too many requests. Wait a minute and try again.';
+
+  @override
+  String get readerWrongState =>
+      'This cannot be done with the document as it is now. Refresh and try again.';
+
+  @override
   String scanAlready(String name, String status) {
     return '$name is already marked $status today';
   }

@@ -1980,6 +1980,33 @@
   "pushSettingsOnContractor": "On. Payments and bills reach this phone.",
   "pushSettingsTitle": "Phone alerts",
   "pushSettingsTurnOn": "Turn on",
+  "readerCompanyLimit": "The AI reader is switched off for your company. Please contact support.",
+  "readerConsentRequired": "Your company has not agreed to the notice for sending documents to the AI service. An owner or admin can do that in Settings on the website.",
+  "readerDailyBudget": "Your company's AI budget for today is used up. Try again tomorrow.",
+  "readerNeedsInternet": "Reading a document needs the internet.",
+  "readerNoCredits": "Your company has no AI credits left.",
+  "readerNotConnected": "The AI service is not available right now. Try again later.",
+  "readerNotReleased": "The AI reader is not switched on yet.",
+  "readerOverLimit": "Only {count} pages fit the limit. Choose fewer pages.",
+  "@readerOverLimit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerPagesMissing": "Some pages are not sent yet. Send them, then start again.",
+  "readerPausedMonth": "The AI reader is paused for this month.",
+  "readerPausedToday": "The AI reader is paused for today. Try again tomorrow.",
+  "readerPhotoMirrored": "This photo is saved mirrored. Take it again.",
+  "readerPhotoTooSmall": "This photo is too small to read. Take it closer.",
+  "readerPhotoUnreadable": "This photo cannot be read. Take it again.",
+  "readerProblem": "Something went wrong. Try again.",
+  "readerRetriesUsed": "This page cannot be read again.",
+  "readerServerBusy": "The server cannot process pictures right now. Nothing was stored. Try again later.",
+  "readerStillWorking": "Still working. Pull to refresh.",
+  "readerTooManyRequests": "Too many requests. Wait a minute and try again.",
+  "readerWrongState": "This cannot be done with the document as it is now. Refresh and try again.",
   "scanAlready": "{name} is already marked {status} today",
   "@scanAlready": {
     "placeholders": {

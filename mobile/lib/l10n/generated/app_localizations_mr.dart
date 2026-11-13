@@ -3918,6 +3918,80 @@ class AppLocalizationsMr extends AppLocalizations {
   String get pushSettingsTurnOn => 'चालू करा';
 
   @override
+  String get readerCompanyLimit =>
+      'तुमच्या कंपनीसाठी AI वाचक बंद केला आहे. कृपया सपोर्टशी संपर्क करा.';
+
+  @override
+  String get readerConsentRequired =>
+      'तुमच्या कंपनीने AI सेवेकडे दस्तऐवज पाठवण्याच्या सूचनेला अजून संमती दिलेली नाही. मालक किंवा अ‍ॅडमिन वेबसाइटवरील सेटिंग्जमध्ये ती देऊ शकतात.';
+
+  @override
+  String get readerDailyBudget =>
+      'तुमच्या कंपनीचे आजचे AI बजेट संपले आहे. उद्या पुन्हा प्रयत्न करा.';
+
+  @override
+  String get readerNeedsInternet => 'दस्तऐवज वाचण्यासाठी इंटरनेट लागते.';
+
+  @override
+  String get readerNoCredits => 'तुमच्या कंपनीकडे AI क्रेडिट शिल्लक नाहीत.';
+
+  @override
+  String get readerNotConnected =>
+      'AI सेवा सध्या उपलब्ध नाही. नंतर पुन्हा प्रयत्न करा.';
+
+  @override
+  String get readerNotReleased => 'AI वाचक अजून सुरू केलेला नाही.';
+
+  @override
+  String readerOverLimit(int count) {
+    return 'मर्यादेत फक्त $count पाने बसतात. कमी पाने निवडा.';
+  }
+
+  @override
+  String get readerPagesMissing =>
+      'काही पाने अजून पाठवलेली नाहीत. ती पाठवा, मग पुन्हा सुरू करा.';
+
+  @override
+  String get readerPausedMonth => 'AI वाचक या महिन्यासाठी थांबवला आहे.';
+
+  @override
+  String get readerPausedToday =>
+      'AI वाचक आजच्या दिवसासाठी थांबवला आहे. उद्या पुन्हा प्रयत्न करा.';
+
+  @override
+  String get readerPhotoMirrored =>
+      'हा फोटो उलटा (आरशासारखा) जतन झाला आहे. पुन्हा काढा.';
+
+  @override
+  String get readerPhotoTooSmall =>
+      'हा फोटो वाचण्यासाठी खूप लहान आहे. जवळून काढा.';
+
+  @override
+  String get readerPhotoUnreadable => 'हा फोटो वाचता येत नाही. पुन्हा काढा.';
+
+  @override
+  String get readerProblem => 'काहीतरी चुकले. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get readerRetriesUsed => 'हे पान पुन्हा वाचता येणार नाही.';
+
+  @override
+  String get readerServerBusy =>
+      'सर्व्हर सध्या फोटोवर प्रक्रिया करू शकत नाही. काहीही जतन झाले नाही. नंतर पुन्हा प्रयत्न करा.';
+
+  @override
+  String get readerStillWorking =>
+      'अजून काम चालू आहे. ताजे करण्यासाठी खाली ओढा.';
+
+  @override
+  String get readerTooManyRequests =>
+      'खूप विनंत्या झाल्या. एक मिनिट थांबा आणि पुन्हा प्रयत्न करा.';
+
+  @override
+  String get readerWrongState =>
+      'दस्तऐवज सध्या ज्या स्थितीत आहे त्यात हे करता येत नाही. ताजे करून पुन्हा प्रयत्न करा.';
+
+  @override
   String scanAlready(String name, String status) {
     return '$name आज आधीच $status नोंदवले आहे';
   }

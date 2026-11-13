@@ -6976,6 +6976,126 @@ abstract class AppLocalizations {
   /// **'Turn on'**
   String get pushSettingsTurnOn;
 
+  /// No description provided for @readerCompanyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI reader is switched off for your company. Please contact support.'**
+  String get readerCompanyLimit;
+
+  /// No description provided for @readerConsentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company has not agreed to the notice for sending documents to the AI service. An owner or admin can do that in Settings on the website.'**
+  String get readerConsentRequired;
+
+  /// No description provided for @readerDailyBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company\'s AI budget for today is used up. Try again tomorrow.'**
+  String get readerDailyBudget;
+
+  /// No description provided for @readerNeedsInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading a document needs the internet.'**
+  String get readerNeedsInternet;
+
+  /// No description provided for @readerNoCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Your company has no AI credits left.'**
+  String get readerNoCredits;
+
+  /// No description provided for @readerNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI service is not available right now. Try again later.'**
+  String get readerNotConnected;
+
+  /// No description provided for @readerNotReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI reader is not switched on yet.'**
+  String get readerNotReleased;
+
+  /// No description provided for @readerOverLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {count} pages fit the limit. Choose fewer pages.'**
+  String readerOverLimit(int count);
+
+  /// No description provided for @readerPagesMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Some pages are not sent yet. Send them, then start again.'**
+  String get readerPagesMissing;
+
+  /// No description provided for @readerPausedMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI reader is paused for this month.'**
+  String get readerPausedMonth;
+
+  /// No description provided for @readerPausedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI reader is paused for today. Try again tomorrow.'**
+  String get readerPausedToday;
+
+  /// No description provided for @readerPhotoMirrored.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo is saved mirrored. Take it again.'**
+  String get readerPhotoMirrored;
+
+  /// No description provided for @readerPhotoTooSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo is too small to read. Take it closer.'**
+  String get readerPhotoTooSmall;
+
+  /// No description provided for @readerPhotoUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo cannot be read. Take it again.'**
+  String get readerPhotoUnreadable;
+
+  /// No description provided for @readerProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get readerProblem;
+
+  /// No description provided for @readerRetriesUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'This page cannot be read again.'**
+  String get readerRetriesUsed;
+
+  /// No description provided for @readerServerBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'The server cannot process pictures right now. Nothing was stored. Try again later.'**
+  String get readerServerBusy;
+
+  /// No description provided for @readerStillWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Still working. Pull to refresh.'**
+  String get readerStillWorking;
+
+  /// No description provided for @readerTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests. Wait a minute and try again.'**
+  String get readerTooManyRequests;
+
+  /// No description provided for @readerWrongState.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be done with the document as it is now. Refresh and try again.'**
+  String get readerWrongState;
+
   /// No description provided for @scanAlready.
   ///
   /// In en, this message translates to:
