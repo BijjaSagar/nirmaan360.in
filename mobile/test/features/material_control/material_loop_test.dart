@@ -753,6 +753,17 @@ void main() {
         'status': 'ok',
       });
       expect(within.beyondAllowed, isNull);
+
+      // The verdict is the server's. Figures that look over the line do not make a line wastage here.
+      final WastageRow judgedFine = WastageRow.fromJson(<String, dynamic>{
+        'boq_item_id': 1,
+        'material_id': 2,
+        'executed': '50.000',
+        'actual': '450.000',
+        'allowed': '428.400',
+        'status': 'ok',
+      });
+      expect(judgedFine.beyondAllowed, isNull);
       expect(
         WastageRow.fromJson(<String, dynamic>{'boq_item_id': 1, 'material_id': 2, 'status': 'something new'}).status,
         WastageStatus.ok,

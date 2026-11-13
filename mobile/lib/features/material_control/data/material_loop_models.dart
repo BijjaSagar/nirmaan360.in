@@ -365,11 +365,14 @@ class WastageRow {
   final String? variancePercent;
   final WastageStatus status;
 
-  /// Used beyond what the norm allows, in the base unit.
+  /// How far past the allowance, in the base unit, on a line the server judged as
+  /// wastage. The phone never draws that line itself: where the server's verdict is
+  /// anything else this is null, whatever the figures say.
   Qty? get beyondAllowed {
     final Qty? limit = allowed;
-    if (limit == null || actual <= limit) return null;
-    return actual - limit;
+    if (status != WastageStatus.wastage || limit == null) return null;
+    final Qty over = actual - limit;
+    return over.isNegative || over.isZero ? null : over;
   }
 }
 
