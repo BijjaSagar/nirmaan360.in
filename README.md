@@ -64,3 +64,15 @@ Set these in Laravel Cloud's environment variables:
 - A real mail driver (`MAIL_MAILER` and its settings). Password reset stays hidden in production until this is set.
 
 Plan prices live in `config/buildos.php`. Plans are prepaid per month or year and do not renew by themselves.
+
+## App review demo company
+
+Apple and Google review the field app with a demo login. Make its company once, from the production console:
+
+```bash
+php artisan review:demo-company <owner email> --contractor=<contractor email>
+```
+
+It refuses, changing nothing, if either email already has an account in any letter case, is a platform admin address, or the two are the same, and while mail goes only to the log. Otherwise it makes a separate company on the Business plan with no end date, fills it with the sample data, switches every AI agent and the daily brief off, posts one announcement, invites the contractor to the portal for the sample subcontractor, and sends the owner the "Forgot password?" email. Both people set their own passwords from those emails; the command never prints a password, a token or a link.
+
+Before a review, `php artisan review:demo-company <owner email> --top-up` makes sure a daily report waits at the project manager and a measurement waits at the QS. It works only on a company this command made.
