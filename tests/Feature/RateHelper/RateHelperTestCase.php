@@ -20,7 +20,9 @@ use App\Models\RateSuggestionLine;
 use App\Models\RateSuggestionRun;
 use App\Models\User;
 use App\Services\Access\TeamAccessService;
+use App\Services\RateHelper\RateSources;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -34,6 +36,12 @@ use Tests\TestCase;
 abstract class RateHelperTestCase extends TestCase
 {
     use BuildsTenant, RefreshDatabase;
+
+    /** The refusal for a row that has gone, moved out of the person's reach or out of their role, or changed its unit. */
+    protected const GONE = 'This rate is no longer available to you. It may have been removed, changed or moved out of your projects.';
+
+    /** The refusal for a row that is still there but no longer what the person's page showed. */
+    protected const CHANGED = 'This rate or its description changed after you opened the page. Check what is shown now before you accept.';
 
     protected Organization $org;
 
@@ -299,5 +307,35 @@ abstract class RateHelperTestCase extends TestCase
         $form = '#<form method="POST" action="'.$action.'"(?:(?!</form>).)*?name="candidate" value="'.preg_quote($ref, '#').'">\s*<input type="hidden" name="shown" value="([0-9a-f]{64})">#s';
 
         return preg_match($form, (string) $response->getContent(), $match) ? $match[1] : null;
+    }
+
+    /**
+     * What a tab this person opens now keeps in the accept form of this ref, for pressing Accept on it
+     * later. Fails when the page does not offer the ref, since then there is no such tab.
+     */
+    protected function tabOpenedBy(User $by, RateSuggestionRun $run, BoqItem $item, string $ref): string
+    {
+        $shown = $this->shownOn($by, $run, $this->lineOf($run, $item), $ref);
+        $this->assertNotNull($shown, 'The page of '.$by->name.' offers '.$ref.'.');
+
+        return $shown;
+    }
+
+    /**
+     * The fingerprint a source row has for someone who may see it: what their page would send. For a
+     * row no page of this company ever shows, such as another company's, read it as one of theirs.
+     * A refusal of it can then only come from the reach and tenant checks, not from the fingerprint.
+     */
+    protected function fingerprintFor(User $viewer, string $source, int $rowId): string
+    {
+        $before = Auth::user();
+        $this->actingAs($viewer);
+
+        $figure = app(RateSources::class)->open()[$source]->rateOf($viewer, $rowId);
+
+        $before === null ? Auth::logout() : $this->actingAs($before);
+        $this->assertNotNull($figure, $viewer->name.' can see row '.$rowId.' of '.$source.'.');
+
+        return $figure->fingerprint();
     }
 }

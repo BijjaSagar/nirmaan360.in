@@ -105,7 +105,7 @@ class AcceptTest extends RateHelperTestCase
         // Someone else edits the row before the QS presses Accept on that page.
         RateLibraryItem::withoutGlobalScopes()->whereKey($library->id)->update(['rate' => '58000.00']);
 
-        $changed = 'This rate or its description changed after you opened the page. Check what is shown now before you accept.';
+        $changed = self::CHANGED;
         $this->accept($this->qs, $run, $line, $ref, ['shown' => $seen])
             ->assertRedirect(route('rate-suggestions.show', $run).'#line-'.$stored->id)
             ->assertSessionHasErrors(['candidate' => $changed])
@@ -151,7 +151,7 @@ class AcceptTest extends RateHelperTestCase
             return $match[1];
         };
 
-        $gone = 'This rate is no longer available to you. It may have been removed, changed or moved out of your projects.';
+        $gone = self::GONE;
         RateLibraryItem::withoutGlobalScopes()->whereKey($library->id)->delete();
 
         // The page is read straight after the press, as the browser does. (Reading the session in the test
@@ -288,8 +288,6 @@ class AcceptTest extends RateHelperTestCase
 
     public function test_a_row_that_has_gone_lost_its_rate_or_changed_its_unit_is_refused(): void
     {
-        $gone = 'This rate is no longer available to you. It may have been removed, changed or moved out of your projects.';
-
         $changes = [
             'removed' => fn (RateLibraryItem $row) => $row->delete(),
             'no rate' => fn (RateLibraryItem $row) => $row->update(['rate' => '0.00']),
@@ -303,11 +301,13 @@ class AcceptTest extends RateHelperTestCase
             $run = $this->startRun($this->qs, $line);
             $ref = $this->refOf($run, $line, RateLibrarySource::KEY, $library->id);
             $this->assertNotNull($ref, $case);
+            // Pressed on a page opened before the change.
+            $tab = $this->tabOpenedBy($this->qs, $run, $line, $ref);
 
             $this->actingAs($this->owner);
             $change($library);
 
-            $this->accept($this->qs, $run, $line, $ref)->assertSessionHasErrors(['candidate' => $gone]);
+            $this->accept($this->qs, $run, $line, $ref, ['shown' => $tab])->assertSessionHasErrors(['candidate' => self::GONE]);
             $this->assertSame('0.00', $line->fresh()->rate, $case);
             $this->assertFalse($this->lineOf($run, $line)->isAccepted(), $case);
 
@@ -322,14 +322,17 @@ class AcceptTest extends RateHelperTestCase
         $library = $this->libraryRate('Waterproofing to terrace', 'cum', '880.00');
         $run = $this->startRun($this->qs, $line);
         $ref = $this->refOf($run, $line, RateLibrarySource::KEY, $library->id);
+        $tab = $this->tabOpenedBy($this->qs, $run, $line, $ref);
 
+        // The library row is untouched, so the tab's fingerprint still matches it: only the unit check refuses.
         $line->update(['unit' => 'sqm']);
-        $this->accept($this->qs, $run, $line, $ref)->assertSessionHasErrors('candidate');
+        $this->accept($this->qs, $run, $line, $ref, ['shown' => $tab])->assertSessionHasErrors(['candidate' => self::GONE]);
         $this->assertSame('0.00', $line->fresh()->rate);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
 
         $line->update(['unit' => 'cum']);
         $line->delete();
-        $this->accept($this->qs, $run, $line, $ref)->assertSessionHasErrors(['candidate' => 'This BOQ line is no longer in the BOQ.']);
+        $this->accept($this->qs, $run, $line, $ref, ['shown' => $tab])->assertSessionHasErrors(['candidate' => 'This BOQ line is no longer in the BOQ.']);
         $this->assertFalse($this->lineOf($run, $line)->isAccepted());
         $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()
             ->assertSee('This BOQ line is no longer in the BOQ.')

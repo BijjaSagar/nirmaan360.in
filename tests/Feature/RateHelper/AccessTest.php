@@ -116,7 +116,7 @@ class AccessTest extends RateHelperTestCase
 
     public function test_a_stored_list_that_points_at_another_companys_rows_shows_and_accepts_nothing(): void
     {
-        [$rivalOrg, , $rivalProject] = $this->rival();
+        [$rivalOrg, $rivalOwner, $rivalProject] = $this->rival();
         $rivalLibrary = $this->libraryRate('RCC M25 in slab', 'cum', '9911.00', $rivalOrg);
         $rivalBoq = $this->line('RCC M25 in slab', 'cum', '9922.00', $rivalProject);
         $rivalTender = $this->tenderLine('RCC M25 in slab', 'cum', '9933.00', 'won', [], $rivalOrg);
@@ -138,12 +138,24 @@ class AccessTest extends RateHelperTestCase
             ->assertDontSee('9,911.00')->assertDontSee('9,922.00')->assertDontSee('9,933.00')
             ->assertDontSee('Rival')->assertDontSee('Accept this rate');
 
-        foreach (['C1', 'C2', 'C3', 'C4'] as $ref) {
-            $this->accept($this->owner, $run, $line, $ref)->assertSessionHasErrors('candidate');
+        // The form carries the true fingerprint of each row, as a page of the rival company would hold it,
+        // so the only thing that can refuse it is the company check.
+        $theirs = [
+            'C1' => $this->fingerprintFor($rivalOwner, RateLibrarySource::KEY, $rivalLibrary->id),
+            'C2' => $this->fingerprintFor($rivalOwner, OwnBoqSource::KEY, $rivalBoq->id),
+            'C3' => $this->fingerprintFor($rivalOwner, OwnTenderSource::KEY, $rivalTender->id),
+        ];
+
+        foreach ($theirs as $ref => $shown) {
+            $this->accept($this->owner, $run, $line, $ref, ['shown' => $shown])->assertSessionHasErrors(['candidate' => self::GONE]);
         }
+
+        // A source the app does not have is refused the same way.
+        $this->accept($this->owner, $run, $line, 'C4', ['shown' => $theirs['C1']])->assertSessionHasErrors(['candidate' => self::GONE]);
 
         $this->assertSame('0.00', $line->fresh()->rate);
         $this->assertTrue($this->lineOf($run, $line)->isOpen());
+        $this->assertSame(['9911.00', '9922.00'], [$rivalLibrary->fresh()->rate, $rivalBoq->fresh()->rate]);
     }
 
     public function test_a_tender_that_went_back_to_pricing_or_was_removed_is_no_longer_offered(): void
@@ -159,6 +171,9 @@ class AccessTest extends RateHelperTestCase
         $this->assertNotNull($second);
         $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()->assertSee('7,149.75')->assertSee('7,388.25');
 
+        // The QS keeps that page open, with both forms on it.
+        $tabs = [$first => $this->tabOpenedBy($this->qs, $run, $line, $first), $second => $this->tabOpenedBy($this->qs, $run, $line, $second)];
+
         $this->actingAs($this->owner);
         $reopened->tender->update(['stage' => 'bidding']);
         $removed->tender->delete();
@@ -167,11 +182,13 @@ class AccessTest extends RateHelperTestCase
             ->assertDontSee('7,149.75')->assertDontSee('7,388.25')
             ->assertDontSee('Ward office building')->assertDontSee('Bus depot shed');
 
-        foreach ([$first, $second] as $ref) {
-            $this->accept($this->qs, $run, $line, $ref)->assertSessionHasErrors('candidate');
+        // The rows and their rates are unchanged, so the fingerprints still match: the stage check refuses them.
+        foreach ($tabs as $ref => $shown) {
+            $this->accept($this->qs, $run, $line, $ref, ['shown' => $shown])->assertSessionHasErrors(['candidate' => self::GONE]);
         }
 
         $this->assertSame('0.00', $line->fresh()->rate);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
     }
 
     public function test_only_live_lines_of_this_projects_boq_can_be_picked(): void
@@ -330,6 +347,9 @@ class AccessTest extends RateHelperTestCase
         $this->actingAs($this->owner)->get(route('rate-suggestions.show', $run))->assertOk()
             ->assertSee('5,817.25')->assertSee('GP2 · Maplewood Plaza')->assertSee('7,149.75')->assertSee('Maplewood Plaza tender');
 
+        // What the owner's page sends for the two rows outside the limited person's list.
+        $ownerSaw = [$boqRef => $this->tabOpenedBy($this->owner, $run, $line, $boqRef), $tenderRef => $this->tabOpenedBy($this->owner, $run, $line, $tenderRef)];
+
         $limited = $this->limited('qs', $this->project);
 
         // When the list is shown: no candidate, name or rate from the project outside their list.
@@ -339,9 +359,10 @@ class AccessTest extends RateHelperTestCase
             ->assertDontSee('5,817.25')->assertDontSee('7,149.75')
             ->assertDontSee('secret admixture')->assertDontSee('hidden tender');
 
-        // When accepting: the refs exist on the line, and are still refused for this person.
-        foreach ([$boqRef, $tenderRef] as $ref) {
-            $this->accept($limited, $run, $line, $ref, ['checked_warnings' => '1'])->assertSessionHasErrors('candidate');
+        // When accepting: the refs exist on the line, and are still refused for this person, even with the
+        // fingerprint the owner's page holds. Only the project check can refuse them.
+        foreach ($ownerSaw as $ref => $shown) {
+            $this->accept($limited, $run, $line, $ref, ['checked_warnings' => '1', 'shown' => $shown])->assertSessionHasErrors(['candidate' => self::GONE]);
         }
 
         $this->assertSame('0.00', $line->fresh()->rate);
@@ -363,12 +384,19 @@ class AccessTest extends RateHelperTestCase
         $this->assertNotNull($ref);
         $this->actingAs($limited)->get(route('rate-suggestions.show', $run))->assertOk()->assertSee('5,817.25');
 
+        // That page stays open in a tab.
+        $tab = $this->tabOpenedBy($limited, $run, $line, $ref);
+
         app(TeamAccessService::class)->applyProjects($limited, true, [$this->project->id]);
         $limited->refresh();
 
         $this->actingAs($limited)->get(route('rate-suggestions.show', $run))->assertOk()->assertDontSee('5,817.25')->assertDontSee('Maplewood');
-        $this->accept($limited, $run, $line, $ref)->assertSessionHasErrors('candidate');
+
+        // Accept pressed on the old tab: the row and its rate are as that tab shows them, and it is still refused.
+        $this->accept($limited, $run, $line, $ref, ['shown' => $tab])->assertSessionHasErrors(['candidate' => self::GONE]);
         $this->assertSame('0.00', $line->fresh()->rate);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
+        $this->assertSame('5817.25', $from->fresh()->rate);
     }
 
     public function test_tender_lines_are_only_for_people_who_may_open_tenders(): void
@@ -394,9 +422,12 @@ class AccessTest extends RateHelperTestCase
         $ref = $this->refOf($run, $line, OwnTenderSource::KEY, $tender->id);
         $this->assertNotNull($ref);
         $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()->assertSee('7,149.75')->assertSee('Ward office building');
+        $qsSaw = $this->tabOpenedBy($this->qs, $run, $line, $ref);
         $this->actingAs($withoutSales)->get(route('rate-suggestions.show', $run))->assertOk()->assertDontSee('7,149.75')->assertDontSee('Ward office building');
-        $this->accept($withoutSales, $run, $line, $ref)->assertSessionHasErrors('candidate');
+        // Even with the fingerprint the QS's page holds, only the role check stands in the way, and it refuses.
+        $this->accept($withoutSales, $run, $line, $ref, ['shown' => $qsSaw])->assertSessionHasErrors(['candidate' => self::GONE]);
         $this->assertSame('0.00', $line->fresh()->rate);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
 
         // A company whose plan has no sales module has no tender source at all.
         config(['buildos.plans.business.features' => array_values(array_diff(config('buildos.plans.business.features'), ['crm']))]);
@@ -418,9 +449,13 @@ class AccessTest extends RateHelperTestCase
         $this->assertNotNull($this->refOf($own, $line, OwnBoqSource::KEY, $boq->id));
 
         $run = $this->startRun($this->owner, $line);
+        $ref = $this->refOf($run, $line, RateLibrarySource::KEY, $library->id);
+        $ownerSaw = $this->tabOpenedBy($this->owner, $run, $line, $ref);
         $this->actingAs($withoutRates)->get(route('rate-suggestions.show', $run))->assertOk()->assertSee('5,800.00')->assertDontSee('6,234.50');
-        $this->accept($withoutRates, $run, $line, $this->refOf($run, $line, RateLibrarySource::KEY, $library->id))->assertSessionHasErrors('candidate');
+        // Even with the fingerprint the owner's page holds, only the role check stands in the way, and it refuses.
+        $this->accept($withoutRates, $run, $line, $ref, ['shown' => $ownerSaw])->assertSessionHasErrors(['candidate' => self::GONE]);
         $this->assertSame('0.00', $line->fresh()->rate);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
     }
 
     public function test_the_boq_page_offers_the_lines_without_a_rate(): void

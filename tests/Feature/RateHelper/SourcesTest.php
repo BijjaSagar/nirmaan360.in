@@ -130,12 +130,15 @@ class SourcesTest extends RateHelperTestCase
         $line = $this->line('RCC M25 in slab');
         $this->libraryRate('RCC M25 in slab', 'cum', '6200.00');
         $run = $this->startRun($this->owner, $line);
+        $tab = $this->tabOpenedBy($this->owner, $run, $line, 'C1');
 
         config(['modules.rate_helper.sources' => [OwnBoqSource::class, ScheduleSource::class]]);
 
         $this->actingAs($this->owner)->get(route('rate-suggestions.show', $run))->assertOk()->assertDontSee('6,200.00')->assertDontSee('Accept this rate');
-        $this->accept($this->owner, $run, $line, 'C1')->assertSessionHasErrors('candidate');
+        // Pressed on a page opened before the change: the row is as it showed, and the source is no longer there to read it.
+        $this->accept($this->owner, $run, $line, 'C1', ['shown' => $tab])->assertSessionHasErrors(['candidate' => self::GONE]);
         $this->assertSame('0.00', $line->fresh()->rate);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
         $this->assertSame([], $this->shortlist($this->startRun($this->owner, $line), $line));
     }
 
