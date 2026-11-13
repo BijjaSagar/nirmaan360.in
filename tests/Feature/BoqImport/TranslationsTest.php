@@ -7,16 +7,22 @@ use Tests\TestCase;
 /** Every text of the BOQ sheet import reads in Hindi and Marathi. */
 class TranslationsTest extends TestCase
 {
-    /** @return array<string, string> */
+    /** @return array<string, string> Every translation the app loads: the main file and every module's. */
     private function strings(string $locale): array
     {
         $strings = [];
 
-        foreach ([lang_path($locale.'.json'), lang_path("modules/reports/{$locale}.json"), lang_path("modules/boq_import/{$locale}.json")] as $file) {
+        foreach ([lang_path($locale.'.json'), ...glob(lang_path("modules/*/{$locale}.json"))] as $file) {
             $strings = [...$strings, ...json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR)];
         }
 
         return $strings;
+    }
+
+    /** @return array<string, string> */
+    private function own(string $locale): array
+    {
+        return json_decode((string) file_get_contents(lang_path("modules/boq_import/{$locale}.json")), true, flags: JSON_THROW_ON_ERROR);
     }
 
     /** @return list<string> */
@@ -49,6 +55,21 @@ class TranslationsTest extends TestCase
             $missing = array_values(array_filter($this->usedTexts(), fn (string $text) => trim((string) ($strings[$text] ?? '')) === ''));
 
             $this->assertSame([], $missing, "Missing {$locale} translations");
+        }
+    }
+
+    public function test_no_text_translated_elsewhere_is_given_a_second_meaning_here(): void
+    {
+        foreach (['hi', 'mr'] as $locale) {
+            $elsewhere = json_decode((string) file_get_contents(lang_path($locale.'.json')), true);
+
+            foreach (glob(lang_path("modules/*/{$locale}.json")) as $file) {
+                if (! str_contains($file, '/boq_import/')) {
+                    $elsewhere = [...$elsewhere, ...json_decode((string) file_get_contents($file), true)];
+                }
+            }
+
+            $this->assertSame([], array_keys(array_intersect_key($this->own($locale), $elsewhere)), $locale);
         }
     }
 
