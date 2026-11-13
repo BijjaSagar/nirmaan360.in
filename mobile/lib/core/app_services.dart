@@ -49,11 +49,16 @@ import 'readers/readers.dart';
 import 'session/current_user.dart';
 
 /// Deletes the temporary folders that hold company data: quotation files and
-/// report PDFs handed to another app. Never throws.
+/// report PDFs handed to another app, and the share plugin's copy of the last
+/// one. Never throws.
 Future<void> clearCompanyTempFiles(Future<String> Function() tempDirectory) async {
   try {
     final String root = await tempDirectory();
-    for (final String folder in <String>[AppConfig.quotationFolder, AppConfig.reportFolder]) {
+    for (final String folder in <String>[
+      AppConfig.quotationFolder,
+      AppConfig.reportFolder,
+      AppConfig.sharePluginFolder,
+    ]) {
       try {
         final Directory dir = Directory('$root${Platform.pathSeparator}$folder');
         // Synchronous on purpose: small folders, and it runs inside the sign-out.

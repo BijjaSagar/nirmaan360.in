@@ -116,12 +116,17 @@ void main() {
   test('signing out clears report files with the quotations, and nothing else', () async {
     await ReportShare(api).shareDprPdf(dprId: 41, reportDate: '2026-11-09');
     Directory('${temp.path}/${AppConfig.quotationFolder}').createSync();
+    // Android's share plugin keeps its own copy of the last shared file here.
+    File('${temp.path}/${AppConfig.sharePluginFolder}/DPR-2026-11-09-41.pdf')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('%PDF copy');
     final File other = File('${temp.path}/unrelated.txt')..writeAsStringSync('keep');
 
     await clearCompanyTempFiles(() async => temp.path);
 
     expect(Directory('${temp.path}/${AppConfig.reportFolder}').existsSync(), isFalse);
     expect(Directory('${temp.path}/${AppConfig.quotationFolder}').existsSync(), isFalse);
+    expect(Directory('${temp.path}/${AppConfig.sharePluginFolder}').existsSync(), isFalse);
     expect(other.existsSync(), isTrue);
   });
 }

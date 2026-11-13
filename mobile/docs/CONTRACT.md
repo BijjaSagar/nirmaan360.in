@@ -632,7 +632,7 @@ The app:
 
 ### Sharing a DPR and the measurement sheet (online only)
 
-The website's three report buttons, for the phone. Routes are in `routes/api_modules/reports.php` (`Reports/Api/ReportShareApiController`), behind the same plan and permissions as the website: every one needs the `reports` plan feature (Contractor plan and above), so a Free company gets 403 and the app shows no button (`ReportShare.allowed`: `features` has `reports`, the permission below, not a contractor login). Nothing here is stored in Drift or queued: the files are made on the server from the server's copy, written to `<temp>/reports/` (`AppConfig.reportFolder`, cleared at sign-out and account deletion with the quotation files) and handed to the phone's share sheet through `share_plus`.
+The website's three report buttons, for the phone. Routes are in `routes/api_modules/reports.php` (`Reports/Api/ReportShareApiController`), behind the same plan and permissions as the website: every one needs the `reports` plan feature (Contractor plan and above), so a Free company gets 403 and the app shows no button (`ReportShare.allowed`: `features` has `reports`, the permission below, not a contractor login). Nothing here is stored in Drift or queued: the files are made on the server from the server's copy, written to `<temp>/reports/` (`AppConfig.reportFolder`) and handed to the phone's share sheet through `share_plus`. Sign-out and account deletion clear that folder with the quotation files, and with it `<temp>/share_plus/`, where the share plugin keeps its own copy of the last shared file on Android.
 
 | Method | Path | Needs | Answer |
 |---|---|---|---|

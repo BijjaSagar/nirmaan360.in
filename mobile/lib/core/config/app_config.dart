@@ -21,6 +21,11 @@ abstract final class AppConfig {
   /// measurement sheet) handed to another app. Cleared with [quotationFolder].
   static const String reportFolder = 'reports';
 
+  /// Where the share plugin keeps its own copy of the last file it handed on
+  /// (Android: `cacheDir/share_plus`), until the next share. It holds the same
+  /// company data, so it is cleared with the two folders above.
+  static const String sharePluginFolder = 'share_plus';
+
   /// Name of the sqlite file in the app documents directory.
   static const String databaseName = 'nirmaan360';
 
