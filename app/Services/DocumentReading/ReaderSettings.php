@@ -20,7 +20,7 @@ use LogicException;
  * Nothing here is offered while the readers are off: AiSpend::readersOn() is the one test, the same
  * one the public website, the privacy policy and terms, the menu and the phone's status answer use.
  * A company that has agreed keeps the page and its menu entry while the readers are off, to switch
- * them off (shown()); nothing is sent meanwhile, as every gate asks readersOn's parts itself.
+ * them off (shown()); no reader sends anything meanwhile, as every gate asks readersOn's parts itself.
  */
 class ReaderSettings
 {
@@ -173,7 +173,7 @@ class ReaderSettings
     }
 
     /**
-     * Switches the readers off for a company. From this moment nothing new is sent: every read that
+     * Switches the readers off for a company. From this moment the readers send nothing new: every read that
      * is not finished is cancelled, its waiting pages are skipped and its credits on hold are given
      * back. A read that is finished and waiting for review stays, and can still be checked and saved.
      *

@@ -347,7 +347,7 @@
     "This model has no price on record, so it cannot be tried.": "इस मॉडल की कोई कीमत दर्ज नहीं है, इसलिए इसे आज़माया नहीं जा सकता।",
     "This month (US$)": "इस महीने (US$)",
     "This month's limit for the readers is reached. Nothing more is sent until it is raised or the month ends.": "रीडर के लिए इस महीने की सीमा पूरी हो गई है। जब तक इसे बढ़ाया न जाए या महीना खत्म न हो, कुछ और नहीं भेजा जाएगा।",
-    "This notice has changed since your company agreed to it. Nothing is sent until an owner or admin agrees to it again.": "आपकी कंपनी की सहमति के बाद यह सूचना बदल गई है। जब तक मालिक या एडमिन इस पर दोबारा सहमति नहीं देते, कुछ नहीं भेजा जाएगा।",
+    "This notice has changed since your company agreed to it. The readers send nothing until an owner or admin agrees to it again.": "आपकी कंपनी की सहमति के बाद यह सूचना बदल गई है। जब तक मालिक या एडमिन इस पर दोबारा सहमति नहीं देते, रीडर कुछ नहीं भेजते।",
     "This page has been read again as often as is offered. Type this page by hand.": "यह पन्ना जितनी बार दोबारा पढ़ा जा सकता है उतनी बार पढ़ा जा चुका है। इस पन्ने को हाथ से टाइप करें।",
     "This page has no answer to mark.": "इस पन्ने का कोई जवाब नहीं है जिसे चिह्नित किया जा सके।",
     "This page updates by itself while the dry run is running.": "ड्राई रन चलते समय यह पेज अपने आप अपडेट होता है।",

@@ -475,8 +475,11 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertFalse(AiDocumentConsent::current($this->organization));
         $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v0', 'current' => false], $this->settings()->consent($this->organization));
 
+        // The line sits under the notice, which names the AI features the switch does not cover, so it speaks of the readers only.
         $this->actingAs($this->owner)->get(self::PAGE)->assertOk()
-            ->assertSee('This notice has changed since your company agreed to it.')
+            ->assertSee('This notice has changed since your company agreed to it. The readers send nothing until an owner or admin agrees to it again.')
+            ->assertSee('This switch does not cover the other AI features:')
+            ->assertDontSee('Nothing is sent until an owner or admin agrees to it again.')
             ->assertSee('name="accept"', false)
             ->assertSee('Switch the readers off');
 

@@ -45,7 +45,7 @@
                         </p>
                     @else
                         @if ($consent['enabled'])
-                            <p class="rounded-[3px] border border-haldi bg-haldi/15 px-3 py-2 text-sm" role="alert">{{ __('This notice has changed since your company agreed to it. Nothing is sent until an owner or admin agrees to it again.') }}</p>
+                            <p class="rounded-[3px] border border-haldi bg-haldi/15 px-3 py-2 text-sm" role="alert">{{ __('This notice has changed since your company agreed to it. The readers send nothing until an owner or admin agrees to it again.') }}</p>
                         @endif
 
                         <form method="POST" action="{{ route('ai-documents.update') }}" class="space-y-3 border-t border-rule pt-3">

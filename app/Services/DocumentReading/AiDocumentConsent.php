@@ -7,8 +7,8 @@ use App\Models\Organization;
 
 /**
  * A company's agreement to the notice about sending its pages, photos and text to the AI provider.
- * The notice has a version. A new wording is a new version, and nothing more is sent for a company
- * until an owner or admin has agreed to it.
+ * The notice has a version. A new wording is a new version, and the readers and the text calls under
+ * the switch (TEXT_PURPOSES) send nothing more for a company until an owner or admin has agreed to it.
  *
  * The switch itself, and what turning it off does to reads in progress, is in ReaderSettings.
  */
