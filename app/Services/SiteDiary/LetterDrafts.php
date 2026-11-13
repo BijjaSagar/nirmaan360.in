@@ -8,7 +8,9 @@ use App\Models\SiteLetter;
 use App\Models\User;
 use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\TextCalls;
+use App\Services\Wording\FactFormat;
 use App\Services\Wording\FactSheet;
+use App\Services\Wording\ReviewedLanguages;
 use App\Services\Wording\SlotText;
 use App\Services\Wording\Violation;
 use App\Services\Wording\WordingDocument;
@@ -67,6 +69,10 @@ class LetterDrafts
             throw new ImmutableRecordException(SiteLetters::finalisedMessage());
         }
 
+        if (! self::writable($letter)) {
+            throw ValidationException::withMessages(['ai_reader' => __('The AI writes only in the languages a new document can be prepared in now, so it writes nothing in this one\'s language.')]);
+        }
+
         $free = array_keys(LetterLayout::FREE[$letter->type]);
         $edited = array_filter($free, fn (string $id) => ($letter->slots[$id]['source'] ?? null) === SlotText::EDITED);
 
@@ -77,6 +83,12 @@ class LetterDrafts
         $document = $this->document($letter);
 
         return $this->wording->draft(WordingService::PURPOSE, $document->type, $document->sheet, $document->locale, $letter, $by);
+    }
+
+    /** Whether the AI may write in the letter's language: one offered for letters (ReviewedLanguages). */
+    public static function writable(SiteLetter $letter): bool
+    {
+        return ReviewedLanguages::writable(ReviewedLanguages::SITE_LETTERS, (string) $letter->language, FactFormat::LOCALES);
     }
 
     /**
@@ -94,7 +106,8 @@ class LetterDrafts
     {
         $organization = $user->organization;
         $draft = ! $letter->isFinalised();
-        $offered = $draft && $user->can('agents.use') && $this->spend->aiOn($organization);
+        // The AI writes a letter to another party only in a language offered for letters (ReviewedLanguages).
+        $offered = $draft && self::writable($letter) && $user->can('agents.use') && $this->spend->aiOn($organization);
         $call = $this->latest($letter);
 
         if ($call !== null && $call->isOpen()) {
@@ -111,7 +124,7 @@ class LetterDrafts
 
         return [
             'offered' => $offered,
-            'plan' => $draft && ! $organization->allowsFeature('ai_agents') && $this->spend->aiOn(),
+            'plan' => $draft && self::writable($letter) && ! $organization->allowsFeature('ai_agents') && $this->spend->aiOn(),
             // A finalised letter takes nothing more from the AI, so there is nothing to wait for on its page.
             'writing' => $draft && $call !== null && $call->isOpen(),
             'not_used' => $notUsed,

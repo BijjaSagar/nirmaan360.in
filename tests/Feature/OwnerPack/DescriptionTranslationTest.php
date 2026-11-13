@@ -12,6 +12,7 @@ use App\Services\DocumentReading\TextRequest;
 use App\Services\OwnerPack\DescriptionTranslation;
 use App\Services\OwnerPack\QuotationTranslations;
 use App\Services\Wording\FactSheet;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Str;
 
 /**
@@ -371,6 +372,21 @@ class DescriptionTranslationTest extends OwnerPackAiTestCase
 
         $this->translate()->assertStatus(422)->assertJsonValidationErrors('ai_reader');
         $this->assertSame(2, $this->calls());
+    }
+
+    public function test_on_the_live_site_descriptions_are_translated_only_into_a_language_reviewed_for_the_pack(): void
+    {
+        // A translation is printed on the home owner's quotation, so it waits for Marathi's review as the quotation does.
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $this->actingAs($this->manager)->get(route('quotations.show', $this->quotation))->assertOk()->assertDontSee('Translations of the descriptions');
+        $this->translate()->assertStatus(422)->assertJsonValidationErrors(['ai_reader' => 'The AI writes only in the languages a new document can be prepared in now, so it writes nothing in this one\'s language.']);
+        $this->assertSame(0, $this->calls());
+
+        config(['wording.reviewed_languages.owner_pack' => ['mr']]);
+        $this->actingAs($this->manager)->get(route('quotations.show', $this->quotation))->assertOk()->assertSee('Translations of the descriptions');
+        $this->translate()->assertStatus(202);
     }
 
     public function test_a_new_language_clears_translations_and_lines_copied_again_or_revised_keep_theirs(): void

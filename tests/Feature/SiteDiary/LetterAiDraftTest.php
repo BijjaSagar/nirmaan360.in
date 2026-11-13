@@ -11,6 +11,7 @@ use App\Services\SiteDiary\SiteLetters;
 use App\Services\Wording\FactSheet;
 use App\Services\Wording\WordingService;
 use App\Support\PlatformSettings;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
@@ -266,6 +267,21 @@ class LetterAiDraftTest extends SiteDiaryAiTestCase
             ->assertRedirect(route('site-diary.letters.show', $this->letter))->assertSessionHasErrors('ai_reader');
         $this->get(route('site-diary.letters.show', $this->letter))->assertOk()->assertDontSee('Write them with the AI');
         $this->assertSame(0, AiTextCall::withoutGlobalScopes()->count());
+    }
+
+    public function test_on_the_live_site_a_letter_kept_in_marathi_is_written_by_the_ai_only_once_marathi_is_reviewed(): void
+    {
+        // The letter keeps the Marathi it was prepared in, but on the live site Marathi waits for a native reader's review.
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $this->actingAs($this->pm)->get(route('site-diary.letters.show', $this->letter))->assertOk()->assertDontSee('Write them with the AI');
+        $this->ask()->assertStatus(422)->assertJsonValidationErrors(['ai_reader' => 'The AI writes only in the languages a new document can be prepared in now, so it writes nothing in this one\'s language.']);
+        $this->assertSame(0, AiTextCall::withoutGlobalScopes()->count());
+
+        config(['wording.reviewed_languages.site_letters' => ['mr']]);
+        $this->actingAs($this->pm)->get(route('site-diary.letters.show', $this->letter))->assertOk()->assertSee('Write them with the AI');
+        $this->ask()->assertStatus(202);
     }
 
     public function test_who_may_ask(): void

@@ -11,6 +11,7 @@ use App\Services\OwnerPack\PackDrafts;
 use App\Services\Wording\FactSheet;
 use App\Services\Wording\WordingService;
 use App\Support\PlatformSettings;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
@@ -243,6 +244,21 @@ class QuotationAiDraftTest extends OwnerPackAiTestCase
             ->assertRedirect(route('quotations.show', $this->quotation))->assertSessionHasErrors('ai_reader');
         $this->get(route('quotations.show', $this->quotation))->assertOk()->assertDontSee('Write them with the AI');
         $this->assertSame(0, $this->calls());
+    }
+
+    public function test_on_the_live_site_a_draft_kept_in_marathi_is_written_by_the_ai_only_once_marathi_is_reviewed(): void
+    {
+        // The draft keeps the Marathi it was prepared in, but on the live site Marathi waits for a native reader's review.
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->withoutMiddleware(PreventRequestForgery::class);
+
+        $this->actingAs($this->manager)->get(route('quotations.show', $this->quotation))->assertOk()->assertDontSee('Write them with the AI');
+        $this->ask()->assertStatus(422)->assertJsonValidationErrors(['ai_reader' => 'The AI writes only in the languages a new document can be prepared in now, so it writes nothing in this one\'s language.']);
+        $this->assertSame(0, $this->calls());
+
+        config(['wording.reviewed_languages.owner_pack' => ['mr']]);
+        $this->actingAs($this->manager)->get(route('quotations.show', $this->quotation))->assertOk()->assertSee('Write them with the AI');
+        $this->ask()->assertStatus(202);
     }
 
     public function test_who_may_ask(): void

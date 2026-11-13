@@ -198,6 +198,10 @@ class QuotationTranslations
             throw ValidationException::withMessages(['ai_reader' => __('Descriptions are translated for a quotation in Hindi or Marathi. Choose the language of the quotation first.')]);
         }
 
+        if (! PackDrafts::writable($quotation)) {
+            throw ValidationException::withMessages(['ai_reader' => __('The AI writes only in the languages a new document can be prepared in now, so it writes nothing in this one\'s language.')]);
+        }
+
         if ($this->toSend($quotation) === []) {
             throw ValidationException::withMessages(['ai_reader' => __('No line is waiting for a translation: each has an accepted translation, or its description cannot be sent as it is.')]);
         }
@@ -277,7 +281,9 @@ class QuotationTranslations
     {
         $organization = $user->organization;
         $draft = $quotation->isDraft();
-        $translatable = $draft && in_array($quotation->language, self::LANGUAGES, true);
+        $inLanguage = in_array($quotation->language, self::LANGUAGES, true);
+        // A translation goes into a document for the home owner, so only into a language offered for it (ReviewedLanguages).
+        $translatable = $draft && $inLanguage && PackDrafts::writable($quotation);
         $call = $draft ? $this->latest($quotation) : null;
 
         if ($call !== null && $call->isOpen()) {
@@ -299,7 +305,7 @@ class QuotationTranslations
         return [
             'offered' => $offered,
             'plan' => $lines !== [] && ! $organization->allowsFeature('ai_agents') && $this->spend->aiOn(),
-            'language' => $draft && ! $translatable,
+            'language' => $draft && ! $inLanguage,
             'writing' => $call !== null && $call->isOpen(),
             'not_used' => $notUsed,
             'lines' => count($lines),

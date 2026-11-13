@@ -18,6 +18,7 @@ use App\Services\Wording\Violation;
 use App\Services\Wording\WordingDocument;
 use App\Services\Wording\WordingDraft;
 use App\Services\Wording\WordingException;
+use App\Services\Wording\ReviewedLanguages;
 use App\Services\Wording\WordingService;
 use App\Support\Dec;
 use Brick\Math\RoundingMode;
@@ -88,6 +89,10 @@ class PackDrafts
 
         if (! $record->isDraft()) {
             throw new ImmutableRecordException($record::lockedMessage());
+        }
+
+        if (! self::writable($record)) {
+            throw ValidationException::withMessages(['ai_reader' => __('The AI writes only in the languages a new document can be prepared in now, so it writes nothing in this one\'s language.')]);
         }
 
         $edited = array_filter(self::freeSlots($record), fn (string $id) => ($record->slots[$id]['source'] ?? null) === SlotText::EDITED);
@@ -180,7 +185,9 @@ class PackDrafts
     {
         $organization = $user->organization;
         $draft = $record->isDraft();
-        $offered = $draft && $user->can('agents.use') && $this->spend->aiOn($organization);
+        // The AI writes for a document going to the home owner only in a language offered for it (ReviewedLanguages).
+        $writable = self::writable($record);
+        $offered = $draft && $writable && $user->can('agents.use') && $this->spend->aiOn($organization);
         $call = $draft ? $this->latest($record) : null;
 
         if ($call !== null && $call->isOpen()) {
@@ -197,7 +204,7 @@ class PackDrafts
 
         return [
             'offered' => $offered,
-            'plan' => $draft && ! $organization->allowsFeature('ai_agents') && $this->spend->aiOn(),
+            'plan' => $draft && $writable && ! $organization->allowsFeature('ai_agents') && $this->spend->aiOn(),
             'writing' => $call !== null && $call->isOpen(),
             'not_used' => $notUsed,
             'credits' => $offered ? (string) Dec::of($this->calls->upTo(WordingService::PURPOSE))->toScale(0, RoundingMode::Ceiling) : null,
@@ -237,6 +244,12 @@ class PackDrafts
             ->where('subject_id', $record->id)
             ->latest('id')
             ->first();
+    }
+
+    /** Whether the AI may write in the record's language: one offered for the home-owner pack (ReviewedLanguages). */
+    public static function writable(ClientQuotation|OwnerUpdate $record): bool
+    {
+        return ReviewedLanguages::writable(ReviewedLanguages::OWNER_PACK, (string) $record->language, ClientQuotation::LANGUAGES);
     }
 
     /** @return list<string> The sentences of the record the AI may write. */

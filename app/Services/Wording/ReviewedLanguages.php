@@ -64,6 +64,18 @@ final class ReviewedLanguages
             : $offered;
     }
 
+    /**
+     * Whether new wording may be written in a document's language now, by the app or by the AI: the
+     * language is offered for its kind. A draft kept in a language no longer offered keeps the words it
+     * has; nothing new is written for it in that language, the AI's sentences and translations included.
+     *
+     * @param  list<string>  $all
+     */
+    public static function writable(string $kind, string $language, array $all = FactFormat::LOCALES): bool
+    {
+        return in_array($language, self::offered($kind, $all), true);
+    }
+
     /** Whether every language the module writes is offered, so a page may say that it writes them all. */
     public static function allOffered(string $kind, array $all = FactFormat::LOCALES): bool
     {

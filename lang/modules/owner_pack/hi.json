@@ -193,6 +193,7 @@
     "The AI is translating the descriptions. This page looks again by itself.": "AI विवरणों का अनुवाद कर रहा है। यह पेज अपने आप फिर से देखेगा।",
     "The AI is writing the opening and the closing sentences. The page shows them when they are ready.": "AI शुरुआती और समापन वाक्य लिख रहा है। तैयार होने पर पेज उन्हें दिखाएगा।",
     "The AI is writing the opening and the closing sentences. This page looks again by itself.": "AI शुरुआती और समापन वाक्य लिख रहा है। यह पेज अपने आप फिर से देखेगा।",
+    "The AI writes only in the languages a new document can be prepared in now, so it writes nothing in this one's language.": "AI केवल उन्हीं भाषाओं में लिखता है जिनमें अभी नया दस्तावेज़ तैयार किया जा सकता है, इसलिए वह इस दस्तावेज़ की भाषा में कुछ नहीं लिखता।",
     "The amounts of these lines add up to {{subtotal}}.": "इन मदों की रकम का जोड़ {{subtotal}} है।",
     "The approved daily reports of this week have no photos.": "इस सप्ताह की मंज़ूर दैनिक रिपोर्टों में कोई फ़ोटो नहीं है।",
     "The balance of {{balance}} is not covered by a stage.": "शेष {{balance}} किसी भी चरण में शामिल नहीं है।",
