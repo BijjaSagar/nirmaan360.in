@@ -48,7 +48,12 @@ class BoqService
 
         if (isset($data['qty'])) {
             $data['qty'] = Dec::qty($data['qty']);
-            $this->assertQtyCoversWorkDone($item, Dec::of($data['qty']));
+
+            // Only a cut is held to the work done. The forms always send the quantity, so a rate or wording fix on a
+            // line measured past its quantity keeps it as it is, and a rise never leaves less room than there was.
+            if (Dec::of($data['qty'])->isLessThan(Dec::of($item->qty))) {
+                $this->assertQtyCoversWorkDone($item, Dec::of($data['qty']));
+            }
         }
 
         if (isset($data['rate'])) {
@@ -130,14 +135,18 @@ class BoqService
     }
 
     /**
-     * Quantities can be revised, but never below what is already measured (rejected entries left out) or
-     * billed to the client. Measured and billed quantities are added up here, never by the database, so no
-     * float is involved. Daily report figures are site estimates and an approved one cannot be corrected,
-     * so they do not hold the quantity up.
+     * A cut can go no lower than what is already measured or billed to the client. Measured is the approved total,
+     * deductions and reversals included, plus every pending entry that adds work. A pending deduction or reversal
+     * never lowers it: it may yet be deleted or rejected, which would leave approved work above the line. Rejected
+     * entries do not count. Quantities are added up here, never by the database, so no float is involved. Daily
+     * report figures are site estimates and an approved one cannot be corrected, so they do not hold it up.
      */
     private function assertQtyCoversWorkDone(BoqItem $item, BigDecimal $qty): void
     {
-        $measured = $this->total(DB::table('measurement_entries')->where('boq_item_id', $item->id)->where('status', '!=', 'REJECTED')->pluck('qty'));
+        $entries = DB::table('measurement_entries')->where('boq_item_id', $item->id)->where('status', '!=', 'REJECTED')->get(['status', 'qty']);
+        $measured = $this->total($entries
+            ->filter(fn (object $entry) => $entry->status === 'APPROVED' || Dec::of($entry->qty)->isPositive())
+            ->pluck('qty'));
 
         if ($measured->isGreaterThan($qty)) {
             throw ValidationException::withMessages(['qty' => __('Quantity cannot be lower than the quantity already measured (:qty).', ['qty' => fmt_qty($measured)])]);

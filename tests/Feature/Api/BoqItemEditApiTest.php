@@ -10,6 +10,8 @@ use App\Models\MeasurementEntry;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\BoqService;
+use App\Services\MeasurementService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -286,6 +288,100 @@ class BoqItemEditApiTest extends ApiTestCase
         $this->edit($this->line, ['qty' => '80'])->assertOk()->assertJsonPath('data.qty', '80.000');
     }
 
+    /** An approved +50 on the line, measured by an engineer and approved by the owner. */
+    private function approvedFifty(): MeasurementEntry
+    {
+        $engineer = $this->member($this->org, 'engineer');
+        $entry = $this->approveEntry($this->draftEntry($this->project, $this->line, $engineer), $engineer, $this->owner);
+        $this->assertSame(['APPROVED', '50.000'], [$entry->status, $entry->qty]);
+
+        return $entry;
+    }
+
+    public function test_a_pending_reversal_does_not_let_the_quantity_go_below_approved_work(): void
+    {
+        $approved = $this->approvedFifty();
+        $reversal = app(MeasurementService::class)->reverse($approved, $this->member($this->org, 'engineer'));
+        $this->assertSame(['DRAFT', '-50.000'], [$reversal->status, $reversal->qty]);
+        $this->signIn($this->pm);
+
+        // The reversal may yet be deleted or rejected, which would leave 50 approved on a 0 line.
+        $this->edit($this->line, ['qty' => '0'])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.qty.0', 'Quantity cannot be lower than the quantity already measured (50.000).');
+        $this->assertSame('100.000', $this->line->fresh()->qty);
+
+        $this->edit($this->line, ['qty' => '50'])->assertOk()->assertJsonPath('data.qty', '50.000');
+    }
+
+    public function test_a_pending_deduction_does_not_let_the_quantity_go_below_approved_work(): void
+    {
+        $this->approvedFifty();
+        $deduction = $this->measured($this->line)->forceFill(['is_deduction' => true]);
+        $deduction->save();
+        $this->assertSame('-50.000', $deduction->fresh()->qty);
+        $this->signIn($this->pm);
+
+        foreach (['DRAFT', 'IN_REVIEW', 'RETURNED'] as $status) {
+            DB::table('measurement_entries')->where('id', $deduction->id)->update(['status' => $status]);
+
+            $this->edit($this->line, ['qty' => '49.999'])
+                ->assertUnprocessable()
+                ->assertJsonPath('errors.qty.0', 'Quantity cannot be lower than the quantity already measured (50.000).');
+        }
+
+        // The web edit goes through the same service.
+        $this->actingAs($this->pm)->patch(route('boq.update', $this->line), [
+            'code' => $this->line->code, 'description' => $this->line->description, 'unit' => 'cum', 'qty' => '0', 'rate' => '5000', 'reason' => 'Slab dropped',
+        ])->assertSessionHasErrors('qty');
+        $this->assertSame('100.000', $this->line->fresh()->qty);
+    }
+
+    public function test_an_approved_reversal_frees_the_quantity(): void
+    {
+        $engineer = $this->member($this->org, 'engineer');
+        $reversal = app(MeasurementService::class)->reverse($this->approvedFifty(), $engineer);
+        $this->approveEntry($reversal, $engineer, $this->owner);
+        $this->signIn($this->pm);
+
+        $this->edit($this->line, ['qty' => '0'])->assertOk()->assertJsonPath('data.qty', '0.000');
+    }
+
+    public function test_a_line_measured_past_its_quantity_still_takes_a_rate_or_wording_fix(): void
+    {
+        $line = $this->makeBoqItem($this->project, '40.000');
+        $this->assertSame('50.000', $this->measured($line)->qty);
+        $this->signIn($this->pm);
+
+        $this->edit($line, ['rate' => '5200', 'description' => 'RCC M25 in roof slab'])
+            ->assertOk()
+            ->assertJsonPath('data.qty', '40.000')
+            ->assertJsonPath('data.rate', '5200.00')
+            ->assertJsonPath('data.description', 'RCC M25 in roof slab');
+
+        // Raising the quantity never leaves less room than there was, even when it stays below what is measured.
+        $this->edit($line->fresh(), ['qty' => '45'])->assertOk()->assertJsonPath('data.qty', '45.000');
+
+        $this->edit($line->fresh(), ['qty' => '44.999'])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.qty.0', 'Quantity cannot be lower than the quantity already measured (50.000).');
+        $this->assertSame('45.000', $line->fresh()->qty);
+    }
+
+    public function test_the_website_edits_the_wording_of_a_line_approved_or_billed_past_its_quantity(): void
+    {
+        $this->approvedFifty();
+        $this->bill($this->line, '50.000', 'APPROVED');
+        $this->line->update(['qty' => '40.000']);
+        $form = ['code' => $this->line->code, 'unit' => 'cum', 'qty' => '40', 'rate' => '5000', 'reason' => 'Typo'];
+
+        $this->actingAs($this->pm)->patch(route('boq.update', $this->line), [...$form, 'description' => 'RCC M25 in roof slab'])->assertSessionHasNoErrors();
+        $this->assertSame(['RCC M25 in roof slab', '40.000'], [$this->line->fresh()->description, $this->line->fresh()->qty]);
+
+        $this->actingAs($this->pm)->patch(route('boq.update', $this->line), [...$form, 'qty' => '39', 'description' => 'Cut'])->assertSessionHasErrors('qty');
+        $this->assertSame('40.000', $this->line->fresh()->qty);
+    }
+
     public function test_the_unit_is_locked_once_anything_is_recorded_against_the_line(): void
     {
         $this->signIn($this->pm);
@@ -484,6 +580,33 @@ class BoqItemEditApiTest extends ApiTestCase
 
         $this->actingAs($this->pm)->delete(route('boq.destroy', $this->line), ['reason' => 'Not needed'])->assertSessionHasErrors('boq');
         $this->assertFalse($this->line->fresh()->trashed());
+    }
+
+    public function test_the_website_remove_hint_names_every_record_that_holds_a_line(): void
+    {
+        // How the hint names each record BoqService::uses() checks. A new check needs a word here and in the hint.
+        $named = [
+            'bills' => 'bills',
+            'measurements' => 'measurements',
+            'work_orders' => 'work orders',
+            'tenders' => 'tenders',
+            'daily_reports' => 'daily report work',
+            'site_progress' => 'site progress',
+            'labour' => 'labour',
+        ];
+
+        foreach (self::uses() as [$record]) {
+            $this->{$record}($this->line);
+        }
+        $this->assertEqualsCanonicalizing(array_keys($named), app(BoqService::class)->uses($this->line));
+
+        $this->withoutVite();
+        $page = $this->actingAs($this->pm)->get(route('boq.index', $this->project))->assertOk()->getContent();
+        $this->assertSame(1, preg_match('/<p class="hint">([^<]*cannot be removed[^<]*)<\/p>/', $page, $hint));
+
+        foreach ($named as $use => $words) {
+            $this->assertStringContainsString($words, $hint[1], "The remove hint does not name {$use}.");
+        }
     }
 
     // GET /me

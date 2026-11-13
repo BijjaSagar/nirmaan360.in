@@ -208,7 +208,7 @@
     "Remove this photo": "यह फ़ोटो हटाएँ",
     "Photo of :project": ":project की फ़ोटो",
     "The photo could not be saved. Please try again.": "फ़ोटो सेव नहीं हो सकी। कृपया फिर से कोशिश करें।",
-    "An item with measurements, daily report work, tenders or bills cannot be removed. The removal is kept in the history.": "जिस आइटम पर माप, रोज़ की रिपोर्ट का काम, टेंडर या बिल हों, उसे हटाया नहीं जा सकता। हटाना इतिहास में दर्ज रहता है।",
+    "An item with measurements, daily report work, tenders, work orders, bills, site progress or labour cannot be removed. The removal is kept in the history.": "जिस आइटम पर माप, रोज़ की रिपोर्ट का काम, टेंडर, वर्क ऑर्डर, बिल, साइट प्रगति या मज़दूरी दर्ज हो, उसे हटाया नहीं जा सकता। हटाना इतिहास में दर्ज रहता है।",
     "The unit cannot change once work, tenders or bills are recorded against this item. Add a new item instead.": "जब इस आइटम पर काम, टेंडर या बिल दर्ज हो जाएँ तो इकाई नहीं बदली जा सकती। इसकी जगह नया आइटम जोड़ें।",
     "This item is on a bill and cannot be removed.": "यह आइटम एक बिल में है, इसलिए इसे हटाया नहीं जा सकता।",
     "This item has measurements and cannot be removed.": "इस आइटम पर माप हैं, इसलिए इसे हटाया नहीं जा सकता।",

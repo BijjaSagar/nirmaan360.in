@@ -5,7 +5,7 @@
     <div x-show="open" x-cloak class="space-y-2">
         <label class="label" for="remove-reason">{{ __('Why is it being removed?') }}</label>
         <input id="remove-reason" name="reason" class="input" maxlength="500" :required="open" :disabled="! open">
-        <p class="hint">{{ __('An item with measurements, daily report work, tenders or bills cannot be removed. The removal is kept in the history.') }}</p>
+        <p class="hint">{{ __('An item with measurements, daily report work, tenders, work orders, bills, site progress or labour cannot be removed. The removal is kept in the history.') }}</p>
         <div class="flex justify-end gap-2">
             <button type="button" class="btn btn-ghost" @click="open = false">{{ __('Keep it') }}</button>
             <button class="btn btn-danger">{{ __('Remove item') }}</button>

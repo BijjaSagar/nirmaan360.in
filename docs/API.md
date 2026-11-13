@@ -119,7 +119,7 @@ Both go through `BoqService`, as the web BOQ page does, and each change is kept 
 
 - **200** `{"data": {...}}`, the line in the `boq_items` pull shape. The same values again change nothing and write no history.
 - **409** `{"message", "code": "changed", "data": {...}}` when `updated_at` is given and the line changed since, to the second. `data` is the line as it is now.
-- **422** `errors.qty` below what is measured (entries not rejected) or billed to the client (bills not cancelled). `errors.unit` once anything below is recorded against the line.
+- **422** `errors.qty` when the quantity is cut below what is measured or billed to the client (bills not cancelled). Measured is the approved total plus pending entries that add work; a pending deduction or reversal does not lower it, and rejected entries do not count. Keeping or raising the quantity is never refused, so a rate or wording fix goes through on a line measured past its quantity. `errors.unit` once anything below is recorded against the line.
 - **404** another company's line, a project the person is not given, or a removed line.
 
 ### `DELETE /boq-items/{item}`
