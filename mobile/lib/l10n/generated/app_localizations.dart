@@ -1414,6 +1414,192 @@ abstract class AppLocalizations {
   /// **'Balance value'**
   String get boqBalanceValueLabel;
 
+  /// No description provided for @boqDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this item'**
+  String get boqDeleteAction;
+
+  /// No description provided for @boqDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be taken out of the BOQ for everyone. The BOQ history keeps it with your name and reason. It cannot be brought back from the app.'**
+  String get boqDeleteBody;
+
+  /// No description provided for @boqDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete item'**
+  String get boqDeleteConfirm;
+
+  /// No description provided for @boqDeleteDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Item {code} deleted from the BOQ.'**
+  String boqDeleteDone(String code);
+
+  /// No description provided for @boqDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The item could not be deleted. Try again.'**
+  String get boqDeleteFailed;
+
+  /// No description provided for @boqDeleteKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it'**
+  String get boqDeleteKeep;
+
+  /// No description provided for @boqDeleteOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting needs the internet.'**
+  String get boqDeleteOffline;
+
+  /// No description provided for @boqDeleteOwnerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the company owner can delete BOQ items. An item with measurements, daily report work, tenders or bills cannot be deleted.'**
+  String get boqDeleteOwnerNote;
+
+  /// No description provided for @boqDeleteOwnerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the company owner can delete a BOQ item.'**
+  String get boqDeleteOwnerOnly;
+
+  /// No description provided for @boqDeleteReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Why is it being deleted?'**
+  String get boqDeleteReason;
+
+  /// No description provided for @boqDeleteReasonRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write why it is being deleted.'**
+  String get boqDeleteReasonRequired;
+
+  /// No description provided for @boqDeleteRefusedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This item cannot be deleted'**
+  String get boqDeleteRefusedTitle;
+
+  /// No description provided for @boqDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete item {code}?'**
+  String boqDeleteTitle(String code);
+
+  /// No description provided for @boqDeleteUnsent.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has work on this item that has not been sent yet. Send it first, then delete.'**
+  String get boqDeleteUnsent;
+
+  /// No description provided for @boqEditAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit item'**
+  String get boqEditAction;
+
+  /// No description provided for @boqEditChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone changed this item after you opened it. It now shows as the office has it. Check it and save again.'**
+  String get boqEditChanged;
+
+  /// No description provided for @boqEditCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Item code'**
+  String get boqEditCode;
+
+  /// No description provided for @boqEditCodeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the item code.'**
+  String get boqEditCodeRequired;
+
+  /// No description provided for @boqEditGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is no longer in the BOQ.'**
+  String get boqEditGone;
+
+  /// No description provided for @boqEditMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured so far: {qty} {unit}. The quantity cannot go below what is measured or billed.'**
+  String boqEditMeasured(String qty, String unit);
+
+  /// No description provided for @boqEditNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot change the BOQ. Ask the office.'**
+  String get boqEditNotAllowed;
+
+  /// No description provided for @boqEditOfflineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ items can be changed only online.'**
+  String get boqEditOfflineDetail;
+
+  /// No description provided for @boqEditQtyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the quantity as a number with up to 3 decimals, like 120.5.'**
+  String get boqEditQtyInvalid;
+
+  /// No description provided for @boqEditRateInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the rate as a number with up to 2 decimals, like 450.00.'**
+  String get boqEditRateInvalid;
+
+  /// No description provided for @boqEditReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Why is it changing?'**
+  String get boqEditReason;
+
+  /// No description provided for @boqEditReasonHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept in the BOQ history with your name. Measurements and bills already made do not change.'**
+  String get boqEditReasonHelper;
+
+  /// No description provided for @boqEditReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Revised drawing from the architect'**
+  String get boqEditReasonHint;
+
+  /// No description provided for @boqEditReasonRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Write why it is changing.'**
+  String get boqEditReasonRequired;
+
+  /// No description provided for @boqEditSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get boqEditSave;
+
+  /// No description provided for @boqEditSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ item saved.'**
+  String get boqEditSaved;
+
+  /// No description provided for @boqEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit BOQ item'**
+  String get boqEditTitle;
+
   /// No description provided for @boqEmptyAsk.
   ///
   /// In en, this message translates to:

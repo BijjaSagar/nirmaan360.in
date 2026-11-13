@@ -782,6 +782,113 @@ class AppLocalizationsEn extends AppLocalizations {
   String get boqBalanceValueLabel => 'Balance value';
 
   @override
+  String get boqDeleteAction => 'Delete this item';
+
+  @override
+  String get boqDeleteBody =>
+      'It will be taken out of the BOQ for everyone. The BOQ history keeps it with your name and reason. It cannot be brought back from the app.';
+
+  @override
+  String get boqDeleteConfirm => 'Delete item';
+
+  @override
+  String boqDeleteDone(String code) {
+    return 'Item $code deleted from the BOQ.';
+  }
+
+  @override
+  String get boqDeleteFailed => 'The item could not be deleted. Try again.';
+
+  @override
+  String get boqDeleteKeep => 'Keep it';
+
+  @override
+  String get boqDeleteOffline => 'Deleting needs the internet.';
+
+  @override
+  String get boqDeleteOwnerNote =>
+      'Only the company owner can delete BOQ items. An item with measurements, daily report work, tenders or bills cannot be deleted.';
+
+  @override
+  String get boqDeleteOwnerOnly =>
+      'Only the company owner can delete a BOQ item.';
+
+  @override
+  String get boqDeleteReason => 'Why is it being deleted?';
+
+  @override
+  String get boqDeleteReasonRequired => 'Write why it is being deleted.';
+
+  @override
+  String get boqDeleteRefusedTitle => 'This item cannot be deleted';
+
+  @override
+  String boqDeleteTitle(String code) {
+    return 'Delete item $code?';
+  }
+
+  @override
+  String get boqDeleteUnsent =>
+      'This phone has work on this item that has not been sent yet. Send it first, then delete.';
+
+  @override
+  String get boqEditAction => 'Edit item';
+
+  @override
+  String get boqEditChanged =>
+      'Someone changed this item after you opened it. It now shows as the office has it. Check it and save again.';
+
+  @override
+  String get boqEditCode => 'Item code';
+
+  @override
+  String get boqEditCodeRequired => 'Enter the item code.';
+
+  @override
+  String get boqEditGone => 'This item is no longer in the BOQ.';
+
+  @override
+  String boqEditMeasured(String qty, String unit) {
+    return 'Measured so far: $qty $unit. The quantity cannot go below what is measured or billed.';
+  }
+
+  @override
+  String get boqEditNotAllowed => 'You cannot change the BOQ. Ask the office.';
+
+  @override
+  String get boqEditOfflineDetail => 'BOQ items can be changed only online.';
+
+  @override
+  String get boqEditQtyInvalid =>
+      'Enter the quantity as a number with up to 3 decimals, like 120.5.';
+
+  @override
+  String get boqEditRateInvalid =>
+      'Enter the rate as a number with up to 2 decimals, like 450.00.';
+
+  @override
+  String get boqEditReason => 'Why is it changing?';
+
+  @override
+  String get boqEditReasonHelper =>
+      'Kept in the BOQ history with your name. Measurements and bills already made do not change.';
+
+  @override
+  String get boqEditReasonHint => 'e.g. Revised drawing from the architect';
+
+  @override
+  String get boqEditReasonRequired => 'Write why it is changing.';
+
+  @override
+  String get boqEditSave => 'Save changes';
+
+  @override
+  String get boqEditSaved => 'BOQ item saved.';
+
+  @override
+  String get boqEditTitle => 'Edit BOQ item';
+
+  @override
   String get boqEmptyAsk =>
       'A BOQ is the list of work on this project. Ask the office to add it.';
 

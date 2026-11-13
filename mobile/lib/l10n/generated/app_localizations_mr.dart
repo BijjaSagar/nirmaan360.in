@@ -784,6 +784,112 @@ class AppLocalizationsMr extends AppLocalizations {
   String get boqBalanceValueLabel => 'शिल्लक मूल्य';
 
   @override
+  String get boqDeleteAction => 'हा आयटम काढा';
+
+  @override
+  String get boqDeleteBody =>
+      'तो सर्वांसाठी BOQ मधून काढला जाईल. BOQ इतिहासात तो तुमच्या नावासह आणि कारणासह राहील. ॲपमधून तो परत आणता येणार नाही.';
+
+  @override
+  String get boqDeleteConfirm => 'आयटम काढा';
+
+  @override
+  String boqDeleteDone(String code) {
+    return 'आयटम $code BOQ मधून काढला.';
+  }
+
+  @override
+  String get boqDeleteFailed => 'आयटम काढता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get boqDeleteKeep => 'ठेवा';
+
+  @override
+  String get boqDeleteOffline => 'काढण्यासाठी इंटरनेट लागते.';
+
+  @override
+  String get boqDeleteOwnerNote =>
+      'BOQ आयटम फक्त कंपनीचा मालक काढू शकतो. ज्या आयटमवर मोजमाप, रोजच्या अहवालातील काम, टेंडर किंवा बिले आहेत तो काढता येत नाही.';
+
+  @override
+  String get boqDeleteOwnerOnly => 'BOQ आयटम फक्त कंपनीचा मालक काढू शकतो.';
+
+  @override
+  String get boqDeleteReason => 'तो का काढला जात आहे?';
+
+  @override
+  String get boqDeleteReasonRequired => 'तो का काढत आहात ते लिहा.';
+
+  @override
+  String get boqDeleteRefusedTitle => 'हा आयटम काढता येत नाही';
+
+  @override
+  String boqDeleteTitle(String code) {
+    return 'आयटम $code काढायचा?';
+  }
+
+  @override
+  String get boqDeleteUnsent =>
+      'या फोनवर या आयटमचे काम आहे जे अजून पाठवलेले नाही. आधी ते पाठवा, मग काढा.';
+
+  @override
+  String get boqEditAction => 'आयटम बदला';
+
+  @override
+  String get boqEditChanged =>
+      'तुम्ही उघडल्यानंतर कोणीतरी हा आयटम बदलला. आता तो ऑफिसमध्ये आहे तसा दिसत आहे. तपासा आणि पुन्हा जतन करा.';
+
+  @override
+  String get boqEditCode => 'आयटम कोड';
+
+  @override
+  String get boqEditCodeRequired => 'आयटम कोड टाका.';
+
+  @override
+  String get boqEditGone => 'हा आयटम आता BOQ मध्ये नाही.';
+
+  @override
+  String boqEditMeasured(String qty, String unit) {
+    return 'आतापर्यंत मोजलेले: $qty $unit. मोजलेल्या किंवा बिल केलेल्या परिमाणापेक्षा कमी परिमाण ठेवता येत नाही.';
+  }
+
+  @override
+  String get boqEditNotAllowed => 'तुम्ही BOQ बदलू शकत नाही. ऑफिसला विचारा.';
+
+  @override
+  String get boqEditOfflineDetail => 'BOQ आयटम फक्त ऑनलाइन बदलता येतात.';
+
+  @override
+  String get boqEditQtyInvalid =>
+      'परिमाण आकड्यात टाका, जास्तीत जास्त 3 दशांश, उदा. 120.5.';
+
+  @override
+  String get boqEditRateInvalid =>
+      'दर आकड्यात टाका, जास्तीत जास्त 2 दशांश, उदा. 450.00.';
+
+  @override
+  String get boqEditReason => 'हे का बदलत आहे?';
+
+  @override
+  String get boqEditReasonHelper =>
+      'तुमच्या नावासह BOQ इतिहासात राहते. आधी झालेली मोजमापे आणि बिले बदलत नाहीत.';
+
+  @override
+  String get boqEditReasonHint => 'उदा. आर्किटेक्टचे सुधारित ड्रॉइंग';
+
+  @override
+  String get boqEditReasonRequired => 'हे का बदलत आहे ते लिहा.';
+
+  @override
+  String get boqEditSave => 'बदल जतन करा';
+
+  @override
+  String get boqEditSaved => 'BOQ आयटम जतन झाला.';
+
+  @override
+  String get boqEditTitle => 'BOQ आयटम बदला';
+
+  @override
   String get boqEmptyAsk =>
       'BOQ म्हणजे या प्रकल्पातील कामांची यादी. ऑफिसला ती जोडायला सांगा.';
 

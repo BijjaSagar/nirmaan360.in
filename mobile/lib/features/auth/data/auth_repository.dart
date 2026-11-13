@@ -58,6 +58,9 @@ class AuthRepository {
 
   bool can(String permission) => currentUser?.can(permission) ?? false;
 
+  /// The company's owner, as the server last said. See [CurrentUser.isOwner].
+  bool get isOwner => currentUser?.isOwner ?? false;
+
   Stream<SessionState> watchSession() => _ctx.session.changes;
 
   /// Local only. Never touches the network, so the app opens anywhere.

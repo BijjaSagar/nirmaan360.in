@@ -56,13 +56,15 @@ After a deletion the app drops its push token locally only (the server already r
 ```json
 {
   "id": 4, "name": "Sachin More", "email": "engineer@demo.test",
-  "role": "engineer", "role_label": "Site Engineer", "locale": "en",
+  "role": "engineer", "role_label": "Site Engineer", "is_owner": false, "locale": "en",
   "organization": { "id": 1, "name": "Sahyadri Infra Pvt Ltd", "features": ["site", "measurement"] },
   "can": { "dpr.view": true, "dpr.create": true, "dpr.approve": false }
 }
 ```
 
 `can` is the server's `UserPresenter` list: 46 permission keys, each `true` or `false`. The app reads only the keys it uses and treats a missing key as `false`.
+
+`is_owner` is true only for the company's owner by built-in role (`role` owner with no custom role). An admin or a custom role with every permission is not the owner. The app offers owner-only actions on it, such as deleting a BOQ line, and a copy or server without the key counts as false. The server checks again on every such request.
 
 ### REST endpoints
 
@@ -221,6 +223,28 @@ Add `project.manage` and `boq.manage` to the `can` list. Add nullable `client_uu
 - A blank BOQ `code` becomes the next number in that project. `section` is a name, found or created in that project. `sort` follows the web rule.
 - The plan project limit is a 422 with `errors.plan`, using the web's message.
 - A wallet top-up is an ordinary `petty_cash` push item with `type: topup`, so it works offline.
+
+### Editing and deleting a BOQ line (online only)
+
+Like the setup above, these change the office's BOQ now or not at all: no outbox, and the app sends nothing offline. Both use the web's `BoqService`, so the website and the app refuse the same things, and every change lands in the BOQ history (`boq_revisions`, source `app_edit` or `app_remove`, shown as "Edited in the field app" and "Removed in the field app") with the reason, and in `audit_logs`.
+
+| Method and path | Permission | Body | Returns |
+| --- | --- | --- | --- |
+| `PATCH /boq-items/{item}` | `boq.manage` | `code`, `description`, `unit`, `qty`, `reason` (all required), `rate` (required with `money.view`, ignored without it), `category`, `details`, `updated_at` | `{data}` in the `boq_items` pull shape |
+| `DELETE /boq-items/{item}` | `boq.manage` and the company owner | `reason` (required) | `{data: {id, deleted: true}}` |
+
+- Another company's line, a line in a project the person is not given, and (for `PATCH`) a line already removed are 404.
+- The section is not changed here; it stays a website job, as on the web edit form.
+- `qty` may not go below what is measured (every entry that is not rejected) or billed to the client (client bills that are not cancelled): 422 on `qty` with the figure. Daily report figures do not hold the quantity, because they are site estimates and an approved one cannot be corrected.
+- `unit` cannot change once anything is recorded against the line (below): 422 on `unit`.
+- Approved measurements, bills and DPRs are not touched. A bill keeps the rate it was made with.
+- `updated_at` is the line's `updated_at` when the form opened. If the line changed since, the reply is 409 `{message, code: "changed", data}` with the line as it is now; the app stores that copy, fills the form from it, keeps the typed reason and says so.
+- A repeated `PATCH` with the same values changes nothing and writes no history, so a retry is safe. No `client_uuid` is needed: nothing is created.
+- `DELETE` is for the company owner only (`is_owner` in `/me`). Anyone else, an admin included, gets 403 "Only the company owner can delete a BOQ item." The app shows Delete only to the owner.
+- A line with measurements (any status), work in a daily report that is not deleted, a contractor tender, a work order that is not deleted, an RA bill, site progress entries or labour booked against it is not deleted: 422 with one message per record under `errors.boq`, in the person's language. The app lists them all. The website's remove follows the same rule.
+- Repeating `DELETE` on a line already removed answers 200 the same way and writes nothing more. A removed line reaches other phones through `deleted.boq_items` on the next pull.
+- Before sending, the app refuses itself when the phone holds work on the line the server has not had yet (a measurement never sent, or an outbox row whose payload names the `boq_item_id`), and says to send it first.
+- The confirmation names the line (code, description, quantity and unit), says the history keeps it and that the app cannot bring it back, and needs a reason.
 
 ### Project photo
 

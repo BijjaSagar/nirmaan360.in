@@ -44,6 +44,7 @@ import '../features/petty_cash/view/top_up_screen.dart';
 import '../features/petty_cash/view/wallet_form_screen.dart';
 import '../features/price_watch/view/price_material_screen.dart';
 import '../features/price_watch/view/price_watch_screen.dart';
+import '../features/projects/view/boq_edit_screen.dart';
 import '../features/projects/view/boq_form_screen.dart';
 import '../features/projects/view/boq_screen.dart';
 import '../features/projects/view/project_form_screen.dart';
@@ -99,6 +100,7 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
         (_) => const BoqScreen(),
         routes: <RouteBase>[
           _route('form', (_) => const BoqFormScreen()),
+          _route(':item/edit', (s) => BoqEditScreen(boqItemId: int.parse(s.pathParameters['item']!))),
           _route(
             ':item/tenders',
             (s) => LineTendersScreen(boqItemId: int.parse(s.pathParameters['item']!)),

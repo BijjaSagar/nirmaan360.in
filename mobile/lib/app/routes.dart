@@ -22,6 +22,10 @@ abstract final class Routes {
 
   /// A BOQ line's tenders, a quote for one of them, and choosing a quote.
   static String boqTenders(int boqItemId) => '/boq/$boqItemId/tenders';
+
+  /// Editing a BOQ line, and removing it for the company owner. Needs `boq.manage`.
+  static String boqEdit(int boqItemId) => '/boq/$boqItemId/edit';
+  static bool isBoqEdit(String path) => RegExp(r'^/boq/\d+/edit$').hasMatch(path);
   static String tenderQuote(int boqItemId, int tenderId) => '/boq/$boqItemId/tenders/$tenderId/quote';
   static String tenderAward(int boqItemId, int tenderId, int bidId) =>
       '/boq/$boqItemId/tenders/$tenderId/award?bid=$bidId';

@@ -12,8 +12,9 @@ import '../../issues/view/widgets/group_slice.dart';
 import '../../tenders/data/tender_models.dart';
 import '../bloc/boq_cubit.dart';
 
-/// The BOQ of the current project, grouped by section. Adding lines is for
-/// those with `boq.manage`; everyone else can read.
+/// The BOQ of the current project, grouped by section. Adding and editing
+/// lines is for those with `boq.manage`, deleting for the company owner;
+/// everyone else can read.
 class BoqScreen extends StatelessWidget {
   const BoqScreen({super.key});
 
@@ -507,7 +508,46 @@ class _BoqRow extends StatelessWidget {
             ),
           ],
           if (context.read<BoqCubit>().tenders.canView) _TenderLink(boqItemId: item.id, unit: item.unit),
+          if (context.read<AppServices>().auth.can('boq.manage')) _EditLink(boqItemId: item.id, code: item.code),
         ],
+      ),
+    );
+  }
+}
+
+/// Under a line, for those with `boq.manage`: change it, and for the company
+/// owner also delete it. Both need the network.
+class _EditLink extends StatelessWidget {
+  const _EditLink({required this.boqItemId, required this.code});
+
+  final int boqItemId;
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String text = l.boqEditAction;
+    return Semantics(
+      button: true,
+      label: '$text · ${l.boqItemCode(code)}',
+      child: ExcludeSemantics(
+        child: InkWell(
+          key: ValueKey<String>('boq-edit-$boqItemId'),
+          onTap: () => context.push(Routes.boqEdit(boqItemId)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: N360Size.tap),
+            child: Row(
+              children: <Widget>[
+                const Icon(Icons.edit_outlined, size: N360IconSize.sm, color: N360Colors.laterite),
+                const SizedBox(width: N360Space.xs),
+                Expanded(
+                  child: Text(text, style: N360Type.fit(N360Type.label, text).copyWith(color: N360Colors.laterite)),
+                ),
+                const Icon(Icons.chevron_right, size: N360IconSize.sm, color: N360Colors.laterite),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

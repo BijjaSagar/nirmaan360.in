@@ -367,6 +367,39 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
+  Future<Map<String, dynamic>> updateBoqItem({
+    required int boqItemId,
+    required String code,
+    required String description,
+    required String unit,
+    required String qty,
+    String? rate,
+    required String reason,
+    String? updatedAt,
+  }) async {
+    final body = await _call(
+      () => _dio.patch(
+        '/boq-items/$boqItemId',
+        data: {
+          'code': code,
+          'description': description,
+          'unit': unit,
+          'qty': qty,
+          'rate': ?rate,
+          'reason': reason,
+          'updated_at': ?updatedAt,
+        },
+      ),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<void> deleteBoqItem({required int boqItemId, required String reason}) async {
+    await _call(() => _dio.delete('/boq-items/$boqItemId', data: {'reason': reason}));
+  }
+
+  @override
   Future<Map<String, dynamic>> createWallet({
     required int projectId,
     required String clientUuid,

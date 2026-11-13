@@ -259,6 +259,29 @@ abstract interface class NirmaanApi {
     String? section,
   });
 
+  /// `PATCH /boq-items/{item}`. Returns the row in the `boq_items` pull shape.
+  /// [rate] is left out for someone who may not see money: the server keeps
+  /// the rate. [updatedAt] is the line's `updated_at` when the form opened; a
+  /// line changed since is a 409 [ServerFailure] with `code: changed` and the
+  /// line as it is now in `data.data`. Sending the same values again changes
+  /// nothing on the server.
+  Future<Map<String, dynamic>> updateBoqItem({
+    required int boqItemId,
+    required String code,
+    required String description,
+    required String unit,
+    required String qty,
+    String? rate,
+    required String reason,
+    String? updatedAt,
+  });
+
+  /// `DELETE /boq-items/{item}` with a [reason]. For the company owner only:
+  /// a 403 for anyone else. A line something is recorded against is a 422
+  /// with one message per record under `boq`. A line already removed answers
+  /// as removed, so a retry is safe.
+  Future<void> deleteBoqItem({required int boqItemId, required String reason});
+
   /// `POST /projects/{project}/wallets`. Returns the row in the `wallets` pull
   /// shape. Idempotent on `clientUuid`.
   Future<Map<String, dynamic>> createWallet({

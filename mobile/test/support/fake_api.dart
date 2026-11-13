@@ -1544,6 +1544,104 @@ class FakeApi implements NirmaanApi {
     );
   }
 
+  /// Every `PATCH /boq-items/{item}` that reached the server, newest last.
+  final List<Map<String, Object?>> boqEdits = <Map<String, Object?>>[];
+
+  /// Every `DELETE /boq-items/{item}` that reached the server, newest last.
+  final List<({int id, String reason})> boqDeletes = <({int id, String reason})>[];
+
+  /// Records the server holds against a line, by BOQ item id: a delete is
+  /// refused with these messages under `boq`, as the real server words them.
+  final Map<int, List<String>> boqItemUses = <int, List<String>>{};
+
+  Row _liveBoqItem(int boqItemId) => boqItems.firstWhere(
+    (b) => b['id'] == boqItemId && b['deleted_at'] == null,
+    orElse: () => throw const ServerFailure('Not found.', statusCode: 404),
+  );
+
+  @override
+  Future<Map<String, dynamic>> updateBoqItem({
+    required int boqItemId,
+    required String code,
+    required String description,
+    required String unit,
+    required String qty,
+    String? rate,
+    required String reason,
+    String? updatedAt,
+  }) async {
+    _guard();
+    _requireSetupPermission('boq.manage');
+    final Row item = _liveBoqItem(boqItemId);
+    boqEdits.add(<String, Object?>{
+      'id': boqItemId,
+      'code': code,
+      'description': description,
+      'unit': unit,
+      'qty': qty,
+      'rate': rate,
+      'reason': reason,
+      'updated_at': updatedAt,
+    });
+
+    final DateTime current = DateTime.parse(item['updated_at'] as String);
+    if (updatedAt != null && DateTime.parse(updatedAt).difference(current).inSeconds != 0) {
+      const String message = 'Someone changed this BOQ item after you opened it. Check it and save again.';
+      throw ServerFailure(
+        message,
+        statusCode: 409,
+        code: 'changed',
+        data: <String, dynamic>{'message': message, 'code': 'changed', 'data': _withLedger(item)},
+      );
+    }
+
+    final Map<String, List<String>> errors = <String, List<String>>{};
+    if (reason.trim().isEmpty) errors['reason'] = <String>['The reason field is required.'];
+    final (Decimal measured, _) = _ledger(boqItemId);
+    if (Decimal.parse(qty) < measured) {
+      errors['qty'] = <String>['Quantity cannot be lower than the quantity already measured (${measured.toStringAsFixed(3)}).'];
+    }
+    if (unit != item['unit'] && (measurements.any((m) => m['boq_item_id'] == boqItemId) || boqItemUses.containsKey(boqItemId))) {
+      errors['unit'] = <String>['The unit cannot change once work, tenders or bills are recorded against this item. Add a new item instead.'];
+    }
+    if (errors.isNotEmpty) throw ValidationFailure(errors.values.first.first, errors: errors);
+
+    final Row before = Map<String, dynamic>.of(item);
+    item
+      ..['code'] = code
+      ..['description'] = description
+      ..['unit'] = unit
+      ..['qty'] = Decimal.parse(qty).toStringAsFixed(3);
+    // Someone who may not see money sends no rate, and keeps the one there is.
+    if (rate != null) item['rate'] = Decimal.parse(rate).toStringAsFixed(2);
+    final bool changed = <String>['code', 'description', 'unit', 'qty', 'rate'].any((k) => before[k] != item[k]);
+    if (changed) item['updated_at'] = _stampNow();
+    return _withLedger(item);
+  }
+
+  @override
+  Future<void> deleteBoqItem({required int boqItemId, required String reason}) async {
+    _guard();
+    _requireSetupPermission('boq.manage');
+    if (user['is_owner'] != true) {
+      throw const ServerFailure('Only the company owner can delete a BOQ item.', statusCode: 403);
+    }
+    final Row? item = boqItems.where((b) => b['id'] == boqItemId).firstOrNull;
+    if (item == null) throw const ServerFailure('Not found.', statusCode: 404);
+    boqDeletes.add((id: boqItemId, reason: reason));
+    // A line already removed answers as removed.
+    if (item['deleted_at'] != null) return;
+    if (reason.trim().isEmpty) {
+      throw const ValidationFailure('The reason field is required.', errors: {'reason': ['The reason field is required.']});
+    }
+    final List<String> uses = <String>[
+      if (measurements.any((m) => m['boq_item_id'] == boqItemId)) 'This item has measurements and cannot be removed.',
+      ...?boqItemUses[boqItemId],
+    ];
+    if (uses.isNotEmpty) throw ValidationFailure(uses.first, errors: {'boq': uses});
+    softDeleteOnWeb('boq_items', item);
+  }
+
   @override
   Future<Map<String, dynamic>> createWallet({
     required int projectId,

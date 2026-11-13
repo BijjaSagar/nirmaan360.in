@@ -363,6 +363,7 @@ class AppGate extends Cubit<GateState> {
     if (path == Routes.siteDashboard && !s.canOpenSite) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;
+    if (Routes.isBoqEdit(path) && !s.can('boq.manage')) return Routes.boq;
     final String? needed = _pathPermissions[path];
     if (needed != null && !s.can(needed)) return Routes.home;
     return null;

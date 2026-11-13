@@ -17,6 +17,7 @@ class CurrentUser {
     this.kind = staffKind,
     this.contractorPartyId,
     this.contractorName,
+    this.isOwner = false,
   });
 
   factory CurrentUser.fromJson(Map<String, dynamic> json) {
@@ -40,6 +41,8 @@ class CurrentUser {
       kind: json['kind'] == contractorKind ? contractorKind : staffKind,
       contractorPartyId: contractor is Map ? (contractor['party_id'] as num?)?.toInt() : null,
       contractorName: contractor is Map ? contractor['name'] as String? : null,
+      // Older servers and copies have no `is_owner`: owner-only actions stay hidden.
+      isOwner: json['is_owner'] == true,
     );
   }
 
@@ -69,6 +72,11 @@ class CurrentUser {
   final int? contractorPartyId;
   final String? contractorName;
 
+  /// The company's owner by built-in role, as the server says. Owner-only
+  /// actions, such as removing a BOQ line, are offered on this; the server
+  /// checks again on every such request.
+  final bool isOwner;
+
   bool get isContractor => kind == contractorKind;
 
   /// True when the server granted [permission], e.g. `dpr.create`.
@@ -80,6 +88,7 @@ class CurrentUser {
     'email': email,
     'role': role,
     'role_label': roleLabel,
+    'is_owner': isOwner,
     'locale': locale,
     'organization': {
       'id': organizationId,

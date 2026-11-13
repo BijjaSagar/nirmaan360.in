@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import '../../../core/api/api_failure.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
@@ -20,6 +21,12 @@ class BoqLine {
 
   /// Server balance minus unsent local entries.
   Qty get previewBalance => item.balanceQty - unsentQty;
+}
+
+/// This phone holds work for a BOQ line that has not reached the server, so
+/// the line is not removed: the server could not refuse what it has not seen.
+class UnsentWorkOnLine implements Exception {
+  const UnsentWorkOnLine();
 }
 
 /// How far a project's setup has got.
@@ -157,6 +164,116 @@ class ProjectRepository {
       },
     );
   }
+
+  /// One BOQ line as this phone last had it.
+  Future<BoqItemRow?> getBoqItem(int boqItemId) =>
+      (_db.select(_db.boqItems)..where((t) => t.id.equals(boqItemId))).getSingleOrNull();
+
+  /// Edits a BOQ line on the server and stores the reply. Online only, with no
+  /// outbox: the office's BOQ is changed now or not at all.
+  ///
+  /// [rate] is null for someone who may not see money; the server then keeps
+  /// the rate. [openedAt] is the line's `updated_at` when the form opened. When
+  /// someone has changed the line since, the server's copy is stored here and
+  /// the 409 [ServerFailure] (`code: changed`) is rethrown, so the form can
+  /// show the line as it is now. A line the server no longer has (404) is
+  /// taken off this phone and the failure rethrown.
+  Future<BoqItemRow> updateBoqItem({
+    required int boqItemId,
+    required String code,
+    required String description,
+    required String unit,
+    required Qty qty,
+    Money? rate,
+    required String reason,
+    DateTime? openedAt,
+  }) async {
+    if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
+    final Map<String, dynamic> json;
+    try {
+      json = await _ctx.api.updateBoqItem(
+        boqItemId: boqItemId,
+        code: code,
+        description: description,
+        unit: unit,
+        qty: qty.toWire(),
+        rate: rate?.toWire(),
+        reason: reason,
+        updatedAt: openedAt?.toUtc().toIso8601String(),
+      );
+    } on ServerFailure catch (failure) {
+      final Object? current = failure.data?['data'];
+      if (failure.statusCode == 409 && current is Map) {
+        await _storeBoqRow(current.cast<String, dynamic>());
+      } else if (failure.statusCode == 404) {
+        await _forgetBoqItem(boqItemId);
+      }
+      rethrow;
+    }
+    return _storeBoqRow(json);
+  }
+
+  /// Removes a BOQ line on the server, then from this phone. Online only. The
+  /// server lets only the company owner do it and refuses a line that anything
+  /// is recorded against, with a 422 on `boq` naming each record.
+  ///
+  /// Throws [UnsentWorkOnLine] first when this phone holds work for the line
+  /// the server has not had yet, which the server could not know about.
+  /// A line the server no longer has counts as removed.
+  Future<void> deleteBoqItem({required int boqItemId, required String reason}) async {
+    if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
+    if (await hasUnsentWorkOn(boqItemId)) throw const UnsentWorkOnLine();
+    try {
+      await _ctx.api.deleteBoqItem(boqItemId: boqItemId, reason: reason);
+    } on ServerFailure catch (failure) {
+      if (failure.statusCode != 404) rethrow;
+    }
+    await _forgetBoqItem(boqItemId);
+  }
+
+  /// Whether this phone holds work for [boqItemId] that has not reached the
+  /// server: a measurement never sent, or anything still in the outbox that
+  /// names the line.
+  Future<bool> hasUnsentWorkOn(int boqItemId) async {
+    final MeasurementRow? unsent =
+        await (_db.select(_db.measurements)
+              ..where((t) => t.boqItemId.equals(boqItemId) & t.serverId.isNull())
+              ..limit(1))
+            .getSingleOrNull();
+    if (unsent != null) return true;
+    for (final OutboxRow row in await _ctx.outbox.unfinished()) {
+      Object? payload;
+      try {
+        payload = jsonDecode(row.payload);
+      } on FormatException {
+        continue;
+      }
+      if (_namesLine(payload, boqItemId)) return true;
+    }
+    return false;
+  }
+
+  static bool _namesLine(Object? node, int boqItemId) {
+    if (node is Map) {
+      for (final MapEntry<dynamic, dynamic> entry in node.entries) {
+        final Object? value = entry.value;
+        if (entry.key == 'boq_item_id' && value is num && value.toInt() == boqItemId) return true;
+        if (_namesLine(value, boqItemId)) return true;
+      }
+      return false;
+    }
+    if (node is List) return node.any((Object? element) => _namesLine(element, boqItemId));
+    return false;
+  }
+
+  Future<BoqItemRow> _storeBoqRow(Map<String, dynamic> json) async {
+    final BoqItemsCompanion row = PullApplier.boqItemCompanion(json);
+    await _db.into(_db.boqItems).insertOnConflictUpdate(row);
+    return (_db.select(_db.boqItems)..where((t) => t.id.equals(row.id.value))).getSingle();
+  }
+
+  Future<void> _forgetBoqItem(int boqItemId) =>
+      (_db.delete(_db.boqItems)..where((t) => t.id.equals(boqItemId))).go();
 
   /// Live counts of what has been set up for a project.
   Stream<ProjectSetup> watchSetup(int projectId) {

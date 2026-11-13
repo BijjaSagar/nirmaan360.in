@@ -770,6 +770,112 @@ class AppLocalizationsHi extends AppLocalizations {
   String get boqBalanceValueLabel => 'शेष मूल्य';
 
   @override
+  String get boqDeleteAction => 'यह आइटम हटाएँ';
+
+  @override
+  String get boqDeleteBody =>
+      'यह सभी के लिए BOQ से हटा दिया जाएगा। BOQ इतिहास में यह आपके नाम और कारण के साथ रहेगा। ऐप से इसे वापस नहीं लाया जा सकता।';
+
+  @override
+  String get boqDeleteConfirm => 'आइटम हटाएँ';
+
+  @override
+  String boqDeleteDone(String code) {
+    return 'आइटम $code BOQ से हटाया गया।';
+  }
+
+  @override
+  String get boqDeleteFailed => 'आइटम हटाया नहीं जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get boqDeleteKeep => 'रहने दें';
+
+  @override
+  String get boqDeleteOffline => 'हटाने के लिए इंटरनेट चाहिए।';
+
+  @override
+  String get boqDeleteOwnerNote =>
+      'BOQ आइटम केवल कंपनी का मालिक हटा सकता है। जिस आइटम पर माप, रोज़ की रिपोर्ट का काम, टेंडर या बिल हों, उसे हटाया नहीं जा सकता।';
+
+  @override
+  String get boqDeleteOwnerOnly => 'BOQ आइटम केवल कंपनी का मालिक हटा सकता है।';
+
+  @override
+  String get boqDeleteReason => 'इसे क्यों हटाया जा रहा है?';
+
+  @override
+  String get boqDeleteReasonRequired => 'इसे क्यों हटा रहे हैं, लिखें।';
+
+  @override
+  String get boqDeleteRefusedTitle => 'यह आइटम हटाया नहीं जा सकता';
+
+  @override
+  String boqDeleteTitle(String code) {
+    return 'आइटम $code हटाएँ?';
+  }
+
+  @override
+  String get boqDeleteUnsent =>
+      'इस फ़ोन पर इस आइटम का काम है जो अभी भेजा नहीं गया। पहले उसे भेजें, फिर हटाएँ।';
+
+  @override
+  String get boqEditAction => 'आइटम बदलें';
+
+  @override
+  String get boqEditChanged =>
+      'आपके खोलने के बाद किसी ने यह आइटम बदला। अब यह वैसा दिख रहा है जैसा ऑफिस में है। जाँचें और फिर से सहेजें।';
+
+  @override
+  String get boqEditCode => 'आइटम कोड';
+
+  @override
+  String get boqEditCodeRequired => 'आइटम कोड डालें।';
+
+  @override
+  String get boqEditGone => 'यह आइटम अब BOQ में नहीं है।';
+
+  @override
+  String boqEditMeasured(String qty, String unit) {
+    return 'अब तक मापा गया: $qty $unit। मापी गई या बिल की गई मात्रा से कम मात्रा नहीं रखी जा सकती।';
+  }
+
+  @override
+  String get boqEditNotAllowed => 'आप BOQ नहीं बदल सकते। ऑफिस से पूछें।';
+
+  @override
+  String get boqEditOfflineDetail => 'BOQ आइटम केवल ऑनलाइन बदले जा सकते हैं।';
+
+  @override
+  String get boqEditQtyInvalid =>
+      'मात्रा अंकों में डालें, अधिकतम 3 दशमलव, जैसे 120.5।';
+
+  @override
+  String get boqEditRateInvalid =>
+      'दर अंकों में डालें, अधिकतम 2 दशमलव, जैसे 450.00।';
+
+  @override
+  String get boqEditReason => 'यह क्यों बदल रहा है?';
+
+  @override
+  String get boqEditReasonHelper =>
+      'आपके नाम के साथ BOQ इतिहास में रहता है। पहले हुए माप और बिल नहीं बदलते।';
+
+  @override
+  String get boqEditReasonHint => 'जैसे आर्किटेक्ट की संशोधित ड्रॉइंग';
+
+  @override
+  String get boqEditReasonRequired => 'यह क्यों बदल रहा है, लिखें।';
+
+  @override
+  String get boqEditSave => 'बदलाव सहेजें';
+
+  @override
+  String get boqEditSaved => 'BOQ आइटम सहेजा गया।';
+
+  @override
+  String get boqEditTitle => 'BOQ आइटम बदलें';
+
+  @override
   String get boqEmptyAsk =>
       'BOQ यानी इस प्रोजेक्ट के कामों की सूची। ऑफ़िस से जुड़वाएँ।';
 
