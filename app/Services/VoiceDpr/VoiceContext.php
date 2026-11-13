@@ -18,9 +18,8 @@ use Illuminate\Support\Facades\DB;
 class VoiceContext
 {
     /**
-     * Ids of the lines to offer, B1 first: lines whose code or description shares a word of three or
-     * more letters with what was said, the closest first, then lines used in the project's DPRs of
-     * the last days.
+     * Ids of the lines to offer, B1 first: lines whose code or description shares a word with what was
+     * said (see words()), the closest first, then lines used in the project's DPRs of the last days.
      *
      * @return list<int>
      */
@@ -105,15 +104,23 @@ class VoiceContext
      * Words in lower case with at least the configured number of letters. For what was said, the
      * words that name no work are left out.
      *
+     * Letters are counted as \p{L}. In Devanagari that counts the consonants and vowels that begin a
+     * syllable, not the vowel signs and the anusvara (\p{M}), so a word of two syllables such as भिंत,
+     * वीट or छत has two letters. Such a word names work as fully as a longer English one, so a word
+     * in Devanagari needs min_letters_devanagari letters; the one-syllable particles (है, का, ला) stay
+     * out, and the stop words take out the rest.
+     *
      * @return list<string>
      */
     private function words(string $text, bool $spoken): array
     {
         $minimum = (int) config('modules.voice_dpr.context.min_letters');
+        $devanagari = (int) config('modules.voice_dpr.context.min_letters_devanagari');
         $stop = $spoken ? array_map(fn ($word) => SpokenNumbers::lower((string) $word), (array) config('modules.voice_dpr.context_stop_words')) : [];
+        $long = fn (string $word) => preg_match_all('/\p{L}/u', $word) >= (preg_match('/\p{Devanagari}/u', $word) === 1 ? $devanagari : $minimum);
 
         return (new Collection(preg_split('/[^\p{L}\p{M}\p{N}]+/u', SpokenNumbers::lower($text)) ?: []))
-            ->filter(fn (string $word) => preg_match_all('/\p{L}/u', $word) >= $minimum && ! in_array($word, $stop, true))
+            ->filter(fn (string $word) => $long($word) && ! in_array($word, $stop, true))
             ->unique()
             ->values()
             ->all();

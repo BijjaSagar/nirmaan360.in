@@ -441,12 +441,15 @@ class TextCallStartTest extends TextCallTestCase
     {
         $forReads = new class extends FakeTextHandler {};
 
+        // The purposes the modules really deployed register (voice DPR's "voice" among them) come before the stand-ins'.
+        $deployed = app(TextCallHandlers::class)->purposes();
+
         config(['modules.text_stand_ins.text_calls' => ['rate_match' => FakeTextHandler::class, 'wording' => [DocumentRead::class => $forReads::class]]]);
         config(['modules.more_stand_ins.text_calls' => ['rate_match' => FakeTextHandler::class, 'wording' => ['App\Models\SiteLetter' => FakeTextHandler::class]]]);
 
         $handlers = app(TextCallHandlers::class);
 
-        $this->assertSame(['rate_match', 'wording'], $handlers->purposes());
+        $this->assertSame(array_values(array_unique([...$deployed, 'rate_match', 'wording'])), $handlers->purposes());
         $this->assertInstanceOf(FakeTextHandler::class, $handlers->get('rate_match'));
         $this->assertInstanceOf(FakeTextHandler::class, $handlers->get('rate_match', DocumentRead::class));
         $this->assertInstanceOf($forReads::class, $handlers->get('wording', DocumentRead::class));

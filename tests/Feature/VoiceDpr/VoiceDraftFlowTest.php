@@ -165,6 +165,23 @@ class VoiceDraftFlowTest extends VoiceDprTestCase
         $this->assertSame($this->plaster->id, $this->draft($id)->proposal['work'][0]['boq_item_id']);
     }
 
+    public function test_a_line_named_by_short_marathi_or_hindi_work_words_is_offered_and_one_sharing_only_a_little_word_is_not(): void
+    {
+        $wall = $this->line($this->project, 'BW-01', 'वीट भिंत 230 मिमी', 'cum', '6100.00');
+        $digging = $this->line($this->project, 'EX-02', 'खोदकाम आणि भराव', 'cum', '410.00');
+        $slab = $this->line($this->project, 'RC-03', 'छत ढलाई M20', 'cum', '7300.00');
+        $brick = $this->line($this->project, 'BW-04', 'ईंट की दीवार', 'sqm', '980.00');
+        $sand = $this->line($this->project, 'FL-05', 'रेत भराई', 'cum', '520.00');
+
+        // Two-syllable nouns such as वीट, भिंत, छत, ईंट and रेत have two letters by \p{L}, and they name the work.
+        $marathi = $this->send($this->engineer, $this->payload(['transcript' => 'आज वीट भिंत तीन घनमीटर झाली आणि काम थांबलं.']))->assertStatus(202)->json('id');
+        $this->assertSame([$wall->id], $this->draft($marathi)->checks['refs'], 'आणि and काम name no work, so the digging line is not offered.');
+
+        $hindi = $this->send($this->engineer, $this->payload(['locale' => 'hi-IN', 'transcript' => 'आज छत की ढलाई हुई और ईंट का काम भी, रेत नहीं आई.']))->assertStatus(202)->json('id');
+        $this->assertSame([$slab->id, $brick->id, $sand->id], $this->draft($hindi)->checks['refs'], 'की, का and भी are single syllables and pick no line.');
+        $this->assertNotContains($digging->id, $this->draft($hindi)->checks['refs']);
+    }
+
     public function test_a_failed_call_leaves_the_words_and_says_so(): void
     {
         $id = $this->send($this->engineer)->assertStatus(202)->json('id');

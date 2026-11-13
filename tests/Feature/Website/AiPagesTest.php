@@ -419,8 +419,9 @@ class AiPagesTest extends TestCase
 
     /**
      * Each helper that is built shows its card by the real name of the route its module registers, with no
-     * stand-in, key or release needed: it works from the company's own records. The readers and voice are
-     * not built, so no route of theirs exists and their cards stay hidden whatever is switched on.
+     * stand-in, key or release needed: it works from the company's own records. The readers are not built, so
+     * no route of theirs exists and their cards stay hidden whatever is switched on. Voice is built: its module
+     * registers the route by the design's name, and its card waits for the key, the release and the acceptance test.
      */
     public function test_every_built_helper_shows_its_card_by_the_real_name_of_its_route_and_nothing_unbuilt_does(): void
     {
@@ -428,9 +429,11 @@ class AiPagesTest extends TestCase
             $this->assertTrue(Route::has($route), "{$route} is registered by its module.");
         }
 
-        foreach ([...self::NOT_BUILT_ROUTES, AiOffer::VOICE_ROUTE] as $route) {
+        foreach (self::NOT_BUILT_ROUTES as $route) {
             $this->assertFalse(Route::has($route), "{$route} belongs to a reader that is not built yet.");
         }
+
+        $this->assertTrue(Route::has(AiOffer::VOICE_ROUTE), 'The voice DPR module registers its route by the name the design gives it.');
 
         // The names the design first gave two of them are not the ones their modules use, and nothing waits for those.
         $this->assertFalse(Route::has('bill-checks.store'));
@@ -457,8 +460,18 @@ class AiPagesTest extends TestCase
         $assertCards('connected');
 
         $this->release();
+        $assertCards('connected and released, voice not accepted');
+
+        // Once the acceptance test is recorded, voice is the one reader with a card: the only one really built.
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $assertCards('connected, released and voice accepted');
+        $page = $this->get('/ai')->assertOk()->assertSee(self::HELPERS)->assertSee('<h2 class="text-[30px]">Readers</h2>', false)->assertSee('Voice DPR');
+
+        foreach (self::NEEDS_MODEL as $card) {
+            $page->assertDontSee($card);
+        }
+
+        $this->assertSame(['Voice DPR'], array_column(app(AiOffer::class)->readers(), 1));
+        $this->assertSame(self::CODE_ONLY, array_column(app(AiOffer::class)->helpers(), 1));
 
         $this->get('/ai')->assertOk()
             ->assertSee('Re-adds the bill, compares it with earlier bills, the BOQ and approved measurements')

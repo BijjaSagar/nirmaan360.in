@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\VoiceDpr;
 
+use App\Models\AiDocumentSettings;
 use App\Models\DprVoiceDraft;
 use App\Models\User;
+use App\Services\DocumentReading\ReaderSettings;
 use App\Services\Website\AiOffer;
 use App\Support\PlatformSettings;
 use Illuminate\Cache\RateLimiter;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Feature\DocumentReading\Support\FakeKind;
 
 /**
  * Who may send a spoken report, who may read one, and what refuses it before anything is kept or sent.
@@ -97,6 +100,53 @@ class VoiceDraftAccessTest extends VoiceDprTestCase
         $this->link($this->engineer->fresh(), $id, $link)->assertOk();
     }
 
+    public function test_a_speaker_who_no_longer_writes_dprs_neither_reads_nor_links_their_draft(): void
+    {
+        $id = $this->readyDraft($this->engineer);
+        $link = ['dpr_client_uuid' => (string) Str::uuid(), 'changed' => []];
+
+        foreach (['viewer', 'store', 'qs', 'accounts'] as $role) {
+            $this->engineer->forceFill(['role' => $role])->save();
+
+            $this->look($this->engineer->fresh(), $id)->assertForbidden();
+            $this->link($this->engineer->fresh(), $id, $link)->assertForbidden();
+        }
+
+        $this->assertNull($this->draft($id)->dpr_client_uuid);
+
+        // Back on a role that writes DPRs, the draft is theirs again.
+        $this->engineer->forceFill(['role' => 'engineer'])->save();
+        $this->look($this->engineer->fresh(), $id)->assertOk()->assertJson(['status' => 'ready']);
+        $this->link($this->engineer->fresh(), $id, $link)->assertOk()->assertJson(['linked' => true]);
+    }
+
+    public function test_a_plan_without_the_ai_features_or_the_site_module_neither_reads_nor_links_a_draft(): void
+    {
+        $id = $this->readyDraft($this->engineer);
+        $link = ['dpr_client_uuid' => (string) Str::uuid(), 'changed' => []];
+        $plan = $this->organization->effectivePlan();
+        $features = config("buildos.plans.{$plan}.features");
+
+        $refused = function (string $state) use ($id, $link): void {
+            foreach ([$this->look($this->engineer->fresh(), $id), $this->link($this->engineer->fresh(), $id, $link)] as $response) {
+                $response->assertForbidden();
+                $this->assertDoesNotMatchRegularExpression('/upgrade|\\bbuy\\b/i', (string) $response->json('message'), $state);
+            }
+
+            $this->assertNull($this->draft($id)->dpr_client_uuid, $state);
+        };
+
+        $this->organization->update(['plan' => 'contractor']);
+        $refused('a plan without the AI features');
+
+        $this->organization->update(['plan' => $plan]);
+        config(["buildos.plans.{$plan}.features" => array_values(array_diff($features, ['site']))]);
+        $refused('a plan without the site module');
+
+        config(["buildos.plans.{$plan}.features" => $features]);
+        $this->look($this->engineer->fresh(), $id)->assertOk()->assertJson(['status' => 'ready']);
+    }
+
     public function test_without_the_companys_consent_nothing_is_taken(): void
     {
         $this->consent($this->organization, false);
@@ -111,7 +161,12 @@ class VoiceDraftAccessTest extends VoiceDprTestCase
 
     public function test_nothing_is_taken_until_the_readers_are_released_and_voice_is_accepted(): void
     {
+        // Until the acceptance test is recorded voice counts as no reader, so with no other reader deployed the readers' own refusal answers.
         app(PlatformSettings::class)->set([AiOffer::VOICE_ACCEPTED => null]);
+        $this->send($this->engineer)->assertStatus(409)->assertJson(['code' => 'not_released', 'message' => 'The readers are not switched on yet.']);
+
+        // With another reader deployed, voice says it is the one not switched on.
+        config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class]]);
         $this->send($this->engineer)->assertStatus(409)->assertJson(['code' => 'not_released', 'message' => 'Voice reports are not switched on yet.']);
 
         app(PlatformSettings::class)->set([AiOffer::VOICE_ACCEPTED => '1', 'ai_readers_released' => '0']);
@@ -225,7 +280,27 @@ class VoiceDraftAccessTest extends VoiceDprTestCase
 
         $this->engineer->update(['locale' => 'hi']);
         app(PlatformSettings::class)->set([AiOffer::VOICE_ACCEPTED => null]);
+        config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class]]);
         $this->send($this->engineer->fresh())->assertStatus(409)->assertJson(['message' => 'वॉइस रिपोर्ट अभी चालू नहीं की गई हैं।']);
+    }
+
+    public function test_a_daily_limit_for_voice_is_offered_only_once_speech_was_shown_to_stay_on_the_phone(): void
+    {
+        $this->withoutVite();
+        $page = '/settings/ai-documents';
+
+        // Accepted, as set up for these tests: voice is a feature with limits of its own.
+        $this->assertContains('voice', app(ReaderSettings::class)->features());
+        $this->actingAs($this->owner)->get($page)->assertOk()->assertSee('Voice reports')->assertSee('budgets[user][voice]', false);
+        $this->post($page, ['action' => 'limits', 'budgets' => ['user' => ['voice' => '5']]])->assertSessionHasNoErrors();
+        $this->assertSame('5', AiDocumentSettings::withoutGlobalScopes()->where('organization_id', $this->organization->id)->value('budgets')['user']['voice']);
+
+        // Until then voice cannot spend, so like every other place the limits leave it out, and a figure for it is refused.
+        app(PlatformSettings::class)->set([AiOffer::VOICE_ACCEPTED => null]);
+        $this->assertNotContains('voice', app(ReaderSettings::class)->features());
+        $this->get($page)->assertOk()->assertDontSee('Voice reports')->assertDontSee('budgets[user][voice]', false);
+        $this->post($page, ['action' => 'limits', 'budgets' => ['user' => ['voice' => '2']]])->assertSessionHasErrors('budgets.user');
+        $this->assertSame('5', AiDocumentSettings::withoutGlobalScopes()->where('organization_id', $this->organization->id)->value('budgets')['user']['voice']);
     }
 
     public function test_the_website_names_voice_by_its_real_route_once_speech_was_shown_to_stay_on_the_phone(): void
