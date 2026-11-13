@@ -78,7 +78,7 @@ It prints how many reads it looked at, how many reads had their files deleted, a
 | A draft was never started | 2 hours without any change | Cancelled. |
 | A quote was never accepted | 24 hours | Cancelled. |
 | A read is paused | 24 hours | Cancelled. |
-| A finished read was never confirmed or discarded | `abandon_days` (14) without any change | Closed as expired. |
+| A finished read was never confirmed or discarded | `abandon_days` (14) without any change; a person working on its rows or facts counts as a change | Closed as expired. |
 | A read ended (confirmed, discarded, cancelled, failed, expired) | `keep_days` (30) | Its folder is deleted, and with it every page picture, the original PDF and the extracted text. What the reader returned is blanked. Counts, tokens and costs stay. |
 
 Every pause, cancel, finish and expiry gives back the credits the read had on hold, in the same database transaction.
@@ -128,23 +128,26 @@ When a company is erased, every file a table row names is deleted first, and the
 
 ## The company's own switch
 
-An owner or admin of a company on a plan with the AI features decides under **AI > AI document readers** (`/settings/ai-documents`) whether pages, photos and text of the company may be sent to the AI provider at all. The page shows the notice, and the switch is on only after the box under it was ticked. The words that were shown, their language and the notice's version (`AiDocumentConsent::VERSION`) are kept on the company's row in `ai_document_settings`; the audit trail keeps the version, the language and a fingerprint of the words.
+An owner or admin of a company on a plan with the AI features decides under **AI > AI document readers** (`/settings/ai-documents`) whether the readers may send the company's pages, photos and text to the AI provider at all. The page shows the notice, and the switch is on only after the box under it was ticked. The words that were shown, their language and the notice's version (`AiDocumentConsent::VERSION`) are kept on the company's row in `ai_document_settings`; the audit trail keeps the version, the language and a fingerprint of the words.
 
 - The switch and the notice appear only when a reader is deployed and the readers are released. Until then the page says "No reader is switched on yet." and nothing can be agreed to.
 - Switching off cancels every read of the company that is not finished and gives back its credits on hold. Reads that were already finished can still be checked and saved.
 - A new wording of the notice is a new version. From the moment it is deployed nothing is sent for a company until an owner or admin has agreed to it again, and reads started under the old one stop at their next page.
 - The sentence about voice notes is shown only after the platform setting `ai_voice_accepted` is `1`, which records that speech was shown to stay on the phone.
+- The switch covers the readers and the text calls that send what a person wrote or spoke (voice reports, hindrance grouping: `AiDocumentConsent::TEXT_PURPOSES`). The notice says what it does not cover: rate suggestions, translations of quotation lines, and the sentences the AI writes for letters, quotations, weekly updates and bill checks. Those send line descriptions and labels, never a rate, a quantity or an amount of a record, and a test fails if a text purpose outside the switch is not named in the notice (`ai-docs-v3`).
 - The same page holds the company's own limits: the most one document may use (it can be lowered, never raised above `max_credits_per_read`) and the daily budgets for each person and for the company, for each feature that is deployed.
 
 ### The privacy policy and the terms
 
 The legal pages are in English and have one address each (`App\Services\Seo\PublicPages`). Their paragraphs about the AI provider have Hindi and Marathi lines in `lang/modules/document_reading`, but those lines are used only once a reader is offered (deployed and released). Until then every paragraph of both pages is English for every visitor, whatever their language, so no unchecked translation reaches a live legal page. The paragraphs shown only before a reader is offered are therefore plain English with no Hindi or Marathi line. This differs from the spec, which lists Hindi and Marathi for all of the legal text.
 
+The policy names the other AI features with what they send (rate suggestions, translations of quotation lines, sentences for letters, quotations, weekly updates and bill checks) in the same branch as the readers: they work only while the readers are released, and a test fails if a route that makes a text call is not named there.
+
 Before the readers are released on production, a native reader must check the Hindi and Marathi lines of the notice and of these paragraphs (spec E9). Releasing is what switches those lines on.
 
 ## Which routes are guarded
 
-`App\Http\Middleware\RequireAiReader` goes on every route that makes the AI model read or write something, and on no other. A route that sends a page, a photo, document text or spoken words uses `RequireAiReader::class.':consent'`; one that sends only labels and descriptions the code prepared uses `':text'`. Looking at a read, correcting it, confirming it, its status and its page pictures carry no guard, so a company can always finish what was already read. A test fails if a `GET` route carries it.
+`App\Http\Middleware\RequireAiReader` goes on every route that makes the AI model read or write something, and on no other. A route that sends a page, a photo, document text, spoken words or notes a person wrote uses `RequireAiReader::class.':consent'`; one that sends line descriptions and labels, never a rate, a quantity or an amount, uses `':text'`, which the notice names as not under the company's switch. Looking at a read, correcting it, confirming it, its status and its page pictures carry no guard, so a company can always finish what was already read. A test fails if a `GET` route carries it.
 
 | Answer | Code | When |
 | --- | --- | --- |
@@ -272,7 +275,7 @@ Each feature creates its reads through its own route (`ReadDesk::open`). Everyth
 | `GET /document-reads/{read}/pages/{page}/image` | The stored page picture. | no |
 | `GET /api/v1/document-reading/status` | For the app: released, connected, plan, consent, and what this person may use. | no |
 
-"Guarded" means `RequireAiReader:consent` and the permission `agents.use`. Who may open a read at all is decided for each read by `ReadAccess::assert`: the read's company and project, the permissions its kind asks for, the plan feature named under `kinds.{kind}.feature`, and, for kinds marked `own_only`, being the person who started it or an owner or admin.
+"Guarded" means `RequireAiReader:consent` and the permission `agents.use`. Who may open a read at all is decided for each read by `ReadAccess::assert`: the read's company and project, for a kind that implements `ChecksSubjectAccess` whether the person still sees what it reads (a tender read is not found by someone limited to other projects once its tender is taken into a project), the permissions its kind asks for, the plan feature named under `kinds.{kind}.feature`, and, for kinds marked `own_only`, being the person who started it or an owner or admin.
 
 A read's limit is set at the start. Continuing, reading a page again and reading halves use what is left of it; when that is not enough the answer is `409 limit_reached` with the amounts, and only a request that names a new `cap` changes the limit.
 

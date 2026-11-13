@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\BoqItem;
 use App\Models\BoqRevision;
 use App\Models\BoqSection;
+use App\Models\CustomRole;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Access\TeamAccessService;
@@ -1126,6 +1127,48 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->uploadAs($this->pm, $project, $this->textlessPdf(1));
         $this->get(route('boq.excel.index', $project))->assertOk()->assertSee('Nothing was imported')
             ->assertSee('This PDF is a scanned copy. It can be read as a scan instead.');
+    }
+
+    /**
+     * Once the readers are on, a scanned PDF is refused in one voice: the refusal, the offer below it and the
+     * import card all say it can be read as a scan. Only to someone the scan is offered to: a person who may
+     * import the BOQ but not use the AI agents is told to upload the Excel file, as before, with no offer.
+     */
+    public function test_a_scanned_pdf_is_pointed_to_the_scan_reader_only_by_whoever_is_offered_it(): void
+    {
+        $project = $this->makeProject($this->org);
+        $refused = 'This PDF has no text in it, so it is a scanned copy or a picture. Its figures cannot be read. Please upload the Excel file of the estimate instead.';
+        $card = 'A scanned PDF has no text to read, so upload the Excel file for those.';
+        app(PlatformSettings::class)->set(['ai_readers_released' => '1', 'ai_tier_monthly_cap_usd' => '1000', 'anthropic_api_key' => 'test-key-value']);
+
+        $this->uploadAs($this->pm, $project, $this->textlessPdf(1));
+        $this->assertSame('This PDF has no text in it, so it is a scanned copy or a picture. Its figures cannot be read as typed text. Read it as a scan, or upload the Excel file of the estimate instead.', session('boq_import.errors.0.message'));
+        $this->get(route('boq.excel.index', $project))->assertOk()
+            ->assertSee('Read it as a scan, or upload the Excel file of the estimate instead.')
+            ->assertSee('This PDF is a scanned copy. It can be read as a scan instead.')
+            ->assertSee('A scanned PDF has no text to read, so read it as a scan instead, or upload the Excel file.')
+            ->assertDontSee($refused)
+            ->assertDontSee($card);
+
+        // May import the BOQ and see its money, but may not use the AI agents: the scan screen is not theirs.
+        $role = CustomRole::withoutGlobalScopes()->create(['organization_id' => $this->org->id, 'name' => 'Estimator', 'permissions' => ['project.view', 'boq.view', 'boq.manage', 'money.view']]);
+        $estimator = $this->member($this->org, $role->baseRole());
+        $estimator->forceFill(['custom_role_id' => $role->id])->save();
+        $this->assertFalse($estimator->hasPermission('agents.use'));
+        $this->actingAs($estimator);
+        $this->assertFalse(BoqPdfReader::hasScanReader());
+
+        $this->uploadAs($estimator, $project, $this->textlessPdf(1));
+        $this->assertSame($refused, session('boq_import.errors.0.message'));
+        $this->get(route('boq.excel.index', $project))->assertOk()
+            ->assertSee($refused)
+            ->assertSee($card)
+            ->assertDontSee('data-boq-scan-offer', false)
+            ->assertDontSee('read it as a scan', false)
+            ->assertDontSee('Read it as a scan');
+
+        $this->uploadAs($estimator, $project, $this->upload($this->handPdf($this->pagePicture().$this->textLines(self::SCANNED_LINES, 3)), 'scan.pdf'));
+        $this->assertStringNotContainsString('Read it as a scan', session('boq_import.errors.0.message'));
     }
 
     public function test_a_scanned_pdf_is_refused_with_a_plain_message(): void

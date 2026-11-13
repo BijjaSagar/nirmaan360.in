@@ -2,11 +2,16 @@
 
 namespace App\Services\TenderReading;
 
+use App\Models\CrmTender;
+use App\Models\CrmTenderDocument;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
+use App\Models\User;
+use App\Services\DocumentReading\Contracts\ChecksSubjectAccess;
 use App\Services\DocumentReading\Contracts\ReadKind;
 use App\Services\DocumentReading\ReaderRequest;
 use App\Services\DocumentReading\ReadFiles;
+use App\Services\Notify\Audience;
 use RuntimeException;
 
 /**
@@ -21,7 +26,7 @@ use RuntimeException;
  * Nothing the reader returns changes the tender. Each fact is a proposal on the tender sheet until a
  * person confirms it with the page drawn beside it.
  */
-class TenderReadKind implements ReadKind
+class TenderReadKind implements ChecksSubjectAccess, ReadKind
 {
     public const KEY = 'tender';
 
@@ -197,6 +202,34 @@ class TenderReadKind implements ReadKind
     public function abilities(DocumentRead $read): array
     {
         return ['all' => ['crm.manage'], 'any' => []];
+    }
+
+    /**
+     * A tender read is opened with no project: the tender is the company's own while it is bid for.
+     * When it is won, the tender and its documents are taken into a project (TenderConversionService),
+     * so someone limited to other projects stops seeing them, and from then on the read too: its status,
+     * its page pictures, and every step that spends credits on it. Looked up afresh each time, without
+     * the signed-in scope, because this also runs on the queue for the person who started the read.
+     */
+    public function sees(User $user, DocumentRead $read): bool
+    {
+        if (! $user->isProjectLimited()) {
+            return true;
+        }
+
+        $organization = (int) $read->organization_id;
+        $projects = [
+            CrmTender::withoutGlobalScopes()->where('organization_id', $organization)->whereKey((int) ($read->options['tender_id'] ?? 0))->value('project_id'),
+            CrmTenderDocument::withoutGlobalScopes()->where('organization_id', $organization)->whereKey((int) ($read->options['document_id'] ?? 0))->value('project_id'),
+        ];
+
+        foreach ($projects as $project) {
+            if (! Audience::seesProject($user, $project === null ? null : (int) $project)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

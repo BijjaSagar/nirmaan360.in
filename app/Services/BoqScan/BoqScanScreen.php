@@ -72,11 +72,22 @@ class BoqScanScreen
         return $organization !== null
             && Route::has('boq-scans.create')
             && $this->installed()
-            && $organization->allowsFeature('reports')
+            && self::mayScan($user)
+            && $this->spend->readersOn($organization, BoqReadKind::KEY);
+    }
+
+    /**
+     * What the person needs to be offered a scan, whatever the state of the readers: a plan with the
+     * reports module, the right to manage the BOQ and see its money, and the right to use the AI agents.
+     * The refusal of a scanned PDF asks the same (BoqPdfReader::hasScanReader), so it never points
+     * anyone to the scan reader who is not offered it.
+     */
+    public static function mayScan(User $user): bool
+    {
+        return (bool) $user->organization?->allowsFeature('reports')
             && $user->hasPermission('boq.manage')
             && Money::visible($user)
-            && $user->hasPermission('agents.use')
-            && $this->spend->readersOn($organization, BoqReadKind::KEY);
+            && $user->hasPermission('agents.use');
     }
 
     /**

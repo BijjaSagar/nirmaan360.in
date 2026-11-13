@@ -68,7 +68,7 @@ class ReadAuditTest extends PageReadingTestCase
         $row = ReadAudit::started($read, $engineer, 12);
 
         $this->assertSame('ai.read_started', $row->action);
-        $this->assertSame(['kind' => 'boq', 'pages' => 12, 'cap' => '131.0000', 'consent_version' => 'ai-docs-v2', 'channel' => 'web'], $row->new_values);
+        $this->assertSame(['kind' => 'boq', 'pages' => 12, 'cap' => '131.0000', 'consent_version' => 'ai-docs-v3', 'channel' => 'web'], $row->new_values);
         $this->assertSame([$this->organization->id, $engineer->id, $read->id, $read->getMorphClass()], [$row->organization_id, $row->user_id, $row->auditable_id, $row->auditable_type]);
         $this->assertOnlyCodesAndCounts($row);
     }
@@ -111,7 +111,7 @@ class ReadAuditTest extends PageReadingTestCase
 
     public function test_a_value_that_is_not_a_code_never_reaches_a_row(): void
     {
-        foreach (['boq', 'claude-sonnet-5-5', 'ai-docs-v2', 'req_011CSHoEeqs5C35K2UUqR7Fy', 'hindrance_groups'] as $code) {
+        foreach (['boq', 'claude-sonnet-5-5', 'ai-docs-v3', 'req_011CSHoEeqs5C35K2UUqR7Fy', 'hindrance_groups'] as $code) {
             $this->assertSame($code, ReadAudit::code($code));
         }
 

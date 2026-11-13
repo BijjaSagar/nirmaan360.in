@@ -14,12 +14,17 @@ use App\Models\Organization;
  */
 final class AiDocumentConsent
 {
-    public const VERSION = 'ai-docs-v2';
+    public const VERSION = 'ai-docs-v3';
 
     /**
      * Text calls that send words a person wrote or spoke, as they are: what was heard for a voice
      * report, and hindrance notes from daily reports. They need the switch, like every reader.
-     * The other text calls send only labels and descriptions the code prepared, and do not.
+     *
+     * The other text calls are not under the switch, and the notice says so (sentences()): rate
+     * suggestions and translations send the descriptions of BOQ, rate library and quotation lines that
+     * the company wrote, and the sentences the AI writes for letters, quotations, weekly updates and
+     * bill checks send the labels the code prepared. None of them sends a rate, a quantity or an amount
+     * of a record, and each is redacted before it is sent (TextRequest).
      */
     public const TEXT_PURPOSES = ['voice', 'hindrance_groups'];
 
@@ -75,7 +80,8 @@ final class AiDocumentConsent
             __('Hindrance notes from your daily reports are sent only when you ask for them to be grouped.', [], $locale),
             __('What the reader returns can be wrong, so your staff must check every value against the page before saving.', [], $locale),
             __('By switching this on you confirm that your company is allowed to share these documents in this way.', [], $locale),
-            __('You can switch it off at any time, and nothing new is sent after that.', [], $locale),
+            __('You can switch it off at any time, and the readers send nothing new after that.', [], $locale),
+            __('This switch does not cover the other AI features: rate suggestions, translations of quotation lines, and the sentences the AI writes for letters, quotations, weekly updates and bill checks. When someone asks for one of them, the descriptions and labels it works on are sent to Anthropic, but not the rates, quantities or amounts of your records.', [], $locale),
         ]));
     }
 

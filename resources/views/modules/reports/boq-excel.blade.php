@@ -73,7 +73,10 @@
                     <p class="text-sm text-ink-3">{{ __('Rows with an existing item code are updated. If any row has a problem, nothing is imported.') }}</p>
                     <p class="text-sm text-ink-3">{{ __('Quantity cannot go below what is already approved. Use values, not formulas.') }}</p>
                     <p class="text-sm text-ink-3">{{ __('An engineer\'s estimate also works: Sr. No., Description, Qty, Rate, Unit and Amount columns. Part rows, add-on percentages and totals are read for you.') }}</p>
-                    <p class="text-sm text-ink-3">{{ __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so upload the Excel file for those.') }}</p>
+                    {{-- A scan is pointed to the scan reader only for someone it is offered to, as the refusal of a scanned PDF does. --}}
+                    <p class="text-sm text-ink-3">{{ \App\Services\Reports\BoqPdfReader::hasScanReader()
+                        ? __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so read it as a scan instead, or upload the Excel file.')
+                        : __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so upload the Excel file for those.') }}</p>
                     <x-field :label="__('Excel or PDF file (.xlsx, .pdf)')" name="file"><input id="file" name="file" type="file" accept=".xlsx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="input" required></x-field>
                     <div class="flex items-center justify-between gap-2">
                         <a href="{{ route('boq.excel.template') }}" class="link text-sm">{{ __('Download template') }}</a>

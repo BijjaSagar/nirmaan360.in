@@ -91,9 +91,9 @@ class ReadingTranslationsTest extends TestCase
         $texts = $this->usedTexts();
 
         foreach ([
-            'AI agents and readers can be wrong.',
-            'The AI agents on the website and the AI readers use an AI model provider, Anthropic',
-            'When you use an AI agent or reader, what it needs',
+            'AI agents, AI readers and the other AI features can be wrong.',
+            'The AI agents on the website, the AI readers and the other AI features use an AI model provider, Anthropic',
+            'When you use an AI agent, a reader or another AI feature, what it needs',
             'We do not use your records to train AI models.',
             'Pages, photos and document text sent to an AI reader',
             'The text of voice notes you spoke into the app',

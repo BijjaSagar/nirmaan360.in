@@ -11,6 +11,7 @@ use App\Services\BoqScan\BoqScanReview;
 use App\Services\BoqScan\ItemNumber;
 use App\Services\BoqScan\ScanFlag;
 use App\Services\DocumentReading\ReadRefused;
+use App\Services\DocumentReading\ReadTending;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -570,6 +571,51 @@ class BoqScanChecksTest extends BoqScanTestCase
 
         $this->expectException(ReadRefused::class);
         $this->review()->update($read, $this->row($read, '1'), ['description' => 'Changed'], $this->owner);
+    }
+
+    /**
+     * A finished scan closes once nobody has worked on it for the abandon days (ReadTending), counted from its
+     * last change. Checking the lines is working on it, even when only rows change: each step keeps the scan
+     * open, so a long review is not lost with the credits it cost.
+     */
+    public function test_working_through_the_lines_keeps_a_finished_scan_open(): void
+    {
+        $read = $this->scan();
+        $this->cleanPage($read);
+        $added = null;
+        $days = (int) config('modules.document_reading.abandon_days', 14);
+
+        $steps = [
+            'confirm a line' => fn () => $this->review()->confirmRow($read, $this->row($read, '1'), $this->owner),
+            'confirm the clean lines of a page' => fn () => $this->review()->confirmClean($read, 1, true, $this->owner),
+            'correct a cell' => fn () => $this->review()->update($read, $this->row($read, '3'), ['description' => 'PCC 1:4:8 below all footings'], $this->owner),
+            'add a line' => function () use ($read, &$added) {
+                $added = $this->review()->add($read, ['page_no' => 1, 'client_uuid' => (string) Str::uuid(), 'kind' => BoqScanRow::NOTE, 'description' => 'Rates include carting'], $this->owner);
+            },
+            'leave a line out' => function () use ($read, &$added) {
+                $this->review()->exclude($read, $added, $this->owner);
+            },
+        ];
+
+        foreach ($steps as $name => $step) {
+            DocumentRead::withoutGlobalScopes()->whereKey($read->id)->update(['updated_at' => now()->subDays($days - 1)]);
+            $step();
+            $this->assertTrue(DocumentRead::withoutGlobalScopes()->findOrFail($read->id)->updated_at->greaterThanOrEqualTo(now()->subMinute()), "{$name} keeps the scan open");
+        }
+
+        // Days after the read finished, and after a last tick of a check, the review is still going on.
+        $this->travel(2)->days();
+        app(ReadTending::class)->one($read);
+        $this->assertSame(DocumentRead::READY, $read->refresh()->status);
+        $this->review()->confirmRow($read, $this->row($read, '3'), $this->owner);
+
+        // Left alone for the abandon days, it closes as before, and its lines cannot be worked on any more.
+        $this->travel($days + 1)->days();
+        app(ReadTending::class)->one($read);
+        $this->assertSame(DocumentRead::EXPIRED, $read->refresh()->status);
+
+        $this->expectException(ReadRefused::class);
+        $this->review()->confirmRow($read, $this->row($read, '2'), $this->owner);
     }
 
     public function test_repeated_codes_long_text_subtotals_pages_without_a_table_and_instruction_like_text_are_each_flagged(): void

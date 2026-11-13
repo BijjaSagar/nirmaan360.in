@@ -46,8 +46,8 @@ class AiDocumentSettingsController extends Controller
             $cancelled = $settings->turnOff($organization, $user);
 
             return redirect()->route('ai-documents.edit')->with('success', $cancelled > 0
-                ? __('The readers are switched off. Nothing new is sent. Documents that were still being read and are now cancelled: :count.', ['count' => $cancelled])
-                : __('The readers are switched off. Nothing new is sent.'));
+                ? __('The readers are switched off and send nothing new. Documents that were still being read and are now cancelled: :count.', ['count' => $cancelled])
+                : __('The readers are switched off and send nothing new.'));
         }
 
         if ($action === 'on') {

@@ -435,7 +435,13 @@ class BoqScanReview
         });
     }
 
-    /** Locks the read; refuses when its rows cannot be worked on any more. */
+    /**
+     * Locks the read; refuses when its rows cannot be worked on any more.
+     *
+     * Every step that comes here is a person working through the review, so the read counts as changed
+     * even when the step writes only rows: a finished read is closed once nobody has worked on it for the
+     * abandon days, counted from its own last change (ReadTending). A step that fails is rolled back with it.
+     */
     private function lockWorkable(DocumentRead $read): DocumentRead
     {
         $locked = DocumentRead::withoutGlobalScopes()->where('organization_id', $read->organization_id)->lockForUpdate()->findOrFail($read->id);
@@ -443,6 +449,8 @@ class BoqScanReview
         if (! in_array($locked->status, self::WORKABLE, true) || $locked->files_purged_at !== null) {
             throw ReadRefused::wrongState($locked);
         }
+
+        $locked->touch();
 
         return $locked;
     }

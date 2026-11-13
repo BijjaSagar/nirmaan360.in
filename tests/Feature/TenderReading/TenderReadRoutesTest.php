@@ -3,18 +3,28 @@
 namespace Tests\Feature\TenderReading;
 
 use App\Jobs\TenderReading\PrepareTenderText;
+use App\Models\CrmTender;
+use App\Models\CrmTenderDocument;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
+use App\Models\User;
+use App\Services\DocumentReading\ReadFiles;
+use App\Services\TenderReading\TenderReadKind;
 use App\Services\TenderReading\TenderReads;
 use App\Services\TenderReading\TenderTextPreparer;
 use App\Support\PlatformSettings;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
+use Tests\Feature\DocumentReading\BuildsPictures;
 
 /** Who may start, answer and watch a tender read, from which company, and how often. */
 class TenderReadRoutesTest extends TenderReadingTestCase
 {
+    use BuildsPictures;
+
     public function test_starting_a_read_needs_crm_manage_and_agents_use(): void
     {
         $document = $this->storeDocument($this->tender);
@@ -96,6 +106,95 @@ class TenderReadRoutesTest extends TenderReadingTestCase
         $this->startRead($outsider, $this->storeDocument($this->tender))->assertNotFound();
 
         $this->assertNull($read->refresh()->options['language'] ?? null);
+    }
+
+    /** A project manager who is limited to one project of the company, the Canal Road Block. */
+    private function limitedManager(): User
+    {
+        $limited = $this->member($this->organization, 'pm');
+        $limited->forceFill(['limited_to_projects' => true])->save();
+        $limited->assignedProjects()->attach($this->makeProject($this->organization, ['name' => 'Canal Road Block']), ['organization_id' => $this->organization->id]);
+
+        return $limited;
+    }
+
+    /** The tender is won and taken into a project, with its documents, as TenderConversionService does. */
+    private function takeIntoProject(string $name = 'North Block'): int
+    {
+        $project = $this->makeProject($this->organization, ['name' => $name]);
+        CrmTender::withoutGlobalScopes()->whereKey($this->tender->id)->update(['project_id' => $project->id]);
+        CrmTenderDocument::withoutGlobalScopes()->where('tender_id', $this->tender->id)->update(['project_id' => $project->id]);
+
+        return $project->id;
+    }
+
+    /** A page picture stored for the read, as the upload route stores it. */
+    private function picturePage(DocumentRead $read, int $number): DocumentReadPage
+    {
+        $path = ReadFiles::page($read, $number, TenderReadKind::IMAGE, 'full');
+        Storage::put($path, $this->jpeg(640, 900));
+
+        return DocumentReadPage::withoutGlobalScopes()->create([
+            'document_read_id' => $read->id,
+            'page_no' => $number,
+            'pass' => TenderReadKind::IMAGE,
+            'part' => 'full',
+            'model' => 'claude-sonnet-5-5',
+            'status' => DocumentReadPage::SKIPPED,
+            'image_path' => $path,
+            'image_bytes' => (int) Storage::size($path),
+        ]);
+    }
+
+    /**
+     * A tender read belongs to no project, but its tender and documents move into one when the tender is
+     * won. From then on someone limited to other projects no longer finds the read on any route, as they no
+     * longer find the tender itself: not its pictures, not its status, and nothing that spends credits on it.
+     */
+    public function test_a_read_of_a_tender_taken_into_a_project_is_not_found_by_someone_limited_to_other_projects(): void
+    {
+        $read = $this->preparedRead();
+        $this->answer($read)->assertRedirect();
+        $page = $this->picturePage($read, 3);
+        $limited = $this->limitedManager();
+
+        // While the tender is the company's own, a limited project manager works with its read like anyone else.
+        $this->actingAs($limited)->getJson(route('document-reads.status', $read))->assertOk();
+        $this->actingAs($limited)->get(route('document-reads.pages.image', [$read, $page]))->assertOk();
+        $this->actingAs($limited)->get(route('tender-reads.view', $read))->assertOk();
+
+        $project = $this->takeIntoProject();
+        $before = $read->refresh()->only(['status', 'options', 'quoted_at', 'started_at', 'credits_estimate']);
+
+        $this->actingAs($limited)->get(route('crm.tenders.show', $this->tender))->assertNotFound();
+        $this->actingAs($limited)->get(route('tender-reads.view', $read))->assertNotFound();
+        $this->actingAs($limited)->post(route('tender-reads.mode', $read), ['language' => 'mr', 'matches' => 'no'])->assertNotFound();
+
+        foreach ([
+            'status' => ['GET', route('document-reads.status', $read)],
+            'image' => ['GET', route('document-reads.pages.image', [$read, $page])],
+            'quote' => ['POST', route('document-reads.quote', $read)],
+            'start' => ['POST', route('document-reads.start', $read)],
+            'retry' => ['POST', route('document-reads.pages.retry', [$read, $page])],
+            'cancel' => ['POST', route('document-reads.cancel', $read)],
+        ] as $name => [$method, $address]) {
+            $this->actingAs($limited)->json($method, $address)->assertNotFound();
+            $this->assertNotSame(200, $this->actingAs($limited)->call($method, $address)->getStatusCode(), $name);
+        }
+
+        Sanctum::actingAs($limited);
+        $this->getJson(route('api.document-reads.status', $read))->assertNotFound();
+        $this->getJson(route('api.document-reads.pages.image', [$read, $page]))->assertNotFound();
+        $this->postJson(route('api.document-reads.quote', $read))->assertNotFound();
+
+        $this->assertSame($before, $read->refresh()->only(['status', 'options', 'quoted_at', 'started_at', 'credits_estimate']));
+        $this->assertSame([], $this->sent);
+
+        // The company's owner, and a project manager on that project, still have it.
+        $this->actingAs($this->owner)->getJson(route('document-reads.status', $read))->assertOk();
+        $limited->assignedProjects()->attach($project, ['organization_id' => $this->organization->id]);
+        $this->actingAs($limited)->getJson(route('document-reads.status', $read))->assertOk();
+        $this->actingAs($limited)->get(route('tender-reads.view', $read))->assertOk();
     }
 
     public function test_a_read_of_another_kind_is_not_shown_here(): void

@@ -11,13 +11,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * with the page drawn beside it; rejected when the person says it is wrong; superseded when a later
  * reading of a corrigendum replaces it. Nothing here changes the tender by itself.
  *
- * Tenders belong to the company, not to a project, as the tender's BOQ lines do.
+ * A fact is seen by whoever sees its tender. A tender is the company's own until it is won and taken
+ * into a project; from then on someone limited to other projects finds neither the tender nor its facts.
  */
 class CrmTenderFact extends Model
 {
     use BelongsToOrganization;
 
-    public const COMPANY_WIDE = true;
+    /** Project limits reach a fact through its tender (ProjectAccessScope). */
+    public const PROJECT_VIA = 'tender';
 
     public const PROPOSED = 'proposed';
 

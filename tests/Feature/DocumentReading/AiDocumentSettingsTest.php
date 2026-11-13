@@ -247,17 +247,17 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertNotNull($row->consented_at);
         $this->assertNull($row->withdrawn_at);
         $this->assertTrue(AiDocumentConsent::current($this->organization));
-        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v2', 'current' => true], $this->settings()->consent($this->organization));
+        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v3', 'current' => true], $this->settings()->consent($this->organization));
 
         $audit = collect($this->audits('ai_documents.consent_on'))->sole();
         $this->assertSame(['enabled' => false, 'version' => null], $audit->old_values);
-        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v2', 'locale' => 'en', 'sha256' => hash('sha256', $notice)], $audit->new_values);
+        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v3', 'locale' => 'en', 'sha256' => hash('sha256', $notice)], $audit->new_values);
         $this->assertSame([$this->organization->id, $this->owner->id, $row->id], [$audit->organization_id, $audit->user_id, $audit->auditable_id]);
         $this->assertStringNotContainsString('Anthropic', (string) json_encode($audit->getAttributes()));
 
         $this->actingAs($this->owner)->get(self::PAGE)->assertOk()
             ->assertSee('Switched on by '.$this->owner->name)
-            ->assertSee('Notice version: ai-docs-v2.')
+            ->assertSee('Notice version: ai-docs-v3.')
             ->assertSee('Switch the readers off')
             ->assertDontSee('name="accept"', false);
     }
@@ -344,8 +344,8 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->deployVoice(true);
         $this->assertTrue($this->settings()->voiceOffered());
         $this->actingAs($this->owner)->get(self::PAGE)->assertSee($voice);
-        $this->assertCount(10, $this->settings()->sentences('en'));
-        $this->assertCount(9, AiDocumentConsent::sentences('en'));
+        $this->assertCount(11, $this->settings()->sentences('en'));
+        $this->assertCount(10, AiDocumentConsent::sentences('en'));
 
         // Voice alone is a reader too: with no document reader deployed the switch is still offered.
         config(['modules.reader_stand_ins.read_kinds' => []]);
@@ -384,7 +384,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertSame('40.0000', $this->credits()->held($this->organization));
 
         $this->switchOff()->assertRedirect(route('ai-documents.edit'))
-            ->assertSessionHas('success', 'The readers are switched off. Nothing new is sent. Documents that were still being read and are now cancelled: '.count(DocumentRead::OPEN).'.');
+            ->assertSessionHas('success', 'The readers are switched off and send nothing new. Documents that were still being read and are now cancelled: '.count(DocumentRead::OPEN).'.');
 
         $row = $this->row();
         $this->assertFalse($row->enabled);
@@ -393,7 +393,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         // What was agreed to stays on record.
         $this->assertSame([AiDocumentConsent::VERSION, AiDocumentConsent::notice('en')], [$row->consent_version, $row->consent_text]);
         $this->assertFalse(AiDocumentConsent::current($this->organization));
-        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v2', 'current' => false], $this->settings()->consent($this->organization));
+        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v3', 'current' => false], $this->settings()->consent($this->organization));
 
         foreach (DocumentRead::OPEN as $status) {
             $read = $reads[$status]->fresh();
@@ -424,8 +424,8 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertTrue(AiDocumentConsent::current($other));
 
         $off = collect($this->audits('ai_documents.consent_off'))->sole();
-        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v2'], $off->old_values);
-        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v2'], $off->new_values);
+        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v3'], $off->old_values);
+        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v3'], $off->new_values);
         $this->assertSame([$this->organization->id, $this->owner->id], [$off->organization_id, $off->user_id]);
 
         $cancels = collect($this->audits('ai.read_cancelled'));
@@ -436,7 +436,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
 
     public function test_switching_off_twice_or_before_anything_was_agreed_changes_nothing(): void
     {
-        $this->switchOff()->assertRedirect(route('ai-documents.edit'))->assertSessionHas('success', 'The readers are switched off. Nothing new is sent.');
+        $this->switchOff()->assertRedirect(route('ai-documents.edit'))->assertSessionHas('success', 'The readers are switched off and send nothing new.');
         $this->assertNull($this->row());
         $this->assertSame([], $this->audits('ai_documents.consent_off'));
 
@@ -485,7 +485,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertTrue(AiDocumentConsent::current($this->organization));
         $audit = collect($this->audits('ai_documents.consent_on'))->sole();
         $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v0'], $audit->old_values);
-        $this->assertSame('ai-docs-v2', $audit->new_values['version']);
+        $this->assertSame('ai-docs-v3', $audit->new_values['version']);
     }
 
     public function test_one_company_never_changes_or_sees_another_companys_switch(): void
@@ -673,8 +673,8 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertNull(AiDocumentConsent::agreedVersion($this->organization));
 
         $this->switchOn();
-        $this->assertSame('ai-docs-v2', AiDocumentConsent::agreedVersion($this->organization));
-        $this->assertSame('ai-docs-v2', AiDocumentConsent::agreedVersion($this->organization->id));
+        $this->assertSame('ai-docs-v3', AiDocumentConsent::agreedVersion($this->organization));
+        $this->assertSame('ai-docs-v3', AiDocumentConsent::agreedVersion($this->organization->id));
 
         // Another company's agreement is not this one's.
         $this->assertNull(AiDocumentConsent::agreedVersion($this->tenant('Godavari Infra')));
@@ -696,7 +696,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertTrue(AiDocumentConsent::covers('voice'));
         $this->assertTrue(AiDocumentConsent::covers('hindrance_groups'));
 
-        // These send only labels and descriptions the code prepared.
+        // These send line descriptions and labels, never a rate, a quantity or an amount, and the notice names them as not under the switch.
         foreach (['wording', 'rate_match', 'translate'] as $purpose) {
             $this->assertFalse(AiDocumentConsent::covers($purpose), $purpose);
         }
@@ -707,6 +707,45 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         foreach (AiDocumentConsent::TEXT_PURPOSES as $purpose) {
             $this->assertArrayHasKey($purpose, config('modules.document_reading.purposes'));
         }
+    }
+
+    /**
+     * The switch covers the readers and the text calls that send what a person wrote or spoke. Every other AI
+     * feature that sends something is named in the notice with what it sends, so neither the notice nor the
+     * page around it can be read as if switching off stopped those too.
+     */
+    public function test_the_notice_names_every_ai_feature_its_switch_does_not_cover(): void
+    {
+        $named = [
+            'rate_match' => 'rate suggestions',
+            'translate' => 'translations of quotation lines',
+            'wording' => 'the sentences the AI writes for letters, quotations, weekly updates and bill checks',
+        ];
+        $outside = array_values(array_filter(array_keys(config('modules.document_reading.purposes')), fn (string $purpose) => ! AiDocumentConsent::covers($purpose)));
+        $this->assertEqualsCanonicalizing(array_keys($named), $outside, 'Each text call outside the switch is named in the notice.');
+
+        $notice = AiDocumentConsent::notice('en');
+
+        foreach ($named as $purpose => $words) {
+            $this->assertStringContainsString($words, $notice, $purpose);
+        }
+
+        $this->assertStringContainsString('This switch does not cover the other AI features:', $notice);
+        $this->assertStringContainsString('the descriptions and labels it works on are sent to Anthropic, but not the rates, quantities or amounts of your records.', $notice);
+        $this->assertStringContainsString('You can switch it off at any time, and the readers send nothing new after that.', $notice);
+        $this->assertStringNotContainsString('nothing new is sent after that', $notice);
+
+        // The page, and what switching off says, speak of the readers, not of every AI feature.
+        $this->switchOn()->assertSessionHasNoErrors();
+        $this->actingAs($this->owner)->get(self::PAGE)->assertOk()
+            ->assertSee('Whether the readers may send your company\'s pages, photos and text to the AI service, and how much each AI feature may spend.')
+            ->assertSee('Switching off stops the readers from that moment')
+            ->assertDontSee('stops everything')
+            ->assertDontSee('Whether pages, photos and text of your company may be sent');
+        $this->switchOff()->assertSessionHas('success', 'The readers are switched off and send nothing new.');
+
+        // The notice that said more is an older version, so no company stays agreed to it.
+        $this->assertSame('ai-docs-v3', AiDocumentConsent::VERSION);
     }
 
     public function test_the_form_has_a_counter_of_its_own_and_reading_the_page_is_not_counted(): void

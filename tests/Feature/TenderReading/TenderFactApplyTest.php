@@ -5,6 +5,7 @@ namespace Tests\Feature\TenderReading;
 use App\Models\AuditLog;
 use App\Models\CrmActivity;
 use App\Models\CrmTask;
+use App\Models\CrmTender;
 use App\Models\CrmTenderFact;
 use App\Models\CrmTenderPayment;
 use App\Models\CustomRole;
@@ -246,6 +247,46 @@ class TenderFactApplyTest extends TenderReadingTestCase
 
         $this->assertNull($this->tender->refresh()->reference);
         $this->assertNull($fact->refresh()->applied_to);
+    }
+
+    /**
+     * A tender's facts follow the tender into the project it is taken into when it is won. Someone limited to
+     * other projects no longer finds the tender, so they no longer find its facts either: they cannot correct,
+     * confirm, reject or use one, and nothing on the tender changes.
+     */
+    public function test_someone_limited_to_other_projects_cannot_reach_the_facts_of_a_tender_taken_into_a_project(): void
+    {
+        $deadline = $this->makeFact('due_at', '15-12-2026 up to 15:00 hrs', 2);
+        $deposit = $this->makeFact('emd_amount', 'Rs. 61,500/-', 2);
+        $proposed = $this->makeFact('reference', 'SWD/77/2026-27', 1, ['status' => CrmTenderFact::PROPOSED, 'page_viewed' => false, 'confirmed_by' => null, 'confirmed_at' => null]);
+
+        $limited = $this->member($this->organization, 'pm');
+        $limited->forceFill(['limited_to_projects' => true])->save();
+        $limited->assignedProjects()->attach($this->makeProject($this->organization, ['name' => 'Canal Road Block']), ['organization_id' => $this->organization->id]);
+        $this->assertTrue($limited->can('crm.manage') && $limited->can('crm.emd'));
+
+        $project = $this->makeProject($this->organization, ['name' => 'North Block']);
+        CrmTender::withoutGlobalScopes()->whereKey($this->tender->id)->update(['project_id' => $project->id]);
+
+        $this->actingAs($limited)->get(route('tender-facts.index', $this->tender))->assertNotFound();
+        $this->actingAs($limited)->patchJson(route('tender-facts.update', $proposed), ['value' => '20-12-2026 up to 15:00 hrs'])->assertNotFound();
+        $this->actingAs($limited)->postJson(route('tender-facts.confirm', $proposed), ['viewed' => 1])->assertNotFound();
+        $this->actingAs($limited)->postJson(route('tender-facts.reject', $proposed))->assertNotFound();
+        $this->apply($deadline, 'field', [], $limited)->assertNotFound();
+        $this->apply($deadline, 'task', [], $limited)->assertNotFound();
+        $this->apply($deposit, 'payment', ['mode' => 'online'], $limited)->assertNotFound();
+
+        $this->assertNull($this->tender->refresh()->due_at);
+        $this->assertSame(0, CrmTenderPayment::withoutGlobalScopes()->where('tender_id', $this->tender->id)->count());
+        $this->assertSame(0, CrmTask::withoutGlobalScopes()->where('subject_id', $this->tender->id)->count());
+        $this->assertSame([CrmTenderFact::PROPOSED, 'SWD/77/2026-27', false], [$proposed->refresh()->status, $proposed->value_raw, (bool) $proposed->edited]);
+        $this->assertNull($deadline->refresh()->applied_to);
+
+        // On the project, the same person works through the sheet as before.
+        $limited->assignedProjects()->attach($project, ['organization_id' => $this->organization->id]);
+        $this->actingAs($limited)->get(route('tender-facts.index', $this->tender))->assertOk();
+        $this->apply($deadline, 'field', [], $limited)->assertCreated();
+        $this->assertSame('2026-12-15 15:00', $this->tender->refresh()->due_at->format('Y-m-d H:i'));
     }
 
     public function test_the_sheet_offers_each_use_with_what_it_will_do(): void
