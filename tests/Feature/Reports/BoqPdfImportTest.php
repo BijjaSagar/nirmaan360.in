@@ -12,6 +12,9 @@ use App\Services\Access\TeamAccessService;
 use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\BoqPdfImport;
 use App\Services\Reports\BoqPdfReader;
+use App\Services\Reports\PdfTable;
+use App\Services\Reports\PdfTableTimedOut;
+use App\Services\Reports\PdfTextLayer;
 use App\Support\Dec;
 use App\Support\PlatformSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -859,6 +862,158 @@ class BoqPdfImportTest extends ReportsTestCase
             $this->assertTrue($read->ok(), (string) $read->error);
             $this->assertSame($grid, $read->grid, $borders ? 'With rules.' : 'Without rules.');
         }
+    }
+
+    public function test_a_footer_with_a_page_number_or_two_figures_on_every_page_stays_out(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['fonts' => ['F2' => 'ABCDEF+Kruti#20Dev#20010'], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $letterhead = 'BT /F2 12 Tf 1 0 0 1 170 815 Tm (Old font company name) Tj /F2 9 Tf 1 0 0 1 150 800 Tm (Old font office address) Tj ET'."\n";
+        $at = fn (string $text, float $x, float $y, string $font = 'F1') => 'BT /'.$font.' 9 Tf 1 0 0 1 '.$x.' '.$y.' Tm ('.$text.') Tj ET'."\n";
+        $footer = $at('Old font footer address line', 150, 40, 'F2');
+
+        // The footer in the old font, and a typed page number that differs from page to page. Every number is invented.
+        $footers = [
+            'a page number centred under the footer' => fn (int $page, int $of) => $footer.$at((string) $page, 297, 25),
+            'a page number centred over the footer' => fn (int $page, int $of) => $at((string) $page, 297, 55).$footer,
+            '"Page n of m" on the footer line beside a PIN code' => fn (int $page, int $of) => 'BT /F2 8 Tf 1 0 0 1 120 40 Tm (Old font footer line) Tj 1 0 0 1 480 40 Tm (400000) Tj /F1 8 Tf 1 0 0 1 300 40 Tm (Page '.$page.' of '.$of.') Tj ET'."\n",
+            'a PIN code under the quantity and a phone number under the amount' => fn (int $page, int $of) => 'BT /F2 8 Tf 1 0 0 1 120 40 Tm (Old font footer line) Tj 1 0 0 1 300 40 Tm (411001) Tj 1 0 0 1 480 40 Tm (9800000002) Tj ET'."\n",
+            'a page number on the address line of the letterhead' => fn (int $page, int $of) => $at((string) $page, 540, 800).$footer,
+        ];
+
+        foreach ($footers as $case => $foot) {
+            foreach ([2, 3] as $count) {
+                $chunks = array_chunk(array_slice(self::LETTERHEAD_ITEMS, 0, 2 * $count), 2);
+
+                foreach (['the heading on every page' => true, 'the heading on the first page only' => false] as $how => $repeated) {
+                    $pages = [];
+
+                    foreach ($chunks as $number => $chunk) {
+                        $pages[] = $letterhead.$this->tableCells($number === 0 || $repeated ? [self::ESTIMATE_HEADING, ...$chunk] : $chunk).$foot($number + 1, $count);
+                    }
+
+                    $estimate = $read($pages);
+                    $this->assertTrue($estimate->ok(), "{$case}, {$count} pages, {$how}: ".$estimate->error);
+                    $this->assertSame($this->estimateGrid(array_merge(...$chunks)), $estimate->grid, "{$case}, {$count} pages, {$how}: only the rows of the table.");
+                }
+            }
+        }
+    }
+
+    public function test_rows_printed_alike_on_pages_laid_out_alike_stay_rows(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['picture' => 'none']), 'estimate.pdf')->getRealPath());
+        [$excavation, $door, $brick] = self::LETTERHEAD_ITEMS;
+        $addOn = ['', 'Add 6% supervision charges', '', '', '', '7170'];
+
+        // Two blocks printed alike, one to a page, each with an add-on and no serial number after its last item, with or without a total under it.
+        foreach (['with a total' => true, 'without one' => false] as $case => $withTotal) {
+            $total = fn (string $name) => $withTotal ? [['', 'Total of Block '.$name, '', '', '', '126670']] : [];
+            $block = fn (string $name) => $this->tableCells([self::ESTIMATE_HEADING, ['', 'Block '.$name, '', '', '', ''], $excavation, $door, $brick, $addOn, ...$total($name)]);
+            $blocks = $read([$block('A'), $block('B')]);
+            $expected = [];
+
+            foreach (['A', 'B'] as $name) {
+                // Without rules a title line joins the description of the row under it, as it always has.
+                $first = $excavation;
+                $first[1] = 'Block '.$name.' '.$first[1];
+                array_push($expected, $first, $door, $brick, $addOn, ...$total($name));
+            }
+
+            $this->assertTrue($blocks->ok(), "{$case}: ".$blocks->error);
+            $this->assertSame($this->estimateGrid($expected), $blocks->grid, "{$case}: every add-on stays a row.");
+        }
+
+        // A lump sum with no serial number first under the heading on two pages.
+        $lumpSum = ['', 'Mobilisation lump sum', '', '', 'LS', '25000'];
+        $page = fn (string $end) => [$lumpSum, $excavation, $door, ['', $end, '', '', '', '1']];
+        $sums = $read([$this->tableCells([self::ESTIMATE_HEADING, ...$page('Block A end')]), $this->tableCells([self::ESTIMATE_HEADING, ...$page('Block B end')])]);
+        $this->assertTrue($sums->ok(), (string) $sums->error);
+        $this->assertSame($this->estimateGrid([...$page('Block A end'), ...$page('Block B end')]), $sums->grid);
+    }
+
+    public function test_a_head_and_its_lettered_parts_are_looked_at_together_across_a_page(): void
+    {
+        $read = fn (array $pages, string $font) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['fonts' => ['F2' => $font], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+        [$excavation, $door, , $plaster] = self::LETTERHEAD_ITEMS;
+        $project = $this->makeProject($this->org);
+
+        foreach (['the heading printed again' => [self::ESTIMATE_HEADING], 'the heading on the first page only' => []] as $how => $heading) {
+            $old = count($heading);
+            $cases = [
+                // A head with a unit and no figure in the old font at the foot of page 1, and its parts with their rates on
+                // page 2. The import writes the head into the description of each part.
+                'a head over parts on the next page' => [[
+                    $this->tableCells([self::ESTIMATE_HEADING, $excavation, $door]).$this->tableCells([['3', 'Old font centering head', '', '', 'sqm', '']], 706, [0 => 'F2']),
+                    $this->tableCells([...$heading, ['', 'a. Plinth area', '2', '750', '', '1500'], ['', 'b. Slab area', '1', '2000', '', '2000'], $plaster]),
+                ], 'description', 'Plinth area - Old font centering head'],
+                // Lettered rows with no figure in the old font at the top of page 2, under a priced row of page 1. The import
+                // writes them into the details of that row.
+                'a break-up on the next page' => [[
+                    $this->tableCells([self::ESTIMATE_HEADING, $excavation, ['2', 'Providing concrete M-20', '', '4000', 'cu.m', '40000']]),
+                    $this->tableCells([...$heading, ['', 'a. Old font column footing', '', '', '', ''], ['', 'b. Old font slabs', '', '', '', '']], 760, [$old => 'F2', $old + 1 => 'F2'])
+                        .$this->tableCells([$plaster], 760 - 18 * ($old + 1) - 30),
+                ], 'details', 'Old font column footing'],
+            ];
+
+            foreach ($cases as $case => [$pages, $field, $written]) {
+                $refused = $read($pages, 'ABCDEF+Kruti#20Dev#20010');
+                $this->assertFalse($refused->ok(), "{$case}, {$how}");
+                $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $refused->error, "{$case}, {$how}");
+
+                // Typed, the same pages import, and the text of those rows is in the lines.
+                $typed = $read($pages, 'Helvetica');
+                $this->assertTrue($typed->ok(), "{$case}, {$how}: ".$typed->error);
+                [$lines] = app(BoqExcelService::class)->checkGrid($project, $typed->grid);
+                $this->assertNotSame([], array_filter($lines, fn (array $line) => str_contains((string) $line[$field], $written)), "{$case}, {$how}: the import writes it into a line.");
+            }
+        }
+    }
+
+    public function test_putting_the_table_together_takes_time_in_step_with_the_text_and_stops_at_its_deadline(): void
+    {
+        $piece = fn (string $text, float $x, float $y) => ['x' => $x, 'x1' => $x + PdfTable::width($text, 8), 'y' => $y, 'size' => 8.0, 'text' => $text];
+        $pages = function (int $count, int $lines, callable $line) use ($piece) {
+            $pages = [];
+
+            for ($page = 0; $page < $count; $page++) {
+                $pieces = array_map(fn (array $cell) => $piece($cell[1], $cell[0], 100000), [[20, 'Sr. No.'], [80, 'Description'], [400, 'Unit'], [450, 'Qty'], [500, 'Rate'], [560, 'Amount']]);
+
+                for ($number = 1; $number <= $lines; $number++) {
+                    array_push($pieces, ...$line($number, 100000 - 12 * $number));
+                }
+
+                $pages[] = ['pieces' => $pieces, 'h' => [], 'v' => []];
+            }
+
+            return $pages;
+        };
+
+        // As a crafted file could hold them: the same note on every line of fifty pages, and long runs of lettered rows.
+        $inputs = [
+            'the same line in the same place on every page' => $pages(50, 400, fn (int $number, float $y) => [$piece('do', 80, $y)]),
+            'long runs of lettered rows' => $pages(5, 3000, fn (int $number, float $y) => $number === 3000
+                ? [$piece('a. part', 80, $y), $piece('1', 450, $y), $piece('2', 500, $y)]
+                : [$piece('a. part', 80, $y)]),
+        ];
+
+        foreach ($inputs as $case => $input) {
+            $started = hrtime(true);
+            $this->assertNotSame([], (new PdfTable($input))->grid());
+            $this->assertLessThan(8.0, (hrtime(true) - $started) / 1e9, $case);
+        }
+
+        // A deadline that has passed stops the work, and the reader says so in its own words.
+        try {
+            (new PdfTable($inputs['long runs of lettered rows'], hrtime(true)))->grid();
+            $this->fail('A deadline that has passed stops the table.');
+        } catch (PdfTableTimedOut) {
+        }
+
+        $path = $this->upload($this->handPdf($this->tableCells([self::ESTIMATE_HEADING, ...self::LETTERHEAD_ITEMS]), ['picture' => 'none']), 'estimate.pdf')->getRealPath();
+        $this->assertTrue(app(BoqPdfReader::class)->read($path)->ok());
+        $late = (new BoqPdfReader(new PdfTextLayer, 0))->read($path);
+        $this->assertFalse($late->ok());
+        $this->assertStringContainsString('too complex to read in the time allowed', (string) $late->error);
     }
 
     public function test_each_piece_of_text_is_in_the_font_that_draws_it_after_q_and_q_and_with_quote_operators(): void

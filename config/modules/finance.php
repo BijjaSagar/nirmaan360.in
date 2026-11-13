@@ -9,7 +9,8 @@ return [
         'qs' => ['finance.view'],
     ],
     'nav' => [
-        ['place' => 'project', 'label' => 'Finance', 'route' => 'finance.project.ledger', 'active' => 'finance.project.*', 'can' => 'finance.view', 'order' => 10],
+        // Lands on the ledger with money.overview, on vendor bills without it (LedgerController::home).
+        ['place' => 'project', 'label' => 'Finance', 'route' => 'finance.project.home', 'active' => 'finance.project.*', 'can' => 'finance.view', 'order' => 10],
         ['place' => 'company', 'group' => 'Finance', 'label' => 'GST reports', 'route' => 'finance.reports.gstr1', 'active' => 'finance.reports.gstr1*', 'can' => 'finance.report', 'order' => 10],
         ['place' => 'company', 'group' => 'Finance', 'label' => 'TDS reports', 'route' => 'finance.reports.tds', 'active' => 'finance.reports.tds*', 'can' => 'finance.report', 'order' => 20],
         ['place' => 'company', 'group' => 'Finance', 'label' => 'Cash-flow forecast', 'route' => 'finance.reports.cash-flow', 'active' => 'finance.reports.cash-flow', 'can' => 'finance.report', 'order' => 30],

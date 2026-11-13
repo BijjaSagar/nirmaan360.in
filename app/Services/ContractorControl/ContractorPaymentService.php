@@ -128,8 +128,12 @@ class ContractorPaymentService
                 throw ValidationException::withMessages(['reason' => __('This payment cannot be reversed.')]);
             }
 
+            // The reversal never goes through approval, so it carries no owner's override of its own.
             $reversal = ContractorPayment::create([
-                ...collect($payment->getAttributes())->except(['id', 'number', 'amount', 'notes', 'paid_on', 'bill_path', 'status', 'entered_by', 'client_uuid', 'created_at', 'updated_at'])->all(),
+                ...collect($payment->getAttributes())->except([
+                    'id', 'number', 'amount', 'notes', 'paid_on', 'bill_path', 'status', 'entered_by', 'client_uuid', 'created_at', 'updated_at',
+                    'override_reason', 'override_by', 'override_at',
+                ])->all(),
                 'number' => $this->numbers->next($payment->organization_id, 'CP'),
                 'amount' => Dec::money(BigDecimal::zero()->minus(Dec::of($payment->amount))),
                 'paid_on' => today()->toDateString(),

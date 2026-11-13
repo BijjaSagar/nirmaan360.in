@@ -3,6 +3,9 @@
 namespace App\Http\Presenters;
 
 use App\Models\Project;
+use App\Models\User;
+use App\Support\Dec;
+use App\Support\Money;
 
 final class ProjectPresenter
 {
@@ -19,6 +22,40 @@ final class ProjectPresenter
             'measurement_tolerance_pct' => $project->measurement_tolerance_pct,
             'image_url' => $project->image_path === null ? null : url('/api/v1/projects/'.$project->id.'/image?v='.$project->imageVersion()),
             'updated_at' => $project->updated_at?->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Everything the edit screen shows: the list row and the fields the website's form edits.
+     * Money is null to anyone who may not see it, and the budget to anyone without the budget.
+     *
+     * @param  list<array{id:int,name:string,amount:string,share_pct:?string}>  $phases
+     */
+    public static function detail(Project $project, User $user, array $phases): array
+    {
+        $money = Money::visible($user);
+        $budget = Money::overview($user);
+
+        return [
+            ...self::present($project),
+            'client_id' => $project->client_id,
+            'state' => $project->state,
+            'plot_size' => $project->plot_size,
+            'built_up_area' => $project->built_up_area,
+            'planned_days' => $project->planned_days,
+            'deadline_date' => $project->deadline_date?->toDateString(),
+            'retention_pct' => $project->retention_pct,
+            'tds_pct' => $project->tds_pct,
+            'gst_pct' => $project->gst_pct,
+            'advance_recovery_pct' => $project->advance_recovery_pct,
+            'deduction_basis' => $project->deduction_basis,
+            'deduction_order' => implode(',', $project->deduction_order ?: config('buildos.default_deduction_order')),
+            'contract_value' => $money ? Dec::money($project->contract_value) : null,
+            'advance_amount' => $money ? Dec::money($project->advance_amount) : null,
+            // The contract value split into phases, in order, each with its share of the total. Empty when it is one figure.
+            'phases' => $money ? $phases : null,
+            'budget_amount' => $budget && $project->budget_amount !== null ? Dec::money($project->budget_amount) : null,
+            'budget_margin_pct' => $budget ? $project->budget_margin_pct : null,
         ];
     }
 }

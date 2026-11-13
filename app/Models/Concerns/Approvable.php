@@ -4,6 +4,7 @@ namespace App\Models\Concerns;
 
 use App\Models\Approval;
 use App\Models\User;
+use App\Services\ApprovalGuard;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -40,6 +41,16 @@ trait Approvable
     public function currentApproval(): MorphOne
     {
         return $this->morphOne(Approval::class, 'approvable')->latestOfMany();
+    }
+
+    /**
+     * The ApprovalGuard class this document must pass at its final approval, or null for none.
+     *
+     * @return class-string<ApprovalGuard>|null
+     */
+    public function approvalGuard(): ?string
+    {
+        return null;
     }
 
     public function isEditable(): bool

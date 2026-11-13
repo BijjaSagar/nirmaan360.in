@@ -12,8 +12,17 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('feature:finance')->prefix('finance')->name('finance.')->group(function () {
     Route::name('project.')->group(function () {
         Route::middleware('can:finance.view')->group(function () {
-            Route::get('/projects/{project}/ledger', [LedgerController::class, 'index'])->name('ledger');
-            Route::get('/projects/{project}/budget', [BudgetController::class, 'index'])->name('budget');
+            // The menu's way in: the ledger for those who may see the project's whole spend, vendor bills otherwise.
+            Route::get('/projects/{project}', [LedgerController::class, 'home'])->name('home');
+
+            // The ledger lays out everything billed, paid and spent on the project, and the budget screen sets
+            // budget against actual cost and margin. That is the overall spend, which needs money.overview:
+            // the accountant keeps vendor bills, payments, receipts and invoices, but not these two.
+            Route::middleware('can:money.overview')->group(function () {
+                Route::get('/projects/{project}/ledger', [LedgerController::class, 'index'])->name('ledger');
+                Route::get('/projects/{project}/budget', [BudgetController::class, 'index'])->name('budget');
+            });
+
             Route::get('/projects/{project}/vendor-bills', [VendorBillController::class, 'index'])->name('vendor-bills.index');
             Route::get('/projects/{project}/payments', [SettlementController::class, 'payments'])->name('payments');
             Route::get('/projects/{project}/receipts', [SettlementController::class, 'receipts'])->name('receipts');
@@ -22,7 +31,7 @@ Route::middleware('feature:finance')->prefix('finance')->name('finance.')->group
         });
 
         Route::middleware('can:finance.manage')->group(function () {
-            Route::patch('/projects/{project}/budget', [BudgetController::class, 'update'])->name('budget.update');
+            Route::patch('/projects/{project}/budget', [BudgetController::class, 'update'])->middleware('can:money.overview')->name('budget.update');
 
             Route::get('/projects/{project}/vendor-bills/create', [VendorBillController::class, 'create'])->name('vendor-bills.create');
             Route::post('/projects/{project}/vendor-bills', [VendorBillController::class, 'store'])->name('vendor-bills.store');

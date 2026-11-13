@@ -1,11 +1,13 @@
 @php
+    // The ledger and the budget show the project's overall spend, so only money.overview gets those two tabs.
+    $overview = auth()->user()->can('money.overview');
     $tabs = [
-        ['finance.project.ledger', __('Ledger'), 'finance.project.ledger'],
+        ...($overview ? [['finance.project.ledger', __('Ledger'), 'finance.project.ledger']] : []),
         ['finance.project.vendor-bills.index', __('Vendor bills'), 'finance.project.vendor-bills.*'],
         ['finance.project.payments', __('Payments'), 'finance.project.payments*'],
         ['finance.project.receipts', __('Receipts'), 'finance.project.receipts*'],
         ['finance.project.invoices', __('Tax invoices'), 'finance.project.invoices*'],
-        ['finance.project.budget', __('Budget'), 'finance.project.budget*'],
+        ...($overview ? [['finance.project.budget', __('Budget'), 'finance.project.budget*']] : []),
     ];
 @endphp
 <nav class="mb-5 flex gap-1 overflow-x-auto border-b border-rule" aria-label="{{ __('Finance sections') }}">

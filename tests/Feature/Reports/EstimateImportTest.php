@@ -4,7 +4,9 @@ namespace Tests\Feature\Reports;
 
 use App\Models\BoqItem;
 use App\Models\Project;
+use App\Models\ProjectValuePhase;
 use App\Models\User;
+use App\Services\ProjectService;
 use App\Services\Reports\BoqExcelService;
 use App\Services\SiteControl\WorkProgress;
 use App\Services\SiteProgress\ProgressReport;
@@ -251,6 +253,43 @@ class EstimateImportTest extends ReportsTestCase
         $this->assertSame('Solapur', $project->location);
         $this->assertSame('A Client', $project->client->name);
         $this->assertSame('1067000.00', $project->contract_value);
+        $this->assertSame(10, BoqItem::where('project_id', $project->id)->count());
+    }
+
+    /** A project the customer already made, its value split into phases. */
+    private function phasedProject(array $amounts): Project
+    {
+        $project = $this->makeProject($this->org, ['code' => 'EST-ONE', 'name' => 'Sample bungalow']);
+        $phases = array_map(fn (string $amount, int $index) => ['name' => 'Phase '.($index + 1), 'amount' => $amount], $amounts, array_keys($amounts));
+
+        return app(ProjectService::class)->update($project, ['phases' => $phases], $this->owner);
+    }
+
+    public function test_the_console_command_leaves_a_phased_value_alone_when_the_boq_comes_to_something_else(): void
+    {
+        $project = $this->phasedProject(['5000000', '15000000']);
+        $path = $this->pack([['code' => 'EST-ONE', 'name' => 'Sample bungalow', 'grid' => $this->grid()]]);
+
+        $this->artisan('boq:load-estimates', ['email' => $this->owner->email, 'path' => $path])
+            ->expectsOutputToContain('phases')
+            ->assertFailed();
+
+        $project->refresh();
+        $this->assertSame('20000000.00', $project->contract_value);
+        $this->assertSame(['5000000.00', '15000000.00'], ProjectValuePhase::where('project_id', $project->id)->orderBy('sort')->pluck('amount')->all());
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
+    }
+
+    public function test_the_console_command_loads_into_a_phased_project_whose_phases_come_to_the_boq_total(): void
+    {
+        $project = $this->phasedProject(['67000', '1000000']);
+        $path = $this->pack([['code' => 'EST-ONE', 'name' => 'Sample bungalow', 'grid' => $this->grid()]]);
+
+        $this->artisan('boq:load-estimates', ['email' => $this->owner->email, 'path' => $path])->assertSuccessful();
+
+        $project->refresh();
+        $this->assertSame('1067000.00', $project->contract_value);
+        $this->assertSame(2, ProjectValuePhase::where('project_id', $project->id)->count());
         $this->assertSame(10, BoqItem::where('project_id', $project->id)->count());
     }
 

@@ -39,6 +39,9 @@ final class BoqPdfReader
 
     private const TIME_BUDGET_SECONDS = 30;
 
+    /** Putting the table together from the pages read has a budget of its own, so the two stay inside the request's time limit. */
+    private const TABLE_BUDGET_SECONDS = 20;
+
     /** What a single compressed stream may unpack to. */
     private const DECODE_LIMIT_BYTES = 64 * 1024 * 1024;
 
@@ -53,7 +56,8 @@ final class BoqPdfReader
     /** The route of the reader for scans and photos. It belongs to another module and may not be installed. */
     private const SCAN_READER_ROUTE = 'boq-scans.create';
 
-    public function __construct(private PdfTextLayer $layer = new PdfTextLayer) {}
+    /** @param  int  $tableSeconds  How long putting the table together may take (TABLE_BUDGET_SECONDS). */
+    public function __construct(private PdfTextLayer $layer = new PdfTextLayer, private int $tableSeconds = self::TABLE_BUDGET_SECONDS) {}
 
     public function read(string $path): BoqPdfRead
     {
@@ -141,8 +145,10 @@ final class BoqPdfReader
         gc_collect_cycles();
 
         try {
-            $table = new PdfTable($read);
+            $table = new PdfTable($read, hrtime(true) + $this->tableSeconds * 1_000_000_000);
             $grid = $table->grid();
+        } catch (PdfTableTimedOut) {
+            return BoqPdfRead::failed($this->slow());
         } catch (Throwable) {
             return BoqPdfRead::failed($this->unreadable());
         }
@@ -151,8 +157,9 @@ final class BoqPdfReader
         // one makes BOQ lines (the heading, a row of the grid with a description and a quantity, rate or
         // amount, or a row that belongs to one), or when no table is found and most of its text is drawn
         // in one. A title or a cover page above the table, a letterhead or a footer printed again in the
-        // same place on each page, a signature below the rows with no figure beside a description, or a
-        // font only listed beside a page changes nothing (PdfTable::keeps).
+        // same place on each page (its page number apart), a signature below the rows with no figure
+        // beside a description, or a font only listed beside a page changes nothing (PdfTable::keeps).
+        // Rows the import joins across a page, such as a head and its lettered parts, are looked at too.
         if ($table->keeps('old_font') || ($grid === [] && $oldFontPieces * 100 >= $pieces * PdfTextLayer::LEGACY_SHARE)) {
             return BoqPdfRead::failed($this->machineText(), scanned: true);
         }

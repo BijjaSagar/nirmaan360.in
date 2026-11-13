@@ -34,8 +34,10 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         parent::setUp();
         $this->withoutVite();
 
-        // Every test starts with a company that has never decided anything.
-        AiDocumentSettings::withoutGlobalScopes()->delete();
+        // Every test starts with a company that has never decided anything, and whose menu says so.
+        AiDocumentSettings::withoutGlobalScopes()->get()->each->delete();
+        $this->organization->refresh();
+        $this->owner->refresh();
     }
 
     private function row(?Organization $organization = null): ?AiDocumentSettings

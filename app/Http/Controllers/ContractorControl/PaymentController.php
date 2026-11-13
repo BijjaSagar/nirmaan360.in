@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\WorkOrder;
 use App\Services\BillingExtras\PrivateFile;
 use App\Services\ContractorControl\ContractorPaymentService;
+use App\Services\ContractorControl\PaymentAheadGuard;
 use App\Services\ContractorControl\WorkPaymentRatio;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class PaymentController extends Controller
 {
     private const STATUSES = ['IN_REVIEW', 'APPROVED', 'RETURNED', 'REJECTED'];
 
-    public function __construct(private ContractorPaymentService $service, private WorkPaymentRatio $ratio) {}
+    public function __construct(private ContractorPaymentService $service, private WorkPaymentRatio $ratio, private PaymentAheadGuard $ahead) {}
 
     /** Without money.view a person sees only the requests they raised, and no amounts. */
     public function index(Request $request, Project $project): View
@@ -67,7 +68,7 @@ class PaymentController extends Controller
         $money = $request->user()->can('money.view');
         abort_unless($money || $payment->entered_by === $request->user()->id, 403);
 
-        $payment->load('project', 'party', 'boqItem', 'milestone', 'enteredBy', 'reversal', 'approvals.steps.user');
+        $payment->load('project', 'party', 'boqItem', 'milestone', 'enteredBy', 'overrideBy', 'reversal', 'approvals.steps.user');
         $workOrder = $payment->workOrder;
 
         return view('modules.contractor_control.payments.show', [
@@ -78,6 +79,8 @@ class PaymentController extends Controller
             'canEdit' => $this->service->canEdit($payment, $request->user()),
             'impact' => $money ? $this->ratio->impact($payment) : null,
             'ratio' => $money ? null : ContractorControlPresenter::workOnly($this->ratio->forContract($workOrder)),
+            // Whether approving it now would need the owner's override.
+            'ahead' => $money && $payment->status === 'IN_REVIEW' ? $this->ahead->assess($payment) : null,
         ]);
     }
 

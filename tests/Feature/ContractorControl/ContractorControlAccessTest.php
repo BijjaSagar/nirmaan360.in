@@ -150,18 +150,34 @@ class ContractorControlAccessTest extends TestCase
         $this->actingAs($this->supervisor)->patch(route('contractor-control.contracts.deadline', $order), ['end_date' => '2027-01-01'])->assertForbidden();
     }
 
-    public function test_the_manager_can_set_the_limit_and_deadline(): void
+    public function test_the_manager_sets_the_deadline_and_only_the_owner_the_limit(): void
     {
+        // The limit is also where approving a contractor payment needs the owner, so the manager cannot move it.
         $this->actingAs($this->manager)
             ->patch(route('contractor-control.settings', $this->project), ['payment_gap_alert_pct' => '7.5', 'deadline_date' => '2027-03-31'])
-            ->assertRedirect();
+            ->assertSessionHasErrors('payment_gap_alert_pct');
+        $this->assertSame('5.00', Dec::money($this->project->refresh()->payment_gap_alert_pct));
 
+        // The deadline alone, or with the limit sent back unchanged as a page opened earlier would, is his to set.
+        $this->actingAs($this->manager)
+            ->patch(route('contractor-control.settings', $this->project), ['payment_gap_alert_pct' => '5', 'deadline_date' => '2027-03-31'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+        $this->assertSame('2027-03-31', $this->project->refresh()->deadline_date->toDateString());
+        $this->actingAs($this->manager)->patch(route('contractor-control.settings', $this->project), ['deadline_date' => '2027-04-30'])->assertSessionHasNoErrors();
+        $this->assertSame('2027-04-30', $this->project->refresh()->deadline_date->toDateString());
+
+        $this->actingAs($this->owner)
+            ->patch(route('contractor-control.settings', $this->project), ['payment_gap_alert_pct' => '7.5', 'deadline_date' => '2027-03-31'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
         $this->assertSame('7.50', Dec::money($this->project->refresh()->payment_gap_alert_pct));
     }
 
     public function test_the_limit_must_be_a_percentage(): void
     {
-        $this->actingAs($this->manager)->patch(route('contractor-control.settings', $this->project), ['payment_gap_alert_pct' => 101])->assertSessionHasErrors('payment_gap_alert_pct');
+        $this->actingAs($this->owner)->patch(route('contractor-control.settings', $this->project), ['payment_gap_alert_pct' => 101])->assertSessionHasErrors('payment_gap_alert_pct');
+        $this->actingAs($this->owner)->patch(route('contractor-control.settings', $this->project), [])->assertSessionHasErrors('payment_gap_alert_pct');
     }
 
     public function test_another_company_cannot_reach_anything(): void

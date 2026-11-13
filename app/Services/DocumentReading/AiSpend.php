@@ -48,7 +48,8 @@ class AiSpend
     /**
      * The one test of whether the readers are on. The public website (its cards and the pricing line),
      * a company's consent switch and its menu entry, the privacy policy and the terms, the phone's status
-     * answer and the offer to read a PDF as a scan all ask this, so they cannot disagree. The gates
+     * answer and the offer to read a PDF as a scan all ask this, so they cannot disagree. (The menu entry
+     * also stays for a company whose agreement is on record, so it can switch the readers off: ReaderSettings::shown.) The gates
      * (RequireAiReader, PageReader, TextCallRunner, assertRoom) check the same parts one at a time,
      * because each part has its own refusal: released(), then the model connected, then the plan, and
      * a reader route exists only once its kind is deployed.

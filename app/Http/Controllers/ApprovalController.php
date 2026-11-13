@@ -29,9 +29,11 @@ class ApprovalController extends Controller
         $data = $request->validate([
             'action' => ['required', Rule::in(['approve', 'return', 'reject'])],
             'remark' => ['nullable', 'string', 'max:1000'],
+            // The owner's written reason for approving a contractor payment ahead of the work done.
+            'override_reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $this->service->act($approval, $request->user(), $data['action'], $data['remark'] ?? null);
+        $this->service->act($approval, $request->user(), $data['action'], $data['remark'] ?? null, null, ['override_reason' => $data['override_reason'] ?? null]);
 
         return back()->with('success', [
             'approve' => __('Approved.'),

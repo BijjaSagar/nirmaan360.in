@@ -43,7 +43,6 @@
     "Complete": "पूर्ण",
     "Cost head": "लागत मद",
     "Cost recorded.": "लागत दर्ज हुई।",
-    "Cost removed.": "लागत हटाई गई।",
     "Cumulative planned and actual progress over time": "समय के साथ संचयी नियोजित और वास्तविक प्रगति",
     "Current budget": "वर्तमान बजट",
     "Dates and details": "तारीखें और विवरण",
@@ -123,7 +122,6 @@
     "Record cost": "लागत दर्ज करें",
     "Remove": "हटाएँ",
     "Remove this WBS node?": "यह WBS नोड हटाएँ?",
-    "Remove this cost?": "यह लागत हटाएँ?",
     "Replace the saved baseline with the current plan and budget?": "सेव की गई बेसलाइन को वर्तमान योजना और बजट से बदलें?",
     "S-curve": "S-कर्व",
     "SPI": "SPI",
@@ -168,5 +166,12 @@
     "and :count more": "और :count अन्य",
     "earned": "अर्जित",
     "overdue by :days days": "समय सीमा से :days दिन ऊपर",
-    "start late by :days days": "शुरुआत में :days दिन की देरी"
+    "start late by :days days": "शुरुआत में :days दिन की देरी",
+    "A cost entry cannot be changed or removed. Reverse it instead.": "लागत की प्रविष्टि बदली या हटाई नहीं जा सकती। इसके बजाय उसे रिवर्स करें।",
+    "Cost reversed.": "लागत रिवर्स हुई।",
+    "Reverse this cost? A second entry for the opposite amount is added, and both stay on record.": "यह लागत रिवर्स करें? उलटी रकम की एक दूसरी प्रविष्टि जोड़ी जाएगी, और दोनों रिकॉर्ड में रहेंगी।",
+    "Reversed on :date": ":date को रिवर्स हुई",
+    "Reverses the entry of :date. Reason: :reason": ":date की प्रविष्टि को रिवर्स करती है। कारण: :reason",
+    "This cost has already been reversed, or is itself a reversal.": "यह लागत पहले ही रिवर्स हो चुकी है, या खुद एक रिवर्सल है।",
+    "Why is this cost being reversed?": "यह लागत क्यों रिवर्स की जा रही है?"
 }

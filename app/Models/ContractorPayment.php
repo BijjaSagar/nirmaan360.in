@@ -6,6 +6,7 @@ use App\Models\Concerns\Approvable;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Concerns\Immutable;
+use App\Services\ContractorControl\PaymentAheadGuard;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,12 +25,18 @@ class ContractorPayment extends Model
 
     protected function casts(): array
     {
-        return ['paid_on' => 'date', 'amount' => 'decimal:2', 'is_advance' => 'boolean'];
+        return ['paid_on' => 'date', 'amount' => 'decimal:2', 'is_advance' => 'boolean', 'override_at' => 'datetime'];
     }
 
     public function approvalDocType(): string
     {
         return 'contractor';
+    }
+
+    /** No payment beyond the work done, past the project's limit, unless the owner overrides in writing. */
+    public function approvalGuard(): ?string
+    {
+        return PaymentAheadGuard::class;
     }
 
     /** Shown to everyone who can open the approvals page, so it must never carry an amount. */
@@ -87,5 +94,11 @@ class ContractorPayment extends Model
     public function reversal(): HasOne
     {
         return $this->hasOne(self::class, 'reversal_of_id');
+    }
+
+    /** The owner who approved this payment ahead of the work done, when one had to. */
+    public function overrideBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'override_by');
     }
 }

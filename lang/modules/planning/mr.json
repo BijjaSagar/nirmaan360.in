@@ -43,7 +43,6 @@
     "Complete": "पूर्ण",
     "Cost head": "खर्च शीर्ष",
     "Cost recorded.": "खर्च नोंदवला.",
-    "Cost removed.": "खर्च काढला.",
     "Cumulative planned and actual progress over time": "कालानुसार एकत्रित नियोजित आणि प्रत्यक्ष प्रगती",
     "Current budget": "सध्याचे अंदाजपत्रक",
     "Dates and details": "तारखा आणि तपशील",
@@ -123,7 +122,6 @@
     "Record cost": "खर्च नोंदवा",
     "Remove": "काढा",
     "Remove this WBS node?": "हा WBS नोड काढायचा?",
-    "Remove this cost?": "हा खर्च काढायचा?",
     "Replace the saved baseline with the current plan and budget?": "जतन केलेली बेसलाइन सध्याच्या योजना आणि अंदाजपत्रकाने बदलायची?",
     "S-curve": "S-वक्र",
     "SPI": "SPI",
@@ -168,5 +166,12 @@
     "and :count more": "आणि आणखी :count",
     "earned": "मिळवलेले",
     "overdue by :days days": ":days दिवस मुदत उलटली",
-    "start late by :days days": "सुरुवातीला :days दिवस उशीर"
+    "start late by :days days": "सुरुवातीला :days दिवस उशीर",
+    "A cost entry cannot be changed or removed. Reverse it instead.": "खर्चाची नोंद बदलता किंवा काढता येत नाही. त्याऐवजी ती रिव्हर्स करा.",
+    "Cost reversed.": "खर्च रिव्हर्स झाला.",
+    "Reverse this cost? A second entry for the opposite amount is added, and both stay on record.": "हा खर्च रिव्हर्स करायचा? उलट रकमेची दुसरी नोंद जोडली जाईल, आणि दोन्ही नोंदीत राहतील.",
+    "Reversed on :date": ":date रोजी रिव्हर्स झाली",
+    "Reverses the entry of :date. Reason: :reason": ":date ची नोंद रिव्हर्स करते. कारण: :reason",
+    "This cost has already been reversed, or is itself a reversal.": "हा खर्च आधीच रिव्हर्स झाला आहे, किंवा तोच एक रिव्हर्सल आहे.",
+    "Why is this cost being reversed?": "हा खर्च का रिव्हर्स केला जात आहे?"
 }

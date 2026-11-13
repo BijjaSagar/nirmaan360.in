@@ -304,7 +304,7 @@ class OfflinePlanRemovedTest extends TestCase
         $me = $this->withToken($login->json('token'))->getJson('/api/v1/me')->assertOk();
 
         foreach ([$login->json('user'), $me->json('user')] as $profile) {
-            $this->assertSame(['id', 'name', 'email', 'role', 'role_label', 'kind', 'contractor', 'locale', 'organization', 'can'], array_keys($profile));
+            $this->assertSame(['id', 'name', 'email', 'role', 'role_label', 'is_owner', 'kind', 'contractor', 'locale', 'organization', 'can'], array_keys($profile));
             $this->assertSame(['id', 'name', 'features'], array_keys($profile['organization']));
             $this->assertSame([$user->id, 'staff', null, $organization->id], [$profile['id'], $profile['kind'], $profile['contractor'], $profile['organization']['id']]);
             $this->assertSame(config('buildos.plans.contractor.features'), $profile['organization']['features']);

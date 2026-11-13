@@ -104,9 +104,16 @@
                         @endif
                     </div>
                 </x-field>
-                <x-field :label="__('Contract value (₹)')" name="contract_value">
-                    <input id="contract_value" name="contract_value" type="number" step="0.01" min="0" value="{{ old('contract_value', $project->contract_value ?? 0) }}" class="input num" required>
-                </x-field>
+                @if (($phases ?? []) !== [])
+                    {{-- A phased value is the total of its phases and changes only with them, in the field app. --}}
+                    <x-field :label="__('Contract value (₹)')" name="contract_value" :hint="__('The total of :count phases. Change the phases in the field app to change it.', ['count' => count($phases)])">
+                        <input id="contract_value" name="contract_value" type="number" step="0.01" min="0" value="{{ $project->contract_value }}" class="input num" readonly>
+                    </x-field>
+                @else
+                    <x-field :label="__('Contract value (₹)')" name="contract_value">
+                        <input id="contract_value" name="contract_value" type="number" step="0.01" min="0" value="{{ old('contract_value', $project->contract_value ?? 0) }}" class="input num" required>
+                    </x-field>
+                @endif
                 <x-field :label="__('Location')" name="location">
                     <input id="location" name="location" value="{{ old('location', $project->location) }}" class="input">
                 </x-field>
