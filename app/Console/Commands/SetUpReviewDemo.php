@@ -6,6 +6,7 @@ use App\Exceptions\ReviewDemoRefused;
 use App\Models\Organization;
 use App\Services\Access\ReviewDemoCompany;
 use Illuminate\Console\Command;
+use Throwable;
 
 /** Parses and prints only. The work is in ReviewDemoCompany, and nothing it hands back is secret. */
 class SetUpReviewDemo extends Command
@@ -18,6 +19,8 @@ class SetUpReviewDemo extends Command
         {--top-up : Add approvals waiting to a demo company this command made, and change nothing else}';
 
     protected $description = 'Make the separate company that App Store and Google Play reviewers sign in to, or top up its waiting approvals';
+
+    private const NOT_READ = 'not read (see the warning below)';
 
     public function handle(ReviewDemoCompany $demo): int
     {
@@ -37,6 +40,11 @@ class SetUpReviewDemo extends Command
             $this->error($refused->getMessage());
 
             return self::FAILURE;
+        } catch (Throwable $unexpected) {
+            // Never the raw message: a database error spells out its bindings, a password hash among them.
+            $this->error('Stopped by an unexpected error ('.$demo->describe($unexpected).'). Look the owner email up in /admin before running this again: the company may have been made.');
+
+            return self::FAILURE;
         }
 
         return self::SUCCESS;
@@ -50,9 +58,14 @@ class SetUpReviewDemo extends Command
         $this->info('Demo company made.');
         $this->line("Company: #{$organization->id} {$organization->name}");
         $this->planLine($organization);
-        $this->line('Projects: '.implode(', ', $result['projects']));
+        $this->line('Projects: '.($result['projects'] === null ? self::NOT_READ : implode(', ', $result['projects'])));
         $this->waitingLine($result['waiting']);
-        $this->line("AI agents: {$result['agents_off']} switched off, daily brief off.");
+        $this->line('AI agents: '.($result['agents_off'] === null ? self::NOT_READ : "{$result['agents_off']} switched off, daily brief off."));
+
+        foreach ($result['extras'] as $extra) {
+            $this->line("Also added: {$extra}");
+        }
+
         $this->line('Announcement: '.($result['announcement'] ?? 'none'));
 
         $this->line('Emails:');
@@ -61,7 +74,7 @@ class SetUpReviewDemo extends Command
             $this->line("  {$email['what']} to {$email['to']}: ".($email['sent'] ? 'sent' : 'NOT sent'));
         }
 
-        $this->line('Worker QR cards print at '.ReviewDemoCompany::CARDS_PATH.' ('.url(ReviewDemoCompany::CARDS_PATH).'), signed in as the owner.');
+        $this->line('Worker QR cards print at '.route('workforce.cards', [], false).' ('.route('workforce.cards').'), signed in as the owner.');
 
         if ($result['card'] !== null) {
             $this->line("QR card text for {$result['card']['worker']}, not yet marked today: {$result['card']['code']}");
@@ -89,9 +102,16 @@ class SetUpReviewDemo extends Command
         }
 
         $this->waitingLine($result['waiting']);
-        $this->line($result['today_free']
-            ? "Today's daily report on {$result['project']} is free."
-            : "Today's daily report on {$result['project']} was already written, and was left as it is.");
+
+        if ($result['today_free'] !== null) {
+            $this->line($result['today_free']
+                ? "Today's daily report on {$result['project']} is free."
+                : "Today's daily report on {$result['project']} was already written, and was left as it is.");
+        }
+
+        foreach ($result['problems'] as $problem) {
+            $this->warn($problem);
+        }
     }
 
     private function planLine(Organization $organization): void
@@ -104,9 +124,15 @@ class SetUpReviewDemo extends Command
         $this->line("Plan: {$label}, {$organization->plan_status}; {$ends}.");
     }
 
-    /** @param  array<string, int>  $waiting */
-    private function waitingLine(array $waiting): void
+    /** @param  ?array<string, int>  $waiting */
+    private function waitingLine(?array $waiting): void
     {
+        if ($waiting === null) {
+            $this->line('Approvals waiting for the owner: '.self::NOT_READ);
+
+            return;
+        }
+
         $parts = collect($waiting)->map(fn (int $count, string $kind) => "{$kind}: {$count}")->values()->all();
 
         $this->line('Approvals waiting for the owner: '.array_sum($waiting).($parts === [] ? '' : ' ('.implode(', ', $parts).')'));

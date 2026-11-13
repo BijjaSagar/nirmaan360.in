@@ -23,6 +23,7 @@ use App\Services\MeasurementService;
 use App\Services\Notify\AnnouncementService;
 use App\Services\SampleDataService;
 use App\Services\Workforce\WorkerCardService;
+use App\Support\MailTransports;
 use Closure;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\QueryException;
@@ -62,20 +63,25 @@ class ReviewDemoCompany
 
     public const TOPPED_UP = 'review_demo.topped_up';
 
-    public const CARDS_PATH = '/workers/cards';
-
     public const ANNOUNCEMENT_TITLE = 'Welcome to the demo site';
 
     public const ANNOUNCEMENT_BODY = 'Daily reports are due by 6 pm. Try the sample projects: daily reports, measurements, attendance and approvals.';
 
-    /** How far back a top-up looks for a day with no daily report, inside the app's sync window. */
+    /**
+     * How many days back a top-up looks for a day with no daily report. Only a bound on the search: the app
+     * pulls a report by when it last changed and keeps every report still in review (SyncService::window),
+     * so a new report reaches the phone whatever its date.
+     */
     private const FREE_DAY_SEARCH = 30;
 
-    private const DOC_LABELS = ['dpr' => 'daily report', 'measurement' => 'measurement', 'ra_bill' => 'RA bill'];
+    private const DOC_LABELS = ['dpr' => 'daily report', 'measurement' => 'measurement', 'ra_bill' => 'RA bill', 'contractor' => 'contractor payment'];
+
+    private const CHECK_ON_WEBSITE = 'The company is made: check this on the website.';
 
     public function __construct(
         private SignupService $signup,
         private SampleDataService $sample,
+        private ReviewDemoExtras $extras,
         private AgentRegistry $agents,
         private AnnouncementService $announcements,
         private ContractorAccessService $contractors,
@@ -86,12 +92,14 @@ class ReviewDemoCompany
     ) {}
 
     /**
-     * Makes the company. Refuses before changing anything when an email cannot be used or no mail can go out.
-     * The company, its plan, the agents and the sample data go in together or not at all. The announcement,
-     * the contractor invitation and the reset link follow; one that fails is reported, not undone.
+     * Makes the company. Refuses before changing anything when an email cannot be used or mail could be kept
+     * instead of sent. The company, its plan, the agents and the sample data go in together or not at all. The
+     * extra records for the Business screens, the announcement, the contractor invitation and the reset link
+     * follow, and then the summary is read back; a step or read that fails is reported, not undone, and the
+     * company id and the emails already sent are always returned.
      *
-     * @return array{organization: Organization, projects: list<string>, waiting: array<string, int>, agents_off: int,
-     *               announcement: ?string, emails: list<array{to: string, what: string, sent: bool}>,
+     * @return array{organization: Organization, projects: ?list<string>, waiting: ?array<string, int>, agents_off: ?int,
+     *               extras: list<string>, announcement: ?string, emails: list<array{to: string, what: string, sent: bool}>,
      *               card: ?array{worker: string, code: string}, problems: list<string>}
      *
      * @throws ReviewDemoRefused
@@ -110,7 +118,16 @@ class ReviewDemoCompany
 
         return $this->asOwner($owner, function () use ($owner, $organization, $contractorEmail) {
             $problems = [];
+            $extras = [];
             $emails = [];
+
+            foreach ($this->extras->steps($organization, $owner) as $step) {
+                $added = $this->attempt($step['what'], $step['instead'], fn () => DB::transaction($step['add']), $problems);
+
+                if ($added !== null) {
+                    $extras[] = $added;
+                }
+            }
 
             $announcement = $this->attempt(
                 'posting the announcement',
@@ -143,14 +160,16 @@ class ReviewDemoCompany
                 $emails[] = $reset;
             }
 
+            // Read back last, each read on its own: the company and the emails above stand whatever happens here.
             return [
-                'organization' => $organization->refresh(),
-                'projects' => $this->projectNames($organization),
-                'waiting' => $this->waiting($organization, $owner),
-                'agents_off' => $this->agentsOff($organization),
+                'organization' => $this->attempt('reading the company back', self::CHECK_ON_WEBSITE, fn () => $organization->refresh(), $problems) ?? $organization,
+                'projects' => $this->attempt('listing the projects', self::CHECK_ON_WEBSITE, fn () => $this->projectNames($organization), $problems),
+                'waiting' => $this->attempt('counting the approvals waiting', self::CHECK_ON_WEBSITE, fn () => $this->waiting($organization, $owner), $problems),
+                'agents_off' => $this->attempt('counting the agents switched off', self::CHECK_ON_WEBSITE, fn () => $this->agentsOff($organization), $problems),
+                'extras' => $extras,
                 'announcement' => $announcement,
                 'emails' => $emails,
-                'card' => $this->card($organization),
+                'card' => $this->attempt('reading a worker card', 'Print the cards from /workers/cards on the website.', fn () => $this->card($organization), $problems),
                 'problems' => $problems,
             ];
         });
@@ -160,13 +179,17 @@ class ReviewDemoCompany
      * Makes sure the first sample project has a daily report waiting at the project manager and a measurement
      * waiting at the QS, adding one of each only when none waits. Today's report is never used.
      *
-     * @return array{organization: Organization, project: string, added: list<string>, waiting: array<string, int>, today_free: bool}
+     * @return array{organization: Organization, project: string, added: list<string>, waiting: ?array<string, int>, today_free: ?bool, problems: list<string>}
      *
      * @throws ReviewDemoRefused
      */
     public function topUp(string $ownerEmail): array
     {
-        $owner = User::findByEmail($ownerEmail);
+        try {
+            $owner = User::findByEmail($ownerEmail);
+        } catch (Throwable $exception) {
+            throw new ReviewDemoRefused('The owner could not be looked up ('.$this->describe($exception).'). Nothing was changed.');
+        }
 
         if ($owner === null || $owner->role !== 'owner' || $owner->isAnonymised()) {
             throw new ReviewDemoRefused('No owner account uses that email. Nothing was changed.');
@@ -206,12 +229,16 @@ class ReviewDemoCompany
                 throw new ReviewDemoRefused('The top-up could not be made ('.$this->describe($exception).'). Nothing was changed.');
             }
 
+            $problems = [];
+            $checkAgain = 'The top-up is made: check this on the website.';
+
             return [
-                'organization' => $organization->refresh(),
+                'organization' => $this->attempt('reading the company back', $checkAgain, fn () => $organization->refresh(), $problems) ?? $organization,
                 'project' => $tower->name,
                 'added' => $added,
-                'waiting' => $this->waiting($organization, $owner),
-                'today_free' => ! Dpr::withoutGlobalScopes()->where('project_id', $tower->id)->whereNull('deleted_at')->whereDate('report_date', now()->toDateString())->exists(),
+                'waiting' => $this->attempt('counting the approvals waiting', $checkAgain, fn () => $this->waiting($organization, $owner), $problems),
+                'today_free' => $this->attempt('checking today\'s daily report', $checkAgain, fn () => ! Dpr::withoutGlobalScopes()->where('project_id', $tower->id)->whereNull('deleted_at')->whereDate('report_date', now()->toDateString())->exists(), $problems),
+                'problems' => $problems,
             ];
         });
     }
@@ -269,10 +296,30 @@ class ReviewDemoCompany
             }
         }
 
-        // The log mailer would write the reset link, token and all, into the log. The array mailer sends nothing.
-        if (in_array(config('mail.default'), ['log', 'array'], true)) {
-            throw new ReviewDemoRefused('No mail can go out (MAIL_MAILER is '.config('mail.default').'), so the owner could not get the link to set a password. Set up mail first. Nothing was changed.');
+        $this->assertMailOnlySends();
+    }
+
+    /**
+     * Every mailer the default one can hand mail to must send it. The log transport would write the reset and
+     * invitation emails, links and tokens included, into the log, and a failover mailer reaches it when its
+     * first mailer fails; the array transport sends nothing at all.
+     *
+     * @throws ReviewDemoRefused
+     */
+    private function assertMailOnlySends(): void
+    {
+        $keeps = MailTransports::firstThatKeepsMail();
+
+        if ($keeps === null) {
+            return;
         }
+
+        $default = (string) config('mail.default');
+        $why = $keeps['mailer'] === $default
+            ? "MAIL_MAILER is {$default}, which uses the {$keeps['transport']} transport"
+            : "MAIL_MAILER is {$default}, which can hand mail to the {$keeps['mailer']} mailer ({$keeps['transport']} transport)";
+
+        throw new ReviewDemoRefused("No mail can go out safely ({$why}). The log transport writes the password link into the log and the array transport sends nothing. Set MAIL_MAILER to a mailer that only sends. Nothing was changed.");
     }
 
     private function emailProblem(string $email): ?string
@@ -559,7 +606,7 @@ class ReviewDemoCompany
     }
 
     /**
-     * A step after the company exists. A failure is noted with what to do instead, and the rest carries on.
+     * A step or a read after the company exists. A failure is noted with what to do instead, and the rest carries on.
      *
      * @template T
      *
@@ -582,7 +629,7 @@ class ReviewDemoCompany
      * Words safe to print and log. Only messages written for people are shown. A database error carries its
      * bindings, which can hold a password hash, so it is named by its SQL state alone, and anything else by its kind.
      */
-    private function describe(Throwable $exception): string
+    public function describe(Throwable $exception): string
     {
         $text = match (true) {
             $exception instanceof ReviewDemoRefused, $exception instanceof HttpExceptionInterface => $exception->getMessage(),
