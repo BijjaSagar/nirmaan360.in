@@ -335,15 +335,19 @@ class FloorSetupApiTest extends SiteProgressTestCase
         $this->assertNotNull(ProjectFloor::find($floor->id));
     }
 
-    public function test_a_switched_off_owner_is_not_an_owner(): void
+    public function test_owner_means_the_built_in_role_and_a_switched_off_owner_removes_nothing(): void
     {
         $owner = $this->member($this->organization, 'owner');
         $this->assertTrue($owner->isOwner());
-        $owner->forceFill(['is_active' => false])->save();
-
-        $this->assertFalse($owner->fresh()->isOwner());
         $this->assertFalse($this->holding(['*'], 'owner')->isOwner());
         $this->assertFalse($this->member($this->organization, 'admin')->isOwner());
+
+        $floor = $this->floor('Spare');
+        $owner->forceFill(['is_active' => false])->save();
+        $this->signIn($owner->fresh());
+
+        $this->deleteJson(self::API."/floors/{$floor->id}")->assertForbidden();
+        $this->assertNotNull(ProjectFloor::find($floor->id));
     }
 
     public function test_a_floor_with_work_or_segments_is_never_removed(): void

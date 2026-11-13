@@ -181,10 +181,14 @@ class ProgressApiController extends Controller
         ]]);
     }
 
-    /** Only the company owner removes a floor, and only one with no work recorded on it and no segments under it. */
+    /**
+     * Only the company owner removes a floor: the built-in owner role, no custom role, and active. FloorService::delete
+     * is the one place a floor is removed, so every protection it holds applies here too.
+     */
     public function destroyFloor(Request $request, ProjectFloor $floor): JsonResponse
     {
-        abort_unless($request->user()->isOwner(), 403, __('Only the company owner can remove a floor.'));
+        $user = $request->user();
+        abort_unless($user->isOwner() && $user->is_active, 403, __('Only the company owner can remove a floor.'));
 
         $id = $floor->id;
         $this->floorService->delete($floor);
