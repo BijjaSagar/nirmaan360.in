@@ -1681,7 +1681,10 @@ class FakeApi implements NirmaanApi {
     final Map<String, List<String>> errors = <String, List<String>>{};
     if (reason.trim().isEmpty) errors['reason'] = <String>['The reason field is required.'];
     final (Decimal measured, _) = _ledger(boqItemId);
-    if (Decimal.parse(qty) < measured) {
+    // As on the server: the floor is checked only when the quantity is being cut, so a rate or
+    // wording fix on a line already measured past its quantity is not refused.
+    final bool cut = Decimal.parse(qty) < Decimal.parse(item['qty'] as String);
+    if (cut && Decimal.parse(qty) < measured) {
       errors['qty'] = <String>['Quantity cannot be lower than the quantity already measured (${measured.toStringAsFixed(3)}).'];
     }
     if (unit != item['unit'] && (measurements.any((m) => m['boq_item_id'] == boqItemId) || boqItemUses.containsKey(boqItemId))) {
