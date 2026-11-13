@@ -32,6 +32,7 @@ import '../features/machine_logs/view/machine_logs_screen.dart';
 import '../features/material_control/bloc/material_form_cubit.dart';
 import '../features/material_control/view/issue_stock_screen.dart';
 import '../features/material_control/view/material_form_screen.dart';
+import '../features/material_control/view/material_loop_screens.dart';
 import '../features/material_control/view/material_screen.dart';
 import '../features/material_control/view/receive_order_screen.dart';
 import '../features/measurement/view/measurement_detail_screen.dart';
@@ -262,6 +263,9 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
             ),
           _route('receive-order', (s) => ReceiveOrderScreen(orderId: int.tryParse(s.uri.queryParameters['order'] ?? ''))),
           _route('issue', (s) => IssueStockScreen(materialId: int.tryParse(s.uri.queryParameters['material'] ?? ''))),
+          _route('challan', (s) => ChallanScreen(challanId: int.tryParse(s.uri.queryParameters['id'] ?? ''))),
+          _route('bills', (_) => const BillsScreen()),
+          _route('wastage', (_) => const WastageScreen()),
         ],
       ),
       _route(

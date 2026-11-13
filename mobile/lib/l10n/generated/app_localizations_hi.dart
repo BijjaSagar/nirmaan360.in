@@ -2444,16 +2444,193 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get materialActualUsed => 'लगा';
+
+  @override
   String get materialAdd => 'एंट्री करें';
+
+  @override
+  String get materialAgainstNorm => 'नॉर्म के मुकाबले';
+
+  @override
+  String get materialAllowed => 'मान्य सीमा';
+
+  @override
+  String get materialAllowedWastage => 'मान्य वेस्टेज';
+
+  @override
+  String get materialAsPerNorm => 'नॉर्म के अनुसार';
+
+  @override
+  String get materialBasisApproved => 'मंज़ूर माप';
+
+  @override
+  String get materialBasisDpr => 'दैनिक रिपोर्ट';
+
+  @override
+  String get materialBasisMeasured => 'माप पुस्तिका';
+
+  @override
+  String materialBeyondAllowed(String qty) {
+    return 'मान्य सीमा से $qty ज़्यादा';
+  }
+
+  @override
+  String get materialBillAmount => 'रकम';
+
+  @override
+  String get materialBillAmountInvalid =>
+      '0 से ज़्यादा रकम, अधिकतम 2 दशमलव, लिखें।';
+
+  @override
+  String get materialBillAttach => 'बिल लगाएं';
+
+  @override
+  String get materialBillAttached => 'बिल लगा';
+
+  @override
+  String materialBillAttachedBy(String name) {
+    return '$name ने लगाया';
+  }
+
+  @override
+  String get materialBillDate => 'बिल की तारीख';
+
+  @override
+  String get materialBillFailed => 'बिल नहीं खुला। इंटरनेट जांचें।';
+
+  @override
+  String get materialBillFromGallery => 'गैलरी से';
+
+  @override
+  String get materialBillHeading => 'बिल';
+
+  @override
+  String get materialBillNeeded => 'बिल की फ़ोटो जोड़ें।';
+
+  @override
+  String get materialBillNeededOrNumber =>
+      'बिल की फ़ोटो जोड़ें, या बिल नंबर लिखें।';
+
+  @override
+  String get materialBillNo => 'बिल नं.';
+
+  @override
+  String get materialBillNotPicture => 'यह बिल PDF है। इसे वेबसाइट पर खोलें।';
+
+  @override
+  String get materialBillPending => 'बिल बाकी';
+
+  @override
+  String get materialBillPhoto => 'बिल की फ़ोटो';
+
+  @override
+  String get materialBillRemovePhoto => 'फ़ोटो हटाएं';
+
+  @override
+  String get materialBillReplace => 'बिल बदलें';
+
+  @override
+  String get materialBillReplaceNote => 'नई फ़ाइल पहले वाली की जगह लेगी।';
+
+  @override
+  String get materialBillSaved => 'बिल लग गया।';
+
+  @override
+  String get materialBillSend => 'बिल सेव करें';
+
+  @override
+  String get materialBillTakePhoto => 'फ़ोटो लें';
+
+  @override
+  String get materialBillView => 'बिल देखें';
+
+  @override
+  String get materialBillWaiting => 'बिल का इंतज़ार है।';
+
+  @override
+  String materialBillsAlertNote(int days) {
+    return '$days दिन बिल न आने पर अलर्ट जाता है।';
+  }
+
+  @override
+  String materialBillsDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days दिन से बाकी',
+      one: '1 दिन से बाकी',
+      zero: 'आज आया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get materialBillsLoadFailed =>
+      'बिल नहीं खुले। फिर से कोशिश के लिए नीचे खींचें।';
+
+  @override
+  String get materialBillsNoneAttached => 'अभी तक कोई बिल नहीं लगा';
+
+  @override
+  String get materialBillsNoneMessage =>
+      'साइट पर लिए चालान बिल लगने तक यहां दिखते हैं।';
+
+  @override
+  String get materialBillsNonePending => 'कोई बिल बाकी नहीं';
+
+  @override
+  String get materialBillsOffline => 'बिल देखने के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String get materialBillsOverdue => 'देर हो गई';
+
+  @override
+  String get materialBillsRefused => 'बिल आपकी भूमिका के लिए खुले नहीं हैं।';
+
+  @override
+  String get materialBillsTitle => 'चालानों के बिल';
+
+  @override
+  String materialBillsWaitingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count बिल बाकी',
+      one: '1 बिल बाकी',
+      zero: 'कोई बिल बाकी नहीं',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get materialBoqForWork => 'हुए काम के लिए BOQ';
 
   @override
+  String get materialChallanLoadFailed =>
+      'यह चालान नहीं खुला। फिर से कोशिश के लिए नीचे खींचें।';
+
+  @override
   String get materialChallanNo => 'चालान नंबर (वैकल्पिक)';
 
   @override
+  String get materialChallanNoShort => 'चालान नं.';
+
+  @override
+  String get materialChallanOffline =>
+      'यह चालान देखने के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String get materialChallanOpen => 'चालान खोलें';
+
+  @override
   String get materialChallanPhoto => 'चालान की फ़ोटो';
+
+  @override
+  String get materialChallanRefused => 'यह चालान आपके लिए खुला नहीं है।';
+
+  @override
+  String get materialChallanTitle => 'चालान';
 
   @override
   String get materialChoose => 'मटेरियल चुनें';
@@ -2466,6 +2643,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपकी गिनती के हिसाब से स्टॉक ठीक होता है। कम मात्रा बिना हिसाब के रूप में दिखती है।';
 
   @override
+  String get materialDate => 'तारीख';
+
+  @override
   String materialDifference(String qty) {
     return 'अंतर $qty';
   }
@@ -2476,6 +2656,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get materialEmptyTitle => 'अभी जाँचने को कुछ नहीं';
+
+  @override
+  String get materialEnteredBy => 'दर्ज करने वाले';
 
   @override
   String get materialExtraRequired => 'अतिरिक्त काम लिखें';
@@ -2496,7 +2679,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialLoading => 'मटेरियल लोड हो रहा है';
 
   @override
+  String get materialMoreFailed => 'और नहीं आया। फिर कोशिश करें।';
+
+  @override
   String get materialName => 'मटेरियल';
+
+  @override
+  String get materialNeedsNetwork =>
+      'इसके लिए इंटरनेट चाहिए। कनेक्ट करके फिर कोशिश करें।';
 
   @override
   String get materialNoCountsTitle => 'अभी कोई गिनती नहीं';
@@ -2509,10 +2699,28 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialNoDeliveriesTitle => 'अभी कोई चालान नहीं';
 
   @override
+  String get materialNoPhoto => 'कोई फ़ोटो नहीं लगी।';
+
+  @override
   String get materialNoUseTitle => 'अभी मटेरियल इस्तेमाल नहीं हुआ';
 
   @override
+  String get materialNorm => 'नॉर्म';
+
+  @override
+  String materialNormPer(String qty, String unit, String workUnit) {
+    return 'प्रति $workUnit $qty $unit';
+  }
+
+  @override
+  String get materialNotAllowed =>
+      'आपकी भूमिका यह नहीं कर सकती। ऑफिस से पूछें।';
+
+  @override
   String get materialOnBoq => 'BOQ काम';
+
+  @override
+  String get materialOnChallan => 'चालान पर';
 
   @override
   String get materialOnExtra => 'अतिरिक्त काम';
@@ -2521,8 +2729,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialOnSite => 'साइट पर स्टॉक';
 
   @override
+  String get materialOptional => 'वैकल्पिक';
+
+  @override
   String get materialOverStock =>
       'यह यहाँ दिखे स्टॉक से ज़्यादा है। सर्वर इसे मना कर सकता है।';
+
+  @override
+  String get materialPhotoFailed => 'फ़ोटो नहीं खुली। इंटरनेट जांचें।';
 
   @override
   String get materialQtyCounted => 'गिनी गई मात्रा';
@@ -2547,7 +2761,38 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialQtyUsed => 'इस्तेमाल मात्रा';
 
   @override
-  String get materialReasonOnWeb => 'कारण वेबसाइट पर लिखें।';
+  String get materialReasonAnswered => 'जवाब दिया';
+
+  @override
+  String get materialReasonEmpty => 'पहले कारण लिखें।';
+
+  @override
+  String materialReasonFrom(String name) {
+    return '$name का दिया कारण';
+  }
+
+  @override
+  String get materialReasonHint =>
+      'साइट पर क्या हुआ, वह लिखें। अंतर बढ़ा तो फिर से पूछा जाएगा।';
+
+  @override
+  String get materialReasonLabel => 'यह अंतर क्यों है?';
+
+  @override
+  String get materialReasonNotYours =>
+      'कारण इंजीनियर, स्टोर कीपर, QS या प्रोजेक्ट मैनेजर लिखते हैं।';
+
+  @override
+  String get materialReasonSaved => 'कारण सेव हो गया।';
+
+  @override
+  String get materialReasonSend => 'कारण सेव करें';
+
+  @override
+  String get materialReasonTooLong => 'कारण 2000 अक्षरों में रखें।';
+
+  @override
+  String get materialReasonWrite => 'कारण लिखें';
 
   @override
   String get materialReceived => 'मटेरियल आया';
@@ -2556,22 +2801,98 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialReceivedShort => 'आया';
 
   @override
+  String get materialRemarks => 'टिप्पणी';
+
+  @override
+  String get materialReorderHeading => 'रीऑर्डर स्तर से नीचे';
+
+  @override
+  String materialReorderLine(String balance, String level, String unit) {
+    return '$level में से $balance $unit';
+  }
+
+  @override
+  String materialReversedNote(String name, String date, String reason) {
+    return '$name ने $date को उलटा किया: $reason';
+  }
+
+  @override
   String get materialSearch => 'मटेरियल खोजें';
 
   @override
   String get materialSearchNone => 'कुछ नहीं मिला';
 
   @override
+  String get materialSendFailed => 'सेव नहीं हुआ। फिर कोशिश करें।';
+
+  @override
   String get materialShort => 'कम आया';
 
   @override
+  String get materialShortAsk => 'माल कम आया?';
+
+  @override
+  String get materialShortAtGate => 'गेट पर ही पता चला';
+
+  @override
+  String materialShortBy(String unit) {
+    return 'कितना कम ($unit)';
+  }
+
+  @override
+  String get materialShortFoundOn => 'कब पता चला';
+
+  @override
+  String get materialShortHeading => 'कम आया माल';
+
+  @override
+  String get materialShortHint =>
+      'इससे यह माल स्टॉक से घटता है और सप्लायर के रिकॉर्ड में गिना जाता है।';
+
+  @override
+  String get materialShortLater => 'बाद में पता चला';
+
+  @override
+  String get materialShortNote => 'नोट';
+
+  @override
+  String get materialShortNoteTooLong => 'नोट 500 अक्षरों में रखें।';
+
+  @override
+  String get materialShortQtyInvalid => '0 से ज़्यादा, अधिकतम 3 दशमलव, लिखें।';
+
+  @override
+  String get materialShortSaved => 'कम माल सप्लायर के नाम दर्ज हुआ।';
+
+  @override
+  String get materialShortSend => 'कम माल दर्ज करें';
+
+  @override
   String get materialShouldBe => 'स्टॉक में होना चाहिए';
+
+  @override
+  String get materialShowMore => 'और दिखाएं';
 
   @override
   String get materialStage => 'चरण (वैकल्पिक)';
 
   @override
   String get materialStageHint => 'जैसे स्लैब 3';
+
+  @override
+  String get materialStatusNoNorm => 'नॉर्म तय नहीं';
+
+  @override
+  String get materialStatusNoWork => 'माल दिया, काम नहीं';
+
+  @override
+  String get materialStatusOk => 'नॉर्म में';
+
+  @override
+  String get materialStatusUnder => 'नॉर्म से कम';
+
+  @override
+  String get materialStatusWastage => 'वेस्टेज';
 
   @override
   String get materialStore => 'स्टोर';
@@ -2621,13 +2942,73 @@ class AppLocalizationsHi extends AppLocalizations {
   String get materialUnaccounted => 'बिना हिसाब';
 
   @override
+  String get materialUnplannedHeading => 'बिना BOQ लाइन दिया माल';
+
+  @override
   String get materialUsed => 'मटेरियल इस्तेमाल हुआ';
 
   @override
   String get materialUsedShort => 'इस्तेमाल';
 
   @override
+  String get materialVehicle => 'गाड़ी नं.';
+
+  @override
   String get materialVehicleNo => 'गाड़ी नंबर (वैकल्पिक)';
+
+  @override
+  String get materialViewPhoto => 'चालान की फ़ोटो देखें';
+
+  @override
+  String get materialWastageBasis => 'किया काम किससे';
+
+  @override
+  String get materialWastageEmptyMessage =>
+      'नॉर्म वेबसाइट पर तय होते हैं। BOQ लाइन पर माल देने पर यहां दिखेगा।';
+
+  @override
+  String get materialWastageEmptyTitle => 'अभी मिलान के लिए कुछ नहीं';
+
+  @override
+  String get materialWastageHint =>
+      'मान्य सीमा = किया काम × नॉर्म, और नॉर्म का वेस्टेज %. नॉर्म वेबसाइट पर तय होते हैं।';
+
+  @override
+  String get materialWastageLoadFailed =>
+      'वेस्टेज नहीं खुला। फिर से कोशिश के लिए नीचे खींचें।';
+
+  @override
+  String get materialWastageOffline =>
+      'BOQ के हिसाब से वेस्टेज देखने के लिए इंटरनेट से जुड़ें।';
+
+  @override
+  String materialWastageOverCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count लाइन मान्य सीमा से ज़्यादा',
+      one: '1 लाइन मान्य सीमा से ज़्यादा',
+      zero: 'कोई लाइन मान्य सीमा से ज़्यादा नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get materialWastageRefused =>
+      'BOQ के हिसाब से वेस्टेज आपकी भूमिका के लिए खुला नहीं है।';
+
+  @override
+  String get materialWastageTile => 'BOQ नॉर्म के हिसाब से वेस्टेज';
+
+  @override
+  String get materialWastageTileHint =>
+      'हर BOQ लाइन पर लगा माल, नॉर्म की मान्य सीमा के मुकाबले';
+
+  @override
+  String get materialWastageTitle => 'BOQ के हिसाब से वेस्टेज';
+
+  @override
+  String get materialWorkDone => 'किया काम';
 
   @override
   String get measurementAdd => 'जोड़ें';

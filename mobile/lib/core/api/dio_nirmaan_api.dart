@@ -872,6 +872,58 @@ class DioNirmaanApi implements NirmaanApi {
   Future<DocumentReadStatus> _readStep(String path, Map<String, dynamic> data) async =>
       DocumentReadStatus.fromJson(await _call(() => _dio.post(path, data: data)));
 
+  // Closing the material loop from site ----------------------------------------
+
+  @override
+  Future<Map<String, dynamic>> postMaterialReason(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-control/reasons', body);
+
+  @override
+  Future<Map<String, dynamic>> deliveryChallan(int challanId) => _getData('/delivery-challans/$challanId');
+
+  @override
+  Future<Uint8List> deliveryChallanPhoto(int challanId) => _bytes('/delivery-challans/$challanId/photo');
+
+  @override
+  Future<Map<String, dynamic>> attachChallanBill(int challanId, Map<String, dynamic> body, {String? filePath}) async {
+    final path = '/delivery-challans/$challanId/bill';
+    if (filePath == null) return _postData(path, body);
+    final reply = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        for (final entry in body.entries)
+          if (entry.value != null) entry.key: entry.value,
+        'bill': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (reply['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Uint8List> challanBillBytes(int challanId) => _bytes('/delivery-challans/$challanId/bill');
+
+  @override
+  Future<Map<String, dynamic>> postChallanShort(int challanId, Map<String, dynamic> body) =>
+      _call(() => _dio.post('/delivery-challans/$challanId/short', data: body));
+
+  @override
+  Future<Map<String, dynamic>> challanBills(int projectId, {bool attached = false, int page = 1}) => _call(
+    () => _dio.get(
+      '/projects/$projectId/material-control/bills',
+      queryParameters: <String, dynamic>{if (attached) 'show': 'attached', if (page > 1) 'page': page},
+    ),
+  );
+
+  @override
+  Future<Map<String, dynamic>> materialReconciliation(int projectId, {String? basis}) => _getData(
+    '/projects/$projectId/material-reconciliation${basis == null ? '' : '?basis=${Uri.encodeQueryComponent(basis)}'}',
+  );
+
   Future<Uint8List> _bytes(String path) async {
     try {
       final response = await _dio.get<List<int>>(

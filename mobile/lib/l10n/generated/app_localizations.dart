@@ -4444,11 +4444,269 @@ abstract class AppLocalizations {
   /// **'Machine no. {id}'**
   String machinesUnknownMachine(int id);
 
+  /// No description provided for @materialActualUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get materialActualUsed;
+
   /// No description provided for @materialAdd.
   ///
   /// In en, this message translates to:
   /// **'Add entry'**
   String get materialAdd;
+
+  /// No description provided for @materialAgainstNorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Against the norm'**
+  String get materialAgainstNorm;
+
+  /// No description provided for @materialAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get materialAllowed;
+
+  /// No description provided for @materialAllowedWastage.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed wastage'**
+  String get materialAllowedWastage;
+
+  /// No description provided for @materialAsPerNorm.
+  ///
+  /// In en, this message translates to:
+  /// **'As per norm'**
+  String get materialAsPerNorm;
+
+  /// No description provided for @materialBasisApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved measurements'**
+  String get materialBasisApproved;
+
+  /// No description provided for @materialBasisDpr.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily reports'**
+  String get materialBasisDpr;
+
+  /// No description provided for @materialBasisMeasured.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement book'**
+  String get materialBasisMeasured;
+
+  /// No description provided for @materialBeyondAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'{qty} beyond what is allowed'**
+  String materialBeyondAllowed(String qty);
+
+  /// No description provided for @materialBillAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get materialBillAmount;
+
+  /// No description provided for @materialBillAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount above 0 with up to 2 decimals.'**
+  String get materialBillAmountInvalid;
+
+  /// No description provided for @materialBillAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach bill'**
+  String get materialBillAttach;
+
+  /// No description provided for @materialBillAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill attached'**
+  String get materialBillAttached;
+
+  /// No description provided for @materialBillAttachedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Attached by {name}'**
+  String materialBillAttachedBy(String name);
+
+  /// No description provided for @materialBillDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill date'**
+  String get materialBillDate;
+
+  /// No description provided for @materialBillFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the bill. Check your internet.'**
+  String get materialBillFailed;
+
+  /// No description provided for @materialBillFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'From gallery'**
+  String get materialBillFromGallery;
+
+  /// No description provided for @materialBillHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill'**
+  String get materialBillHeading;
+
+  /// No description provided for @materialBillNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a photo of the bill.'**
+  String get materialBillNeeded;
+
+  /// No description provided for @materialBillNeededOrNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a photo of the bill, or enter its number.'**
+  String get materialBillNeededOrNumber;
+
+  /// No description provided for @materialBillNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill no.'**
+  String get materialBillNo;
+
+  /// No description provided for @materialBillNotPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'This bill is a PDF. Open it on the website.'**
+  String get materialBillNotPicture;
+
+  /// No description provided for @materialBillPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill pending'**
+  String get materialBillPending;
+
+  /// No description provided for @materialBillPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo of the bill'**
+  String get materialBillPhoto;
+
+  /// No description provided for @materialBillRemovePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get materialBillRemovePhoto;
+
+  /// No description provided for @materialBillReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace bill'**
+  String get materialBillReplace;
+
+  /// No description provided for @materialBillReplaceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A new file replaces the one attached.'**
+  String get materialBillReplaceNote;
+
+  /// No description provided for @materialBillSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill attached.'**
+  String get materialBillSaved;
+
+  /// No description provided for @materialBillSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Save bill'**
+  String get materialBillSend;
+
+  /// No description provided for @materialBillTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get materialBillTakePhoto;
+
+  /// No description provided for @materialBillView.
+  ///
+  /// In en, this message translates to:
+  /// **'View bill'**
+  String get materialBillView;
+
+  /// No description provided for @materialBillWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the bill.'**
+  String get materialBillWaiting;
+
+  /// No description provided for @materialBillsAlertNote.
+  ///
+  /// In en, this message translates to:
+  /// **'An alert goes out after {days} days without a bill.'**
+  String materialBillsAlertNote(int days);
+
+  /// No description provided for @materialBillsDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =0{Came today} =1{1 day waiting} other{{days} days waiting}}'**
+  String materialBillsDays(int days);
+
+  /// No description provided for @materialBillsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the bills. Pull down to try again.'**
+  String get materialBillsLoadFailed;
+
+  /// No description provided for @materialBillsNoneAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'No bills attached yet'**
+  String get materialBillsNoneAttached;
+
+  /// No description provided for @materialBillsNoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Challans taken on site show here until their bill is attached.'**
+  String get materialBillsNoneMessage;
+
+  /// No description provided for @materialBillsNonePending.
+  ///
+  /// In en, this message translates to:
+  /// **'No bills pending'**
+  String get materialBillsNonePending;
+
+  /// No description provided for @materialBillsOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to see the bills.'**
+  String get materialBillsOffline;
+
+  /// No description provided for @materialBillsOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get materialBillsOverdue;
+
+  /// No description provided for @materialBillsRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills are not open to your role.'**
+  String get materialBillsRefused;
+
+  /// No description provided for @materialBillsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bills against challans'**
+  String get materialBillsTitle;
+
+  /// No description provided for @materialBillsWaitingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No bill waiting} =1{1 waiting for a bill} other{{count} waiting for a bill}}'**
+  String materialBillsWaitingCount(int count);
 
   /// No description provided for @materialBoqForWork.
   ///
@@ -4456,17 +4714,53 @@ abstract class AppLocalizations {
   /// **'BOQ for work done'**
   String get materialBoqForWork;
 
+  /// No description provided for @materialChallanLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this challan. Pull down to try again.'**
+  String get materialChallanLoadFailed;
+
   /// No description provided for @materialChallanNo.
   ///
   /// In en, this message translates to:
   /// **'Challan no. (optional)'**
   String get materialChallanNo;
 
+  /// No description provided for @materialChallanNoShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Challan no.'**
+  String get materialChallanNoShort;
+
+  /// No description provided for @materialChallanOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to open this challan.'**
+  String get materialChallanOffline;
+
+  /// No description provided for @materialChallanOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open challan'**
+  String get materialChallanOpen;
+
   /// No description provided for @materialChallanPhoto.
   ///
   /// In en, this message translates to:
   /// **'Photo of challan'**
   String get materialChallanPhoto;
+
+  /// No description provided for @materialChallanRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'This challan is not open to you.'**
+  String get materialChallanRefused;
+
+  /// No description provided for @materialChallanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Challan'**
+  String get materialChallanTitle;
 
   /// No description provided for @materialChoose.
   ///
@@ -4486,6 +4780,12 @@ abstract class AppLocalizations {
   /// **'Stock is corrected to what you counted. Any missing quantity shows as unaccounted.'**
   String get materialCountHint;
 
+  /// No description provided for @materialDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get materialDate;
+
   /// No description provided for @materialDifference.
   ///
   /// In en, this message translates to:
@@ -4503,6 +4803,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nothing to check yet'**
   String get materialEmptyTitle;
+
+  /// No description provided for @materialEnteredBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered by'**
+  String get materialEnteredBy;
 
   /// No description provided for @materialExtraRequired.
   ///
@@ -4540,11 +4846,23 @@ abstract class AppLocalizations {
   /// **'Loading material'**
   String get materialLoading;
 
+  /// No description provided for @materialMoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more. Try again.'**
+  String get materialMoreFailed;
+
   /// No description provided for @materialName.
   ///
   /// In en, this message translates to:
   /// **'Material'**
   String get materialName;
+
+  /// No description provided for @materialNeedsNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'This needs the internet. Connect and try again.'**
+  String get materialNeedsNetwork;
 
   /// No description provided for @materialNoCountsTitle.
   ///
@@ -4564,17 +4882,47 @@ abstract class AppLocalizations {
   /// **'No challans yet'**
   String get materialNoDeliveriesTitle;
 
+  /// No description provided for @materialNoPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'No photo was attached.'**
+  String get materialNoPhoto;
+
   /// No description provided for @materialNoUseTitle.
   ///
   /// In en, this message translates to:
   /// **'No material used yet'**
   String get materialNoUseTitle;
 
+  /// No description provided for @materialNorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Norm'**
+  String get materialNorm;
+
+  /// No description provided for @materialNormPer.
+  ///
+  /// In en, this message translates to:
+  /// **'{qty} {unit} per {workUnit}'**
+  String materialNormPer(String qty, String unit, String workUnit);
+
+  /// No description provided for @materialNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your role cannot do this. Ask your office.'**
+  String get materialNotAllowed;
+
   /// No description provided for @materialOnBoq.
   ///
   /// In en, this message translates to:
   /// **'BOQ work'**
   String get materialOnBoq;
+
+  /// No description provided for @materialOnChallan.
+  ///
+  /// In en, this message translates to:
+  /// **'On challan'**
+  String get materialOnChallan;
 
   /// No description provided for @materialOnExtra.
   ///
@@ -4588,11 +4936,23 @@ abstract class AppLocalizations {
   /// **'Stock on site'**
   String get materialOnSite;
 
+  /// No description provided for @materialOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get materialOptional;
+
   /// No description provided for @materialOverStock.
   ///
   /// In en, this message translates to:
   /// **'This is more than the stock shown here. The server may refuse it.'**
   String get materialOverStock;
+
+  /// No description provided for @materialPhotoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the photo. Check your internet.'**
+  String get materialPhotoFailed;
 
   /// No description provided for @materialQtyCounted.
   ///
@@ -4636,11 +4996,65 @@ abstract class AppLocalizations {
   /// **'Quantity used'**
   String get materialQtyUsed;
 
-  /// No description provided for @materialReasonOnWeb.
+  /// No description provided for @materialReasonAnswered.
   ///
   /// In en, this message translates to:
-  /// **'Write the reason on the website.'**
-  String get materialReasonOnWeb;
+  /// **'Answered'**
+  String get materialReasonAnswered;
+
+  /// No description provided for @materialReasonEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the reason first.'**
+  String get materialReasonEmpty;
+
+  /// No description provided for @materialReasonFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason from {name}'**
+  String materialReasonFrom(String name);
+
+  /// No description provided for @materialReasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Say what happened on site. If the gap grows, it will ask again.'**
+  String get materialReasonHint;
+
+  /// No description provided for @materialReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Why is there a gap?'**
+  String get materialReasonLabel;
+
+  /// No description provided for @materialReasonNotYours.
+  ///
+  /// In en, this message translates to:
+  /// **'The engineer, store keeper, QS or project manager writes the reason.'**
+  String get materialReasonNotYours;
+
+  /// No description provided for @materialReasonSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason saved.'**
+  String get materialReasonSaved;
+
+  /// No description provided for @materialReasonSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Save reason'**
+  String get materialReasonSend;
+
+  /// No description provided for @materialReasonTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the reason to 2000 characters.'**
+  String get materialReasonTooLong;
+
+  /// No description provided for @materialReasonWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the reason'**
+  String get materialReasonWrite;
 
   /// No description provided for @materialReceived.
   ///
@@ -4654,6 +5068,30 @@ abstract class AppLocalizations {
   /// **'Received'**
   String get materialReceivedShort;
 
+  /// No description provided for @materialRemarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Remarks'**
+  String get materialRemarks;
+
+  /// No description provided for @materialReorderHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Below reorder level'**
+  String get materialReorderHeading;
+
+  /// No description provided for @materialReorderLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{balance} of {level} {unit}'**
+  String materialReorderLine(String balance, String level, String unit);
+
+  /// No description provided for @materialReversedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversed by {name} on {date}: {reason}'**
+  String materialReversedNote(String name, String date, String reason);
+
   /// No description provided for @materialSearch.
   ///
   /// In en, this message translates to:
@@ -4666,17 +5104,101 @@ abstract class AppLocalizations {
   /// **'Nothing matches'**
   String get materialSearchNone;
 
+  /// No description provided for @materialSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Try again.'**
+  String get materialSendFailed;
+
   /// No description provided for @materialShort.
   ///
   /// In en, this message translates to:
   /// **'Short delivered'**
   String get materialShort;
 
+  /// No description provided for @materialShortAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered short?'**
+  String get materialShortAsk;
+
+  /// No description provided for @materialShortAtGate.
+  ///
+  /// In en, this message translates to:
+  /// **'Found at the gate'**
+  String get materialShortAtGate;
+
+  /// No description provided for @materialShortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Short by ({unit})'**
+  String materialShortBy(String unit);
+
+  /// No description provided for @materialShortFoundOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Found on'**
+  String get materialShortFoundOn;
+
+  /// No description provided for @materialShortHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Short deliveries'**
+  String get materialShortHeading;
+
+  /// No description provided for @materialShortHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This takes the quantity out of stock and counts against the supplier.'**
+  String get materialShortHint;
+
+  /// No description provided for @materialShortLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Found later'**
+  String get materialShortLater;
+
+  /// No description provided for @materialShortNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get materialShortNote;
+
+  /// No description provided for @materialShortNoteTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the note to 500 characters.'**
+  String get materialShortNoteTooLong;
+
+  /// No description provided for @materialShortQtyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a quantity above 0 with up to 3 decimals.'**
+  String get materialShortQtyInvalid;
+
+  /// No description provided for @materialShortSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Short delivery recorded against the supplier.'**
+  String get materialShortSaved;
+
+  /// No description provided for @materialShortSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Record short delivery'**
+  String get materialShortSend;
+
   /// No description provided for @materialShouldBe.
   ///
   /// In en, this message translates to:
   /// **'Should be in stock'**
   String get materialShouldBe;
+
+  /// No description provided for @materialShowMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get materialShowMore;
 
   /// No description provided for @materialStage.
   ///
@@ -4689,6 +5211,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Such as slab 3'**
   String get materialStageHint;
+
+  /// No description provided for @materialStatusNoNorm.
+  ///
+  /// In en, this message translates to:
+  /// **'No norm set'**
+  String get materialStatusNoNorm;
+
+  /// No description provided for @materialStatusNoWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Issued, no work yet'**
+  String get materialStatusNoWork;
+
+  /// No description provided for @materialStatusOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Within norm'**
+  String get materialStatusOk;
+
+  /// No description provided for @materialStatusUnder.
+  ///
+  /// In en, this message translates to:
+  /// **'Under norm'**
+  String get materialStatusUnder;
+
+  /// No description provided for @materialStatusWastage.
+  ///
+  /// In en, this message translates to:
+  /// **'Wastage'**
+  String get materialStatusWastage;
 
   /// No description provided for @materialStore.
   ///
@@ -4780,6 +5332,12 @@ abstract class AppLocalizations {
   /// **'Unaccounted'**
   String get materialUnaccounted;
 
+  /// No description provided for @materialUnplannedHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Issued without a BOQ line'**
+  String get materialUnplannedHeading;
+
   /// No description provided for @materialUsed.
   ///
   /// In en, this message translates to:
@@ -4792,11 +5350,95 @@ abstract class AppLocalizations {
   /// **'Used'**
   String get materialUsedShort;
 
+  /// No description provided for @materialVehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vehicle no.'**
+  String get materialVehicle;
+
   /// No description provided for @materialVehicleNo.
   ///
   /// In en, this message translates to:
   /// **'Vehicle no. (optional)'**
   String get materialVehicleNo;
+
+  /// No description provided for @materialViewPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'View challan photo'**
+  String get materialViewPhoto;
+
+  /// No description provided for @materialWastageBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done from'**
+  String get materialWastageBasis;
+
+  /// No description provided for @materialWastageEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Norms are set on the website. Issue material against BOQ lines to see it here.'**
+  String get materialWastageEmptyMessage;
+
+  /// No description provided for @materialWastageEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to reconcile yet'**
+  String get materialWastageEmptyTitle;
+
+  /// No description provided for @materialWastageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed = work done × norm, plus the norm\'s wastage %. Norms are set on the website.'**
+  String get materialWastageHint;
+
+  /// No description provided for @materialWastageLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the wastage. Pull down to try again.'**
+  String get materialWastageLoadFailed;
+
+  /// No description provided for @materialWastageOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to see wastage against the BOQ.'**
+  String get materialWastageOffline;
+
+  /// No description provided for @materialWastageOverCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No line over its allowance} =1{1 line over its allowance} other{{count} lines over their allowance}}'**
+  String materialWastageOverCount(int count);
+
+  /// No description provided for @materialWastageRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Wastage against the BOQ is not open to your role.'**
+  String get materialWastageRefused;
+
+  /// No description provided for @materialWastageTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Wastage against BOQ norms'**
+  String get materialWastageTile;
+
+  /// No description provided for @materialWastageTileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Material used on each BOQ line against what its norm allows'**
+  String get materialWastageTileHint;
+
+  /// No description provided for @materialWastageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Wastage against BOQ'**
+  String get materialWastageTitle;
+
+  /// No description provided for @materialWorkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Work done'**
+  String get materialWorkDone;
 
   /// No description provided for @measurementAdd.
   ///

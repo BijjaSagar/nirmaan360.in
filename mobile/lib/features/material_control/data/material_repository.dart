@@ -8,6 +8,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/ids.dart';
+import 'material_loop_repository.dart';
 import 'material_models.dart';
 
 export 'material_models.dart';
@@ -38,6 +39,9 @@ class MaterialRepository {
   static const int issueLinesMax = 200;
 
   AppDatabase get _db => _ctx.db;
+
+  /// The online half: reasons, a challan in full, bills, shorts found later and wastage.
+  late final MaterialLoopRepository loop = MaterialLoopRepository(_ctx, this);
 
   /// Receiving against a purchase order and issuing from a store. Only
   /// `procurement.stock` reaches the app, and every role that has it also reads

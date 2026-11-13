@@ -4387,6 +4387,247 @@ class FakeApi implements NirmaanApi {
     return tinyPng;
   }
 
+  // Closing the material loop from site --------------------------------------
+
+  /// The next material-loop call fails with this, then calls work again.
+  ApiFailure? materialLoopFailure;
+
+  bool get _seesMoney => (user['can'] as Map)['money.view'] == true;
+
+  void _loopGuard() {
+    _guard();
+    final ApiFailure? failure = materialLoopFailure;
+    if (failure != null) {
+      materialLoopFailure = null;
+      throw failure;
+    }
+  }
+
+  static const Set<String> _challanMoneyKeys = {'bill_no', 'bill_date', 'bill_amount', 'vendor_bill_id', 'has_bill_file'};
+
+  Row _withoutBillMoney(Row row) =>
+      _seesMoney ? row : {for (final entry in row.entries) if (!_challanMoneyKeys.contains(entry.key)) entry.key: entry.value};
+
+  /// Challans in full, by id, with every figure. Money is taken out on the way
+  /// for someone without money.view, as the server does.
+  final Map<int, Row> challanDetails = {
+    1: {
+      'id': 1,
+      'number': 'DC-2026-27-0001',
+      'client_uuid': null,
+      'project_id': 1,
+      'party_id': 8,
+      'supplier': 'Gupta Traders',
+      'supplier_warning': null,
+      'store_id': 1,
+      'store': 'Site store',
+      'material_id': 5,
+      'material': 'Cement',
+      'unit_id': 10,
+      'unit': 'bag',
+      'qty': '200.000',
+      'base_qty': '200.000',
+      'challan_qty': null,
+      'challan_no': 'C-1',
+      'challan_date': '2026-11-01',
+      'vehicle_no': 'MH12AB1234',
+      'remarks': 'Unloaded at the north gate.',
+      'has_photo': true,
+      'bill_status': 'pending',
+      'status': 'POSTED',
+      'created_by': 'Sachin More',
+      'bill_attached_by': null,
+      'reversed_by': null,
+      'reversed_at': null,
+      'reversal_reason': null,
+      'shorts': <Row>[],
+      'bill_no': null,
+      'bill_date': null,
+      'bill_amount': null,
+      'vendor_bill_id': null,
+      'has_bill_file': false,
+    },
+  };
+  final List<int> challanDetailReads = [];
+  final List<(int, Row)> reasonPosts = [];
+
+  /// The `client_uuid` of every reason and short sent, stored or not, so a
+  /// test can see that a retry reused the first one.
+  final List<String> reasonAttempts = [];
+  final List<String> shortAttempts = [];
+  final Map<String, Row> _reasonOnce = {};
+  final List<(int, Row, String?)> billPosts = [];
+  final List<(int, Row)> shortPosts = [];
+  final Map<String, Row> _shortOnce = {};
+  final List<int> challanBillReads = [];
+  final List<int> challanPhotoReads = [];
+  int _nextShortId = 900;
+
+  /// Rows for the bills list, in the presenter's shape. `bill_status` decides the tab.
+  List<Row> billRows = [
+    {'id': 1, 'number': 'DC-2026-27-0001', 'supplier': 'Gupta Traders', 'material': 'Cement', 'unit': 'bag', 'qty': '200.000', 'challan_no': 'C-1', 'challan_date': '2026-11-01', 'bill_status': 'pending', 'days_waiting': 9, 'overdue': true, 'bill_amount': null},
+    {'id': 2, 'number': 'DC-2026-27-0002', 'supplier': 'Patil Sand', 'material': 'Sand', 'unit': 'brass', 'qty': '4.000', 'challan_no': null, 'challan_date': '2026-11-08', 'bill_status': 'pending', 'days_waiting': 2, 'overdue': false, 'bill_amount': null},
+    {'id': 3, 'number': 'DC-2026-27-0003', 'supplier': 'Gupta Traders', 'material': 'Cement', 'unit': 'bag', 'qty': '50.000', 'challan_no': 'C-9', 'challan_date': '2026-10-28', 'bill_status': 'attached', 'days_waiting': null, 'overdue': false, 'bill_amount': '19500.00', 'bill_no': 'GT/77'},
+  ];
+
+  /// More pages for the list being read, so "Show more" can be tested.
+  int billsLastPage = 1;
+  final List<(bool, int)> billsReads = [];
+
+  Row reconciliationBody = {
+    'basis': 'measured',
+    'bases': ['measured', 'approved', 'dpr'],
+    'counts': {'wastage': 1, 'under': 0, 'no_work': 0, 'no_norm': 1, 'ok': 1},
+    'rows': [
+      {'boq_item_id': 11, 'boq_code': '2.1', 'boq_description': 'RCC M25 in slab', 'boq_unit': 'cum', 'executed': '50.000', 'material_id': 5, 'material_name': 'Cement', 'unit': 'bag', 'actual': '450.000', 'norm': '8.4000', 'wastage_pct': '2.00', 'theoretical': '420.000', 'allowed': '428.400', 'variance': '30.000', 'variance_pct': '7.14', 'status': 'wastage'},
+      {'boq_item_id': 12, 'boq_code': '2.2', 'boq_description': 'Brick work', 'boq_unit': 'cum', 'executed': '10.000', 'material_id': 5, 'material_name': 'Cement', 'unit': 'bag', 'actual': '12.000', 'norm': '1.2500', 'wastage_pct': '3.00', 'theoretical': '12.500', 'allowed': '12.875', 'variance': '-0.500', 'variance_pct': '-4.00', 'status': 'ok'},
+      {'boq_item_id': 13, 'boq_code': '3.1', 'boq_description': 'Plaster', 'boq_unit': 'sqm', 'executed': '0.000', 'material_id': 6, 'material_name': 'Sand', 'unit': 'brass', 'actual': '2.000', 'norm': null, 'wastage_pct': null, 'theoretical': null, 'allowed': null, 'variance': null, 'variance_pct': null, 'status': 'no_norm'},
+    ],
+    'unallocated': [
+      {'material_id': 5, 'material_name': 'Cement', 'unit': 'bag', 'activity': 'Site office plinth', 'actual': '40.000'},
+    ],
+    'below_reorder': [
+      {'store_id': 1, 'store': 'Site store', 'material_id': 5, 'material_name': 'Cement', 'unit': 'bag', 'balance': '35.000', 'reorder_level': '100.000', 'shortfall': '65.000'},
+    ],
+  };
+  final List<String?> reconciliationReads = [];
+
+  @override
+  Future<Map<String, dynamic>> postMaterialReason(int projectId, Map<String, dynamic> body) async {
+    final String uuid = body['client_uuid'] as String;
+    reasonAttempts.add(uuid);
+    _loopGuard();
+    final Row? first = _reasonOnce[uuid];
+    if (first != null) return first;
+    final Row? row = (materialCheckBody['rows'] as List).cast<Row>().where((r) => r['material_id'] == body['material_id']).firstOrNull;
+    final Row? flag = row == null ? null : (row['flags'] as List).cast<Row>().where((f) => f['type'] == body['flag_type']).firstOrNull;
+    if (flag == null) {
+      throw const ValidationFailure('Closed', errors: {'flag_type': ['This gap has since closed, so no reason is needed.']});
+    }
+    reasonPosts.add((projectId, body));
+    // The check now shows it answered, as the server would on the next read.
+    flag['open'] = false;
+    flag['reason'] = body['reason'];
+    flag['reason_by'] = user['name'];
+    materialCheckBody['open_flags'] = max(0, ((materialCheckBody['open_flags'] as int?) ?? 1) - 1);
+    final Row reply = {
+      'id': reasonPosts.length,
+      'client_uuid': uuid,
+      'project_id': projectId,
+      'material_id': body['material_id'],
+      'flag_type': body['flag_type'],
+      'gap_qty': flag['gap'] ?? '0.000',
+      'reason': body['reason'],
+      'created_by': user['name'],
+    };
+    return _reasonOnce[uuid] = reply;
+  }
+
+  @override
+  Future<Map<String, dynamic>> deliveryChallan(int challanId) async {
+    _loopGuard();
+    challanDetailReads.add(challanId);
+    final Row? row = challanDetails[challanId];
+    if (row == null) throw const ServerFailure('Not found', statusCode: 404);
+    return _withoutBillMoney(row);
+  }
+
+  @override
+  Future<Uint8List> deliveryChallanPhoto(int challanId) async {
+    _loopGuard();
+    challanPhotoReads.add(challanId);
+    return tinyPng;
+  }
+
+  @override
+  Future<Map<String, dynamic>> attachChallanBill(int challanId, Map<String, dynamic> body, {String? filePath}) async {
+    _loopGuard();
+    final Row row = challanDetails[challanId]!;
+    if (row['status'] == 'REVERSED') {
+      throw const ValidationFailure('Reversed', errors: {'status': ['This challan has been reversed.']});
+    }
+    // Figures are read only from money.view, as `billRules` does.
+    final Row kept = _seesMoney ? body : {for (final entry in body.entries) if (!_challanMoneyKeys.contains(entry.key)) entry.key: entry.value};
+    if (filePath == null && (kept['bill_no'] == null || '${kept['bill_no']}'.isEmpty)) {
+      throw const ValidationFailure('Bill', errors: {'bill': ['Attach the bill, or enter its number.']});
+    }
+    billPosts.add((challanId, body, filePath));
+    row['bill_status'] = 'attached';
+    row['bill_attached_by'] = user['name'];
+    if (filePath != null) row['has_bill_file'] = true;
+    for (final key in const ['bill_no', 'bill_date', 'bill_amount']) {
+      if (kept[key] != null) row[key] = kept[key];
+    }
+    for (final bill in billRows.where((r) => r['id'] == challanId)) {
+      bill['bill_status'] = 'attached';
+      bill['days_waiting'] = null;
+      bill['overdue'] = false;
+    }
+    return _withoutBillMoney(row);
+  }
+
+  @override
+  Future<Uint8List> challanBillBytes(int challanId) async {
+    _loopGuard();
+    if (!_seesMoney) throw const ServerFailure('Forbidden', statusCode: 403);
+    challanBillReads.add(challanId);
+    return tinyPng;
+  }
+
+  @override
+  Future<Map<String, dynamic>> postChallanShort(int challanId, Map<String, dynamic> body) async {
+    final String uuid = body['client_uuid'] as String;
+    shortAttempts.add(uuid);
+    _loopGuard();
+    final Row row = challanDetails[challanId]!;
+    final Row? first = _shortOnce[uuid];
+    if (first != null) return {'data': first, 'challan': _withoutBillMoney(row)};
+    final Decimal already = (row['shorts'] as List).cast<Row>().where((r) => r['at_entry'] != true).fold(Decimal.zero, (sum, r) => sum + Decimal.parse('${r['short_qty']}'));
+    if (already + Decimal.parse('${body['short_qty']}') > Decimal.parse('${row['qty']}')) {
+      throw const ValidationFailure('Too much', errors: {'short_qty': ['A shortage cannot be more than the quantity on this challan.']});
+    }
+    shortPosts.add((challanId, body));
+    final Row short = {
+      'id': _nextShortId++,
+      'client_uuid': uuid,
+      'delivery_challan_id': challanId,
+      'short_qty': Decimal.parse('${body['short_qty']}').toStringAsFixed(3),
+      'found_on': body['found_on'],
+      'note': body['note'],
+      'at_entry': false,
+      'status': 'POSTED',
+      'created_by': user['name'],
+    };
+    (row['shorts'] as List).add(short);
+    _shortOnce[uuid] = short;
+    return {'data': short, 'challan': _withoutBillMoney(row)};
+  }
+
+  @override
+  Future<Map<String, dynamic>> challanBills(int projectId, {bool attached = false, int page = 1}) async {
+    _loopGuard();
+    billsReads.add((attached, page));
+    final rows = billRows.where((r) => (r['bill_status'] == 'attached') == attached).map(_withoutBillMoney).toList();
+    return {
+      'data': rows,
+      'meta': {
+        'show': attached ? 'attached' : 'pending',
+        'pending_count': billRows.where((r) => r['bill_status'] == 'pending').length,
+        'alert_after_days': 7,
+        'current_page': page,
+        'last_page': billsLastPage,
+        'total': rows.length,
+      },
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> materialReconciliation(int projectId, {String? basis}) async {
+    _loopGuard();
+    reconciliationReads.add(basis);
+    return {...reconciliationBody, 'basis': basis ?? 'measured'};
+  }
+
   /// Server time as a wire timestamp, advancing one second per call. Use it
   /// for rows a test adds by hand, so a delta pull picks them up.
   String stampNow() => _stampNow();

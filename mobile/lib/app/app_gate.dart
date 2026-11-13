@@ -129,6 +129,11 @@ class GateState extends Equatable {
   /// a calm page, and only the entry points (Home's row) hide it.
   bool get canOpenSite => can('progress.view') || can('alerts.view');
 
+  /// Wastage against the BOQ norms, inside the Material page: `procurement.view`
+  /// on a plan with `procurement`. Read only; norms are entered on the website.
+  bool get canSeeWastage =>
+      can('procurement.view') && (user?.features.contains('procurement') ?? false) && !isContractor;
+
   /// A subcontractor's login: the portal and settings, and nothing else.
   bool get isContractor => user?.isContractor ?? false;
 
@@ -307,6 +312,7 @@ class AppGate extends Cubit<GateState> {
       a.hasSiteTools != b.hasSiteTools ||
       a.hasSite != b.hasSite ||
       a.canSeeAlerts != b.canSeeAlerts ||
+      a.canSeeWastage != b.canSeeWastage ||
       a.ready != b.ready;
 
   /// Exact paths that need a permission. Anything else is open once signed in.
@@ -325,6 +331,8 @@ class AppGate extends Cubit<GateState> {
     Routes.materialReceive: 'material_control.challan',
     Routes.materialUse: 'material_control.consume',
     Routes.materialCount: 'material_control.count',
+    Routes.materialChallan: 'material_control.view',
+    Routes.materialBills: 'material_control.bills',
   };
 
   /// The location for [uri], or null to stay.
@@ -361,6 +369,7 @@ class AppGate extends Cubit<GateState> {
     if (Routes.isAttendanceCapture(path) && !s.canCaptureAttendance) return Routes.attendance;
     if (Routes.isStockEntry(path) && !(s.canStockProcure && s.can('material_control.view'))) return Routes.home;
     if (path == Routes.siteTools && !s.hasSiteTools) return Routes.home;
+    if (path == Routes.materialWastage && !s.canSeeWastage) return Routes.home;
     if (path == Routes.siteDashboard && !s.canOpenSite) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;

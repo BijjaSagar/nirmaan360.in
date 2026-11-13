@@ -13,6 +13,7 @@ import '../../measurement/bloc/measurement_book.dart';
 import '../../measurement/view/widgets/book_kit.dart';
 import '../bloc/material_cubit.dart';
 import '../data/material_repository.dart';
+import 'material_loop_screens.dart';
 
 /// What came to site, what was used, and whether the two add up.
 class MaterialScreen extends StatelessWidget {
@@ -170,6 +171,7 @@ class _MaterialScroll extends StatelessWidget {
 
     return <Widget>[
       SliverToBoxAdapter(child: _Summary(overview: overview)),
+      const SliverToBoxAdapter(child: _Links()),
       SliverToBoxAdapter(child: _Tabs(state: state)),
       switch (state.tab) {
         MaterialTab.stock =>
@@ -240,6 +242,49 @@ class _Summary extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Ways on to the online pages: bills for whoever chases them, and wastage
+/// against the BOQ norms. Each shows only to someone the server would answer.
+class _Links extends StatelessWidget {
+  const _Links();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final GateState gate = context.select((AppGate gate) => gate.state);
+    final bool bills = gate.can('material_control.bills');
+    final bool wastage = gate.canSeeWastage;
+    if (!bills && !wastage) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.sm),
+      child: LedgerCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (wastage)
+              LedgerListTile(
+                key: const ValueKey<String>('material-open-wastage'),
+                leading: const Icon(Icons.balance_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+                title: l.materialWastageTile,
+                subtitle: l.materialWastageTileHint,
+                onTap: () => context.push(Routes.materialWastage),
+              ),
+            if (bills && wastage) const RuledDivider(indent: N360Space.card),
+            if (bills)
+              LedgerListTile(
+                key: const ValueKey<String>('material-open-bills'),
+                leading: const Icon(Icons.receipt_long_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+                title: l.materialBillsTitle,
+                onTap: () => context.push(Routes.materialBills),
               ),
           ],
         ),
@@ -329,7 +374,11 @@ class _StockTile extends StatelessWidget {
       onTap: () => showLedgerSheet<void>(
         context,
         isScrollControlled: true,
-        builder: (sheet) => _RowSheet(row: row, gateContext: context),
+        builder: (sheet) => _RowSheet(
+          row: row,
+          gateContext: context,
+          projectId: context.read<MaterialCubit>().state.project?.id,
+        ),
       ),
     );
   }
@@ -337,16 +386,29 @@ class _StockTile extends StatelessWidget {
 
 /// The full picture of one material, and the questions it raises.
 class _RowSheet extends StatelessWidget {
-  const _RowSheet({required this.row, required this.gateContext});
+  const _RowSheet({required this.row, required this.gateContext, required this.projectId});
 
   final MaterialRow row;
   final BuildContext gateContext;
+  final int? projectId;
+
+  /// The sheet closes and the reason box opens over the page, so the page is
+  /// what shows, already read again, once the reason is stored.
+  void _answer(BuildContext context, MaterialFlag flag) {
+    final int? project = projectId;
+    if (project == null) return;
+    Navigator.of(context).pop();
+    showFlagReasonSheet(gateContext, projectId: project, materialId: row.materialId, materialName: row.name, flag: flag);
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool canCount = gateContext.read<AppGate>().state.can('material_control.count');
+    final GateState gate = gateContext.read<AppGate>().state;
+    final bool canCount = gate.can('material_control.count');
+    final bool canReason = gate.can('material_control.reason') && projectId != null;
     final List<MaterialFlag> open = row.flags.where((flag) => flag.open).toList();
+    final List<MaterialFlag> answered = row.flags.where((flag) => !flag.open && flag.reason != null).toList();
     String figure(Qty value) => '${formatQty(value)} ${row.unit}'.trim();
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
@@ -370,10 +432,34 @@ class _RowSheet extends StatelessWidget {
             for (final MaterialFlag flag in open) ...<Widget>[
               const SizedBox(height: N360Space.sm),
               Text(flag.message, style: N360Type.fit(N360Type.body, flag.message).copyWith(color: N360Colors.laterite)),
+              if (canReason) ...<Widget>[
+                const SizedBox(height: N360Space.xs),
+                GloveButton(
+                  key: ValueKey<String>('material-flag-${flag.type}-reason'),
+                  label: l.materialReasonWrite,
+                  icon: Icons.edit_note,
+                  kind: GloveButtonKind.secondary,
+                  fullWidth: true,
+                  onPressed: () => _answer(context, flag),
+                ),
+              ],
             ],
-            if (open.isNotEmpty) ...<Widget>[
+            if (open.isNotEmpty && !canReason) ...<Widget>[
               const SizedBox(height: N360Space.xs),
-              Text(l.materialReasonOnWeb, style: N360Type.fit(N360Type.caption, l.materialReasonOnWeb)),
+              Text(l.materialReasonNotYours, style: N360Type.fit(N360Type.caption, l.materialReasonNotYours)),
+            ],
+            for (final MaterialFlag flag in answered) ...<Widget>[
+              const SizedBox(height: N360Space.sm),
+              Text(flag.message, style: N360Type.fit(N360Type.body, flag.message).copyWith(color: N360Colors.ink2)),
+              const SizedBox(height: N360Space.xxs),
+              Text(
+                <String>[
+                  l.materialReasonAnswered,
+                  if (flag.reasonBy != null) l.materialReasonFrom(flag.reasonBy!),
+                ].join(' · '),
+                style: N360Type.fit(N360Type.caption, l.materialReasonAnswered),
+              ),
+              Text(flag.reason!, style: N360Type.fit(N360Type.body, flag.reason!)),
             ],
             if (canCount) ...<Widget>[
               const SizedBox(height: N360Space.md),
@@ -405,11 +491,23 @@ class _DeliveryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final String subtitle = <String>[?row.supplier, ?row.challanNo, ?_day(context, row.date)].join(' · ');
+    final int? id = row.id;
+    // The bill is chased by whoever holds material_control.bills; nobody else is nagged about it.
+    final bool chasesBills = context.select((AppGate gate) => gate.state.can('material_control.bills'));
     return LedgerListTile(
+      key: id == null ? null : ValueKey<String>('material-challan-$id'),
       title: overview.materialName(row.materialId),
       subtitle: subtitle.isEmpty ? null : subtitle,
-      status: _notSent(l, row.notSent),
+      status: row.notSent
+          ? _notSent(l, true)
+          : row.reversed
+          ? StatusPill(kind: StampKind.rejected, label: l.procurementReversed)
+          : row.billPending && chasesBills
+          ? StatusPill(kind: StampKind.inReview, label: l.materialBillPending)
+          : null,
       trailing: _figure('${formatQty(row.qty)} ${overview.unitLabel(row.materialId, row.unitId)}'.trim()),
+      // A challan the server holds opens in full: photo, bill, shortages.
+      onTap: id == null ? null : () => context.push(Routes.materialChallanAt(id)),
     );
   }
 }

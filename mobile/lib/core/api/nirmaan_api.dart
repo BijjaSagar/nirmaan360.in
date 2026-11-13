@@ -602,4 +602,37 @@ abstract interface class NirmaanApi {
   /// `GET /document-reads/{read}/pages/{page}/image`: the stored picture,
   /// exactly as it went to the reader. A 404 once the read's files are deleted.
   Future<Uint8List> readPageImage(int readId, int pageId);
+
+  // Closing the material loop from site, online only: a reason on a flag, a
+  // challan in full, its bill, a short found later, the bills list, and
+  // wastage against the BOQ norms.
+
+  /// `POST /projects/{project}/material-control/reasons` with `material_id`,
+  /// `flag_type`, `reason` and `client_uuid`. Returns the reason; a repeated
+  /// `client_uuid` returns the first one.
+  Future<Map<String, dynamic>> postMaterialReason(int projectId, Map<String, dynamic> body);
+
+  /// `GET /delivery-challans/{id}`: the challan with names, remarks and shorts.
+  Future<Map<String, dynamic>> deliveryChallan(int challanId);
+
+  /// `GET /delivery-challans/{id}/photo`.
+  Future<Uint8List> deliveryChallanPhoto(int challanId);
+
+  /// `POST /delivery-challans/{id}/bill`, multipart `bill` when [filePath] is
+  /// given. Returns the challan in full.
+  Future<Map<String, dynamic>> attachChallanBill(int challanId, Map<String, dynamic> body, {String? filePath});
+
+  /// `GET /delivery-challans/{id}/bill`: the bill file. Needs `money.view`.
+  Future<Uint8List> challanBillBytes(int challanId);
+
+  /// `POST /delivery-challans/{id}/short` with `short_qty`, `found_on`, `note`
+  /// and `client_uuid`. The whole reply: `{data: short, challan: challan}`.
+  Future<Map<String, dynamic>> postChallanShort(int challanId, Map<String, dynamic> body);
+
+  /// `GET /projects/{project}/material-control/bills`, the whole reply:
+  /// `{data: rows, meta: {show, pending_count, alert_after_days, current_page, last_page, total}}`.
+  Future<Map<String, dynamic>> challanBills(int projectId, {bool attached = false, int page = 1});
+
+  /// `GET /projects/{project}/material-reconciliation?basis=`.
+  Future<Map<String, dynamic>> materialReconciliation(int projectId, {String? basis});
 }

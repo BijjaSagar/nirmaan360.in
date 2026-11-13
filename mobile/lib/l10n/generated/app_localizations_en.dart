@@ -2493,16 +2493,196 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get materialActualUsed => 'Used';
+
+  @override
   String get materialAdd => 'Add entry';
+
+  @override
+  String get materialAgainstNorm => 'Against the norm';
+
+  @override
+  String get materialAllowed => 'Allowed';
+
+  @override
+  String get materialAllowedWastage => 'Allowed wastage';
+
+  @override
+  String get materialAsPerNorm => 'As per norm';
+
+  @override
+  String get materialBasisApproved => 'Approved measurements';
+
+  @override
+  String get materialBasisDpr => 'Daily reports';
+
+  @override
+  String get materialBasisMeasured => 'Measurement book';
+
+  @override
+  String materialBeyondAllowed(String qty) {
+    return '$qty beyond what is allowed';
+  }
+
+  @override
+  String get materialBillAmount => 'Amount';
+
+  @override
+  String get materialBillAmountInvalid =>
+      'Enter an amount above 0 with up to 2 decimals.';
+
+  @override
+  String get materialBillAttach => 'Attach bill';
+
+  @override
+  String get materialBillAttached => 'Bill attached';
+
+  @override
+  String materialBillAttachedBy(String name) {
+    return 'Attached by $name';
+  }
+
+  @override
+  String get materialBillDate => 'Bill date';
+
+  @override
+  String get materialBillFailed =>
+      'Could not load the bill. Check your internet.';
+
+  @override
+  String get materialBillFromGallery => 'From gallery';
+
+  @override
+  String get materialBillHeading => 'Bill';
+
+  @override
+  String get materialBillNeeded => 'Add a photo of the bill.';
+
+  @override
+  String get materialBillNeededOrNumber =>
+      'Add a photo of the bill, or enter its number.';
+
+  @override
+  String get materialBillNo => 'Bill no.';
+
+  @override
+  String get materialBillNotPicture =>
+      'This bill is a PDF. Open it on the website.';
+
+  @override
+  String get materialBillPending => 'Bill pending';
+
+  @override
+  String get materialBillPhoto => 'Photo of the bill';
+
+  @override
+  String get materialBillRemovePhoto => 'Remove photo';
+
+  @override
+  String get materialBillReplace => 'Replace bill';
+
+  @override
+  String get materialBillReplaceNote => 'A new file replaces the one attached.';
+
+  @override
+  String get materialBillSaved => 'Bill attached.';
+
+  @override
+  String get materialBillSend => 'Save bill';
+
+  @override
+  String get materialBillTakePhoto => 'Take photo';
+
+  @override
+  String get materialBillView => 'View bill';
+
+  @override
+  String get materialBillWaiting => 'Waiting for the bill.';
+
+  @override
+  String materialBillsAlertNote(int days) {
+    return 'An alert goes out after $days days without a bill.';
+  }
+
+  @override
+  String materialBillsDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days waiting',
+      one: '1 day waiting',
+      zero: 'Came today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get materialBillsLoadFailed =>
+      'Could not load the bills. Pull down to try again.';
+
+  @override
+  String get materialBillsNoneAttached => 'No bills attached yet';
+
+  @override
+  String get materialBillsNoneMessage =>
+      'Challans taken on site show here until their bill is attached.';
+
+  @override
+  String get materialBillsNonePending => 'No bills pending';
+
+  @override
+  String get materialBillsOffline =>
+      'Connect to the internet to see the bills.';
+
+  @override
+  String get materialBillsOverdue => 'Overdue';
+
+  @override
+  String get materialBillsRefused => 'Bills are not open to your role.';
+
+  @override
+  String get materialBillsTitle => 'Bills against challans';
+
+  @override
+  String materialBillsWaitingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count waiting for a bill',
+      one: '1 waiting for a bill',
+      zero: 'No bill waiting',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get materialBoqForWork => 'BOQ for work done';
 
   @override
+  String get materialChallanLoadFailed =>
+      'Could not load this challan. Pull down to try again.';
+
+  @override
   String get materialChallanNo => 'Challan no. (optional)';
 
   @override
+  String get materialChallanNoShort => 'Challan no.';
+
+  @override
+  String get materialChallanOffline =>
+      'Connect to the internet to open this challan.';
+
+  @override
+  String get materialChallanOpen => 'Open challan';
+
+  @override
   String get materialChallanPhoto => 'Photo of challan';
+
+  @override
+  String get materialChallanRefused => 'This challan is not open to you.';
+
+  @override
+  String get materialChallanTitle => 'Challan';
 
   @override
   String get materialChoose => 'Choose material';
@@ -2515,6 +2695,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Stock is corrected to what you counted. Any missing quantity shows as unaccounted.';
 
   @override
+  String get materialDate => 'Date';
+
+  @override
   String materialDifference(String qty) {
     return 'Difference $qty';
   }
@@ -2525,6 +2708,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get materialEmptyTitle => 'Nothing to check yet';
+
+  @override
+  String get materialEnteredBy => 'Entered by';
 
   @override
   String get materialExtraRequired => 'Say what the extra work was';
@@ -2545,7 +2731,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialLoading => 'Loading material';
 
   @override
+  String get materialMoreFailed => 'Could not load more. Try again.';
+
+  @override
   String get materialName => 'Material';
+
+  @override
+  String get materialNeedsNetwork =>
+      'This needs the internet. Connect and try again.';
 
   @override
   String get materialNoCountsTitle => 'No counts yet';
@@ -2558,10 +2751,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialNoDeliveriesTitle => 'No challans yet';
 
   @override
+  String get materialNoPhoto => 'No photo was attached.';
+
+  @override
   String get materialNoUseTitle => 'No material used yet';
 
   @override
+  String get materialNorm => 'Norm';
+
+  @override
+  String materialNormPer(String qty, String unit, String workUnit) {
+    return '$qty $unit per $workUnit';
+  }
+
+  @override
+  String get materialNotAllowed => 'Your role cannot do this. Ask your office.';
+
+  @override
   String get materialOnBoq => 'BOQ work';
+
+  @override
+  String get materialOnChallan => 'On challan';
 
   @override
   String get materialOnExtra => 'Extra work';
@@ -2570,8 +2780,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialOnSite => 'Stock on site';
 
   @override
+  String get materialOptional => 'Optional';
+
+  @override
   String get materialOverStock =>
       'This is more than the stock shown here. The server may refuse it.';
+
+  @override
+  String get materialPhotoFailed =>
+      'Could not load the photo. Check your internet.';
 
   @override
   String get materialQtyCounted => 'Counted quantity';
@@ -2596,7 +2813,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialQtyUsed => 'Quantity used';
 
   @override
-  String get materialReasonOnWeb => 'Write the reason on the website.';
+  String get materialReasonAnswered => 'Answered';
+
+  @override
+  String get materialReasonEmpty => 'Write the reason first.';
+
+  @override
+  String materialReasonFrom(String name) {
+    return 'Reason from $name';
+  }
+
+  @override
+  String get materialReasonHint =>
+      'Say what happened on site. If the gap grows, it will ask again.';
+
+  @override
+  String get materialReasonLabel => 'Why is there a gap?';
+
+  @override
+  String get materialReasonNotYours =>
+      'The engineer, store keeper, QS or project manager writes the reason.';
+
+  @override
+  String get materialReasonSaved => 'Reason saved.';
+
+  @override
+  String get materialReasonSend => 'Save reason';
+
+  @override
+  String get materialReasonTooLong => 'Keep the reason to 2000 characters.';
+
+  @override
+  String get materialReasonWrite => 'Write the reason';
 
   @override
   String get materialReceived => 'Material received';
@@ -2605,22 +2853,100 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialReceivedShort => 'Received';
 
   @override
+  String get materialRemarks => 'Remarks';
+
+  @override
+  String get materialReorderHeading => 'Below reorder level';
+
+  @override
+  String materialReorderLine(String balance, String level, String unit) {
+    return '$balance of $level $unit';
+  }
+
+  @override
+  String materialReversedNote(String name, String date, String reason) {
+    return 'Reversed by $name on $date: $reason';
+  }
+
+  @override
   String get materialSearch => 'Search material';
 
   @override
   String get materialSearchNone => 'Nothing matches';
 
   @override
+  String get materialSendFailed => 'Could not save. Try again.';
+
+  @override
   String get materialShort => 'Short delivered';
 
   @override
+  String get materialShortAsk => 'Delivered short?';
+
+  @override
+  String get materialShortAtGate => 'Found at the gate';
+
+  @override
+  String materialShortBy(String unit) {
+    return 'Short by ($unit)';
+  }
+
+  @override
+  String get materialShortFoundOn => 'Found on';
+
+  @override
+  String get materialShortHeading => 'Short deliveries';
+
+  @override
+  String get materialShortHint =>
+      'This takes the quantity out of stock and counts against the supplier.';
+
+  @override
+  String get materialShortLater => 'Found later';
+
+  @override
+  String get materialShortNote => 'Note';
+
+  @override
+  String get materialShortNoteTooLong => 'Keep the note to 500 characters.';
+
+  @override
+  String get materialShortQtyInvalid =>
+      'Enter a quantity above 0 with up to 3 decimals.';
+
+  @override
+  String get materialShortSaved =>
+      'Short delivery recorded against the supplier.';
+
+  @override
+  String get materialShortSend => 'Record short delivery';
+
+  @override
   String get materialShouldBe => 'Should be in stock';
+
+  @override
+  String get materialShowMore => 'Show more';
 
   @override
   String get materialStage => 'Stage (optional)';
 
   @override
   String get materialStageHint => 'Such as slab 3';
+
+  @override
+  String get materialStatusNoNorm => 'No norm set';
+
+  @override
+  String get materialStatusNoWork => 'Issued, no work yet';
+
+  @override
+  String get materialStatusOk => 'Within norm';
+
+  @override
+  String get materialStatusUnder => 'Under norm';
+
+  @override
+  String get materialStatusWastage => 'Wastage';
 
   @override
   String get materialStore => 'Store';
@@ -2670,13 +2996,73 @@ class AppLocalizationsEn extends AppLocalizations {
   String get materialUnaccounted => 'Unaccounted';
 
   @override
+  String get materialUnplannedHeading => 'Issued without a BOQ line';
+
+  @override
   String get materialUsed => 'Material used';
 
   @override
   String get materialUsedShort => 'Used';
 
   @override
+  String get materialVehicle => 'Vehicle no.';
+
+  @override
   String get materialVehicleNo => 'Vehicle no. (optional)';
+
+  @override
+  String get materialViewPhoto => 'View challan photo';
+
+  @override
+  String get materialWastageBasis => 'Work done from';
+
+  @override
+  String get materialWastageEmptyMessage =>
+      'Norms are set on the website. Issue material against BOQ lines to see it here.';
+
+  @override
+  String get materialWastageEmptyTitle => 'Nothing to reconcile yet';
+
+  @override
+  String get materialWastageHint =>
+      'Allowed = work done × norm, plus the norm\'s wastage %. Norms are set on the website.';
+
+  @override
+  String get materialWastageLoadFailed =>
+      'Could not load the wastage. Pull down to try again.';
+
+  @override
+  String get materialWastageOffline =>
+      'Connect to the internet to see wastage against the BOQ.';
+
+  @override
+  String materialWastageOverCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lines over their allowance',
+      one: '1 line over its allowance',
+      zero: 'No line over its allowance',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get materialWastageRefused =>
+      'Wastage against the BOQ is not open to your role.';
+
+  @override
+  String get materialWastageTile => 'Wastage against BOQ norms';
+
+  @override
+  String get materialWastageTileHint =>
+      'Material used on each BOQ line against what its norm allows';
+
+  @override
+  String get materialWastageTitle => 'Wastage against BOQ';
+
+  @override
+  String get materialWorkDone => 'Work done';
 
   @override
   String get measurementAdd => 'Add';

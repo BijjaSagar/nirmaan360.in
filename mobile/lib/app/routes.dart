@@ -164,4 +164,14 @@ abstract final class Routes {
 
   /// True for the portal's own pages, and no other path.
   static bool isPortal(String path) => path == portal || path.startsWith('$portal/');
+
+  /// One delivery challan in full, online. Query: `id`.
+  static const materialChallan = '/material/challan';
+  static String materialChallanAt(int challanId) => '$materialChallan?id=$challanId';
+
+  /// Challans waiting for their bill. Needs `material_control.bills`.
+  static const materialBills = '/material/bills';
+
+  /// Wastage against the BOQ norms, read only. Needs `procurement.view` on a plan with `procurement`.
+  static const materialWastage = '/material/wastage';
 }

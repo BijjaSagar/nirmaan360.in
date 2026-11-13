@@ -93,19 +93,25 @@ class SupplierOption {
 }
 
 class MaterialFlag {
-  const MaterialFlag({required this.type, required this.message, this.open = true, this.reason});
+  const MaterialFlag({required this.type, required this.message, this.open = true, this.reason, this.reasonBy, this.reasonAt});
 
   factory MaterialFlag.fromJson(Map<String, dynamic> json) => MaterialFlag(
     type: _text(json['type']) ?? '',
     message: _text(json['message']) ?? '',
     open: json['open'] != false,
     reason: _text(json['reason']),
+    reasonBy: _text(json['reason_by']),
+    reasonAt: _text(json['reason_at']),
   );
 
   final String type;
   final String message;
   final bool open;
+
+  /// The written answer, while it still covers the gap. A gap that grew opens again with none.
   final String? reason;
+  final String? reasonBy;
+  final String? reasonAt;
 }
 
 /// One material on the check: what the BOQ expects against what really moved.
@@ -179,22 +185,36 @@ class MaterialDelivery {
   const MaterialDelivery({
     required this.materialId,
     required this.qty,
+    this.id,
     this.unitId,
     this.supplier,
     this.challanNo,
     this.date,
+    this.billPending = false,
+    this.reversed = false,
     this.notSent = false,
   });
 
   factory MaterialDelivery.fromJson(Map<String, dynamic> json) => MaterialDelivery(
+    id: _intOrNull(json['id']),
     materialId: _int(json['material_id']),
     qty: _qty(json['qty']),
     unitId: _intOrNull(json['unit_id']),
     supplier: _text(json['supplier']),
     challanNo: _text(json['challan_no']),
     date: _text(json['challan_date']),
+    billPending: _text(json['bill_status']) == 'pending' && _text(json['status']) != 'REVERSED',
+    reversed: _text(json['status']) == 'REVERSED',
   );
 
+  /// The server's id, so the challan can be opened in full. Null while it waits to send.
+  final int? id;
+
+  /// Taken into stock, and the supplier's bill not attached yet.
+  final bool billPending;
+
+  /// Undone on the website.
+  final bool reversed;
   final int materialId;
   final Qty qty;
   final int? unitId;

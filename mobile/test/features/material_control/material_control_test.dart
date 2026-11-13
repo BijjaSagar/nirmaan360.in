@@ -315,7 +315,8 @@ void main() {
       await tap(tester, k('material-row-5'));
       expect(find.text('Should be in stock'), findsOneWidget);
       expect(find.textContaining('Where did it go?'), findsOneWidget);
-      expect(find.text('Write the reason on the website.'), findsOneWidget);
+      // No material_control.reason here: it says who writes the reason, and offers no button.
+      expect(find.text('The engineer, store keeper, QS or project manager writes the reason.'), findsOneWidget);
       expect(find.text('Count stock'), findsOneWidget);
     });
 

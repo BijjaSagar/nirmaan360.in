@@ -282,7 +282,7 @@ Needs the `site_control` plan feature, and `material_control.view`, `.challan`, 
 - A delivery, a use and a count are outbox rows posted to `POST /projects/{project}/material-control/challans`, `/consumption` and `/stock-checks` with a `client_uuid`. A repeat returns the first row and moves no stock. A challan photo goes with the fields as multipart field `photo`.
 - Screens lay rows waiting to send over the last answer, converting to the base unit with the material's factors.
 - A use above the stock is a 422 on `stock` and goes to the Sync Center. The form warns first but does not block, because the phone's figure may be out of date.
-- Answering a flag needs a written reason on the website. The API has no route for it.
+- A flag is answered with a written reason from the Material page, online. See "Closing the material loop" at the end of this file.
 
 ### Site progress and stages
 
@@ -687,3 +687,81 @@ Warm and soft: a light warm page, large white rounded cards, big confident figur
 Outdoor contrast: body text at least 7:1, labels at least 4.5:1. Text on orange is dark ink. The deep oranges are below 4.5:1 on light surfaces, so small orange text and icons use `laterite` (`#8F4622`), a darker cut of `#BC5E2F`. Primary actions sit in the lower half of the screen for one-handed use, and every icon that stands for an action has a text label.
 
 Motion must mean something and stay cheap on a low-end Android phone: no blurs, no backdrop filters, no animated opacity on large subtrees, `RepaintBoundary` around anything that animates often, transforms over layout.
+
+## 5. Closing the material loop (online only)
+
+Added after section 4 so branches adding to this file do not collide; it belongs with "Material control" in section 2. Routes are in `routes/api_modules/material_control.php` and `procurement.php`, the app in `lib/features/material_control` (`material_loop_*`). Nothing here is kept on the phone or waits in the outbox: a reason is written by someone standing on site, a bill is a photo in their hand, and a short is checked against the challan as it is now. Each write that creates a record carries a `client_uuid` the screen keeps until it is stored, so a retry after a lost reply returns the first record (201 the first time, 200 after). The server looks the `client_uuid` up before the field rules, and one used on another project or challan is a 422 on `client_uuid`.
+
+| Route | Needs | What it does |
+| --- | --- | --- |
+| `POST /projects/{project}/material-control/reasons` | `material_control.reason` (pm, qs, engineer, store) | Answers a flag of the check |
+| `GET /delivery-challans/{id}` | `material_control.view` | One challan in full |
+| `POST /delivery-challans/{id}/bill` | `material_control.bills` (pm, engineer, accounts) | Attaches the supplier's bill |
+| `GET /delivery-challans/{id}/bill` | `material_control.view` and `money.view` | The bill file |
+| `POST /delivery-challans/{id}/short` | `material_control.challan` (pm, engineer, store) | A shortage found after the delivery was posted |
+| `GET /projects/{project}/material-control/bills` | `material_control.bills` | Challans waiting for a bill, or with `?show=attached` those that have one |
+| `GET /projects/{project}/material-reconciliation` | `procurement.view` and the `procurement` plan feature | Wastage against the BOQ norms, read only |
+
+The first six also need the `site_control` plan feature. `procurement.view` is now in the `can` list the app is sent; an older server does not send it and the app then hides the wastage page.
+
+### A reason on a flag
+
+`{material_id, flag_type, reason, client_uuid}`. `flag_type` is one of `over_used`, `under_used`, `unaccounted`, `over_received`, `short_delivery`; `reason` is at most 2000 characters. It is `MaterialCheckService::addReason`, the same as the web form: the gap is stored as it stood (`gap_qty`), so the flag opens again, with no reason, once the gap grows past it. A flag that is no longer on the check is a 422 on `flag_type` ("This gap has since closed, so no reason is needed."). The reply is `{data: {id, client_uuid, project_id, material_id, flag_type, gap_qty, reason, created_by, created_at}}`.
+
+The check's flags already carry `open`, `reason`, `reason_by` and `reason_at`. The Material page shows a "Write the reason" button on each open flag to someone with `material_control.reason`, and to everyone else who writes it. An answered flag shows its reason and who gave it. After a reason is stored the page is read again.
+
+### A challan in full
+
+`GET /delivery-challans/{id}` returns the list row (`id`, `number`, `client_uuid`, `project_id`, `party_id`, `supplier`, `store_id`, `material_id`, `unit_id`, `qty`, `base_qty`, `challan_qty`, `challan_no`, `challan_date`, `vehicle_no`, `has_photo`, `bill_status`, `status`) and adds `material`, `unit`, `store`, `remarks`, `created_by`, `created_at`, `bill_attached_by`, `bill_attached_at`, `reversed_by`, `reversed_at`, `reversal_reason`, `supplier_warning` and `shorts`:
+
+```json
+{"id": 4, "client_uuid": "9a0d...", "delivery_challan_id": 12, "project_id": 1, "material_id": 5, "unit_id": 10,
+ "short_qty": "2.000", "short_base_qty": "2.000", "found_on": "2026-11-09", "note": "Counted at unloading.",
+ "at_entry": false, "status": "POSTED", "created_by": "Sachin More"}
+```
+
+`at_entry` is true for a shortage counted at the gate (the challan said more than was received, so it never entered stock) and false for one reported later (stock was corrected). `bill_status` is `pending` or `attached`. **Only with `money.view`** the challan also carries `bill_no`, `bill_date`, `bill_amount`, `vendor_bill_id` and `has_bill_file`; without it those keys are absent, and the app draws nothing for them. `remarks`, `reversal_reason` and a short's `note` are words a person typed: when one names a rupee figure (`MoneyMention`, the same detector announcements use) it comes as `null` to anyone without `money.view`, and the app shows no row for it. The photo is `GET /delivery-challans/{id}/photo` as before. The Challans tab of the Material page opens a challan the server holds; one still waiting to send has no id and does not open.
+
+### The bill
+
+`POST /delivery-challans/{id}/bill` is `multipart/form-data` with the file as `bill` (jpg, jpeg, png, webp or pdf, up to 10 MB). From `money.view` it also reads `bill_no` (60), `bill_date` (not after today), `bill_amount` (above 0, two decimals) and `vendor_bill_id`; from anyone else those fields are ignored, not refused. A file, or for `money.view` a `bill_no` or `vendor_bill_id`, must be sent, else 422 on `bill`. A reversed challan is a 422 on `status`. The reply is the challan in full. Attaching again replaces the file, so a retried upload leaves one bill behind; it creates no record and takes no `client_uuid`.
+
+The app sends a photo taken with the camera or chosen from the gallery. **It cannot pick a PDF** (there is no file picker in the app); a PDF bill is attached on the website. A bill that is a PDF opens on the website too: the app shows a photo and says so for anything else. The bill file route answers 403 without `money.view`, and the app offers "View bill" only when `has_bill_file` came.
+
+### A short found later
+
+`{short_qty, found_on, note, client_uuid}`: `short_qty` in the challan's unit, above 0 with three decimals; `found_on` not after today; `note` up to 500 characters. It is `ShortDeliveryService::report`: the quantity leaves stock as a negative receipt, the supplier's record counts it, and the people who can write the reason are pushed. Shortages reported later cannot add up to more than the challan (422 on `short_qty`); a reversed challan is a 422 on `status`. The reply is `{data: short, challan: the challan in full}`. Reversing a short or a challan stays on the website (`material_control.adjust`).
+
+### Bills waiting
+
+`GET /projects/{project}/material-control/bills` lists posted challans, newest first, 25 a page (`?page=`):
+
+```json
+{"data": [{"id": 12, "number": "DC-2026-27-0012", "supplier": "Gupta Traders", "material": "Cement", "unit": "bag",
+           "qty": "200.000", "challan_no": "C-1", "challan_date": "2026-11-01", "bill_status": "pending",
+           "days_waiting": 9, "overdue": true, "...": "the other list keys"}],
+ "meta": {"show": "pending", "pending_count": 2, "alert_after_days": 7, "current_page": 1, "last_page": 1, "total": 2}}
+```
+
+`days_waiting` counts from the challan date and is null once a bill is attached. `overdue` is true from `alert_after_days` on, the same line the site alert "Challans without bills" uses (`modules.site_alerts.challan_bill_days`). Bill figures follow the same `money.view` rule as the challan. The Material page links to the list for `material_control.bills`; a challan on the Challans tab is marked "Bill pending" only for those people.
+
+### Wastage against the BOQ norms
+
+`GET /projects/{project}/material-reconciliation?basis=measured|approved|dpr` (default `measured`; anything else is read as `measured`) is the web's reconciliation page, read from `ReconciliationService`. Quantities only, in each material's base unit, so nothing in it depends on `money.view`.
+
+```json
+{"data": {
+  "basis": "measured", "bases": ["measured", "approved", "dpr"],
+  "counts": {"wastage": 1, "under": 0, "no_work": 0, "no_norm": 1, "ok": 3},
+  "rows": [{"boq_item_id": 11, "boq_code": "2.1", "boq_description": "RCC M25 in slab", "boq_unit": "cum", "executed": "50.000",
+            "material_id": 5, "material_name": "Cement", "unit": "bag", "actual": "450.000", "norm": "8.4000", "wastage_pct": "2.00",
+            "theoretical": "420.000", "allowed": "428.400", "variance": "30.000", "variance_pct": "7.14", "status": "wastage"}],
+  "unallocated": [{"material_id": 5, "material_name": "Cement", "unit": "bag", "activity": "Site office plinth", "actual": "40.000"}],
+  "below_reorder": [{"store_id": 1, "store": "Site store", "material_id": 5, "material_name": "Cement", "unit": "bag",
+                     "balance": "35.000", "reorder_level": "100.000", "shortfall": "65.000"}]
+}}
+```
+
+`theoretical` = work done × `norm`; `allowed` = `theoretical` × (1 + `wastage_pct` / 100); `variance` = `actual` − `theoretical`. `status` is `wastage` (used more than allowed), `under` (less than theoretical), `ok`, `no_work` (issued, no work done yet on this basis) or `no_norm` (issued to the line with no norm, so the four figures are null). The app lists lines over their allowance first and shows how much is beyond it; a status it does not know reads as within the norm. Norms are entered on the website (`procurement.masters`).
+
+The check's `over_used` flag and this page are two views of the same use. `fix/web-money-rules` makes that flag fire only beyond the same allowance; neither the flag's shape nor this route's changes with it.
