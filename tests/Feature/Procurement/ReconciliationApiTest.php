@@ -108,6 +108,32 @@ class ReconciliationApiTest extends TestCase
         }
     }
 
+    public function test_the_phone_and_the_web_page_draw_the_wastage_line_in_the_same_place(): void
+    {
+        // A second line used within its allowance: 10 cum at 8.4 bags is 84 theoretical, 85.68 allowed. 85 issued
+        // is over the norm but inside the 2% (WastageAllowance), so it is "ok" on the web page and on the phone.
+        $this->workedExample();
+        $within = $this->makeBoqItem($this->project, '10.000', '7313.19');
+        $this->draftEntry($this->project, $within, $this->owner, ['breadth' => '1']);
+        app(MaterialCatalogService::class)->saveNorm($this->project, [
+            'boq_item_id' => $within->id, 'material_id' => $this->bagged->id, 'qty_per_unit' => '8.4', 'wastage_pct' => '2',
+        ]);
+        $this->issue($this->bagged, '85', ['boq_item_id' => $within->id, 'activity' => null]);
+        $engineer = $this->signIn('engineer');
+        $this->withoutVite();
+
+        foreach (array_keys(ReconciliationService::BASES) as $basis) {
+            $web = $this->actingAs($engineer)->get(route('procurement.reconciliation.index', [$this->project, 'basis' => $basis]))->assertOk();
+            $phone = $this->getJson($this->url($basis))->assertOk()->json('data');
+
+            $this->assertSame($web->viewData('rows'), $phone['rows'], "basis {$basis}");
+            $this->assertCount(count($web->viewData('wastage')), array_filter($phone['rows'], fn (array $row) => $row['status'] === 'wastage'));
+        }
+
+        $row = collect($this->getJson($this->url())->json('data.rows'))->firstWhere('boq_item_id', $within->id);
+        $this->assertSame(['84.000', '85.680', '85.000', 'ok'], [$row['theoretical'], $row['allowed'], $row['actual'], $row['status']]);
+    }
+
     public function test_issues_with_no_boq_line_lines_with_no_norm_and_stock_below_reorder_are_listed(): void
     {
         $this->stockIn($this->cement, '500');

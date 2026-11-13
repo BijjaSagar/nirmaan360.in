@@ -133,6 +133,33 @@ class ContractorPaymentOverrideApiTest extends TestCase
         $this->decide($payment, $this->manager, ['action' => 'return', 'remark' => 'Wait for the slab to finish'])->assertOk()->assertJsonPath('data.status', 'RETURNED');
     }
 
+    public function test_allowed_is_user_is_owner_and_not_the_role_column_or_the_permission_list(): void
+    {
+        // As ahead(), but the request waits at the owner's own level, so a custom role whose role column says
+        // "owner" may act on it too.
+        $order = $this->contract();
+        $this->workDone($this->item, '70');
+        $this->paid($order, '60000');
+        ApprovalRule::create(['organization_id' => $this->organization->id, 'doc_type' => 'contractor', 'levels' => ['owner'], 'active' => true]);
+        $payment = $this->raise($order, '20000');
+        $this->assertSame(['owner'], $payment->currentApproval->levels);
+
+        $role = CustomRole::withoutGlobalScopes()->create(['organization_id' => $this->organization->id, 'name' => 'Partner', 'permissions' => ['*']]);
+        $partner = $this->member($this->organization, 'owner');
+        $partner->forceFill(['custom_role_id' => $role->id])->save();
+        $partner->refresh();
+        $this->assertSame('owner', $partner->role);
+        $this->assertTrue($partner->can('contractor.approve'));
+        $this->assertFalse($partner->isOwner());
+
+        $this->assertSame(['needed' => true, 'allowed' => false, 'message' => self::BLOCKED], $this->document($partner)['owner_override']);
+        $this->refused($this->decide($payment, $partner, ['action' => 'approve', 'override_reason' => self::REASON]), self::BLOCKED);
+        $this->assertSame('IN_REVIEW', $payment->refresh()->status);
+        $this->assertNull($payment->override_reason);
+
+        $this->assertSame(['needed' => true, 'allowed' => true, 'message' => self::BLOCKED], $this->document($this->owner)['owner_override']);
+    }
+
     public function test_the_owner_overrides_from_the_phone_with_a_written_reason_kept_and_audited(): void
     {
         $payment = $this->ahead();

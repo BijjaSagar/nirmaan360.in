@@ -341,3 +341,15 @@ Seven routes that let the field app answer a material flag, attach a bill, repor
 | `GET /projects/{project}/material-reconciliation` | `procurement.view` | `ReconciliationService`, read only |
 
 The first six sit behind `feature:site_control`, the last behind `feature:procurement`. A reason and a short need a `client_uuid` and answer a repeat with the first row (201, then 200); the lookup runs before the field rules, and a `client_uuid` from another project or challan is a 422. Attaching a bill creates no record: it replaces the file and takes no `client_uuid`. Bill number, date, amount and `has_bill_file` leave the server only with `money.view`, and are read from a request only with it. A remark, reversal reason or short-delivery note that names a rupee figure is sent as `null` without `money.view`. The reconciliation carries quantities only. `procurement.view` is now one of the `can` keys in `GET /me`.
+
+## Approvals: a contractor payment ahead of the work
+
+`GET /approvals`, the pull's `approvals` and the reply of `POST /approvals/{id}/act` share one presenter. For `doc_type` `contractor` the `document` carries two additive keys, always present:
+
+- `owner_override`: `{needed: bool, allowed: bool, message: string|null}`, from `PaymentAheadGuard::assess()` while the approval is `IN_REVIEW`.
+  - Blocked at the final level: `needed: true`, `allowed: User::isOwner()` (built-in owner role, no custom role), `message: PaymentAheadGuard::blockedMessage(figures, money.view)`, which names no figure without `money.view`.
+  - Blocked before the final level: `needed: false`, `allowed: false`, `message` is the warning that the last approval will need the owner. Nothing is refused at this level.
+  - Not blocked, or no longer in review: `{needed: false, allowed: false, message: null}`.
+- `check`: the guard's figures `{contract_value, work_done, work_pct, paid, paid_pct, paid_after, paid_pct_after, gap_after, limit_pct}` (decimal strings) and `blocked` (bool). `null` without `money.view`, and `null` once the approval is decided.
+
+`POST /approvals/{id}/act` takes an optional `override_reason` (string, at most 1000 characters) and passes it to `ApprovalService::act()` as `['override_reason' => ...]`, the same call the website makes. A final approve the guard blocks answers 422 with `errors.override_reason`: for anyone but the owner the `blockedMessage`; for the owner without a reason of at least 20 characters and 4 words, "Write why this payment may go ahead of the work done, in at least one full sentence." A request without the field behaves as before. A reason sent when none is needed is not stored.
