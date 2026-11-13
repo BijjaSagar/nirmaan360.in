@@ -342,6 +342,23 @@ class OwnerUpdateService
     }
 
     /**
+     * Why no link can be made now for an approved update, or null when one can. This runs the very
+     * check a share runs, so the page never offers a link the button would refuse: the records must
+     * still give the kept facts, and a payment position must still stand on a quotation no later
+     * issued revision has replaced.
+     */
+    public function shareRefusal(OwnerUpdate $update): ?string
+    {
+        try {
+            $this->checked($update, __('The records behind this update have changed since it was approved. It stays as it was approved, and a new link cannot be made for it. Prepare a new update for the week.'));
+        } catch (ValidationException $e) {
+            return $e->errors()['facts'][0] ?? __('The records behind this update have changed since it was approved. Prepare a new update for the week.');
+        }
+
+        return null;
+    }
+
+    /**
      * An update that states a payment position is nothing a person without money.view may open or change.
      *
      * @throws AuthorizationException

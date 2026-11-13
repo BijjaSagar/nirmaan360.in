@@ -22,12 +22,13 @@
         <a href="{{ route('owner-updates.index', $project) }}" class="btn btn-ghost">{{ __('All updates') }}</a>
     </x-page-header>
 
-    @if (! $current)
+    {{-- A draft is compared with its records. An approved update gets the reason a share would give: records changed, or its quotation replaced. --}}
+    @if (! $current || $shareRefusal !== null)
         <div class="mb-5 rounded-[3px] border border-haldi bg-haldi/10 px-3 py-2 text-sm" role="status">
             @if ($draft)
                 {{ __('The records have changed since this draft was prepared. Save the draft to read them again.') }}
             @else
-                {{ __('The records behind this update have changed since it was approved. It stays as it was approved, and a new link cannot be made for it. Prepare a new update for the week.') }}
+                {{ $shareRefusal }}
             @endif
         </div>
     @endif
@@ -199,13 +200,13 @@
                             <div class="flex flex-wrap gap-2">
                                 <a href="{{ $whatsappUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">{{ __('Send on WhatsApp') }}</a>
                                 <form method="POST" action="{{ route('owner-updates.share.revoke', $update) }}" onsubmit="return confirm(@js(__('Withdraw the link? The client will no longer be able to open it.')))">@csrf<button class="btn btn-danger">{{ __('Withdraw the link') }}</button></form>
-                                @if ($current)
+                                @if ($shareRefusal === null)
                                     <form method="POST" action="{{ route('owner-updates.share', $update) }}" onsubmit="return confirm(@js(__('Make a new link? The link you sent earlier will stop working.')))">@csrf<button class="btn btn-ghost">{{ __('Make a new link') }}</button></form>
                                 @endif
                             </div>
-                            @unless ($current)
+                            @if ($shareRefusal !== null)
                                 @include('modules.owner_pack.updates._prepare-again', ['update' => $update, 'project' => $project])
-                            @endunless
+                            @endif
                         @endif
                     @else
                         <p>
@@ -217,11 +218,11 @@
                                 {{ __('The link has passed its date. It no longer opens.') }}
                             @endif
                         </p>
-                        @if ($canApprove && $current)
+                        @if ($canApprove && $shareRefusal === null)
                             <form method="POST" action="{{ route('owner-updates.share', $update) }}">@csrf<button class="btn btn-primary">{{ __('Make a link') }}</button></form>
                             <p class="hint">{{ trans_choice('The link stays open for :count day and you send it yourself.|The link stays open for :count days and you send it yourself.', config('modules.owner_pack.share_link_days'), ['count' => config('modules.owner_pack.share_link_days')]) }}</p>
                         @elseif ($canApprove)
-                            {{-- The records changed since approval, so a link would be refused: the way on is a new update for the week. --}}
+                            {{-- A share would be refused (records changed, or the quotation replaced): the way on is a new update for the week. --}}
                             @include('modules.owner_pack.updates._prepare-again', ['update' => $update, 'project' => $project])
                         @endif
                     @endif

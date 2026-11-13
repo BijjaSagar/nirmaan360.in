@@ -510,6 +510,51 @@ class OwnerUpdateHttpTest extends TestCase
         $this->get(route('owner-updates.show', $draft))->assertOk()->assertDontSee('The records have changed since this draft was prepared.')->assertSee('Approved daily reports of that week: ', false);
     }
 
+    public function test_once_its_quotation_is_replaced_the_page_offers_a_new_update_and_no_link(): void
+    {
+        $this->week();
+        $quotation = $this->quotationWithAStageReached();
+        $money = ['show_money' => true, 'quotation_id' => $quotation->id, 'received_amount' => '40000'];
+        $approved = $this->approvedUpdate($this->draftUpdate($money));
+        [$shared] = $this->sharedUpdate($this->approvedUpdate($this->draftUpdate($money)));
+        $this->actingAs($this->manager);
+        $again = route('owner-updates.create', [$this->project, 'week_start' => self::WEEK, 'language' => 'en']);
+        $replaced = 'The quotation this update refers to was replaced by revision 2. Prepare a new update on that revision.';
+
+        // While the next revision is only a draft, revision 1 stands and a link can be made.
+        $revision = $this->quotations()->revise($quotation, $this->manager);
+        $this->get(route('owner-updates.show', $approved))->assertOk()->assertSee('Make a link</button>', false)->assertDontSee($replaced)->assertDontSee($again);
+        $this->get(route('owner-updates.show', $shared))->assertOk()->assertSee('Make a new link</button>', false)->assertDontSee($again);
+
+        $revision = $this->issued($revision);
+
+        // Revision 1 is still issued and its stages are as they were, so the records still give the kept facts.
+        // A share is refused all the same, and the page says why instead of offering the button.
+        $this->assertTrue($this->updates()->isCurrent($approved->fresh()));
+        $this->get(route('owner-updates.show', $approved))->assertOk()
+            ->assertSee($replaced)
+            ->assertDontSee('Make a link</button>', false)
+            ->assertSee('Prepare a new update for this week')
+            ->assertSee($again);
+        $this->get(route('owner-updates.show', $shared))->assertOk()
+            ->assertSee($replaced)
+            ->assertDontSee('Make a new link</button>', false)
+            ->assertSee('Withdraw the link')
+            ->assertSee($again);
+
+        // The button the page no longer shows would have been refused with the same reason, and nothing changed.
+        $token = $shared->fresh()->share_token;
+        $this->post(route('owner-updates.share', $approved))->assertSessionHasErrors(['facts' => $replaced]);
+        $this->post(route('owner-updates.share', $shared))->assertSessionHasErrors(['facts' => $replaced]);
+        $this->assertNull($approved->fresh()->share_token);
+        $this->assertSame($token, $shared->fresh()->share_token);
+
+        // The new update for the week is offered on the revision that stands.
+        $this->get($again)->assertOk()
+            ->assertSee('<option value="'.$revision->id.'" selected>', false)
+            ->assertDontSee('<option value="'.$quotation->id.'"', false);
+    }
+
     public function test_changing_the_week_on_the_page_keeps_the_ticked_photos_of_the_new_week_and_drops_the_rest(): void
     {
         ['photos' => [$footing, , $brickwork]] = $this->week();

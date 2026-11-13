@@ -75,7 +75,10 @@ class OwnerUpdateController extends Controller
             'textFingerprint' => $note === null ? null : ShownText::fingerprint($note),
             'work' => $document->workLines($sheet, app()->getLocale()),
             'photos' => $document->photos($sheet, app()->getLocale()),
-            'current' => $this->service->isCurrent($update),
+            // A draft is compared with the records, which a save reads again. An approved update is put
+            // through the whole check a share runs, so the page offers a link only when one can be made.
+            'current' => ! $draft || $this->service->isCurrent($update),
+            'shareRefusal' => $draft ? null : $this->service->shareRefusal($update),
             'weekPhotos' => $draft ? $this->service->weekPhotos($update->organization_id, $update->project_id, $from, $to) : collect(),
             'quotations' => $draft && Money::visible($request->user()) ? $this->service->standingQuotations($update->organization_id, $update->project_id) : collect(),
             'shareUrl' => $shares->url($update),
