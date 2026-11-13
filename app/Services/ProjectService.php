@@ -49,7 +49,7 @@ class ProjectService
             'retention_pct' => ['required', 'numeric', 'between:0,100'],
             'tds_pct' => ['required', 'numeric', 'between:0,100'],
             'gst_pct' => ['required', 'numeric', 'between:0,100'],
-            'advance_amount' => ['required', 'numeric', 'min:0'],
+            'advance_amount' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
             'advance_recovery_pct' => ['required', 'numeric', 'between:0,100'],
             'measurement_tolerance_pct' => ['required', 'numeric', 'between:0,100'],
             'deduction_basis' => ['required', Rule::in(['gross', 'running'])],

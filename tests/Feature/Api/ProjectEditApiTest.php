@@ -173,6 +173,10 @@ class ProjectEditApiTest extends ApiTestCase
         $this->edit(['deduction_order' => 'tds,tds'])->assertUnprocessable()->assertJsonValidationErrors('deduction_order');
         $this->edit(['contract_value' => '-1'])->assertUnprocessable()->assertJsonValidationErrors('contract_value');
 
+        // More than decimal(15,2) holds is a field error, not a database overflow.
+        $this->edit(['advance_amount' => '100000000000000'])->assertUnprocessable()->assertJsonValidationErrors('advance_amount');
+        $this->edit(['advance_amount' => '9999999999999'])->assertOk()->assertJsonPath('data.advance_amount', '9999999999999.00');
+
         // Its own code is not a clash.
         $this->edit(['code' => 'KT-B'])->assertOk();
     }
