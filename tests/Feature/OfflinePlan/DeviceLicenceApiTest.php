@@ -67,7 +67,8 @@ class DeviceLicenceApiTest extends ApiTestCase
             ->assertJsonPath('code', 'device_limit')
             ->assertJsonPath('max_devices', 1)
             ->assertJsonPath('active_devices', 1)
-            ->assertJsonPath('manage_url', route('offline.devices.index'));
+            ->assertJsonPath('manage_url', route('offline.devices.phones'))
+            ->assertJsonPath('message', 'Your plan allows 1 phone(s) and every slot is taken. Free a phone at '.route('offline.devices.phones').' first.');
         $this->assertSame(1, DeviceLicence::count());
 
         app(DeviceLicenceService::class)->free(DeviceLicence::first(), $owner);
@@ -77,7 +78,27 @@ class DeviceLicenceApiTest extends ApiTestCase
 
         // The freed phone is told the next time it comes online.
         $this->refreshPhone('phone-0001')->assertStatus(410)->assertJsonPath('code', 'licence_revoked')
-            ->assertJsonPath('manage_url', route('offline.devices.index'));
+            ->assertJsonPath('manage_url', route('offline.devices.phones'));
+    }
+
+    /**
+     * The app shows manage_url for freeing a phone, so it must not land on the devices page, which lists plan
+     * prices and an upgrade button (App Store guideline 3.1.1). The page it lands on lists the phones only.
+     */
+    public function test_the_address_the_app_is_given_lists_the_phones_and_no_plan_or_price(): void
+    {
+        $this->withoutVite();
+        $owner = $this->member($this->offlineTenant(), 'owner');
+        $this->signIn($owner);
+
+        $this->activatePhone('phone-0001', 'Ravi Pixel')->assertCreated();
+        $url = $this->activatePhone('phone-0002', 'Spare Samsung')->assertStatus(409)->json('manage_url');
+
+        $this->assertNotSame(route('offline.devices.index'), $url);
+        $this->actingAs($owner)->get($url)->assertOk()
+            ->assertSee('Ravi Pixel')->assertSee('Free phone')->assertSee('1 of 1 phone slots in use')
+            ->assertDontSee('Upgrade')->assertDontSee('Online plans')->assertDontSee('Want a server copy and a team?')
+            ->assertDontSee('/month')->assertDontSee('₹');
     }
 
     public function test_the_limit_set_in_admin_is_the_limit_that_applies(): void

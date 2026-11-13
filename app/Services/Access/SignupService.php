@@ -48,8 +48,8 @@ class SignupService
     /**
      * The plan for a company started from the field app: free, active and with no trial, so nothing it was
      * given in the app ever needs paying for outside the app (App Store guideline 3.1.1). Null when the free
-     * plan has been renamed, taken off sale or given a price: the app's sign-up is then refused rather than
-     * started on a paid plan or a trial.
+     * plan has been renamed, taken off sale or given a price: the app's sign-up is then refused, with a 422 on
+     * errors.signup, rather than started on a paid plan or a trial.
      */
     public function appPlan(): ?string
     {
@@ -99,7 +99,9 @@ class SignupService
         $plan = $method === 'app' ? $this->appPlan() : ($data['plan'] ?? $this->defaultPlan());
 
         if ($plan === null) {
-            throw ValidationException::withMessages(['company' => __('A new company cannot be started from the app right now. Try again later.')]);
+            // Not on a form field: the app marks any field named in errors as wrong, so the person would edit a
+            // company name that was fine. A key the app does not know makes it say "try again in a few minutes".
+            throw ValidationException::withMessages(['signup' => __('A new company cannot be started from the app right now. Try again later.')]);
         }
 
         $isFree = $method === 'app' || $plan === 'free';

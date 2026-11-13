@@ -40,6 +40,7 @@
     "On an online plan the phone uploads what it holds the next time it has internet, and nothing is entered twice.": "ऑनलाइन प्लान पर फ़ोन में जो कुछ है वह अगली बार इंटरनेट मिलते ही अपलोड हो जाता है, और कुछ भी दो बार दर्ज नहीं होता।",
     "Upgrade in Billing": "बिलिंग में अपग्रेड करें",
     "Ask your company owner to upgrade from Billing.": "अपने कंपनी मालिक से बिलिंग से अपग्रेड करने को कहें।",
+    "Ask your company owner to free a phone on this page.": "अपने कंपनी मालिक से इस पेज पर एक फ़ोन खाली करने को कहें।",
     "Licensed phones": "लाइसेंस वाले फ़ोन",
     ":count phone in use|:count phones in use": ":count फ़ोन उपयोग में|:count फ़ोन उपयोग में",
     ":used of :max phone slots in use": ":max में से :used फ़ोन स्लॉट उपयोग में",

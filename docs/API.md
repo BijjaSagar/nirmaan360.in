@@ -27,7 +27,7 @@ Starts a new company with the person as its owner, and signs them in on this dev
 
 - The company starts on the `free` plan, active, with no trial, so nothing started in the app needs paying for outside it (App Store guideline 3.1.1). The website's sign-up still starts a trial of the default plan.
 - The app does not choose a plan: a `plan` in the body is ignored.
-- If the free plan has been renamed, taken off sale or given a price, the sign-up answers 422 on `errors.company` and no company is made. It never falls back to a paid plan or a trial.
+- If the free plan has been renamed, taken off sale or given a price, the sign-up answers 422 on `errors.signup` and no company is made. It never falls back to a paid plan or a trial. `signup` is not a form field: treat it as a problem on the server to try again later, not as a mistake in what the person typed.
 - The reply carries no plan, trial or price.
 
 Errors:
@@ -40,7 +40,7 @@ The same email is never accepted twice. If a reply is lost and the app sends the
 
 ## Plan refusals
 
-A reply under `/api/v1` that a plan stops never tells the person to upgrade, buy, renew or go to billing or pricing, because the app shows its `message` as it is. It says what the plan stops and that the company's owner can check the plan, for example a module outside the plan (403), the project limit (422 on `errors.plan`), the offline plan (403, `code` `offline_plan`) and no AI credits left (402, `reason` `no_credits`). The website keeps its own wording. The offline plan's reply still carries `upgrade_url`, unchanged.
+A reply under `/api/v1` that a plan stops never tells the person to upgrade, buy, renew or go to billing or pricing, because the app shows its `message` as it is. It says what the plan stops and that the company's owner can check the plan, for example a module outside the plan (403), the project limit (422 on `errors.plan`), the offline plan (403, `code` `offline_plan`) and no AI credits left (402, `reason` `no_credits`). The website keeps its own wording. The offline plan's reply still carries `upgrade_url`, unchanged. The phone-licence refusals (`device_limit` 409, `licence_revoked` 410) carry `manage_url`, which is `/offline/devices/phones`: a website page that lists only the company's phones and the button that frees one, with no plans, prices or upgrade button.
 
 ## Deleting an account
 

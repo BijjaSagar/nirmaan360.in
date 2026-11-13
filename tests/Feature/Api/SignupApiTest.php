@@ -131,8 +131,10 @@ class SignupApiTest extends ApiTestCase
         foreach ($broken as $case => $config) {
             config(['buildos.plans' => $config]);
 
+            // On a key that is not a form field: the app marks any field named in errors as wrong.
             $this->signUp()->assertUnprocessable()
-                ->assertJsonValidationErrors(['company' => 'A new company cannot be started from the app right now. Try again later.']);
+                ->assertJsonValidationErrors(['signup' => 'A new company cannot be started from the app right now. Try again later.'])
+                ->assertJsonMissingValidationErrors(['company', 'name', 'email', 'phone', 'password', 'plan']);
 
             $this->assertSame(0, Organization::count(), "Free plan {$case}");
             $this->assertSame(0, User::count(), "Free plan {$case}");

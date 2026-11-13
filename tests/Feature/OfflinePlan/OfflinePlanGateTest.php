@@ -224,6 +224,48 @@ class OfflinePlanGateTest extends ApiTestCase
         $this->getJson(self::API.'/me')->assertOk()->assertJsonPath('user.kind', 'contractor');
     }
 
+    /** The page the field app links to for freeing a phone: the phones only, with no plan, price or upgrade button. */
+    public function test_the_phones_page_lists_only_this_companys_phones_and_no_plans(): void
+    {
+        $organization = $this->offlineTenant();
+        $owner = $this->member($organization, 'owner');
+        $licence = $this->licenceFor($owner);
+        $this->licenceFor($this->member($this->offlineTenant('Other Co'), 'owner'), 'phone-0009', 'Other Co Nokia');
+
+        $this->get('/offline/devices/phones')->assertRedirect(route('login'));
+
+        $this->actingAs($owner);
+        $this->get('/offline/devices/phones')->assertOk()
+            ->assertSee('Ravi Pixel')->assertSee('1 of 1 phone slots in use')->assertSee('Free phone')
+            ->assertSee(route('offline.devices.free', $licence), false)
+            ->assertDontSee('Other Co Nokia')
+            ->assertDontSee('Upgrade')->assertDontSee('Online plans')->assertDontSee('Want a server copy and a team?')->assertDontSee('/month');
+
+        // The full devices page keeps its plans and its upgrade button for the website.
+        $this->get('/offline/devices')->assertOk()->assertSee('Upgrade in Billing')->assertSee('Licensed phones')->assertSee('Ravi Pixel');
+
+        // Freeing from the phones page works as from the devices page.
+        $this->from('/offline/devices/phones')->post("/offline/devices/{$licence->id}/free")->assertRedirect('/offline/devices/phones');
+        $this->assertSame('revoked', $licence->fresh()->status);
+    }
+
+    public function test_someone_without_billing_rights_sees_no_phones_on_the_phones_page(): void
+    {
+        $organization = $this->offlineTenant();
+        $this->licenceFor($this->member($organization, 'owner'));
+        $engineer = $this->member($organization, 'engineer');
+        $this->actingAs($engineer);
+
+        $this->get('/offline/devices/phones')->assertOk()
+            ->assertSee('Ask your company owner to free a phone on this page.')
+            ->assertDontSee('Ravi Pixel')->assertDontSee('Free phone')->assertDontSee('Upgrade')->assertDontSee('Billing');
+
+        $engineer->update(['locale' => 'hi']);
+        $this->get('/offline/devices/phones')->assertOk()->assertSee('अपने कंपनी मालिक से इस पेज पर एक फ़ोन खाली करने को कहें।');
+        $engineer->update(['locale' => 'mr']);
+        $this->get('/offline/devices/phones')->assertOk()->assertSee('तुमच्या कंपनी मालकाला या पानावर एक फोन मोकळा करायला सांगा.');
+    }
+
     public function test_the_owner_frees_a_phone_from_the_web_and_never_another_companys(): void
     {
         $organization = $this->offlineTenant();

@@ -107,7 +107,7 @@ class DeviceLicenceService
 
         if (! $licence->isActive()) {
             throw new OfflinePlanRefused('licence_revoked', __('This phone was freed from the company. It can be activated again if a slot is free.'), 410, [
-                'manage_url' => route('offline.devices.index'),
+                'manage_url' => $this->manageUrl(),
             ]);
         }
 
@@ -279,12 +279,21 @@ class DeviceLicenceService
 
         return new OfflinePlanRefused('device_limit', __('Your plan allows :count phone(s) and every slot is taken. Free a phone at :url first.', [
             'count' => $max ?? '∞',
-            'url' => route('offline.devices.index'),
+            'url' => $this->manageUrl(),
         ]), 409, [
             'max_devices' => $max,
             'active_devices' => $used ?? $this->activeCount($organization),
-            'manage_url' => route('offline.devices.index'),
+            'manage_url' => $this->manageUrl(),
         ]);
+    }
+
+    /**
+     * Where a refusal sends the person to free a phone. The field app shows it, so it is the page with only the
+     * phones, not the devices page with its plan prices and upgrade button (App Store guideline 3.1.1).
+     */
+    private function manageUrl(): string
+    {
+        return route('offline.devices.phones');
     }
 
     /** Seen again: move the expiry on and note the version, without an audit row for every ping. */
