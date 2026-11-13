@@ -88,6 +88,7 @@
         <x-field :label="__('Photo of challan')" name="photo" :hint="__('Keep this as proof of what arrived.')">
             <input id="photo" name="photo" type="file" accept="image/*" capture="environment" class="input min-h-12 text-base">
         </x-field>
+        @includeIf('modules.slip_reading._challan_form', ['project' => $project])
 
         @if ($canAttachBill)
             <x-field :label="__('Bill, if it has come')" name="bill" :hint="__('Leave empty and it shows as bill pending for the accountant.')">

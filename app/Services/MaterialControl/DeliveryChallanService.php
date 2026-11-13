@@ -13,6 +13,8 @@ use App\Services\Procurement\DocumentNumbers;
 use App\Services\Procurement\ProcurementRules;
 use App\Services\Procurement\StockLedgerService;
 use App\Services\Procurement\UnitConverter;
+use App\Services\SlipReading\LinkedSlip;
+use App\Services\SlipReading\SlipLink;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
 use App\Support\Idempotent;
@@ -37,6 +39,7 @@ class DeliveryChallanService
         private DocumentNumbers $numbers,
         private SiteStores $stores,
         private ShortDeliveryService $shorts,
+        private SlipLink $slips,
     ) {}
 
     /** One rule set for the web form and the mobile API. */
@@ -56,6 +59,8 @@ class DeliveryChallanService
             'remarks' => ['nullable', 'string', 'max:2000'],
             'photo' => self::PHOTO_RULE,
             'client_uuid' => ProcurementRules::clientUuid(),
+            // A reading of the challan's photo that filled the form, and the fields a person confirmed against the photo.
+            ...SlipLink::rules(),
         ];
 
         return $canAttachBill ? [...$rules, 'bill' => self::BILL_RULE] : $rules;
@@ -72,13 +77,22 @@ class DeliveryChallanService
                 'bill_date' => ['nullable', 'date', 'before_or_equal:today'],
                 'bill_amount' => ['nullable', 'numeric', 'gt:0', 'decimal:0,2', 'max:9999999999999'],
                 'vendor_bill_id' => ['bail', 'nullable', 'integer', Rule::exists('vendor_bills', 'id')->where('project_id', $project->id)],
+                // A reading of the bill's photo fills money fields, so it is taken only with them.
+                ...SlipLink::rules(),
             ];
         }
 
         return $rules;
     }
 
-    /** Post a delivery. A repeated client_uuid returns the original and adds no stock. */
+    /**
+     * Post a delivery. A repeated client_uuid returns the original and adds no stock, before anything
+     * else is checked, so a phone's retry of a saved challan is never refused.
+     *
+     * A form filled from a photo reading (read_id) must have every field the reading filled either
+     * typed over or confirmed against the photo (SlipLink). Without a photo of its own, the challan
+     * keeps a copy of the photo that was read.
+     */
     public function create(Project $project, array $data, User $by): DeliveryChallan
     {
         $uuid = $data['client_uuid'] ?? null;
@@ -87,13 +101,23 @@ class DeliveryChallanService
             return $existing;
         }
 
+        $link = $this->slips->check($project, $data, $by, SlipLink::CHALLAN);
+
         $folder = 'org-'.$project->organization_id.'/material-challans/'.$project->id;
-        $photo = isset($data['photo']) && $data['photo'] instanceof UploadedFile ? $data['photo']->store($folder) : null;
+        $photo = isset($data['photo']) && $data['photo'] instanceof UploadedFile ? $data['photo']->store($folder) : ($link ? $this->slips->copyPhoto($link, $folder) : null);
         $bill = isset($data['bill']) && $data['bill'] instanceof UploadedFile ? $data['bill']->store($folder) : null;
 
         try {
             $challan = DB::transaction(fn () => Idempotent::create(
-                fn () => $this->post($project, $data, $by, $photo, $bill),
+                function () use ($project, $data, $by, $photo, $bill, $link, $uuid) {
+                    $challan = $this->post($project, $data, $by, $photo, $bill);
+
+                    if ($link !== null) {
+                        $this->slips->used($link, $challan, $uuid, $by);
+                    }
+
+                    return $challan;
+                },
                 fn () => $this->find($project->organization_id, (string) $uuid),
             ), 3);
         } catch (Throwable $exception) {
@@ -117,34 +141,52 @@ class DeliveryChallanService
             throw ValidationException::withMessages(['bill' => __('Attach the bill, or enter its number.')]);
         }
 
+        $link = $this->slips->check($challan->project, $data, $by, SlipLink::CHALLAN_BILL, $challan);
         $path = $file instanceof UploadedFile ? $file->store('org-'.$challan->organization_id.'/material-challans/'.$challan->project_id) : null;
 
-        return DB::transaction(function () use ($challan, $data, $by, $path) {
-            $challan = DeliveryChallan::lockForUpdate()->findOrFail($challan->id);
+        try {
+            return DB::transaction(fn () => $this->saveBill($challan, $data, $by, $path, $link));
+        } catch (Throwable $exception) {
+            $this->discard($path);
 
-            if ($challan->isReversed()) {
-                $this->discard($path);
+            throw $exception;
+        }
+    }
 
-                throw ValidationException::withMessages(['status' => __('This challan has been reversed.')]);
-            }
+    private function saveBill(DeliveryChallan $challan, array $data, User $by, ?string $path, ?LinkedSlip $link): DeliveryChallan
+    {
+        $challan = DeliveryChallan::lockForUpdate()->findOrFail($challan->id);
 
-            if ($path && $challan->bill_path) {
-                Storage::delete($challan->bill_path);
-            }
+        if ($challan->isReversed()) {
+            throw ValidationException::withMessages(['status' => __('This challan has been reversed.')]);
+        }
 
-            $challan->update([
-                'bill_status' => 'attached',
-                'bill_path' => $path ?? $challan->bill_path,
-                'bill_no' => $data['bill_no'] ?? $challan->bill_no,
-                'bill_date' => $data['bill_date'] ?? $challan->bill_date,
-                'bill_amount' => $data['bill_amount'] ?? $challan->bill_amount,
-                'vendor_bill_id' => $data['vendor_bill_id'] ?? $challan->vendor_bill_id,
-                'bill_attached_by' => $by->id,
-                'bill_attached_at' => now(),
-            ]);
+        // Before the earlier bill file is deleted, so a reading that can no longer be used leaves everything as it was.
+        if ($link !== null) {
+            $this->slips->used($link, $challan, null, $by);
+        }
 
-            return $challan;
-        });
+        if ($path && $challan->bill_path) {
+            Storage::delete($challan->bill_path);
+        }
+
+        $challan->update([
+            'bill_status' => 'attached',
+            'bill_path' => $path ?? $challan->bill_path,
+            'bill_no' => $data['bill_no'] ?? $challan->bill_no,
+            'bill_date' => $data['bill_date'] ?? $challan->bill_date,
+            'bill_amount' => $data['bill_amount'] ?? $challan->bill_amount,
+            'vendor_bill_id' => $data['vendor_bill_id'] ?? $challan->vendor_bill_id,
+            'bill_attached_by' => $by->id,
+            'bill_attached_at' => now(),
+        ]);
+
+        // A bill filled from a photo earlier and changed now by hand: its note says which figures changed.
+        if ($link === null) {
+            $this->slips->changedLater($challan, SlipLink::CHALLAN_BILL, array_keys($challan->getChanges()), $by);
+        }
+
+        return $challan;
     }
 
     /** Undo a delivery with reversal entries. Refused if the stock has since been used. */

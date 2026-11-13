@@ -64,6 +64,7 @@
                 </dl>
             </section>
 
+            @includeIf('modules.slip_reading._vendor_bill_note', ['bill' => $bill])
             <x-approval-trail :approvals="$bill->approvals" />
 
             @can('vendor_bill.approve')

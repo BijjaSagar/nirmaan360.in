@@ -67,6 +67,7 @@
                     @can('material_control.bills')
                         <form method="POST" action="{{ route('material_control.challans.bill.store', $challan) }}" enctype="multipart/form-data" class="mt-3 grid gap-3 sm:grid-cols-2">
                             @csrf
+                            @includeIf('modules.slip_reading._challan_bill', ['challan' => $challan])
                             <x-field :label="__('Bill file')" name="bill" class="sm:col-span-2">
                                 <input id="bill" name="bill" type="file" accept="image/*,application/pdf" class="input min-h-12 text-base">
                             </x-field>

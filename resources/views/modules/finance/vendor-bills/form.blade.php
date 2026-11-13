@@ -20,6 +20,7 @@
             @endif
             <input type="hidden" name="purchase_order_id" value="{{ old('purchase_order_id', $bill->purchase_order_id ?? request('purchase_order_id')) }}">
             <input type="hidden" name="grn_id" value="{{ old('grn_id', $bill->grn_id ?? request('grn_id')) }}">
+            @includeIf('modules.slip_reading._vendor_bill_form', ['project' => $project, 'bill' => $bill])
 
             <x-field :label="__('Vendor')" name="party_id" class="sm:col-span-2">
                 <select id="party_id" name="party_id" class="input" required>
