@@ -148,6 +148,18 @@ class WorkPaymentRatioTest extends TestCase
         $row = $this->ratio()->forContract($order);
 
         $this->assertSame('none', $row['status']);
+        // Nothing of what was paid is covered by work done, so it is over the limit whatever the project's limit,
+        // for the alert and for PaymentAheadGuard alike.
+        $this->assertTrue($row['over_limit']);
+    }
+
+    public function test_a_contract_with_no_value_and_nothing_paid_is_not_over_the_limit(): void
+    {
+        $order = $this->contract(null, '0', '500');
+
+        $row = $this->ratio()->forContract($order);
+
+        $this->assertSame('none', $row['status']);
         $this->assertFalse($row['over_limit']);
     }
 

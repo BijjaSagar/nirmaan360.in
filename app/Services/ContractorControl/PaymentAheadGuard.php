@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
  * exactly the "over_limit" that raises the payment-ahead alert (PaymentAheadSource), from the same
  * WorkPaymentRatio figures (value of work done, approved payments to date, payment_gap_alert_pct). So a
  * payment the approver may pass never raises that alert by itself, and one that would is stopped first.
+ * A contract with no value has no work done to pay against, so any payment on it is over the limit.
+ * The limit itself is the owner's to change (ProjectLimits), or the approver could lift it first.
  *
  * Only the owner may approve it anyway, with a reason of at least a sentence. The reason, who gave it and
  * when are stored on the payment and in the audit log with the figures as they stood. Raising a payment
@@ -34,7 +36,7 @@ class PaymentAheadGuard implements ApprovalGuard
     /**
      * The contract now, and as it would stand with this payment counted.
      *
-     * @return array{work_done: string, work_pct: string, paid: string, paid_pct: string, paid_after: string, paid_pct_after: string, gap_after: string, limit_pct: string, blocked: bool}
+     * @return array{contract_value: string, work_done: string, work_pct: string, paid: string, paid_pct: string, paid_after: string, paid_pct_after: string, gap_after: string, limit_pct: string, blocked: bool}
      */
     public function assess(ContractorPayment $payment): array
     {
@@ -42,6 +44,7 @@ class PaymentAheadGuard implements ApprovalGuard
         $after = $this->ratio->compare($now['contract_value'], Dec::of($now['paid'])->plus(Dec::of($payment->amount)), $now['work_pct'], $now['limit_pct'], $now['earned']);
 
         return [
+            'contract_value' => $now['contract_value'],
             'work_done' => $now['earned'],
             'work_pct' => $now['work_pct'],
             'paid' => $now['paid'],
@@ -76,7 +79,7 @@ class PaymentAheadGuard implements ApprovalGuard
         }
 
         if (! $by?->isOwner()) {
-            throw ValidationException::withMessages(['override_reason' => self::blockedMessage($figures)]);
+            throw ValidationException::withMessages(['override_reason' => self::blockedMessage($figures, (bool) $by?->can('money.view'))]);
         }
 
         $reason = trim((string) ($context['override_reason'] ?? ''));
@@ -94,9 +97,21 @@ class PaymentAheadGuard implements ApprovalGuard
         ], $by);
     }
 
-    /** Why the approval is stopped, in percentages only, so it can be shown to an approver who may not see money. */
-    public static function blockedMessage(array $figures): string
+    /**
+     * Why the approval is stopped. Paid % and the gap are money (ContractorCard, ContractorControlPresenter::workOnly),
+     * so an approver without money.view, such as a custom role allowed to pass payments, is told why with no figure.
+     */
+    public static function blockedMessage(array $figures, bool $money): string
     {
+        if (! $money) {
+            return __('Approving this payment would put payment ahead of the work done on this contract, past what this project allows. Only the owner can approve it, with a written reason.');
+        }
+
+        // Both percentages are 0 on a contract with no value, so they would explain nothing.
+        if (Dec::of($figures['contract_value'])->isZero()) {
+            return __('This contract has no value, as its lines have no quantity, so no payment on it is covered by work done. Only the owner can approve it, with a written reason.');
+        }
+
         return __('Approving this payment would make it :paid% paid against :work% work done, :gap points ahead, beyond this project\'s limit of :limit points. Only the owner can approve it, with a written reason.', [
             'paid' => Figures::pct($figures['paid_pct_after']),
             'work' => Figures::pct($figures['work_pct']),

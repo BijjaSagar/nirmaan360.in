@@ -17,6 +17,7 @@ use Illuminate\Support\Collection;
  * Paid % = approved payments ÷ contract value × 100. Gap = Paid % − Work %.
  * Green when payment is at or below work, red the moment it is ahead. The project's
  * payment_gap_alert_pct decides when a red contract is also over the limit and raises the alert.
+ * A contract with no value and anything paid on it is over the limit whatever the project's limit.
  * Every row here carries money: anything shown to site staff goes through ContractorControlPresenter.
  */
 class WorkPaymentRatio
@@ -36,6 +37,9 @@ class WorkPaymentRatio
         $paidPct = $this->progress->percent($paid, $contract);
         $gap = Dec::of($paidPct)->minus($work);
         $status = $contract->isZero() ? 'none' : ($gap->isPositive() ? 'red' : 'green');
+        // A contract with no value (its lines have no quantity) has no work done to set a payment against, so
+        // anything paid on it is ahead of the work past any limit. Percentages say nothing here, as both are 0.
+        $paidWithoutValue = $contract->isZero() && Dec::of($paid)->isGreaterThan(Dec::of($earned));
 
         $workLeft = BigDecimal::of(100)->minus($work);
         $workLeft = $workLeft->isNegative() ? BigDecimal::zero() : $workLeft;
@@ -50,7 +54,8 @@ class WorkPaymentRatio
             'paid_pct' => $paidPct,
             'gap_pct' => Dec::money($gap),
             'status' => $status,
-            'over_limit' => $status === 'red' && $gap->isGreaterThan(Dec::of($limitPct)),
+            // The one "paid ahead past the limit" test: the payment-ahead alert, the boards and PaymentAheadGuard all read it.
+            'over_limit' => $paidWithoutValue || ($status === 'red' && $gap->isGreaterThan(Dec::of($limitPct))),
             'limit_pct' => Dec::money($limitPct),
             'label' => $this->label($paidPct, $workPct),
             'balance_work_pct' => Dec::money($workLeft),

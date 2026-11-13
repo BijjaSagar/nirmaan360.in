@@ -17,9 +17,18 @@
             <summary class="card-head cursor-pointer"><span class="card-title">{{ __('Alert limit and deadline') }}</span><span class="num text-xs text-ink-3">{{ \App\Services\ContractorControl\Figures::pct($project->payment_gap_alert_pct) }}%</span></summary>
             <form method="POST" action="{{ route('contractor-control.settings', $project) }}" class="grid items-end gap-3 p-4 sm:grid-cols-3">
                 @csrf @method('PATCH')
-                <x-field :label="__('Alert when paid is ahead of work by more than (%)')" name="payment_gap_alert_pct">
-                    <input id="payment_gap_alert_pct" name="payment_gap_alert_pct" type="number" step="0.01" min="0" max="100" value="{{ old('payment_gap_alert_pct', (float) $project->payment_gap_alert_pct) }}" class="input num" required>
-                </x-field>
+                {{-- The limit is also where approving a contractor payment needs the owner, so only the owner moves it. --}}
+                @if ($canSetLimit)
+                    <x-field :label="__('Alert when paid is ahead of work by more than (%)')" name="payment_gap_alert_pct">
+                        <input id="payment_gap_alert_pct" name="payment_gap_alert_pct" type="number" step="0.01" min="0" max="100" value="{{ old('payment_gap_alert_pct', (float) $project->payment_gap_alert_pct) }}" class="input num" required>
+                    </x-field>
+                @else
+                    <div class="text-sm">
+                        <p class="text-xs text-ink-3">{{ __('Alert when paid is ahead of work by more than (%)') }}</p>
+                        <p class="num mt-1">{{ \App\Services\ContractorControl\Figures::pct($project->payment_gap_alert_pct) }}%</p>
+                        <p class="mt-1 text-xs text-ink-3">{{ __('Only the owner can change this limit, because it also decides which contractor payments need the owner\'s written reason.') }}</p>
+                    </div>
+                @endif
                 <x-field :label="__('Project deadline')" name="deadline_date">
                     <input id="deadline_date" name="deadline_date" type="date" value="{{ old('deadline_date', $project->deadline_date ? \Illuminate\Support\Carbon::parse($project->deadline_date)->format('Y-m-d') : '') }}" class="input">
                 </x-field>

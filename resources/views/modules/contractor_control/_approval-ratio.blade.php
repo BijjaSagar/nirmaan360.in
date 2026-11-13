@@ -20,7 +20,8 @@
 @if ($check['blocked'])
     <p class="mt-2 rounded-[3px] border border-laterite bg-laterite/10 px-3 py-2 text-sm font-medium text-laterite-dark" role="note">
         @if ($finalLevel)
-            {{ \App\Services\ContractorControl\PaymentAheadGuard::blockedMessage($check) }}
+            {{-- Paid % and the gap are money: without money.view the reason comes with no figure. --}}
+            {{ \App\Services\ContractorControl\PaymentAheadGuard::blockedMessage($check, auth()->user()->can('money.view')) }}
         @else
             {{ __('As it stands, the last approval of this payment will need the owner, with a written reason: it would put payment ahead of the work done beyond this project\'s limit.') }}
         @endif

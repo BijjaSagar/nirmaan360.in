@@ -198,9 +198,12 @@
     "Put several BOQ lines in one tender": "एका टेंडरमध्ये अनेक BOQ ओळी ठेवा",
     "Approved ahead of the work done by the owner": "मालकांनी झालेल्या कामाच्या पुढे मंजूर केले",
     "Approving this payment would make it :paid% paid against :work% work done, :gap points ahead, beyond this project's limit of :limit points. Only the owner can approve it, with a written reason.": "हे पेमेंट मंजूर केल्यास :work% झालेल्या कामाच्या तुलनेत :paid% पेमेंट होईल, म्हणजे :gap पॉइंट पुढे, जे या प्रकल्पाच्या :limit पॉइंटच्या मर्यादेपेक्षा जास्त आहे. हे फक्त मालक लेखी कारणासह मंजूर करू शकतात.",
+    "Approving this payment would put payment ahead of the work done on this contract, past what this project allows. Only the owner can approve it, with a written reason.": "हे पेमेंट मंजूर केल्यास या ठेक्यावरील पेमेंट झालेल्या कामाच्या पुढे जाईल, या प्रकल्पाच्या परवानगीपेक्षा जास्त. हे फक्त मालक लेखी कारणासह मंजूर करू शकतात.",
     "As it stands, the last approval of this payment will need the owner, with a written reason: it would put payment ahead of the work done beyond this project's limit.": "सध्याच्या स्थितीत, या पेमेंटच्या शेवटच्या मंजुरीसाठी मालक आणि लेखी कारण लागेल: यामुळे पेमेंट झालेल्या कामाच्या पुढे या प्रकल्पाच्या मर्यादेपलीकडे जाईल.",
+    "Only the owner can change this limit, because it also decides which contractor payments need the owner's written reason.": "ही मर्यादा फक्त मालक बदलू शकतात, कारण कोणत्या ठेकेदार पेमेंटसाठी मालकांचे लेखी कारण लागेल हेही याच मर्यादेवरून ठरते.",
     "Paid if approved": "मंजूर झाल्यास पेमेंट",
     "Paid so far": "आतापर्यंत पेमेंट",
+    "This contract has no value, as its lines have no quantity, so no payment on it is covered by work done. Only the owner can approve it, with a written reason.": "या ठेक्याची रक्कम शून्य आहे, कारण त्याच्या ओळींमध्ये प्रमाण नाही, त्यामुळे यावरील कोणतेही पेमेंट झालेल्या कामाच्या बदल्यात नाही. हे फक्त मालक लेखी कारणासह मंजूर करू शकतात.",
     "Value of work done": "झालेल्या कामाचे मूल्य",
     "Write why this payment may go ahead of the work done, in at least one full sentence.": "हे पेमेंट झालेल्या कामाच्या पुढे का जाऊ शकते, ते किमान एका पूर्ण वाक्यात लिहा."
 }

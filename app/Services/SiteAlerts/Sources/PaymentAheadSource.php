@@ -13,7 +13,9 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Arr;
 
 /**
- * A contractor paid ahead of the work, beyond the project's limit: the classic "paid 90%, work 70%".
+ * A contractor paid ahead of the work, beyond the project's limit: the classic "paid 90%, work 70%", or
+ * anything paid on a contract with no value. The line is WorkPaymentRatio's over_limit, which
+ * PaymentAheadGuard also holds at a payment's final approval, so the alert and the approval agree.
  * The figures come from contractor_control's WorkPaymentRatio. Payments are money, so the alert
  * needs money.view and site staff never see it.
  */
@@ -38,6 +40,26 @@ class PaymentAheadSource implements AlertSource
             $workOrder = $row['work_order'];
             $gap = Dec::of($row['gap_pct']);
             $limit = Dec::of($row['limit_pct']);
+
+            // Paid on a contract with no value: none of it is covered by work done, and its percentages are both 0.
+            if (Dec::of($row['contract_value'])->isZero()) {
+                yield new Finding(
+                    type: self::TYPE,
+                    title: 'Payment ahead of work',
+                    message: ':contract (:party): paid on a contract with no value, so none of the payment is covered by work done.',
+                    params: [
+                        'contract' => $workOrder->number,
+                        'party' => $row['party']?->name ?? '—',
+                    ],
+                    reference: 'work_order:'.$workOrder->id,
+                    severity: Alert::CRITICAL,
+                    data: Arr::only($row, ['contract_value', 'paid', 'paid_pct', 'work_pct', 'gap_pct', 'limit_pct', 'balance_work_pct', 'balance_work_value', 'balance_money', 'short_by']),
+                    needs: 'money.view',
+                    url: route('contractor-control.contracts.show', $workOrder),
+                );
+
+                continue;
+            }
 
             yield new Finding(
                 type: self::TYPE,

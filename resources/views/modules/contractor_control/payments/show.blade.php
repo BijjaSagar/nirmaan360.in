@@ -63,7 +63,7 @@
                     @if ($ahead['blocked'] ?? false)
                         <p class="mt-2 text-xs font-medium text-laterite" role="note">
                             @if ($payment->currentApproval?->isFinalLevel())
-                                {{ \App\Services\ContractorControl\PaymentAheadGuard::blockedMessage($ahead) }}
+                                {{ \App\Services\ContractorControl\PaymentAheadGuard::blockedMessage($ahead, $money) }}
                             @else
                                 {{ __('As it stands, the last approval of this payment will need the owner, with a written reason: it would put payment ahead of the work done beyond this project\'s limit.') }}
                             @endif
