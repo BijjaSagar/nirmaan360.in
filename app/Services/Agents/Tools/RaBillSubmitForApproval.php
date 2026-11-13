@@ -4,6 +4,7 @@ namespace App\Services\Agents\Tools;
 
 use App\Models\RaBill;
 use App\Services\ApprovalService;
+use App\Services\BillCheck\BillCheckGate;
 use App\Support\Money;
 
 class RaBillSubmitForApproval extends Tool
@@ -58,6 +59,7 @@ class RaBillSubmitForApproval extends Tool
     {
         $bill = $this->bill($input, $context);
 
+        app(BillCheckGate::class)->assertMaySubmit($bill, $context->user);
         $this->approvals->submit($bill, $context->user);
         $bill->refresh();
 

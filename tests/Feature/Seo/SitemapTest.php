@@ -27,6 +27,10 @@ class SitemapTest extends TestCase
         'up' => 'the health check',
         'otp.show' => 'a sign-in helper, served noindex',
         'password.request' => 'a sign-in helper, served noindex',
+        // Home-owner pack: what a client opens from a link the contractor sent. One company's document, never a website page.
+        'quotations.shared' => 'a signed link to one quotation, served noindex',
+        'owner-updates.shared' => 'a signed link to one weekly update, served noindex',
+        'owner-updates.shared.photo' => 'a photo of one weekly update, behind the same signed link',
     ];
 
     protected function setUp(): void

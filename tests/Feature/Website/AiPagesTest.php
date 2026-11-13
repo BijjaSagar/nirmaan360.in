@@ -9,6 +9,7 @@ use App\Support\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Testing\TestResponse;
 use Tests\BuildsTenant;
 use Tests\TestCase;
 
@@ -37,6 +38,18 @@ class AiPagesTest extends TestCase
     private const WEB_ROUTES = [
         'boq-scans.create', 'slip-reads.store', 'tender-reads.show', 'bill-checks.store',
         'rate-suggestions.store', 'hindrances.index', 'owner-updates.index',
+    ];
+
+    /** Card => the route it waits for. */
+    private const CARD_ROUTES = [
+        'Scanned BOQ reader' => 'boq-scans.create',
+        'Challan and bill photo' => 'slip-reads.store',
+        'Tender reader' => 'tender-reads.show',
+        'RA bill pre-check' => 'bill-checks.store',
+        'Rate helper' => 'rate-suggestions.store',
+        'Hindrance register and letters' => 'hindrances.index',
+        'Home-owner pack' => 'owner-updates.index',
+        'Voice DPR' => AiOffer::VOICE_ROUTE,
     ];
 
     private const LIVE_INTRO = 'These work on the records already in your account. What the AI prepares is saved as a draft and marked as one. Nothing is approved, posted to stock, billed or sent outside your company until a person confirms it.';
@@ -78,6 +91,42 @@ class AiPagesTest extends TestCase
         }
 
         Route::getRoutes()->refreshNameLookups();
+    }
+
+    /**
+     * The cards among these whose module is really in the app, before any deploy() in the test. A module
+     * that has landed registers its route, so its card is rightly shown; only the others can be absent.
+     *
+     * @param  list<string>  $cards
+     * @return list<string>
+     */
+    private function landed(array $cards): array
+    {
+        return array_values(array_filter($cards, fn (string $card) => Route::has(self::CARD_ROUTES[$card])));
+    }
+
+    /**
+     * @param  list<string>  $cards
+     * @return list<string>
+     */
+    private function notLanded(array $cards): array
+    {
+        return array_values(array_diff($cards, $this->landed($cards)));
+    }
+
+    /** The page shows the cards of the modules that have landed among $offered, with their heading, and no other card. */
+    private function assertOnlyLandedCards(TestResponse $page, array $offered): void
+    {
+        $landed = $this->landed($offered);
+        $landed === [] ? $page->assertDontSee('Readers and helpers') : $page->assertSee('Readers and helpers');
+
+        foreach ($landed as $card) {
+            $page->assertSee($card);
+        }
+
+        foreach (array_diff(array_keys(self::CARD_ROUTES), $landed) as $card) {
+            $page->assertDontSee($card);
+        }
     }
 
     /** A new visitor with no cookies, so an earlier request's language does not carry over. */
@@ -202,11 +251,13 @@ class AiPagesTest extends TestCase
     {
         $this->connect();
 
-        $this->get('/ai')->assertOk()
+        $page = $this->get('/ai')->assertOk()
             ->assertSee(self::LIVE_INTRO)
             ->assertSee('Early access')
-            ->assertDontSee('None of them are live yet')
-            ->assertDontSee('Readers and helpers');
+            ->assertDontSee('None of them are live yet');
+
+        // Not released: only a helper that works from the company's own records, and only once its module is in.
+        $this->assertOnlyLandedCards($page, self::CODE_ONLY);
 
         $this->get('/pricing')->assertOk()
             ->assertSee(self::PRICING_AGENTS)
@@ -234,11 +285,12 @@ class AiPagesTest extends TestCase
         $this->connect();
         $this->release();
 
-        $page = $this->get('/ai')->assertOk()->assertDontSee('Readers and helpers');
+        $this->assertEqualsCanonicalizing([...self::WEB_ROUTES, AiOffer::VOICE_ROUTE], array_values(self::CARD_ROUTES), 'Every card is listed with the route it waits for.');
+        $this->assertEqualsCanonicalizing([...self::CODE_ONLY, ...self::NEEDS_MODEL, 'Voice DPR'], array_keys(self::CARD_ROUTES));
 
-        foreach ([...self::CODE_ONLY, ...self::NEEDS_MODEL, 'Voice DPR'] as $card) {
-            $page->assertDontSee($card);
-        }
+        // Before anything is stood in for, the page shows the modules that have really landed, and no other.
+        $waiting = $this->notLanded(['RA bill pre-check', 'Rate helper', 'Home-owner pack', 'Challan and bill photo', 'Tender reader', 'Voice DPR']);
+        $this->assertOnlyLandedCards($this->get('/ai')->assertOk(), [...self::CODE_ONLY, ...self::NEEDS_MODEL]);
 
         $this->deploy('hindrances.index', 'boq-scans.create');
 
@@ -249,8 +301,12 @@ class AiPagesTest extends TestCase
             ->assertSee('Scanned BOQ reader')
             ->assertSee('you confirm every line before anything is saved');
 
-        foreach (['RA bill pre-check', 'Rate helper', 'Home-owner pack', 'Challan and bill photo', 'Tender reader', 'Voice DPR'] as $card) {
+        foreach ($waiting as $card) {
             $page->assertDontSee($card);
+        }
+
+        foreach ($this->landed(['RA bill pre-check', 'Rate helper', 'Home-owner pack', 'Challan and bill photo', 'Tender reader']) as $card) {
+            $page->assertSee($card);
         }
     }
 
@@ -295,9 +351,12 @@ class AiPagesTest extends TestCase
     {
         $this->connect();
         $this->release();
+        $others = [...self::CODE_ONLY, ...self::NEEDS_MODEL];
         $this->deploy(AiOffer::VOICE_ROUTE);
 
-        $this->get('/ai')->assertOk()->assertDontSee('Voice DPR')->assertDontSee('Readers and helpers');
+        $page = $this->get('/ai')->assertOk()->assertDontSee('Voice DPR');
+        // The heading is there only for the other cards whose modules have landed.
+        $this->landed($others) === [] ? $page->assertDontSee('Readers and helpers') : $page->assertSee('Readers and helpers');
 
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
 

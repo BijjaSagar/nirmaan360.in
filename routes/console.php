@@ -19,3 +19,5 @@ Schedule::command('crm:send-reminders')->everyTenMinutes()->withoutOverlapping()
 Schedule::command('site-alerts:scan')->dailyAt('07:30')->timezone('Asia/Kolkata')->withoutOverlapping()->onOneServer();
 // Notify module: start the broadcasts and reminders whose time has come. Each run is claimed once, so overlapping runs send nothing twice.
 Schedule::command('announcements:send-due')->everyMinute()->withoutOverlapping(5)->onOneServer();
+// Document reading: send the next page of each read, recover pages a worker lost, close reads nobody came back to, delete old page files.
+Schedule::command('document-reads:tend')->everyMinute()->withoutOverlapping(5)->onOneServer();
