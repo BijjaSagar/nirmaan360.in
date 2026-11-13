@@ -13,12 +13,13 @@ use App\Services\Procurement\ReconciliationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\ReadsApiDocs;
 use Tests\TestCase;
 
 /** The reconciliation page for the field app: wastage against each BOQ line's norm, quantities only. */
 class ReconciliationApiTest extends TestCase
 {
-    use BuildsProcurement, RefreshDatabase;
+    use BuildsProcurement, ReadsApiDocs, RefreshDatabase;
 
     private BoqItem $boq;
 
@@ -191,5 +192,21 @@ class ReconciliationApiTest extends TestCase
         $this->organization->update(['plan' => 'free']);
         $this->signIn('pm');
         $this->getJson($this->url())->assertForbidden();
+    }
+
+    public function test_the_api_doc_names_every_key_the_reply_sends(): void
+    {
+        $this->workedExample();
+        $this->stockIn($this->cement, '500');
+        $this->issue($this->cement, '40', ['activity' => 'Site office plinth']);
+        StockLevel::updateOrCreate(['store_id' => $this->store->id, 'material_id' => $this->cement->id], ['organization_id' => $this->organization->id, 'reorder_level' => '1000']);
+        $this->signIn('engineer');
+
+        $data = $this->getJson($this->url())->assertOk()->json('data');
+        $this->assertNotEmpty($data['rows']);
+        $this->assertNotEmpty($data['unallocated']);
+        $this->assertNotEmpty($data['below_reorder']);
+
+        $this->assertDocumentsKeys($this->apiDocSection('Material loop from site'), $data, 'data');
     }
 }

@@ -17,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\ReadsApiDocs;
 use Tests\TestCase;
 
 /**
@@ -25,7 +26,7 @@ use Tests\TestCase;
  */
 class MaterialLoopApiTest extends TestCase
 {
-    use BuildsMaterialControl, RefreshDatabase;
+    use BuildsMaterialControl, ReadsApiDocs, RefreshDatabase;
 
     private const API = '/api/v1';
 
@@ -527,5 +528,29 @@ class MaterialLoopApiTest extends TestCase
         $this->getJson(self::API.'/delivery-challans/'.$challan->id)->assertForbidden();
         $this->getJson(self::API.'/projects/'.$this->project->id.'/material-control/bills')->assertForbidden();
         $this->postJson($this->reasonUrl(), ['client_uuid' => (string) Str::uuid()])->assertForbidden();
+    }
+
+    // docs/API.md
+
+    public function test_the_api_doc_names_every_key_these_routes_send(): void
+    {
+        $this->overUsed();
+        $billed = $this->deliver($this->bags, '38', $this->makeVendor('Patil Sand Supply'), ['challan_qty' => '40', 'remarks' => 'Two bags torn.']);
+        $this->billed($billed);
+        $pending = $this->deliver($this->bags, '10');
+        // The owner holds every permission and money.view, so each reply carries its fullest set of keys.
+        $this->signIn('owner', $this->owner);
+
+        $reason = $this->postJson($this->reasonUrl(), ['client_uuid' => (string) Str::uuid(), 'material_id' => $this->bags->id, 'flag_type' => 'over_used', 'reason' => 'Extra drop beam.'])->assertCreated();
+        $short = $this->postJson(self::API.'/delivery-challans/'.$billed->id.'/short', ['client_uuid' => (string) Str::uuid(), 'short_qty' => '1', 'found_on' => today()->toDateString(), 'note' => 'Counted later.'])->assertCreated();
+        $detail = $this->getJson(self::API.'/delivery-challans/'.$billed->id)->assertOk()->assertJsonPath('data.has_bill_file', true);
+        $bills = $this->getJson(self::API.'/projects/'.$this->project->id.'/material-control/bills')->assertOk()->assertJsonPath('data.0.id', $pending->id);
+
+        $section = $this->apiDocSection('Material loop from site');
+        $this->assertDocumentsKeys($section, $reason->json(), 'reason');
+        $this->assertDocumentsKeys($section, $short->json(), 'short');
+        $this->assertDocumentsKeys($section, $detail->json(), 'challan');
+        $this->assertDocumentsKeys($section, $bills->json(), 'bills');
+        $this->assertContractPointersResolve();
     }
 }

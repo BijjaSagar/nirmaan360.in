@@ -328,7 +328,7 @@ Sending the same choice again returns the same work order with 200. A replaced q
 
 ## Material loop from site
 
-Seven routes that let the field app answer a material flag, attach a bill, report a short delivery and read wastage against the BOQ norm. They reuse the web's services and permissions; request and reply shapes are in `mobile/docs/CONTRACT.md`, section 5.
+Seven routes that let the field app answer a material flag, attach a bill, report a short delivery and read wastage against the BOQ norm. They reuse the web's services and permissions. Nothing here is kept on the phone or waits in the outbox.
 
 | Route | Permission | Service |
 | --- | --- | --- |
@@ -340,7 +340,102 @@ Seven routes that let the field app answer a material flag, attach a bill, repor
 | `GET /projects/{project}/material-control/bills` | `material_control.bills` | bills pending, or `?show=attached` |
 | `GET /projects/{project}/material-reconciliation` | `procurement.view` | `ReconciliationService`, read only |
 
-The first six sit behind `feature:site_control`, the last behind `feature:procurement`. A reason and a short need a `client_uuid` and answer a repeat with the first row (201, then 200); the lookup runs before the field rules, and a `client_uuid` from another project or challan is a 422. Attaching a bill creates no record: it replaces the file and takes no `client_uuid`. Bill number, date, amount and `has_bill_file` leave the server only with `money.view`, and are read from a request only with it. A remark, reversal reason or short-delivery note that names a rupee figure is sent as `null` without `money.view`. The reconciliation carries quantities only. `procurement.view` is now one of the `can` keys in `GET /me`.
+The first six sit behind `feature:site_control`, the last behind `feature:procurement`. `procurement.view` is now one of the `can` keys in `GET /me`. A challan or project of another company, or outside the user's project limit, answers 404.
+
+A reason and a short need a `client_uuid` and answer a repeat with the first row: 201 the first time, 200 after. The lookup runs before the field rules, so a retry sent the next day is not refused for its date, and a `client_uuid` already used on another project or challan is a 422 on `client_uuid`. Attaching a bill creates no record: it replaces the file and takes no `client_uuid`.
+
+Money: `bill_no`, `bill_date`, `bill_amount`, `vendor_bill_id` and `has_bill_file` leave the server only with `money.view`. Without it the keys are absent, not null, and the same fields are ignored on a request. `remarks`, `reversal_reason` and a short's `note` are words a person typed: one that names a rupee figure (`MoneyMention`) is sent as `null` without `money.view`, and the key stays. The reconciliation carries quantities only.
+
+### `POST /projects/{project}/material-control/reasons`
+
+```json
+{"material_id": 5, "flag_type": "over_used", "reason": "Slab 2 had an extra drop beam.", "client_uuid": "9a0d..."}
+```
+
+`flag_type` is one of `over_used`, `under_used`, `unaccounted`, `over_received` or `short_delivery`, and `reason` is at most 2000 characters. As on the web form, the gap is stored as it stood (`gap_qty`), so the flag opens again, with no reason, once the gap grows past it. A flag that is no longer on the check answers 422 on `flag_type`.
+
+```json
+{"data": {"id": 3, "client_uuid": "9a0d...", "project_id": 1, "material_id": 5, "flag_type": "over_used", "gap_qty": "5.000",
+          "reason": "Slab 2 had an extra drop beam.", "created_by": "Sachin More", "created_at": "2026-11-10T10:15:00+05:30"}}
+```
+
+### `GET /delivery-challans/{deliveryChallan}`
+
+One challan in full: the challan list row, then names, remarks, who did what and the shortages found on it. The five bill keys marked above come only with `money.view`.
+
+```json
+{"data": {
+  "id": 12, "number": "DC-2026-27-0012", "client_uuid": "9a0d...", "project_id": 1, "party_id": 7, "supplier": "Gupta Traders",
+  "store_id": 1, "material_id": 5, "unit_id": 10, "qty": "38.000", "base_qty": "38.000", "challan_qty": "40.000",
+  "challan_no": "DC-881", "challan_date": "2026-11-01", "vehicle_no": "MH12AB1234", "has_photo": true,
+  "bill_status": "attached", "status": "POSTED",
+  "bill_no": "INV-77", "bill_date": "2026-11-04", "bill_amount": "98765.43", "vendor_bill_id": null, "has_bill_file": true,
+  "material": "Cement", "unit": "bag", "store": "Site store", "remarks": "Two bags torn, left at gate.",
+  "created_by": "Sachin More", "created_at": "2026-11-01T09:30:00+05:30",
+  "bill_attached_by": "Priya Shah", "bill_attached_at": "2026-11-04T16:00:00+05:30",
+  "reversed_by": null, "reversed_at": null, "reversal_reason": null, "supplier_warning": null,
+  "shorts": [{"id": 4, "client_uuid": null, "project_id": 1, "delivery_challan_id": 12, "material_id": 5, "unit_id": 10,
+              "short_qty": "2.000", "short_base_qty": "2.000", "found_on": "2026-11-01", "note": null,
+              "at_entry": true, "status": "POSTED", "created_by": "Sachin More"}]
+}}
+```
+
+`status` is `POSTED` or `REVERSED`, and `bill_status` is `pending` or `attached`. `reversed_at` is a date, and `created_at` and `bill_attached_at` are timestamps. `supplier_warning` is the supplier's repeated-shortage warning, or null. A short's `at_entry` is true for a shortage counted at the gate (only the counted quantity entered stock) and false for one reported later (stock was corrected). The photo is `GET /delivery-challans/{deliveryChallan}/photo` as before.
+
+### `POST /delivery-challans/{deliveryChallan}/bill`
+
+`multipart/form-data` with the file as `bill` (jpg, jpeg, png, webp or pdf, up to 10 MB). From `money.view` it also reads `bill_no` (at most 60), `bill_date` (not after today), `bill_amount` (above 0, two decimals) and `vendor_bill_id` (a vendor bill of this project). From anyone else those fields are ignored, not refused. A file, or from `money.view` a `bill_no` or `vendor_bill_id`, must be sent, else 422 on `bill`. A reversed challan answers 422 on `status`. The reply is `{"data": ...}` with the challan in full, as `GET /delivery-challans/{deliveryChallan}`.
+
+### `GET /delivery-challans/{deliveryChallan}/bill`
+
+Streams the bill file with its own content type. It answers 403 without `money.view` and 404 when the challan has no file. Offer it only when `has_bill_file` is true.
+
+### `POST /delivery-challans/{deliveryChallan}/short`
+
+```json
+{"short_qty": "3", "found_on": "2026-11-09", "note": "Counted at unloading.", "client_uuid": "9a0d..."}
+```
+
+`short_qty` is in the challan's unit, above 0 with up to three decimals; `found_on` is not after today; `note` is at most 500 characters. The quantity leaves stock as a negative receipt, the supplier's record counts it, and the people who can write the reason are notified. Shortages reported later cannot add up to more than the challan (422 on `short_qty`), and a reversed challan answers 422 on `status`. Reversing a short stays on the website.
+
+```json
+{"data": {"id": 5, "client_uuid": "9a0d...", "project_id": 1, "delivery_challan_id": 12, "material_id": 5, "unit_id": 10,
+          "short_qty": "3.000", "short_base_qty": "3.000", "found_on": "2026-11-09", "note": "Counted at unloading.",
+          "at_entry": false, "status": "POSTED", "created_by": "Sachin More"},
+ "challan": {"id": 12, "...": "the challan in full, as GET /delivery-challans/{deliveryChallan}"}}
+```
+
+### `GET /projects/{project}/material-control/bills`
+
+Posted challans still waiting for a bill, or with `?show=attached` those that have one, newest first, 25 a page (`?page=`). Each row is the challan list row plus `material`, `unit`, `days_waiting` and `overdue`:
+
+```json
+{"data": [{"id": 12, "number": "DC-2026-27-0012", "supplier": "Gupta Traders", "material": "Cement", "unit": "bag",
+           "qty": "200.000", "challan_no": "C-1", "challan_date": "2026-11-01", "bill_status": "pending",
+           "days_waiting": 9, "overdue": true, "...": "the other list row keys"}],
+ "meta": {"show": "pending", "pending_count": 2, "alert_after_days": 7, "current_page": 1, "last_page": 1, "total": 2}}
+```
+
+`days_waiting` counts whole days from the challan date and is null once a bill is attached. `overdue` is true from `alert_after_days` on, the same line the site alert for challans without bills uses (`modules.site_alerts.challan_bill_days`). `pending_count` counts pending bills whichever list is shown.
+
+### `GET /projects/{project}/material-reconciliation`
+
+`?basis=measured|approved|dpr`, default `measured`; any other value is read as `measured`. It is the web's reconciliation page, read from `ReconciliationService`, whose figures come from `Procurement\WastageAllowance`. Every figure is a quantity in the material's base unit, so nothing here depends on `money.view`.
+
+```json
+{"data": {
+  "basis": "measured", "bases": ["measured", "approved", "dpr"],
+  "counts": {"wastage": 1, "under": 0, "no_work": 0, "no_norm": 1, "ok": 3},
+  "rows": [{"boq_item_id": 11, "boq_code": "2.1", "boq_description": "RCC M25 in slab", "boq_unit": "cum", "executed": "50.000",
+            "material_id": 5, "material_name": "Cement", "unit": "bag", "actual": "450.000", "norm": "8.400000", "wastage_pct": "2.00",
+            "theoretical": "420.000", "allowed": "428.400", "variance": "30.000", "variance_pct": "7.14", "status": "wastage"}],
+  "unallocated": [{"material_id": 5, "material_name": "Cement", "unit": "bag", "activity": "Site office plinth", "actual": "40.000"}],
+  "below_reorder": [{"store_id": 1, "store": "Site store", "material_id": 5, "material_name": "Cement", "unit": "bag",
+                     "balance": "35.000", "reorder_level": "100.000", "shortfall": "65.000"}]
+}}
+```
+
+`executed` is the work done on the chosen basis. `theoretical` is `executed` times `norm`, `allowed` is `theoretical` times (1 + `wastage_pct` / 100), and `variance` is `actual` minus `theoretical`. A row's `status` is `wastage` (used beyond what is allowed), `under` (less than theoretical), `ok`, `no_work` (issued with no work done yet on this basis) or `no_norm` (issued to a line with no norm, so the four worked figures and `variance_pct` are null). `unallocated` lists issues with no BOQ line, and `below_reorder` lists stock under its reorder level. Norms are entered on the website.
 
 ## Approvals: a contractor payment ahead of the work
 

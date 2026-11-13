@@ -96,7 +96,11 @@ class FloorService
         return $floor;
     }
 
-    /** Only a floor with no history can go: entries and stage updates must stay attached to where the work was. */
+    /**
+     * Only a floor with no history can go: entries and stage updates must stay attached to where the work was.
+     * Any stage update counts, even one later set back to not started or one that arrived too late to apply:
+     * removing the cell would take its append-only events with it through the foreign key.
+     */
     public function delete(ProjectFloor $floor): void
     {
         if (ProjectFloor::where('parent_id', $floor->id)->exists()) {
@@ -104,7 +108,9 @@ class FloorService
         }
 
         $hasHistory = ProgressEntry::where('project_floor_id', $floor->id)->exists()
-            || MepStageCell::where('project_floor_id', $floor->id)->where(fn ($query) => $query->where('status', '!=', 'not_started')->orWhereHas('photos'))->exists();
+            || MepStageCell::where('project_floor_id', $floor->id)
+                ->where(fn ($query) => $query->where('status', '!=', 'not_started')->orWhereHas('photos')->orWhereHas('events'))
+                ->exists();
 
         if ($hasHistory) {
             throw ValidationException::withMessages(['floor' => __('Work has been recorded on this floor, so it cannot be removed.')]);

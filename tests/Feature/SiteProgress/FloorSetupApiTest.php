@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\CustomRole;
 use App\Models\FloorWorkPlan;
 use App\Models\MepStageCell;
+use App\Models\MepStageEvent;
 use App\Models\ProjectFloor;
 use App\Models\User;
 use App\Services\Access\TeamAccessService;
@@ -361,15 +362,26 @@ class FloorSetupApiTest extends SiteProgressTestCase
         $this->work($item, '0', $pendingOnly, ['is_pending' => true, 'remark' => 'Shuttering left']);
         $parent = $this->floor('Parent');
         $this->floor('Flat', $parent->id);
+        // Marked and then set back: the cell reads not started, but its two stage events are history.
+        $reset = $this->floor('Reset');
+        foreach (['in_progress', 'not_started'] as $status) {
+            app(MepTracker::class)->update($this->project, ['project_floor_id' => $reset->id, 'trade' => 'electrical', 'stage' => 'wiring', 'status' => $status], $this->owner);
+        }
+        $resetCell = MepStageCell::where('project_floor_id', $reset->id)->firstOrFail();
+        $this->assertSame('not_started', $resetCell->status);
+        $this->assertSame(2, MepStageEvent::where('mep_stage_cell_id', $resetCell->id)->count());
         $this->signIn($this->owner);
 
-        foreach ([$worked, $staged, $pendingOnly, $parent] as $floor) {
+        foreach ([$worked, $staged, $pendingOnly, $parent, $reset] as $floor) {
             $this->deleteJson(self::API."/floors/{$floor->id}")->assertUnprocessable()->assertJsonValidationErrors('floor');
             $this->assertNotNull(ProjectFloor::find($floor->id), "{$floor->name} was removed");
         }
 
         $this->deleteJson(self::API."/floors/{$parent->id}")->assertJsonPath('errors.floor.0', 'Remove the flats under this floor first.');
         $this->deleteJson(self::API."/floors/{$worked->id}")->assertJsonPath('errors.floor.0', 'Work has been recorded on this floor, so it cannot be removed.');
+        $this->deleteJson(self::API."/floors/{$reset->id}")->assertJsonPath('errors.floor.0', 'Work has been recorded on this floor, so it cannot be removed.');
+        $this->assertNotNull(MepStageCell::find($resetCell->id));
+        $this->assertSame(2, MepStageEvent::where('mep_stage_cell_id', $resetCell->id)->count());
     }
 
     // Time frame
