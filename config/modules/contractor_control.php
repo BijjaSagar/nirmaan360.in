@@ -24,7 +24,7 @@ return [
         ['place' => 'project', 'group' => 'Contractors', 'label' => 'Contractor payments', 'route' => 'contractor-control.payments.index', 'active' => 'contractor-control.payments.*', 'can' => 'contractor.view', 'order' => 20],
         ['place' => 'project', 'group' => 'Contractors', 'label' => 'Contractor tenders', 'route' => 'contractor-control.tenders.index', 'active' => 'contractor-control.tenders.*', 'can' => 'money.view', 'order' => 30],
         ['place' => 'project', 'group' => 'Contractors', 'label' => 'Deadlines', 'route' => 'contractor-control.deadlines', 'active' => 'contractor-control.deadlines', 'can' => 'contractor.view', 'order' => 40],
-        ['place' => 'project', 'group' => 'Contractors', 'label' => 'Cost variance', 'route' => 'contractor-control.variance', 'active' => 'contractor-control.variance', 'can' => 'money.view', 'order' => 50],
+        ['place' => 'project', 'group' => 'Contractors', 'label' => 'Cost variance', 'route' => 'contractor-control.variance', 'active' => 'contractor-control.variance', 'can' => ['contractor.view', 'money.view', 'money.overview'], 'order' => 50],
         ['place' => 'company', 'group' => 'Contractors', 'label' => 'Contractor ledger', 'route' => 'contractor-control.contractors.index', 'active' => 'contractor-control.contractors.*', 'can' => 'money.view', 'order' => 10],
     ],
 ];

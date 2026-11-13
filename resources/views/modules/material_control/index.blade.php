@@ -39,6 +39,7 @@
         <div class="card p-3">
             <p class="eyebrow text-[10px] text-ink-3">{{ __('Flags to answer') }}</p>
             <p class="num text-xl font-medium {{ $check['open_flags'] > 0 ? 'text-laterite' : 'text-moss' }}">{{ $check['open_flags'] }}</p>
+            <p class="hint">{{ __('Over used counts only use beyond the wastage the BOQ norms allow.') }}</p>
         </div>
         @if ($billsPending !== null)
             <a href="{{ route('material_control.bills.index', $project) }}" class="card block p-3">

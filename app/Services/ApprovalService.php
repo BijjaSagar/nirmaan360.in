@@ -48,6 +48,12 @@ class ApprovalService
                 ...$extraLevels,
             ]));
 
+            // With no approver configured the document would pass on its own. One its guard would stop goes
+            // to the owner instead, so a company's empty approval chain cannot get round the rule.
+            if ($levels === [] && $this->guardFor($document)?->blocks($document)) {
+                $levels = ['owner'];
+            }
+
             if ($levels === []) {
                 $document->onApprovalApproved();
                 AuditLog::record('approval.auto_approved', $document);
@@ -115,8 +121,10 @@ class ApprovalService
      * Apply approve, return or reject. Return and reject need a remark.
      * A repeated $clientUuid returns the approval as it stands and applies nothing,
      * even though the caller usually cannot act on it any more.
+     *
+     * @param  array<string, mixed>  $context  Passed to the document's ApprovalGuard at the final approval, e.g. an owner's override reason.
      */
-    public function act(Approval $approval, User $by, string $action, ?string $remark = null, ?string $clientUuid = null): Approval
+    public function act(Approval $approval, User $by, string $action, ?string $remark = null, ?string $clientUuid = null, array $context = []): Approval
     {
         if (! in_array($action, ['approve', 'return', 'reject'], true)) {
             throw ValidationException::withMessages(['action' => __('Unknown action.')]);
@@ -126,7 +134,7 @@ class ApprovalService
             throw ValidationException::withMessages(['remark' => __('A remark is required to return or reject.')]);
         }
 
-        return DB::transaction(function () use ($approval, $by, $action, $remark, $clientUuid) {
+        return DB::transaction(function () use ($approval, $by, $action, $remark, $clientUuid, $context) {
             $approval = Approval::lockForUpdate()->findOrFail($approval->id);
 
             if ($clientUuid !== null && $this->alreadyApplied($approval, $clientUuid)) {
@@ -135,7 +143,7 @@ class ApprovalService
 
             abort_unless($this->canAct($approval, $by), 403, __('You cannot act on this approval.'));
 
-            $this->applyAction($approval, $action, $remark, $by->role, $by, null, $clientUuid);
+            $this->applyAction($approval, $action, $remark, $by->role, $by, null, $clientUuid, $context);
 
             return $approval->refresh();
         });
@@ -175,10 +183,15 @@ class ApprovalService
         return $step !== null;
     }
 
-    private function applyAction(Approval $approval, string $action, ?string $remark, string $role, ?User $by, ?string $actorName = null, ?string $clientUuid = null): void
+    private function applyAction(Approval $approval, string $action, ?string $remark, string $role, ?User $by, ?string $actorName = null, ?string $clientUuid = null, array $context = []): void
     {
         $level = $approval->current_level;
         $document = $approval->approvable()->withoutGlobalScopes()->firstOrFail();
+
+        // The final approve is what makes the document count, so that is where its rule is checked.
+        if ($action === 'approve' && $approval->isFinalLevel()) {
+            $this->guardFor($document)?->check($document, $by, $context);
+        }
 
         $this->logStep($approval, $level, $role, $by, $action, $remark, $actorName, $clientUuid);
         AuditLog::record('approval.'.$action, $document, null, ['level' => $level, 'remark' => $remark, 'actor' => $by?->name ?? $actorName]);
@@ -195,6 +208,13 @@ class ApprovalService
         } else {
             $this->workflow->approvalWaiting($approval, $document);
         }
+    }
+
+    private function guardFor(Model $document): ?ApprovalGuard
+    {
+        $class = method_exists($document, 'approvalGuard') ? $document->approvalGuard() : null;
+
+        return $class === null ? null : app($class);
     }
 
     private function close(Approval $approval, string $status, callable $apply): void

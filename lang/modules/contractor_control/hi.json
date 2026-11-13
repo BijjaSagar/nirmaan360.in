@@ -195,5 +195,12 @@
     "This line has no quantity yet. Enter its quantity in the BOQ before asking contractors for quotes.": "इस लाइन में अभी मात्रा नहीं है। ठेकेदारों से कोटेशन मांगने से पहले BOQ में इसकी मात्रा डालें।",
     "Add tender": "टेंडर जोड़ें",
     "Next you add each contractor's quote for this line.": "इसके बाद इस लाइन के लिए हर ठेकेदार का कोटेशन जोड़ें।",
-    "Put several BOQ lines in one tender": "एक टेंडर में कई BOQ लाइनें रखें"
+    "Put several BOQ lines in one tender": "एक टेंडर में कई BOQ लाइनें रखें",
+    "Approved ahead of the work done by the owner": "मालिक ने हुए काम से आगे मंज़ूर किया",
+    "Approving this payment would make it :paid% paid against :work% work done, :gap points ahead, beyond this project's limit of :limit points. Only the owner can approve it, with a written reason.": "इस भुगतान को मंज़ूर करने पर :work% हुए काम के मुकाबले :paid% भुगतान हो जाएगा, यानी :gap पॉइंट आगे, जो इस प्रोजेक्ट की :limit पॉइंट की सीमा से ज़्यादा है। इसे केवल मालिक लिखित कारण के साथ मंज़ूर कर सकते हैं।",
+    "As it stands, the last approval of this payment will need the owner, with a written reason: it would put payment ahead of the work done beyond this project's limit.": "अभी की स्थिति में, इस भुगतान की अंतिम मंज़ूरी के लिए मालिक और लिखित कारण चाहिए होगा: यह भुगतान को हुए काम से इस प्रोजेक्ट की सीमा से ज़्यादा आगे ले जाएगा।",
+    "Paid if approved": "मंज़ूर होने पर भुगतान",
+    "Paid so far": "अब तक भुगतान",
+    "Value of work done": "हुए काम का मूल्य",
+    "Write why this payment may go ahead of the work done, in at least one full sentence.": "कम से कम एक पूरे वाक्य में लिखें कि यह भुगतान हुए काम से आगे क्यों जा सकता है।"
 }

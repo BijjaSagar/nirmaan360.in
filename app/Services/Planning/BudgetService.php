@@ -3,6 +3,7 @@
 namespace App\Services\Planning;
 
 use App\Models\Attendance;
+use App\Models\AuditLog;
 use App\Models\PettyCashEntry;
 use App\Models\PlanBudgetLine;
 use App\Models\PlanCostEntry;
@@ -15,6 +16,7 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Budget per cost head against what the project has actually spent. Actuals come from
@@ -86,6 +88,42 @@ class BudgetService
             ]),
             fn () => $this->findCost($project->organization_id, (string) $uuid),
         );
+    }
+
+    public function reversalRules(): array
+    {
+        return ['reason' => ['required', 'string', 'max:500']];
+    }
+
+    /**
+     * Cancel a cost entry with a second entry for the opposite amount, linked to it. The original stays,
+     * the two net to zero in every total, and an entry is reversed once at most. Nothing is ever deleted.
+     */
+    public function reverseCost(PlanCostEntry $entry, string $reason, User $by): PlanCostEntry
+    {
+        return DB::transaction(function () use ($entry, $reason, $by) {
+            $entry = PlanCostEntry::lockForUpdate()->findOrFail($entry->id);
+
+            if ($entry->isReversal() || $entry->reversal()->exists()) {
+                throw ValidationException::withMessages(['reason' => __('This cost has already been reversed, or is itself a reversal.')]);
+            }
+
+            $reversal = PlanCostEntry::create([
+                'organization_id' => $entry->organization_id,
+                'project_id' => $entry->project_id,
+                'head' => $entry->head,
+                'entry_date' => today()->toDateString(),
+                'amount' => Dec::money(BigDecimal::zero()->minus(Dec::of($entry->amount))),
+                'description' => $entry->description,
+                'reversal_of_id' => $entry->id,
+                'reversal_reason' => $reason,
+                'created_by' => $by->id,
+            ]);
+
+            AuditLog::record('planning.cost_reversed', $entry, null, ['reversal_id' => $reversal->id, 'amount' => $reversal->amount, 'reason' => $reason], $by);
+
+            return $reversal;
+        });
     }
 
     /**

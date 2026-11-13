@@ -82,10 +82,28 @@
                         <tr>
                             <td class="num whitespace-nowrap">{{ $entry->entry_date->format('d M Y') }}</td>
                             <td>{{ __($heads[$entry->head] ?? $entry->head) }}</td>
-                            <td>{{ $entry->description ?? '—' }}</td>
-                            <td class="r">{{ inr($entry->amount) }}</td>
+                            <td>
+                                {{ $entry->description ?? '—' }}
+                                @if ($entry->isReversal())
+                                    <span class="block text-xs text-laterite">{{ __('Reverses the entry of :date. Reason: :reason', ['date' => $entry->reversalOf?->entry_date->format('d M Y') ?? '—', 'reason' => $entry->reversal_reason]) }}</span>
+                                @elseif ($entry->reversal)
+                                    <span class="block text-xs text-ink-3">{{ __('Reversed on :date', ['date' => $entry->reversal->entry_date->format('d M Y')]) }}</span>
+                                @endif
+                            </td>
+                            <td class="r {{ $entry->isReversal() ? 'text-laterite' : '' }}">{{ inr($entry->amount) }}</td>
                             @can('planning.manage')
-                                <td class="text-right"><form method="POST" action="{{ route('planning.costs.destroy', $entry) }}" onsubmit="return confirm(@js(__('Remove this cost?')))">@csrf @method('DELETE')<button class="link text-xs">{{ __('Remove') }}</button></form></td>
+                                <td class="text-right">
+                                    @if (! $entry->isReversal() && ! $entry->reversal)
+                                        <details class="text-left">
+                                            <summary class="link cursor-pointer text-xs">{{ __('Reverse') }}</summary>
+                                            <form method="POST" action="{{ route('planning.costs.reverse', $entry) }}" class="mt-2 flex min-w-56 flex-col gap-2" onsubmit="return confirm(@js(__('Reverse this cost? A second entry for the opposite amount is added, and both stay on record.')))">
+                                                @csrf
+                                                <textarea name="reason" rows="2" maxlength="500" class="input" required aria-label="{{ __('Reason') }}" placeholder="{{ __('Why is this cost being reversed?') }}"></textarea>
+                                                <button class="btn btn-danger">{{ __('Reverse') }}</button>
+                                            </form>
+                                        </details>
+                                    @endif
+                                </td>
                             @endcan
                         </tr>
                     @endforeach

@@ -32,6 +32,7 @@ return [
         'accounts' => ['crm.view'],
     ],
     // place: "project" (inside a project, the route receives the project) or "company".
+    // can: one permission, or a list when the screen needs all of them. The item is hidden from anyone missing one.
     'nav' => [
         ['place' => 'company', 'group' => 'Sales', 'label' => 'Tenders', 'route' => 'crm.tenders.index', 'active' => 'crm.tenders.*', 'can' => 'crm.view', 'order' => 10],
     ],
@@ -49,7 +50,7 @@ Protect every route with `feature:<name>` when the module has a feature, and wit
 - Use the migration date assigned to your module so timestamps never collide. Migrations must be additive and have a working `down()`.
 - A link to another module's table is a nullable id with no foreign key, so modules can merge in any order.
 - Do not touch `mobile/`.
-- Site staff never receive money. Rates, amounts, contract values and payments need `money.view`; budget and total spend need `money.overview`. Enforce this in the controller, API presenter, export and view alike, not only by hiding a column. Work out progress only through `App\Services\SiteControl\WorkProgress`.
+- Site staff never receive money. Rates, amounts, contract values and payments need `money.view`; budget and total spend need `money.overview`. Only the owner, admin and project manager hold `money.overview`: the accountant and the QS see the entries they work with, never a project's budget, total actual cost, margin or budget against spend. Enforce this in the controller, API presenter, export and view alike, not only by hiding a column. Work out progress only through `App\Services\SiteControl\WorkProgress`.
   `App\Support\Money::visible()` / `overview()` answer the question in code and `Money::orNull()` keeps a JSON key while blanking its figure; views use `@can('money.view')`. `tests/Feature/SiteControl/MoneyVisibilityTest` walks every signed-in GET route as engineer, store keeper and viewer and fails on any rupee figure, so a new route needs a row for its model in `BuildsMoneyWorld` (the walk names the model it is missing).
 - Every tenant model needs a `project_id` column, a `PROJECT_VIA` constant naming the relation that leads to one, or `COMPANY_WIDE = true`. Without this, people limited to chosen projects could read the record by id.
 - An outside service (WhatsApp, FCM, SMS, AI model, Tally, SSO) sits behind a small gateway class that reads its keys from `PlatformSettings` or `config/services.php`. With no keys it must report "not connected" clearly, and tests use a fake. Never fake a success, and never show a feature as live when it is not connected.

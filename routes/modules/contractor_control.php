@@ -32,7 +32,9 @@ Route::middleware('feature:site_control')->prefix('contractor-control')->name('c
     Route::get('/payments/{payment}/bill', [PaymentController::class, 'bill'])->middleware('can:money.view')->name('payments.bill');
 
     Route::middleware('can:money.view')->group(function () {
-        Route::get('/projects/{project}/cost-variance', [ReportController::class, 'variance'])->middleware('can:contractor.view')->name('variance');
+        // BOQ amount against what was paid, item by item and in total: budget against spend, and the margin on
+        // contracted work. That needs money.overview as well.
+        Route::get('/projects/{project}/cost-variance', [ReportController::class, 'variance'])->middleware(['can:contractor.view', 'can:money.overview'])->name('variance');
 
         Route::get('/projects/{project}/tenders', [TenderController::class, 'index'])->middleware('can:contractor.view')->name('tenders.index');
         Route::get('/projects/{project}/tenders/create', [TenderController::class, 'create'])->middleware('can:contractor.tender')->name('tenders.create');

@@ -1,6 +1,6 @@
 @php
     $moduleGroups = collect(\App\Support\Modules::nav($place, $organization))
-        ->filter(fn ($item) => ! $item['can'] || auth()->user()->can($item['can']))
+        ->filter(fn ($item) => collect((array) $item['can'])->every(fn ($permission) => auth()->user()->can($permission)))
         ->groupBy('group');
     $href = fn ($item) => isset($project) ? route($item['route'], $project) : route($item['route']);
 @endphp

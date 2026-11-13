@@ -248,5 +248,8 @@
     "Trial ends on :date": "ट्रायल :date को ख़त्म होगा",
     "Paid until :date": ":date तक भुगतान किया हुआ",
     "Payment received, but that plan is no longer offered, so your plan has not changed. We will contact you about a refund.": "भुगतान मिला, लेकिन वह प्लान अब उपलब्ध नहीं है, इसलिए आपका प्लान नहीं बदला। रिफंड के बारे में हम आपसे संपर्क करेंगे।",
-    "Refund due": "रिफंड बाकी"
+    "Refund due": "रिफंड बाकी",
+    "Approve with override": "छूट के साथ मंज़ूर करें",
+    "At least one full sentence. It is kept with the payment and in the audit log.": "कम से कम एक पूरा वाक्य। यह भुगतान के साथ और ऑडिट लॉग में रखा जाता है।",
+    "Owner override: why may this payment go ahead of the work done?": "मालिक की छूट: यह भुगतान हुए काम से आगे क्यों जा सकता है?"
 }

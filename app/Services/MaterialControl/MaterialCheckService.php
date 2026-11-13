@@ -17,6 +17,7 @@ use App\Models\StockLedgerEntry;
 use App\Models\User;
 use App\Services\Procurement\ProcurementRules;
 use App\Services\Procurement\StockLedgerService;
+use App\Services\Procurement\WastageAllowance;
 use App\Services\SiteControl\WorkProgress;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
@@ -35,7 +36,11 @@ use Illuminate\Validation\ValidationException;
  *   Wastage %            = (used - BOQ) / BOQ * 100
  *
  * Material recorded against extra work is taken out of "used" for wastage, so it is not
- * counted as waste. Stock on site is the ledger balance, which a physical count corrects.
+ * counted as waste. "Over used" is raised only beyond what the norms allow: the theoretical
+ * quantity plus each norm's allowed wastage %, worked out by Procurement\WastageAllowance, the
+ * same calculation as the reconciliation page and its wastage alert. A material with no norm, or
+ * no work done against one, has no allowance, so any use above the BOQ is flagged as before.
+ * Stock on site is the ledger balance, which a physical count corrects.
  * A flag is never stored: it is worked out from these figures, and only the written reason
  * is kept. A reason covers the gap as it stood, so if the gap grows a new one is needed.
  */
@@ -71,7 +76,7 @@ class MaterialCheckService
      */
     public function check(Project $project, bool $withMoney = false): array
     {
-        [$estimate, $fullNeed] = $this->boqNeeds($project);
+        [$estimate, $fullNeed, $allowance] = $this->boqNeeds($project);
         $movements = $this->movements($project);
         $extra = $this->extraWork($project);
         $short = $this->shorts($project);
@@ -86,7 +91,7 @@ class MaterialCheckService
 
         foreach ($ids as $id) {
             if ($material = $materials->get($id)) {
-                $rows[] = $this->row($material, $estimate[$id] ?? null, $fullNeed[$id] ?? null, $movements[$id] ?? null, $extra[$id] ?? null, $short[$id] ?? null, $counted[$id] ?? null, $reasons, $rates[$id] ?? null, $withMoney);
+                $rows[] = $this->row($material, $estimate[$id] ?? null, $fullNeed[$id] ?? null, $allowance[$id] ?? null, $movements[$id] ?? null, $extra[$id] ?? null, $short[$id] ?? null, $counted[$id] ?? null, $reasons, $rates[$id] ?? null, $withMoney);
             }
         }
 
@@ -139,14 +144,19 @@ class MaterialCheckService
         );
     }
 
-    /** @return array{0: array<int, BigDecimal>, 1: array<int, BigDecimal>} BOQ need for work done, and for the whole BOQ. */
+    /**
+     * BOQ need for work done, for the whole BOQ, and the wastage the norms allow on the work done.
+     *
+     * @return array{0: array<int, BigDecimal>, 1: array<int, BigDecimal>, 2: array<int, BigDecimal>}
+     */
     private function boqNeeds(Project $project): array
     {
-        $norms = BoqMaterialNorm::where('project_id', $project->id)->get(['boq_item_id', 'material_id', 'qty_per_unit']);
+        $norms = BoqMaterialNorm::where('project_id', $project->id)->get(['boq_item_id', 'material_id', 'qty_per_unit', 'wastage_pct']);
         $done = $this->progress->doneByItem($project);
         $items = BoqItem::where('project_id', $project->id)->whereIn('id', $norms->pluck('boq_item_id'))->get(['id', 'qty'])->keyBy('id');
         $estimate = [];
         $fullNeed = [];
+        $allowance = [];
 
         foreach ($norms as $norm) {
             $id = $norm->material_id;
@@ -156,6 +166,8 @@ class MaterialCheckService
 
             if ($completed->isPositive()) {
                 $estimate[$id] = ($estimate[$id] ?? BigDecimal::zero())->plus($completed->multipliedBy($perUnit));
+                $theoretical = WastageAllowance::theoretical($completed, $perUnit);
+                $allowance[$id] = ($allowance[$id] ?? BigDecimal::zero())->plus(WastageAllowance::allowance($theoretical, $norm->wastage_pct));
             }
 
             if ($item) {
@@ -163,7 +175,7 @@ class MaterialCheckService
             }
         }
 
-        return [$estimate, $fullNeed];
+        return [$estimate, $fullNeed, $allowance];
     }
 
     /**
@@ -257,7 +269,7 @@ class MaterialCheckService
     }
 
     /** @return array<string, mixed> */
-    private function row(Material $material, ?BigDecimal $estimate, ?BigDecimal $fullNeed, ?array $movement, ?BigDecimal $extra, ?BigDecimal $short, ?string $lastCount, $reasons, ?BigDecimal $rate, bool $withMoney): array
+    private function row(Material $material, ?BigDecimal $estimate, ?BigDecimal $fullNeed, ?BigDecimal $allowance, ?array $movement, ?BigDecimal $extra, ?BigDecimal $short, ?string $lastCount, $reasons, ?BigDecimal $rate, bool $withMoney): array
     {
         $estimate = Dec::of(Dec::qty($estimate ?? 0));
         $received = $movement['received'] ?? BigDecimal::zero();
@@ -272,7 +284,7 @@ class MaterialCheckService
         $hasEstimate = $estimate->isPositive();
         $wastagePct = $hasEstimate ? $this->progress->percent($waste, $estimate) : null;
 
-        $flags = $this->flags($material, $estimate, $fullNeed, $received, $used, $waste, $unaccounted, $short ?? BigDecimal::zero(), $reasons);
+        $flags = $this->flags($material, $estimate, $fullNeed, $received, $used, $waste, $allowance ?? BigDecimal::zero(), $unaccounted, $short ?? BigDecimal::zero(), $reasons);
 
         $row = [
             'material_id' => $material->id,
@@ -303,13 +315,15 @@ class MaterialCheckService
     }
 
     /** @return list<array<string, mixed>> */
-    private function flags(Material $material, BigDecimal $estimate, ?BigDecimal $fullNeed, BigDecimal $received, BigDecimal $used, BigDecimal $waste, BigDecimal $unaccounted, BigDecimal $short, $reasons): array
+    private function flags(Material $material, BigDecimal $estimate, ?BigDecimal $fullNeed, BigDecimal $received, BigDecimal $used, BigDecimal $waste, BigDecimal $allowance, BigDecimal $unaccounted, BigDecimal $short, $reasons): array
     {
         $flags = [];
         $unit = $material->baseUnit->code;
         $words = fn (BigDecimal $qty) => ['gap' => $this->words($qty->abs()), 'unit' => $unit];
 
-        if ($waste->isPositive()) {
+        // Use within the norms' allowed wastage is neither over nor under: the allowance is the line, as on
+        // the reconciliation page. The gap still reads against the BOQ, which is what the message says.
+        if (WastageAllowance::exceeds($waste, $allowance)) {
             $flags[] = $this->flag(self::OVER_USED, $material, $waste, $estimate->isZero()
                 ? __(':gap :unit used with no BOQ estimate for the work done. Where is it going, and why?', $words($waste))
                 : __('Used :gap :unit more than the BOQ for the work done. Where is it going, and why?', $words($waste)), $reasons);

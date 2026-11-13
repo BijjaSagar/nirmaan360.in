@@ -32,6 +32,13 @@
                 @if ($money && $payment->notes)
                     <div class="col-span-2"><dt class="text-xs text-ink-3">{{ __('Notes') }}</dt><dd class="whitespace-pre-line">{{ $payment->notes }}</dd></div>
                 @endif
+                @if ($money && $payment->override_reason)
+                    <div class="col-span-2 rounded-[3px] border border-laterite/60 bg-laterite/5 px-3 py-2">
+                        <dt class="text-xs font-semibold text-laterite">{{ __('Approved ahead of the work done by the owner') }}</dt>
+                        <dd class="mt-1 whitespace-pre-line">{{ $payment->override_reason }}</dd>
+                        <dd class="mt-1 text-xs text-ink-3">{{ $payment->overrideBy?->name ?? '—' }} · <span class="num">{{ $payment->override_at?->format('d M Y H:i') }}</span></dd>
+                    </div>
+                @endif
                 @if ($money && $payment->bill_path)
                     <div class="col-span-2"><a href="{{ route('contractor-control.payments.bill', $payment) }}" target="_blank" rel="noopener" class="link">{{ __('Open the bill or receipt') }}</a></div>
                 @endif
@@ -52,6 +59,15 @@
                     <div class="mt-2">@include('modules.contractor_control._bars', ['work' => $impact['now']['work_pct'], 'paid' => $impact['now']['paid_pct'], 'status' => $impact['now']['status']])</div>
                     @if ($impact['after'])
                         <p class="mt-2 text-sm font-medium {{ $impact['after']['status'] === 'red' ? 'text-laterite' : 'text-moss' }}">{{ __('If approved: :label', ['label' => $impact['after']['label']]) }}</p>
+                    @endif
+                    @if ($ahead['blocked'] ?? false)
+                        <p class="mt-2 text-xs font-medium text-laterite" role="note">
+                            @if ($payment->currentApproval?->isFinalLevel())
+                                {{ \App\Services\ContractorControl\PaymentAheadGuard::blockedMessage($ahead) }}
+                            @else
+                                {{ __('As it stands, the last approval of this payment will need the owner, with a written reason: it would put payment ahead of the work done beyond this project\'s limit.') }}
+                            @endif
+                        </p>
                     @endif
                     <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                         <div><dt class="text-ink-3">{{ __('Balance work') }}</dt><dd class="num">{{ inr($impact['now']['balance_work_value']) }}</dd></div>
