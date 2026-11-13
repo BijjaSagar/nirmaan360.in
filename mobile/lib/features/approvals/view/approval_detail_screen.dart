@@ -48,17 +48,38 @@ class _DetailView extends StatelessWidget {
     final ApprovalDetailCubit cubit = context.read<ApprovalDetailCubit>();
     final AppLocalizations l = AppLocalizations.of(context);
     final OwnerOverride override = row.ownerOverride;
-    String? reason;
     if (override.needed) {
-      // Only the owner is offered Approve here, and only with a written reason.
+      // Only the owner is offered Approve here, and only with a written reason. The reason is sent from its
+      // own sheet, so a refusal shows beside what was typed. Nobody else's approve ever carries a reason.
       if (!override.allowed) return;
-      reason = await showOwnerOverrideSheet(context, message: override.message);
-      if (reason == null || !context.mounted) return;
+      await showOwnerOverrideSheet(
+        context,
+        message: override.message,
+        submit: (String reason) => _sendOverride(cubit, l, reason),
+      );
+      // The sheet may have been closed by hand after the server accepted.
+      if (!cubit.state.finished || !context.mounted) return;
+    } else {
+      final ActResult result = await cubit.approve();
+      if (result != ActResult.done || !context.mounted) return;
     }
-    final ActResult result = await cubit.approve(overrideReason: reason);
-    if (result != ActResult.done || !context.mounted) return;
     await showStampThud(context, StampKind.approved, l.statusApproved);
     if (context.mounted) _leave(context, ApprovalOutcome(approvalId, ApprovalAction.approved));
+  }
+
+  /// Sends the owner's approval with its reason, and says what the reason sheet should do next.
+  Future<OverrideOutcome> _sendOverride(ApprovalDetailCubit cubit, AppLocalizations l, String reason) async {
+    final ActResult result = await cubit.approve(overrideReason: reason);
+    if (result == ActResult.done) return const OverrideAccepted();
+    final ApprovalDetailState state = cubit.state;
+    return switch (state.failure) {
+      // A 422: on `override_reason` it is the server's word on the reason itself.
+      ApprovalFailure.rejected => OverrideRefused(state.failureDetail ?? l.approvalsFailRejectedTitle),
+      ApprovalFailure.offline => OverrideRefused(l.approvalsFailOfflineBody),
+      ApprovalFailure.server => OverrideRefused(l.approvalsFailServerBody),
+      // Someone else decided it, the session ended, or a decision was already on its way.
+      ApprovalFailure.raceLost || ApprovalFailure.session || null => const OverrideAbandoned(),
+    };
   }
 
   Future<void> _sendBack(BuildContext context, ApprovalRow row) async {

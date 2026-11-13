@@ -521,6 +521,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'मंज़ूर करने पर भी भुगतान हुए काम के अंदर रहता है।';
 
   @override
+  String get approvalsPayNoValue =>
+      'इस ठेके की कोई राशि नहीं है, इसलिए इस पर कोई भी भुगतान हुए काम के अंदर नहीं आता।';
+
+  @override
   String approvalsPayOverLimit(String limit) {
     return 'यह इस प्रोजेक्ट की $limit अंक की सीमा से ज़्यादा है।';
   }
@@ -558,6 +562,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String approvalsPayRatio(String paid, String work) {
     return 'भुगतान $paid, काम $work';
   }
+
+  @override
+  String get approvalsPayWorkValue => 'हुए काम की कीमत';
 
   @override
   String get approvalsPayWorkVsPaid => 'काम बनाम भुगतान';

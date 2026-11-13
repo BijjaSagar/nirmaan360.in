@@ -952,6 +952,12 @@ abstract class AppLocalizations {
   /// **'Approving keeps payment within the work done.'**
   String get approvalsPayInStep;
 
+  /// No description provided for @approvalsPayNoValue.
+  ///
+  /// In en, this message translates to:
+  /// **'This contract has no value, so no payment on it is covered by work done.'**
+  String get approvalsPayNoValue;
+
   /// No description provided for @approvalsPayOverLimit.
   ///
   /// In en, this message translates to:
@@ -1017,6 +1023,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paid {paid}, work {work}'**
   String approvalsPayRatio(String paid, String work);
+
+  /// No description provided for @approvalsPayWorkValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value of work done'**
+  String get approvalsPayWorkValue;
 
   /// No description provided for @approvalsPayWorkVsPaid.
   ///

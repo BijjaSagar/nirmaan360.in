@@ -596,7 +596,7 @@ No new route: the request is an ordinary item in `GET /approvals` (and the pull'
   "amount": "20000.00", "is_advance": false, "mode": "upi", "paid_to": "Ganesh",
   "notes": "Second running bill", "has_bill": true, "paid_pct": "60.00",
   "impact": { "now": {...}, "after": {...}, "item": {...} },
-  "owner_override": { "needed": false, "allowed": false, "message": null }
+  "owner_override": { "needed": true, "allowed": false, "message": "Approving this payment would make it 80% paid against 70% work done, ..." }
 }
 ```
 
@@ -604,14 +604,22 @@ No new route: the request is an ordinary item in `GET /approvals` (and the pull'
 - `work_pct` and `balance_work_pct` are the contract's, the same figures the contractor board sends, and go to every approver.
 - `amount`, `is_advance`, `mode`, `paid_to`, `notes` (free text, which may quote a price), `has_bill`, `paid_pct` and `impact` are null without `money.view`. The keys stay.
 - `impact` is the website's "If approved", from `WorkPaymentRatio::impact`: `now` is the contract as the board shows it, `after` the contract with this payment counted (null once the payment is no longer `IN_REVIEW`), `item` the BOQ line the payment is against (null for an advance, a part or the whole contract). Each holds `contract_value, paid, advance, paid_pct, gap_pct, ratio_status (green|red|none), over_limit, limit_pct, label, balance_work_value, balance_money, short_by, work_pct`.
-- `owner_override` is always `{needed: false, allowed: false, message: null}` on this server. It is for the owner-override rule (branch `fix/web-money-rules`): once that rule is merged, `needed` is true when approving now would put payment beyond the project's limit ahead of work done, `allowed` is true when the person reading is the owner, and `message` says why in percentages only. The owner then sends `override_reason` (at least 20 characters and 4 words) with `action: approve`; the app sends it only in that case. Until the server reads `override_reason` the key is ignored.
+- `owner_override` says how the payment-ahead rule meets the person reading. The rule is the server's: at a contractor payment's final approval level, a payment that would put the contract ahead of the work done past the project's limit is refused unless the owner approves with a written reason. `needed`: approving now would be refused. `allowed`: the reader is the owner. `message`: the server's words for why. Otherwise all three are false and null.
+- `POST /approvals/{id}/act` accepts an optional `override_reason`. A blocked approval without a valid reason answers 422 with the error on the field `override_reason`. A valid reason has at least 20 characters and four words. Return and reject are never stopped.
+- The exact fields of this rule are Remote control's to confirm; the four points above are what the app is built and tested against.
 
 The app (`features/approvals`):
 
 - `reviewableHere` is true for a payment when `amount` came, so someone without `money.view` is sent to the website, as for a bill.
 - The detail screen shows work done, paid so far and paid if approved as bars, with a warning when approving puts payment ahead of work (red when beyond the limit), the money rows, the line the payment is against, the payment's details and "View bill" (`GET /contractor-payments/{id}/bill`).
 - Buttons: Send back and Approve, and Reject under them. Reject asks for a remark in a sheet that says a rejected payment is closed for good. Other document types keep Send back only.
-- `owner_override.needed` and not `allowed`: Approve is not offered and the message shows. `needed` and `allowed`: the button reads "Approve with override" and asks for the reason first.
+- `owner_override.needed` and not `allowed`: Approve is not offered and the message shows. A `message` with `needed` false shows as a warning and Approve stays as it is.
+- `needed` and `allowed`: the button reads "Approve with override" and opens the reason sheet. The sheet states the rule (at least 4 words and 20 letters) from the start, keeps Approve off until the words meet it (the same count as the server: characters and whitespace-separated words, in any script), and stops at 500 characters. It sends the approve itself and stays open until the server answers.
+- `override_reason` is sent only from that sheet. A plain approve, a send back and a reject never carry the key.
+- A 422 on `override_reason` in the sheet shows the field's message under the reason box, and what was typed stays; changing the words clears the message. No network or a server fault shows there too. If someone else decided the payment, or the session ended, the sheet closes and the page says so. The retry carries the same `client_uuid`.
+- A 422 on `override_reason` for a plain approve (the phone read the payment before it was blocked) shows the field's message under "The server refused this", and the inbox is read again at once: a manager then loses the Approve button and the owner gets the override.
+- When the server's message is on the page, the work-against-paid card does not repeat it. Without one, the card warns in the app's own words: points ahead, past the limit, or, when `impact.after.over_limit` is true with both percents at 0, that the contract has no value. It never says a payment "keeps within the work done" when `over_limit` is true.
+- The money rows show the value of work done (`impact.now.contract_value` less `impact.now.balance_work_value`) beside paid so far and paid if approved.
 
 ### Vendor bills, indents and RFIs in the approvals inbox (online only)
 

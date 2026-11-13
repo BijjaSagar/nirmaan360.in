@@ -536,6 +536,10 @@ class AppLocalizationsMr extends AppLocalizations {
       'मंजूर केले तरी पेमेंट झालेल्या कामाच्या आत राहते.';
 
   @override
+  String get approvalsPayNoValue =>
+      'या ठेक्याची किंमत शून्य आहे, त्यामुळे त्यावरील कोणतेही पेमेंट झालेल्या कामात बसत नाही.';
+
+  @override
   String approvalsPayOverLimit(String limit) {
     return 'हे या प्रकल्पाच्या $limit अंकांच्या मर्यादेपलीकडे आहे.';
   }
@@ -573,6 +577,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String approvalsPayRatio(String paid, String work) {
     return 'दिले $paid, काम $work';
   }
+
+  @override
+  String get approvalsPayWorkValue => 'झालेल्या कामाची किंमत';
 
   @override
   String get approvalsPayWorkVsPaid => 'काम विरुद्ध दिलेले पैसे';

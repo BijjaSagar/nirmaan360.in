@@ -294,6 +294,7 @@
   },
   "approvalsPayContractor": "Contractor",
   "approvalsPayInStep": "Approving keeps payment within the work done.",
+  "approvalsPayNoValue": "This contract has no value, so no payment on it is covered by work done.",
   "approvalsPayOverLimit": "That is beyond this project's limit of {limit} points.",
   "@approvalsPayOverLimit": {
     "placeholders": {
@@ -322,6 +323,7 @@
       }
     }
   },
+  "approvalsPayWorkValue": "Value of work done",
   "approvalsPayWorkVsPaid": "Work against paid",
   "approvalsPeriod": "Period",
   "approvalsPhotos": "Photos",
