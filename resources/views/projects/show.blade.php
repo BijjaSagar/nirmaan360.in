@@ -23,6 +23,24 @@
         <x-stat :label="__('Open issues')" :value="$openIssues" :note="$dprCount.' '.__('daily reports')" :accent="$openIssues > 0" />
     </div>
 
+    @if ($phases !== [])
+        {{-- The contract value split into phases. Money, so the controller sends none to anyone without money.view. --}}
+        <section class="card mt-5">
+            <div class="card-head"><h2 class="card-title">{{ __('Contract value by phase') }}</h2></div>
+            <div class="overflow-x-auto">
+                <table class="ledger">
+                    <thead><tr><th>{{ __('Phase') }}</th><th class="r">{{ __('Amount') }}</th><th class="r">{{ __('Share') }}</th></tr></thead>
+                    <tbody>
+                    @foreach ($phases as $phase)
+                        <tr><td>{{ $phase['name'] }}</td><td class="r num">{{ inr($phase['amount']) }}</td><td class="r num">{{ $phase['share_pct'] === null ? '—' : $phase['share_pct'].'%' }}</td></tr>
+                    @endforeach
+                    </tbody>
+                    <tfoot><tr><th>{{ __('Total') }}</th><th class="r num">{{ inr($project->contract_value) }}</th><th class="r num">{{ $phases[0]['share_pct'] === null ? '—' : '100.00%' }}</th></tr></tfoot>
+                </table>
+            </div>
+        </section>
+    @endif
+
     <div class="mt-5 grid gap-5 lg:grid-cols-2">
         <section class="card">
             <div class="card-head"><h2 class="card-title">{{ __('Latest daily reports') }}</h2></div>

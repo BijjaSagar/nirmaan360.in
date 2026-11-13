@@ -18,6 +18,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 class FinanceHttpTest extends FinanceTestCase
 {
+    /** Screens that show the project's budget, total cost or margin, and so need money.overview as well. */
+    private const OVERVIEW_ROUTES = ['finance.project.ledger', 'finance.project.budget', 'finance.project.budget.update'];
+
     private RaBill $clientBill;
 
     private VendorBill $approvedBill;
@@ -48,6 +51,7 @@ class FinanceHttpTest extends FinanceTestCase
         $project = ['project' => $this->project->id];
 
         return [
+            ['get', 'finance.project.home', $project],
             ['get', 'finance.project.ledger', $project],
             ['get', 'finance.project.budget', $project],
             ['patch', 'finance.project.budget.update', $project],
@@ -125,7 +129,12 @@ class FinanceHttpTest extends FinanceTestCase
             $response = $this->hit($method, $name, $parameters);
             $writes = $method !== 'get' || str_ends_with($name, '.create') || str_ends_with($name, '.edit');
 
-            $writes ? $response->assertForbidden() : $response->assertOk();
+            // The ledger and the budget are the project's overall spend: money.overview, which the QS lacks.
+            match (true) {
+                $name === 'finance.project.home' => $response->assertRedirect(route('finance.project.vendor-bills.index', $this->project)),
+                $writes, in_array($name, self::OVERVIEW_ROUTES, true) => $response->assertForbidden(),
+                default => $response->assertOk(),
+            };
         }
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ContractorControl;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\ContractorControlPresenter;
 use App\Models\Project;
+use App\Services\ContractorControl\ProjectLimits;
 use App\Services\ContractorControl\WorkPaymentRatio;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class BoardController extends Controller
 {
-    public function __construct(private WorkPaymentRatio $ratio) {}
+    public function __construct(private WorkPaymentRatio $ratio, private ProjectLimits $limits) {}
 
     public function index(Request $request, Project $project): View
     {
@@ -24,15 +25,13 @@ class BoardController extends Controller
             'money' => $money,
             'contracts' => $money ? $rows : $rows->map(ContractorControlPresenter::workOnly(...)),
             'summary' => $money ? $this->ratio->summary($rows) : null,
+            'canSetLimit' => $this->limits->canChangeLimit($request->user()),
         ]);
     }
 
     public function settings(Request $request, Project $project): RedirectResponse
     {
-        $project->update($request->validate([
-            'payment_gap_alert_pct' => ['required', 'numeric', 'between:0,100', 'decimal:0,2'],
-            'deadline_date' => ['nullable', 'date'],
-        ]));
+        $this->limits->update($project, $request->validate($this->limits->rules($request->user())), $request->user());
 
         return back()->with('success', __('Saved.'));
     }

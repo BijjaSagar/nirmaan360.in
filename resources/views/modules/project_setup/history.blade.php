@@ -16,6 +16,8 @@
             'concrete' => __('Concrete'),
             'edit' => __('Edited on screen'),
             'remove' => __('Removed on screen'),
+            'app_edit' => __('Edited in the field app'),
+            'app_remove' => __('Removed in the field app'),
         ];
     @endphp
 

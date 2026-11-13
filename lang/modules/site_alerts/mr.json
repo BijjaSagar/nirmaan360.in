@@ -4,6 +4,7 @@
     ":approved of :total approved": ":total पैकी :approved मंजूर",
     ":complete of :total BOQ lines complete, :started started": ":total पैकी :complete BOQ ओळी पूर्ण, :started सुरू",
     ":contract (:party): paid :paid%, work :work%, :gap% ahead against a :limit% limit.": ":contract (:party): पेमेंट :paid%, काम :work%, :limit% मर्यादेच्या तुलनेत :gap% पुढे.",
+    ":contract (:party): paid on a contract with no value, so none of the payment is covered by work done.": ":contract (:party): शून्य रकमेच्या ठेक्यावर पेमेंट झाले आहे, त्यामुळे त्यातील कोणताही भाग झालेल्या कामाच्या बदल्यात नाही.",
     ":count BOQ lines, done against BOQ quantity": ":count BOQ ओळी, BOQ परिमाणाच्या तुलनेत झालेले काम",
     ":count critical": ":count गंभीर",
     ":count delivery challans have had no bill for more than :days days; the oldest is from :date.": ":count डिलिव्हरी चलनांचे बिल :days दिवसांहून अधिक काळ आलेले नाही; सर्वात जुने :date चे आहे.",

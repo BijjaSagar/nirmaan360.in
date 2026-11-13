@@ -214,4 +214,13 @@ class User extends Authenticatable
     {
         return $this->custom_role_id === null && in_array($this->role, config('buildos.approver_override_roles'), true);
     }
+
+    /**
+     * The company's owner. Admin also holds '*', so the permission list cannot tell the two apart, and a
+     * custom role is never the owner whatever its role column says.
+     */
+    public function isOwner(): bool
+    {
+        return $this->custom_role_id === null && $this->role === 'owner';
+    }
 }

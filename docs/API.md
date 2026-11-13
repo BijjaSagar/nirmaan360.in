@@ -109,6 +109,27 @@ If the only owner deleted their account and another owner then cancels, the comp
 
 Support can do the same for someone who cannot sign in, after checking the request by email: `php artisan account:delete {email}`. It asks before it acts unless `--force` is given.
 
+## Editing and deleting a BOQ line
+
+Both go through `BoqService`, as the web BOQ page does, and each change is kept in the BOQ history with its reason (source `app_edit` or `app_remove`) and in `audit_logs`. `GET /me` carries `is_owner`: true only for a built-in owner, never for an admin or a custom role.
+
+### `PATCH /boq-items/{item}`
+
+`boq.manage`. Body: `code`, `description`, `unit`, `qty`, `reason` (all required), `rate` (required with `money.view`; without it the rate is ignored and kept), `category`, `details`, `updated_at` (optional). The section is not changed here.
+
+- **200** `{"data": {...}}`, the line in the `boq_items` pull shape. The same values again change nothing and write no history.
+- **409** `{"message", "code": "changed", "data": {...}}` when `updated_at` is given and the line changed since, to the second. `data` is the line as it is now.
+- **422** `errors.qty` when the quantity is cut below what is measured or billed to the client (bills not cancelled). Measured is the approved total plus pending entries that add work; a pending deduction or reversal does not lower it, and rejected entries do not count. Keeping or raising the quantity is never refused, so a rate or wording fix goes through on a line measured past its quantity. `errors.unit` once anything below is recorded against the line.
+- **404** another company's line, a project the person is not given, or a removed line.
+
+### `DELETE /boq-items/{item}`
+
+`boq.manage`, and the company owner only. Body: `reason` (required).
+
+- **200** `{"data": {"id": 12, "deleted": true}}`, also for a line already removed, so a retry is safe.
+- **403** `{"message": "Only the company owner can delete a BOQ item."}` for anyone else, an admin included.
+- **422** `errors.boq`, one message per kind of record that holds the line: measurements, work in a daily report that is not deleted, a contractor tender, a work order that is not deleted, an RA bill, site progress entries, labour. The website's remove refuses the same records.
+
 ## Tender API
 
 The app's side of the web page "Tenders for this BOQ line": see which tenders a BOQ line is in, start a tender from the line, add contractors and their quotes, compare the quotes and choose one. Choosing a quote makes the work order at its rates.

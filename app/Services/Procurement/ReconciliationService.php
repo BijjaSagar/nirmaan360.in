@@ -9,7 +9,6 @@ use App\Models\Project;
 use App\Models\StockLedgerEntry;
 use App\Models\StockLevel;
 use App\Support\Dec;
-use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Collection;
 
@@ -188,9 +187,8 @@ class ReconciliationService
             return [...$base, 'theoretical' => null, 'allowed' => null, 'variance' => null, 'variance_pct' => null, 'status' => 'no_norm'];
         }
 
-        $work = Dec::of($executed)->isPositive() ? Dec::of($executed) : BigDecimal::zero();
-        $theoretical = Dec::of(Dec::qty($work->multipliedBy(Dec::of($norm->qty_per_unit))));
-        $allowed = Dec::of(Dec::qty($theoretical->multipliedBy(Dec::of($norm->wastage_pct)->plus(100))->dividedBy(100, 6, RoundingMode::HalfUp)));
+        $theoretical = WastageAllowance::theoretical($executed, $norm->qty_per_unit);
+        $allowed = WastageAllowance::allowed($theoretical, $norm->wastage_pct);
         $used = Dec::of($actual);
         $variance = $used->minus($theoretical);
 
@@ -200,17 +198,7 @@ class ReconciliationService
             'allowed' => Dec::qty($allowed),
             'variance' => Dec::qty($variance),
             'variance_pct' => $theoretical->isZero() ? null : Dec::money($variance->multipliedBy(100)->dividedBy($theoretical, 6, RoundingMode::HalfUp)),
-            'status' => $this->status($theoretical, $allowed, $used),
+            'status' => WastageAllowance::status($theoretical, $allowed, $used),
         ];
-    }
-
-    private function status(BigDecimal $theoretical, BigDecimal $allowed, BigDecimal $used): string
-    {
-        return match (true) {
-            $theoretical->isZero() => $used->isPositive() ? 'no_work' : 'ok',
-            $used->isGreaterThan($allowed) => 'wastage',
-            $used->isLessThan($theoretical) => 'under',
-            default => 'ok',
-        };
     }
 }

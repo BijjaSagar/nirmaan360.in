@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AccountDeletionApiController;
 use App\Http\Controllers\Api\ApprovalApiController;
 use App\Http\Controllers\Api\AttendanceApiController;
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\BoqItemApiController;
 use App\Http\Controllers\Api\DprApiController;
 use App\Http\Controllers\Api\IssueApiController;
 use App\Http\Controllers\Api\MeasurementApiController;
@@ -36,8 +37,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/projects', [ProjectApiController::class, 'index'])->middleware('can:project.view');
         Route::get('/projects/{project}/image', [ProjectController::class, 'image'])->middleware('can:project.view');
         Route::post('/projects', [ProjectApiController::class, 'store'])->middleware('can:project.manage');
+        Route::get('/projects/{project}', [ProjectApiController::class, 'show'])->middleware('can:project.view');
+        Route::patch('/projects/{project}', [ProjectApiController::class, 'update'])->middleware('can:project.manage');
         Route::get('/projects/{project}/boq', [ProjectApiController::class, 'boq'])->middleware('can:boq.view');
         Route::post('/projects/{project}/boq-items', [ProjectApiController::class, 'storeBoqItem'])->middleware('can:boq.manage');
+        // Delete is for the company owner only, checked in the controller. A line already removed still answers, for retries.
+        Route::patch('/boq-items/{item}', [BoqItemApiController::class, 'update'])->middleware('can:boq.manage');
+        Route::delete('/boq-items/{item}', [BoqItemApiController::class, 'destroy'])->middleware('can:boq.manage')->withTrashed();
 
         // Each module adds its own endpoints in routes/api_modules/<name>.php. See docs/MODULES.md.
         foreach (glob(base_path('routes/api_modules/*.php')) ?: [] as $moduleRoutes) {

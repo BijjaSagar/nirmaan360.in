@@ -15,7 +15,6 @@ Route::middleware('feature:planning')->group(function () {
     });
 
     Route::middleware('can:planning.manage')->group(function () {
-        Route::post('/projects/{project}/planning/baseline', [OverviewController::class, 'baseline'])->name('planning.baseline.store');
         Route::post('/projects/{project}/planning/alerts/scan', [OverviewController::class, 'scan'])->name('planning.alerts.scan')->middleware('throttle:10,1');
 
         Route::post('/projects/{project}/planning/wbs', [ScheduleController::class, 'storeNode'])->name('planning.wbs.store');
@@ -31,8 +30,14 @@ Route::middleware('feature:planning')->group(function () {
         Route::post('/planning/activities/{activity}/boq-links', [ActivityController::class, 'storeBoqLink'])->name('planning.boq-links.store');
         Route::delete('/planning/boq-links/{link}', [ActivityController::class, 'destroyBoqLink'])->name('planning.boq-links.destroy');
 
-        Route::post('/projects/{project}/planning/budget', [BudgetController::class, 'storeLine'])->name('planning.budget.store');
-        Route::post('/projects/{project}/planning/costs', [BudgetController::class, 'storeCost'])->name('planning.costs.store');
-        Route::delete('/planning/costs/{entry}', [BudgetController::class, 'destroyCost'])->name('planning.costs.destroy');
+        // Budget lines, the baseline (which freezes the budget) and cost entries are the project's budget and
+        // spend, so they also need money.overview: only the owner, admin and project manager hold it.
+        // A cost entry is never deleted, only reversed.
+        Route::middleware('can:money.overview')->group(function () {
+            Route::post('/projects/{project}/planning/baseline', [OverviewController::class, 'baseline'])->name('planning.baseline.store');
+            Route::post('/projects/{project}/planning/budget', [BudgetController::class, 'storeLine'])->name('planning.budget.store');
+            Route::post('/projects/{project}/planning/costs', [BudgetController::class, 'storeCost'])->name('planning.costs.store');
+            Route::post('/planning/costs/{entry}/reverse', [BudgetController::class, 'reverseCost'])->name('planning.costs.reverse');
+        });
     });
 });

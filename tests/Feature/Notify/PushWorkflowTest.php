@@ -181,7 +181,7 @@ class PushWorkflowTest extends NotifyTestCase
 
     public function test_an_approved_payment_is_pushed_to_whoever_raised_it_without_the_amount_for_a_site_role(): void
     {
-        app(ApprovalService::class)->act($this->pendingPayment->currentApproval, $this->manager, 'approve');
+        $this->approveAhead($this->pendingPayment);
 
         $push = $this->pushesFor($this->engineer)->sole();
         $this->assertSame('Payment approved: '.$this->pendingPayment->number, $push->message->title);
@@ -191,7 +191,7 @@ class PushWorkflowTest extends NotifyTestCase
 
         // The same event raised by someone who may see money names the amount.
         $byManager = app(ContractorPaymentService::class)->raise($this->workOrder, ['paid_on' => '2026-11-05', 'amount' => '73105098.00', 'mode' => 'bank'], null, $this->manager);
-        app(ApprovalService::class)->act($byManager->currentApproval, $this->owner, 'approve');
+        $this->approveAhead($byManager);
 
         $this->assertSame(inr('73105098.00').' to Shree Formwork · Riverside Tower', $this->pushesFor($this->manager)->last()->message->body);
     }
@@ -243,7 +243,7 @@ class PushWorkflowTest extends NotifyTestCase
 
     public function test_a_contractor_login_is_pushed_when_its_payment_is_approved(): void
     {
-        app(ApprovalService::class)->act($this->pendingPayment->currentApproval, $this->manager, 'approve');
+        $this->approveAhead($this->pendingPayment);
 
         $push = $this->pushesFor($this->contractor)->sole();
         $this->assertSame('Payment approved: '.$this->pendingPayment->number, $push->message->title);
@@ -378,5 +378,14 @@ class PushWorkflowTest extends NotifyTestCase
         $this->assertSame('APPROVED', $reversal->status);
         $this->assertCount(0, $this->pushesFor($this->contractor));
         $this->assertSame(1, ContractorPayment::where('reversal_of_id', $this->payment->id)->count());
+    }
+
+    /**
+     * The sentinel amounts are far beyond this small contract's work, so only the owner may approve them,
+     * with a written reason (PaymentAheadGuard). The pushes are the same whoever approves.
+     */
+    private function approveAhead(ContractorPayment $payment): void
+    {
+        app(ApprovalService::class)->act($payment->currentApproval, $this->owner, 'approve', context: ['override_reason' => 'Test sentinel amount, approved ahead of the work on purpose.']);
     }
 }

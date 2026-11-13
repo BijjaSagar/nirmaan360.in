@@ -24,7 +24,7 @@ class BudgetController extends Controller
             'project' => $project,
             'report' => $this->budget->report($project),
             'heads' => $this->budget->heads(),
-            'entries' => PlanCostEntry::with('creator')->where('project_id', $project->id)->latest('entry_date')->latest('id')->paginate(20),
+            'entries' => PlanCostEntry::with('creator', 'reversal', 'reversalOf')->where('project_id', $project->id)->latest('entry_date')->latest('id')->paginate(20),
         ]);
     }
 
@@ -42,10 +42,13 @@ class BudgetController extends Controller
         return back()->with('success', __('Cost recorded.'));
     }
 
-    public function destroyCost(PlanCostEntry $entry): RedirectResponse
+    /** A cost is never deleted. It is cancelled by an opposite entry, with the reason on record. */
+    public function reverseCost(Request $request, PlanCostEntry $entry): RedirectResponse
     {
-        $entry->delete();
+        $data = $request->validate($this->budget->reversalRules());
 
-        return back()->with('success', __('Cost removed.'));
+        $this->budget->reverseCost($entry, $data['reason'], $request->user());
+
+        return back()->with('success', __('Cost reversed.'));
     }
 }

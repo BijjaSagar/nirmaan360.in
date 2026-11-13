@@ -4,10 +4,13 @@
     <x-page-header :title="__('Planning')" :subtitle="$project->name">
         @can('planning.manage')
             <form method="POST" action="{{ route('planning.alerts.scan', $project) }}">@csrf<button class="btn btn-ghost">{{ __('Check delays now') }}</button></form>
-            <form method="POST" action="{{ route('planning.baseline.store', $project) }}" @if ($baseline) onsubmit="return confirm(@js(__('Replace the saved baseline with the current plan and budget?')))" @endif>
-                @csrf
-                <button class="btn btn-primary">{{ $baseline ? __('Update baseline') : __('Save baseline') }}</button>
-            </form>
+            {{-- The baseline freezes the budget as well as the dates, so it needs money.overview too. --}}
+            @can('money.overview')
+                <form method="POST" action="{{ route('planning.baseline.store', $project) }}" @if ($baseline) onsubmit="return confirm(@js(__('Replace the saved baseline with the current plan and budget?')))" @endif>
+                    @csrf
+                    <button class="btn btn-primary">{{ $baseline ? __('Update baseline') : __('Save baseline') }}</button>
+                </form>
+            @endcan
         @endcan
     </x-page-header>
 

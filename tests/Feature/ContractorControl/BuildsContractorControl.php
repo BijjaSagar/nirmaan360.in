@@ -13,6 +13,7 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderItem;
 use App\Services\ApprovalService;
 use App\Services\ContractorControl\ContractorPaymentService;
+use App\Services\ContractorControl\PaymentAheadGuard;
 use Illuminate\Support\Str;
 use Tests\BuildsTenant;
 
@@ -94,9 +95,21 @@ trait BuildsContractorControl
         return app(ContractorPaymentService::class)->raise($order, $this->paymentData(['amount' => $amount, ...$overrides]), null, $this->supervisor);
     }
 
+    /**
+     * The manager approves. A payment that puts the contract ahead of the work past the project's limit can only
+     * be approved by the owner with a written reason (PaymentAheadGuard), so fixtures that need one paid ahead,
+     * such as the "paid 90%, work 70%" example, go through the owner's override. PaymentAheadGuardTest covers the rule.
+     */
     private function approve(ContractorPayment $payment): ContractorPayment
     {
-        app(ApprovalService::class)->act($payment->currentApproval, $this->manager, 'approve');
+        $ahead = app(PaymentAheadGuard::class)->blocks($payment);
+
+        app(ApprovalService::class)->act(
+            $payment->currentApproval,
+            $ahead ? $this->owner : $this->manager,
+            'approve',
+            context: $ahead ? ['override_reason' => 'Test fixture: paid ahead of the work on purpose for this example.'] : [],
+        );
 
         return $payment->refresh();
     }
