@@ -5,6 +5,7 @@ namespace Tests\Feature\DocumentReading;
 use App\Models\AgentCreditLedger;
 use App\Models\AgentCreditWallet;
 use App\Models\DocumentRead;
+use App\Models\DocumentReadAttempt;
 use App\Models\DocumentReadPage;
 use App\Models\Organization;
 use App\Models\User;
@@ -102,6 +103,34 @@ abstract class ReadingTestCase extends TestCase
     protected function answeredPage(DocumentRead $read, int $number = 1, string $costUsd = '0.050000', array $overrides = []): DocumentReadPage
     {
         return $this->makePage($read, $number, ['status' => DocumentReadPage::READ, 'attempts' => 1, 'cost_usd' => $costUsd, 'finished_at' => now(), ...$overrides]);
+    }
+
+    /**
+     * One more call for a page, as PageReader records it once the call has settled: the figures a
+     * day's and a month's limits count. Dated now and booked to the read's person unless told otherwise.
+     */
+    protected function settledCall(DocumentReadPage $page, array $figures = []): DocumentReadAttempt
+    {
+        $read = DocumentRead::withoutGlobalScopes()->findOrFail($page->document_read_id);
+        $number = (int) DocumentReadAttempt::withoutGlobalScopes()->where('document_read_page_id', $page->id)->max('attempt') + 1;
+
+        return DocumentReadAttempt::withoutGlobalScopes()->create([
+            'document_read_page_id' => $page->id,
+            'attempt' => $number,
+            'kind' => $read->kind,
+            'user_id' => $read->user_id,
+            'finished_at' => now(),
+            ...$figures,
+        ])->refresh();
+    }
+
+    /** A page that was read and cost this much today, with the record of its call. */
+    protected function paidPage(DocumentRead $read, int $number = 1, string $costUsd = '0.050000', array $overrides = []): DocumentReadPage
+    {
+        $page = $this->answeredPage($read, $number, $costUsd, $overrides);
+        $this->settledCall($page, ['cost_usd' => $costUsd, 'credits' => $page->credits, 'finished_at' => $page->finished_at]);
+
+        return $page;
     }
 
     /** A read that is running with this much on hold, without going through the checks of hold(). */

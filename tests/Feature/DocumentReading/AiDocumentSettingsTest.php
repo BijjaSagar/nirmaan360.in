@@ -613,8 +613,15 @@ class AiDocumentSettingsTest extends PageReadingTestCase
 
         // Nobody raises the most one document may use above the platform's figure, or sets it to nothing.
         $post(['max_credits_per_read' => '651'])->assertRedirect(self::PAGE)->assertSessionHasErrors('max_credits_per_read');
-        $post(['max_credits_per_read' => '0'])->assertSessionHasErrors('max_credits_per_read');
-        $post(['max_credits_per_read' => '-5'])->assertSessionHasErrors('max_credits_per_read');
+        // Zero is a number: the owner is told why it is refused here, and where a feature is stopped instead.
+        $stop = 'The most one document may use must be more than 0. To stop a feature, enter 0 as its daily budget.';
+        $post(['max_credits_per_read' => '0'])->assertSessionHasErrors(['max_credits_per_read' => $stop]);
+        $this->owner->forceFill(['locale' => 'mr'])->save();
+        $post(['max_credits_per_read' => '0'])->assertSessionHasErrors(['max_credits_per_read' => __($stop, [], 'mr')]);
+        $this->assertNotSame($stop, __($stop, [], 'mr'));
+        $this->owner->forceFill(['locale' => 'en'])->save();
+        // Something that is not a number is asked for as one.
+        $post(['max_credits_per_read' => '-5'])->assertSessionHasErrors(['max_credits_per_read' => 'Enter a number of credits, such as 50 or 12.5.']);
         $post(['max_credits_per_read' => '1e2'])->assertSessionHasErrors('max_credits_per_read');
         $post(['max_credits_per_read' => 'fifty'])->assertSessionHasErrors('max_credits_per_read');
 

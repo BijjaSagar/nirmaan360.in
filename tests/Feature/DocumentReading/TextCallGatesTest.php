@@ -220,7 +220,7 @@ class TextCallGatesTest extends TextCallTestCase
     {
         $call = $this->waiting();
         app(PlatformSettings::class)->set(['ai_reader_daily_usd' => '1']);
-        $this->answeredPage($this->makeRead($this->tenant('Konkan Infra')), 1, '1.000000');
+        $this->paidPage($this->makeRead($this->tenant('Konkan Infra')), 1, '1.000000');
 
         $this->runCall($call);
 

@@ -287,7 +287,7 @@ class TextCallStartTest extends TextCallTestCase
         // Today's limit for every company is used up by pages read elsewhere.
         app(PlatformSettings::class)->set(['ai_readers_released' => '1', 'ai_reader_daily_usd' => '1']);
         $other = $this->tenant('Konkan Infra');
-        $this->answeredPage($this->makeRead($other), 1, '1.000000');
+        $this->paidPage($this->makeRead($other), 1, '1.000000');
 
         $refused = $this->refusal(SpendRefused::class, fn () => $this->start());
         $this->assertSame([409, ['code' => 'reader_paused', 'period' => 'daily']], [$refused->status, $refused->toArray()]);

@@ -6,6 +6,7 @@ use App\Models\AgentRun;
 use App\Models\AgentStep;
 use App\Models\AiDocumentSettings;
 use App\Models\DocumentRead;
+use App\Models\DocumentReadPage;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Agents\AgentRegistry;
@@ -42,11 +43,12 @@ class AiSpendTest extends ReadingTestCase
         return app(AiSpend::class);
     }
 
-    /** A page that was charged or cost something, on a read of its own. */
+    /** A page that was charged or cost something, on a read of its own, with the record of its one call. */
     private function spentPage(Organization $organization, ?User $by, string $kind, array $page, array $read = []): DocumentRead
     {
         $made = $this->makeRead($organization, $by, ['kind' => $kind, 'status' => DocumentRead::READY, ...$read]);
-        $this->makePage($made, 1, ['pass' => 'main', 'status' => 'read', 'attempts' => 1, 'finished_at' => now(), ...$page]);
+        $row = $this->makePage($made, 1, ['pass' => 'main', 'status' => 'read', 'attempts' => 1, 'finished_at' => now(), ...$page]);
+        $this->settledCall($row, ['cost_usd' => $row->cost_usd, 'credits' => $row->credits, 'finished_at' => $row->finished_at]);
 
         return $made;
     }
@@ -208,6 +210,38 @@ class AiSpendTest extends ReadingTestCase
         Carbon::setTestNow();
     }
 
+    public function test_a_page_read_again_today_counts_only_todays_charge(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-13 10:00:00', 'Asia/Kolkata'));
+
+        // Charged 5 credits yesterday; the page row adds that up with today's 5.
+        $read = $this->makeRead($this->organization, $this->engineer, ['kind' => 'slip', 'status' => DocumentRead::READY]);
+        $page = $this->makePage($read, 1, ['pass' => 'main', 'status' => 'read', 'attempts' => 2, 'credits' => '10', 'finished_at' => now()]);
+        $this->settledCall($page, ['credits' => '5', 'cost_usd' => '0.04', 'finished_at' => Carbon::parse('2026-11-12 18:00:00', 'Asia/Kolkata')]);
+        $this->settledCall($page, ['credits' => '5', 'cost_usd' => '0.04']);
+
+        $this->assertSame('5.0000', (string) $this->spend()->spentToday($this->organization, 'slip', $this->engineer));
+        $this->assertSame('5.0000', (string) $this->spend()->spentToday($this->organization, 'slip'));
+        // So 25 more still fit the engineer's 30.
+        $this->assertRoom('slip', '25');
+
+        Carbon::setTestNow();
+    }
+
+    public function test_a_charge_counts_against_the_person_the_read_was_booked_to_when_it_was_made(): void
+    {
+        $read = $this->makeRead($this->organization, $this->engineer, ['kind' => 'slip', 'status' => DocumentRead::READY]);
+        $page = $this->makePage($read, 1, ['pass' => 'main', 'status' => 'read', 'attempts' => 2, 'credits' => '20', 'finished_at' => now()]);
+        $this->settledCall($page, ['credits' => '12']);
+
+        // The engineer left, and the owner took the read over for its second call.
+        $read->forceFill(['user_id' => $this->owner->id])->save();
+        $this->settledCall($page, ['credits' => '8']);
+
+        $this->assertSame('12.0000', (string) $this->spend()->spentToday($this->organization, 'slip', $this->engineer));
+        $this->assertSame('8.0000', (string) $this->spend()->spentToday($this->organization, 'slip', $this->owner));
+    }
+
     public function test_a_hold_that_is_being_replaced_is_not_counted_twice(): void
     {
         $read = $this->runningRead($this->organization, $this->engineer, '20', ['kind' => 'slip']);
@@ -241,7 +275,7 @@ class AiSpendTest extends ReadingTestCase
         $second = $this->member($this->organization, 'owner');
         $elsewhere = $this->member($this->tenant('Konkan Infra'), 'owner');
         $read = $this->makeRead($this->organization, $this->engineer, ['kind' => 'slip', 'status' => DocumentRead::READY]);
-        $spend = fn (int $page, string $credits) => $this->makePage($read, $page, ['pass' => 'main', 'status' => 'read', 'attempts' => 1, 'credits' => $credits, 'finished_at' => now()]);
+        $spend = fn (int $page, string $credits) => $this->settledCall($this->makePage($read, $page, ['pass' => 'main', 'status' => 'read', 'attempts' => 1, 'credits' => $credits, 'finished_at' => now()]), ['credits' => $credits]);
 
         // Under half of 150: nothing is said.
         $spend(1, '74.9');
@@ -369,49 +403,79 @@ class AiSpendTest extends ReadingTestCase
         $this->assertNull($this->spend()->companyStop($this->organization));
     }
 
+    /** A page of its own with one call that cost this much and was charged for none of it. */
+    private function burntPage(Organization $organization, string $usd, $when = null): DocumentReadPage
+    {
+        $read = $this->makeRead($organization, null, ['status' => DocumentRead::READY]);
+        $page = $this->makePage($read, 1, ['status' => 'failed', 'fail_reason' => 'timeout', 'attempts' => 1, 'cost_usd' => $usd, 'finished_at' => $when ?? now()]);
+        $this->settledCall($page, ['cost_usd' => $usd, 'absorbed_usd' => $usd, 'finished_at' => $when ?? now()]);
+
+        return $page;
+    }
+
     public function test_cost_nobody_was_charged_for_is_capped_per_day_and_lower_on_a_trial(): void
     {
         $trial = $this->trialTenant();
 
-        $this->makeRead($this->organization, $this->owner, ['absorbed_usd' => '1.999999', 'last_progress_at' => now()]);
-        $this->makeRead($this->organization, $this->owner, ['absorbed_usd' => '5', 'last_progress_at' => now()->subDays(2)]);
-        $this->makeRead($trial, null, ['absorbed_usd' => '0.499999', 'last_progress_at' => now()]);
+        $this->burntPage($this->organization, '1.999999');
+        $this->burntPage($this->organization, '5', now()->subDays(2));
+        $this->burntPage($trial, '0.499999');
 
         $this->assertNull($this->spend()->companyStop($this->organization));
         $this->assertNull($this->spend()->companyStop($trial));
 
-        $this->makeRead($this->organization, $this->owner, ['absorbed_usd' => '0.000001', 'last_progress_at' => now()]);
-        $this->makeRead($trial, null, ['absorbed_usd' => '0.000001', 'last_progress_at' => now()]);
+        $this->burntPage($this->organization, '0.000001');
+        $this->burntPage($trial, '0.000001');
 
         $this->assertSame('absorbed', $this->spend()->companyStop($this->organization));
+        $this->assertSame('company_limit', $this->spend()->pauseReason($this->organization));
         $this->assertSame('absorbed', $this->spend()->companyStop($trial));
         $this->assertSame('2.000000', (string) $this->spend()->absorbedToday($this->organization)->toScale(6));
     }
 
-    public function test_burnt_pages_reach_the_daily_cap_through_the_credit_service(): void
+    public function test_cost_nobody_was_charged_for_counts_on_the_day_of_its_call_not_the_day_its_read_moves(): void
     {
-        $read = $this->makeRead($this->organization, $this->owner);
-        $this->credits()->hold($read, '400', $this->owner);
-        $page = $this->makePage($read, 1, ['status' => 'failed', 'fail_reason' => 'timeout', 'attempts' => 1]);
+        Carbon::setTestNow(Carbon::parse('2026-11-12 22:30:00', 'Asia/Kolkata'));
 
-        $this->credits()->burnRead($read, $page, '100', '1.25');
+        // A long read loses 1.70 dollars to failed pages before midnight.
+        $read = $this->makeRead($this->organization, $this->owner, ['status' => DocumentRead::RUNNING, 'absorbed_usd' => '1.70', 'last_progress_at' => now()]);
+
+        foreach (range(1, 17) as $number) {
+            $this->settledCall($this->makePage($read, $number, ['status' => 'failed', 'fail_reason' => 'timeout', 'attempts' => 1]), ['cost_usd' => '0.10', 'absorbed_usd' => '0.10']);
+        }
+
+        $this->assertSame('1.700000', (string) $this->spend()->absorbedToday($this->organization)->toScale(6));
+
+        // Just after midnight its next page is read and partly charged: only that page's share counts today.
+        Carbon::setTestNow(Carbon::parse('2026-11-13 00:01:00', 'Asia/Kolkata'));
+        $read->forceFill(['absorbed_usd' => '1.75', 'last_progress_at' => now()])->save();
+        $this->settledCall($this->makePage($read, 18, ['status' => 'read', 'attempts' => 1]), ['cost_usd' => '0.08', 'credits' => '4', 'absorbed_usd' => '0.05']);
+
+        $this->assertSame('0.050000', (string) $this->spend()->absorbedToday($this->organization)->toScale(6));
+        $this->assertNull($this->spend()->companyStop($this->organization));
         $this->assertNull($this->spend()->pauseReason($this->organization));
 
-        $this->credits()->burnRead($read, $page, '100', '0.75');
-        $this->assertSame('company_limit', $this->spend()->pauseReason($this->organization));
-        $this->assertSame('absorbed', $this->spend()->companyStop($this->organization));
+        Carbon::setTestNow();
     }
 
     public function test_too_many_unusable_answers_in_a_day_stop_the_company_until_the_admin_lifts_it(): void
     {
         $read = $this->makeRead($this->organization, $this->owner, ['status' => DocumentRead::READY]);
-        $failed = fn (int $page, int $times, $when = null) => $this->makePage($read, $page, ['status' => 'failed', 'fail_reason' => 'invalid_output', 'attempts' => $times, 'behaviour_failures' => $times, 'finished_at' => $when ?? now()]);
+        $unusable = fn (DocumentReadPage $page, int $times, $when = null) => collect(range(1, $times))
+            ->each(fn () => $this->settledCall($page, ['behaviour_failure' => true, 'cost_usd' => '0.05', 'absorbed_usd' => '0.0001', 'finished_at' => $when ?? now()]));
+        $failed = function (int $number, int $times, $when = null) use ($read, $unusable) {
+            $page = $this->makePage($read, $number, ['status' => 'failed', 'fail_reason' => 'invalid_output', 'attempts' => $times, 'behaviour_failures' => $times, 'finished_at' => $when ?? now()]);
+            $unusable($page, $times, $when);
+
+            return $page;
+        };
 
         $failed(1, 3);
-        $failed(2, 36);
+        $second = $failed(2, 36);
         $failed(3, 9, now()->subHours(25));
         // A call that went wrong on the way is nobody's fault and is not counted.
-        $this->makePage($read, 4, ['status' => 'failed', 'fail_reason' => 'timeout', 'attempts' => 5, 'finished_at' => now()]);
+        $lost = $this->makePage($read, 4, ['status' => 'failed', 'fail_reason' => 'timeout', 'attempts' => 5, 'finished_at' => now()]);
+        $this->settledCall($lost, ['cost_usd' => '0.1', 'absorbed_usd' => '0.1']);
 
         $this->assertSame(39, $this->spend()->unusableAnswers($this->organization));
         $this->assertNull($this->spend()->companyStop($this->organization));
@@ -429,7 +493,16 @@ class AiSpendTest extends ReadingTestCase
         $this->assertSame(0, $this->spend()->unusableAnswers($this->organization));
         $this->assertNull($this->spend()->companyStop($this->organization));
 
-        $failed(6, 40);
+        // A page that failed before the lift is read again and comes back fine: its old answers stay forgiven.
+        $second->forceFill(['status' => 'read', 'fail_reason' => null, 'attempts' => 37, 'finished_at' => now()])->save();
+        $this->settledCall($second, ['cost_usd' => '0.05', 'credits' => '6']);
+        $this->assertSame(0, $this->spend()->unusableAnswers($this->organization));
+
+        // Read again and unusable once more: that one answer counts, not the 36 before the lift.
+        $unusable($second, 1);
+        $this->assertSame(1, $this->spend()->unusableAnswers($this->organization));
+
+        $failed(6, 39);
         $this->assertSame('brake', $this->spend()->companyStop($this->organization));
     }
 
@@ -581,6 +654,22 @@ class AiSpendTest extends ReadingTestCase
         app(PlatformSettings::class)->set(['ai_reader_month_share' => null]);
         Carbon::setTestNow(Carbon::parse('2026-12-01 05:31:00', 'Asia/Kolkata'));
         $this->assertNull($this->spend()->platformStop());
+
+        Carbon::setTestNow();
+    }
+
+    public function test_a_page_read_again_counts_only_its_new_call_in_the_new_day_and_month(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-01 12:00:00', 'Asia/Kolkata'));
+
+        // It cost 8 cents on 31 October; read again on 1 November, the row adds up to 16 cents.
+        $read = $this->makeRead($this->organization, $this->owner, ['status' => DocumentRead::READY]);
+        $page = $this->makePage($read, 1, ['status' => 'read', 'attempts' => 2, 'cost_usd' => '0.16', 'finished_at' => now()]);
+        $this->settledCall($page, ['cost_usd' => '0.08', 'finished_at' => Carbon::parse('2026-10-31 12:00:00', 'Asia/Kolkata')]);
+        $this->settledCall($page, ['cost_usd' => '0.08']);
+
+        $this->assertSame('0.080000', (string) $this->spend()->platformCostThisMonth()->toScale(6));
+        $this->assertSame('0.080000', (string) $this->spend()->platformCostToday()->toScale(6));
 
         Carbon::setTestNow();
     }

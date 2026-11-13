@@ -4,6 +4,7 @@ namespace App\Services\DocumentReading;
 
 use App\Models\AuditLog;
 use App\Models\DocumentRead;
+use App\Models\DocumentReadAttempt;
 use App\Models\DocumentReadPage;
 use App\Models\Organization;
 use App\Models\User;
@@ -13,6 +14,7 @@ use App\Services\Agents\ModelGateway;
 use App\Services\Agents\ModelGatewayException;
 use App\Services\DocumentReading\Contracts\ReadKind;
 use App\Support\Dec;
+use App\Support\Idempotent;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -286,12 +288,16 @@ class PageReader
             $row = DocumentReadPage::withoutGlobalScopes()->findOrFail($page->id);
             $row->setRelation('documentRead', $read);
 
+            $charge = '0';
+
             if ($charged) {
-                $this->credits->chargeRead($read, $row, $plan['metered']);
+                $charge = $this->credits->chargeRead($read, $row, $plan['metered']);
                 $row->forceFill(['cost_usd' => $total])->save();
             } elseif (Dec::of($plan['usd'])->isPositive()) {
                 $this->credits->burnRead($read, $row, $plan['metered'], $plan['usd']);
             }
+
+            $this->recordAttempt($row, $read, $plan, $charged, $charge);
 
             if ($plan['step'] === 'read') {
                 $kind->pageRead($row);
@@ -349,7 +355,9 @@ class PageReader
      * step: 'read', 'failed', 'again' (queued once more after a wait), 'held' (back to waiting, the
      * read pauses) or 'split' (a run of text pages cut off: read again as two halves).
      *
-     * @return array{step:string, page:array<string,mixed>, usd:string, metered:string, estimated:bool, chargeable:bool, pause:?string, delay:int, second_half:?array<string,mixed>, reason:?string}
+     * behaviour: the model answered, but not usably. The call counts toward the company's daily brake.
+     *
+     * @return array{step:string, page:array<string,mixed>, usd:string, metered:string, estimated:bool, chargeable:bool, pause:?string, delay:int, second_half:?array<string,mixed>, reason:?string, behaviour:bool}
      */
     private function plan(DocumentReadPage $page, DocumentRead $read, ReadKind $kind, PageOutcome $outcome): array
     {
@@ -374,7 +382,7 @@ class PageReader
 
         $plan = [
             'step' => $step, 'usd' => $usd, 'metered' => $metered, 'estimated' => $estimated, 'chargeable' => false,
-            'pause' => null, 'delay' => 0, 'second_half' => null, 'reason' => $reason,
+            'pause' => null, 'delay' => 0, 'second_half' => null, 'reason' => $reason, 'behaviour' => false,
         ];
 
         $row = [
@@ -425,6 +433,7 @@ class PageReader
 
         $behaviour = in_array($reason, DocumentReadPage::BEHAVIOUR_FAILURES, true);
         $failures = min(250, (int) $page->behaviour_failures + ($behaviour ? 1 : 0));
+        $plan['behaviour'] = $behaviour;
         $from = (int) $page->page_no;
         $to = (int) ($page->page_to ?? $from);
         $cutOff = $reason === PageOutcome::CUT_OFF ? $kind->onCutOff($page) : null;
@@ -511,6 +520,41 @@ class PageReader
                 ...$page->only(['image_path', 'image_sha256', 'image_width', 'image_height', 'image_bytes', 'part_top', 'part_height', 'text_chars']),
             ]);
         }
+    }
+
+    /**
+     * This call's own figures, dated now: what it cost, what was charged for it, what nobody paid
+     * for and whether the answer was unusable. The page row adds up every call for the read's
+     * totals; the limits of a day or a month count these rows, so each call counts in its own period.
+     *
+     * @param  array<string, mixed>  $plan
+     * @param  bool  $charged  Whether the call was put to the wallet. Otherwise its cost was burned.
+     * @param  string  $charge  What the wallet was actually charged.
+     */
+    private function recordAttempt(DocumentReadPage $row, DocumentRead $read, array $plan, bool $charged, string $charge): void
+    {
+        $usd = Dec::of($plan['usd']);
+
+        if (! $usd->isPositive() && ! Dec::of($charge)->isPositive() && ! $plan['behaviour']) {
+            return;
+        }
+
+        $figures = [
+            'kind' => (string) $read->kind,
+            'user_id' => $read->user_id,
+            'cost_usd' => (string) $usd->toScale(6, RoundingMode::HalfUp),
+            'credits' => (string) Dec::of($charge)->toScale(4),
+            // A burned call is the platform's cost in full; a charged one only in the part its charge did not cover.
+            'absorbed_usd' => (string) ($charged ? CreditService::uncharged($plan['usd'], $plan['metered'], $charge) : $usd->toScale(6, RoundingMode::HalfUp)),
+            'behaviour_failure' => (bool) $plan['behaviour'],
+            'finished_at' => now(),
+        ];
+
+        // Settling is reached once per claim; the unique key on the attempt number is a second lock, as the ledger's reference is.
+        Idempotent::create(
+            fn () => DocumentReadAttempt::withoutGlobalScopes()->create(['document_read_page_id' => $row->id, 'attempt' => (int) $row->attempts, ...$figures]),
+            fn () => DocumentReadAttempt::withoutGlobalScopes()->where('document_read_page_id', $row->id)->where('attempt', (int) $row->attempts)->first(),
+        );
     }
 
     /**

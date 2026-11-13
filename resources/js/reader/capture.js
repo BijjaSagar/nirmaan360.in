@@ -10,7 +10,10 @@
 // stores only its own copy.
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import PdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?worker';
+import { ReaderError, refusalOf, uploadFailure, worthRetrying } from './errors.js';
 import { imageTokens, photoSize, targetSize, TOKEN_VECTORS, VECTORS } from './size.js';
+
+export { ReaderError };
 
 const JPEG_QUALITY = 0.9;
 // A page whose longer side is above this many points at scale 1 is larger than A3 (1191 points) and is not drawn.
@@ -27,17 +30,6 @@ const UPLOAD_TRIES = 3;
 const WATCH_EVERY_MS = 3000;
 const WATCH_PAUSED_EVERY_MS = 15000;
 const FINAL = ['ready', 'failed', 'confirmed', 'discarded', 'cancelled', 'expired'];
-
-/** A refusal with a code the calling screen can act on: from the server, or raised here before anything was sent. */
-export class ReaderError extends Error {
-    constructor(code, message, details = {}, status = 0) {
-        super(message || code);
-        this.name = 'ReaderError';
-        this.code = code;
-        this.details = details;
-        this.status = status;
-    }
-}
 
 let cachedSettings = null;
 
@@ -104,9 +96,8 @@ async function call(method, url, body = undefined) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        const firstError = data.errors ? Object.values(data.errors)[0]?.[0] : null;
-
-        throw new ReaderError(data.code ?? `http_${response.status}`, firstError ?? data.message ?? '', data, response.status);
+        // A failure that is not one of the module's own refusals gets a sentence of the partial, never a bare code or the framework's English.
+        throw refusalOf(response.status, data, words);
     }
 
     return data;
@@ -378,9 +369,7 @@ export async function uploadPage(readId, pageNo, blob, part = 'full') {
         } catch (error) {
             last = error;
 
-            const final = error instanceof ReaderError && error.status >= 400 && error.status < 500 && ![408, 425, 429].includes(error.status) && error.code !== 'not_stored';
-
-            if (final) {
+            if (!worthRetrying(error)) {
                 throw error;
             }
 
@@ -390,7 +379,8 @@ export async function uploadPage(readId, pageNo, blob, part = 'full') {
         }
     }
 
-    throw last instanceof ReaderError && last.message ? last : new ReaderError('upload_failed', words('upload_failed', { n: pageNo }), { cause: last?.message ?? null });
+    // After the last try: the module's own refusal as it came, anything else as the page that could not be uploaded.
+    throw uploadFailure(last, pageNo, words);
 }
 
 /**

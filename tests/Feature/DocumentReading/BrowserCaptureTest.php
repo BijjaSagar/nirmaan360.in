@@ -129,6 +129,98 @@ class BrowserCaptureTest extends TestCase
         app()->setLocale('en');
     }
 
+    public function test_a_failure_without_a_sentence_of_the_modules_own_is_told_in_the_persons_language(): void
+    {
+        $node = (new ExecutableFinder)->find('node');
+
+        if ($node === null) {
+            $this->markTestSkipped('Node.js is not installed here, so the script\'s error handling cannot be run.');
+        }
+
+        $this->withoutVite();
+        app()->setLocale('mr');
+        $html = view('modules.document_reading._capture')->render();
+        app()->setLocale('en');
+        $this->assertSame(1, preg_match('/data-words="([^"]+)"/', $html, $found));
+        $words = json_decode(html_entity_decode($found[1]), true, flags: JSON_THROW_ON_ERROR);
+
+        // Every word the error handling may ask for is one the partial carries.
+        preg_match_all("/return '([a-z_]+)';/", $this->source('resources/js/reader/errors.js'), $asked);
+        $this->assertNotEmpty($asked[1]);
+        $this->assertSame([], array_values(array_diff([...$asked[1], 'upload_failed'], array_keys($words))));
+
+        $answers = [
+            'proxy_502' => [502, null],
+            'proxy_504' => [504, null],
+            'too_large_413' => [413, null],
+            'plain_403' => [403, ['message' => '']],
+            'gate_403' => [403, ['message' => 'This action is unauthorized.']],
+            'expired_419' => [419, ['message' => 'CSRF token mismatch.']],
+            'throttled_429' => [429, ['message' => 'Too Many Attempts.']],
+            'framework_500' => [500, ['message' => 'Server Error']],
+            'gone_404' => [404, ['message' => 'Not Found']],
+            'own_refusal' => [409, ['code' => 'wrong_state', 'message' => 'आपल्या भाषेतील वाक्य', 'status' => 'running']],
+            'form_check' => [422, ['message' => 'The image field is required.', 'errors' => ['image' => ['चित्र निवडा.']]]],
+        ];
+
+        $program = 'import { ReaderError, refusalOf, uploadFailure, worthRetrying } from "./resources/js/reader/errors.js";'
+            .'const words = JSON.parse(process.argv[1]); const answers = JSON.parse(process.argv[2]);'
+            .'const say = (key, values = {}) => Object.entries(values).reduce((line, [name, value]) => line.replaceAll(`:${name}`, String(value)), words[key] ?? key);'
+            .'const out = {};'
+            .'for (const [name, [status, body]] of Object.entries(answers)) { const error = refusalOf(status, body ?? {}, say); out[name] = { code: error.code, message: error.message, retry: worthRetrying(error), ok: error instanceof ReaderError }; }'
+            .'out.after_proxy = uploadFailure(refusalOf(502, {}, say), 7, say);'
+            .'out.after_network = uploadFailure(new TypeError("Failed to fetch"), 7, say);'
+            .'out.after_not_stored = uploadFailure(refusalOf(503, { code: "not_stored", message: "जतन झाले नाही" }, say), 7, say);'
+            .'for (const key of ["after_proxy", "after_network", "after_not_stored"]) { out[key] = { code: out[key].code, message: out[key].message }; }'
+            .'console.log(JSON.stringify(out));';
+
+        $run = new Process([$node, '--input-type=module', '-e', $program, json_encode($words, JSON_UNESCAPED_UNICODE), json_encode($answers, JSON_UNESCAPED_UNICODE)], base_path());
+        $run->mustRun();
+        $got = json_decode($run->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+        $said = fn (string $english) => __($english, [], 'mr');
+
+        $expected = [
+            'proxy_502' => ['http_502', $said('Something went wrong on our side. Try again in a few minutes.'), true],
+            'proxy_504' => ['http_504', $said('Something went wrong on our side. Try again in a few minutes.'), true],
+            'too_large_413' => ['http_413', $said('This file is too large to upload.'), false],
+            'plain_403' => ['http_403', $said('You are not allowed to do this.'), false],
+            'gate_403' => ['http_403', $said('You are not allowed to do this.'), false],
+            'expired_419' => ['http_419', $said('You have been signed out. Sign in again, then try once more.'), false],
+            'throttled_429' => ['http_429', $said('Too many tries in a short time. Wait a minute and try again.'), true],
+            'framework_500' => ['http_500', $said('Something went wrong on our side. Try again in a few minutes.'), true],
+            'gone_404' => ['http_404', $said('This document is no longer here. Reload the page.'), false],
+            'own_refusal' => ['wrong_state', 'आपल्या भाषेतील वाक्य', false],
+            'form_check' => ['http_422', 'चित्र निवडा.', false],
+        ];
+
+        foreach ($expected as $name => [$code, $message, $retry]) {
+            $this->assertSame(['code' => $code, 'message' => $message, 'retry' => $retry, 'ok' => true], $got[$name], $name);
+            $this->assertNotSame('', $message);
+        }
+
+        // After the last try: the page that could not be uploaded, unless the module said something of its own.
+        $page7 = __('Page :n could not be uploaded. Check your connection and try again.', ['n' => 7], 'mr');
+        $this->assertSame(['code' => 'upload_failed', 'message' => $page7], $got['after_proxy']);
+        $this->assertSame(['code' => 'upload_failed', 'message' => $page7], $got['after_network']);
+        $this->assertSame(['code' => 'not_stored', 'message' => 'जतन झाले नाही'], $got['after_not_stored']);
+
+        // No English from the framework, and no bare code, reaches the person.
+        foreach ($got as $name => $error) {
+            foreach (['Server Error', 'CSRF token mismatch.', 'Too Many Attempts.', 'This action is unauthorized.', 'Not Found'] as $english) {
+                $this->assertStringNotContainsString($english, $error['message'], $name);
+            }
+
+            $this->assertDoesNotMatchRegularExpression('/^http_\d+$/', $error['message'], $name);
+        }
+
+        // The capture script uses this handling for every call and for the end of an upload.
+        $script = $this->source('resources/js/reader/capture.js');
+        $this->assertStringContainsString("from './errors.js'", $script);
+        $this->assertStringContainsString('throw refusalOf(response.status, data, words);', $script);
+        $this->assertStringContainsString('throw uploadFailure(last, pageNo, words);', $script);
+        $this->assertStringNotContainsString('super(message || code)', $script.$this->source('resources/js/reader/errors.js'));
+    }
+
     public function test_the_browsers_page_size_is_the_servers(): void
     {
         $node = (new ExecutableFinder)->find('node');

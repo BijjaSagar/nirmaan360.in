@@ -26,7 +26,9 @@ class ReadingTranslationsTest extends TestCase
         ], is_dir(...));
 
         $files = collect($folders)->flatMap(fn (string $folder) => File::allFiles($folder))->map->getPathname()
-            ->merge(array_filter([app_path('Http/Middleware/RequireAiReader.php'), app_path('Console/Commands/TendDocumentReads.php')], is_file(...)));
+            ->merge(array_filter([app_path('Http/Middleware/RequireAiReader.php'), app_path('Console/Commands/TendDocumentReads.php')], is_file(...)))
+            // What the privacy policy and the terms say about the AI provider is the module's text too.
+            ->merge([resource_path('views/public/privacy.blade.php'), resource_path('views/public/terms.blade.php')]);
 
         $texts = [];
 
@@ -68,6 +70,33 @@ class ReadingTranslationsTest extends TestCase
                 $this->assertEqualsCanonicalizing($expected[0], $actual[0], "Placeholders differ in: {$english}");
                 $this->assertNotSame($english, $translated);
             }
+        }
+    }
+
+    public function test_the_legal_pages_put_every_sentence_about_the_ai_provider_through_translation_whole(): void
+    {
+        foreach (['privacy', 'terms'] as $view) {
+            $source = (string) file_get_contents(resource_path("views/public/{$view}.blade.php"));
+
+            // A word spliced into a sentence cannot be put in Hindi or Marathi order.
+            $this->assertDoesNotMatchRegularExpression("/\\?\\s*' (and|or) readers?'/", $source, $view);
+            $this->assertStringNotContainsString('@if ($readers) Pages', $source, $view);
+        }
+
+        $texts = $this->usedTexts();
+
+        foreach ([
+            'AI agents can be wrong.',
+            'AI agents and readers can be wrong.',
+            'for the AI agents, only when your company uses them.',
+            'for the AI agents and readers, only when your company uses them.',
+            'When you use an AI agent, what it needs',
+            'When you use an AI agent or reader, what it needs',
+            'We do not use your records to train AI models.',
+            'Pages, photos and document text sent to an AI reader',
+            'The text of voice notes you spoke into the app',
+        ] as $part) {
+            $this->assertNotEmpty(array_filter($texts, fn (string $text) => str_contains($text, $part)), $part);
         }
     }
 

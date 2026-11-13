@@ -5,6 +5,7 @@ namespace Tests\Feature\DocumentReading;
 use App\Models\AgentCreditLedger;
 use App\Models\AiDocumentSettings;
 use App\Models\DocumentRead;
+use App\Models\DocumentReadAttempt;
 use App\Models\DocumentReadPage;
 use App\Models\Organization;
 use App\Models\User;
@@ -38,7 +39,7 @@ class ReadingTablesTest extends ReadingTestCase
 
         $this->artisan('migrate:rollback', ['--path' => self::MIGRATION])->assertSuccessful();
 
-        foreach (['document_reads', 'document_read_pages', 'ai_document_settings'] as $table) {
+        foreach (['document_reads', 'document_read_pages', 'document_read_attempts', 'ai_document_settings'] as $table) {
             $this->assertFalse(Schema::hasTable($table), $table);
         }
 
@@ -51,7 +52,7 @@ class ReadingTablesTest extends ReadingTestCase
 
         $this->artisan('migrate', ['--path' => self::MIGRATION])->assertSuccessful();
 
-        foreach (['document_reads', 'document_read_pages', 'ai_document_settings'] as $table) {
+        foreach (['document_reads', 'document_read_pages', 'document_read_attempts', 'ai_document_settings'] as $table) {
             $this->assertTrue(Schema::hasTable($table), $table);
         }
 
@@ -152,6 +153,65 @@ class ReadingTablesTest extends ReadingTestCase
 
         $companyLevel = $this->makeRead($organization, null, ['kind' => 'tender']);
         $this->assertNull($this->makePage($companyLevel, 1, ['pass' => 'image', 'project_id' => $project->id])->project_id);
+    }
+
+    public function test_a_call_takes_its_company_and_read_from_its_page_and_is_seen_only_where_its_read_is(): void
+    {
+        $organization = $this->tenant('Sahyadri Builders');
+        $other = $this->tenant('Konkan Infra');
+        $owner = $this->member($organization, 'owner');
+        $mine = $this->makeProject($organization, ['name' => 'Visible Tower']);
+        $hidden = $this->makeProject($organization, ['name' => 'Secret Plaza']);
+        $visible = $this->makePage($this->makeRead($organization, $owner, ['project_id' => $mine->id]));
+        $secret = $this->makePage($this->makeRead($organization, $owner, ['project_id' => $hidden->id]));
+        $elsewhere = $this->makeRead($other);
+
+        // Passed wrongly, and made while someone of another company is signed in: the page's own values win.
+        $this->actingAs($this->member($other, 'owner'));
+        $seen = $this->settledCall($visible, ['organization_id' => $other->id, 'document_read_id' => $elsewhere->id, 'cost_usd' => '0.05']);
+        $unseen = $this->settledCall($secret);
+
+        $this->assertSame([$organization->id, $visible->document_read_id], [$seen->organization_id, $seen->document_read_id]);
+        $this->assertSame(['0.050000', '0.0000', '0.000000', false], [$seen->cost_usd, $seen->credits, $seen->absorbed_usd, $seen->behaviour_failure]);
+        $this->assertSame(0, DocumentReadAttempt::count());
+
+        $engineer = $this->member($organization, 'engineer');
+        $engineer->forceFill(['limited_to_projects' => true])->save();
+        DB::table('user_project_access')->insert(['organization_id' => $organization->id, 'user_id' => $engineer->id, 'project_id' => $mine->id, 'created_at' => now(), 'updated_at' => now()]);
+        $this->actingAs($engineer);
+
+        $this->assertSame([$seen->id], DocumentReadAttempt::pluck('id')->all());
+        $this->assertNull(DocumentReadAttempt::find($unseen->id));
+
+        // A call is on record once.
+        $this->expectException(UniqueConstraintViolationException::class);
+        DocumentReadAttempt::withoutGlobalScopes()->create(['document_read_page_id' => $visible->id, 'attempt' => 1, 'kind' => 'boq', 'finished_at' => now()]);
+    }
+
+    public function test_the_daily_and_monthly_sums_each_have_an_index(): void
+    {
+        $indexed = fn (string $table) => collect(Schema::getIndexes($table))->pluck('columns')->all();
+
+        // A company's day, and every company's day or month.
+        $this->assertContains(['organization_id', 'finished_at'], $indexed('document_read_attempts'));
+        $this->assertContains(['finished_at'], $indexed('document_read_attempts'));
+        $this->assertContains(['created_at'], $indexed('ai_text_calls'));
+        // The month's agent steps of every company, which the readers' monthly limit adds up.
+        $this->assertContains(['created_at'], $indexed('agent_steps'));
+    }
+
+    public function test_the_agent_steps_index_rolls_back_and_runs_again(): void
+    {
+        $migration = 'database/migrations/2027_01_10_100009_add_created_at_index_to_agent_steps.php';
+        $indexed = fn () => collect(Schema::getIndexes('agent_steps'))->pluck('columns')->contains(['created_at']);
+
+        $this->artisan('migrate:rollback', ['--path' => $migration])->assertSuccessful();
+        $this->assertFalse($indexed());
+        // The index the agents already had is untouched.
+        $this->assertTrue(collect(Schema::getIndexes('agent_steps'))->pluck('columns')->contains(['organization_id', 'created_at']));
+
+        $this->artisan('migrate', ['--path' => $migration])->assertSuccessful();
+        $this->assertTrue($indexed());
     }
 
     public function test_a_page_cannot_be_made_for_a_read_that_does_not_exist(): void

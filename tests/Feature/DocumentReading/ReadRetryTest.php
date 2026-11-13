@@ -182,6 +182,7 @@ class ReadRetryTest extends ReadRoutesTestCase
         // The failed page itself is today's one unusable answer.
         foreach ([$this->finished(), $this->finished([], ['status' => DocumentRead::RUNNING, 'credits_held' => '20', 'last_dispatched_at' => now()])] as $read) {
             $page = $this->row($read, 2);
+            $this->settledCall($page, ['behaviour_failure' => true, 'cost_usd' => '0.05']);
 
             $this->web($this->owner, 'POST', $read, "/pages/{$page->id}/retry")->assertStatus(409)->assertJson(['code' => 'company_limit', 'limit' => 'brake']);
             $this->assertSame(DocumentReadPage::FAILED, $page->refresh()->status);

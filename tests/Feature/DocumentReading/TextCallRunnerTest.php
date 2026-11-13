@@ -7,13 +7,16 @@ use App\Models\AgentCreditLedger;
 use App\Models\AiTextCall;
 use App\Models\DocumentRead;
 use App\Models\User;
+use App\Services\Agents\CostMeter;
 use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\ProviderBlock;
 use App\Services\DocumentReading\TextCall;
 use App\Services\DocumentReading\TextCallRunner;
 use App\Services\DocumentReading\TextOutcome;
 use App\Services\DocumentReading\TextRequest;
+use App\Support\Dec;
 use App\Support\PlatformSettings;
+use Brick\Math\RoundingMode;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -204,6 +207,9 @@ class TextCallRunnerTest extends TextCallTestCase
         $this->assertSame([2900, 500], [$call->input_tokens, $call->output_tokens]);
         $this->assertSame('0.000540', $call->cost_usd);
         $this->assertSame('0.0293', $call->credits);
+        // So the first answer's cost is the platform's, though the call was charged.
+        $this->assertSame('0.000290', $call->absorbed_usd);
+        $this->assertSame('0.000290', (string) app(AiSpend::class)->absorbedToday($this->organization)->toScale(6));
         $this->assertSame(['-0.0293', "tc:{$call->id}:2"], [$this->usageLines($this->organization)[0]->credits, $this->usageLines($this->organization)[0]->reference]);
         $this->assertCount(1, $this->usageLines($this->organization));
         $this->assertCount(1, FakeTextHandler::$done);
@@ -499,6 +505,13 @@ class TextCallRunnerTest extends TextCallTestCase
         $this->assertSame([AiTextCall::DONE, '0.0500', '0.001640'], [$this->fresh()->status, $this->fresh()->credits, $this->fresh()->cost_usd]);
         $this->assertSame('499.9500', $this->wallet($this->organization)->available());
         $this->assertLedgerMatchesWallet($this->organization);
+
+        // What the charge did not cover counts against the company's cap on cost nobody paid for.
+        $metered = app(CostMeter::class)->credits('0.001640');
+        $uncovered = (string) Dec::of('0.001640')->multipliedBy(Dec::of($metered)->minus(Dec::of('0.05')))->dividedBy(Dec::of($metered), 6, RoundingMode::HalfUp);
+        $this->assertTrue(Dec::of($uncovered)->isPositive());
+        $this->assertSame($uncovered, $this->fresh()->absorbed_usd);
+        $this->assertSame($uncovered, (string) app(AiSpend::class)->absorbedToday($this->organization)->toScale(6));
 
         // The wallet was emptied by something else while the call was with the model: the answer is kept, the charge is what is there.
         $second = $this->start($this->record());

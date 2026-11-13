@@ -129,19 +129,23 @@ class AiSpendTextCallsTest extends ReadingTestCase
     public function test_text_the_guards_refused_counts_toward_the_brake_and_its_cost_is_capped(): void
     {
         $read = $this->makeRead($this->organization, $this->owner);
-        $this->makePage($read, 1, ['status' => 'failed', 'fail_reason' => 'declined', 'attempts' => 2, 'behaviour_failures' => 38, 'finished_at' => now()]);
+        $page = $this->makePage($read, 1, ['status' => 'failed', 'fail_reason' => 'declined', 'attempts' => 38, 'behaviour_failures' => 38, 'finished_at' => now()]);
 
-        $this->textCall($this->organization, $this->engineer, ['status' => 'rejected', 'cost_usd' => '0.9']);
+        foreach (range(1, 38) as $ignored) {
+            $this->settledCall($page, ['behaviour_failure' => true]);
+        }
+
+        $this->textCall($this->organization, $this->engineer, ['status' => 'rejected', 'cost_usd' => '0.9', 'absorbed_usd' => '0.9']);
         // Failed on the way, or finished and paid for: neither is an unusable answer.
-        $this->textCall($this->organization, $this->engineer, ['status' => 'failed', 'cost_usd' => '0.6']);
-        $this->textCall($this->organization, $this->engineer, ['status' => 'done', 'credits' => '2', 'cost_usd' => '7']);
+        $this->textCall($this->organization, $this->engineer, ['status' => 'failed', 'cost_usd' => '0.6', 'absorbed_usd' => '0.6']);
+        $this->textCall($this->organization, $this->engineer, ['status' => 'done', 'credits' => '819', 'cost_usd' => '7']);
         $this->textCall($this->organization, $this->engineer, ['status' => 'rejected', 'created_at' => now()->subHours(25)]);
 
         $this->assertSame(39, $this->spend()->unusableAnswers($this->organization));
         $this->assertSame('1.500000', (string) $this->spend()->absorbedToday($this->organization)->toScale(6));
         $this->assertNull($this->spend()->companyStop($this->organization));
 
-        $this->textCall($this->organization, $this->engineer, ['status' => 'rejected', 'cost_usd' => '0.4']);
+        $this->textCall($this->organization, $this->engineer, ['status' => 'rejected', 'cost_usd' => '0.4', 'absorbed_usd' => '0.4']);
 
         $this->assertSame(40, $this->spend()->unusableAnswers($this->organization));
         $this->assertSame('brake', $this->spend()->companyStop($this->organization));
@@ -152,8 +156,24 @@ class AiSpendTextCallsTest extends ReadingTestCase
         $this->assertSame(0, $this->spend()->unusableAnswers($this->organization));
         $this->assertNull($this->spend()->companyStop($this->organization));
 
-        $this->textCall($this->organization, $this->engineer, ['status' => 'rejected', 'cost_usd' => '0.1']);
+        $this->textCall($this->organization, $this->engineer, ['status' => 'rejected', 'cost_usd' => '0.1', 'absorbed_usd' => '0.1']);
         $this->assertSame('absorbed', $this->spend()->companyStop($this->organization));
+    }
+
+    public function test_a_call_charged_in_part_counts_what_its_charge_did_not_cover(): void
+    {
+        // Refused once and then accepted: the first answer was nobody's to pay, and the wallet covered only half of the second.
+        $this->textCall($this->organization, $this->engineer, ['status' => 'done', 'attempts' => 2, 'credits' => '1.5', 'cost_usd' => '1.95', 'absorbed_usd' => '1.95']);
+
+        $this->assertSame('1.950000', (string) $this->spend()->absorbedToday($this->organization)->toScale(6));
+        $this->assertNull($this->spend()->companyStop($this->organization));
+
+        $this->textCall($this->organization, $this->engineer, ['status' => 'done', 'credits' => '3', 'cost_usd' => '0.1', 'absorbed_usd' => '0.05']);
+        $this->assertSame('absorbed', $this->spend()->companyStop($this->organization));
+
+        // Yesterday's calls are yesterday's.
+        $this->travel(1)->days();
+        $this->assertNull($this->spend()->companyStop($this->organization));
     }
 
     public function test_text_calls_count_in_the_platforms_day_and_month(): void

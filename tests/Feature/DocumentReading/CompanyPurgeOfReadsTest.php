@@ -4,6 +4,7 @@ namespace Tests\Feature\DocumentReading;
 
 use App\Models\AiDocumentSettings;
 use App\Models\DocumentRead;
+use App\Models\DocumentReadAttempt;
 use App\Models\DocumentReadPage;
 use App\Models\Organization;
 use App\Models\User;
@@ -48,8 +49,9 @@ class CompanyPurgeOfReadsTest extends PageReadingTestCase
             'credits_held' => $status === DocumentRead::RUNNING ? '40' : '0',
         ]);
 
-        $this->storedPage($read, 1, ['status' => DocumentReadPage::READ, 'result' => ['page_kind' => 'table']]);
+        $first = $this->storedPage($read, 1, ['status' => DocumentReadPage::READ, 'attempts' => 1, 'result' => ['page_kind' => 'table']]);
         $this->storedPage($read, 2, ['status' => DocumentReadPage::WAITING]);
+        $this->settledCall($first, ['cost_usd' => '0.05', 'credits' => '6']);
 
         Storage::put(ReadFiles::source($read), '%PDF-1.4 a test file');
         $read->forceFill(['source_path' => ReadFiles::source($read), 'source_name' => 'estimate.pdf'])->save();
@@ -137,17 +139,19 @@ class CompanyPurgeOfReadsTest extends PageReadingTestCase
             }
         }
 
-        foreach (['document_reads', 'document_read_pages', 'ai_document_settings', 'credit_ledger', 'audit_logs'] as $table) {
+        foreach (['document_reads', 'document_read_pages', 'document_read_attempts', 'ai_document_settings', 'credit_ledger', 'audit_logs'] as $table) {
             $this->assertArrayHasKey($table, app(TenantData::class)->tables(), "{$table} is found by the sweep.");
         }
 
         $this->assertSame(0, DocumentReadPage::withoutGlobalScopes()->whereIn('document_read_id', collect($reads)->pluck('id'))->count());
+        $this->assertSame(0, DocumentReadAttempt::withoutGlobalScopes()->whereIn('document_read_id', collect($reads)->pluck('id'))->count());
         $this->assertSame([], $this->fileWarnings(), 'Every file could be removed, so nothing is logged about files.');
 
         // The other company keeps its read, its pages, its consent and every file, the unrecorded one included.
         $this->assertSame($theirFiles, $this->filesOf($other->id));
         $this->assertSame(DocumentRead::READY, $theirs->fresh()->status);
         $this->assertSame(2, DocumentReadPage::withoutGlobalScopes()->where('document_read_id', $theirs->id)->count());
+        $this->assertSame(1, DocumentReadAttempt::withoutGlobalScopes()->where('document_read_id', $theirs->id)->count());
         $this->assertTrue(AiDocumentConsent::current($other));
         $this->assertNotNull(AiDocumentSettings::withoutGlobalScopes()->where('organization_id', $other->id)->first());
     }

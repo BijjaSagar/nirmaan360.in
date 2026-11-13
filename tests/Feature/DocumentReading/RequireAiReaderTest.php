@@ -236,7 +236,7 @@ class RequireAiReaderTest extends PageReadingTestCase
         // Another company used up the day: the limit is the platform's, so it stops everyone.
         $this->platform(['ai_reader_daily_usd' => '5']);
         $theirs = $this->startedRead($theirOwner);
-        $this->answeredPage($theirs, 1, '5.000000');
+        $this->paidPage($theirs, 1, '5.000000');
 
         $today = 'The reader is paused for today. Try again tomorrow.';
         $this->assertSentBack($this->web($this->owner), $today);
@@ -251,7 +251,7 @@ class RequireAiReaderTest extends PageReadingTestCase
 
         // The month's limit is a share of the cap the platform admin typed.
         $this->platform(['ai_reader_daily_usd' => '500', 'ai_tier_monthly_cap_usd' => '10']);
-        $this->answeredPage($read, 2, '6.000000');
+        $this->paidPage($read, 2, '6.000000');
 
         $month = 'The reader is paused for this month.';
         $this->assertRefused($this->api($this->owner), ['code' => 'reader_paused', 'period' => 'monthly', 'message' => $month]);
@@ -264,7 +264,7 @@ class RequireAiReaderTest extends PageReadingTestCase
         $this->platform(['ai_readers_released' => '0', 'anthropic_api_key' => null, 'ai_reader_daily_usd' => '1']);
         $this->organization->update(['plan' => 'contractor']);
         AiDocumentSettings::for($this->organization)->update(['platform_block' => true, 'enabled' => false]);
-        $this->answeredPage($this->startedRead(), 1, '2.000000');
+        $this->paidPage($this->startedRead(), 1, '2.000000');
 
         $code = fn () => $this->api($this->owner->fresh())->json('code');
 
@@ -330,7 +330,7 @@ class RequireAiReaderTest extends PageReadingTestCase
             function () {
                 $this->consent($this->organization);
                 $this->platform(['ai_reader_daily_usd' => '1']);
-                $this->answeredPage($this->startedRead(), 1, '2.000000');
+                $this->paidPage($this->startedRead(), 1, '2.000000');
             },
         ];
 

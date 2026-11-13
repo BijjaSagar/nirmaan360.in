@@ -191,6 +191,59 @@ class LegalPagesTest extends ReadingTestCase
         }
     }
 
+    public function test_what_the_pages_say_about_the_ai_provider_is_in_the_visitors_language_whole(): void
+    {
+        $agents = [
+            'privacy' => [
+                'We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that it does not use what it receives through this service to train its models.',
+                'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents, only when your company uses them. They handle data only so that we can run the service.',
+                'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer.',
+            ],
+            'terms' => ['AI agents can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.'],
+        ];
+        $readers = [
+            'privacy' => [
+                'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents and readers, only when your company uses them. They handle data only so that we can run the service.',
+                'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent or reader, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer. Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.',
+                'Pages, photos and document text sent to an AI reader, and what the reader read from them, are part of the company\'s records. They stay with the company when one person\'s account is deleted, and are erased with the company.',
+            ],
+            'terms' => ['AI agents and readers can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.'],
+        ];
+
+        $check = function (array $texts, string $state) {
+            foreach (['hi', 'mr'] as $locale) {
+                foreach ($texts as $view => $sentences) {
+                    $this->withSession(['locale' => $locale]);
+                    $page = $this->text("/{$view}");
+
+                    foreach ($sentences as $english) {
+                        $translated = __($english, [], $locale);
+                        $this->assertNotSame($english, $translated, "{$locale}: {$english}");
+                        $this->assertStringContainsString($translated, $page, "{$locale} {$view} {$state}");
+                        $this->assertStringNotContainsString($english, $page, "{$locale} {$view} {$state}");
+                    }
+                }
+            }
+
+            // In English the same paragraphs are there as they were.
+            $this->withSession(['locale' => 'en']);
+
+            foreach ($texts as $view => $sentences) {
+                foreach ($sentences as $english) {
+                    $this->assertStringContainsString($english, $this->text("/{$view}"), "en {$view} {$state}");
+                }
+            }
+        };
+
+        $check($agents, 'before a reader exists');
+
+        $this->release();
+        $this->deployReader();
+        $check($readers, 'with a reader');
+        // The first paragraph is the same in both states.
+        $check(['privacy' => [$agents['privacy'][0]]], 'with a reader');
+    }
+
     public function test_text_saved_by_the_platform_admin_still_replaces_the_built_in_text(): void
     {
         $this->release();

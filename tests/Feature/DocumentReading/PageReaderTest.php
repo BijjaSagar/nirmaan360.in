@@ -5,11 +5,14 @@ namespace Tests\Feature\DocumentReading;
 use App\Jobs\DocumentReading\ReadDocumentPage;
 use App\Models\AgentCreditLedger;
 use App\Models\DocumentRead;
+use App\Models\DocumentReadAttempt;
 use App\Models\DocumentReadPage;
 use App\Models\PlatformSetting;
+use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\PageReader;
 use App\Services\DocumentReading\ReaderRequest;
 use App\Support\PlatformSettings;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -312,6 +315,56 @@ class PageReaderTest extends PageReadingTestCase
         $this->assertSame('4.1588', $read->credits_burned);
         // The part of the page's cost that nobody could be charged for: 0.056912 x 4.1588 / 6.6588.
         $this->assertSame('0.035545', $read->absorbed_usd);
+
+        // The call's own record carries the same split, which is what today's cap on uncharged cost counts.
+        $call = DocumentReadAttempt::withoutGlobalScopes()->where('document_read_page_id', $page->id)->sole();
+        $this->assertSame(['0.056912', '2.5000', '0.035545', false], [$call->cost_usd, $call->credits, $call->absorbed_usd, $call->behaviour_failure]);
+        $this->assertSame('0.035545', (string) app(AiSpend::class)->absorbedToday($this->organization)->toScale(6));
+    }
+
+    public function test_each_try_of_a_page_counts_in_the_limits_on_the_day_it_was_made(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-12 23:30:00', 'Asia/Kolkata'));
+        $spend = app(AiSpend::class);
+        $read = $this->startedRead();
+        $page = $this->storedPage($read);
+        $this->storedPage($read, 2, ['status' => DocumentReadPage::WAITING]);
+        $this->fakeReader([$this->answer('unusable', 5956, 300), $this->answer('other')]);
+
+        $this->readPage($page);
+
+        // The unusable answer: its cost is the platform's, and it is the company's one unusable answer today.
+        $this->assertSame('0.014912', (string) $spend->absorbedToday($this->organization)->toScale(6));
+        $this->assertSame('0.014912', (string) $spend->platformCostToday()->toScale(6));
+        $this->assertSame(1, $spend->unusableAnswers($this->organization));
+
+        // The platform admin lets the company go on. After midnight the page is asked for again, and read.
+        $spend->liftBrake($this->organization);
+        Carbon::setTestNow(Carbon::parse('2026-11-13 00:10:00', 'Asia/Kolkata'));
+        $page->refresh()->forceFill(['status' => DocumentReadPage::QUEUED])->save();
+        $this->readPage($page);
+
+        // The row adds up both tries, for the read's own totals...
+        $page->refresh();
+        $this->assertSame(['0.071824', '6.6588', 1], [$page->cost_usd, $page->credits, (int) $page->behaviour_failures]);
+        $this->assertSame('0.014912', $read->fresh()->absorbed_usd);
+
+        // ...and today's limits see only today's try: charged in full, nothing left uncharged, no unusable answer since the lift.
+        $this->assertSame('0.000000', (string) $spend->absorbedToday($this->organization)->toScale(6));
+        $this->assertSame('0.056912', (string) $spend->platformCostToday()->toScale(6));
+        $this->assertSame('6.6588', (string) $spend->spentToday($this->organization, 'boq', null, $read->fresh()));
+        $this->assertSame(0, $spend->unusableAnswers($this->organization));
+
+        // Each try is on record with its own figures, date and person.
+        $tries = DocumentReadAttempt::withoutGlobalScopes()->where('document_read_page_id', $page->id)->orderBy('attempt')->get();
+        $this->assertSame([
+            [1, '0.014912', '0.0000', '0.014912', true, '2026-11-12 23:30'],
+            [2, '0.056912', '6.6588', '0.000000', false, '2026-11-13 00:10'],
+        ], $tries->map(fn (DocumentReadAttempt $try) => [$try->attempt, $try->cost_usd, $try->credits, $try->absorbed_usd, $try->behaviour_failure, $try->finished_at->setTimezone('Asia/Kolkata')->format('Y-m-d H:i')])->all());
+        $this->assertSame([$this->owner->id], $tries->pluck('user_id')->unique()->values()->all());
+        $this->assertSame([$this->organization->id], $tries->pluck('organization_id')->unique()->values()->all());
+
+        Carbon::setTestNow();
     }
 
     public function test_a_page_tried_twice_keeps_the_cost_of_both_tries_and_is_charged_for_the_one_that_was_read(): void

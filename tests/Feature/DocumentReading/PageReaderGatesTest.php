@@ -226,7 +226,7 @@ class PageReaderGatesTest extends PageReadingTestCase
         app(PlatformSettings::class)->set(['ai_reader_daily_usd' => '1']);
 
         $elsewhere = $this->startedRead($this->member($this->tenant('Narmada Projects'), 'owner'));
-        $this->makePage($elsewhere, 1, ['status' => DocumentReadPage::READ, 'cost_usd' => '1.000000', 'finished_at' => now(), 'attempts' => 1]);
+        $this->paidPage($elsewhere, 1, '1.000000');
 
         $this->readPage($page);
 

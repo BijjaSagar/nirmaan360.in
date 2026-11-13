@@ -6,6 +6,7 @@ use App\Models\AiDocumentSettings;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
 use App\Services\DocumentReading\AiDocumentConsent;
+use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\ReadQuote;
 use App\Support\Dec;
 use Illuminate\Support\Facades\Http;
@@ -413,6 +414,53 @@ class ReadStartTest extends ReadRoutesTestCase
         $kept = $this->paused('provider_limit', '40', '7', ['user_id' => $other->id]);
         $this->web($this->owner, 'POST', $kept, '/resume')->assertStatus(202);
         $this->assertSame($other->id, $kept->refresh()->user_id);
+    }
+
+    public function test_an_owner_who_continues_someones_own_read_is_held_to_that_persons_daily_budget(): void
+    {
+        $storeKeeper = $this->member($this->organization, 'store');
+        $slip = fn () => tap($this->draft(['kind' => 'slip', 'status' => DocumentRead::PAUSED, 'pause_reason' => 'provider_limit', 'credits_cap' => '20', 'started_at' => now()->subMinutes(5)], $storeKeeper),
+            fn (DocumentRead $read) => $this->storedPage($read, 1, ['status' => DocumentReadPage::WAITING, 'pass' => 'main']));
+        // What a person has been charged for slips today, on a slip of their own that is done.
+        $charged = fn ($person, string $credits) => $this->settledCall($this->storedPage($this->draft(['kind' => 'slip', 'status' => DocumentRead::READY], $person), 1, ['status' => DocumentReadPage::READ, 'pass' => 'main', 'attempts' => 1]), ['credits' => $credits]);
+
+        // The store keeper has used nearly all of their 30 credits for slips today; the owner none of theirs.
+        $charged($storeKeeper, '29.99');
+        $read = $slip();
+
+        $this->web($this->owner, 'POST', $read, '/resume')->assertStatus(402)->assertJson(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'user']);
+        $this->assertSame([DocumentRead::PAUSED, '0.0000', $storeKeeper->id], [$read->refresh()->status, (string) $read->credits_held, $read->user_id]);
+
+        // The other way round: the owner's own budget is used up, the store keeper's is not.
+        $other = $this->member($this->organization, 'store');
+        $charged($this->owner, '29.99');
+        $theirs = tap($slip(), fn (DocumentRead $read) => $read->forceFill(['user_id' => $other->id])->save());
+
+        $this->web($this->owner, 'POST', $theirs, '/resume')->assertStatus(202)->assertJson(['status' => 'running']);
+        $theirs->refresh();
+        $this->assertSame($other->id, $theirs->user_id);
+
+        // The hold is the store keeper's to count, not the owner's.
+        $spend = app(AiSpend::class);
+        $this->assertSame((string) Dec::of($theirs->credits_held)->toScale(4), (string) $spend->spentToday($this->organization, 'slip', $other));
+        $this->assertSame('29.9900', (string) $spend->spentToday($this->organization, 'slip', $this->owner));
+    }
+
+    public function test_an_owner_who_starts_someones_own_read_is_held_to_that_persons_daily_budget(): void
+    {
+        $storeKeeper = $this->member($this->organization, 'store');
+        $this->settledCall($this->storedPage($this->draft(['kind' => 'slip', 'status' => DocumentRead::READY], $storeKeeper), 1, ['status' => DocumentReadPage::READ, 'pass' => 'main', 'attempts' => 1]), ['credits' => '29.99']);
+        $read = $this->draft(['kind' => 'slip', 'pages_total' => 1], $storeKeeper);
+        $this->storedPage($read, 1, ['status' => DocumentReadPage::WAITING, 'pass' => 'main']);
+
+        $this->web($this->owner, 'POST', $read, '/start')->assertStatus(402)->assertJson(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'user']);
+        $this->assertSame([DocumentRead::DRAFT, '0.0000'], [$read->refresh()->status, (string) $read->credits_held]);
+
+        // A tender is nobody's own: it is booked to whoever starts it, so that person's budget is the one that counts.
+        AiDocumentSettings::for($this->organization)->update(['budgets' => ['user' => ['tender' => '1000']]]);
+        $tender = $this->draftWithPages(1, ['kind' => 'tender'], $storeKeeper);
+        $this->web($this->owner, 'POST', $tender, '/start')->assertStatus(202);
+        $this->assertSame($this->owner->id, $tender->refresh()->user_id);
     }
 
     public function test_a_paused_read_with_nothing_left_to_send_is_finished_instead(): void

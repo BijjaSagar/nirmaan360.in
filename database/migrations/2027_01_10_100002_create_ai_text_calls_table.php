@@ -40,6 +40,8 @@ return new class extends Migration
             $table->unsignedBigInteger('cache_read_tokens')->default(0);
             $table->unsignedBigInteger('cache_write_tokens')->default(0);
             $table->decimal('cost_usd', 12, 6)->default(0);
+            // The part of the cost nobody was charged for: every attempt but the one whose answer was kept, and what its charge could not cover.
+            $table->decimal('absorbed_usd', 12, 6)->default(0);
             $table->boolean('cost_estimated')->default(false);
             $table->string('stop_reason', 30)->nullable();
             $table->string('provider_message_id')->nullable();

@@ -151,6 +151,14 @@ An owner or admin of a company on a plan with the AI features decides under **AI
 
 The phone and any request that asks for JSON get the code with a sentence in `message`. A browser is sent back to the page it came from with the sentence, and for a missing consent an owner or admin is taken to the notice. Budgets, the wallet and a company's own brakes are checked later, where credits are put on hold, and answer as `SpendRefused` says.
 
+### How the day's and the month's figures are counted
+
+Every call for a page that cost something, was charged something or came back unusable leaves one row in `document_read_attempts`, dated by when that call ended and booked to the person the read was booked to at that moment. A page row adds up all of its calls for the read's own totals, and a page can be read again on a later day, so the limits never sum page rows: the daily budgets, the company's share of the day, its cap on cost nobody was charged for, the brake on unusable answers and the platform's day and month all count these rows. A page read again today therefore brings none of yesterday's cost, charge or unusable answer into today, and an answer forgiven when the platform admin lifts the brake stays forgiven when its page is read again.
+
+A text call is counted on the day it was made. Its `absorbed_usd` holds what nobody paid for: every attempt whose answer was not kept, and the part of the kept one that its maximum or the wallet did not cover.
+
+A daily budget belongs to the person the read is booked to. When an owner or admin starts or continues one person's own read (a slip or a bill), the read stays booked to that person, so that person's budget is the one checked.
+
 ## Figures that belong together
 
 Each reader call has a model, a largest answer (`max_tokens`) and a time limit, in `config/modules/document_reading.php` under `kinds`. They must be changed together: a call has to be able to write its largest answer inside 80 percent of its time limit at `assumed_tokens_per_second`. A test holds this. No time limit may be above 240 seconds; longer answers would need streaming, which is not used.
@@ -176,7 +184,7 @@ Things to know:
 - **No tools, no pictures.** A text call body may hold a model, an output limit, the fixed instructions, one user message of plain text and the form of the answer. Anything else stops the call before it is sent (`TextRequest::problems`), and so does a request longer than `text_call_max_chars` (40,000 characters).
 - **Personal details are taken out** of what every purpose sends (phone numbers, e-mail addresses, GSTINs, PANs, account numbers), except a purpose whose figures say `'redact' => false`. Only the spoken report does: it is sent as it was heard, and only under the company's switch.
 - **Busy provider.** "Too many requests" and an outage are tried again after a short wait, three attempts in all. A rejected key, a billing problem or a spending limit sets the provider stop, as for pages; the company is only told that the service could not be reached.
-- **The corrective request counts as an attempt** on the same row. `cost_usd` and the token columns add up over the attempts; `credits` is what the company paid, which is for one answer at most. `correction` keeps which rules the refused answer broke, as codes.
+- **The corrective request counts as an attempt** on the same row. `cost_usd` and the token columns add up over the attempts; `credits` is what the company paid, which is for one answer at most, and `absorbed_usd` what nobody paid. `correction` keeps which rules the refused answer broke, as codes.
 
 What tending does for text calls:
 
@@ -237,6 +245,7 @@ pdf.js fetches part of what it needs while it runs: the decoders for fax, JBIG2 
 - `npm run build` copies those folders from `node_modules/pdfjs-dist` to `public/pdfjs-assets/<version>/` (the small plugin at the top of `vite.config.js`). The folder is not committed. **A deploy that does not run the build, or does not serve `public/pdfjs-assets` as static files, breaks scanned PDFs.**
 - `pdfjs_assets` in `config/modules/document_reading.php` names the folder. A test fails when it is not the installed pdfjs-dist version, so an upgrade of the package cannot leave it pointing at a folder that is gone.
 - The script never uploads a scan it could not draw: a drawn page that is flat although it holds a picture is reported as "could not be drawn in this browser", and a page with nothing on it is left out unless the person includes it.
+- A refusal of the module's own reaches the screen with its code and its sentence in the person's language. Any other failure (a proxy's error page, an expired session, a throttle, a plain permission refusal, a server error) carries the code `http_<status>` and one of the partial's own sentences instead of the framework's English; after the last try at uploading a page it is "Page :n could not be uploaded". This handling is `resources/js/reader/errors.js`, which runs without a browser and is tested with Node.
 
 ### The browser self-check
 

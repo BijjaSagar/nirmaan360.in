@@ -102,23 +102,28 @@ class CreditService
      * same transaction, and must not lock the read's row before calling this.
      *
      * @param  string  $credits  At a start, the read's cap. At a resume, no more than $read->capLeft().
+     * @param  User  $by  The person acting now. Their share of the wallet limits the hold.
+     * @param  ?User  $bookedTo  The person the read is booked to from now on, when that is not $by: the
+     *                           hold and the pages count against this person's daily budget, so this
+     *                           is the budget that is checked.
      *
      * @throws SpendRefused When a platform or company limit or a daily budget stops it.
      * @throws InsufficientCredits When the wallet's free balance is smaller, or this person may not hold that much of it.
      */
-    public function hold(DocumentRead $read, string $credits, User $by): void
+    public function hold(DocumentRead $read, string $credits, User $by, ?User $bookedTo = null): void
     {
         $asked = Dec::of($credits)->toScale(4, RoundingMode::Up);
+        $bookedTo ??= $by;
 
         if (! $asked->isPositive()) {
             throw new InvalidArgumentException('A hold is for more than nothing.');
         }
 
-        if ($by->organization_id !== $read->organization_id) {
+        if ($by->organization_id !== $read->organization_id || $bookedTo->organization_id !== $read->organization_id) {
             throw new LogicException('A read is started by someone of its own company.');
         }
 
-        DB::transaction(function () use ($read, $asked, $by) {
+        DB::transaction(function () use ($read, $asked, $by, $bookedTo) {
             $organization = Organization::findOrFail($read->organization_id);
             $wallet = $this->lockedWallet($organization);
             $locked = DocumentRead::withoutGlobalScopes()->lockForUpdate()->findOrFail($read->id);
@@ -127,7 +132,7 @@ class CreditService
                 throw new LogicException("A {$locked->status} read cannot hold credits.");
             }
 
-            $this->spend->assertRoom($organization, $by, $locked->kind, (string) $asked, $locked);
+            $this->spend->assertRoom($organization, $bookedTo, $locked->kind, (string) $asked, $locked);
 
             [$free, $own] = $this->reach($wallet, $organization, $by, $locked->id);
 
@@ -222,11 +227,8 @@ class CreditService
             ];
 
             if ($shortfall->isPositive()) {
-                // The part of the page's cost that matches the credits nobody could be charged for.
-                $lost = Dec::of($row->cost_usd)->multipliedBy($shortfall)->dividedBy($metered, 6, RoundingMode::HalfUp);
-
                 $changes['credits_burned'] = (string) Dec::of($locked->credits_burned)->plus($shortfall);
-                $changes['absorbed_usd'] = (string) Dec::of($locked->absorbed_usd)->plus($lost);
+                $changes['absorbed_usd'] = (string) Dec::of($locked->absorbed_usd)->plus(self::uncharged((string) $row->cost_usd, (string) $metered, (string) $charge));
             }
 
             $this->change($locked, $read, $changes);
@@ -243,6 +245,28 @@ class CreditService
 
             return (string) $charge->toScale(4);
         });
+    }
+
+    /**
+     * The part of a call's provider cost that matches the credits nobody could be charged for: all
+     * of it when nothing was charged, none of it when the whole metered amount was.
+     *
+     * @param  string  $usd  The call's provider cost.
+     * @param  string  $metered  CostMeter::credits() of the call.
+     * @param  string  $charged  What was actually charged for it.
+     */
+    public static function uncharged(string $usd, string $metered, string $charged): BigDecimal
+    {
+        $cost = Dec::of($usd);
+        $metered = Dec::of($metered);
+        $shortfall = $metered->minus(Dec::of($charged));
+
+        // A shortfall above nothing means the metered amount was above nothing too.
+        if (! $cost->isPositive() || ! $shortfall->isPositive()) {
+            return BigDecimal::zero()->toScale(6);
+        }
+
+        return $cost->multipliedBy($shortfall)->dividedBy($metered, 6, RoundingMode::HalfUp);
     }
 
     /**

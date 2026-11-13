@@ -110,7 +110,37 @@ return new class extends Migration
             $table->index(['organization_id', 'status']);
             $table->index(['status', 'claimed_at']);
             $table->index(['organization_id', 'finished_at']);
-            // The platform's daily and monthly limits add up every company's pages by day.
+            // Every company's pages by when they last ended, for figures across the platform.
+            $table->index('finished_at');
+        });
+
+        /*
+         * One call for a page that cost something, charged something or came back unusable, dated by
+         * when that call ended. A page row adds up all of its calls, and a page can be read again on a
+         * later day, so the day's and the month's limits count these rows instead: each call in the
+         * period it was made, and charged to the person the read was booked to at that moment.
+         */
+        Schema::create('document_read_attempts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('document_read_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('document_read_page_id')->constrained()->cascadeOnDelete();
+            $table->string('kind', 24);
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedTinyInteger('attempt');
+            // Credits and provider cost are usage units, finer than invoice money.
+            $table->decimal('cost_usd', 12, 6)->default(0);
+            $table->decimal('credits', 15, 4)->default(0);
+            // The part of the cost nobody was charged for.
+            $table->decimal('absorbed_usd', 12, 6)->default(0);
+            // The model answered, but not usably: it counts toward the company's daily brake.
+            $table->boolean('behaviour_failure')->default(false);
+            $table->timestamp('finished_at');
+            $table->timestamps();
+            $table->unique(['document_read_page_id', 'attempt']);
+            // A company's budgets and limits add up its calls by day.
+            $table->index(['organization_id', 'finished_at']);
+            // The platform's daily and monthly limits add up every company's calls by day.
             $table->index('finished_at');
         });
 
@@ -153,6 +183,7 @@ return new class extends Migration
             $table->dropColumn(['document_read_id', 'reference']);
         });
 
+        Schema::dropIfExists('document_read_attempts');
         Schema::dropIfExists('document_read_pages');
         Schema::dropIfExists('document_reads');
         Schema::dropIfExists('ai_document_settings');

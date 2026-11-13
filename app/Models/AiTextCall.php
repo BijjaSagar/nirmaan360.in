@@ -50,6 +50,7 @@ class AiTextCall extends Model
             'max_credits' => 'decimal:4',
             'credits' => 'decimal:4',
             'cost_usd' => 'decimal:6',
+            'absorbed_usd' => 'decimal:6',
             'claimed_at' => 'datetime',
         ];
     }

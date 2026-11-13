@@ -134,12 +134,14 @@ class AiSpend
     /**
      * Checked before credits are put on hold for a read (pass the read) or before a text call is made.
      *
+     * @param  User  $bookedTo  The person the read or the call is booked to. What it holds and is charged
+     *                          counts against this person's own daily budget, so this is the budget checked.
      * @param  string  $credits  What is about to be held: a read's limit, or a text call's maximum.
      * @param  ?DocumentRead  $for  The read the hold is for. What it already holds is not counted twice.
      *
      * @throws SpendRefused
      */
-    public function assertRoom(Organization $organization, User $by, string $feature, string $credits, ?DocumentRead $for = null): void
+    public function assertRoom(Organization $organization, User $bookedTo, string $feature, string $credits, ?DocumentRead $for = null): void
     {
         $asked = Dec::of($credits);
 
@@ -163,7 +165,7 @@ class AiSpend
 
         $own = $this->budget($organization, 'user', $feature);
 
-        if ($own !== null && $this->spentToday($organization, $feature, $by, $for)->plus($asked)->isGreaterThan(Dec::of($own))) {
+        if ($own !== null && $this->spentToday($organization, $feature, $bookedTo, $for)->plus($asked)->isGreaterThan(Dec::of($own))) {
             throw new SpendRefused(SpendRefused::DAILY_BUDGET, 402,
                 __('You have used your AI budget for :feature today. It starts again tomorrow.', ['feature' => self::label($feature)]),
                 ['feature' => $feature, 'scope' => 'user']);
@@ -199,8 +201,11 @@ class AiSpend
     /**
      * Credits counted against a daily budget so far: charged since midnight in India, plus what is on hold now.
      *
+     * Each page call counts on the day it was made, for the person its read was booked to then: a page
+     * read again today does not bring yesterday's charge into today.
+     *
      * @param  string  $feature  'total' counts every feature.
-     * @param  ?User  $user  Only what this person started.
+     * @param  ?User  $user  Only what is booked to this person.
      * @param  ?DocumentRead  $except  A read whose present hold is about to be replaced.
      */
     public function spentToday(Organization $organization, string $feature, ?User $user = null, ?DocumentRead $except = null): BigDecimal
@@ -208,13 +213,12 @@ class AiSpend
         $feature = $feature === 'total' ? null : $feature;
         $from = $this->dayStart();
 
-        $total = Dec::of(DB::table('document_read_pages as p')
-            ->join('document_reads as r', 'r.id', '=', 'p.document_read_id')
-            ->where('p.organization_id', $organization->id)
-            ->where('p.finished_at', '>=', $from)
-            ->when($feature, fn ($query) => $query->where('r.kind', $feature))
-            ->when($user, fn ($query) => $query->where('r.user_id', $user->id))
-            ->sum('p.credits'));
+        $total = Dec::of(DB::table('document_read_attempts')
+            ->where('organization_id', $organization->id)
+            ->where('finished_at', '>=', $from)
+            ->when($feature, fn ($query) => $query->where('kind', $feature))
+            ->when($user, fn ($query) => $query->where('user_id', $user->id))
+            ->sum('credits'));
 
         $total = $total->plus(Dec::of(DB::table('document_reads')
             ->where('organization_id', $organization->id)
@@ -358,7 +362,11 @@ class AiSpend
         Cache::put($this->brakeKey($organization), now()->getTimestamp(), now()->addDay());
     }
 
-    /** Unusable answers this company caused in the last 24 hours: pages the model answered badly, and text the guards refused. */
+    /**
+     * Unusable answers this company caused in the last 24 hours: page calls the model answered badly,
+     * and text the guards refused. Each page call counts when it was made, so a page that failed
+     * earlier and is read again now brings none of its earlier answers into the count.
+     */
     public function unusableAnswers(Organization $organization): int
     {
         $since = now()->subDay();
@@ -369,10 +377,11 @@ class AiSpend
             $since = Carbon::createFromTimestamp($lifted + 1, config('app.timezone'));
         }
 
-        $count = (int) DB::table('document_read_pages')
+        $count = DB::table('document_read_attempts')
             ->where('organization_id', $organization->id)
             ->where('finished_at', '>=', $since)
-            ->sum('behaviour_failures');
+            ->where('behaviour_failure', true)
+            ->count();
 
         if ($this->has(self::TEXT_CALLS)) {
             $count += DB::table(self::TEXT_CALLS)
@@ -385,22 +394,25 @@ class AiSpend
         return $count;
     }
 
-    /** Provider cost, in US dollars, this company caused today without being charged for it. */
+    /**
+     * Provider cost, in US dollars, this company caused today without being charged for it. A page
+     * call counts on the day it was made, whatever day its read started or moves again; a text call
+     * counts on the day it was made, with every attempt nobody paid for and what its charge did not cover.
+     */
     public function absorbedToday(Organization $organization): BigDecimal
     {
         $from = $this->dayStart();
 
-        $total = Dec::of(DB::table('document_reads')
+        $total = Dec::of(DB::table('document_read_attempts')
             ->where('organization_id', $organization->id)
-            ->where('last_progress_at', '>=', $from)
+            ->where('finished_at', '>=', $from)
             ->sum('absorbed_usd'));
 
         if ($this->has(self::TEXT_CALLS)) {
             $total = $total->plus(Dec::of(DB::table(self::TEXT_CALLS)
                 ->where('organization_id', $organization->id)
                 ->where('created_at', '>=', $from)
-                ->where('credits', '<=', 0)
-                ->sum('cost_usd')));
+                ->sum('absorbed_usd')));
         }
 
         return $total;
@@ -415,6 +427,8 @@ class AiSpend
     /**
      * What the provider has been asked for this calendar month, in US dollars: agents, readers, text
      * calls and the admin's own dry runs. The provider counts its month in UTC, so this does too.
+     * Each page call counts in the month it was made, so a page read again does not bring last
+     * month's cost into this one.
      */
     public function platformCostThisMonth(): BigDecimal
     {
@@ -422,7 +436,7 @@ class AiSpend
             $from = now('UTC')->startOfMonth()->setTimezone(config('app.timezone'));
 
             $total = Dec::of(DB::table('agent_steps')->where('created_at', '>=', $from)->sum('cost_usd'))
-                ->plus(Dec::of(DB::table('document_read_pages')->where('finished_at', '>=', $from)->sum('cost_usd')));
+                ->plus(Dec::of(DB::table('document_read_attempts')->where('finished_at', '>=', $from)->sum('cost_usd')));
 
             foreach ([self::TEXT_CALLS, self::TRIAL_PAGES] as $table) {
                 if ($this->has($table)) {
@@ -502,12 +516,12 @@ class AiSpend
         return Dec::of(config('modules.document_reading.absorbed_usd_per_day.'.($organization->plan_status === 'trial' ? 'trial' : 'paying')));
     }
 
-    /** Pages finished and text calls made since midnight in India, for one company or for all. */
+    /** Page calls and text calls made since midnight in India, for one company or for all. */
     private function costToday(?int $organizationId): BigDecimal
     {
         $from = $this->dayStart();
 
-        $total = Dec::of(DB::table('document_read_pages')
+        $total = Dec::of(DB::table('document_read_attempts')
             ->when($organizationId, fn ($query) => $query->where('organization_id', $organizationId))
             ->where('finished_at', '>=', $from)
             ->sum('cost_usd'));

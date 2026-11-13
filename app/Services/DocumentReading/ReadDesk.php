@@ -175,15 +175,18 @@ class ReadDesk
 
             $limit = $this->quotes->capFor($quote, $cap);
 
-            $this->credits->hold($locked, $limit, $by);
+            // The read goes out in the starter's name. One person's own read (a slip, a bill) stays theirs when an owner or admin starts it for them.
+            $bookedTo = config("modules.document_reading.kinds.{$locked->kind}.own_only", false) ? $this->bookedTo($locked, $by) : $by;
+
+            // The hold and the pages count against the daily budget of the person the read is booked to, so that budget is the one checked.
+            $this->credits->hold($locked, $limit, $by, $bookedTo);
 
             $locked->forceFill([
                 'credits_cap' => $limit,
                 'credits_estimate' => $quote['estimate'],
                 'quoted_at' => $locked->quoted_at ?? now(),
                 'started_at' => now(),
-                // The read goes out in the starter's name. One person's own read (a slip, a bill) stays theirs when an owner or admin starts it for them.
-                'user_id' => config("modules.document_reading.kinds.{$locked->kind}.own_only", false) ? $this->starterFor($locked, $by) : $by->id,
+                'user_id' => $bookedTo->id,
                 'consent_version' => AiDocumentConsent::agreedVersion($organization),
                 'error' => null,
             ])->save();
@@ -238,12 +241,13 @@ class ReadDesk
             }
 
             $this->assertConsent($organization);
-            $held = $this->holdFor($organization, $locked, $waiting, $by, $cap);
+            $bookedTo = $this->bookedTo($locked, $by);
+            $held = $this->holdFor($organization, $locked, $waiting, $by, $cap, $bookedTo);
 
             $locked->forceFill([
                 'resumes' => min(250, (int) $locked->resumes + ($reason === DocumentRead::PAUSE_MANY_FAILURES ? 1 : 0)),
                 'consent_version' => AiDocumentConsent::agreedVersion($organization),
-                'user_id' => $this->starterFor($locked, $by),
+                'user_id' => $bookedTo->id,
             ])->save();
 
             AuditLog::record('ai.read_resumed', $locked, ['status' => DocumentRead::PAUSED, 'pause_reason' => ReadAudit::code($reason)], [
@@ -479,16 +483,19 @@ class ReadDesk
             $locked->save();
 
             // No new hold, so the limits a hold would have checked are checked here: the day's limits, the company's brakes, the budgets.
-            $this->spend->assertRoom($organization, $by, $locked->kind, $this->quotes->forPages($locked, $rows, $by)['cap_floor'], $locked);
+            // The pages are charged to the person the running read is booked to, so that person's budget is the one checked.
+            $bookedTo = ($locked->user_id === null ? null : User::where('organization_id', $locked->organization_id)->find($locked->user_id)) ?? $by;
+            $this->spend->assertRoom($organization, $bookedTo, $locked->kind, $this->quotes->forPages($locked, $rows, $by)['cap_floor'], $locked);
 
             return;
         }
 
-        $this->holdFor($organization, $locked, $rows, $by, $cap);
+        $bookedTo = $this->bookedTo($locked, $by);
+        $this->holdFor($organization, $locked, $rows, $by, $cap, $bookedTo);
 
         $locked->forceFill([
             'consent_version' => AiDocumentConsent::agreedVersion($organization),
-            'user_id' => $this->starterFor($locked, $by),
+            'user_id' => $bookedTo->id,
         ])->save();
     }
 
@@ -497,9 +504,10 @@ class ReadDesk
      * limit. The limit is changed only when the request names a new amount for these rows.
      *
      * @param  Collection<int, DocumentReadPage>  $rows
+     * @param  User  $bookedTo  The person the read is booked to from now on, whose daily budget the hold counts against.
      * @return array{hold:string, pages:int}
      */
-    private function holdFor(Organization $organization, DocumentRead $locked, Collection $rows, User $by, ?string $cap): array
+    private function holdFor(Organization $organization, DocumentRead $locked, Collection $rows, User $by, ?string $cap, User $bookedTo): array
     {
         $quote = $this->quotes->forPages($locked, $rows, $by);
         $this->assertFits($organization, $locked, $by, $quote, wholeOrNothing: false);
@@ -537,7 +545,7 @@ class ReadDesk
         $hold = (string) $hold->toScale(4, RoundingMode::Up);
         $limit = $locked->credits_cap;
 
-        $this->credits->hold($locked, $hold, $by);
+        $this->credits->hold($locked, $hold, $by, $bookedTo);
         $locked->forceFill(['credits_cap' => $limit, 'error' => null])->save();
 
         return ['hold' => $hold, 'pages' => (int) $quote['pages']];
@@ -631,7 +639,7 @@ class ReadDesk
      * In whose name the pages go out from now on. The person who started the read stays, as long as
      * they could still start it today; otherwise the person acting now takes it over.
      */
-    private function starterFor(DocumentRead $read, User $by): int
+    private function bookedTo(DocumentRead $read, User $by): User
     {
         $starter = $read->user_id === null ? null : User::where('organization_id', $read->organization_id)->find($read->user_id);
         $kind = $this->kinds->find($read->kind);
@@ -639,7 +647,7 @@ class ReadDesk
         $stillCan = $starter !== null && $kind !== null && $starter->is_active && $starter->anonymised_at === null
             && $starter->hasPermission('agents.use') && ReadAccess::holds($starter, $read, $kind);
 
-        return $stillCan ? (int) $starter->id : (int) $by->id;
+        return $stillCan ? $starter : $by;
     }
 
     /** The earlier read of a repeated client_uuid, when it is the same thing being asked for again. */

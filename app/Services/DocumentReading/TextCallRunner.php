@@ -347,8 +347,14 @@ class TextCallRunner
             $row = AiTextCall::withoutGlobalScopes()->findOrFail($call->id);
 
             if ($plan['step'] === 'done') {
-                if (Dec::of($plan['metered'])->isPositive()) {
-                    $this->credits->chargeCall($row, $plan['metered']);
+                $charge = Dec::of($plan['metered'])->isPositive() ? $this->credits->chargeCall($row, $plan['metered']) : '0';
+                $lost = CreditService::uncharged($plan['usd'], $plan['metered'], $charge);
+
+                // The answer that is kept is paid for, but never beyond the call's maximum or the wallet: the rest is the platform's.
+                if ($lost->isPositive()) {
+                    $absorbed = (string) Dec::of($row->absorbed_usd)->plus($lost)->toScale(6, RoundingMode::HalfUp);
+                    AiTextCall::withoutGlobalScopes()->whereKey($row->id)->where('organization_id', $row->organization_id)->update(['absorbed_usd' => $absorbed]);
+                    $row->setAttribute('absorbed_usd', $absorbed)->syncOriginalAttribute('absorbed_usd');
                 }
 
                 $handler->done($row, (array) $outcome->output);
@@ -408,6 +414,8 @@ class TextCallRunner
         // Cost and tokens add up over the attempts of a call: the first answer was paid for even when the second one is used.
         $row = [
             'cost_usd' => (string) Dec::of($call->cost_usd)->plus(Dec::of($usd))->toScale(6, RoundingMode::HalfUp),
+            // Nobody is charged for an attempt whose answer is not kept. What the kept one's charge leaves over is added when it is charged.
+            'absorbed_usd' => (string) Dec::of($call->absorbed_usd)->plus(Dec::of($step === 'done' ? '0' : $usd))->toScale(6, RoundingMode::HalfUp),
             'cost_estimated' => $estimated || $call->cost_estimated,
             'latency_ms' => max(0, $outcome->latencyMs),
             ...array_filter([

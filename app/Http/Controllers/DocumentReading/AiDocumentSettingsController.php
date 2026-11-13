@@ -77,7 +77,8 @@ class AiDocumentSettingsController extends Controller
         ], [
             'numeric' => __('Enter a number of credits, such as 50 or 12.5.'),
             'regex' => __('Enter a number of credits, such as 50 or 12.5.'),
-            'max_credits_per_read.gt' => __('Enter a number of credits, such as 50 or 12.5.'),
+            // Zero is a number, so it is told why it is refused here, and where a feature is stopped instead.
+            'max_credits_per_read.gt' => __('The most one document may use must be more than 0. To stop a feature, enter 0 as its daily budget.'),
             'max_credits_per_read.lte' => __('The most one document may use cannot be above :max credits.', ['max' => $platformMaximum]),
         ]);
 

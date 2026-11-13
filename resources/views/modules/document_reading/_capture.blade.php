@@ -31,6 +31,13 @@
         'draw_failed' => __('Page :n could not be turned into a picture in this browser.'),
         'upload_failed' => __('Page :n could not be uploaded. Check your connection and try again.'),
         'upload_size' => __('About :mb MB will be uploaded.'),
+        // For a failure that comes without a sentence of the module's own: a proxy's error page, an expired session, a throttle, a plain refusal.
+        'signed_out' => __('You have been signed out. Sign in again, then try once more.'),
+        'not_allowed' => __('You are not allowed to do this.'),
+        'not_found' => __('This document is no longer here. Reload the page.'),
+        'too_large' => __('This file is too large to upload.'),
+        'too_many' => __('Too many tries in a short time. Wait a minute and try again.'),
+        'server_failed' => __('Something went wrong on our side. Try again in a few minutes.'),
     ];
 @endphp
 <div hidden data-reader-capture
