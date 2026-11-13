@@ -494,10 +494,12 @@ class AcceptTest extends RateHelperTestCase
             }
         }
 
-        // One rate for one line is the only write there is.
+        // One rate for one line is the only write to a rate there is. Ranking with AI only puts candidates in order.
         $this->assertSame([
             'POST projects/{project}/rate-suggestions' => 'rate-suggestions.store',
             'GET rate-suggestions/{run}' => 'rate-suggestions.show',
+            'POST rate-suggestions/{run}/rank' => 'rate-suggestions.rank',
+            'GET rate-suggestions/{run}/ranking' => 'rate-suggestions.ranking',
             'POST rate-suggestions/{run}/lines/{line}/accept' => 'rate-suggestions.lines.accept',
             'POST rate-suggestions/{run}/lines/{line}/skip' => 'rate-suggestions.lines.skip',
         ], $routes);
