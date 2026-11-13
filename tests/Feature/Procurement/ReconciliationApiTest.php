@@ -9,6 +9,7 @@ use App\Models\StockLevel;
 use App\Models\User;
 use App\Services\Access\TeamAccessService;
 use App\Services\Procurement\MaterialCatalogService;
+use App\Services\Procurement\ReconciliationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -87,6 +88,24 @@ class ReconciliationApiTest extends TestCase
             ->assertJsonPath('data.rows.0.status', 'no_work');
 
         $this->getJson($this->url('nonsense'))->assertOk()->assertJsonPath('data.basis', 'measured');
+    }
+
+    public function test_the_rows_are_the_reconciliation_services_own_with_nothing_worked_out_again(): void
+    {
+        // The route may not calculate wastage itself: every figure and every status is ReconciliationService's,
+        // so whatever that service is built on (one shared allowance calculation) is what the phone shows.
+        $this->workedExample();
+        $other = $this->makeBoqItem($this->project, '10.000', '7313.19');
+        $this->issue($this->bagged, '5', ['boq_item_id' => $other->id, 'activity' => null]);
+        $this->signIn('engineer');
+
+        foreach (array_keys(ReconciliationService::BASES) as $basis) {
+            $rows = app(ReconciliationService::class)->consumption($this->project, $basis);
+            $data = $this->getJson($this->url($basis))->assertOk()->json('data');
+
+            $this->assertSame($rows, $data['rows']);
+            $this->assertEquals(array_count_values(array_column($rows, 'status')), array_filter($data['counts']));
+        }
     }
 
     public function test_issues_with_no_boq_line_lines_with_no_norm_and_stock_below_reorder_are_listed(): void
