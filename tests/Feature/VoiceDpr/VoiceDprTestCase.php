@@ -37,6 +37,8 @@ abstract class VoiceDprTestCase extends TextCallTestCase
     {
         parent::setUp();
 
+        // Voice is the only reader unless a test deploys a stand-in beside it.
+        $this->withoutShippedReaders();
         $this->consent($this->organization);
         app(PlatformSettings::class)->set([AiOffer::VOICE_ACCEPTED => '1']);
 

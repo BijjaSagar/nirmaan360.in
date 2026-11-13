@@ -15,6 +15,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\Feature\DocumentReading\Support\FakeKind;
+use Tests\Feature\DocumentReading\Support\SetsAsideShippedReaders;
 
 /**
  * The invented company of the letter tests, with the AI switched on for it: the platform admin has
@@ -25,6 +26,8 @@ use Tests\Feature\DocumentReading\Support\FakeKind;
  */
 abstract class SiteDiaryAiTestCase extends SiteLetterTestCase
 {
+    use SetsAsideShippedReaders;
+
     /** @var list<array<string, mixed>> Every body sent to the Messages address, in order. */
     protected array $sent = [];
 
@@ -35,6 +38,8 @@ abstract class SiteDiaryAiTestCase extends SiteLetterTestCase
     {
         parent::setUp();
         Http::preventStrayRequests();
+        // The stand-in reader is the only one, so a test can take it away and leave no reader deployed.
+        $this->withoutShippedReaders();
 
         config([
             'modules.document_reading.ceilings.cache_seconds' => 0,

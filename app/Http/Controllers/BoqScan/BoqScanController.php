@@ -42,9 +42,14 @@ class BoqScanController extends Controller
         private BoqScanScreen $screen,
     ) {}
 
-    /** The scan screen. When a scan cannot be started now it says why and what to do, never an error. */
+    /**
+     * The scan screen, there only while the readers are on for the company (BoqScanScreen::open). When a scan
+     * cannot be started now for another reason it says why and what to do, never an error.
+     */
     public function create(Request $request, Project $project): View
     {
+        abort_unless($this->screen->open($request->user()), 404);
+
         return view('modules.boq_scan.create', $this->screen->create($project, $request->user()));
     }
 

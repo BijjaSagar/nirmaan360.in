@@ -48,6 +48,19 @@ class BoqScanScreen
     }
 
     /**
+     * Whether the scan screen is there for this person's company at all: this module's reader is deployed and
+     * the readers are on for the company (AiSpend::readersOn, the one test). While they are off the screen
+     * answers as if it did not exist, as every other place that offers a reader hides it. A scan that cannot be
+     * started for another reason (consent, a limit, the permission to use the AI agents) is explained there.
+     */
+    public function open(User $user): bool
+    {
+        $organization = $user->organization;
+
+        return $organization !== null && $this->installed() && $this->spend->readersOn($organization, BoqReadKind::KEY);
+    }
+
+    /**
      * Whether the BOQ in Excel page offers this person the scan reader: the scan screen is there, the
      * readers are on for the company and its plan, and the person may both use the AI agents and work
      * with the money of the BOQ, as every route of the module asks.

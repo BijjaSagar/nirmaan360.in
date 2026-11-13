@@ -58,7 +58,8 @@ class AiOffer
 
     /**
      * Readers: icon, name, what it does, and the reader kinds it reads with (AiSpend::VOICE for spoken reports).
-     * Every kind in config/modules/document_reading.php is on a card. None of them is built yet.
+     * Every kind in config/modules/document_reading.php is on a card. A card shows only while the readers are on
+     * for one of its kinds, whatever routes its module registers.
      */
     private const READERS = [
         ['scan', 'Scanned BOQ reader', 'Reads a scanned or photographed BOQ or estimate page by page. Every line where quantity times rate does not equal the printed amount, or the total does not add up, is stopped for you to fix, and you confirm every line before anything is saved.', ['boq']],

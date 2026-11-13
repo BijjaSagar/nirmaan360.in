@@ -16,6 +16,7 @@ use App\Services\DocumentReading\ReadKinds;
 use App\Services\Reports\BoqPdfImport;
 use App\Support\PlatformSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -105,17 +106,31 @@ class BoqScanScreensTest extends BoqScanTestCase
 
     public function test_the_scan_screen_is_there_only_while_the_reader_kind_is_registered(): void
     {
-        // The app was booted with the module's config file, which does not register the kind yet.
-        $this->assertSame([], (require config_path('modules/boq_scan.php'))['read_kinds']);
-        $this->assertFalse(Route::has('boq-scans.create'));
+        // The module's config file deploys the kind, so the app was booted with the scan screen.
+        $this->assertSame([BoqReadKind::class], (require config_path('modules/boq_scan.php'))['read_kinds']);
         $this->assertTrue(Route::has('boq-scans.show'), 'The screen of a read is always there; it answers as if nothing existed while the kind is not registered.');
 
-        config(['modules.boq_scan.read_kinds' => []]);
-        $this->withScanScreen();
-        $this->assertFalse(Route::has('boq-scans.create'));
+        // The route file registers the screen only while the kind is listed.
+        $registers = function (array $kinds): bool {
+            config(['modules.boq_scan.read_kinds' => $kinds]);
+            $router = new Router(app('events'), app());
+            $booted = Route::getFacadeRoot();
+            Route::swap($router);
 
-        config(['modules.boq_scan.read_kinds' => [BoqReadKind::class]]);
-        $this->withScanScreen();
+            try {
+                require base_path('routes/modules/boq_scan.php');
+            } finally {
+                Route::swap($booted);
+            }
+
+            $router->getRoutes()->refreshNameLookups();
+
+            return $router->getRoutes()->hasNamedRoute('boq-scans.create');
+        };
+
+        $this->assertFalse($registers([]));
+        $this->assertTrue($registers([BoqReadKind::class]));
+
         $this->assertTrue(Route::has('boq-scans.create'));
         $this->assertSame('projects/{project}/boq-scans/create', Route::getRoutes()->getByName('boq-scans.create')->uri());
         $this->assertEqualsCanonicalizing(
@@ -167,12 +182,13 @@ class BoqScanScreensTest extends BoqScanTestCase
                 ->assertDontSee('boqScanUpload(', false);
         };
 
+        // While the readers are off for the company (AiSpend::readersOn) the screen is not there at all.
         $settings->set(['ai_readers_released' => '0']);
-        $blocked($this->owner, 'not_released', 'The readers are not switched on yet.');
+        $this->actingAs($this->owner)->get($url)->assertNotFound();
         $this->release();
 
         $settings->set(['anthropic_api_key' => null]);
-        $blocked($this->owner, 'not_connected', 'The AI service is not available right now. Try again later.');
+        $this->actingAs($this->owner)->get($url)->assertNotFound();
         $this->connect();
 
         AiDocumentSettings::for($this->organization)->update(['platform_block' => true]);
@@ -364,10 +380,12 @@ class BoqScanScreensTest extends BoqScanTestCase
         $url = route('boq.excel.index', $this->project);
         $key = 'boq-pdf:'.$pm->id.':'.$this->project->id;
 
-        // The module's scan screen is not registered: no offer, but the browser still keeps its copy of a PDF for the preview.
+        // The readers are off: no offer, but the browser still keeps its copy of a PDF for the preview.
+        app(PlatformSettings::class)->set(['ai_readers_released' => '0']);
         $this->actingAs($pm)->get($url)->assertOk()
             ->assertDontSee('Scanned copy or photos?')->assertDontSee('data-boq-scan-offer', false)
             ->assertSee('window.BoqScanKeptPdf', false)->assertSee($key, false);
+        $this->release();
 
         $this->withScanScreen();
         $this->get($url)->assertOk()

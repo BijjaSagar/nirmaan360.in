@@ -61,6 +61,8 @@ class LegalPagesTest extends ReadingTestCase
     {
         parent::setUp();
         $this->withoutVite();
+        // The stand-in reader below is the only one, so each test decides whether a reader is deployed.
+        $this->withoutShippedReaders();
         // Showing a public page must never reach the AI provider.
         Http::fake();
         // A key is saved in these tests, so a reader is named once it is deployed and released. Without one the readers

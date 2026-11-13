@@ -1,5 +1,7 @@
 <?php
 
+use App\Services\TenderReading\TenderReadKind;
+
 /*
  * The tender reader: the text of a tender PDF is taken out page by page, read by the AI model into
  * a sheet of dates, deposits, periods and conditions, each with its page and the line it was read
@@ -17,12 +19,11 @@ return [
     'plans' => [],
 
     /*
-     * The reader is deployed by listing App\Services\TenderReading\TenderReadKind::class here. The
-     * list is empty until the shared reader tests (tests/Feature/DocumentReading) stop registering a
-     * stand-in under the same "tender" key next to whatever a module ships: two classes under one key
-     * stop every reader. Everything else of the module is in place and works the moment it is listed.
+     * The reader is deployed here. Being deployed is one part of the one test of whether the readers are
+     * on (AiSpend::readersOn): until the platform admin has made a dry run and released the readers, and
+     * the company's plan has the AI features, the tender page offers no read and nothing is sent.
      */
-    'read_kinds' => [],
+    'read_kinds' => [TenderReadKind::class],
 
     /*
      * What the reader looks for. Labels only, never a value: the app knows no deposit, period or

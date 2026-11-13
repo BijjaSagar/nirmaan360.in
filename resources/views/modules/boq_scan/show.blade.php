@@ -73,7 +73,7 @@
                     @if ($status['message'])
                         <p class="text-ink-3">{{ $status['message'] }}</p>
                     @endif
-                    @if ($project && \Illuminate\Support\Facades\Route::has('boq-scans.create'))
+                    @if ($project && \Illuminate\Support\Facades\Route::has('boq-scans.create') && app(\App\Services\BoqScan\BoqScanScreen::class)->open(auth()->user()))
                         <a href="{{ route('boq-scans.create', $project) }}" class="btn btn-primary">{{ __('Start a new scan') }}</a>
                     @endif
                 </div>

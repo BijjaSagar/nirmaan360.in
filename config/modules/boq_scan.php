@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\BoqScan\BoqReadKind;
 use App\Services\BoqScan\BoqScanOffer;
 
 /*
@@ -16,16 +17,16 @@ use App\Services\BoqScan\BoqScanOffer;
  */
 return [
     /*
-     * The reader kind (App\Services\BoqScan\BoqReadKind) is registered here to put the reader in
-     * front of people: "read_kinds" => [BoqReadKind::class]. That also registers the scan screen
-     * (boq-scans.create, see routes/modules/boq_scan.php), which the website's card, the refusal of a
-     * scanned PDF and the offer on the BOQ in Excel page wait for. Until then no BOQ read can be
-     * created, no page is sent, and every route of a read answers as if it did not exist. Its models
-     * and limits are already in config/modules/document_reading.php under kinds.boq.
+     * The reader kind is deployed here. That also registers the scan screen (boq-scans.create, see
+     * routes/modules/boq_scan.php), which the website's card, the refusal of a scanned PDF and the offer
+     * on the BOQ in Excel page wait for. Being deployed is one part of the one test of whether the readers
+     * are on (AiSpend::readersOn): until the platform admin has made a dry run and released the readers,
+     * and the company's plan has the AI features, nothing offers a scan and nothing is sent. Its models and
+     * limits are in config/modules/document_reading.php under kinds.boq.
      */
-    'read_kinds' => [],
+    'read_kinds' => [BoqReadKind::class],
 
-    // Answers the field app's "may this person scan BOQ pages?" (status.can.boq_scan). False while the kind is not registered.
+    // Answers the field app's "may this person scan BOQ pages?" (status.can.boq_scan). False while the readers are off for the company.
     'reader_offers' => ['boq_scan' => BoqScanOffer::class],
 
     // Two figures, two lines or a line and a printed total "agree" when they differ by no more than this, in rupees: the rule of the estimate import.

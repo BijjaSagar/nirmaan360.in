@@ -15,6 +15,7 @@ use Tests\BuildsTenant;
 use Tests\Feature\DocumentReading\Support\FakeKind;
 use Tests\Feature\DocumentReading\Support\FakeSlipKind;
 use Tests\Feature\DocumentReading\Support\FakeTextKind;
+use Tests\Feature\DocumentReading\Support\SetsAsideShippedReaders;
 use Tests\TestCase;
 
 /**
@@ -25,7 +26,7 @@ use Tests\TestCase;
  */
 class AiPagesTest extends TestCase
 {
-    use BuildsTenant, RefreshDatabase;
+    use BuildsTenant, RefreshDatabase, SetsAsideShippedReaders;
 
     /** Promises the pages used to make about things that are not built. */
     private const NOT_BUILT = [
@@ -37,20 +38,20 @@ class AiPagesTest extends TestCase
     /** Cards that work from the company's own records, with no AI model. Each of these modules is built. */
     private const CODE_ONLY = ['RA bill pre-check', 'Rate helper', 'Hindrance register and letters', 'Home-owner pack'];
 
-    /** Cards that send a page, a photo or words to the AI model. None of these readers is built yet. */
+    /** Cards that send a page, a photo or words to the AI model. Each of these readers is built and deployed by its module. */
     private const NEEDS_MODEL = ['Scanned BOQ reader', 'Challan and bill photo', 'Tender reader'];
 
     /** The routes the built helpers' cards wait for: the names their modules really register. */
     private const BUILT_ROUTES = ['bill-checks.run', 'rate-suggestions.store', 'site-diary.hindrances.index', 'owner-updates.index'];
 
-    /** The routes the readers not built yet wait for, by the names the design gives them. The tests stand in for them. */
-    private const NOT_BUILT_ROUTES = ['boq-scans.create', 'slip-reads.store', 'tender-reads.show'];
+    /** The routes the reader modules register. A reader's card never waits for one: it waits for its kind (AiSpend::readersOn). */
+    private const READER_ROUTES = ['boq-scans.create', 'slip-reading.store', 'tender-reads.store'];
 
     /** Card => the route it waits for. */
     private const CARD_ROUTES = [
         'Scanned BOQ reader' => 'boq-scans.create',
-        'Challan and bill photo' => 'slip-reads.store',
-        'Tender reader' => 'tender-reads.show',
+        'Challan and bill photo' => 'slip-reading.store',
+        'Tender reader' => 'tender-reads.store',
         'RA bill pre-check' => 'bill-checks.run',
         'Rate helper' => 'rate-suggestions.store',
         'Hindrance register and letters' => 'site-diary.hindrances.index',
@@ -115,9 +116,10 @@ class AiPagesTest extends TestCase
         $this->settings([AiOffer::RELEASED => '1', 'ai_tier_monthly_cap_usd' => '1000']);
     }
 
-    /** Stands in for the reader modules: the kinds they register. Without one, no reader is deployed. */
+    /** Stands in for the reader modules: the kinds they register, with the real ones set aside. */
     private function deployReaderKinds(): void
     {
+        $this->withoutShippedReaders();
         config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class, FakeTextKind::class, FakeSlipKind::class]]);
     }
 
@@ -222,7 +224,8 @@ class AiPagesTest extends TestCase
     {
         $visit = function (string $state) {
             foreach (['/ai', '/', '/pricing'] as $path) {
-                $html = $this->get($path)->assertOk()->getContent();
+                // The page's form token is random letters, which can spell a short phrase such as "GeM" by chance.
+                $html = (string) preg_replace('/(name="csrf-token" content=|name="_token" value=)"[^"]*"/', '$1""', $this->get($path)->assertOk()->getContent());
 
                 foreach (self::NOT_BUILT as $phrase) {
                     $this->assertStringNotContainsString($phrase, $html, "{$path} {$state} must not say \"{$phrase}\".");
@@ -235,7 +238,7 @@ class AiPagesTest extends TestCase
         $this->connect();
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
+        $this->deploy(AiOffer::VOICE_ROUTE);
 
         $visit('with everything deployed and released');
     }
@@ -263,7 +266,7 @@ class AiPagesTest extends TestCase
         // Even with every later module in place and the release switch set, no key means nothing can run.
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
+        $this->deploy(AiOffer::VOICE_ROUTE);
         $this->deployReaderKinds();
 
         $offer = app(AiOffer::class);
@@ -335,16 +338,20 @@ class AiPagesTest extends TestCase
     {
         $this->connect();
         $this->release();
+        // The real readers are set aside, so a reader is deployed here only when the test stands one in.
+        $this->withoutShippedReaders();
 
-        $this->assertEqualsCanonicalizing([...self::BUILT_ROUTES, ...self::NOT_BUILT_ROUTES, AiOffer::VOICE_ROUTE], array_values(self::CARD_ROUTES), 'Every card is listed with the route it waits for.');
+        $this->assertEqualsCanonicalizing([...self::BUILT_ROUTES, ...self::READER_ROUTES, AiOffer::VOICE_ROUTE], array_values(self::CARD_ROUTES), 'Every card is listed with the route its module registers.');
         $this->assertEqualsCanonicalizing([...self::CODE_ONLY, ...self::NEEDS_MODEL, 'Voice DPR'], array_keys(self::CARD_ROUTES));
 
-        // Before anything is stood in for, the page shows the helpers that have really landed, and no reader.
-        $this->assertOnlyLandedCards($this->get('/ai')->assertOk(), [...self::CODE_ONLY, ...self::NEEDS_MODEL]);
+        // With no reader kind deployed, the page shows the helpers that have really landed, and no reader,
+        // although each reader's route is there: a reader's card waits for its kind, as every other place does.
+        foreach (self::READER_ROUTES as $route) {
+            $this->assertTrue(Route::has($route), "{$route} is registered by its module.");
+        }
 
-        // A route by a reader's design name shows nothing: a reader's card waits for its kind, as every other place does.
-        $this->deploy(...self::NOT_BUILT_ROUTES);
-        $page = $this->get('/ai')->assertOk()->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false);
+        $page = $this->get('/ai')->assertOk();
+        $this->assertOnlyLandedCards($page, self::CODE_ONLY);
 
         foreach ([...self::NEEDS_MODEL, 'Voice DPR'] as $card) {
             $page->assertDontSee($card);
@@ -368,7 +375,6 @@ class AiPagesTest extends TestCase
 
     public function test_a_card_that_needs_the_model_waits_for_the_release_switch(): void
     {
-        $this->deploy(...self::NOT_BUILT_ROUTES);
         $this->deployReaderKinds();
         $this->connect();
 
@@ -419,27 +425,25 @@ class AiPagesTest extends TestCase
 
     /**
      * Each helper that is built shows its card by the real name of the route its module registers, with no
-     * stand-in, key or release needed: it works from the company's own records. The readers are not built, so
-     * no route of theirs exists and their cards stay hidden whatever is switched on. Voice is built: its module
-     * registers the route by the design's name, and its card waits for the key, the release and the acceptance test.
+     * stand-in, key or release needed: it works from the company's own records. Each reader is built and its
+     * module deploys its kind: its card waits for the key and the release (AiSpend::readersOn), and voice's
+     * also for the acceptance test on real phones. No stand-in is used here.
      */
-    public function test_every_built_helper_shows_its_card_by_the_real_name_of_its_route_and_nothing_unbuilt_does(): void
+    public function test_every_built_helper_and_reader_shows_its_card_by_what_its_module_really_registers(): void
     {
-        foreach (self::BUILT_ROUTES as $route) {
+        foreach ([...self::BUILT_ROUTES, ...self::READER_ROUTES] as $route) {
             $this->assertTrue(Route::has($route), "{$route} is registered by its module.");
         }
 
-        foreach (self::NOT_BUILT_ROUTES as $route) {
-            $this->assertFalse(Route::has($route), "{$route} belongs to a reader that is not built yet.");
+        $this->assertTrue(Route::has(AiOffer::VOICE_ROUTE), 'The voice DPR module registers its route by the name the design gives it.');
+        $this->assertTrue(app(AiSpend::class)->readerDeployed(), 'The reader modules deploy their kinds.');
+
+        // The names the design first gave some of them are not the ones their modules use, and nothing waits for those.
+        foreach (['bill-checks.store', 'hindrances.index', 'slip-reads.store', 'tender-reads.show'] as $route) {
+            $this->assertFalse(Route::has($route), $route);
         }
 
-        $this->assertTrue(Route::has(AiOffer::VOICE_ROUTE), 'The voice DPR module registers its route by the name the design gives it.');
-
-        // The names the design first gave two of them are not the ones their modules use, and nothing waits for those.
-        $this->assertFalse(Route::has('bill-checks.store'));
-        $this->assertFalse(Route::has('hindrances.index'));
-
-        $assertCards = function (string $state) {
+        $helpersOnly = function (string $state) {
             $page = $this->get('/ai')->assertOk()->assertSee(self::HELPERS)->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false);
 
             foreach (self::CODE_ONLY as $card) {
@@ -454,23 +458,24 @@ class AiPagesTest extends TestCase
             $this->assertSame([], app(AiOffer::class)->readers(), $state);
         };
 
-        $assertCards('with no key');
+        $helpersOnly('with no key');
 
         $this->connect();
-        $assertCards('connected');
+        $helpersOnly('connected');
 
+        // Released: every reader the modules deploy has its card. Voice still waits for the acceptance test.
         $this->release();
-        $assertCards('connected and released, voice not accepted');
-
-        // Once the acceptance test is recorded, voice is the one reader with a card: the only one really built.
-        $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $page = $this->get('/ai')->assertOk()->assertSee(self::HELPERS)->assertSee('<h2 class="text-[30px]">Readers</h2>', false)->assertSee('Voice DPR');
+        $page = $this->get('/ai')->assertOk()->assertSee(self::HELPERS)->assertSee('<h2 class="text-[30px]">Readers</h2>', false)->assertDontSee('Voice DPR');
 
         foreach (self::NEEDS_MODEL as $card) {
-            $page->assertDontSee($card);
+            $page->assertSee($card);
         }
 
-        $this->assertSame(['Voice DPR'], array_column(app(AiOffer::class)->readers(), 1));
+        $this->assertSame(self::NEEDS_MODEL, array_column(app(AiOffer::class)->readers(), 1));
+
+        $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
+        $this->get('/ai')->assertOk()->assertSee('Voice DPR');
+        $this->assertSame([...self::NEEDS_MODEL, 'Voice DPR'], array_column(app(AiOffer::class)->readers(), 1));
         $this->assertSame(self::CODE_ONLY, array_column(app(AiOffer::class)->helpers(), 1));
 
         $this->get('/ai')->assertOk()
@@ -478,6 +483,10 @@ class AiPagesTest extends TestCase
             ->assertSee('Suggests rates from your own rate library and past work')
             ->assertSee('Keeps a dated register from your daily reports')
             ->assertSee(self::OWNER_PACK_LANGUAGES);
+
+        // Taking the release back takes every reader's card away again.
+        $this->settings([AiOffer::RELEASED => null]);
+        $helpersOnly('released no more');
 
         Http::assertNothingSent();
     }
@@ -517,6 +526,8 @@ class AiPagesTest extends TestCase
         $this->connect();
         $this->release();
         $this->deploy(AiOffer::VOICE_ROUTE);
+        // The other readers are set aside, so voice is the only one.
+        $this->withoutShippedReaders();
 
         // Voice counts as a reader only once the acceptance test is recorded, for this card and for every other place.
         $this->assertFalse(app(AiOffer::class)->readersOn());
@@ -541,6 +552,8 @@ class AiPagesTest extends TestCase
     public function test_pricing_names_readers_only_when_one_is_deployed_and_released(): void
     {
         $this->connect();
+        // The real readers are set aside: the test deploys one at a time.
+        $this->withoutShippedReaders();
 
         // Released with nothing deployed: there is no reader to name.
         $this->release();
@@ -598,7 +611,7 @@ class AiPagesTest extends TestCase
         $this->connect();
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
+        $this->deploy(AiOffer::VOICE_ROUTE);
         $this->deployReaderKinds();
 
         $texts = $offer->everyLine();

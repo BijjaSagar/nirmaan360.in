@@ -68,6 +68,8 @@ abstract class TenderReadingTestCase extends ReadingTestCase
         Storage::fake();
         Queue::fake();
 
+        // The tender reader is the only one, so a test can take it away and leave no reader deployed.
+        $this->withoutShippedReaders();
         config(['modules.tender_reading.read_kinds' => [TenderReadKind::class]]);
 
         $this->release();

@@ -9,6 +9,7 @@ use App\Models\BoqSection;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Access\TeamAccessService;
+use App\Services\BoqScan\BoqReadKind;
 use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\BoqPdfImport;
 use App\Services\Reports\BoqPdfReader;
@@ -22,9 +23,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\View;
 use Illuminate\Testing\TestResponse;
-use Tests\Feature\DocumentReading\Support\FakeKind;
 
 /**
  * A BOQ read from a PDF. The PDFs are made here with dompdf, in the two layouts people upload:
@@ -1064,21 +1063,21 @@ class BoqPdfImportTest extends ReportsTestCase
     {
         $project = $this->makeProject($this->org);
         $scan = $this->handPdf($this->pagePicture().$this->textLines(self::SCANNED_LINES, 3));
+
+        // The module that reads scans is deployed: its screen's route is there. While the readers are off nobody is sent to it.
+        $this->assertTrue(Route::has('boq-scans.create'));
         $this->assertFalse(BoqPdfReader::hasScanReader());
 
         $this->uploadAs($this->pm, $project, $this->upload($scan, 'scan.pdf'));
         $this->assertStringNotContainsString('Read it as a scan', session('boq_import.errors.0.message'));
 
-        // The module that reads scans brings this route. Until it is there, nobody is sent to it.
-        Route::get('/projects/{project}/boq-scans/create', fn () => '')->name('boq-scans.create');
-        Route::getRoutes()->refreshNameLookups();
-
-        // Nor while the readers are off for the company: the same test as its consent switch (AiSpend::readersOn).
+        // Off for the company is the same test as its consent switch (AiSpend::readersOn), and it asks for the BOQ kind.
         $this->actingAs($this->pm);
         $this->assertFalse(BoqPdfReader::hasScanReader());
         app(PlatformSettings::class)->set(['ai_readers_released' => '1', 'ai_tier_monthly_cap_usd' => '1000', 'anthropic_api_key' => 'test-key-value']);
+        config(['modules.boq_scan.read_kinds' => []]);
         $this->assertFalse(BoqPdfReader::hasScanReader(), 'No BOQ reader kind is registered.');
-        config(['modules.boq_scan.read_kinds' => [FakeKind::class]]);
+        config(['modules.boq_scan.read_kinds' => [BoqReadKind::class]]);
         $this->assertTrue(BoqPdfReader::hasScanReader());
 
         $this->uploadAs($this->pm, $project, $this->upload($scan, 'scan.pdf'));
@@ -1095,39 +1094,38 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->assertStringNotContainsString('Read it as a scan', session('boq_import.errors.0.message'));
     }
 
-    public function test_the_scan_module_can_put_its_offer_and_the_pages_of_the_pdf_on_these_screens(): void
+    public function test_the_scan_module_puts_its_offer_and_the_pages_of_the_pdf_on_these_screens(): void
     {
         $project = $this->makeProject($this->org);
+        $this->assertTrue(view()->exists('modules.boq_scan._offer'));
+        $this->assertTrue(view()->exists('modules.boq_scan._pdf_pages'));
 
-        // Without that module there is no offer, and the person is told to open the PDF themselves.
-        $this->actingAs($this->pm)->get(route('boq.excel.index', $project))->assertOk()->assertDontSee('scan-offer');
+        // The pages are drawn beside the rows from the copy the browser kept, with no AI: the line about opening
+        // the PDF by hand is said in that panel only for when no copy is kept.
         $this->uploadAs($this->pm, $project, $this->pdf($this->estimate(), [], 'tower-estimate.pdf'));
-        $this->get(route('boq.pdf.preview', $project))->assertOk()->assertSee('Open the PDF beside this page and compare each row with it.')->assertDontSee('pdf-pages');
+        $preview = $this->get(route('boq.pdf.preview', $project))->assertOk()
+            ->assertSee('boqPdfPages(', false)
+            ->assertSee('Pages of the PDF')
+            ->assertSee('tower-estimate.pdf')
+            ->assertSee('I compared these rows with the pages of the PDF');
+        $this->assertSame(1, substr_count($preview->getContent(), 'Open the PDF beside this page and compare each row with it.'));
 
-        $views = storage_path('framework/testing/boq-scan-views-'.uniqid());
-        File::ensureDirectoryExists($views.'/modules/boq_scan');
-        File::put($views.'/modules/boq_scan/_offer.blade.php', '<p id="scan-offer" data-project="{{ $project->id }}" data-scanned="{{ empty($import[\'scanned\']) ? \'no\' : \'yes\' }}"></p>');
-        File::put($views.'/modules/boq_scan/_pdf_pages.blade.php', '<aside id="pdf-pages" data-project="{{ $project->id }}" data-file="{{ $preview[\'file\'] }}" data-pages="{{ $preview[\'pages\'] }}"></aside>');
-        View::addLocation($views);
+        // The upload form and its file box keep the names that module's script looks for, and the copy is kept
+        // whether or not the readers are on. The offer to read a scan waits for them (AiSpend::readersOn).
+        $this->get(route('boq.excel.index', $project))->assertOk()
+            ->assertSee('window.BoqScanKeptPdf', false)
+            ->assertDontSee('data-boq-scan-offer', false)
+            ->assertSee('<form id="boq-import-form" method="POST" action="'.route('boq.excel.import', $project).'"', false)
+            ->assertSee('<input id="file" name="file" type="file"', false);
 
-        try {
-            // The pages are drawn beside the rows, and the line about opening the PDF by hand goes.
-            $this->get(route('boq.pdf.preview', $project))->assertOk()
-                ->assertSee('<aside id="pdf-pages" data-project="'.$project->id.'" data-file="tower-estimate.pdf" data-pages="1"></aside>', false)
-                ->assertDontSee('Open the PDF beside this page')
-                ->assertSee('I compared these rows with the pages of the PDF');
+        app(PlatformSettings::class)->set(['ai_readers_released' => '1', 'ai_tier_monthly_cap_usd' => '1000', 'anthropic_api_key' => 'test-key-value']);
+        $this->get(route('boq.excel.index', $project))->assertOk()->assertSee('data-boq-scan-offer', false)->assertSee('Scanned copy or photos?')
+            ->assertSee(route('boq-scans.create', $project));
 
-            // The offer is on the import page always, and knows when a PDF has just been refused as a scan.
-            // The upload form and its file box keep the names that module's script looks for.
-            $this->get(route('boq.excel.index', $project))->assertOk()
-                ->assertSee('<p id="scan-offer" data-project="'.$project->id.'" data-scanned="no"></p>', false)
-                ->assertSee('<form id="boq-import-form" method="POST" action="'.route('boq.excel.import', $project).'"', false)
-                ->assertSee('<input id="file" name="file" type="file"', false);
-            $this->uploadAs($this->pm, $project, $this->textlessPdf(1));
-            $this->get(route('boq.excel.index', $project))->assertOk()->assertSee('Nothing was imported')->assertSee('<p id="scan-offer" data-project="'.$project->id.'" data-scanned="yes"></p>', false);
-        } finally {
-            File::deleteDirectory($views);
-        }
+        // It knows when a PDF has just been refused as a scan.
+        $this->uploadAs($this->pm, $project, $this->textlessPdf(1));
+        $this->get(route('boq.excel.index', $project))->assertOk()->assertSee('Nothing was imported')
+            ->assertSee('This PDF is a scanned copy. It can be read as a scan instead.');
     }
 
     public function test_a_scanned_pdf_is_refused_with_a_plain_message(): void
