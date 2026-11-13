@@ -428,8 +428,25 @@ class ReadStartTest extends ReadRoutesTestCase
         $charged($storeKeeper, '29.99');
         $read = $slip();
 
-        $this->web($this->owner, 'POST', $read, '/resume')->assertStatus(402)->assertJson(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'user']);
+        $refused = $this->web($this->owner, 'POST', $read, '/resume')->assertStatus(402)->assertJson(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'user']);
         $this->assertSame([DocumentRead::PAUSED, '0.0000', $storeKeeper->id], [$read->refresh()->status, (string) $read->credits_held, $read->user_id]);
+
+        // The owner is told it is the store keeper's budget that is used up, not their own.
+        $this->assertSame("{$storeKeeper->name} has used their AI budget for challan photos today, and this document counts against that budget. The budget starts again tomorrow.", $refused->json('message'));
+        $this->assertStringNotContainsString('You have used your AI budget', (string) $refused->json('message'));
+
+        // In the owner's own language, with the store keeper named in it.
+        $this->owner->forceFill(['locale' => 'hi'])->save();
+        $hindi = (string) $this->web($this->owner->refresh(), 'POST', $read, '/resume')->assertStatus(402)->json('message');
+        $this->assertSame(__(':name has used their AI budget for :feature today, and this document counts against that budget. The budget starts again tomorrow.', ['name' => $storeKeeper->name, 'feature' => __('challan photos', [], 'hi')], 'hi'), $hindi);
+        $this->assertStringContainsString($storeKeeper->name, $hindi);
+        $this->owner->forceFill(['locale' => 'en'])->save();
+        // The test's requests share one application, so its language is set back by hand.
+        $this->app->setLocale('en');
+
+        // The store keeper continuing their own slip is told it is their own budget.
+        $this->web($storeKeeper, 'POST', $read, '/resume')->assertStatus(402)
+            ->assertJson(['code' => 'daily_budget', 'scope' => 'user', 'message' => 'You have used your AI budget for challan photos today. It starts again tomorrow.']);
 
         // The other way round: the owner's own budget is used up, the store keeper's is not.
         $other = $this->member($this->organization, 'store');
@@ -453,7 +470,8 @@ class ReadStartTest extends ReadRoutesTestCase
         $read = $this->draft(['kind' => 'slip', 'pages_total' => 1], $storeKeeper);
         $this->storedPage($read, 1, ['status' => DocumentReadPage::WAITING, 'pass' => 'main']);
 
-        $this->web($this->owner, 'POST', $read, '/start')->assertStatus(402)->assertJson(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'user']);
+        $this->web($this->owner, 'POST', $read, '/start')->assertStatus(402)->assertJson(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'user'])
+            ->assertJsonPath('message', "{$storeKeeper->name} has used their AI budget for challan photos today, and this document counts against that budget. The budget starts again tomorrow.");
         $this->assertSame([DocumentRead::DRAFT, '0.0000'], [$read->refresh()->status, (string) $read->credits_held]);
 
         // A tender is nobody's own: it is booked to whoever starts it, so that person's budget is the one that counts.

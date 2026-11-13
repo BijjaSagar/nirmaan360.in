@@ -73,7 +73,12 @@ class ReadingTranslationsTest extends TestCase
         }
     }
 
-    public function test_the_legal_pages_put_every_sentence_about_the_ai_provider_through_translation_whole(): void
+    /**
+     * The legal pages are in English. What they say once a reader is offered goes through translation
+     * whole; what they say before that stays English like the rest of the page, so a native reader's
+     * check of these lines comes before any of them is shown in Hindi or Marathi.
+     */
+    public function test_the_legal_pages_put_every_sentence_about_readers_through_translation_whole(): void
     {
         foreach (['privacy', 'terms'] as $view) {
             $source = (string) file_get_contents(resource_path("views/public/{$view}.blade.php"));
@@ -86,17 +91,26 @@ class ReadingTranslationsTest extends TestCase
         $texts = $this->usedTexts();
 
         foreach ([
-            'AI agents can be wrong.',
             'AI agents and readers can be wrong.',
-            'for the AI agents, only when your company uses them.',
             'for the AI agents and readers, only when your company uses them.',
-            'When you use an AI agent, what it needs',
             'When you use an AI agent or reader, what it needs',
             'We do not use your records to train AI models.',
             'Pages, photos and document text sent to an AI reader',
             'The text of voice notes you spoke into the app',
         ] as $part) {
             $this->assertNotEmpty(array_filter($texts, fn (string $text) => str_contains($text, $part)), $part);
+        }
+
+        foreach ([
+            'AI agents can be wrong.',
+            'for the AI agents, only when your company uses them.',
+            'When you use an AI agent, what it needs',
+        ] as $part) {
+            $this->assertSame([], array_values(array_filter($texts, fn (string $text) => str_contains($text, $part))), "Shown before a reader is offered, so it stays English: {$part}");
+
+            foreach (['hi', 'mr'] as $locale) {
+                $this->assertSame([], array_values(array_filter(array_keys($this->lines($locale)), fn (string $text) => str_contains($text, $part))), "No {$locale} line waits unused for: {$part}");
+            }
         }
     }
 

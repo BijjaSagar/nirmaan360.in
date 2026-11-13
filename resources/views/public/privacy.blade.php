@@ -11,6 +11,9 @@
         $readerSettings = app(\App\Services\DocumentReading\ReaderSettings::class);
         $readers = $readerSettings->offered();
         $voiceNotes = $readers && $readerSettings->voiceOffered();
+        // The policy is in English. Its Hindi and Marathi lines about the AI provider are used only once a reader is offered,
+        // which the platform admin does after a native reader has checked them; until then every paragraph stays English.
+        $aiLocale = $readers ? null : 'en';
     @endphp
     <p>This policy explains what Nirmaan360 collects when you use nirmaan360.in and our apps, and what we do with it.</p>
 
@@ -26,7 +29,7 @@
     </ul>
 
     <h2>How we use it</h2>
-    <p>{{ __('We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that it does not use what it receives through this service to train its models.') }}</p>
+    <p>{{ __('We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that it does not use what it receives through this service to train its models.', [], $aiLocale) }}</p>
 
     @if (app(\App\Services\Seo\Analytics::class)->measurementId())
     {{-- Only shown while Google Analytics is switched on in /admin/seo. --}}
@@ -38,14 +41,14 @@
     @if ($readers)
     <p>{{ __('Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents and readers, only when your company uses them. They handle data only so that we can run the service.') }}</p>
     @else
-    <p>{{ __('Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents, only when your company uses them. They handle data only so that we can run the service.') }}</p>
+    <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents, only when your company uses them. They handle data only so that we can run the service.</p>
     @endif
 
     <h2>Where your data is stored</h2>
     @if ($readers)
     <p>{{ __('Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent or reader, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer. Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.') }}</p>
     @else
-    <p>{{ __('Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer.') }}</p>
+    <p>Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider's servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer.</p>
     @endif
 
     <h2>Your rights</h2>

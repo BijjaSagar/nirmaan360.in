@@ -138,10 +138,12 @@ class AiSpend
      *                          counts against this person's own daily budget, so this is the budget checked.
      * @param  string  $credits  What is about to be held: a read's limit, or a text call's maximum.
      * @param  ?DocumentRead  $for  The read the hold is for. What it already holds is not counted twice.
+     * @param  ?User  $by  The person acting now, who reads the refusal. Null when that is $bookedTo.
+     *                     When it is someone else, the refusal names whose budget is used up.
      *
      * @throws SpendRefused
      */
-    public function assertRoom(Organization $organization, User $bookedTo, string $feature, string $credits, ?DocumentRead $for = null): void
+    public function assertRoom(Organization $organization, User $bookedTo, string $feature, string $credits, ?DocumentRead $for = null, ?User $by = null): void
     {
         $asked = Dec::of($credits);
 
@@ -166,8 +168,12 @@ class AiSpend
         $own = $this->budget($organization, 'user', $feature);
 
         if ($own !== null && $this->spentToday($organization, $feature, $bookedTo, $for)->plus($asked)->isGreaterThan(Dec::of($own))) {
-            throw new SpendRefused(SpendRefused::DAILY_BUDGET, 402,
-                __('You have used your AI budget for :feature today. It starts again tomorrow.', ['feature' => self::label($feature)]),
+            // An owner acting on someone's own read is told it is that person's budget, not their own.
+            $theirs = $by !== null && (int) $by->id !== (int) $bookedTo->id;
+
+            throw new SpendRefused(SpendRefused::DAILY_BUDGET, 402, $theirs
+                ? __(':name has used their AI budget for :feature today, and this document counts against that budget. The budget starts again tomorrow.', ['name' => $bookedTo->name, 'feature' => self::label($feature)])
+                : __('You have used your AI budget for :feature today. It starts again tomorrow.', ['feature' => self::label($feature)]),
                 ['feature' => $feature, 'scope' => 'user']);
         }
 

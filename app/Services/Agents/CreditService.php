@@ -132,7 +132,7 @@ class CreditService
                 throw new LogicException("A {$locked->status} read cannot hold credits.");
             }
 
-            $this->spend->assertRoom($organization, $bookedTo, $locked->kind, (string) $asked, $locked);
+            $this->spend->assertRoom($organization, $bookedTo, $locked->kind, (string) $asked, $locked, $by);
 
             [$free, $own] = $this->reach($wallet, $organization, $by, $locked->id);
 

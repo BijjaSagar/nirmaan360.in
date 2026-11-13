@@ -485,7 +485,7 @@ class ReadDesk
             // No new hold, so the limits a hold would have checked are checked here: the day's limits, the company's brakes, the budgets.
             // The pages are charged to the person the running read is booked to, so that person's budget is the one checked.
             $bookedTo = ($locked->user_id === null ? null : User::where('organization_id', $locked->organization_id)->find($locked->user_id)) ?? $by;
-            $this->spend->assertRoom($organization, $bookedTo, $locked->kind, $this->quotes->forPages($locked, $rows, $by)['cap_floor'], $locked);
+            $this->spend->assertRoom($organization, $bookedTo, $locked->kind, $this->quotes->forPages($locked, $rows, $by)['cap_floor'], $locked, $by);
 
             return;
         }

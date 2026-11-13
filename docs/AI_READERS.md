@@ -136,6 +136,12 @@ An owner or admin of a company on a plan with the AI features decides under **AI
 - The sentence about voice notes is shown only after the platform setting `ai_voice_accepted` is `1`, which records that speech was shown to stay on the phone.
 - The same page holds the company's own limits: the most one document may use (it can be lowered, never raised above `max_credits_per_read`) and the daily budgets for each person and for the company, for each feature that is deployed.
 
+### The privacy policy and the terms
+
+The legal pages are in English and have one address each (`App\Services\Seo\PublicPages`). Their paragraphs about the AI provider have Hindi and Marathi lines in `lang/modules/document_reading`, but those lines are used only once a reader is offered (deployed and released). Until then every paragraph of both pages is English for every visitor, whatever their language, so no unchecked translation reaches a live legal page. The paragraphs shown only before a reader is offered are therefore plain English with no Hindi or Marathi line. This differs from the spec, which lists Hindi and Marathi for all of the legal text.
+
+Before the readers are released on production, a native reader must check the Hindi and Marathi lines of the notice and of these paragraphs (spec E9). Releasing is what switches those lines on.
+
 ## Which routes are guarded
 
 `App\Http\Middleware\RequireAiReader` goes on every route that makes the AI model read or write something, and on no other. A route that sends a page, a photo, document text or spoken words uses `RequireAiReader::class.':consent'`; one that sends only labels and descriptions the code prepared uses `':text'`. Looking at a read, correcting it, confirming it, its status and its page pictures carry no guard, so a company can always finish what was already read. A test fails if a `GET` route carries it.
@@ -157,7 +163,7 @@ Every call for a page that cost something, was charged something or came back un
 
 A text call is counted on the day it was made. Its `absorbed_usd` holds what nobody paid for: every attempt whose answer was not kept, and the part of the kept one that its maximum or the wallet did not cover.
 
-A daily budget belongs to the person the read is booked to. When an owner or admin starts or continues one person's own read (a slip or a bill), the read stays booked to that person, so that person's budget is the one checked.
+A daily budget belongs to the person the read is booked to. When an owner or admin starts or continues one person's own read (a slip or a bill), the read stays booked to that person, so that person's budget is the one checked. When it is used up, the refusal names that person, so the owner or admin is not told they used their own budget.
 
 ## Figures that belong together
 

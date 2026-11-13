@@ -159,6 +159,30 @@ class AiSpendTest extends ReadingTestCase
         $this->assertRoom('boq', '400');
     }
 
+    public function test_someone_acting_on_another_persons_read_is_told_whose_budget_is_used_up(): void
+    {
+        $storeKeeper = $this->member($this->organization, 'store');
+        $this->spentPage($this->organization, $storeKeeper, 'slip', ['credits' => '29']);
+        $read = $this->makeRead($this->organization, $storeKeeper, ['kind' => 'slip']);
+
+        // The owner acts, the store keeper's budget is checked: the sentence names the store keeper.
+        $refused = $this->refusal(fn () => $this->spend()->assertRoom($this->organization, $storeKeeper, 'slip', '2', $read, $this->owner));
+        $this->assertSame(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'user'], $refused->toArray());
+        $this->assertSame("{$storeKeeper->name} has used their AI budget for challan photos today, and this document counts against that budget. The budget starts again tomorrow.", $refused->getMessage());
+
+        // Acting on one's own read, or naming nobody else, it is one's own budget.
+        foreach ([$storeKeeper, null] as $by) {
+            $own = $this->refusal(fn () => $this->spend()->assertRoom($this->organization, $storeKeeper, 'slip', '2', $read, $by));
+            $this->assertSame('You have used your AI budget for challan photos today. It starts again tomorrow.', $own->getMessage());
+        }
+
+        // A company budget is everyone's, so its sentence is the same whoever acts.
+        AiDocumentSettings::for($this->organization)->update(['budgets' => ['company' => ['slip' => '30'], 'user' => ['slip' => '100']]]);
+        $company = $this->refusal(fn () => $this->spend()->assertRoom($this->organization, $storeKeeper, 'slip', '2', $read, $this->owner));
+        $this->assertSame(['code' => 'daily_budget', 'feature' => 'slip', 'scope' => 'company'], $company->toArray());
+        $this->assertStringStartsWith('Your company has used its AI budget for challan photos today.', $company->getMessage());
+    }
+
     public function test_the_company_budget_counts_everyone_together(): void
     {
         foreach (range(1, 5) as $ignored) {
