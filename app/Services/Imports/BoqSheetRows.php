@@ -67,6 +67,12 @@ final class BoqSheetRows extends EstimateSheet
 
     private ?string $subheading = null;
 
+    /** The number of the numbered heading the sub-heading came from, as 1 for "1 | EARTH WORK": item 2 is past it. */
+    private ?string $headNumber = null;
+
+    /** Whether items under that heading are numbered from it, as 1.1 and 1.2: then 2 is past it, not one of them. */
+    private bool $headChildren = false;
+
     /** @var array{row: int, label: string, amount: string, from: BigDecimal}|null A section row's own total, checked when the section ends. */
     private ?array $sectionCheck = null;
 
@@ -138,7 +144,7 @@ final class BoqSheetRows extends EstimateSheet
         $this->descriptionColumns = $layout->columnsOf('description');
         $this->numbering = isset($columns['serial']) || isset($columns['code']);
         $fallback = $layout->headingUnit() ?? CellValues::unit($unit);
-        $grid = $this->unmerge($grid, $options['merges'] ?? [], $layout->lastRow());
+        $grid = $this->unmerge($grid, $options['merges'] ?? [], $layout->lastRow(), array_values(array_intersect_key($columns, array_flip(['qty', 'rate', 'amount']))));
         $headings = array_filter(array_map(fn (string $text) => BoqHeadings::normalise($text), $layout->headings));
         $headingRows = [];
 
@@ -208,11 +214,13 @@ final class BoqSheetRows extends EstimateSheet
     /**
      * An item's text in a cell merged down over several rows, with its figures on one of them: the text
      * belongs to that row. Merged ranges over the same rows are taken together, so a merged serial number
-     * and a merged description go to the row with the figures.
+     * and a merged description go to the row with the figures; so does a serial number typed, unmerged,
+     * in the first row beside the merged text.
      *
      * @param  list<array{0: int, 1: int, 2: int, 3: int}>  $merges
+     * @param  list<int>  $figureColumns  The quantity, rate and amount columns.
      */
-    private function unmerge(array $grid, array $merges, int $lastHeading): array
+    private function unmerge(array $grid, array $merges, int $lastHeading, array $figureColumns = []): array
     {
         $groups = [];
 
@@ -226,6 +234,7 @@ final class BoqSheetRows extends EstimateSheet
             [$top, $bottom] = array_map('intval', explode(':', $span));
             $inside = fn (int $column) => array_filter($ranges, fn (array $range) => $column >= $range[0] && $column <= $range[1]) !== [];
             $rows = [];
+            $priced = [];
 
             for ($number = $top; $number <= $bottom; $number++) {
                 foreach ($grid[$number] ?? [] as $column => $value) {
@@ -234,22 +243,40 @@ final class BoqSheetRows extends EstimateSheet
                         break;
                     }
                 }
+
+                foreach ($figureColumns as $column) {
+                    if (! $inside($column) && CellValues::text($grid[$number][$column] ?? null) !== '') {
+                        $priced[] = $number;
+                        break;
+                    }
+                }
             }
 
-            if (count($rows) !== 1 || $rows[0] === $top) {
+            // The one row with figures, else the one row with anything beside the merged cells.
+            $target = count($priced) === 1 ? $priced[0] : (count($priced) === 0 && count($rows) === 1 ? $rows[0] : null);
+
+            if ($target === null || $target === $top) {
                 continue;
             }
 
             foreach ($ranges as [$left]) {
-                $grid[$rows[0]][$left] = $grid[$top][$left];
+                $grid[$target][$left] = $grid[$top][$left];
                 unset($grid[$top][$left]);
+            }
+
+            // The first row has no figures: what else is typed on it, as the serial number, goes with the text.
+            foreach ($grid[$top] ?? [] as $column => $value) {
+                if (CellValues::text($grid[$target][$column] ?? null) === '') {
+                    $grid[$target][$column] = $value;
+                    unset($grid[$top][$column]);
+                }
             }
 
             if (($grid[$top] ?? []) === []) {
                 unset($grid[$top]);
             }
 
-            ksort($grid[$rows[0]]);
+            ksort($grid[$target]);
         }
 
         ksort($grid);
@@ -336,9 +363,14 @@ final class BoqSheetRows extends EstimateSheet
         $priced = $row['qty'] !== null && $row['rate'] !== null;
         $amountOnly = $row['qty'] === null && $row['rate'] === null && $row['qty_text'] === null && $row['amount'] !== null && ! $row['rate_only'];
         $unit = CellValues::knownUnit($row['unit']);
-        // What makes a row a line and not a total: its own number, a unit, a quantity, a rate, a rate-only mark.
-        $lineLike = ($row['serial'] !== '' && ! $this->isBareTotal($row['serial'])) || ($row['code'] !== '' && ! $this->isBareTotal($row['code']))
-            || ($unit !== null && $unit !== '%') || $row['rate_only'] || $row['qty'] !== null || $row['rate'] !== null || $row['qty_text'] !== null;
+        $totalWords = $this->isTotalWording($label);
+        // A number of its own or a unit makes a row an item, whatever its words say: "Testing of samples brought to
+        // site", "Provision for inspection inclusive of GST", "Total station survey". Not "A | Sub Total (A)".
+        $numbered = $this->ownNumber($row, $totalWords);
+        $ownUnit = $unit !== null && $unit !== '%';
+        // What makes a row a line and not a total: its own number, a rate, a rate-only mark, or a unit or quantity
+        // beside words that are not a total's ("Total Qty | Cum | 120" is the quantities added up).
+        $lineLike = $numbered || $row['rate_only'] || $row['rate'] !== null || $row['qty_text'] !== null || (($ownUnit || $row['qty'] !== null) && ! $totalWords);
 
         if (! $priced && $this->isWords($label)) {
             $this->kind($number, 'words', $label, __('The amount written in words.'));
@@ -346,7 +378,7 @@ final class BoqSheetRows extends EstimateSheet
             return;
         }
 
-        if (! $priced && $this->isCarried($label)) {
+        if (! $priced && ! $numbered && $this->isCarried($label)) {
             $this->kind($number, 'carried', $label, __('Carried or brought forward between pages. Not a line.'));
 
             return;
@@ -364,29 +396,36 @@ final class BoqSheetRows extends EstimateSheet
             return;
         }
 
-        if ($amountOnly && $this->isCarriedElsewhere($label)) {
+        if ($amountOnly && ! $numbered && ! $ownUnit && $this->isCarriedElsewhere($label)) {
             $this->kind($number, 'carried', $label, __('Carried to or brought from another page or the summary. Not a line.'));
 
             return;
         }
 
-        if ($amountOnly && ($marker = $this->sectionMarker($row)) !== null) {
-            $this->openSection($number, $row, $marker, $row['amount']);
+        // A section's letter with an amount: the section's own total when its work follows, else a lettered item of
+        // its own, as "C | Provisional sum for electrical works | 5,00,000" after the last section.
+        if ($amountOnly && ! $ownUnit && ($marker = $this->sectionMarker($row)) !== null) {
+            if ($this->headsWork($next)) {
+                $this->openSection($number, $row, $marker, $row['amount']);
 
-            return;
+                return;
+            }
         }
 
         $percentUnit = $unit === '%';
         $percent = $this->percent($label, $row);
         $notLine = $row['qty'] === null && $row['qty_text'] === null && ! $row['rate_only'] && ($unit === null || $percentUnit);
 
-        if ($percent !== null && ($percentUnit || ($notLine && $row['rate'] === null && $this->percentIsSubject($label, $percent, $row['amount'])))) {
+        // Text with lettered parts under it is a specification, whatever percentage it names.
+        $partsBelow = $row['amount'] === null && $next !== null && $this->lettered($next['description']) !== null;
+
+        if ($percent !== null && ($percentUnit || ($notLine && $row['rate'] === null && $this->percentIsSubject($label, $percent, $row['amount'], $numbered || $partsBelow)))) {
             $this->adjustment($number, $label, $percent, $row['amount']);
 
             return;
         }
 
-        if ($amountOnly && $notLine && $this->isAmountAdjustment($label)) {
+        if ($amountOnly && $notLine && $this->isAmountAdjustment($label, $numbered)) {
             $this->amountAdjustment($number, $label, $row['amount']);
 
             return;
@@ -415,10 +454,15 @@ final class BoqSheetRows extends EstimateSheet
         // A lump-sum figure with lettered rows under it that carry their own quantity and rate: the
         // figure is what the rows add up to, so it is a head, not a line of its own.
         if ($amountOnly && $next !== null && $this->lettered($next['description']) !== null && ($next['qty'] !== null || $next['rate'] !== null)) {
-            $this->closeSpec();
+            $this->closeSpec($row);
             $this->openSpec($number, $row);
 
             return;
+        }
+
+        // A lettered item after the sections, as a provisional sum: a part of its own, with itself as its one line.
+        if ($amountOnly && ! $ownUnit && ($marker = $this->sectionMarker($row)) !== null) {
+            $this->openSection($number, $row, $marker, null);
         }
 
         $this->line($number, $row, $columns, $fallback);
@@ -461,9 +505,11 @@ final class BoqSheetRows extends EstimateSheet
             return;
         }
 
-        // A numbered row with no figures is an item whose parts follow, however short its text.
+        // A numbered row with no figures is an item whose parts follow, however short its text. With none, a
+        // short one is the heading of the items after it ("1 | EARTH WORK" over 1.1, 1.2).
         if (! $short || $this->startsLikeSpecification($text)) {
-            $this->closeSpec();
+            $this->closeSpec($row);
+            $this->leaveHeading($row);
             $this->openSpec($number, $row);
 
             return;
@@ -478,7 +524,82 @@ final class BoqSheetRows extends EstimateSheet
 
         $this->closeSpec();
         $this->subheading = Str::limit(trim($text, " :-\t"), 80, '');
+        $this->headNumber = null;
         $this->kind($number, 'subheading', $text, null);
+    }
+
+    /**
+     * A numbered row past the numbered heading above, as 2 after "1 | EARTH WORK", 1.1 and 1.2, is not under that
+     * heading. Where the items under a heading are numbered 1, 2, 3 afresh, only the next heading ends it.
+     */
+    private function leaveHeading(array $row): void
+    {
+        $serial = $row['serial'] !== '' ? $row['serial'] : $row['code'];
+
+        if ($this->headNumber === null || $serial === '') {
+            return;
+        }
+
+        if (str_starts_with($serial, $this->headNumber.'.')) {
+            $this->headChildren = true;
+        } elseif ($this->headChildren) {
+            $this->subheading = null;
+            $this->headNumber = null;
+            $this->headChildren = false;
+        }
+    }
+
+    /**
+     * Whether the row below a section's letter with an amount is work of that section: an item, or text that
+     * opens one. A total, another section's letter, or nothing below, says the lettered row is an item itself.
+     */
+    private function headsWork(?array $next): bool
+    {
+        if ($next === null || $this->sectionMarker($next) !== null) {
+            return false;
+        }
+
+        $label = $next['description'] !== '' ? $next['description'] : $next['all'];
+        $totalWords = $this->isTotalWording($label);
+
+        if (! $this->ownNumber($next, $totalWords) && ($totalWords || $this->totalKind($label, $next) !== null || $this->isCarried($label) || $this->isWords($label))) {
+            return false;
+        }
+
+        return $label !== '';
+    }
+
+    /**
+     * Whether the row has a number of its own in the serial or code column: not a total's word there ("Total",
+     * "C/F"), nor a section's letter beside a total's words, as "A | Sub Total (A)".
+     */
+    private function ownNumber(array $row, bool $totalWords): bool
+    {
+        foreach ([$row['serial'], $row['code']] as $cell) {
+            if ($cell === '' || $this->isBareTotal($cell) || $this->isCarried($cell)) {
+                continue;
+            }
+
+            if ($totalWords && $this->sectionMarker(['serial' => $cell, 'code' => '', 'description' => '']) !== null) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Words that are a total's and nothing else: "Total", "Sub Total (A)", "Total Qty", "Total quantity of
+     * excavation", "Grand Total", "एकूण". Not "Total station survey", an item.
+     */
+    private function isTotalWording(string $label): bool
+    {
+        $text = trim(mb_strtolower($label));
+
+        return preg_match('/^(sub\s*-?\s*total|grand\s*total|net\s*total|page\s*total|total)(\s*(qty|qnty|quantity|quantities|amount|amt|cost|value|of|for|in|carried|c\/f|b\/f|rs\.?|₹)\b|\s*[:(\-–.=]|\s*$)/u', $text) === 1
+            || preg_match('/^(एकूण|कुल|योग|बेरीज|उप\s*योग|महायोग)(\s|$|[:.(])/u', $text) === 1;
     }
 
     private function openSection(int $number, array $row, string $marker, ?string $amount): void
@@ -490,6 +611,7 @@ final class BoqSheetRows extends EstimateSheet
         $this->section = Str::limit($name !== '' ? $name : __('Section :marker', ['marker' => $marker]), 120, '');
         $this->marker = $marker;
         $this->subheading = null;
+        $this->headNumber = null;
         $this->lastBase = null;
         $this->running = 0;
         $this->lastLine = null;
@@ -537,9 +659,11 @@ final class BoqSheetRows extends EstimateSheet
         }
 
         if (! $child) {
-            $this->closeSpec();
+            $this->closeSpec($row);
             $spec = null;
         }
+
+        $this->leaveHeading($row);
 
         ['qty' => $qty, 'rate' => $rate, 'amount' => $amount] = $row;
         $kind = 'line';
@@ -765,9 +889,23 @@ final class BoqSheetRows extends EstimateSheet
         }
 
         $text = $row['description'];
+        $specText = rtrim($spec['text']);
+        // A short heading with no colon ("EARTH WORK", "Earth work") is finished by nothing: its numbered items are items.
+        $finishable = mb_strlen($specText) >= self::SPEC_LENGTH || str_ends_with($specText, ':') || $this->startsLikeSpecification($specText);
 
-        return mb_strlen($text) < 40 && ! $this->startsLikeSpecification($text)
-            && (str_ends_with($text, ':') || count(preg_split('/\s+/u', $text) ?: []) <= 3 || ($row['code'] !== '' && $row['code'] === $spec['code']));
+        return mb_strlen($text) < 40 && ! $this->startsLikeSpecification($text) && ! $this->followsOn($row['serial'], $spec['serial'])
+            && (($finishable && (str_ends_with($text, ':') || count(preg_split('/\s+/u', $text) ?: []) <= 3)) || ($row['code'] !== '' && $row['code'] === $spec['code']));
+    }
+
+    /**
+     * Whether a number comes after another at its own level or above, not under it, in numbering by steps:
+     * 1.4 or 2 after 1.3. Under it is 1.3.1. Plain numbers, as 4 after 3, say nothing.
+     */
+    private function followsOn(string $serial, string $after): bool
+    {
+        $dotted = '/^\d+(\.\d+)*$/';
+
+        return preg_match($dotted, $serial) === 1 && preg_match($dotted, $after) === 1 && str_contains($serial.$after, '.') && ! str_starts_with($serial, $after.'.');
     }
 
     /** Whether a row's text goes on from the text above it: it starts in lower case or with a figure. */
@@ -821,8 +959,12 @@ final class BoqSheetRows extends EstimateSheet
         $this->kind($number, 'spec', $row['description'], null);
     }
 
-    /** Finish the specification lines were being added to. One with no lines under it is a note, left out. */
-    private function closeSpec(): void
+    /**
+     * Finish the specification lines were being added to. One with no lines under it is a note, left out,
+     * unless it is a short numbered heading with an item after it ($next) that is not numbered past it: then it
+     * heads the items, as "1 | EARTH WORK" over 1.1 and 1.2.
+     */
+    private function closeSpec(?array $next = null): void
     {
         $spec = $this->spec;
         $this->spec = null;
@@ -832,6 +974,16 @@ final class BoqSheetRows extends EstimateSheet
         }
 
         if ($spec['children'] === 0) {
+            if ($next !== null && $spec['amount'] === null && ($spec['serial'] !== '' || $spec['code'] !== '') && ! $this->followsOn($next['serial'], $spec['serial'])
+                && mb_strlen($spec['text']) < self::SPEC_LENGTH && ! $this->startsLikeSpecification($spec['text']) && ! str_ends_with(rtrim($spec['text']), ':')) {
+                $this->subheading = Str::limit(trim($spec['text'], " :-\t"), 80, '');
+                $this->headNumber = $spec['serial'] !== '' ? $spec['serial'] : $spec['code'];
+                $this->headChildren = false;
+                $this->kind($spec['row'], 'subheading', $spec['text'], null);
+
+                return;
+            }
+
             if ($spec['amount'] !== null) {
                 $this->kind($spec['row'], 'skipped', $spec['text'], __('An amount with no quantity, rate or lines under it. Left out.'));
             } else {
@@ -984,31 +1136,54 @@ final class BoqSheetRows extends EstimateSheet
      * "GST @ 18%" or "Water supply 3%", and not a figure inside an item's text, as in "Plaster with 2%
      * waterproofing compound". An amount that is that share of the lines also says so.
      */
-    private function percentIsSubject(string $label, string $percent, ?string $amount): bool
+    private function percentIsSubject(string $label, string $percent, ?string $amount, bool $numbered): bool
     {
         $text = trim(CellValues::asciiDigits($label));
 
-        if (preg_match('/^(add|less|deduct|deduction|minus|plus|[-+−–])|^[-+]?\s*\d+(\.\d+)?\s*(%|percent|per\s*cent)|@\s*\d/iu', $text) === 1
+        // It opens with the adjustment.
+        if (preg_match('/^(add|less|deduct|deduction|minus|plus|[-+−–])|^[-+]?\s*\d+(\.\d+)?\s*(%|percent|per\s*cent)/iu', $text) === 1) {
+            return true;
+        }
+
+        // Its amount is that share of the lines.
+        if ($amount !== null) {
+            $effect = $this->linesSum->multipliedBy(Dec::of($percent))->dividedBy(100, 2, RoundingMode::HalfUp);
+
+            if (! $this->linesSum->isZero() && (! $this->differs($effect->abs(), Dec::of($amount)->abs()) || ! $this->differs($this->linesSum->plus($this->effects)->plus($effect), Dec::of($amount)))) {
+                return true;
+            }
+        }
+
+        // A specification's words around a percentage say nothing: a long text, one that ends in a colon for the
+        // parts below it, or a numbered row, or one with parts below it, with no figures ("Plaster ... with
+        // compound @ 2% by weight of cement:").
+        if (mb_strlen($text) >= self::SPEC_LENGTH || str_ends_with($text, ':') || ($numbered && $amount === null)) {
+            return false;
+        }
+
+        if (preg_match('/@\s*\d/u', $text) === 1
             || preg_match('/\b(contingenc\w*|escalation|gst|cgst|sgst|igst|tax|taxes|cess|overheads?|profit|supervision|rebate|discount|below|above|insurance|welfare|premium|work\s*charged?)\b|आकस्मिक|जीएसटी|वजा|कमी|अधिक|जादा|घटा|जोड़|जोडा/iu', $text) === 1) {
             return true;
         }
 
-        if (preg_match('/\d\s*(%|percent|per\s*cent|टक्के|प्रतिशत)\s*\)?\.?\s*$/iu', $text) === 1 && count(preg_split('/\s+/u', $text) ?: []) <= 6) {
+        return preg_match('/\d\s*(%|percent|per\s*cent|टक्के|प्रतिशत)\s*\)?\.?\s*$/iu', $text) === 1 && count(preg_split('/\s+/u', $text) ?: []) <= 6;
+    }
+
+    /**
+     * "Add GST", "Round off", "Labour welfare cess", "Less: discount": an amount added to or taken off the work.
+     * The words open the row, or, on a short row with no number of its own, stand anywhere in it. An item that
+     * only mentions tax, as "Provision for inspection charges inclusive of GST", is not one.
+     */
+    private function isAmountAdjustment(string $label, bool $numbered): bool
+    {
+        $text = trim($label);
+
+        if (preg_match('/^(add|less|deduct)\b|^(round(ed|ing)?\s*-?\s*off|gst|cgst|sgst|igst|tax|taxes|cess|discount|rebate|contingenc\w*)\b|^(पूर्णांक|जीएसटी|सूट|वजावट)/iu', $text) === 1) {
             return true;
         }
 
-        if ($amount === null) {
-            return false;
-        }
-
-        $effect = $this->linesSum->multipliedBy(Dec::of($percent))->dividedBy(100, 2, RoundingMode::HalfUp);
-
-        return ! $this->linesSum->isZero() && (! $this->differs($effect->abs(), Dec::of($amount)->abs()) || ! $this->differs($this->linesSum->plus($this->effects)->plus($effect), Dec::of($amount)));
-    }
-
-    private function isAmountAdjustment(string $label): bool
-    {
-        return preg_match('/^\s*(add|less|deduct)\b|round(ed|ing)?\s*-?\s*off|\b(gst|cgst|sgst|igst|tax|taxes|cess|discount|rebate|contingenc\w*)\b|पूर्णांक|जीएसटी|सूट|वजावट/iu', $label) === 1;
+        return ! $numbered && count(preg_split('/\s+/u', $text) ?: []) <= 6
+            && preg_match('/round(ed|ing)?\s*-?\s*off|\b(gst|cgst|sgst|igst|tax|taxes|cess|discount|rebate|contingenc\w*)\b|पूर्णांक|जीएसटी|सूट|वजावट/iu', $text) === 1;
     }
 
     private function takesOff(string $label): bool
@@ -1080,11 +1255,15 @@ final class BoqSheetRows extends EstimateSheet
     /**
      * An amount carried to or brought from another page or the summary, in any wording: "Carried to next
      * page", "Amount carried to summary", "Amount c/o to next page", "पुढील पानावर नेलेली रक्कम", "अगले पृष्ठ
-     * पर ले जाया गया".
+     * पर ले जाया गया". The words name the page or the summary; work "carried out" or "brought to site" is not one.
      */
     private function isCarriedElsewhere(string $label): bool
     {
-        return preg_match('/\b(carried|brought|transferred|taken)\b|\b[cb]\s*\/\s*[fo]\b|\b[cb]\.\s*[fo]\.|\b(next|previous|preceding|last)\s+page\b|\b(to|from)\s+(the\s+)?(summary|abstract|collection)\b|पुढील\s+(पान|पृष्ठ)|मागील\s+(पान|पृष्ठ)|नेलेली|आणलेली|अगले\s+(पृष्ठ|पेज|पन्ने)|पिछले\s+(पृष्ठ|पेज|पन्ने)|ले\s+जाया|लाया\s+गया/iu', trim($label)) === 1;
+        $text = trim($label);
+
+        return preg_match('/\b[cb]\s*\/\s*[fo]\b|\b[cb]\.\s*[fo]\.|\b(next|previous|preceding|following|last)\s+page\b|\b(to|from)\s+(the\s+)?(general\s+)?(summary|abstract|collection)\b'
+            .'|पुढील\s+(पान|पृष्ठ)|मागील\s+(पान|पृष्ठ)|अगले\s+(पृष्ठ|पेज|पन्ने)|पिछले\s+(पृष्ठ|पेज|पन्ने)|(नेलेली|आणलेली|ले\s+जाया|लाया\s+गया).*(गोषवार|सारांश)|(गोषवार|सारांश).*(नेलेली|आणलेली|ले\s+जाया|लाया\s+गया)/iu', $text) === 1
+            || preg_match('/^(amount\s+|total\s+)?(carried|brought|transferred)(\s+(over|forward|fwd|down|on))?\s*$/iu', $text) === 1;
     }
 
     /** "Rupees nineteen lakh ... only" and the like: an amount written in words. */

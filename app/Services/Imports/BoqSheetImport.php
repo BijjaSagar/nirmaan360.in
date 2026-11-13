@@ -362,6 +362,11 @@ final class BoqSheetImport
         }
 
         foreach ($this->unreadFigures($sheet['grid'], $layout) as $unread) {
+            // A second amount, as one with taxes or one in lakhs, changes no line: the quantity and rate are imported.
+            if ($unread['field'] === 'amount') {
+                continue;
+            }
+
             if ($unread['field'] !== null) {
                 return ['rows' => [], 'error' => __('Column :column is also headed ":heading" and holds figures, like column :taken. Only one column can be read for it: remove or rename the others and upload the file again.', $unread)];
             }
@@ -452,13 +457,16 @@ final class BoqSheetImport
             array_unshift($errors, ['row' => 0, 'field' => 'unit', 'message' => __('This sheet has no unit column. Type the unit for its lines above.')]);
         }
 
+        $notes = $read['notes'];
+
         foreach ($this->unreadFigures($sheet['grid'], $layout) as $unread) {
-            if ($unread['field'] !== null) {
+            if ($unread['field'] === 'amount') {
+                // Only checked against the quantity times the rate: said, never a reason to stop.
+                $notes[] = ['row' => 0, 'message' => __('Column :column is also headed ":heading" and holds figures. Column :taken is read as the amount; to read :column instead, choose it under Read as.', $unread)];
+            } elseif ($unread['field'] !== null) {
                 $errors[] = ['row' => 0, 'field' => $unread['field'], 'message' => __('Column :column is also headed ":heading" and holds figures, like column :taken. Only one of them can be read: choose it, and set the others to Leave out. For a rate split into parts, such as supply and installation, read the total amount column as the amount and leave the rate columns out.', $unread)];
             }
         }
-
-        $notes = $read['notes'];
         $unread = array_filter($this->unreadFigures($sheet['grid'], $layout), fn (array $column) => $column['field'] === null);
 
         if ($unread !== []) {
@@ -492,8 +500,9 @@ final class BoqSheetImport
      */
     private function matchExisting(Project $project, array &$read): array
     {
+        // Every scope is lifted to read the project's lines inside the import's lock, so deleted lines are left out here.
         $existing = BoqItem::withoutGlobalScopes()->where('organization_id', $project->organization_id)->where('project_id', $project->id)
-            ->orderBy('id')->get(['id', 'code', 'description'])->unique('code')->keyBy('code');
+            ->whereNull('deleted_at')->orderBy('id')->get(['id', 'code', 'description'])->unique('code')->keyBy('code');
 
         if ($existing->isEmpty()) {
             return [[], []];
@@ -545,7 +554,9 @@ final class BoqSheetImport
      * Columns not read that hold figures under the heading, each with its letter and heading. "field" is the
      * quantity, rate or amount when the heading names one that another column is already read as: two
      * columns that could each be it, as a rate split into supply and installation under one merged heading,
-     * or a second table beside the first. A column the person or a saved layout left out has no "field".
+     * or a second table beside the first. Two quantity or rate columns stop the import until the person
+     * chooses; a second amount only changes the check of quantity times rate, so it is named and nothing
+     * more. A column the person or a saved layout left out has no "field".
      *
      * @return list<array{column: string, heading: string, field: ?string, taken: string}>
      */

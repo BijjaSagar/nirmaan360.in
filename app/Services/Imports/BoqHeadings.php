@@ -359,6 +359,7 @@ final class BoqHeadings
         }
 
         $score += $this->byValues($grid, $last, $fields, $how, $taken);
+        $this->amountThatIsTheProduct($grid, $last, $headings, $fields, $how, $taken);
 
         // "Description" merged over two columns, the item in one and its parts in the next: both are read.
         if (isset($taken['description'])) {
@@ -488,6 +489,41 @@ final class BoqHeadings
         }
 
         return $score;
+    }
+
+    /**
+     * Two columns headed as the amount, as "TOTAL AMOUNT With Taxes" and "TOTAL AMOUNT Without Taxes", or one
+     * in rupees and one in lakhs: the one that is the quantity times the rate is read, the other is not.
+     *
+     * @param  array<int, string>  $headings
+     * @param  array<int, ?string>  $fields
+     * @param  array<int, string>  $how
+     * @param  array<string, int>  $taken
+     */
+    private function amountThatIsTheProduct(array $grid, int $last, array $headings, array &$fields, array &$how, array &$taken): void
+    {
+        if (! isset($taken['amount'], $taken['qty'], $taken['rate'])) {
+            return;
+        }
+
+        $share = $this->product($grid, $taken['amount'], $taken['qty'], $taken['rate'], $last);
+
+        foreach ($fields as $column => $field) {
+            if ($field !== null || ! isset(self::read($headings[$column] ?? '')['scores']['amount'])) {
+                continue;
+            }
+
+            $other = $this->product($grid, $column, $taken['qty'], $taken['rate'], $last);
+
+            if ($other >= 0.6 && $other > $share + 0.2) {
+                $fields[$taken['amount']] = null;
+                unset($how[$taken['amount']]);
+                $fields[$column] = 'amount';
+                $how[$column] = 'values';
+                $taken['amount'] = $column;
+                $share = $other;
+            }
+        }
     }
 
     /**

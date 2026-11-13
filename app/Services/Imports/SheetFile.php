@@ -52,6 +52,9 @@ final class SheetFile
     /** CSV files bigger than this are refused; the upload limit is lower anyway. */
     private const MAX_CSV_BYTES = 8 * 1024 * 1024;
 
+    /** Rows past the limit looked at in one go for a value, so a sheet formatted far down is never loaded whole. */
+    private const WINDOW_ROWS = 5000;
+
     /** What kind of file this is, by its content, or null when it is none of the kinds read here. */
     public static function sniff(string $path): ?string
     {
@@ -128,7 +131,7 @@ final class SheetFile
         // Cells past the limits are never loaded. The filter only notes which sheets were offered one.
         $filter = new class($limit) implements IReadFilter
         {
-            /** @var array<string, array{rows: bool, columns: bool}> */
+            /** @var array<string, array{rows: bool, columns: bool, last: int}> */
             public array $beyond = [];
 
             public function __construct(private int $limit) {}
@@ -141,6 +144,7 @@ final class SheetFile
                 if ($rows || $columns) {
                     $this->beyond[$worksheetName]['rows'] = ($this->beyond[$worksheetName]['rows'] ?? false) || $rows;
                     $this->beyond[$worksheetName]['columns'] = ($this->beyond[$worksheetName]['columns'] ?? false) || $columns;
+                    $this->beyond[$worksheetName]['last'] = max($this->beyond[$worksheetName]['last'] ?? 0, $row);
 
                     return false;
                 }
@@ -166,7 +170,7 @@ final class SheetFile
 
                 if ($offered !== null) {
                     // The filter is offered empty cells too, formatted ones, so whether they hold a value is looked up.
-                    $values = self::valuesBeyond($path, $format, $sheet->getTitle(), $limit);
+                    $values = self::valuesBeyond($path, $format, $sheet->getTitle(), $limit, $offered);
                     $read['truncated'] = $offered['rows'] && $values['rows'];
                     $read['wide'] = $offered['columns'] && $values['columns'];
                 }
@@ -192,59 +196,81 @@ final class SheetFile
     }
 
     /**
-     * Whether a sheet holds a value in a row past $limit, and in a column past MAX_COLUMNS. An .xlsx sheet
-     * is streamed, so nothing is loaded; a BIFF .xls offers only cells with values; an OpenDocument sheet
-     * is loaded once more with values only, and only past the limits.
+     * Whether a sheet holds a value in a row past $limit, and in a column past MAX_COLUMNS. A cell with a
+     * border, a space, or a formula whose saved result is empty holds none. An .xlsx sheet is streamed, so
+     * nothing is loaded; a BIFF .xls or an OpenDocument sheet is loaded again with values only, only past
+     * the limits, a window of rows at a time.
      *
+     * @param  array{rows: bool, columns: bool, last: int}  $offered  What the first reading was offered past the limits.
      * @return array{rows: bool, columns: bool}
      */
-    private static function valuesBeyond(string $path, string $format, string $sheetName, int $limit): array
+    private static function valuesBeyond(string $path, string $format, string $sheetName, int $limit, array $offered): array
     {
-        if ($format === self::XLS) {
-            return ['rows' => true, 'columns' => true];
-        }
-
         if ($format === self::XLSX) {
             return self::xlsxValuesBeyond($path, $sheetName, $limit);
         }
 
-        $reader = self::reader($format);
-        $reader->setReadDataOnly(true);
-        $reader->setReadEmptyCells(false);
-        $reader->setLoadSheetsOnly([$sheetName]);
-        $reader->setReadFilter(new class($limit) implements IReadFilter
-        {
-            public function __construct(private int $limit) {}
-
-            public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool
-            {
-                return $row > $this->limit || Coordinate::columnIndexFromString($columnAddress) > SheetFile::MAX_COLUMNS;
-            }
-        });
-
         $found = ['rows' => false, 'columns' => false];
-        $book = $reader->load($path);
+        $windows = $offered['columns'] ? [[1, $limit]] : [];
 
-        try {
-            foreach ($book->getActiveSheet()->getCoordinates() as $coordinate) {
-                $value = $book->getActiveSheet()->getCell($coordinate)->getValue();
+        for ($from = $limit + 1; $offered['rows'] && $from <= $offered['last']; $from += self::WINDOW_ROWS) {
+            $windows[] = [$from, min($offered['last'], $from + self::WINDOW_ROWS - 1)];
+        }
 
-                if ($value === null || trim((string) (is_scalar($value) ? $value : 'x')) === '') {
-                    continue;
-                }
-
-                [$column, $row] = Coordinate::coordinateFromString($coordinate);
-                $found['rows'] = $found['rows'] || (int) $row > $limit;
-                $found['columns'] = $found['columns'] || Coordinate::columnIndexFromString($column) > self::MAX_COLUMNS;
+        foreach ($windows as [$from, $to]) {
+            if (($found['columns'] || ! $offered['columns']) && ($found['rows'] || $to <= $limit)) {
+                continue;
             }
-        } finally {
-            $book->disconnectWorksheets();
+
+            $reader = self::reader($format);
+            $reader->setReadDataOnly(true);
+            $reader->setReadEmptyCells(false);
+            $reader->setLoadSheetsOnly([$sheetName]);
+            $reader->setReadFilter(new class($from, $to, $limit) implements IReadFilter
+            {
+                public function __construct(private int $from, private int $to, private int $limit) {}
+
+                public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool
+                {
+                    return $row >= $this->from && $row <= $this->to
+                        && ($row > $this->limit || Coordinate::columnIndexFromString($columnAddress) > SheetFile::MAX_COLUMNS);
+                }
+            });
+
+            $book = $reader->load($path);
+
+            try {
+                foreach ($book->getSheetCount() > 0 ? $book->getSheet(0)->getCellCollection()->getCoordinates() : [] as $coordinate) {
+                    $cell = $book->getSheet(0)->getCell($coordinate);
+                    $value = $cell->isFormula() ? $cell->getOldCalculatedValue() : $cell->getValue();
+                    $value = $value instanceof RichText ? $value->getPlainText() : $value;
+
+                    if ($value === null || (is_string($value) && trim($value) === '')) {
+                        continue;
+                    }
+
+                    [$column, $row] = Coordinate::coordinateFromString($coordinate);
+                    $found['rows'] = $found['rows'] || (int) $row > $limit;
+                    $found['columns'] = $found['columns'] || Coordinate::columnIndexFromString($column) > self::MAX_COLUMNS;
+                }
+            } finally {
+                $book->disconnectWorksheets();
+            }
+
+            if ($found['rows'] && ($found['columns'] || ! $offered['columns'])) {
+                break;
+            }
         }
 
         return $found;
     }
 
-    /** @return array{rows: bool, columns: bool} The xlsx sheet's XML read as a stream for a value past the limits. */
+    /**
+     * The xlsx sheet's XML read as a stream for a value past the limits. A shared string is looked up, since
+     * the cell holds only its number in the list of strings: a space typed far down is not a value.
+     *
+     * @return array{rows: bool, columns: bool}
+     */
     private static function xlsxValuesBeyond(string $path, string $sheetName, int $limit): array
     {
         $found = ['rows' => false, 'columns' => false];
@@ -258,6 +284,9 @@ final class SheetFile
 
         $row = 0;
         $column = 0;
+        $type = '';
+        /** @var array<int, array{rows: bool, columns: bool}> Shared string number => where cells holding it are. */
+        $shared = [];
 
         try {
             while (@$xml->read()) {
@@ -272,7 +301,15 @@ final class SheetFile
                     $reference = (string) $xml->getAttribute('r');
                     $column = preg_match('/^([A-Z]{1,3})(\d+)$/', $reference, $match) === 1 ? Coordinate::columnIndexFromString($match[1]) : $column + 1;
                     $row = isset($match[2]) && $reference !== '' ? (int) $match[2] : $row;
-                } elseif (($xml->localName === 'v' || $xml->localName === 't') && ($row > $limit || $column > self::MAX_COLUMNS) && trim($xml->readString()) !== '') {
+                    $type = (string) $xml->getAttribute('t');
+                } elseif (($xml->localName === 'v' || $xml->localName === 't') && ($row > $limit || $column > self::MAX_COLUMNS) && ($text = trim($xml->readString())) !== '') {
+                    if ($xml->localName === 'v' && $type === 's' && ctype_digit($text)) {
+                        $shared[(int) $text]['rows'] = ($shared[(int) $text]['rows'] ?? false) || $row > $limit;
+                        $shared[(int) $text]['columns'] = ($shared[(int) $text]['columns'] ?? false) || $column > self::MAX_COLUMNS;
+
+                        continue;
+                    }
+
                     $found['rows'] = $found['rows'] || $row > $limit;
                     $found['columns'] = $found['columns'] || $column > self::MAX_COLUMNS;
 
@@ -285,7 +322,58 @@ final class SheetFile
             $xml->close();
         }
 
+        if ($shared === [] || ($found['rows'] && $found['columns'])) {
+            return $found;
+        }
+
+        foreach (self::sharedStringsWithText($path, $shared) as $index) {
+            $found['rows'] = $found['rows'] || $shared[$index]['rows'];
+            $found['columns'] = $found['columns'] || $shared[$index]['columns'];
+        }
+
         return $found;
+    }
+
+    /**
+     * Which of these shared strings of an xlsx hold more than spaces.
+     *
+     * @param  array<int, mixed>  $wanted  Shared string number => anything.
+     * @return list<int>
+     */
+    private static function sharedStringsWithText(string $path, array $wanted): array
+    {
+        $xml = new XMLReader;
+
+        if (! @$xml->open('zip://'.$path.'#xl/sharedStrings.xml', null, LIBXML_NONET | LIBXML_COMPACT)) {
+            // When the strings cannot be looked into, every cell holding one counts as a value.
+            return array_keys($wanted);
+        }
+
+        $last = max(array_keys($wanted));
+        $index = -1;
+        $withText = [];
+
+        try {
+            while (@$xml->read()) {
+                if ($xml->nodeType !== XMLReader::ELEMENT || $xml->localName !== 'si') {
+                    continue;
+                }
+
+                $index++;
+
+                if (isset($wanted[$index]) && trim($xml->readString()) !== '') {
+                    $withText[] = $index;
+                }
+
+                if ($index >= $last) {
+                    break;
+                }
+            }
+        } finally {
+            $xml->close();
+        }
+
+        return $withText;
     }
 
     /** The path inside the xlsx zip of the sheet with this name. */
