@@ -93,7 +93,10 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
       _route(
         Routes.projects,
         (_) => const ProjectPickerScreen(),
-        routes: <RouteBase>[_route('new', (_) => const ProjectFormScreen())],
+        routes: <RouteBase>[
+          _route('new', (_) => const ProjectFormScreen()),
+          _route('edit', (s) => ProjectFormScreen(projectId: int.tryParse(s.uri.queryParameters['id'] ?? '') ?? 0)),
+        ],
       ),
       _route(
         Routes.boq,

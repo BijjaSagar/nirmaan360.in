@@ -312,6 +312,7 @@ class AppGate extends Cubit<GateState> {
   /// Exact paths that need a permission. Anything else is open once signed in.
   static const Map<String, String> _pathPermissions = <String, String>{
     Routes.projectForm: 'project.manage',
+    Routes.projectEdit: 'project.manage',
     Routes.boq: 'boq.view',
     Routes.boqForm: 'boq.manage',
     Routes.walletForm: 'petty_cash.manage',

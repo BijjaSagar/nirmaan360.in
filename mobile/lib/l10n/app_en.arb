@@ -1986,6 +1986,44 @@
   },
   "progressTitle": "Site progress",
   "progressWorkDone": "Work done",
+  "projectEditLoading": "Opening the project…",
+  "projectEditOffline": "A project can only be changed with network. Try again when you have signal.",
+  "projectEditRowSubtitle": "Name, place, dates and value by phase",
+  "projectEditSave": "Save changes",
+  "projectEditSaving": "Saving…",
+  "projectEditTitle": "Edit project",
+  "projectPhaseAdd": "Add phase",
+  "projectPhaseAmount": "Amount",
+  "projectPhaseAmountRequired": "Enter the amount",
+  "projectPhaseName": "Phase name",
+  "projectPhaseNameHint": "For example Foundation",
+  "projectPhaseNameRequired": "Name this phase",
+  "projectPhaseNumbered": "Phase {number}",
+  "@projectPhaseNumbered": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "projectPhaseRemove": "Remove {phase}",
+  "@projectPhaseRemove": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "projectPhaseShare": "{share} of the total",
+  "@projectPhaseShare": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "projectPhaseTotal": "Total",
+  "projectPhasesHint": "Enter the value phase by phase. Each phase's share is worked out for you.",
   "pushPrefsAlerts": "Site alerts",
   "pushPrefsAlertsHint": "New alerts on your projects, such as work falling behind. Critical ones reach you at any hour.",
   "pushPrefsAnnouncements": "Announcements and reminders",

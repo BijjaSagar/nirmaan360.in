@@ -16,6 +16,11 @@ abstract final class Routes {
   /// Create a project. Needs `project.manage` and network.
   static const projectForm = '/projects/new';
 
+  /// Change a project: its name, place, dates and value by phase. Query `id`.
+  /// Needs `project.manage` and network.
+  static const projectEdit = '/projects/edit';
+  static String projectEditOf(int id) => '$projectEdit?id=$id';
+
   /// BOQ lines of the current project, and adding one.
   static const boq = '/boq';
   static const boqForm = '/boq/form';

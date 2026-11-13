@@ -332,6 +332,7 @@ class DioNirmaanApi implements NirmaanApi {
     String? endDate,
     String? contractValue,
     String? code,
+    List<Map<String, String>>? phases,
   }) {
     return _createRow('/projects', {
       'client_uuid': clientUuid,
@@ -341,7 +342,17 @@ class DioNirmaanApi implements NirmaanApi {
       'end_date': ?endDate,
       'contract_value': ?contractValue,
       'code': ?code,
+      'phases': ?phases,
     });
+  }
+
+  @override
+  Future<Map<String, dynamic>> projectDetail(int projectId) => _getData('/projects/$projectId');
+
+  @override
+  Future<Map<String, dynamic>> updateProject(int projectId, Map<String, dynamic> fields) async {
+    final body = await _call(() => _dio.patch('/projects/$projectId', data: fields));
+    return (body['data'] as Map).cast<String, dynamic>();
   }
 
   @override

@@ -79,6 +79,7 @@ class _HomeView extends StatelessWidget {
               _ContractorsRow(overview: state.contractors),
             // One row for the field tools that are open to this person, rather than a tile each.
             if (context.select((AppGate gate) => gate.state.hasSiteTools)) const _SiteToolsRow(),
+            if (context.select((AppGate gate) => gate.state.canManageProjects)) _ProjectDetailsRow(projectId: project.id),
           ];
 
           return Column(
@@ -520,6 +521,25 @@ class _SiteToolsRow extends StatelessWidget {
       title: t.siteToolsTitle,
       subtitle: <String>[if (inspect) t.inspectionsTitle, if (machines) t.machinesTitle].join(' · '),
       onTap: () => context.push(Routes.siteTools),
+    );
+  }
+}
+
+/// The way to change the project itself: its name, place, dates and value by phase.
+class _ProjectDetailsRow extends StatelessWidget {
+  const _ProjectDetailsRow({required this.projectId});
+
+  final int projectId;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    return LedgerListTile(
+      key: const ValueKey<String>('home-project-details'),
+      leading: const Icon(Icons.edit_note, size: N360IconSize.lg, color: N360Colors.ink2),
+      title: t.projectEditTitle,
+      subtitle: t.projectEditRowSubtitle,
+      onTap: () => context.push(Routes.projectEditOf(projectId)),
     );
   }
 }

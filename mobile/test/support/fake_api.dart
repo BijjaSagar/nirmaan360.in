@@ -6,6 +6,8 @@ import 'dart:typed_data';
 import 'package:decimal/decimal.dart';
 import 'package:nirmaan360/core/api/api_failure.dart';
 import 'package:nirmaan360/core/api/nirmaan_api.dart';
+import 'package:nirmaan360/core/money/money.dart';
+import 'package:nirmaan360/features/projects/data/project_detail.dart' show phaseShares;
 
 typedef Row = Map<String, dynamic>;
 
@@ -1443,9 +1445,11 @@ class FakeApi implements NirmaanApi {
     String? endDate,
     String? contractValue,
     String? code,
+    List<Map<String, String>>? phases,
   }) async {
     _guard();
     _requireSetupPermission('project.manage');
+    final List<Row>? split = phases == null || phases.isEmpty ? null : _cleanPhases(phases);
     return _createOnce(
       clientUuid,
       () {
@@ -1470,15 +1474,94 @@ class FakeApi implements NirmaanApi {
           'status': 'active',
           'start_date': startDate,
           'end_date': endDate,
-          'contract_value': contractValue,
+          'contract_value': split == null ? contractValue : _phaseTotal(split),
           'measurement_tolerance_pct': '5.00',
           'updated_at': _stampNow(),
+          'phases': split ?? <Row>[],
         };
         projects.add(row);
         return row;
       },
-      (row) => Map<String, dynamic>.of(row),
+      (row) => Map<String, dynamic>.of(row)..remove('phases'),
     );
+  }
+
+  /// Every `PATCH /projects/{project}` body, in order.
+  final List<Row> projectUpdates = [];
+
+  /// Thrown by the next `PATCH /projects/{project}`, as a server refusal.
+  ApiFailure? projectUpdateFailure;
+
+  @override
+  Future<Map<String, dynamic>> projectDetail(int projectId) async {
+    _guard();
+    _requireProject(projectId);
+    return _presentDetail(projects.firstWhere((p) => p['id'] == projectId));
+  }
+
+  /// Applies the fields sent, as the server does: money only for
+  /// `money.view`, and a phased value changes only through its phases.
+  @override
+  Future<Map<String, dynamic>> updateProject(int projectId, Map<String, dynamic> fields) async {
+    _guard();
+    _requireSetupPermission('project.manage');
+    _requireProject(projectId);
+    final ApiFailure? failure = projectUpdateFailure;
+    if (failure != null) {
+      projectUpdateFailure = null;
+      throw failure;
+    }
+    projectUpdates.add(Map<String, dynamic>.of(fields));
+    final Row row = projects.firstWhere((p) => p['id'] == projectId);
+    if (fields.containsKey('name')) _requireField('name', fields['name'] as String?);
+    final bool money = (user['can'] as Map)['money.view'] == true;
+    final List<Row>? split = money && fields['phases'] != null
+        ? _cleanPhases((fields['phases'] as List).map((p) => (p as Map).cast<String, String>()).toList())
+        : null;
+    if (money && split == null && fields.containsKey('contract_value')) {
+      final List<Row> saved = (row['phases'] as List<Row>?) ?? const <Row>[];
+      if (saved.isNotEmpty && Money.fromWire(fields['contract_value'] as String?) != Money.fromWire(row['contract_value'] as String?)) {
+        const message = 'This value is the total of the project\'s phases. Change the phases to change it.';
+        throw const ValidationFailure(message, errors: {'contract_value': [message]});
+      }
+    }
+    for (final key in const ['name', 'location', 'start_date', 'end_date']) {
+      if (fields.containsKey(key)) row[key] = fields[key];
+    }
+    if (split != null) {
+      row['phases'] = split;
+      if (split.isNotEmpty) row['contract_value'] = _phaseTotal(split);
+    }
+    if (money && (split == null || split.isEmpty) && fields.containsKey('contract_value')) {
+      row['contract_value'] = Money.fromWire(fields['contract_value'] as String?).toWire();
+    }
+    row['updated_at'] = _stampNow();
+    return _presentDetail(row);
+  }
+
+  List<Row> _cleanPhases(List<Map<String, String>> phases) => <Row>[
+        for (final phase in phases)
+          <String, dynamic>{'name': phase['name']!.trim(), 'amount': Money.fromWire(phase['amount']).toWire()},
+      ];
+
+  String _phaseTotal(List<Row> phases) =>
+      phases.fold(Money.zero, (Money sum, phase) => sum + Money.fromWire(phase['amount'] as String)).toWire();
+
+  Row _presentDetail(Row row) {
+    final bool money = (user['can'] as Map)['money.view'] == true;
+    final List<Row> phases = (row['phases'] as List<Row>?) ?? const <Row>[];
+    final List<String?> shares = phaseShares(phases.map((p) => Money.fromWire(p['amount'] as String)).toList());
+    return <String, dynamic>{
+      ...(Map<String, dynamic>.of(row)
+        ..remove('phases')
+        ..remove('client_uuid')),
+      'contract_value': money ? Money.fromWire(row['contract_value'] as String?).toWire() : null,
+      'phases': money
+          ? <Row>[
+              for (final (i, phase) in phases.indexed) <String, dynamic>{'id': i + 1, ...phase, 'share_pct': shares[i]},
+            ]
+          : null,
+    };
   }
 
   /// Two jobs under one name. `NirmaanApi` needs this name, and existing

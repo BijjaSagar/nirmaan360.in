@@ -3848,6 +3848,66 @@ class AppLocalizationsHi extends AppLocalizations {
   String get progressWorkDone => 'हुआ काम';
 
   @override
+  String get projectEditLoading => 'परियोजना खुल रही है…';
+
+  @override
+  String get projectEditOffline =>
+      'परियोजना सिर्फ़ नेटवर्क होने पर बदलती है। सिग्नल आने पर फिर कोशिश करें।';
+
+  @override
+  String get projectEditRowSubtitle =>
+      'नाम, स्थान, तारीखें और चरण के अनुसार राशि';
+
+  @override
+  String get projectEditSave => 'बदलाव सहेजें';
+
+  @override
+  String get projectEditSaving => 'सहेजा जा रहा है…';
+
+  @override
+  String get projectEditTitle => 'परियोजना बदलें';
+
+  @override
+  String get projectPhaseAdd => 'चरण जोड़ें';
+
+  @override
+  String get projectPhaseAmount => 'राशि';
+
+  @override
+  String get projectPhaseAmountRequired => 'राशि भरें';
+
+  @override
+  String get projectPhaseName => 'चरण का नाम';
+
+  @override
+  String get projectPhaseNameHint => 'जैसे नींव';
+
+  @override
+  String get projectPhaseNameRequired => 'इस चरण का नाम लिखें';
+
+  @override
+  String projectPhaseNumbered(int number) {
+    return 'चरण $number';
+  }
+
+  @override
+  String projectPhaseRemove(String phase) {
+    return '$phase हटाएँ';
+  }
+
+  @override
+  String projectPhaseShare(String share) {
+    return 'कुल का $share';
+  }
+
+  @override
+  String get projectPhaseTotal => 'कुल';
+
+  @override
+  String get projectPhasesHint =>
+      'राशि चरण के अनुसार भरें। हर चरण का हिस्सा अपने आप निकलता है।';
+
+  @override
   String get pushPrefsAlerts => 'साइट अलर्ट';
 
   @override

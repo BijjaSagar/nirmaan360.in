@@ -3898,6 +3898,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressWorkDone => 'Work done';
 
   @override
+  String get projectEditLoading => 'Opening the project…';
+
+  @override
+  String get projectEditOffline =>
+      'A project can only be changed with network. Try again when you have signal.';
+
+  @override
+  String get projectEditRowSubtitle => 'Name, place, dates and value by phase';
+
+  @override
+  String get projectEditSave => 'Save changes';
+
+  @override
+  String get projectEditSaving => 'Saving…';
+
+  @override
+  String get projectEditTitle => 'Edit project';
+
+  @override
+  String get projectPhaseAdd => 'Add phase';
+
+  @override
+  String get projectPhaseAmount => 'Amount';
+
+  @override
+  String get projectPhaseAmountRequired => 'Enter the amount';
+
+  @override
+  String get projectPhaseName => 'Phase name';
+
+  @override
+  String get projectPhaseNameHint => 'For example Foundation';
+
+  @override
+  String get projectPhaseNameRequired => 'Name this phase';
+
+  @override
+  String projectPhaseNumbered(int number) {
+    return 'Phase $number';
+  }
+
+  @override
+  String projectPhaseRemove(String phase) {
+    return 'Remove $phase';
+  }
+
+  @override
+  String projectPhaseShare(String share) {
+    return '$share of the total';
+  }
+
+  @override
+  String get projectPhaseTotal => 'Total';
+
+  @override
+  String get projectPhasesHint =>
+      'Enter the value phase by phase. Each phase\'s share is worked out for you.';
+
+  @override
   String get pushPrefsAlerts => 'Site alerts';
 
   @override

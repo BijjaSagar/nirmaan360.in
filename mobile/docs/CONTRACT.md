@@ -246,6 +246,24 @@ Like the setup above, these change the office's BOQ now or not at all: no outbox
 - Before sending, the app refuses itself when the phone holds work on the line the server has not had yet (a measurement never sent, or an outbox row whose payload names the `boq_item_id`), and says to send it first.
 - The confirmation names the line (code, description, quantity and unit), says the history keeps it and that the app cannot bring it back, and needs a reason.
 
+### Changing a project, and its value by phase (online only)
+
+The contract value can be one figure or split into phases (foundation, slab, finishing). The server keeps the phases in `project_value_phases` and the project's `contract_value` always equal to their total, so everything that reads it still works. While a project has phases its value changes only through them.
+
+| Method and path | Permission | Body | Returns |
+| --- | --- | --- | --- |
+| `POST /projects` | `project.manage` | as above, plus optional `phases: [{name, amount}]` | `{data}` in the `projects` pull shape |
+| `GET /projects/{project}` | `project.view` | | `{data}`: the detail below |
+| `PATCH /projects/{project}` | `project.manage` | any of the website form's fields: `name`, `code`, `location`, `state`, `client_id`, `start_date`, `end_date`, `status`, `contract_value`, `phases`, `retention_pct`, `tds_pct`, `gst_pct`, `advance_amount`, `advance_recovery_pct`, `measurement_tolerance_pct`, `deduction_basis`, `deduction_order` (`"retention,advance,material,tds"`), `plot_size`, `built_up_area`, `planned_days`, `deadline_date`, `boq_mode`, `budget_amount`, `budget_margin_pct` | `{data}`: the detail below |
+
+- The detail is the `projects` pull row plus those fields, and `phases: [{id, name, amount, share_pct}]` in order (empty for one figure). `contract_value`, `advance_amount` and `phases` are null without `money.view`; `budget_amount` and `budget_margin_pct` without `money.overview`.
+- `PATCH` changes only the keys sent. Money keys (`contract_value`, `advance_amount`, `phases`) are ignored from someone without `money.view`, and the budget from someone without `money.overview`. The end date is checked against the saved start date when only one is sent: 422 on `end_date`.
+- `phases` replace the saved ones and set `contract_value` to their total. Each needs `name` (120) and `amount` (0 or more); at most 50, and their total must fit `decimal(15,2)` (422 on `phases`). A `contract_value` sent beside them must equal their total (422 on `contract_value`). `phases: []` takes them away and leaves the value as it is, so `{phases: [], contract_value}` makes it one figure again. A `contract_value` alone on a phased project is 422 unless it is the same figure.
+- `share_pct` is each phase's share of the total with two decimals, adding up to exactly `100.00`: each is rounded down to the hundredth and the hundredths left over go one each to the largest remainders, the earlier phase first on a tie. Null for every phase when the total is 0. The app works out the same figures as the person types (`phaseShares`).
+- A change of phases is audited as `project.phases_changed`, with the old and new lists. Sending the same phases again changes and audits nothing.
+- Other organisations' projects, and projects outside a project-limited person's list, are 404.
+- The app opens the edit screen from Home ("Edit project", for `project.manage`). It reads the detail, sends `name`, `location`, `start_date` and `end_date`, and, only when the detail showed money, `phases` (and `contract_value` when there are none). The answer replaces the project's row on the phone. Nothing is queued: offline, the screen says so and offers to try again.
+
 ### Project photo
 
 `image_url` is on each project in `GET /projects` and the `projects` rows of the pull, null when there is no photo. It needs the same bearer token, so the app asks for the same path on its own configured server rather than fetching the address as given. The `v=` value changes with the photo. The photo is kept on the phone for offline use, and the first letter of the name shows when there is none. Setting a photo stays on the website.

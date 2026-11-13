@@ -7,6 +7,9 @@ import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/pull_applier.dart';
+import 'project_detail.dart';
+
+export 'project_detail.dart' show ProjectDetail, ValuePhase, phaseShares;
 
 /// A BOQ line with the server's balance and the local preview.
 class BoqLine {
@@ -107,6 +110,7 @@ class ProjectRepository {
     String? startDate,
     String? endDate,
     Money? contractValue,
+    List<ValuePhase>? phases,
   }) {
     return _ctx.createOnline(
       identity: ['project', name],
@@ -117,15 +121,56 @@ class ProjectRepository {
         startDate: startDate,
         endDate: endDate,
         contractValue: contractValue?.toWire(),
+        phases: phases == null || phases.isEmpty ? null : phases.map((p) => p.toWire()).toList(),
       ),
-      store: (json) async {
-        final row = PullApplier.projectCompanion(json);
-        await _db.into(_db.projects).insertOnConflictUpdate(row);
-        return (_db.select(_db.projects)
-              ..where((t) => t.id.equals(row.id.value)))
-            .getSingle();
-      },
+      store: _storeProject,
     );
+  }
+
+  /// The project as the edit screen needs it. Online only, as project setup
+  /// is: throws `OfflineFailure` without network.
+  Future<ProjectDetail> loadProject(int projectId) async {
+    if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
+    return ProjectDetail.fromJson(await _ctx.api.projectDetail(projectId));
+  }
+
+  /// Changes a project on the server and the copy on this phone. Online only.
+  ///
+  /// [phases] replace the saved ones and set the contract value to their
+  /// total; an empty list makes it one figure again, [contractValue]. Money is
+  /// sent only when [withMoney], for someone the server lets see it.
+  ///
+  /// Throws `OfflineFailure` when offline and `ValidationFailure` with the
+  /// server's `errors`.
+  Future<ProjectDetail> updateProject(
+    int projectId, {
+    required String name,
+    String? location,
+    String? startDate,
+    String? endDate,
+    bool withMoney = false,
+    Money? contractValue,
+    List<ValuePhase> phases = const <ValuePhase>[],
+  }) async {
+    if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
+    final Map<String, dynamic> json = await _ctx.api.updateProject(projectId, <String, dynamic>{
+      'name': name,
+      'location': location,
+      'start_date': startDate,
+      'end_date': endDate,
+      if (withMoney) ...<String, dynamic>{
+        'phases': phases.map((p) => p.toWire()).toList(),
+        if (phases.isEmpty) 'contract_value': (contractValue ?? Money.zero).toWire(),
+      },
+    });
+    await _db.transaction(() => _storeProject(json));
+    return ProjectDetail.fromJson(json);
+  }
+
+  Future<ProjectRow> _storeProject(Map<String, dynamic> json) async {
+    final row = PullApplier.projectCompanion(json);
+    await _db.into(_db.projects).insertOnConflictUpdate(row);
+    return (_db.select(_db.projects)..where((t) => t.id.equals(row.id.value))).getSingle();
   }
 
   /// Adds a BOQ line on the server and stores it locally. Online only.

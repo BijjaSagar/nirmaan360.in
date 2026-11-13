@@ -3861,6 +3861,66 @@ class AppLocalizationsMr extends AppLocalizations {
   String get progressWorkDone => 'झालेले काम';
 
   @override
+  String get projectEditLoading => 'प्रकल्प उघडत आहे…';
+
+  @override
+  String get projectEditOffline =>
+      'नेटवर्क असतानाच प्रकल्प बदलता येतो. सिग्नल आल्यावर पुन्हा प्रयत्न करा.';
+
+  @override
+  String get projectEditRowSubtitle =>
+      'नाव, ठिकाण, तारखा आणि टप्प्यानुसार रक्कम';
+
+  @override
+  String get projectEditSave => 'बदल जतन करा';
+
+  @override
+  String get projectEditSaving => 'जतन होत आहे…';
+
+  @override
+  String get projectEditTitle => 'प्रकल्प बदला';
+
+  @override
+  String get projectPhaseAdd => 'टप्पा जोडा';
+
+  @override
+  String get projectPhaseAmount => 'रक्कम';
+
+  @override
+  String get projectPhaseAmountRequired => 'रक्कम भरा';
+
+  @override
+  String get projectPhaseName => 'टप्प्याचे नाव';
+
+  @override
+  String get projectPhaseNameHint => 'उदा. पाया';
+
+  @override
+  String get projectPhaseNameRequired => 'या टप्प्याचे नाव लिहा';
+
+  @override
+  String projectPhaseNumbered(int number) {
+    return 'टप्पा $number';
+  }
+
+  @override
+  String projectPhaseRemove(String phase) {
+    return '$phase काढा';
+  }
+
+  @override
+  String projectPhaseShare(String share) {
+    return 'एकूणपैकी $share';
+  }
+
+  @override
+  String get projectPhaseTotal => 'एकूण';
+
+  @override
+  String get projectPhasesHint =>
+      'रक्कम टप्प्यानुसार भरा. प्रत्येक टप्प्याचा हिस्सा आपोआप मोजला जातो.';
+
+  @override
   String get pushPrefsAlerts => 'साइटच्या सूचना';
 
   @override

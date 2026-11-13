@@ -6868,6 +6868,108 @@ abstract class AppLocalizations {
   /// **'Work done'**
   String get progressWorkDone;
 
+  /// No description provided for @projectEditLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the project…'**
+  String get projectEditLoading;
+
+  /// No description provided for @projectEditOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'A project can only be changed with network. Try again when you have signal.'**
+  String get projectEditOffline;
+
+  /// No description provided for @projectEditRowSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, place, dates and value by phase'**
+  String get projectEditRowSubtitle;
+
+  /// No description provided for @projectEditSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get projectEditSave;
+
+  /// No description provided for @projectEditSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get projectEditSaving;
+
+  /// No description provided for @projectEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit project'**
+  String get projectEditTitle;
+
+  /// No description provided for @projectPhaseAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add phase'**
+  String get projectPhaseAdd;
+
+  /// No description provided for @projectPhaseAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get projectPhaseAmount;
+
+  /// No description provided for @projectPhaseAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the amount'**
+  String get projectPhaseAmountRequired;
+
+  /// No description provided for @projectPhaseName.
+  ///
+  /// In en, this message translates to:
+  /// **'Phase name'**
+  String get projectPhaseName;
+
+  /// No description provided for @projectPhaseNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example Foundation'**
+  String get projectPhaseNameHint;
+
+  /// No description provided for @projectPhaseNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name this phase'**
+  String get projectPhaseNameRequired;
+
+  /// No description provided for @projectPhaseNumbered.
+  ///
+  /// In en, this message translates to:
+  /// **'Phase {number}'**
+  String projectPhaseNumbered(int number);
+
+  /// No description provided for @projectPhaseRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {phase}'**
+  String projectPhaseRemove(String phase);
+
+  /// No description provided for @projectPhaseShare.
+  ///
+  /// In en, this message translates to:
+  /// **'{share} of the total'**
+  String projectPhaseShare(String share);
+
+  /// No description provided for @projectPhaseTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get projectPhaseTotal;
+
+  /// No description provided for @projectPhasesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the value phase by phase. Each phase\'s share is worked out for you.'**
+  String get projectPhasesHint;
+
   /// No description provided for @pushPrefsAlerts.
   ///
   /// In en, this message translates to:
