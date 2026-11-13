@@ -103,4 +103,65 @@ class TenderFactDiff
 
         return $replaced->modelKeys();
     }
+
+    /**
+     * The facts this fact replaced when it was confirmed and that are still marked replaced by it. The
+     * audit row written when each was replaced is the record of which fact replaced it; a fact replaced
+     * again later names the later fact instead.
+     *
+     * @return Collection<int, CrmTenderFact>
+     */
+    public static function replacedBy(CrmTenderFact $fact, bool $lock = false): Collection
+    {
+        $superseded = CrmTenderFact::withoutGlobalScopes()
+            ->where('organization_id', $fact->organization_id)
+            ->where('tender_id', $fact->tender_id)
+            ->where('field', $fact->field)
+            ->where('status', CrmTenderFact::SUPERSEDED)
+            ->whereKeyNot($fact->id)
+            ->when($lock, fn ($query) => $query->lockForUpdate())
+            ->orderBy('id')
+            ->get();
+
+        if ($superseded->isEmpty()) {
+            return $superseded;
+        }
+
+        $latest = AuditLog::withoutGlobalScopes()
+            ->where('organization_id', $fact->organization_id)
+            ->where('action', 'tender_fact.superseded')
+            ->where('auditable_type', $fact->getMorphClass())
+            ->whereIn('auditable_id', $superseded->modelKeys())
+            ->orderByDesc('id')
+            ->get(['id', 'auditable_id', 'new_values'])
+            ->uniqueStrict('auditable_id')
+            ->keyBy('auditable_id');
+
+        return $superseded->filter(fn (CrmTenderFact $old) => (int) ($latest->get($old->id)?->new_values['replaced_by'] ?? 0) === (int) $fact->id)->values();
+    }
+
+    /**
+     * Gives back the confirmed value that a fact replaced, when that fact is rejected after all: the
+     * value it replaced stands again, confirmed as before. Runs inside the rejection's transaction.
+     *
+     * @return list<int> The ids of the facts that stand again.
+     */
+    public function restore(CrmTenderFact $rejected, User $by): array
+    {
+        $restored = self::replacedBy($rejected, lock: true);
+
+        foreach ($restored as $old) {
+            $old->forceFill(['status' => CrmTenderFact::CONFIRMED])->save();
+
+            // Which fact stands again on which page, and the rejected fact that had replaced it. Never the values.
+            AuditLog::record('tender_fact.restored', $old, ['status' => CrmTenderFact::SUPERSEDED], [
+                'status' => CrmTenderFact::CONFIRMED,
+                'field' => $old->field,
+                'page' => (int) $old->page,
+                'replaced_by_rejected' => (int) $rejected->id,
+            ], $by, (int) $old->organization_id);
+        }
+
+        return $restored->modelKeys();
+    }
 }

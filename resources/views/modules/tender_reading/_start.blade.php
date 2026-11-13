@@ -7,6 +7,9 @@
     Pictures are drawn in this browser from the tender's own document and uploaded one page at a time
     through the shared upload route; the server redraws each before it keeps it. A page left without a
     picture is not read, and the tender sheet lists it as not read.
+
+    The price comes from a shared route, which only those who may start the read can call; someone who
+    only watches is not shown one.
 --}}
 @php
     $hasText = $textPages !== [];
@@ -22,7 +25,7 @@
              get missing() { return this.toRead.filter((page) => !this.stored.includes(page) && !this.leftOut.includes(page)); },
              hasWork() { return this.hasText || this.toRead.some((page) => this.stored.includes(page)); },
              ready() { return new Promise((resolve) => window.ReaderCapture ? resolve() : document.addEventListener('reader-capture:ready', resolve, { once: true })); },
-             async init() { await this.ready(); await this.price(); },
+             async init() { if (!@js($canAct)) return; await this.ready(); await this.price(); },
              async price() {
                  this.quote = null;
                  if (!this.hasWork()) return;

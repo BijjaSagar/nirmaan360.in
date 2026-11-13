@@ -27,6 +27,10 @@ use Illuminate\Validation\ValidationException;
  * - "payment": an EMD or fee becomes a planned payment through TenderPaymentService::record, never a
  *   paid one; the person picks the form of payment.
  *
+ * A fact that replaced a value from another document (a corrigendum) changes what the replaced value
+ * made, instead of adding a second one: the planned payment it made, while still only planned, gets
+ * the new amount, and the follow-up it made, while still open, moves to the new date.
+ *
  * The CRM services do not validate by themselves (their controllers do), so the one value is checked
  * here with the rule the CRM's own form uses for it, and refused when it fails. Everything else a
  * tender says stays on the sheet.
@@ -160,10 +164,24 @@ class TenderFactApply
                 throw ValidationException::withMessages(['mode' => [__('Choose how the payment will be made.')]]);
             }
 
-            $record = match ($target) {
-                self::FIELD => $this->tenders->update($tender, $this->fieldData($locked)),
-                self::TASK => $this->tasks->create($this->taskData($locked, $tender, $clientUuid), $by),
-                self::PAYMENT => $this->payments->record($tender, $this->paymentData($locked, $mode), $by),
+            $earlier = $this->earlier($locked, $target, $tender, lock: true);
+
+            $record = match (true) {
+                $target === self::FIELD => $this->tenders->update($tender, $this->fieldData($locked)),
+                $target === self::TASK && $earlier instanceof CrmTask => $this->tasks->update($earlier, [
+                    ...$this->taskData($locked, $tender, null),
+                    'assigned_to' => $earlier->assigned_to,
+                ]),
+                $target === self::TASK => $this->tasks->create($this->taskData($locked, $tender, $clientUuid), $by),
+                $earlier instanceof CrmTenderPayment => $this->payments->update($earlier, [
+                    ...$this->paymentData($locked, $mode),
+                    'notes' => Str::limit(trim($earlier->notes."\n".$this->paymentData($locked, $mode)['notes']), 1000, ''),
+                    'reference' => $earlier->reference,
+                    'valid_until' => $earlier->valid_until?->toDateString(),
+                    'refund_expected_on' => $earlier->refund_expected_on?->toDateString(),
+                    'refundable' => (bool) $earlier->refundable,
+                ]),
+                default => $this->payments->record($tender, $this->paymentData($locked, $mode), $by),
             };
 
             $locked->forceFill(['applied_to' => $locked->withUse($target, $target === self::FIELD ? null : (int) $record->getKey())])->save();
@@ -175,25 +193,98 @@ class TenderFactApply
                 'page' => (int) $locked->page,
                 'record_type' => $record->getMorphClass(),
                 'record_id' => (int) $record->getKey(),
+                ...($earlier === null ? [] : ['changed_earlier' => true]),
             ], $by, (int) $locked->organization_id);
 
-            $this->activities->log($tender, 'system', $this->activityLine($locked, $target), $by);
+            $this->activities->log($tender, 'system', $this->activityLine($locked, $target, $earlier !== null), $by);
 
             return ['fact' => $locked->refresh(), 'record' => $record, 'repeated' => false];
         });
     }
 
-    /** What putting the fact to this use will do, in one sentence for the sheet. */
-    public static function preview(CrmTenderFact $fact, string $target): string
+    /**
+     * What putting the fact to this use will do, in one sentence for the sheet.
+     *
+     * @param  bool  $changesEarlier  The use changes the planned payment or follow-up of a value this fact replaced (earlier()).
+     */
+    public static function preview(CrmTenderFact $fact, string $target, bool $changesEarlier = false): string
     {
         $name = __(TenderFields::label($fact->field));
         $shown = TenderValue::display($fact->value_kind, $fact->value_norm) ?? trim($fact->value_raw);
 
-        return match ($target) {
-            self::FIELD => __(':field on the tender becomes :value.', ['field' => $name, 'value' => $shown]),
-            self::TASK => __('A follow-up on this tender for :value.', ['value' => $shown]),
+        return match (true) {
+            $target === self::FIELD => __(':field on the tender becomes :value.', ['field' => $name, 'value' => $shown]),
+            $target === self::TASK && $changesEarlier => __('The follow-up made from the replaced value moves to :value.', ['value' => $shown]),
+            $target === self::TASK => __('A follow-up on this tender for :value.', ['value' => $shown]),
+            $changesEarlier => __('The planned payment made from the replaced value becomes :value. It is not marked paid.', ['value' => $shown]),
             default => __('A planned payment of :value on this tender. It is not marked paid.', ['value' => $shown]),
         };
+    }
+
+    /**
+     * The planned payment or open follow-up that a value this fact replaced was put to, which this fact
+     * changes when it is put to the same use. A payment no longer only planned, or a follow-up done or
+     * removed, is left as it is, and the use makes a new one.
+     */
+    public function earlier(CrmTenderFact $fact, string $target, CrmTender $tender, bool $lock = false): ?Model
+    {
+        if (! in_array($target, [self::TASK, self::PAYMENT], true)) {
+            return null;
+        }
+
+        foreach (TenderFactDiff::replacedBy($fact) as $old) {
+            $id = $old->uses()[$target] ?? null;
+            $record = $id === null ? null : $this->openRecord($target, $id, $tender, $lock);
+
+            if ($record !== null && ($target === self::TASK || $record->kind === (self::PAYMENTS[$fact->field] ?? null))) {
+                return $record;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * What the sheet says under a value that was replaced after it was put to use: what the new value
+     * does to each record this one made.
+     *
+     * @return list<string>
+     */
+    public function replacedUses(CrmTenderFact $old, CrmTender $tender): array
+    {
+        $notes = [];
+
+        foreach ($old->uses() as $target => $id) {
+            $open = $id !== null && $this->openRecord($target, $id, $tender) !== null;
+
+            $notes[] = match (true) {
+                $target === self::FIELD => __('This value was put on the tender. Put the new value on the tender to change it there.'),
+                $target === self::PAYMENT && $open => __('A planned payment was made from this value. Adding the new value as a planned payment changes that payment.'),
+                $target === self::PAYMENT => __('A payment made from this value is no longer only planned. The new value is added as another planned payment, so check both on the tender.'),
+                $open => __('A follow-up was made from this value. Adding the new value as a follow-up moves it.'),
+                default => __('A follow-up made from this value is done or removed. The new value makes a new follow-up.'),
+            };
+        }
+
+        return $notes;
+    }
+
+    /** A planned payment of this tender, or an open follow-up on it: a record the new value may still change. */
+    private function openRecord(string $target, int $id, CrmTender $tender, bool $lock = false): ?Model
+    {
+        if ($target === self::PAYMENT) {
+            return CrmTenderPayment::withoutGlobalScopes()->where('organization_id', $tender->organization_id)
+                ->where('tender_id', $tender->id)->where('status', 'planned')->whereNull('deleted_at')
+                ->when($lock, fn ($query) => $query->lockForUpdate())->find($id);
+        }
+
+        if ($target === self::TASK) {
+            return CrmTask::withoutGlobalScopes()->where('organization_id', $tender->organization_id)
+                ->where('subject_type', 'tender')->where('subject_id', $tender->id)->where('status', 'open')->whereNull('deleted_at')
+                ->when($lock, fn ($query) => $query->lockForUpdate())->find($id);
+        }
+
+        return null;
     }
 
     /** The message the value would be refused with for this use, or null when it passes. */
@@ -301,13 +392,15 @@ class TenderFactApply
         };
     }
 
-    private function activityLine(CrmTenderFact $fact, string $target): string
+    private function activityLine(CrmTenderFact $fact, string $target, bool $changedEarlier): string
     {
         $values = ['field' => __(TenderFields::label($fact->field)), 'page' => (int) $fact->page];
 
-        return match ($target) {
-            self::FIELD => __(':field taken from the tender sheet (page :page).', $values),
-            self::TASK => __('Follow-up added from the tender sheet: :field (page :page).', $values),
+        return match (true) {
+            $target === self::FIELD => __(':field taken from the tender sheet (page :page).', $values),
+            $target === self::TASK && $changedEarlier => __('Follow-up moved from the tender sheet: :field (page :page).', $values),
+            $target === self::TASK => __('Follow-up added from the tender sheet: :field (page :page).', $values),
+            $changedEarlier => __('Planned payment changed from the tender sheet: :field (page :page).', $values),
             default => __('Planned payment added from the tender sheet: :field (page :page).', $values),
         };
     }

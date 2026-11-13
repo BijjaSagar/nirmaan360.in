@@ -11,6 +11,7 @@ use App\Models\DocumentReadPage;
 use App\Models\User;
 use App\Services\DocumentReading\ReadDesk;
 use App\Services\DocumentReading\ReaderRequest;
+use App\Services\DocumentReading\ReadFiles;
 use App\Services\DocumentReading\ReadQueues;
 use App\Services\DocumentReading\ReadRefused;
 use App\Support\ClientUuidRepeat;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -188,20 +190,40 @@ class TenderReads
 
             $model = (string) ReaderRequest::figures(TenderReadKind::KEY, TenderReadKind::TEXT)['model'];
 
+            // Only the pages of the chosen range are read. A run that crosses an edge of the range is cut
+            // at it, so a range may start or end anywhere in a run: the shared quote and start look at a
+            // row's first page only, and every page of the range must be covered by a row.
+            $first = isset($range['page_from']) ? (int) $range['page_from'] : null;
+            $last = isset($range['page_to']) ? (int) $range['page_to'] : null;
+
             foreach ((array) ($locked->options['runs'] ?? []) as [$from, $to, $chars, $tokens]) {
-                if (array_intersect(range((int) $from, (int) $to), $pictures) === []) {
-                    DocumentReadPage::withoutGlobalScopes()->create([
-                        'document_read_id' => $locked->id,
-                        'page_no' => (int) $from,
-                        'page_to' => (int) $to,
-                        'pass' => TenderReadKind::TEXT,
-                        'part' => 'full',
-                        'status' => DocumentReadPage::WAITING,
-                        'model' => $model,
-                        'text_chars' => (int) $chars,
-                        'input_tokens' => (int) $tokens,
-                    ]);
+                [$from, $to] = [(int) $from, (int) $to];
+
+                if (array_intersect(range($from, $to), $pictures) !== []) {
+                    continue;
                 }
+
+                $cutFrom = max($from, $first ?? $from);
+                $cutTo = min($to, $last ?? $to);
+
+                if ($cutFrom > $cutTo) {
+                    continue;
+                }
+
+                $cut = $cutFrom !== $from || $cutTo !== $to;
+
+                DocumentReadPage::withoutGlobalScopes()->create([
+                    'document_read_id' => $locked->id,
+                    'page_no' => $cutFrom,
+                    'page_to' => $cutTo,
+                    'pass' => TenderReadKind::TEXT,
+                    'part' => 'full',
+                    'status' => DocumentReadPage::WAITING,
+                    'model' => $model,
+                    'text_chars' => $cut ? self::charactersOf($locked, $cutFrom, $cutTo, [$from, $to, (int) $chars]) : (int) $chars,
+                    // The count was made for the whole run; a part of it is estimated from its characters.
+                    'input_tokens' => $cut ? 0 : (int) $tokens,
+                ]);
             }
 
             $images = DocumentReadPage::withoutGlobalScopes()->where('organization_id', $locked->organization_id)
@@ -308,6 +330,23 @@ class TenderReads
         $to = isset($range['page_to']) ? (int) $range['page_to'] : null;
 
         return array_values(array_filter(self::picturePages($read), fn (int $page) => ($from === null || $page >= $from) && ($to === null || $page <= $to)));
+    }
+
+    /**
+     * The characters of the stored text from page $from to page $to, for a run cut to a range. When the
+     * text cannot be had, the run's own count is shared out by its pages.
+     *
+     * @param  array{0: int, 1: int, 2: int}  $run  The whole run: its first page, its last page and its characters.
+     */
+    private static function charactersOf(DocumentRead $read, int $from, int $to, array $run): int
+    {
+        try {
+            return array_sum(array_map(mb_strlen(...), ReadFiles::texts($read, $from, $to)));
+        } catch (RuntimeException) {
+            [$runFrom, $runTo, $chars] = $run;
+
+            return (int) ceil($chars * ($to - $from + 1) / max(1, $runTo - $runFrom + 1));
+        }
     }
 
     /** @return list<int> The pages of a read whose whole-page picture is stored. */

@@ -74,9 +74,9 @@
                     ? __('Confirming this replaces the confirmed value from page :page of :document.', ['page' => $old['page'], 'document' => $old['document']])
                     : __('Confirming this replaces the confirmed value from page :page.', ['page' => $old['page']]) }}</p>
             @endforeach
-            @if ($fact['status'] === 'superseded' && $fact['applied'])
-                <p class="text-xs font-medium text-[#8a6208]">{{ __('This value was put on the tender. Put the new value on the tender to change it there.') }}</p>
-            @endif
+            @foreach ($fact['replaced_uses'] as $note)
+                <p class="text-xs font-medium text-[#8a6208]">{{ $note }}</p>
+            @endforeach
 
             <div class="flex flex-wrap items-center gap-2 pt-1">
                 @if ($fact['pdf_url'] || $fact['picture_url'])

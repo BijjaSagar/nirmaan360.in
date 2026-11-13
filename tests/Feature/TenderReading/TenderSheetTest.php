@@ -81,6 +81,24 @@ class TenderSheetTest extends TenderReadingTestCase
         $this->assertSame(CrmTenderFact::PROPOSED, $fact->refresh()->status);
     }
 
+    public function test_the_sentence_for_text_pdfs_is_said_only_over_a_line_matched_to_a_pdfs_text(): void
+    {
+        $sentence = "The quoted line matches the PDF's text on that page. The page is shown beside it for you to check.";
+        $fact = $this->makeFact('emd_amount', 'Rs. 61,500/-', 2, ['quote_found' => false]);
+
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
+            ->assertSee('Not matched to the text of page 2. Check it against the page.')
+            ->assertDontSee($sentence);
+
+        $fact->forceFill(['source' => 'image', 'quote_found' => null])->save();
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
+            ->assertSee('Read from the page picture. Check it against the page.')
+            ->assertDontSee($sentence);
+
+        $this->makeFact('bid_validity', '120 days', 3);
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()->assertSee($sentence);
+    }
+
     public function test_qs_reads_the_sheet_and_cannot_change_it(): void
     {
         $fact = $this->makeFact('emd_amount', 'Rs. 61,500/-');
@@ -218,8 +236,8 @@ class TenderSheetTest extends TenderReadingTestCase
         $this->readAll($read);
 
         $page = $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk();
-        $page->assertSee('Pages not read: 2, because its text was laid over a scan by a machine.');
-        $page->assertSee('Pages not read: 3, because the reader could not make sense of its text.');
+        $page->assertSee('Page 2 was not read, because its text was laid over a scan by a machine.');
+        $page->assertSee('Page 3 was not read, because the reader could not make sense of its text.');
         $page->assertSee('120 days');
     }
 }

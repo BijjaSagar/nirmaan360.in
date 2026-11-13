@@ -72,10 +72,15 @@ class TenderFactReview
         });
     }
 
-    /** @throws ReadRefused when the fact was already rejected, replaced or applied */
+    /**
+     * Rejects a fact. A confirmed fact that had replaced a value from another document gives that value
+     * back: it stands again, confirmed, as it was before (TenderFactDiff::restore).
+     *
+     * @throws ReadRefused when the fact was already rejected, replaced or applied
+     */
     public function reject(CrmTenderFact $fact, User $by): CrmTenderFact
     {
-        return $this->change($fact, $by, CrmTenderFact::STANDING, function (CrmTenderFact $locked) {
+        return $this->change($fact, $by, CrmTenderFact::STANDING, function (CrmTenderFact $locked) use ($by) {
             if ($locked->applied_to !== null) {
                 throw $this->refused($locked);
             }
@@ -83,7 +88,9 @@ class TenderFactReview
             $before = ['status' => $locked->status];
             $locked->forceFill(['status' => CrmTenderFact::REJECTED])->save();
 
-            return ['tender_fact.rejected', $before, ['status' => CrmTenderFact::REJECTED]];
+            $restored = $before['status'] === CrmTenderFact::CONFIRMED ? $this->diff->restore($locked, $by) : [];
+
+            return ['tender_fact.rejected', $before, ['status' => CrmTenderFact::REJECTED, ...($restored === [] ? [] : ['restored' => $restored])]];
         });
     }
 

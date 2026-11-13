@@ -188,9 +188,15 @@ class TenderReadKind implements ReadKind
         }
     }
 
+    /**
+     * What every shared step of a tender read asks for: uploading its pages, pricing, starting,
+     * continuing, reading a page again, cancelling and watching. Each of them leads to pages being sent
+     * or stopped, so it needs crm.manage, as starting a read and answering its questions do. Someone
+     * with crm.view only watches through the tender's own reading screen and sheet.
+     */
     public function abilities(DocumentRead $read): array
     {
-        return ['all' => ['crm.view'], 'any' => []];
+        return ['all' => ['crm.manage'], 'any' => []];
     }
 
     /**

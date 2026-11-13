@@ -35,15 +35,28 @@ final class TenderReadWords
         };
     }
 
-    /** Why a page was not read as text. */
-    public static function pageFlag(string $flag): string
+    /** Why a page was not read, said of one page or of several. */
+    public static function pageFlag(string $flag, int $pages = 1): string
     {
+        if ($pages > 1) {
+            return match ($flag) {
+                TenderPdfText::MACHINE_TEXT => __('their text was laid over a scan by a machine'),
+                TenderPdfText::OLD_FONT => __('their text is in an old Marathi or Hindi font'),
+                TenderPdfText::NO_TEXT => __('they have no text'),
+                'unreadable' => __('the reader could not make sense of their text'),
+                'failed' => __('the reader could not read them'),
+                'not_sent' => __('they were not sent to be read'),
+                default => __('their text does not match the document'),
+            };
+        }
+
         return match ($flag) {
             TenderPdfText::MACHINE_TEXT => __('its text was laid over a scan by a machine'),
             TenderPdfText::OLD_FONT => __('its text is in an old Marathi or Hindi font'),
             TenderPdfText::NO_TEXT => __('it has no text'),
             'unreadable' => __('the reader could not make sense of its text'),
             'failed' => __('the reader could not read it'),
+            'not_sent' => __('it was not sent to be read'),
             default => __('its text does not match the document'),
         };
     }

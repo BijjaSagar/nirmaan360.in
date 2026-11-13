@@ -4,6 +4,7 @@ namespace Tests\Feature\TenderReading;
 
 use App\Jobs\TenderReading\PrepareTenderText;
 use App\Models\CrmTenderDocument;
+use App\Models\CrmTenderFact;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
 use App\Services\DocumentReading\ReadFiles;
@@ -106,6 +107,15 @@ class PrepareTenderTextTest extends TenderReadingTestCase
         $read = DocumentRead::withoutGlobalScopes()->findOrFail($this->startRead($this->owner, $picture)->assertCreated()->assertJson(['status' => 'prepared'])->json('id'));
         $this->assertSame([TenderReads::SOURCE_IMAGE, 1], [TenderReads::source($read), (int) $read->pages_total]);
 
+        // On the sheet its page is shown as the picture it is, not drawn as a PDF by its name.
+        CrmTenderFact::withoutGlobalScopes()->create([
+            'organization_id' => $this->organization->id, 'tender_id' => $this->tender->id, 'document_id' => $picture->id, 'document_read_id' => $read->id,
+            'field' => 'emd_amount', 'value_raw' => 'Rs. 61,500/-', 'value_norm' => '61500', 'value_kind' => 'amount', 'page' => 1,
+            'quote' => 'Earnest Money Deposit: Rs. 61,500/- by online payment', 'quote_found' => null, 'source' => CrmTenderFact::FROM_IMAGE,
+        ]);
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
+            ->assertSee('data-pdf="" data-picture="'.route('crm.documents.download', $picture).'"', false);
+
         config(['modules.tender_reading.max_bytes' => 200]);
         $large = DocumentRead::withoutGlobalScopes()->findOrFail($this->startRead($this->owner, $this->storeDocument($this->tender))->assertCreated()->json('id'));
         $this->assertSame([TenderReads::SOURCE_PICTURES, true, 0], [TenderReads::source($large), $large->options['too_large'], (int) $large->pages_total]);
@@ -177,7 +187,11 @@ class PrepareTenderTextTest extends TenderReadingTestCase
         app(ReadTending::class)->one($read);
 
         $this->assertSame(DocumentRead::FAILED, $read->refresh()->status);
-        $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk()->assertSee('This file is too large to read as text. Read it as page pictures.');
+        // The screen says to read it as page pictures, and offers exactly that.
+        $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk()
+            ->assertSee('This file is too large to read as text. Read it as page pictures.')
+            ->assertSee('Read pages as pictures')
+            ->assertSee('name="as" value="pictures"', false);
     }
 
     public function test_the_migration_rolls_back_and_forward(): void

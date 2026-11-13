@@ -10,7 +10,9 @@
     <div class="space-y-5">
         <section class="card space-y-1.5 p-4 text-sm">
             <p class="font-medium">{{ __('This sheet is a reading aid. Read the tender conditions yourself. A corrigendum is seen only if you upload it.') }}</p>
-            <p class="text-ink-2">{{ __("The quoted line matches the PDF's text on that page. The page is shown beside it for you to check.") }}</p>
+            @if ($sheet['text_matched'])
+                <p class="text-ink-2">{{ __("The quoted line matches the PDF's text on that page. The page is shown beside it for you to check.") }}</p>
+            @endif
             @if ($sheet['pictures'])
                 <p class="text-ink-2">{{ __('Read from the page picture. Check it against the page.') }}</p>
             @endif
@@ -100,10 +102,10 @@
                         <p><a href="{{ route('tender-reads.view', $read['id']) }}" class="link break-words">{{ $read['document'] ?? __('Removed document') }}</a>
                             <span class="text-xs text-ink-3">· {{ $read['created_at']?->format('d M Y') }}</span></p>
                         @foreach ($read['not_read'] as $line)
-                            <p class="text-xs text-[#8a6208]">{{ __('Pages not read: :pages, because :why.', ['pages' => $line['pages'], 'why' => $line['why']]) }}</p>
+                            <p class="text-xs text-[#8a6208]">{{ $line }}</p>
                         @endforeach
-                        @if ($read['flagged'] !== '')
-                            <p class="text-xs font-medium text-laterite">{{ __('Pages :pages hold text that reads like instructions to an AI. Nothing on a page is acted on; check the facts from these pages with extra care.', ['pages' => $read['flagged']]) }}</p>
+                        @if ($read['flagged'] !== null)
+                            <p class="text-xs font-medium text-laterite">{{ $read['flagged'] }}</p>
                         @endif
                     </div>
                 @endforeach

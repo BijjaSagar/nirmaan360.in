@@ -8,10 +8,12 @@ use App\Models\CrmTender;
 use App\Models\CrmTenderDocument;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
+use App\Services\Agents\ModelGateway;
 use App\Services\DocumentReading\ReadAccess;
 use App\Services\DocumentReading\ReadFiles;
 use App\Services\DocumentReading\ReadKinds;
 use App\Services\DocumentReading\ReadRefused;
+use App\Services\DocumentReading\ReadWords;
 use App\Services\TenderReading\TenderFields;
 use App\Services\TenderReading\TenderReadKind;
 use App\Services\TenderReading\TenderReads;
@@ -33,7 +35,7 @@ class TenderReadController extends Controller
 {
     use ChecksParent;
 
-    public function __construct(private TenderReads $reads, private ReadKinds $kinds) {}
+    public function __construct(private TenderReads $reads, private ReadKinds $kinds, private ModelGateway $gateway) {}
 
     public function store(Request $request, CrmTender $tender, CrmTenderDocument $document): JsonResponse|RedirectResponse
     {
@@ -64,7 +66,9 @@ class TenderReadController extends Controller
 
     public function show(Request $request, DocumentRead $read): View
     {
-        $this->assertTenderRead($read, $request);
+        // Watching needs crm.view only (the route checks it); every step that sends pages needs crm.manage.
+        abort_unless($read->kind === TenderReadKind::KEY && $this->kinds->find(TenderReadKind::KEY) !== null, 404);
+        abort_unless((int) $read->organization_id === (int) $request->user()->organization_id, 404);
 
         $tender = CrmTender::query()->find((int) ($read->options['tender_id'] ?? 0));
         abort_if($tender === null, 404);
@@ -81,9 +85,12 @@ class TenderReadController extends Controller
             'state' => $state,
             'source' => $source,
             'error' => $state === 'prepare_failed' ? TenderReadWords::error($read) : null,
-            // A PDF whose text could not be taken out for its size, length or time can still be read as page pictures.
+            // A PDF whose text could not be taken out for its size, length or time can still be read as page pictures,
+            // as can one whose prepare never finished (its worker ran out of memory or time), which tending ends.
             'offerPictures' => $state === 'prepare_failed' && $document !== null
-                && in_array($read->error, [TenderTextRefused::TOO_MANY_PAGES, TenderTextRefused::TOO_LARGE, TenderTextRefused::TOO_SLOW], true),
+                && in_array($read->error, [TenderTextRefused::TOO_MANY_PAGES, TenderTextRefused::TOO_LARGE, TenderTextRefused::TOO_SLOW, ReadWords::TOO_LARGE_FOR_TEXT], true),
+            // The prepare sends each run's text to the AI service to count its tokens when a key is saved (TenderTextPreparer::count).
+            'counting' => $state === 'preparing' && $this->gateway->isConnected(),
             'samples' => in_array($state, ['questions', 'quote'], true) && $source === TenderReads::SOURCE_TEXT ? $this->samples($read) : [],
             'pictures' => TenderReads::answered($read) ? TenderReads::picturePages($read) : [],
             'toRead' => $toRead,

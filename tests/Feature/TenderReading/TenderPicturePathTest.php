@@ -101,9 +101,10 @@ class TenderPicturePathTest extends TenderReadingTestCase
         // The sheet shows the picture document itself beside each fact, with the sentence for page pictures.
         $sheet = $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk();
         $sheet->assertSee('Read from the page picture. Check it against the page.');
+        $sheet->assertDontSee("The quoted line matches the PDF's text on that page.");
         $sheet->assertSee('data-picture="'.route('crm.documents.download', $document).'"', false);
         $sheet->assertSee('data-pdf=""', false);
-        $sheet->assertDontSee('Pages not read');
+        $sheet->assertDontSee('not read, because');
 
         $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk()->assertSee('Pages read: 1 of 1');
     }
@@ -145,7 +146,7 @@ class TenderPicturePathTest extends TenderReadingTestCase
 
         $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
             ->assertSee('Read from the page picture. Check it against the page.')
-            ->assertDontSee('Pages not read');
+            ->assertDontSee('not read, because');
     }
 
     public function test_answering_again_sets_uploaded_pictures_aside_so_no_page_is_read_twice(): void
@@ -176,7 +177,7 @@ class TenderPicturePathTest extends TenderReadingTestCase
         $this->assertTrue($this->hasPicture($this->sent[0]) && $this->hasPicture($this->sent[1]));
 
         $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
-            ->assertSee('Pages not read: 3, because its text does not match the document.');
+            ->assertSee('Page 3 was not read, because its text does not match the document.');
     }
 
     public function test_a_pdf_over_the_size_limit_is_read_as_pictures_a_range_of_pages_at_a_time(): void
@@ -217,7 +218,7 @@ class TenderPicturePathTest extends TenderReadingTestCase
         $this->assertCount(1, $this->sent);
         $this->assertSame(2, (int) $this->facts()->sole()->page);
         $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
-            ->assertSee('Pages not read: 3, because it was not sent to be read.');
+            ->assertSee('Page 3 was not read, because it was not sent to be read.');
         $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk()->assertSee('Pages read: 1 of 2');
     }
 

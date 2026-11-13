@@ -124,7 +124,25 @@ final class TenderValue
         return $found === null ? null : PrintedDate::parse($found);
     }
 
-    /** "Y-m-d H:i" when a date and a time are printed, "Y-m-d" when only the date is clear. */
+    /**
+     * Words for the part of the day a time is in, which decide a clock time of 1 to 12 printed without
+     * am or pm: "दुपारी ३.००" is three in the afternoon. Each is a whole word, so a place name that
+     * holds the letters (गुजरात) is not one.
+     */
+    private const MORNING_WORDS = ['morning', 'सकाळी', 'सकाळ', 'सुबह', 'प्रातः', 'प्रात:', 'पूर्वाह्न'];
+
+    private const AFTERNOON_WORDS = ['afternoon', 'दुपारी', 'दुपार', 'दोपहर', 'अपराह्न'];
+
+    private const EVENING_WORDS = ['evening', 'night', 'सायंकाळी', 'संध्याकाळी', 'सायं', 'सायंकाल', 'संध्या', 'रात्री', 'रात्रौ', 'रात्रि', 'रात', 'शाम', 'सायंकाळ'];
+
+    /**
+     * "Y-m-d H:i" when a date and a time are printed, "Y-m-d" when only the date is clear.
+     *
+     * A time is read only when its part of the day is clear: a 24-hour time (13:00 to 23:59, or 0:xx),
+     * one marked am, pm, hrs or hours, or a time of 1 to 12 with a word for the part of the day beside
+     * it. "3.00" alone could be three at night or in the afternoon, so only the date is read and the
+     * time is left for a person to type.
+     */
     public static function dateTime(string $raw): ?string
     {
         $digits = PrintedDigits::plain($raw);
@@ -161,9 +179,45 @@ final class TenderValue
             $hour += 12;
         } elseif ($half === 'am' && $hour === 12) {
             $hour = 0;
+        } elseif ($half === '') {
+            $hour = self::clockHour($hour, $rest);
+
+            if ($hour === null) {
+                return $date;
+            }
         }
 
         return sprintf('%s %02d:%02d', $date, $hour, $minute);
+    }
+
+    /**
+     * The hour on a 24-hour clock of a time printed without am, pm or hrs, from the words for the part
+     * of the day around it, or null when that is not clear.
+     */
+    private static function clockHour(int $hour, string $text): ?int
+    {
+        $has = fn (array $words) => preg_match('/(?<![\p{L}\p{M}])(?:'.implode('|', array_map(fn (string $word) => preg_quote($word, '/'), $words)).')(?![\p{L}\p{M}])/iu', $text) === 1;
+        $morning = $has(self::MORNING_WORDS);
+        $afternoon = $has(self::AFTERNOON_WORDS);
+        $evening = $has(self::EVENING_WORDS);
+
+        // Two parts of the day at once say nothing clear.
+        if ((int) $morning + (int) $afternoon + (int) $evening > 1) {
+            return null;
+        }
+
+        if ($hour === 0 || $hour > 12) {
+            // Already a 24-hour time; a word that says otherwise makes it unclear.
+            return ($morning && $hour > 12) || (($afternoon || $evening) && $hour === 0) ? null : $hour;
+        }
+
+        return match (true) {
+            $morning => $hour === 12 ? null : $hour,
+            // Twelve in the afternoon is noon; twelve in the evening or at night could be either midnight.
+            $afternoon => $hour === 12 ? 12 : $hour + 12,
+            $evening => $hour === 12 ? null : $hour + 12,
+            default => null,
+        };
     }
 
     /** The number and the word after it, as printed: "18 months", "९० दिवस" becomes "90 दिवस". */

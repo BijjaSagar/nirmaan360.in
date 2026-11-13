@@ -45,6 +45,10 @@ class TenderSheet
         $canReview = $viewer->can('crm.manage');
         $context = [
             'documents' => $documents,
+            // Each read's own source, judged by the file's content when it was opened: a picture named .pdf is still a picture.
+            'sources' => DocumentRead::withoutGlobalScopes()->where('organization_id', $tender->organization_id)
+                ->whereIn('id', $facts->pluck('document_read_id')->filter()->uniqueStrict()->values())
+                ->get(['id', 'options'])->mapWithKeys(fn (DocumentRead $read) => [$read->id => TenderReads::source($read)]),
             'confirmed' => $facts->where('status', CrmTenderFact::CONFIRMED)->values(),
             'tender' => $tender,
             'viewer' => $viewer,
@@ -62,6 +66,8 @@ class TenderSheet
                 'conflicts' => $standing->whereNotNull('conflict_group')->pluck('conflict_group')->uniqueStrict()->count(),
             ],
             'changes' => $this->changes($facts, $documents),
+            // One sentence per source (spec D2), each said only when a fact on the sheet came that way.
+            'text_matched' => $standing->contains(fn (CrmTenderFact $fact) => $fact->source === CrmTenderFact::FROM_TEXT && $fact->quote_found === true),
             'pictures' => $standing->contains(fn (CrmTenderFact $fact) => $fact->source === CrmTenderFact::FROM_IMAGE),
             'rejected' => $facts->where('status', CrmTenderFact::REJECTED)->values()->map(fn (CrmTenderFact $fact) => $this->view($fact, [...$context, 'can_review' => false]))->all(),
             'superseded' => $facts->where('status', CrmTenderFact::SUPERSEDED)->values()->map(fn (CrmTenderFact $fact) => $this->view($fact, [...$context, 'can_review' => false]))->all(),
@@ -117,7 +123,12 @@ class TenderSheet
         $canReview = (bool) $context['can_review'];
         $document = $documents->get($fact->document_id);
         $drawable = $document !== null && $document->deleted_at === null;
-        $picture = $document !== null && ! TenderCard::looksLikePdf($document) && TenderCard::looksLikePicture($document);
+        // A JPG or PNG document is shown as it is, a PDF drawn by pdf.js. The read knows which the file is by its
+        // content; the file's name decides only for a fact whose read is gone.
+        $readSource = $fact->document_read_id === null ? null : $context['sources']->get($fact->document_read_id);
+        $picture = $document !== null && ($readSource !== null
+            ? $readSource === TenderReads::SOURCE_IMAGE
+            : ! TenderCard::looksLikePdf($document) && TenderCard::looksLikePicture($document));
         $line = $fact->quote_line ?? $fact->quote;
         $value = mb_strtolower(TenderQuote::spelling($fact->value_raw));
 
@@ -149,6 +160,8 @@ class TenderSheet
                 ? TenderFactDiff::replaces($fact, $context['confirmed'])->map(fn (CrmTenderFact $old) => ['page' => (int) $old->page, 'document' => $documents->get($old->document_id)?->title])->all()
                 : [],
             'applied' => $fact->applied_to !== null,
+            // What the new value does to each record a replaced value made: changes it, or adds another beside it.
+            'replaced_uses' => $fact->status === CrmTenderFact::SUPERSEDED && $fact->applied_to !== null ? $this->apply->replacedUses($fact, $context['tender']) : [],
             'uses' => $canReview && $fact->status === CrmTenderFact::CONFIRMED ? $this->uses($fact, $context) : [],
         ];
     }
@@ -174,7 +187,7 @@ class TenderSheet
 
             $uses[] = [
                 'target' => $target,
-                'preview' => TenderFactApply::preview($fact, $target),
+                'preview' => TenderFactApply::preview($fact, $target, ! $applied && $this->apply->earlier($fact, $target, $context['tender']) !== null),
                 'done' => $applied,
                 'blocked' => $applied ? null : $this->apply->blocker($fact, $target, $context['viewer'], $context['tender'])['message'] ?? null,
             ];
@@ -333,15 +346,34 @@ class TenderSheet
                 'started' => $read->started_at !== null,
                 'created_at' => $read->created_at,
                 'not_read' => $read->started_at === null ? [] : $this->notRead($read, $pages),
-                'flagged' => $this->ranges($pages->filter(fn (DocumentReadPage $page) => ! empty($page->injection_flags))
-                    ->flatMap(fn (DocumentReadPage $page) => range((int) $page->page_no, max((int) $page->page_no, (int) $page->page_to)))->all()),
+                'flagged' => $this->flagged($pages),
             ];
         })->all();
     }
 
     /**
+     * The sentence about the pages whose text reads like instructions, for one page or for several.
+     *
      * @param  Collection<int, DocumentReadPage>  $pages
-     * @return list<array{pages: string, why: string}>
+     */
+    private function flagged(Collection $pages): ?string
+    {
+        $numbers = $pages->filter(fn (DocumentReadPage $page) => ! empty($page->injection_flags))
+            ->flatMap(fn (DocumentReadPage $page) => range((int) $page->page_no, max((int) $page->page_no, (int) $page->page_to)))
+            ->uniqueStrict()->values()->all();
+
+        return match (count($numbers)) {
+            0 => null,
+            1 => __('Page :page holds text that reads like instructions to an AI. Nothing on a page is acted on; check the facts from this page with extra care.', ['page' => $numbers[0]]),
+            default => __('Pages :pages hold text that reads like instructions to an AI. Nothing on a page is acted on; check the facts from these pages with extra care.', ['pages' => $this->ranges($numbers)]),
+        };
+    }
+
+    /**
+     * Each reason pages were not read, as one sentence for one page or for several.
+     *
+     * @param  Collection<int, DocumentReadPage>  $pages
+     * @return list<string>
      */
     private function notRead(DocumentRead $read, Collection $pages): array
     {
@@ -390,6 +422,15 @@ class TenderSheet
             $why[(int) $number] ??= 'unreadable';
         }
 
+        // A text read of a range of pages has no row for a page outside it: that page was not sent either.
+        if (TenderReads::source($read) === TenderReads::SOURCE_TEXT) {
+            for ($number = 1; $number <= (int) $read->pages_total; $number++) {
+                if (! isset($covered[$number])) {
+                    $why[$number] ??= 'not_sent';
+                }
+            }
+        }
+
         ksort($why);
         $byReason = [];
 
@@ -400,10 +441,9 @@ class TenderSheet
         $lines = [];
 
         foreach ($byReason as $reason => $numbers) {
-            $lines[] = [
-                'pages' => $this->ranges($numbers),
-                'why' => $reason === 'not_sent' ? __('it was not sent to be read') : TenderReadWords::pageFlag($reason),
-            ];
+            $lines[] = count($numbers) === 1
+                ? __('Page :page was not read, because :why.', ['page' => $numbers[0], 'why' => TenderReadWords::pageFlag($reason, 1)])
+                : __('Pages not read: :pages, because :why.', ['pages' => $this->ranges($numbers), 'why' => TenderReadWords::pageFlag($reason, count($numbers))]);
         }
 
         return $lines;

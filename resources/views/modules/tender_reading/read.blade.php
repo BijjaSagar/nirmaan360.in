@@ -19,6 +19,7 @@
         <p x-show="problem" x-cloak x-text="problem" class="rounded-[3px] border border-laterite bg-laterite/10 px-3 py-2 text-sm font-medium text-laterite-dark" role="alert"></p>
 
         @if ($state === 'preparing')
+            {{-- The status route is for those who may act on the read; someone who only watches gets the page again now and then. --}}
             <section class="card p-4 text-sm"
                      x-data="{ async ask() {
                          try {
@@ -27,9 +28,11 @@
                              if (now && !['draft', 'preparing'].includes(now.status)) { window.location.reload(); return; }
                          } catch (error) {}
                          setTimeout(() => this.ask(), 3000);
-                     } }" x-init="setTimeout(() => ask(), 3000)">
+                     } }" x-init="{{ $canAct ? 'setTimeout(() => ask(), 3000)' : 'setTimeout(() => window.location.reload(), 15000)' }}">
                 <p class="font-medium">{{ __('Taking the text out of the PDF, page by page.') }}</p>
-                <p class="mt-1 text-ink-3">{{ __('Nothing is sent to the AI service in this step. This page moves on by itself when it is done.') }}</p>
+                <p class="mt-1 text-ink-3">{{ $counting
+                    ? __('The text is sent to the AI service only to count its length, so the price is close. Nothing is read in this step. This page moves on by itself when it is done.')
+                    : __('Nothing is sent to the AI service in this step. This page moves on by itself when it is done.') }}</p>
             </section>
         @elseif ($state === 'prepare_failed')
             <section class="card p-4 text-sm">
@@ -106,24 +109,97 @@
         @elseif ($state === 'quote')
             @include('modules.tender_reading._start')
         @elseif ($state === 'running')
+            {{--
+                A paused read is continued here by someone who may act on it, once it can be: with what is
+                left of its limit, or, when that does not cover the pages left, with the new limit offered.
+            --}}
             <section class="card p-4 text-sm"
-                     x-data="{ now: null, stop: null,
+                     x-data="{ now: null, stop: null, resuming: false, offer: null,
                          init() {
+                             @if ($canAct)
                              const go = () => { this.stop = window.ReaderCapture.watch({{ $read->id }}, (now) => {
                                  this.now = now;
                                  if (!['running', 'paused'].includes(now.status)) window.location.reload();
                              }, (error) => { this.problem = error.message; }); };
                              window.ReaderCapture ? go() : document.addEventListener('reader-capture:ready', go, { once: true });
-                         } }">
-                <p class="font-medium">{{ __('The pages are being read.') }}</p>
+                             @else
+                             setTimeout(() => window.location.reload(), 30000);
+                             @endif
+                         },
+                         @if ($canAct)
+                         async resume(cap = null) {
+                             this.resuming = true;
+                             this.problem = null;
+                             try {
+                                 this.now = await window.ReaderCapture.resume({{ $read->id }}, cap === null ? {} : { cap });
+                                 this.offer = null;
+                             } catch (error) {
+                                 if (error.code === 'limit_reached' && error.details && error.details.cap) { this.offer = error.details; }
+                                 else { this.problem = error.message; }
+                             } finally { this.resuming = false; }
+                         },
+                         @endif
+                     }">
+                <p class="font-medium">{{ $read->status === 'paused' ? __('The reading is paused.') : __('The pages are being read.') }}</p>
                 <p class="mt-1 num" x-show="now" x-text="now ? @js(__('Pages read: :read of :total')).replace(':read', now.pages_read).replace(':total', Math.max(now.pages_total, {{ (int) $readTotal }})) : ''"></p>
+                @if ($read->status === 'paused' && ! $canAct)
+                    <p class="mt-1 text-[#8a6208]">{{ \App\Services\DocumentReading\ReadWords::pause($read->pause_reason) }}</p>
+                @endif
                 <p class="mt-1 text-[#8a6208]" x-show="now && now.status === 'paused'" x-text="now ? now.message : ''"></p>
+                @if ($canAct)
+                    <div class="mt-3 space-y-2" x-show="now && now.status === 'paused' && now.can_resume" x-cloak data-continue>
+                        <button type="button" class="btn btn-primary" x-show="!offer" :disabled="resuming" @click="resume()">{{ __('Continue reading') }}</button>
+                        <template x-if="offer">
+                            <div class="space-y-2">
+                                <p class="num" x-text="@js(__('The pages left need a new limit: about :estimate credits, and never more than :cap.')).replace(':estimate', offer.estimate).replace(':cap', offer.cap)"></p>
+                                <button type="button" class="btn btn-primary" :disabled="resuming" @click="resume(offer.cap)">{{ __('Continue with this limit') }}</button>
+                            </div>
+                        </template>
+                    </div>
+                @endif
                 <p class="mt-1 text-ink-3">{{ __('You can close this page; you are told when it is done.') }}</p>
             </section>
         @else
-            <section class="card p-4 text-sm">
+            {{-- Pages that failed can be read again from here, each as often as the shared reader offers it. --}}
+            <section class="card p-4 text-sm"
+                     @if ($canAct && (int) $read->pages_failed > 0)
+                     x-data="{ failed: [], busy: false, offer: null,
+                         ready() { return new Promise((resolve) => window.ReaderCapture ? resolve() : document.addEventListener('reader-capture:ready', resolve, { once: true })); },
+                         async init() {
+                             await this.ready();
+                             try { this.failed = (await window.ReaderCapture.status({{ $read->id }})).failed_pages.filter((page) => page.can_retry); }
+                             catch (error) { this.problem = error.message; }
+                         },
+                         async retry(page, cap = null) {
+                             this.busy = true;
+                             this.problem = null;
+                             try {
+                                 await window.ReaderCapture.retry({{ $read->id }}, page.id, cap === null ? {} : { cap });
+                                 window.location.reload();
+                             } catch (error) {
+                                 if (error.code === 'limit_reached' && error.details && error.details.cap) { this.offer = { ...error.details, page }; }
+                                 else { this.problem = error.message; }
+                                 this.busy = false;
+                             }
+                         } }"
+                     @endif>
                 <p class="font-medium">{{ __('Reading finished.') }}</p>
                 <p class="mt-1 num">{{ __('Pages read: :read of :total', ['read' => (int) $read->pages_read, 'total' => (int) $readTotal]) }}</p>
+                @if ($canAct && (int) $read->pages_failed > 0)
+                    <div class="mt-3 space-y-2 border-t border-rule pt-3" x-show="failed.length" x-cloak data-retry>
+                        <p>{{ __('These pages could not be read. Each can be read again.') }}</p>
+                        <template x-for="page in failed" :key="page.id">
+                            <button type="button" class="btn btn-ghost mr-2" :disabled="busy" @click="retry(page)"
+                                    x-text="(page.page_to && page.page_to !== page.page_no ? @js(__('Read pages :from to :to again')) : @js(__('Read page :from again'))).replace(':from', page.page_no).replace(':to', page.page_to)"></button>
+                        </template>
+                        <template x-if="offer">
+                            <div class="space-y-2">
+                                <p class="num" x-text="@js(__('The pages left need a new limit: about :estimate credits, and never more than :cap.')).replace(':estimate', offer.estimate).replace(':cap', offer.cap)"></p>
+                                <button type="button" class="btn btn-primary" :disabled="busy" @click="retry(offer.page, offer.cap)">{{ __('Continue with this limit') }}</button>
+                            </div>
+                        </template>
+                    </div>
+                @endif
                 <a href="{{ route('tender-facts.index', $tender) }}" class="btn btn-primary mt-3">{{ __('Open the tender sheet') }}</a>
             </section>
         @endif

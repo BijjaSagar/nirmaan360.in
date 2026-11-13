@@ -184,8 +184,8 @@ class TenderReadKindTest extends TenderReadingTestCase
         $this->assertSame('61500', $facts['emd_amount']->value_norm);
         $this->assertSame('रु. ६१,५००/-', $facts['emd_amount']->value_raw, 'The value is kept as printed.');
         $this->assertTrue($facts['emd_amount']->quote_found);
-        // A time without a 24-hour clock or am/pm is read as printed: the app does not guess the afternoon.
-        $this->assertSame('2026-12-15 03:00', $facts['due_at']->value_norm);
+        // "दुपारी" says the afternoon: three o'clock is 15:00, not three at night.
+        $this->assertSame('2026-12-15 15:00', $facts['due_at']->value_norm);
         $this->assertSame('9 महिने', $facts['completion_period']->value_norm);
 
         $this->assertSame('2026-03-03', TenderValue::date('३ मार्च २०२६'));
@@ -195,6 +195,28 @@ class TenderReadKindTest extends TenderReadingTestCase
         $this->assertSame('1.37', TenderValue::percent('1.37% of the estimated cost'));
         $this->assertSame('2026-12-15 15:00', TenderValue::dateTime('15.12.2026 at 3.00 PM'));
         $this->assertSame('2026-12-15', TenderValue::dateTime('15/12/2026'));
+    }
+
+    public function test_a_time_is_read_only_when_its_part_of_the_day_is_clear(): void
+    {
+        // A word for the part of the day decides a time of 1 to 12 printed without am or pm.
+        $this->assertSame('2026-12-15 17:30', TenderValue::dateTime('15/12/2026 सायं 5.30 बजे'));
+        $this->assertSame('2026-12-15 17:30', TenderValue::dateTime('१५/१२/२०२६ सायंकाळी ५.३० वाजता'));
+        $this->assertSame('2026-12-15 15:00', TenderValue::dateTime('15.12.2026 at 3.00 in the afternoon'));
+        $this->assertSame('2026-12-15 14:00', TenderValue::dateTime('15-12-2026 दोपहर 2.00 बजे तक'));
+        $this->assertSame('2026-12-15 12:30', TenderValue::dateTime('15-12-2026 दुपारी 12.30 वाजता'));
+        $this->assertSame('2026-12-15 11:00', TenderValue::dateTime('15-12-2026 सकाळी 11.00 वाजता'));
+
+        // A 24-hour time, or one marked hrs, needs no word.
+        $this->assertSame('2026-12-17 11:00', TenderValue::dateTime('17-12-2026 at 11:00 hrs'));
+        $this->assertSame('2026-12-17 17:30', TenderValue::dateTime('17-12-2026 at 17:30'));
+
+        // Otherwise only the date is read, so the time is typed by a person and never saved as a guess.
+        $this->assertSame('2026-12-15', TenderValue::dateTime('15-12-2026 at 3.00'));
+        $this->assertSame('2026-12-15', TenderValue::dateTime('15-12-2026 रात्री 12.00 वाजता'), 'Twelve at night could be either midnight.');
+        $this->assertSame('2026-12-15', TenderValue::dateTime('15-12-2026 सकाळी 3.00 सायं'), 'Two parts of the day say nothing clear.');
+        $this->assertSame('2026-12-15', TenderValue::dateTime('गुजरात 15-12-2026 3.00'), 'A place name holding the letters of a word is not that word.');
+        $this->assertSame('2026-12-15', TenderValue::dateTime('15-12-2026 सकाळी 17.00'));
     }
 
     public function test_instruction_like_text_is_flagged_and_nothing_acts_on_it(): void
@@ -215,7 +237,8 @@ class TenderReadKindTest extends TenderReadingTestCase
         $this->assertSame('0.00', (string) $this->tender->refresh()->estimated_value);
 
         $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
-            ->assertSee('Pages 1 hold text that reads like instructions to an AI. Nothing on a page is acted on; check the facts from these pages with extra care.');
+            ->assertSee('Page 1 holds text that reads like instructions to an AI. Nothing on a page is acted on; check the facts from this page with extra care.')
+            ->assertDontSee('Pages 1 hold');
     }
 
     public function test_a_run_whose_answer_is_cut_off_is_split_in_two_and_a_single_page_then_needs_a_picture(): void
@@ -247,7 +270,7 @@ class TenderReadKindTest extends TenderReadingTestCase
 
         $this->assertSame(DocumentRead::READY, $read->refresh()->status);
         $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
-            ->assertSee('Pages not read: 3, because the reader could not read it.');
+            ->assertSee('Page 3 was not read, because the reader could not read it.');
     }
 
     public function test_a_page_read_again_replaces_its_proposals_and_keeps_what_a_person_decided(): void
