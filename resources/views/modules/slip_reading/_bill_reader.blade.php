@@ -11,8 +11,11 @@
     It only fills fields. Each one it fills carries a "read from photo" tag and must be changed or
     confirmed with "Matches the photo" before the form is saved; the server checks the same
     (SlipLink). A form sent back by the server shows the same reading again, with what was typed.
-    Reading again, a new reading and "Do not use this reading" put back what the fields held before
-    the reading filled them, unless the person has changed them since.
+    Until it is shown again, the form still names the reading in inputs the server draws, so a Save
+    meanwhile, or after the reading could not be fetched, is checked by the server as before. A
+    reading that can no longer be used takes back what it filled. Reading again, a new reading and
+    "Do not use this reading" put back what the fields held before the reading filled them, unless
+    the person has changed them since.
 --}}
 @php
     $billService = app(\App\Services\SlipReading\SlipReadService::class);
@@ -36,6 +39,7 @@
             'failed_again' => __('The second reading could not be used. Type the details yourself.'),
             'network' => __('Your request did not reach the server. Check your connection and try again.'),
             'refused' => __('This could not be done. Reload the page and try again.'),
+            'gone' => __('This photo reading can no longer be used. Read the photo again or type the details yourself.'),
             'no_page' => __('The first page of this PDF could not be turned into a picture. Take a photo of the bill instead.'),
             'confirm_all' => __('Confirm each field filled from the photo, or change it, and tick each warning, before saving.'),
         ],
@@ -96,6 +100,8 @@
                 message: '',
                 blocked: '',
                 data: null,
+                // The form was sent back naming a reading that is not shown again yet: the inputs the server drew still name it.
+                held: Boolean(config.old?.id),
                 confirmed: [],
                 // Field => the value the reading put in, and what the field held before that.
                 filled: {},
@@ -232,28 +238,40 @@
                 },
 
                 // The server sent the form back: the reading is shown again and what was typed stays as it is.
+                // When it cannot be fetched, the form keeps naming it (held), so the server checks the next Save as it did this one.
                 async restore(old) {
+                    let data;
+
                     try {
-                        const data = await this.call('GET', address('show', old.id));
-
-                        if (data.status !== 'ready') {
-                            return;
-                        }
-
-                        this.data = data;
-                        this.state = 'ready';
-                        this.confirmed = [...old.confirmed];
-
-                        for (const [name, spec] of Object.entries(config.fields)) {
-                            const value = this.offered(spec);
-
-                            if (value !== null && value !== undefined && value !== '' && this.input(name)) {
-                                this.filled[name] = String(value);
-                            }
-                        }
+                        data = await this.call('GET', address('show', old.id));
                     } catch (error) {
                         this.message = error.message;
+
+                        return;
                     }
+
+                    this.data = data;
+
+                    for (const [name, spec] of Object.entries(config.fields)) {
+                        const value = this.offered(spec);
+
+                        if (value !== null && value !== undefined && value !== '' && this.input(name)) {
+                            this.filled[name] = String(value);
+                        }
+                    }
+
+                    this.held = false;
+
+                    // The reading can no longer be used: what it filled goes, as with "Do not use this reading".
+                    if (data.status !== 'ready') {
+                        this.forget();
+                        this.message = config.words.gone;
+
+                        return;
+                    }
+
+                    this.state = 'ready';
+                    this.confirmed = [...old.confirmed];
                 },
 
                 async recheck() {
@@ -410,6 +428,13 @@
     <p class="hint mt-1">{{ __('Each field shows the text as read, beside the photo. You confirm each field against the photo.') }}</p>
     @error('read_id')<p class="error">{{ $message }}</p>@enderror
     @error('read_confirmed')<p class="error">{{ $message }}</p>@enderror
+    @if ($billOld !== null)
+        {{-- The reading the form was sent back with, until it is shown again. --}}
+        <input type="hidden" name="read_id" value="{{ $billOld['id'] }}" :disabled="!held">
+        @foreach ($billOld['confirmed'] as $billEntry)
+            <input type="hidden" name="read_confirmed[]" value="{{ $billEntry }}" :disabled="!held">
+        @endforeach
+    @endif
     <p class="mt-2" x-show="message" x-cloak x-text="message" role="status"></p>
     <p class="mt-2 font-medium text-laterite" x-show="blocked" x-cloak x-text="blocked" role="alert"></p>
 

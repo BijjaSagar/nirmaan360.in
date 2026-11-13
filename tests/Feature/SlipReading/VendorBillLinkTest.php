@@ -249,7 +249,7 @@ class VendorBillLinkTest extends SlipReadingTestCase
         // Returned and edited by hand on the usual form.
         $this->travel(1)->days();
         $this->change($bill, [...$byHand, 'bill_no' => 'INV/0912-A', 'taxable_amount' => '72000', 'description' => 'Second lot'])->assertSessionHasNoErrors();
-        $this->assertSame(['fields' => ['bill_no', 'taxable_amount'], 'by' => $this->accounts->id], array_intersect_key($slip->refresh()->confirmed['changed_later'], ['fields' => 1, 'by' => 1]));
+        $this->assertSame([['fields' => ['bill_no', 'taxable_amount'], 'by' => $this->accounts->id]], array_map(fn (array $change) => array_intersect_key($change, ['fields' => 1, 'by' => 1]), $slip->refresh()->confirmed['changed_later']));
 
         $approver = $this->member($this->organization, 'pm');
         $this->actingAs($approver)->get(route('finance.project.vendor-bills.show', $bill))->assertOk()
@@ -259,5 +259,32 @@ class VendorBillLinkTest extends SlipReadingTestCase
         $approver->update(['locale' => 'hi']);
         $this->actingAs($approver)->get(route('finance.project.vendor-bills.show', $bill))->assertOk()
             ->assertSee('बाद में Meera Kulkarni ने 14 Nov 2026 को हाथ से बदला');
+    }
+
+    public function test_each_change_made_by_hand_later_is_put_to_the_person_who_made_it_and_when(): void
+    {
+        $this->accounts->update(['name' => 'Meera Kulkarni']);
+        $second = $this->member($this->organization, 'accounts');
+        $second->update(['name' => 'Ravi Deshpande']);
+        $slip = $this->storedReading($this->accounts, [], null, SlipRead::BILL);
+        $form = $this->filled($slip, ['read_confirmed' => self::EVERY_FIELD]);
+        $this->save($form)->assertSessionHasNoErrors();
+        $bill = VendorBill::sole();
+        $byHand = array_diff_key($form, array_flip(['read_id', 'read_confirmed', 'client_uuid']));
+
+        // One person changes the taxable value; two days later another changes the bill number.
+        $this->travel(1)->days();
+        $this->change($bill, [...$byHand, 'taxable_amount' => '72000'])->assertSessionHasNoErrors();
+        $this->travel(2)->days();
+        $this->change($bill, [...$byHand, 'taxable_amount' => '72000', 'bill_no' => 'INV/0912-A'], $second)->assertSessionHasNoErrors();
+
+        $later = $slip->refresh()->confirmed['changed_later'];
+        $this->assertSame([[['taxable_amount'], $this->accounts->id], [['bill_no'], $second->id]], array_map(fn (array $change) => [$change['fields'], $change['by']], $later));
+
+        $this->actingAs($this->member($this->organization, 'pm'))->get(route('finance.project.vendor-bills.show', $bill))->assertOk()
+            ->assertSee('Changed by hand later by Meera Kulkarni on 14 Nov 2026: Taxable value')
+            ->assertSee('Changed by hand later by Ravi Deshpande on 16 Nov 2026: Vendor bill no.')
+            ->assertDontSee('Ravi Deshpande on 16 Nov 2026: Vendor bill no., Taxable value')
+            ->assertDontSee('Ravi Deshpande on 16 Nov 2026: Taxable value');
     }
 }

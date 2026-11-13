@@ -237,9 +237,9 @@ class SlipLink
 
     /**
      * A record filled from a photo reading was saved again without one. The fields of its form that
-     * this save changed are added to the reading's record, with who and when, so the note on the
-     * record no longer reads as if they were still as confirmed. Field names only. Call it inside the
-     * record's transaction.
+     * this save changed are added to the reading's record as one more change, with who and when, so
+     * the note on the record no longer reads as if they were still as confirmed, and each change is
+     * put to the person who made it. Field names only. Call it inside the record's transaction.
      *
      * @param  list<string>  $changed  The record's attributes this save changed.
      * @param  ?User  $by  The person saving, when known.
@@ -255,13 +255,33 @@ class SlipLink
 
         $slip = SlipRead::withoutGlobalScopes()->whereKey($reading->id)->lockForUpdate()->firstOrFail();
         $confirmed = $slip->confirmed ?? [];
-        $confirmed['changed_later'] = [
-            'fields' => array_values(array_unique([...($confirmed['changed_later']['fields'] ?? []), ...$fields])),
-            'by' => $by?->id,
-            'at' => now()->toIso8601String(),
-        ];
+        $confirmed['changed_later'] = [...self::laterChanges($confirmed), ['fields' => $fields, 'by' => $by?->id, 'at' => now()->toIso8601String()]];
 
         $slip->forceFill(['confirmed' => $confirmed])->save();
+    }
+
+    /**
+     * The changes made by hand after a record was filled from a photo, oldest first, each with its
+     * own fields, person and time. A record of the earlier shape (one entry for all) is read as one.
+     *
+     * @param  array<string, mixed>  $confirmed  slip_reads.confirmed
+     * @return list<array{fields: list<string>, by: ?int, at: ?string}>
+     */
+    public static function laterChanges(array $confirmed): array
+    {
+        $later = $confirmed['changed_later'] ?? [];
+
+        if (! is_array($later)) {
+            return [];
+        }
+
+        $later = array_key_exists('fields', $later) ? [$later] : array_values($later);
+
+        return array_values(array_map(fn (array $change) => [
+            'fields' => array_values(array_filter((array) ($change['fields'] ?? []), 'is_string')),
+            'by' => isset($change['by']) ? (int) $change['by'] : null,
+            'at' => isset($change['at']) ? (string) $change['at'] : null,
+        ], array_filter($later, 'is_array')));
     }
 
     private function usable(SlipRead $slip, string $context, array $data, ?Model $record): bool

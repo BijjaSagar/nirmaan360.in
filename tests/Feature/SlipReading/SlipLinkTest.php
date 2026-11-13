@@ -356,7 +356,7 @@ class SlipLinkTest extends SlipReadingTestCase
 
         $this->actingAs($this->owner)->post(route('material_control.challans.bill.store', $challan), [...$form, 'bill_amount' => '70500'])->assertSessionHasNoErrors();
 
-        $this->assertSame(['bill_amount'], $slip->refresh()->confirmed['changed_later']['fields']);
+        $this->assertSame(['bill_amount'], $slip->refresh()->confirmed['changed_later'][0]['fields']);
         $this->actingAs($this->owner)->get(route('material_control.challans.show', $challan))->assertOk()
             ->assertSee('Changed by hand later by '.$this->owner->name.' on 13 Nov 2026: Amount');
     }

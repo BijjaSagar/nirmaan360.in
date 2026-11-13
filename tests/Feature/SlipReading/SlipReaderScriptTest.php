@@ -7,6 +7,7 @@ use App\Models\Material;
 use App\Models\SlipRead;
 use App\Models\User;
 use App\Services\MaterialControl\DeliveryChallanService;
+use Dom\Element;
 use Dom\HTMLDocument;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -29,7 +30,7 @@ class SlipReaderScriptTest extends SlipReadingTestCase
         $this->store = $this->member($this->organization, 'store');
     }
 
-    /** @return array{script: string, xdata: string} The reader's script and its x-data, as the page draws them. */
+    /** @return array{script: string, xdata: string, tree: array<string, mixed>} The reader's script, its x-data and its markup, as the page draws them. */
     private function reader(TestResponse $page, string $factory): array
     {
         $document = HTMLDocument::createFromString((string) $page->getContent(), LIBXML_NOERROR);
@@ -45,7 +46,33 @@ class SlipReaderScriptTest extends SlipReadingTestCase
         $this->assertNotNull($script, "The page carries {$factory}.");
         $this->assertNotNull($holder, "The page draws {$factory}.");
 
-        return ['script' => $script, 'xdata' => (string) $holder->getAttribute('x-data')];
+        return ['script' => $script, 'xdata' => (string) $holder->getAttribute('x-data'), 'tree' => $this->tree($holder)];
+    }
+
+    /**
+     * One element of the page and all inside it, for the harness to read as Alpine would. A template's
+     * content is kept apart from the page by the parser, so it is parsed again from its markup.
+     *
+     * @return array{tag: string, attrs: array<string, string>, text: string, children: list<array<string, mixed>>}
+     */
+    private function tree(Element $element): array
+    {
+        $attrs = [];
+
+        foreach ($element->attributes as $attribute) {
+            $attrs[$attribute->name] = $attribute->value;
+        }
+
+        $holder = strtolower($element->localName) === 'template'
+            ? HTMLDocument::createFromString('<!doctype html><body>'.$element->innerHTML.'</body>', LIBXML_NOERROR)->body
+            : $element;
+
+        return [
+            'tag' => strtolower($element->localName),
+            'attrs' => $attrs,
+            'text' => trim((string) preg_replace('/\s+/u', ' ', (string) $element->textContent)),
+            'children' => array_map(fn (Element $child) => $this->tree($child), iterator_to_array($holder->children)),
+        ];
     }
 
     private function challanPage(): TestResponse
@@ -165,7 +192,7 @@ class SlipReaderScriptTest extends SlipReadingTestCase
         ], ['party' => $sent['party_id'], 'material' => $sent['material_id'], 'unit' => $sent['unit_id']], $back)])['again'];
 
         $this->assertSame('ready', $again[0]['state']);
-        $this->assertSame($slip->id, $again[0]['payload']['read_id']);
+        $this->assertSame((string) $slip->id, $again[0]['payload']['read_id']);
         $this->assertEqualsCanonicalizing(['challan_no', 'challan_date', 'vehicle_no', 'challan_qty', 'unit_id'], $again[0]['filled']);
         $this->assertContains('party_id', $again[0]['payload']['read_confirmed'], 'The confirmation sent the first time stays.');
         $this->assertTrue($again[1]['prevented']);
@@ -176,6 +203,97 @@ class SlipReaderScriptTest extends SlipReadingTestCase
         $this->assertSame(['120.000', $this->bag->id], [$challan->challan_qty, $challan->unit_id]);
         $this->assertSame(SlipRead::USED, $slip->refresh()->status);
         $this->assertEqualsCanonicalizing(['party_id', 'material_id', 'challan_no', 'challan_date', 'vehicle_no', 'challan_qty', 'unit_id'], $slip->confirmed['fields']);
+    }
+
+    public function test_a_form_sent_back_names_its_reading_until_the_reading_is_shown_again(): void
+    {
+        $slip = $this->readyReading($this->store);
+        $first = $this->browse([$this->challanScenario('first', [
+            ['call', 'slipRead'], ['flush'], ['pick', 'material', (string) $this->cement->id], ['flush'],
+            ['call', 'slipUseSupplier'], ['type', 'qty', '118'], ['snap'],
+        ], $this->answers($slip))])['first'];
+        $sent = $first[0]['payload'];
+        $back = $this->actingAs($this->store)->from(route('material_control.challans.create', $this->project))->followingRedirects()
+            ->post(route('material_control.challans.store', $this->project), array_filter($sent, fn ($value) => $value !== ''))
+            ->assertOk()->assertSee('Confirm this against the photo.');
+        $typed = [
+            'qty' => $sent['qty'], 'challan_qty' => $sent['challan_qty'], 'challan_date' => $sent['challan_date'], 'vehicle_no' => $sent['vehicle_no'], 'challan_no' => $sent['challan_no'], 'client_uuid' => $sent['client_uuid'],
+        ];
+        $picked = ['party' => $sent['party_id'], 'material' => $sent['material_id'], 'unit' => $sent['unit_id']];
+
+        // Saved again before the reading is fetched, and after it could not be: the form still names it, so the server checks it again.
+        $results = $this->browse([
+            $this->challanScenario('waiting', [['submit']], ['show' => [['hang' => true]]], $typed, $picked, $back),
+            $this->challanScenario('offline', [['flush'], ['submit']], ['show' => [['network' => true]]], $typed, $picked, $back),
+        ]);
+
+        foreach (['waiting', 'offline'] as $name) {
+            $submit = $results[$name][0];
+            $this->assertSame([(string) $slip->id, $sent['read_line'], $sent['read_confirmed']], [$submit['payload']['read_id'] ?? null, $submit['payload']['read_line'] ?? null, $submit['payload']['read_confirmed'] ?? null], $name);
+            $this->save($submit['payload'])->assertSessionHasErrors(['challan_no' => 'Confirm this against the photo.', 'challan_qty' => 'Confirm this against the photo.']);
+        }
+
+        $this->assertSame('Your request did not reach the server. Check your connection and try again.', $results['offline'][0]['message']);
+        $this->assertSame([0, SlipRead::READY], [DeliveryChallan::count(), $slip->refresh()->status]);
+
+        // Dropped meanwhile (another tab): what the photo filled goes, and the form no longer names it.
+        $this->actingAs($this->store)->postJson("/slip-reads/{$slip->id}/discard")->assertOk();
+        $gone = $this->browse([$this->challanScenario('gone', [['snap']], ['show' => [['body' => $this->shown($slip)]]], $typed, $picked, $back)])['gone'][0];
+
+        $this->assertArrayNotHasKey('read_id', $gone['payload']);
+        $this->assertSame(['', '', '', '', '118'], [$gone['payload']['challan_no'], $gone['payload']['vehicle_no'], $gone['payload']['challan_qty'], $gone['payload']['challan_date'], $gone['payload']['qty']]);
+        $this->assertSame('This photo reading can no longer be used. Read the photo again or type the details yourself.', $gone['message']);
+    }
+
+    public function test_a_bill_form_sent_back_names_its_reading_until_the_reading_is_shown_again(): void
+    {
+        $this->withBillReader();
+        $challan = app(DeliveryChallanService::class)->create($this->project, [
+            'party_id' => $this->vendor->id, 'material_id' => $this->cement->id, 'qty' => '10', 'challan_date' => '2026-11-11',
+        ], $this->owner);
+        $slip = $this->readyBill($this->owner);
+        $form = ['bill_no' => 'INV/0912', 'bill_date' => '2026-11-10', 'bill_amount' => '70800.00'];
+        $back = $this->actingAs($this->owner)->from(route('material_control.challans.show', $challan))->followingRedirects()
+            ->post(route('material_control.challans.bill.store', $challan), [...$form, 'read_id' => $slip->id, 'read_confirmed' => ['bill_date']])
+            ->assertOk()->assertSee('Confirm this against the photo.');
+        $scenario = fn (string $name, array $answer) => [
+            'name' => $name,
+            'factory' => 'slipBillReader',
+            ...$this->reader($back, 'slipBillReader'),
+            'inputs' => $form,
+            'files' => ['bill'],
+            'responses' => ['show' => [$answer]],
+            'steps' => [['flush'], ['submit']],
+        ];
+
+        $results = $this->browse([$scenario('waiting', ['hang' => true]), $scenario('offline', ['network' => true])]);
+
+        foreach (['waiting', 'offline'] as $name) {
+            $payload = $results[$name][0]['payload'];
+            $this->assertSame([(string) $slip->id, ['bill_date']], [$payload['read_id'] ?? null, $payload['read_confirmed'] ?? null], $name);
+            $this->actingAs($this->owner)->post(route('material_control.challans.bill.store', $challan), $payload)
+                ->assertSessionHasErrors(['bill_no' => 'Confirm this against the photo.', 'bill_amount' => 'Confirm this against the photo.']);
+        }
+
+        $this->assertSame([null, SlipRead::READY], [$challan->refresh()->bill_no, $slip->refresh()->status]);
+    }
+
+    public function test_a_supplier_typed_as_read_can_be_confirmed_though_another_was_found_by_its_gstin(): void
+    {
+        $slip = $this->readyReading($this->store);
+        $this->assertNotNull($this->shown($slip)['suggestions']['party']);
+
+        [$snap, $submit] = $this->browse([$this->challanScenario('new supplier', [
+            ['call', 'slipRead'], ['flush'], ['pick', 'material', (string) $this->cement->id], ['flush'],
+            ['pick', 'newSupplier', true], ['type', 'supplier_name', 'Godavari Cement Traders'], ['type', 'qty', '118'],
+            ['snap'], ['confirmNeeded'], ['submit'],
+        ], $this->answers($slip))])['new supplier'];
+
+        // The page asks about the name as read, and shows the button that confirms it.
+        $this->assertContains('supplier_name', $snap['needs']);
+        $this->assertFalse($submit['prevented'], (string) $submit['blocked']);
+        $this->save($submit['payload'])->assertSessionHasNoErrors();
+        $this->assertContains('supplier_name', $slip->refresh()->confirmed['fields']);
     }
 
     public function test_the_page_asks_about_exactly_what_the_server_counts_as_filled(): void
@@ -225,7 +343,7 @@ class SlipReaderScriptTest extends SlipReadingTestCase
         [$snap, $submit, $picked] = $results['two lines'];
         $this->assertSame([], array_values(array_intersect(['challan_qty', 'unit_id'], $snap['needs'])));
         $this->assertSame('', $submit['payload']['read_line']);
-        $this->assertSame(['40.000', 1, (string) $this->bag->id], [number_format((float) $picked['payload']['challan_qty'], 3, '.', ''), $picked['payload']['read_line'], $picked['payload']['unit_id']]);
+        $this->assertSame(['40.000', '1', (string) $this->bag->id], [number_format((float) $picked['payload']['challan_qty'], 3, '.', ''), $picked['payload']['read_line'], $picked['payload']['unit_id']]);
         $this->assertContains('challan_qty', $picked['needs']);
         $this->save($submit['payload'])->assertSessionHasNoErrors();
         $this->assertSame(3, DeliveryChallan::count());

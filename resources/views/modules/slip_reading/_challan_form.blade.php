@@ -10,9 +10,11 @@
     warning that asks for a tick must have one. The counted quantity is never filled: it is what was
     counted on site.
 
-    A form the server sends back shows the same reading again, with what was typed. Reading again,
-    a new reading and "Do not use this reading" put back what the fields held before the reading
-    filled them, unless the person has changed them since.
+    A form the server sends back shows the same reading again, with what was typed. Until it is shown
+    again, the form still names the reading in inputs the server draws, so a Save meanwhile, or after
+    the reading could not be fetched, is checked by the server as before. A reading that can no longer
+    be used takes back what it filled. Reading again, a new reading and "Do not use this reading" put
+    back what the fields held before the reading filled them, unless the person has changed them since.
 --}}
 @php
     $slipUser = auth()->user();
@@ -46,6 +48,7 @@
                 'failed_again' => __('The second reading could not be used. Type the details yourself.'),
                 'network' => __('Your request did not reach the server. Check your connection and try again.'),
                 'refused' => __('This could not be done. Reload the page and try again.'),
+                'gone' => __('This photo reading can no longer be used. Read the photo again or type the details yourself.'),
                 'unit_differs' => __('The slip says :slip; this material is kept in :base. Check the unit and the quantity.'),
                 'unit_not_of_material' => __('The unit on the slip, :slip, is not a unit of this material, so it is not filled.'),
                 'confirm_all' => __('Confirm each field filled from the photo, or change it, and tick each warning, before saving.'),
@@ -104,6 +107,8 @@
                 slipMessage: '',
                 slipBlocked: '',
                 slipData: null,
+                // The form was sent back naming a reading that is not shown again yet: the inputs the server drew still name it.
+                slipHeld: Boolean(config.old?.id),
                 // Field => its value when confirmed, so changing the field afterwards takes the confirmation back.
                 slipConfirmed: {},
                 slipTicks: [],
@@ -227,34 +232,46 @@
                 },
 
                 // The server sent the form back: the reading is shown again, and what the photo filled and the form still holds is tagged again.
+                // When it cannot be fetched, the form keeps naming it (slipHeld), so the server checks the next Save as it did this one.
                 async slipRestore(old) {
+                    let data;
+
                     try {
-                        const data = await this.slipCall('GET', address('show', old.id));
-
-                        if (data.status !== 'ready') {
-                            return;
-                        }
-
-                        this.slipData = data;
-                        this.slipState = 'ready';
-                        this.slipLine = old.line === 'weight' ? 'weight' : (/^\d+$/.test(old.line ?? '') ? Number(old.line) : this.slipDefaultLine());
-
-                        for (const name of ['supplier_name', ...rows]) {
-                            if (this.slipNeeds(name)) {
-                                this.slipFilled[name] = this.slipCurrent(name);
-                                this.slipBefore[name] = '';
-                            }
-                        }
-
-                        for (const entry of old.confirmed ?? []) {
-                            if (entry.startsWith('warning:')) {
-                                this.slipTick(entry.slice(8), true);
-                            } else if (fields.includes(entry)) {
-                                this.slipConfirm(entry);
-                            }
-                        }
+                        data = await this.slipCall('GET', address('show', old.id));
                     } catch (error) {
                         this.slipMessage = error.message;
+
+                        return;
+                    }
+
+                    this.slipData = data;
+                    this.slipLine = old.line === 'weight' ? 'weight' : (/^\d+$/.test(old.line ?? '') ? Number(old.line) : this.slipDefaultLine());
+
+                    for (const name of ['supplier_name', ...rows]) {
+                        if (this.slipNeeds(name)) {
+                            this.slipFilled[name] = this.slipCurrent(name);
+                            this.slipBefore[name] = '';
+                        }
+                    }
+
+                    this.slipHeld = false;
+
+                    // The reading can no longer be used: what it filled goes, as with "Do not use this reading".
+                    if (data.status !== 'ready') {
+                        this.slipForget();
+                        this.slipMessage = config.words.gone;
+
+                        return;
+                    }
+
+                    this.slipState = 'ready';
+
+                    for (const entry of old.confirmed ?? []) {
+                        if (entry.startsWith('warning:')) {
+                            this.slipTick(entry.slice(8), true);
+                        } else if (fields.includes(entry)) {
+                            this.slipConfirm(entry);
+                        }
                     }
                 },
 
@@ -661,6 +678,14 @@
         @error('read_id')<p class="error">{{ $message }}</p>@enderror
         @error('read_line')<p class="error">{{ $message }}</p>@enderror
         @error('read_confirmed')<p class="error">{{ $message }}</p>@enderror
+        @if ($slipConfig['old'] !== null)
+            {{-- The reading the form was sent back with, until it is shown again. --}}
+            <input type="hidden" name="read_id" value="{{ $slipConfig['old']['id'] }}" :disabled="!slipHeld">
+            <input type="hidden" name="read_line" value="{{ $slipConfig['old']['line'] ?? '' }}" :disabled="!slipHeld">
+            @foreach ($slipConfig['old']['confirmed'] as $slipEntry)
+                <input type="hidden" name="read_confirmed[]" value="{{ $slipEntry }}" :disabled="!slipHeld">
+            @endforeach
+        @endif
         <p class="mt-2" x-show="slipMessage" x-cloak x-text="slipMessage" role="status"></p>
         <p class="mt-2 font-medium text-laterite" x-show="slipBlocked" x-cloak x-text="slipBlocked" role="alert"></p>
 
@@ -716,7 +741,7 @@
                                         x-text="slipIsConfirmed('party_id') ? @js(__('Confirmed against the photo')) : (slipNeeds('party_id') ? @js(__('Matches the photo')) : @js(__('Use this supplier')))"></button>
                             </div>
                         </template>
-                        <template x-if="!slipData.suggestions?.party && slipField('supplier_name')?.value">
+                        <template x-if="slipField('supplier_name')?.value && (!slipData.suggestions?.party || newSupplier)">
                             <div class="flex flex-wrap items-center gap-2">
                                 <span class="stamp border-haldi text-[#8a6208]" x-show="slipNeeds('supplier_name')">{{ __('Read from photo') }}</span>
                                 <span x-text="@js(__('As printed:')) + ' ' + slipField('supplier_name').value"></span>
