@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\DocumentReading\AiSpend;
+use App\Services\DocumentReading\ReaderSettings;
 
 /*
  * Reading scanned and photographed documents. This file starts with the word lists the code parsers
@@ -16,10 +16,11 @@ return [
      */
     'feature' => 'ai_agents',
 
-    // Owners and admins only: settings.manage is theirs alone. Shown only while the readers are on for the
-    // company (AiSpend::readersOn, the test its consent switch is shown by), so there is no entry while no reader exists.
+    // Owners and admins only: settings.manage is theirs alone. Shown while the readers are on for the company
+    // (AiSpend::readersOn, the test its consent switch is shown by), so there is no entry while no reader exists,
+    // and while the company's agreement is on record, so it can always be switched off (ReaderSettings::shown).
     'nav' => [
-        ['place' => 'company', 'group' => 'AI', 'label' => 'AI document readers', 'route' => 'ai-documents.edit', 'active' => 'ai-documents.*', 'can' => 'settings.manage', 'order' => 40, 'when' => [AiSpend::class, 'readersOn']],
+        ['place' => 'company', 'group' => 'AI', 'label' => 'AI document readers', 'route' => 'ai-documents.edit', 'active' => 'ai-documents.*', 'can' => 'settings.manage', 'order' => 40, 'when' => [ReaderSettings::class, 'shown']],
     ],
 
     /*

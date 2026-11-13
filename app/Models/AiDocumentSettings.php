@@ -33,6 +33,37 @@ class AiDocumentSettings extends Model
         ];
     }
 
+    /** Where the company's own row keeps a copy of whether it has agreed, for agreed(). */
+    private const AGREED = 'ai_readers_agreed';
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $settings) {
+            if ($settings->wasRecentlyCreated || $settings->wasChanged('enabled')) {
+                self::copyToCompany((int) $settings->organization_id, (bool) $settings->enabled);
+            }
+        });
+
+        static::deleted(fn (self $settings) => self::copyToCompany((int) $settings->organization_id, false));
+    }
+
+    /**
+     * Whether the company has switched the readers on and not off since, as its menu shows it (ReaderSettings::shown).
+     * The menu asks on every page, so this reads a copy kept on the company's own row, which every page has loaded,
+     * and asks no query. Anything that sends a document reads this row itself (RequireAiReader).
+     */
+    public static function agreed(Organization $organization): bool
+    {
+        return (bool) ($organization->settings[self::AGREED] ?? false);
+    }
+
+    private static function copyToCompany(int $organizationId, bool $enabled): void
+    {
+        $organization = Organization::find($organizationId);
+
+        $organization?->forceFill(['settings' => [...($organization->settings ?? []), self::AGREED => $enabled]])->saveQuietly();
+    }
+
     /** The company's row, made the first time it is asked for. Safe on the queue, where no tenant scope applies. */
     public static function for(Organization|int $organization): self
     {

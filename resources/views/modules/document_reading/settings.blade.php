@@ -4,10 +4,21 @@
     <x-page-header :title="__('AI document readers')" :subtitle="__('Whether pages, photos and text of your company may be sent to the AI service, and how much may be spent.')" />
 
     <div class="max-w-3xl space-y-5">
-        @if (! $offered)
+        @if (! $offered && ! $consent['enabled'])
             <section class="card space-y-2 p-4">
                 <p class="text-sm font-semibold">{{ __('No reader is switched on yet.') }}</p>
                 <p class="text-sm text-ink-3">{{ __('When a reader is available for your company, the notice to read and the switch appear here. Until then no reader sends anything to the AI service.') }}</p>
+            </section>
+        @elseif (! $offered)
+            {{-- The company agreed while a reader was available. Its agreement stays on record, so it can be switched off here. --}}
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="card-title">{{ __('Sending documents to the AI service') }}</h2>
+                </div>
+                <div class="space-y-3 p-4">
+                    <p class="text-sm">{{ __('No reader is available for your company right now, so nothing is sent to the AI service. Your company\'s agreement stays on record and counts again when a reader is back, unless the notice has changed. Switch the readers off here to withdraw it.') }}</p>
+                    @include('modules.document_reading._switch_off')
+                </div>
             </section>
         @else
             @if ($settings?->platform_block)
@@ -52,12 +63,7 @@
                     @endif
 
                     @if ($consent['enabled'])
-                        <form method="POST" action="{{ route('ai-documents.update') }}" class="space-y-2 border-t border-rule pt-3">
-                            @csrf
-                            <input type="hidden" name="action" value="off">
-                            <p class="text-sm text-ink-3">{{ __('Switching off stops everything from that moment: a document that is still being read is cancelled and its credits on hold are given back. Documents that were already read stay, and can still be checked and saved.') }}</p>
-                            <button class="btn btn-danger" onclick="return confirm(@js(__('Switch the readers off for your company? Documents that are still being read will be cancelled.')))">{{ __('Switch the readers off') }}</button>
-                        </form>
+                        @include('modules.document_reading._switch_off')
                     @endif
                 </div>
             </section>

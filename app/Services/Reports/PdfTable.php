@@ -16,13 +16,17 @@ namespace App\Services\Reports;
  * columns in the order they appear, so BoqExcelService reads it exactly like a sheet.
  *
  * Text that is not part of the table is left out where it can be told apart, and nowhere else:
- * anything above the heading; page furniture, that is a letterhead, a page heading or a footer
- * printed again in the same place on another page (furniture()); and rows with no description
- * beside a figure, which belong to no row that has one, where they lie above the heading printed
- * again on a later page with no row of the table above them, below the last row of the table, or
- * at the foot of a page whose table goes on under its heading on the next page (a signature, a
- * note). Every other row stays in the grid as it always did, a row with no figure in the middle of
- * the table included, for the import to report.
+ * anything above the heading; page furniture, that is a letterhead or a page heading printed again
+ * in the place it has above the heading, and a footer printed again in the same place at the foot
+ * of other pages, apart from the table (furniture()); and rows with no description beside a figure, which
+ * belong to no row that has one, where they lie above the heading printed again on a later page
+ * with no row of the table above them, below the last row of the table, or at the foot of a page
+ * whose table goes on under its heading on the next page (a signature, a note). Every other row
+ * stays in the grid as it always did, a row with no figure in the middle of the table included,
+ * for the import to report.
+ *
+ * The file is untrusted, so the work grows about in step with the text on the pages, and with a
+ * deadline grid() stops with PdfTableTimedOut once it is passed.
  */
 final class PdfTable
 {
@@ -38,7 +42,16 @@ final class PdfTable
     /** How far apart, in points, two pieces of text on two pages may be and still count as printed in the same place. */
     private const SAME_PLACE = 2.0;
 
-    /** @var list<array{page: int, y: float, size: float, x: float, x1: float, pieces: list<array<string, mixed>>}> */
+    /** A footer stands this far below the line over it, in multiples of the line pitch, on a page where it is told apart. */
+    private const FOOT_GAP = 2.5;
+
+    /**
+     * A piece that can be a page number: up to four digits, alone or as "Page 3", "Page 3 of 9", "3/9" or "- 3 -".
+     * It may differ from one page to the next where the rest of a line is printed again.
+     */
+    private const PAGE_NUMBER = '/^(?:(?:page|pg|p|पृष्ठ|पृ|पान)\.?\s*(?:no\.?\s*)?)?[-–(]?\s*[0-9०-९]{1,4}\s*(?:(?:of|\/|पैकी|में से)\s*[0-9०-९]{1,4})?\s*[-–)]?$/iu';
+
+    /** @var list<array{page: int, y: float, size: float, x: float, x1: float, n: int, pieces: list<array<string, mixed>>}> */
     private array $lines = [];
 
     /** @var list<array{page: int, y: float, size: float, pieces: list<array<string, mixed>>, cells: array<int, list<array<string, mixed>>>}> */
@@ -53,19 +66,46 @@ final class PdfTable
     /** @var list<array<string, mixed>> The pieces of the heading and of the rows of the grid that make BOQ lines. keeps() looks at these. */
     private array $table = [];
 
-    /** @var array<string, list<array{page: int, y: float, xs: list<float>, above: bool}>> Every line of the pages by its text, to find what is printed again in the same place. */
+    /**
+     * Each line by its place among the lines, as samePlace() compares it: its text with the digits of a page
+     * number as "#" (key), whether it is printed above the heading on the page of the heading, and each piece
+     * with the numbers it holds when it can be a page number.
+     *
+     * @var array<int, array{page: int, y: float, key: string, above: bool, pieces: list<array{text: string, x: float, width: float, numbers: ?list<int>}>}>
+     */
+    private array $shapes = [];
+
+    /** @var array<string, array<int, list<int>>> The lines by key and by height in steps of SAME_PLACE, to find what is printed again in the same place. */
     private array $printed = [];
+
+    /** @var array<string, array<int, list<int>>> The same, for the lines above the heading on the page of the heading. */
+    private array $printedAbove = [];
+
+    /** @var array<int, ?string> printedAgain() of each line, once worked out. */
+    private array $again = [];
+
+    private int $ticks = 0;
+
+    /** @var array<int, array{lines: int, top: ?float, bottom: float, width: float}>|null bodyPage() for the body as it is now. */
+    private ?array $bodyPages = null;
 
     /**
      * @param  list<array{pieces: list<array{x: float, x1: float, y: float, size: float, text: string}>, h: list<array{0: float, 1: float, 2: float}>, v: list<array{0: float, 1: float, 2: float}>}>  $pages
+     * @param  ?int  $deadline  hrtime(true) after which grid() stops with PdfTableTimedOut.
      */
-    public function __construct(private array $pages) {}
+    public function __construct(private array $pages, private ?int $deadline = null) {}
 
-    /** @return array<int, array<int, ?string>> Empty when no heading row was found. */
+    /**
+     * @return array<int, array<int, ?string>> Empty when no heading row was found.
+     *
+     * @throws PdfTableTimedOut when the deadline passes first
+     */
     public function grid(): array
     {
+        $this->ticks = 0;
         $this->lines = $this->lines();
         $this->restarts = $this->table = [];
+        $this->inTime();
         $heading = $this->heading();
 
         if ($heading === null) {
@@ -76,19 +116,24 @@ final class PdfTable
 
         [$cells, $headingLines] = $heading;
         $this->headingLines = $headingLines;
-        $this->printed = $this->printed($headingLines);
+        $this->printed($headingLines);
         $this->body = $this->body($headingLines, $cells);
+        $this->inTime();
         [$columns, $rows] = $this->layout($cells, $headingLines);
+        $this->inTime();
         $outside = $this->outside($columns, $rows);
+        $this->inTime();
 
         // Laid out again without the text outside the table, so a letterhead or a footer cannot move a column.
         if ($outside !== []) {
             $this->body = array_values(array_diff_key($this->body, $outside));
             [$columns, $rows] = $this->layout($cells, $headingLines);
+            $this->inTime();
         }
 
-        // Every row left in the grid that makes BOQ lines is looked at, whatever the first layout made of it.
-        $this->table = $this->tablePieces($rows, $this->makesLines($columns, $rows));
+        // Every row left in the grid that makes BOQ lines is looked at, whatever the first layout made of it,
+        // and a row joins the rows it belongs to across a page as the import joins them.
+        $this->table = $this->tablePieces($rows, $this->makesLines($columns, $rows, true));
         $grid = [1 => []];
 
         foreach ($columns as $index => $column) {
@@ -111,7 +156,8 @@ final class PdfTable
     /**
      * Whether a piece of text that makes BOQ lines carries this mark, as the caller set it on the pieces:
      * a piece of the heading, of a row of the grid with a description and a quantity, rate or amount, or of
-     * a row of the grid that belongs to one (the head of its lettered parts, or a lettered part under it).
+     * a row of the grid that belongs to one (the head of its lettered parts, or a lettered part under it, on
+     * the same page or the next, as the import joins them).
      * Text left out of the grid (a title, page furniture, a signature below the rows) is not looked at, nor
      * is a row of the grid with no figure or no description, which makes no BOQ line. Asked after grid();
      * false when no heading was found.
@@ -182,13 +228,15 @@ final class PdfTable
             }
         }
 
-        foreach ($lines as &$line) {
+        foreach ($lines as $n => &$line) {
+            $this->tick();
             usort($line['pieces'], fn (array $a, array $b) => $a['x'] <=> $b['x']);
             $sizes = array_column($line['pieces'], 'size');
             sort($sizes);
             $line['size'] = $sizes[intdiv(count($sizes), 2)];
             $line['x'] = min(array_column($line['pieces'], 'x'));
             $line['x1'] = max(array_column($line['pieces'], 'x1'));
+            $line['n'] = $n;
         }
 
         return $lines;
@@ -202,6 +250,7 @@ final class PdfTable
     private function heading(): ?array
     {
         foreach ($this->lines as $index => $line) {
+            $this->tick();
             $keys = array_map(fn (array $piece) => self::key($piece['text']), $line['pieces']);
             $named = array_filter($keys, fn (string $key) => preg_match('/^(descri|particular|item descr)/', $key) === 1);
 
@@ -359,6 +408,7 @@ final class PdfTable
                 continue;
             }
 
+            $this->tick();
             $named = [];
 
             foreach ($line['pieces'] as $piece) {
@@ -394,6 +444,7 @@ final class PdfTable
      */
     private function layout(array $cells, array $headingLines): array
     {
+        $this->bodyPages = null;
         [$x0, $x1] = $this->span($cells);
         $bands = $this->ruleBands($cells, $headingLines, $x0, $x1) ?? $this->gapBands($cells, $x0, $x1);
         $columns = $this->columns($cells, $bands);
@@ -402,63 +453,150 @@ final class PdfTable
     }
 
     /**
-     * Every line of the pages by its text, with its page, its height, where its pieces start, and whether it is
-     * printed above the heading on the page of the heading, where nothing is part of the table.
+     * Each line of the pages in the shape samePlace() compares, filed by its key and its height, and the lines
+     * printed above the heading on the page of the heading, where nothing is part of the table, filed again apart.
      *
      * @param  list<int>  $headingLines
-     * @return array<string, list<array{page: int, y: float, xs: list<float>, above: bool}>>
      */
-    private function printed(array $headingLines): array
+    private function printed(array $headingLines): void
     {
         $first = min($headingLines);
-        $printed = [];
+        $this->shapes = $this->printed = $this->printedAbove = $this->again = [];
 
-        foreach ($this->lines as $index => $line) {
-            $printed[$this->lineText($line)][] = [
-                'page' => $line['page'],
-                'y' => $line['y'],
-                'xs' => array_column($line['pieces'], 'x'),
-                'above' => $index < $first && $line['page'] === $this->lines[$first]['page'],
-            ];
+        foreach ($this->lines as $n => $line) {
+            $this->tick();
+            $pieces = [];
+            $key = [];
+
+            foreach ($line['pieces'] as $piece) {
+                $text = trim((string) preg_replace('/\s+/u', ' ', $piece['text']));
+                $numbers = preg_match(self::PAGE_NUMBER, $text) === 1 ? $this->numbers($text) : null;
+                $pieces[] = ['text' => $text, 'x' => $piece['x'], 'width' => $piece['x1'] - $piece['x'], 'numbers' => $numbers];
+                $key[] = $numbers === null ? $text : (string) preg_replace('/[0-9०-९]+/u', '#', $text);
+            }
+
+            $above = $n < $first && $line['page'] === $this->lines[$first]['page'];
+            $this->shapes[$n] = ['page' => $line['page'], 'y' => $line['y'], 'key' => implode("\x1F", $key), 'above' => $above, 'pieces' => $pieces];
+            $height = (int) floor($line['y'] / self::SAME_PLACE);
+            $this->printed[$this->shapes[$n]['key']][$height][] = $n;
+
+            if ($above) {
+                $this->printedAbove[$this->shapes[$n]['key']][$height][] = $n;
+            }
         }
-
-        return $printed;
     }
 
-    /** The text of each piece of a line, in order, for telling whether the same line is printed elsewhere. */
-    private function lineText(array $line): string
+    /** @return list<int> The numbers in a page number, in order, Devanagari digits read as digits. */
+    private function numbers(string $text): array
     {
-        return implode("\x1F", array_map(fn (array $piece) => trim((string) preg_replace('/\s+/u', ' ', $piece['text'])), $line['pieces']));
+        preg_match_all('/[0-9०-९]+/u', $text, $matches);
+        $digits = ['०' => '0', '१' => '1', '२' => '2', '३' => '3', '४' => '4', '५' => '5', '६' => '6', '७' => '7', '८' => '8', '९' => '9'];
+
+        return array_map(fn (string $number) => (int) strtr($number, $digits), $matches[0]);
     }
 
     /**
-     * Where else a line is printed in the same place: on another page, at the same height, with the same text in
-     * each piece starting at the same place. Null when nowhere, 'above' when that is above the heading on the page
-     * of the heading, as a letterhead or a title is, and 'page' otherwise.
+     * The lines filed under the key of line $n at about its height, on every page, $n among them. Only these can
+     * be printed in the same place as it, so finding them costs about the same however many lines there are.
+     *
+     * @param  array<string, array<int, list<int>>>  $index
+     * @return list<int>
      */
-    private function printedAgain(array $line): ?string
+    private function filedNear(int $n, array $index): array
     {
-        $found = null;
+        $shape = $this->shapes[$n];
+        $height = (int) floor($shape['y'] / self::SAME_PLACE);
+        $found = [];
 
-        foreach ($this->printed[$this->lineText($line)] ?? [] as $other) {
-            if ($other['page'] === $line['page'] || abs($other['y'] - $line['y']) > self::SAME_PLACE) {
-                continue;
-            }
-
-            foreach ($line['pieces'] as $n => $piece) {
-                if (abs(($other['xs'][$n] ?? PHP_FLOAT_MAX) - $piece['x']) > self::SAME_PLACE) {
-                    continue 2;
-                }
-            }
-
-            if ($other['above']) {
-                return 'above';
-            }
-
-            $found = 'page';
+        foreach ([$height - 1, $height, $height + 1] as $step) {
+            array_push($found, ...($index[$shape['key']][$step] ?? []));
         }
 
         return $found;
+    }
+
+    /**
+     * Whether lines $n and $m are one line printed in the same place on two pages: at the same height, with the
+     * same text in each piece, starting at the same place. Unless $exact, a page number may be higher by as many
+     * as the pages lie apart, and move by as much as its width changes, as a centred or right-aligned one does.
+     */
+    private function samePlace(int $n, int $m, bool $exact = false): bool
+    {
+        $this->tick();
+        $a = $this->shapes[$n];
+        $b = $this->shapes[$m];
+
+        if ($a['page'] === $b['page'] || $a['key'] !== $b['key'] || abs($a['y'] - $b['y']) > self::SAME_PLACE) {
+            return false;
+        }
+
+        foreach ($a['pieces'] as $index => $piece) {
+            $other = $b['pieces'][$index];
+
+            if ($piece['text'] === $other['text']) {
+                if (abs($piece['x'] - $other['x']) > self::SAME_PLACE) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            // The keys are the same, so here only the digits of a page number can differ.
+            if ($exact
+                || $piece['numbers'] === null
+                || $other['numbers'] === null
+                || count($piece['numbers']) !== count($other['numbers'])
+                || $piece['numbers'][0] - $other['numbers'][0] !== $a['page'] - $b['page']
+                || array_slice($piece['numbers'], 1) !== array_slice($other['numbers'], 1)
+                || abs($piece['x'] - $other['x']) > self::SAME_PLACE + abs($piece['width'] - $other['width'])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Where else line $n is printed in the same place (samePlace()): null when nowhere, 'above' when that is above
+     * the heading on the page of the heading, as a letterhead or a title is, and 'page' otherwise.
+     */
+    private function printedAgain(int $n): ?string
+    {
+        if (array_key_exists($n, $this->again)) {
+            return $this->again[$n];
+        }
+
+        foreach ($this->filedNear($n, $this->printedAbove) as $m) {
+            if ($this->samePlace($n, $m)) {
+                return $this->again[$n] = 'above';
+            }
+        }
+
+        foreach ($this->filedNear($n, $this->printed) as $m) {
+            if ($this->samePlace($n, $m)) {
+                return $this->again[$n] = 'page';
+            }
+        }
+
+        return $this->again[$n] = null;
+    }
+
+    /** Whether line $n is printed again in the same place exactly, page numbers and all. */
+    private function printedExactly(int $n): bool
+    {
+        foreach ($this->filedNear($n, $this->printed) as $m) {
+            if ($this->samePlace($n, $m, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** The line printed just above line $n on its page, or null for the first line of a page. */
+    private function lineAbove(int $n): ?int
+    {
+        return $n > 0 && $this->lines[$n - 1]['page'] === $this->lines[$n]['page'] ? $n - 1 : null;
     }
 
     /**
@@ -483,7 +621,7 @@ final class PdfTable
     private function outside(array $columns, array $rows): array
     {
         $description = $this->descriptionColumn($columns);
-        $part = $this->tableRows($rows, $this->makesLines($columns, $rows), $description);
+        $part = $this->tableRows($rows, $this->makesLines($columns, $rows, false), $description);
         $pages = [];
         $drop = [];
 
@@ -491,7 +629,7 @@ final class PdfTable
             $pages[$row['page']][] = $index;
         }
 
-        foreach ($this->furniture($rows, $pages, $description) as $index) {
+        foreach ($this->furniture($columns, $rows, $pages) as $index) {
             $drop[$index] = true;
             $part[$index] = false;
         }
@@ -544,52 +682,151 @@ final class PdfTable
     }
 
     /**
-     * Page furniture: the rows every line of which is printed again in the same place on another page
-     * (printedAgain()), and which either
+     * Page furniture, the rows to leave out wherever they stand, whatever figures they hold:
      *
-     * - repeat what is printed above the heading on the page of the heading, as a letterhead or a title printed at
-     *   the top of each page does, whatever figures they hold; or
-     * - hold one figure at most, such as a PIN code or a phone number in a footer, are neither a lettered part nor
-     *   the head of one, and lie above the first or below the last row of their page that holds two figures or more.
+     * - a letterhead or a page heading: a row every line of which is printed again in the same place as a line
+     *   above the heading on the page of the heading (printedAgain() 'above');
+     * - a footer: of the rows at the foot of a page every line of which is printed again in the same place on
+     *   another page, up to a numbered row printed again exactly (numberedAgain()), the first that stands apart
+     *   from the table (standsApart()) and the rows below it; and on every page, the rows at its foot whose every
+     *   line is printed in the same place as a line of such a footer. A page number on or beside a line may differ
+     *   from page to page (samePlace()).
      *
-     * A row of the table printed in the same place on two pages laid out alike holds its serial number and its
-     * figures, or lies between rows that do, so it is not taken for furniture.
+     * Rows printed alike at the foot of pages laid out alike, such as the end of identical blocks, have the same
+     * line over them on each page, or are stopped by a numbered row printed again, so they are no footer, nor are
+     * the rows above them, whatever figures they hold. Neither is a row printed on one page only.
      *
+     * @param  list<array{x0: float, x1: float, text: string}>  $columns
      * @param  list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>  $rows
      * @param  array<int, list<int>>  $pages  The rows of each page, top to bottom.
      * @return list<int>
      */
-    private function furniture(array $rows, array $pages, int $description): array
+    private function furniture(array $columns, array $rows, array $pages): array
     {
+        $code = $this->fieldColumn($columns, 'code');
+        $description = $this->descriptionColumn($columns);
+        $lines = fn (array $row) => array_map(fn (int $line) => $this->body[$line]['n'], $row['lines']);
         $furniture = [];
+        $again = [];
 
-        foreach ($pages as $indexes) {
-            $again = [];
+        foreach ($rows as $index => $row) {
+            $where = array_map(fn (int $n) => $this->printedAgain($n), $lines($row));
+            $again[$index] = in_array(null, $where, true) ? null : (in_array('page', $where, true) ? 'page' : 'above');
 
-            foreach ($indexes as $index) {
-                $where = array_map(fn (int $line) => $this->printedAgain($this->body[$line]), $rows[$index]['lines']);
-                $again[$index] = in_array(null, $where, true) ? null : (in_array('page', $where, true) ? 'page' : 'above');
+            if ($again[$index] === 'above') {
+                $furniture[$index] = true;
+            }
+        }
+
+        $feet = [];
+
+        foreach ($pages as $page => $indexes) {
+            $foot = [];
+
+            foreach (array_reverse($indexes) as $index) {
+                if ($again[$index] === null || $this->numberedAgain($rows[$index], $code, $description)) {
+                    break;
+                }
+
+                $foot[] = $index;
             }
 
-            $figured = array_values(array_filter($indexes, fn (int $index) => $again[$index] !== 'above' && $this->figures($rows[$index]) >= 2));
-            $first = $figured === [] ? PHP_INT_MAX : min($figured);
-            $last = $figured === [] ? PHP_INT_MIN : max($figured);
+            $feet[$page] = array_reverse($foot);
+        }
 
-            foreach ($indexes as $position => $index) {
-                $next = $indexes[$position + 1] ?? null;
-                $footer = $again[$index] === 'page'
-                    && ($index < $first || $index > $last)
-                    && $this->figures($rows[$index]) <= 1
-                    && ! $this->lettered($rows[$index], $description)
-                    && ($next === null || ! $this->lettered($rows[$next], $description));
+        $pitch = $this->pitch();
+        $footer = [];
 
-                if ($again[$index] === 'above' || $footer) {
-                    $furniture[] = $index;
+        foreach ($feet as $foot) {
+            foreach ($foot as $position => $index) {
+                if (! $this->standsApart($lines($rows[$index])[0], $pitch)) {
+                    continue;
+                }
+
+                foreach (array_slice($foot, $position) as $below) {
+                    foreach ($lines($rows[$below]) as $n) {
+                        $footer[$n] = true;
+                    }
+                }
+
+                break;
+            }
+        }
+
+        if ($footer === []) {
+            return array_keys($furniture);
+        }
+
+        foreach ($feet as $foot) {
+            foreach ($foot as $index) {
+                if (array_filter($lines($rows[$index]), fn (int $n) => ! $this->inFooter($n, $footer)) === []) {
+                    $furniture[$index] = true;
                 }
             }
         }
 
-        return $furniture;
+        return array_keys($furniture);
+    }
+
+    /**
+     * Whether the row whose first line is $n stands apart from the table: well below the line over it (FOOT_GAP),
+     * and that line is not the line over $n where $n is printed in the same place on another page, so $n stays in
+     * its place while the rows above it change, as a footer does.
+     */
+    private function standsApart(int $n, float $pitch): bool
+    {
+        $over = $this->lineAbove($n);
+
+        if ($over === null || $this->lines[$over]['y'] - $this->lines[$n]['y'] <= self::FOOT_GAP * $pitch) {
+            return false;
+        }
+
+        foreach ($this->filedNear($n, $this->printed) as $m) {
+            if (! $this->samePlace($n, $m)) {
+                continue;
+            }
+
+            // Where nothing is printed over it, the page may hold nothing else, which tells nothing.
+            $overThere = $this->lineAbove($m);
+
+            if ($overThere !== null && ! $this->samePlace($over, $overThere)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param  array<int, true>  $footer  Whether line $n is a line of the footer, or is printed in the same place as one. */
+    private function inFooter(int $n, array $footer): bool
+    {
+        if (isset($footer[$n])) {
+            return true;
+        }
+
+        foreach ($this->filedNear($n, $this->printed) as $m) {
+            if (isset($footer[$m]) && $this->samePlace($n, $m)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** A numbered row printed again exactly, as a row of the table is on pages laid out alike: a serial number beside a description, every line the same. */
+    private function numberedAgain(array $row, ?int $code, int $description): bool
+    {
+        if ($code === null || ! $this->isFigure($this->cellText($row['cells'][$code] ?? [])) || $this->cellText($row['cells'][$description] ?? []) === null) {
+            return false;
+        }
+
+        foreach ($row['lines'] as $line) {
+            if (! $this->printedExactly($this->body[$line]['n'])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -645,17 +882,23 @@ final class PdfTable
     }
 
     /**
-     * Which rows make BOQ lines: a row with a description and a quantity, rate or amount, a lettered part that
-     * follows such a row, and the row a lettered part with figures follows, which is the head it belongs to.
-     * Parts and heads count only next to their row on the same page. A row with no description makes no line,
-     * as EstimateSheet passes over it and the template refuses it. With no such row in the whole table, every
-     * row counts, as nothing can be told apart.
+     * Which rows make BOQ lines: a row with a description and a quantity, rate or amount, and the rows that go with
+     * one as the import joins them (EstimateSheet). Lettered parts (lettered()) go with the row with a description
+     * they hang from, their head, passing over rows with no description, and the head and its parts all count
+     * when one of them has such a figure. A row with no description makes no line, as EstimateSheet passes over
+     * it and the template refuses it. With no such row in the whole table, every row counts, as nothing can be
+     * told apart.
+     *
+     * $acrossPages joins parts to their head wherever they stand, as the import does with the rows of the grid, a
+     * head at the foot of one page and its parts on the next included. Without it a part joins only a row just
+     * above it on the same page, to tell the rows of the table from the text around it before the grid is made.
+     * Either way the work grows in step with the rows.
      *
      * @param  list<array{x0: float, x1: float, text: string}>  $columns
      * @param  list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>  $rows
      * @return list<bool>
      */
-    private function makesLines(array $columns, array $rows): array
+    private function makesLines(array $columns, array $rows, bool $acrossPages): array
     {
         $figures = [];
 
@@ -671,11 +914,9 @@ final class PdfTable
 
         $description = $this->descriptionColumn($columns);
         $part = [];
-        $lettered = [];
 
         foreach ($rows as $index => $row) {
             $part[$index] = false;
-            $lettered[$index] = $this->lettered($row, $description);
 
             if ($this->cellText($row['cells'][$description] ?? []) === null) {
                 continue;
@@ -694,26 +935,45 @@ final class PdfTable
         }
 
         $near = 4 * $this->pitch() + 1;
-        $next = fn (int $index) => isset($rows[$index + 1]) && $rows[$index + 1]['page'] === $rows[$index]['page'] && $rows[$index]['bottom'] - $rows[$index + 1]['top'] <= $near;
+        $group = [];
+        $previous = null;
 
-        do {
-            $changed = false;
-
-            foreach (array_keys($rows) as $index) {
-                if ($part[$index]) {
-                    continue;
-                }
-
-                $underARow = $index > 0 && $lettered[$index] && $part[$index - 1] && $next($index - 1);
-                $headOfParts = $next($index) && $lettered[$index + 1] && $part[$index + 1];
-
-                if ($underARow || $headOfParts) {
-                    $part[$index] = $changed = true;
-                }
+        foreach ($rows as $index => $row) {
+            if ($this->cellText($row['cells'][$description] ?? []) === null) {
+                continue;
             }
-        } while ($changed);
+
+            $joins = $previous !== null && ($acrossPages || ($rows[$previous]['page'] === $row['page'] && $rows[$previous]['bottom'] - $row['top'] <= $near));
+            $previous = $index;
+
+            if ($group !== [] && $joins && $this->lettered($row, $description)) {
+                $group[] = $index;
+
+                continue;
+            }
+
+            $this->join($group, $part);
+            $group = [$index];
+        }
+
+        $this->join($group, $part);
 
         return $part;
+    }
+
+    /**
+     * Every row of a group makes lines when one of them does.
+     *
+     * @param  list<int>  $group  A head and the lettered parts under it.
+     * @param  list<bool>  $part  Changed in place, so the work stays in step with the rows.
+     */
+    private function join(array $group, array &$part): void
+    {
+        if (count($group) > 1 && array_filter($group, fn (int $index) => $part[$index]) !== []) {
+            foreach ($group as $index) {
+                $part[$index] = true;
+            }
+        }
     }
 
     /**
@@ -879,6 +1139,7 @@ final class PdfTable
                 continue;
             }
 
+            $this->tick();
             $lines++;
 
             foreach ($line['pieces'] as $piece) {
@@ -1011,8 +1272,7 @@ final class PdfTable
 
         foreach (array_keys($this->pages) as $index) {
             $rulesByPage[$index] = $this->rowRules($index, $headingLines);
-            $lines = count(array_filter($this->body, fn (array $line) => $line['page'] === $index));
-            $ruled[$index] = count($rulesByPage[$index]) >= 0.4 * max(1, $lines);
+            $ruled[$index] = count($rulesByPage[$index]) >= 0.4 * max(1, $this->bodyPage($index)['lines']);
         }
 
         $rows = [];
@@ -1020,6 +1280,7 @@ final class PdfTable
         $previous = null;
 
         foreach ($this->body as $number => $line) {
+            $this->tick();
             $cells = [];
 
             foreach ($line['pieces'] as $piece) {
@@ -1069,13 +1330,19 @@ final class PdfTable
     /** @param  list<array{x0: float, x1: float, text: string}>  $columns */
     private function descriptionColumn(array $columns): int
     {
+        return $this->fieldColumn($columns, 'description') ?? 1;
+    }
+
+    /** @param  list<array{x0: float, x1: float, text: string}>  $columns  The column whose heading names this field, or null. */
+    private function fieldColumn(array $columns, string $field): ?int
+    {
         foreach ($columns as $index => $column) {
-            if (in_array(self::key($column['text']), BoqExcelService::ALIASES['description'], true)) {
+            if (in_array(self::key($column['text']), BoqExcelService::ALIASES[$field], true)) {
                 return $index;
             }
         }
 
-        return 1;
+        return null;
     }
 
     /** @param  list<array{x0: float, x1: float, text: string}>  $columns */
@@ -1174,14 +1441,8 @@ final class PdfTable
             return [];
         }
 
-        $width = 0.0;
+        $width = $this->bodyPage($page)['width'];
         $byY = [];
-
-        foreach ($this->body as $line) {
-            if ($line['page'] === $page) {
-                $width = max($width, $line['x1'] - $line['x']);
-            }
-        }
 
         foreach ($this->pages[$page]['h'] as [$y, $xa, $xb]) {
             if ($y > $top + 2 || $y < $bottom - 2) {
@@ -1217,14 +1478,35 @@ final class PdfTable
             }
         }
 
-        foreach ($this->body as $line) {
-            if ($line['page'] === $page) {
-                $top ??= $line['y'] + 1.2 * $line['size'];
-                $bottom = min($bottom, $line['y'] - 0.3 * $line['size']);
+        $body = $this->bodyPage($page);
+        $top ??= $body['top'];
+        $bottom = min($bottom, $body['bottom']);
+
+        return [$top, $bottom === PHP_FLOAT_MAX ? 0.0 : $bottom];
+    }
+
+    /**
+     * The body lines of a page as region(), rows() and rowRules() ask for them, worked out in one pass over the
+     * body for every page: how many there are, the top of the first, the bottom of the lowest, the widest.
+     *
+     * @return array{lines: int, top: ?float, bottom: float, width: float}
+     */
+    private function bodyPage(int $page): array
+    {
+        if ($this->bodyPages === null) {
+            $this->bodyPages = [];
+
+            foreach ($this->body as $line) {
+                $this->tick();
+                $here = $this->bodyPages[$line['page']] ?? ['lines' => 0, 'top' => $line['y'] + 1.2 * $line['size'], 'bottom' => PHP_FLOAT_MAX, 'width' => 0.0];
+                $here['lines']++;
+                $here['bottom'] = min($here['bottom'], $line['y'] - 0.3 * $line['size']);
+                $here['width'] = max($here['width'], $line['x1'] - $line['x']);
+                $this->bodyPages[$line['page']] = $here;
             }
         }
 
-        return [$top, $bottom === PHP_FLOAT_MAX ? 0.0 : $bottom];
+        return $this->bodyPages[$page] ?? ['lines' => 0, 'top' => null, 'bottom' => PHP_FLOAT_MAX, 'width' => 0.0];
     }
 
     /** @param  list<array{0: float, 1: float}>  $intervals  @return float Length covered by the union of the intervals. */
@@ -1249,6 +1531,22 @@ final class PdfTable
         }
 
         return $length;
+    }
+
+    /** Counts a step of work, and every so many steps stops with PdfTableTimedOut when the deadline has passed. */
+    private function tick(): void
+    {
+        if ((++$this->ticks & 1023) === 0) {
+            $this->inTime();
+        }
+    }
+
+    /** @throws PdfTableTimedOut when the deadline has passed */
+    private function inTime(): void
+    {
+        if ($this->deadline !== null && hrtime(true) > $this->deadline) {
+            throw new PdfTableTimedOut('The table took longer to put together than the time allowed.');
+        }
     }
 
     private function looksNumeric(string $text): bool
