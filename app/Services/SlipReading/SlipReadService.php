@@ -155,7 +155,7 @@ class SlipReadService
                 'id' => $read?->id,
                 'status' => $read?->status,
                 'pause_reason' => $read?->pause_reason,
-                'message' => $this->message($read),
+                'message' => $this->message($slip, $read),
             ],
         ];
     }
@@ -310,13 +310,19 @@ class SlipReadService
         return $arithmetic && $this->desk->strongerOffered(Organization::findOrFail($slip->organization_id), $read, $page);
     }
 
-    /** A sentence for a read that has stopped, in the person's language. */
-    private function message(?DocumentRead $read): ?string
+    /**
+     * A sentence for a reading that has stopped, in the person's language. "Not charged" is said only
+     * when nothing was: a second reading that failed after a first one was charged says so instead.
+     */
+    private function message(SlipRead $slip, ?DocumentRead $read): ?string
     {
-        return match ($read?->status) {
-            DocumentRead::PAUSED => ReadWords::pause($read->pause_reason),
-            DocumentRead::FAILED => __('The photo could not be read. You were not charged for it. Type the details yourself.'),
-            DocumentRead::CANCELLED, DocumentRead::EXPIRED => __('This reading has ended. Read the photo again or type the details yourself.'),
+        $failed = $read?->status === DocumentRead::FAILED || ($slip->status === SlipRead::FAILED && ! in_array($read?->status, [DocumentRead::CANCELLED, DocumentRead::EXPIRED], true));
+
+        return match (true) {
+            $read?->status === DocumentRead::PAUSED => ReadWords::pause($read->pause_reason),
+            $failed && $read !== null && Dec::of($read->credits_used)->isPositive() => __('The second reading could not be used. Type the details yourself.'),
+            $failed => __('The photo could not be read. You were not charged for it. Type the details yourself.'),
+            in_array($read?->status, [DocumentRead::CANCELLED, DocumentRead::EXPIRED], true) => __('This reading has ended. Read the photo again or type the details yourself.'),
             default => null,
         };
     }

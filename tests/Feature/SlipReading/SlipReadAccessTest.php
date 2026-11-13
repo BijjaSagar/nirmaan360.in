@@ -3,11 +3,9 @@
 namespace Tests\Feature\SlipReading;
 
 use App\Http\Middleware\RequireAiReader;
-use App\Models\Project;
 use App\Models\SlipRead;
 use App\Models\User;
 use Illuminate\Cache\RateLimiter;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Sanctum;
 
@@ -129,6 +127,45 @@ class SlipReadAccessTest extends SlipReadingTestCase
         $this->assertSame(SlipRead::READY, $slip->refresh()->status);
     }
 
+    public function test_reading_again_and_discarding_from_the_field_app_are_for_the_readings_own_people_and_company(): void
+    {
+        $store = $this->member($this->organization, 'store');
+        $slip = $this->storedReading($store);
+
+        Sanctum::actingAs($this->member($this->organization, 'store'));
+        $this->postJson("/api/v1/slip-reads/{$slip->id}/recheck")->assertForbidden();
+        $this->postJson("/api/v1/slip-reads/{$slip->id}/discard")->assertForbidden();
+
+        $rivalOwner = $this->member($this->tenant('Narmada Infra'), 'owner');
+        Sanctum::actingAs($rivalOwner);
+        $this->postJson("/api/v1/slip-reads/{$slip->id}/recheck")->assertNotFound();
+        $this->postJson("/api/v1/slip-reads/{$slip->id}/discard")->assertNotFound();
+        $this->actingAs($rivalOwner)->postJson("/slip-reads/{$slip->id}/recheck")->assertNotFound();
+
+        // Their own reading, made in a project they no longer see, is out of reach too.
+        $limited = $this->member($this->organization, 'store');
+        $mine = $this->storedReading($limited, [], $this->otherProject);
+        $this->limitTo($limited, $this->project);
+        Sanctum::actingAs($limited->refresh());
+        $this->postJson("/api/v1/slip-reads/{$mine->id}/recheck")->assertNotFound();
+        $this->postJson("/api/v1/slip-reads/{$mine->id}/discard")->assertNotFound();
+
+        $this->assertSame([SlipRead::READY, SlipRead::READY], [$slip->refresh()->status, $mine->refresh()->status]);
+
+        // The person's own: nothing to read again here, and it can be discarded.
+        Sanctum::actingAs($store);
+        $this->postJson("/api/v1/slip-reads/{$slip->id}/recheck")->assertStatus(409)->assertJsonPath('code', 'not_offered');
+        $this->postJson("/api/v1/slip-reads/{$slip->id}/discard")->assertOk()->assertJsonPath('status', 'discarded');
+    }
+
+    public function test_the_field_app_cannot_read_a_photo_into_another_companys_project(): void
+    {
+        $this->readPhotoFromPhone($this->member($this->organization, 'store'), $this->makeProject($this->tenant('Narmada Infra')))->assertNotFound();
+
+        $this->assertSame(0, SlipRead::withoutGlobalScopes()->count());
+        $this->assertSame([], $this->sent);
+    }
+
     public function test_a_bill_reading_is_opened_only_by_someone_who_sees_money(): void
     {
         $accounts = $this->member($this->organization, 'accounts');
@@ -175,16 +212,6 @@ class SlipReadAccessTest extends SlipReadingTestCase
         // Another person has a counter of their own, and looking at a reading has none of this.
         $this->readPhoto($this->member($this->organization, 'store'))->assertStatus(202);
         $this->actingAs($store)->getJson("/slip-reads/{$slip->id}")->assertOk();
-    }
-
-    /** Limits a person to the given projects. */
-    private function limitTo(User $user, Project ...$projects): void
-    {
-        $user->forceFill(['limited_to_projects' => true])->save();
-
-        foreach ($projects as $project) {
-            DB::table('user_project_access')->insert(['organization_id' => $user->organization_id, 'user_id' => $user->id, 'project_id' => $project->id, 'created_at' => now(), 'updated_at' => now()]);
-        }
     }
 
     public function test_the_field_app_is_told_who_may_read_a_challan_photo(): void

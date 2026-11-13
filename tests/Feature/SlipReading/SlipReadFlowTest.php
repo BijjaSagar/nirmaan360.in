@@ -220,6 +220,67 @@ class SlipReadFlowTest extends SlipReadingTestCase
         $this->actingAs($store)->postJson("/slip-reads/{$slip->id}/recheck")->assertStatus(409);
     }
 
+    public function test_a_second_reading_that_fails_does_not_say_that_nothing_was_charged(): void
+    {
+        $store = $this->member($this->organization, 'store');
+        $slip = $this->readyReading($store, $this->challanForm(['gross_weight' => $this->cell('100'), 'tare_weight' => $this->cell('30'), 'net_weight' => $this->cell('60'), 'weight_unit' => $this->cell('kg')]));
+        $charged = (string) $this->readOf($slip)->credits_used;
+        $this->assertTrue(Dec::of($charged)->isPositive());
+
+        $this->willAnswer($this->reply(['doc_kind' => 'weighbridge_slip', 'lines' => 'not a list'], 'claude-sonnet-5-5'));
+        $this->actingAs($store)->postJson("/slip-reads/{$slip->id}/recheck")->assertStatus(202);
+        $this->runPages($slip);
+
+        $shown = $this->actingAs($store)->getJson("/slip-reads/{$slip->id}")->assertOk()
+            ->assertJsonPath('status', 'failed')
+            ->assertJsonPath('read.message', 'The second reading could not be used. Type the details yourself.');
+        $this->assertSame($charged, $shown->json('credits'));
+        $this->assertStringNotContainsString('not charged', $shown->getContent());
+    }
+
+    public function test_a_page_read_again_through_the_shared_reader_routes_counts_as_the_one_second_reading(): void
+    {
+        $store = $this->member($this->organization, 'store');
+        $slip = $this->readyReading($store);
+        $read = $this->readOf($slip);
+        $page = DocumentReadPage::withoutGlobalScopes()->where('document_read_id', $read->id)->firstOrFail();
+        $this->actingAs($store)->getJson("/slip-reads/{$slip->id}")->assertJsonPath('can_recheck', false);
+
+        // Asked for by hand, around the reading's own "read again", with the challan number read differently.
+        $this->willAnswer($this->reply($this->challanForm(['challan_no' => $this->cell('DC-0991')]), 'claude-sonnet-5-5'));
+        $this->actingAs($store)->postJson("/document-reads/{$read->id}/pages/{$page->id}/retry", ['stronger' => true, 'cap' => '50'])->assertStatus(202);
+        $this->runPages($slip);
+
+        $shown = $this->actingAs($store)->getJson("/slip-reads/{$slip->id}")->assertOk()
+            ->assertJsonPath('status', 'ready')
+            ->assertJsonPath('rechecked', true)
+            ->assertJsonPath('can_recheck', false)
+            ->assertJsonPath('fields.challan_no.value', null)
+            ->assertJsonPath('fields.vehicle_no.value', 'MH12AB1234');
+        $this->assertContains('reads_disagree', $shown->json('fields.challan_no.warnings'));
+        $this->actingAs($store)->postJson("/slip-reads/{$slip->id}/recheck")->assertStatus(409);
+    }
+
+    public function test_a_reading_that_failed_takes_no_answer_and_no_charge_when_its_page_is_read_again_elsewhere(): void
+    {
+        $store = $this->member($this->organization, 'store');
+        $this->willAnswer($this->reply(['doc_kind' => 'delivery_challan', 'lines' => 'not a list']));
+        $slip = SlipRead::withoutGlobalScopes()->findOrFail($this->readPhoto($store)->assertStatus(202)->json('id'));
+        $this->runPages($slip);
+        $this->assertSame(SlipRead::FAILED, $slip->refresh()->status);
+
+        $read = $this->readOf($slip);
+        $page = DocumentReadPage::withoutGlobalScopes()->where('document_read_id', $read->id)->firstOrFail();
+        $this->willAnswer($this->reply($this->challanForm()));
+        $this->actingAs($store)->postJson("/document-reads/{$read->id}/pages/{$page->id}/retry", ['cap' => '50'])->assertStatus(202);
+        $this->runPages($slip);
+
+        $slip->refresh();
+        $this->assertSame([SlipRead::FAILED, null, null], [$slip->status, $slip->fields, $slip->rechecked_at]);
+        $this->assertSame('0.0000', (string) $this->readOf($slip)->credits_used);
+        $this->actingAs($store)->getJson("/slip-reads/{$slip->id}")->assertOk()->assertJsonPath('status', 'failed');
+    }
+
     public function test_a_company_on_a_trial_is_never_offered_the_stronger_model(): void
     {
         $this->organization->update(['plan_status' => 'trial', 'trial_ends_at' => now()->addDays(20)]);

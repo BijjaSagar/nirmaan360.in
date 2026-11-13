@@ -108,6 +108,35 @@ class ChallanChecksTest extends SlipReadingTestCase
         $this->assertNull($missing['fields']['net_weight']['value']);
     }
 
+    public function test_the_weight_unit_is_not_offered_when_the_weights_do_not_add_up(): void
+    {
+        $off = $this->build($this->challanForm(['gross_weight' => $this->cell('25,000'), 'tare_weight' => $this->cell('10,000'), 'net_weight' => $this->cell('14,000'), 'weight_unit' => $this->cell('kg')]));
+
+        $this->assertSame([null, null], [$off['fields']['weight_unit']['value'], $off['fields']['weight_unit']['unit_id']]);
+        $this->assertContains('weights_do_not_add_up', $off['fields']['weight_unit']['warnings']);
+        // What was printed is still shown.
+        $this->assertSame('kg', $off['fields']['weight_unit']['raw']);
+    }
+
+    public function test_a_possible_duplicate_in_a_project_the_person_does_not_see_is_marked_without_its_number(): void
+    {
+        $store = $this->member($this->organization, 'store');
+        $this->limitTo($store, $this->project);
+        app(DeliveryChallanService::class)->create($this->otherProject, ['party_id' => $this->vendor->id, 'material_id' => $this->cement->id, 'qty' => '100', 'challan_date' => '2026-11-10', 'challan_no' => 'DC-0457'], $this->owner);
+        $number = DeliveryChallan::sole()->number;
+
+        $hidden = collect($this->build($this->challanForm(), $this->storedReading($store->refresh()))['warnings'])->firstWhere('code', 'possible_duplicate');
+        $this->assertSame(['code' => 'possible_duplicate', 'params' => [], 'tick' => true], $hidden);
+
+        // Someone who sees that project is told which challan it is.
+        $seen = collect($this->build($this->challanForm(), $this->storedReading($this->owner))['warnings'])->firstWhere('code', 'possible_duplicate');
+        $this->assertSame(['number' => $number], $seen['params']);
+
+        $this->limitTo($store, $this->otherProject);
+        $now = collect($this->build($this->challanForm(), $this->storedReading($store->refresh()))['warnings'])->firstWhere('code', 'possible_duplicate');
+        $this->assertSame(['number' => $number], $now['params']);
+    }
+
     public function test_the_supplier_is_found_only_by_an_exact_gstin_that_passes_and_never_by_its_name(): void
     {
         $this->assertSame(['id' => $this->vendor->id, 'name' => $this->vendor->name, 'by' => 'gstin'], $this->build($this->challanForm())['suggestions']['party']);

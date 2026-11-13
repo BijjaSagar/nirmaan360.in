@@ -31,6 +31,11 @@ use Throwable;
  * different is recorded as typed over. Each warning a person must tick has to be ticked.
  *
  * A form that sends no read_id is not checked at all, so nothing changes for a form filled by hand.
+ *
+ * On the challan form the quantity and the unit come from one line of the slip: the one the form
+ * names in read_line (a line's index, or "weight" for the net weight), or else the one the form
+ * takes by itself (a single line; the net weight of a slip without lines). Only that line counts,
+ * so a quantity or unit the form never filled is never asked about.
  */
 class SlipLink
 {
@@ -46,8 +51,17 @@ class SlipLink
     /** A ticked warning is sent in read_confirmed as this prefix and its code. */
     public const TICK = 'warning:';
 
+    /** read_line for the net weight of a weighbridge slip. */
+    public const WEIGHT_LINE = 'weight';
+
+    /** The fields of each bill form a reading fills, which are also the record's own columns. */
+    public const FORM_FIELDS = [
+        self::CHALLAN_BILL => ['bill_no', 'bill_date', 'bill_amount'],
+        self::VENDOR_BILL => ['party_id', 'bill_no', 'bill_date', 'taxable_amount', 'gst_pct', 'supply_type'],
+    ];
+
     /**
-     * The three keys each save path adds to its rules.
+     * The keys each save path adds to its rules. read_line is the challan form's only.
      *
      * @return array<string, list<mixed>>
      */
@@ -57,6 +71,7 @@ class SlipLink
             'read_id' => ['bail', 'nullable', 'integer', org_exists('slip_reads')],
             'read_confirmed' => ['nullable', 'array', 'max:60'],
             'read_confirmed.*' => ['string', 'max:60'],
+            'read_line' => ['nullable', 'regex:/^('.self::WEIGHT_LINE.'|[0-9]{1,2})$/'],
         ];
     }
 
@@ -220,6 +235,35 @@ class SlipLink
             ->latest('id')->first();
     }
 
+    /**
+     * A record filled from a photo reading was saved again without one. The fields of its form that
+     * this save changed are added to the reading's record, with who and when, so the note on the
+     * record no longer reads as if they were still as confirmed. Field names only. Call it inside the
+     * record's transaction.
+     *
+     * @param  list<string>  $changed  The record's attributes this save changed.
+     * @param  ?User  $by  The person saving, when known.
+     */
+    public function changedLater(Model $record, string $context, array $changed, ?User $by): void
+    {
+        $fields = array_values(array_intersect(self::FORM_FIELDS[$context] ?? [], $changed));
+        $reading = $fields === [] ? null : $this->readingOf($record, self::SLIP_KINDS[$context]);
+
+        if ($reading === null || ($reading->confirmed['context'] ?? null) !== $context) {
+            return;
+        }
+
+        $slip = SlipRead::withoutGlobalScopes()->whereKey($reading->id)->lockForUpdate()->firstOrFail();
+        $confirmed = $slip->confirmed ?? [];
+        $confirmed['changed_later'] = [
+            'fields' => array_values(array_unique([...($confirmed['changed_later']['fields'] ?? []), ...$fields])),
+            'by' => $by?->id,
+            'at' => now()->toIso8601String(),
+        ];
+
+        $slip->forceFill(['confirmed' => $confirmed])->save();
+    }
+
     private function usable(SlipRead $slip, string $context, array $data, ?Model $record): bool
     {
         if ($slip->status === SlipRead::USED) {
@@ -283,17 +327,16 @@ class SlipLink
 
     /**
      * The challan form. The counted quantity is not here: the reading never fills it. The supplier
-     * name as read counts only when no supplier was picked, because a picked supplier wins. A unit
-     * counts only when it is one of the chosen material's, which is when the form offered it.
+     * name as read counts only when no supplier was picked, because a picked supplier wins. The
+     * quantity and the unit count only from the line the form took them from, and a unit only when
+     * it is one of the chosen material's, which is when the form offered it.
      *
      * @param  list<string>  $party
      * @return array<string, array{values: list<string>, submitted: ?string}>
      */
     private function challanOffers(SlipRead $slip, array $data, callable $value, callable $one, callable $text, callable $date, callable $id, array $party): array
     {
-        $lines = $slip->lines ?? [];
-        $quantities = array_values(array_unique(collect($lines)->pluck('qty.value')->push($value('net_weight'))->filter()->map(fn ($qty) => Dec::qty($qty))->all()));
-        $unitIds = array_values(array_unique(collect($lines)->pluck('unit.unit_id')->push($slip->fields['weight_unit']['unit_id'] ?? null)->filter()->map(fn ($unit) => (string) (int) $unit)->all()));
+        $line = $this->chosenLine($slip, $data);
         $materials = collect($slip->suggestions['materials'] ?? [])->pluck('id')->map(fn ($material) => (string) (int) $material)->values()->all();
 
         $offers = [
@@ -302,7 +345,7 @@ class SlipLink
             'vehicle_no' => ['values' => $one($value('vehicle_no'), ChallanChecks::vehicleNumber(...)), 'submitted' => blank($data['vehicle_no'] ?? null) ? null : ChallanChecks::vehicleNumber((string) $data['vehicle_no'])],
             'party_id' => ['values' => $party, 'submitted' => $id($data['party_id'] ?? null)],
             'material_id' => ['values' => $materials, 'submitted' => $id($data['material_id'] ?? null)],
-            'challan_qty' => ['values' => $quantities, 'submitted' => blank($data['challan_qty'] ?? null) || ! is_numeric($data['challan_qty']) ? null : Dec::qty($data['challan_qty'])],
+            'challan_qty' => ['values' => $one($line['qty'] ?? null, fn (string $qty) => Dec::qty($qty)), 'submitted' => blank($data['challan_qty'] ?? null) || ! is_numeric($data['challan_qty']) ? null : Dec::qty($data['challan_qty'])],
         ];
 
         if (blank($data['party_id'] ?? null)) {
@@ -314,12 +357,51 @@ class SlipLink
 
         if ($material !== null) {
             $ofMaterial = $material->conversions->pluck('unit_id')->push($material->base_unit_id)->map(fn ($unit) => (string) (int) $unit)->all();
+            $unit = blank($line['unit'] ?? null) ? [] : [(string) (int) $line['unit']];
             $offers['unit_id'] = [
-                'values' => array_values(array_intersect($unitIds, $ofMaterial)),
+                'values' => array_values(array_intersect($unit, $ofMaterial)),
                 'submitted' => (string) (int) ($data['unit_id'] ?? $material->base_unit_id),
             ];
         }
 
         return $offers;
+    }
+
+    /**
+     * The line of the slip the form took its quantity and unit from: the one named in read_line,
+     * or else the one the form takes by itself. The net weight counts only while it is offered,
+     * and so does its unit. A line the slip does not have is refused.
+     *
+     * @return ?array{qty: ?string, unit: mixed}
+     *
+     * @throws ValidationException
+     */
+    private function chosenLine(SlipRead $slip, array $data): ?array
+    {
+        $lines = array_values($slip->lines ?? []);
+        $fields = $slip->fields ?? [];
+        $net = $fields['net_weight']['value'] ?? null;
+        $choice = $data['read_line'] ?? null;
+
+        if (blank($choice)) {
+            $choice = match (true) {
+                count($lines) === 1 => 0,
+                $lines === [] && $net !== null => self::WEIGHT_LINE,
+                default => null,
+            };
+        }
+
+        if ($choice === null) {
+            return null;
+        }
+
+        if ((string) $choice === self::WEIGHT_LINE) {
+            $line = $net === null ? null : ['qty' => $net, 'unit' => $fields['weight_unit']['unit_id'] ?? null];
+        } else {
+            $cells = $lines[(int) $choice] ?? null;
+            $line = $cells === null ? null : ['qty' => $cells['qty']['value'] ?? null, 'unit' => $cells['unit']['unit_id'] ?? null];
+        }
+
+        return $line ?? throw ValidationException::withMessages(['read_line' => __('This photo reading cannot be used for this form.')]);
     }
 }

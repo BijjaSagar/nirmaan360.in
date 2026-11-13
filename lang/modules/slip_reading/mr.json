@@ -1,5 +1,6 @@
 {
     "A bill of this supplier with the number :number is already entered.": "या पुरवठादाराचे :number क्रमांकाचे बिल आधीच नोंदवलेले आहे.",
+    "A posted challan from this supplier has the same number, in a project you do not have access to.": "या पुरवठादाराचे याच क्रमांकाचे एक चलन तुम्हाला उपलब्ध नसलेल्या प्रकल्पात नोंदवलेले आहे.",
     "A posted challan from this supplier has the same number: :number.": "या पुरवठादाराचे याच क्रमांकाचे एक चलन आधीच नोंदवलेले आहे: :number.",
     "A posted challan of this project has the same vehicle, date and quantity: :number.": "या प्रकल्पाचे एक नोंदवलेले चलन याच वाहन, तारीख आणि प्रमाणाचे आहे: :number.",
     "Amount": "रक्कम",
@@ -8,6 +9,7 @@
     "Bill no.": "बिल क्र.",
     "Buyer GSTIN": "खरेदीदाराचा GSTIN",
     "Challan no.": "चलन क्र.",
+    "Changed by hand later by :name on :date: :fields": "नंतर :name यांनी :date रोजी हाताने बदलले: :fields",
     "Changed by you": "तुम्ही बदलले",
     "Choose the photo of the bill first.": "आधी बिलाचा फोटो निवडा.",
     "Choose the photo of the challan first.": "आधी चलनाचा फोटो निवडा.",
@@ -68,6 +70,7 @@
     "The photo could not be read. You were not charged for it. Type the details yourself.": "फोटो वाचता आला नाही. त्यासाठी तुमचे कोणतेही क्रेडिट घेतले गेले नाही. तपशील स्वतः टाइप करा.",
     "The reader was not sure of this value.": "रीडरला या मूल्याबद्दल खात्री नव्हती.",
     "The readers are not switched on yet.": "रीडर अजून सुरू केलेले नाहीत.",
+    "The second reading could not be used. Type the details yourself.": "दुसऱ्यांदा वाचलेले वापरता आले नाही. तपशील स्वतः टाइप करा.",
     "The server cannot process pictures right now. Nothing was stored. Try again later.": "सर्व्हर सध्या चित्रांवर प्रक्रिया करू शकत नाही. काहीही सेव्ह केले गेले नाही. नंतर पुन्हा प्रयत्न करा.",
     "The slip says :slip; this material is kept in :base. Check the unit and the quantity.": "पावतीवर :slip आहे; हे साहित्य :base मध्ये ठेवले जाते. एकक आणि प्रमाण तपासा.",
     "The tax heads on this bill do not match the states of the two GSTINs. Check the supply.": "या बिलावरील कराचे शीर्ष दोन्ही GSTIN च्या राज्यांशी जुळत नाहीत. पुरवठा तपासा.",

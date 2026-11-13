@@ -17,6 +17,7 @@ use App\Services\SlipReading\BillReadKind;
 use App\Services\SlipReading\SlipChallanOffer;
 use App\Services\SlipReading\SlipReadKind;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -240,6 +241,16 @@ abstract class SlipReadingTestCase extends PageReadingTestCase
     {
         DocumentReadPage::withoutGlobalScopes()->where('document_read_id', $slip->document_read_id)->where('status', DocumentReadPage::QUEUED)
             ->pluck('id')->each(fn (int $id) => $this->readPage($id));
+    }
+
+    /** Limits a person to the given projects. */
+    protected function limitTo(User $user, Project ...$projects): void
+    {
+        $user->forceFill(['limited_to_projects' => true])->save();
+
+        foreach ($projects as $project) {
+            DB::table('user_project_access')->insert(['organization_id' => $user->organization_id, 'user_id' => $user->id, 'project_id' => $project->id, 'created_at' => now(), 'updated_at' => now()]);
+        }
     }
 
     protected function readOf(SlipRead $slip): DocumentRead

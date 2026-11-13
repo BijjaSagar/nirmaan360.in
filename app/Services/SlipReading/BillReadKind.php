@@ -19,6 +19,8 @@ use App\Services\DocumentReading\ReaderRequest;
  */
 class BillReadKind implements ReadKind
 {
+    use FillsSlip;
+
     public const KEY = 'bill';
 
     public const INSTRUCTIONS = <<<'TEXT'
@@ -104,33 +106,6 @@ class BillReadKind implements ReadKind
         return $output;
     }
 
-    /** A photo the reader could not read at all is not charged, like a blank page. */
-    public function chargeable(DocumentReadPage $page): bool
-    {
-        return ($page->result['doc_kind'] ?? null) !== 'unreadable';
-    }
-
-    public function pageRead(DocumentReadPage $page): void
-    {
-        $slip = $this->slipOf((int) $page->organization_id, (int) $page->document_read_id);
-
-        if ($slip === null || ! is_array($page->result)) {
-            return;
-        }
-
-        // A second reading is compared with the first one, which is still on the row.
-        $earlier = $slip->rechecked_at !== null && is_array($slip->fields) ? ['fields' => $slip->fields, 'lines' => $slip->lines ?? []] : null;
-        $built = $this->checks->build($page->result, $slip, $earlier);
-
-        $slip->forceFill([
-            'doc_kind' => $built['doc_kind'],
-            'fields' => $built['fields'],
-            'lines' => $built['lines'],
-            'warnings' => $built['warnings'],
-            'suggestions' => $built['suggestions'],
-        ])->save();
-    }
-
     public function nextPasses(DocumentReadPage $page): array
     {
         return [];
@@ -139,17 +114,6 @@ class BillReadKind implements ReadKind
     public function onCutOff(DocumentReadPage $page): string
     {
         return 'fail';
-    }
-
-    public function finished(DocumentRead $read): void
-    {
-        $slip = $this->slipOf((int) $read->organization_id, (int) $read->id);
-
-        if ($slip === null || ! in_array($slip->status, [SlipRead::READING, SlipRead::READY], true)) {
-            return;
-        }
-
-        $slip->forceFill(['status' => $read->status === DocumentRead::READY && is_array($slip->fields) ? SlipRead::READY : SlipRead::FAILED])->save();
     }
 
     /** Money: money.view, and the right to enter a challan's bill or a vendor bill. */
@@ -163,10 +127,5 @@ class BillReadKind implements ReadKind
         // Supplier names, GSTINs and figures do not outlive the photo. Which fields were confirmed stays.
         SlipRead::withoutGlobalScopes()->where('organization_id', $read->organization_id)->where('document_read_id', $read->id)
             ->update(['fields' => null, 'lines' => null, 'warnings' => null, 'suggestions' => null]);
-    }
-
-    private function slipOf(int $organizationId, int $readId): ?SlipRead
-    {
-        return SlipRead::withoutGlobalScopes()->where('organization_id', $organizationId)->where('document_read_id', $readId)->lockForUpdate()->first();
     }
 }

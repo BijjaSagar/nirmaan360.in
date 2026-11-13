@@ -128,9 +128,10 @@ class VendorBillService
             $this->refuseDuplicate($bill->organization_id, $data['party_id'], $data['bill_no'], $bill->id);
             $bill->update($this->attributes($data));
 
-            if ($link !== null) {
-                $this->slips->used($link, $bill, null, $by);
-            }
+            // A bill filled from a photo earlier and changed now by hand: its note says which fields changed.
+            $link !== null
+                ? $this->slips->used($link, $bill, null, $by)
+                : $this->slips->changedLater($bill, SlipLink::VENDOR_BILL, array_keys($bill->getChanges()), $by);
 
             return $bill;
         });

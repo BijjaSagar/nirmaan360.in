@@ -181,6 +181,11 @@ class DeliveryChallanService
             'bill_attached_at' => now(),
         ]);
 
+        // A bill filled from a photo earlier and changed now by hand: its note says which figures changed.
+        if ($link === null) {
+            $this->slips->changedLater($challan, SlipLink::CHALLAN_BILL, array_keys($challan->getChanges()), $by);
+        }
+
         return $challan;
     }
 

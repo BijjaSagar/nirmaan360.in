@@ -1,5 +1,6 @@
 {
     "A bill of this supplier with the number :number is already entered.": "इस सप्लायर का :number नंबर वाला बिल पहले से दर्ज है।",
+    "A posted challan from this supplier has the same number, in a project you do not have access to.": "इस सप्लायर का इसी नंबर वाला एक चालान ऐसे प्रोजेक्ट में दर्ज है जो आपके लिए खुला नहीं है।",
     "A posted challan from this supplier has the same number: :number.": "इस सप्लायर का इसी नंबर वाला एक चालान पहले से दर्ज है: :number।",
     "A posted challan of this project has the same vehicle, date and quantity: :number.": "इस प्रोजेक्ट का एक दर्ज चालान इसी वाहन, तारीख और मात्रा का है: :number।",
     "Amount": "राशि",
@@ -8,6 +9,7 @@
     "Bill no.": "बिल नं.",
     "Buyer GSTIN": "खरीदार का GSTIN",
     "Challan no.": "चालान नं.",
+    "Changed by hand later by :name on :date: :fields": "बाद में :name ने :date को हाथ से बदला: :fields",
     "Changed by you": "आपने बदला",
     "Choose the photo of the bill first.": "पहले बिल की फोटो चुनें।",
     "Choose the photo of the challan first.": "पहले चालान की फोटो चुनें।",
@@ -68,6 +70,7 @@
     "The photo could not be read. You were not charged for it. Type the details yourself.": "फोटो पढ़ी नहीं जा सकी। इसके लिए आपसे कोई क्रेडिट नहीं लिया गया। विवरण खुद टाइप करें।",
     "The reader was not sure of this value.": "रीडर को इस मान पर पक्का भरोसा नहीं था।",
     "The readers are not switched on yet.": "रीडर अभी चालू नहीं किए गए हैं।",
+    "The second reading could not be used. Type the details yourself.": "दूसरी बार पढ़ने का नतीजा इस्तेमाल नहीं हो सका। विवरण खुद टाइप करें।",
     "The server cannot process pictures right now. Nothing was stored. Try again later.": "सर्वर अभी तस्वीरें प्रोसेस नहीं कर पा रहा है। कुछ भी सेव नहीं किया गया। बाद में फिर कोशिश करें।",
     "The slip says :slip; this material is kept in :base. Check the unit and the quantity.": "पर्ची पर :slip लिखा है; यह सामग्री :base में रखी जाती है। इकाई और मात्रा जांचें।",
     "The tax heads on this bill do not match the states of the two GSTINs. Check the supply.": "इस बिल के टैक्स शीर्ष दोनों GSTIN के राज्यों से मेल नहीं खाते। आपूर्ति जांचें।",

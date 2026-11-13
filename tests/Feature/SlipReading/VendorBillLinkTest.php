@@ -232,4 +232,32 @@ class VendorBillLinkTest extends SlipReadingTestCase
         // A bill typed by hand says nothing of the kind.
         $this->actingAs($approver->fresh())->get(route('finance.project.vendor-bills.show', $this->handBill()))->assertOk()->assertDontSee('Meera Kulkarni');
     }
+
+    public function test_a_bill_changed_by_hand_after_it_was_filled_from_a_photo_tells_its_approvers_what_changed(): void
+    {
+        $this->accounts->update(['name' => 'Meera Kulkarni']);
+        $slip = $this->storedReading($this->accounts, [], null, SlipRead::BILL);
+        $form = $this->filled($slip, ['read_confirmed' => self::EVERY_FIELD]);
+        $this->save($form)->assertSessionHasNoErrors();
+        $bill = VendorBill::sole();
+        $byHand = array_diff_key($form, array_flip(['read_id', 'read_confirmed', 'client_uuid']));
+
+        // Saved again as it was: nothing changed, so nothing is said.
+        $this->change($bill, $byHand)->assertSessionHasNoErrors();
+        $this->assertArrayNotHasKey('changed_later', $slip->refresh()->confirmed);
+
+        // Returned and edited by hand on the usual form.
+        $this->travel(1)->days();
+        $this->change($bill, [...$byHand, 'bill_no' => 'INV/0912-A', 'taxable_amount' => '72000', 'description' => 'Second lot'])->assertSessionHasNoErrors();
+        $this->assertSame(['fields' => ['bill_no', 'taxable_amount'], 'by' => $this->accounts->id], array_intersect_key($slip->refresh()->confirmed['changed_later'], ['fields' => 1, 'by' => 1]));
+
+        $approver = $this->member($this->organization, 'pm');
+        $this->actingAs($approver)->get(route('finance.project.vendor-bills.show', $bill))->assertOk()
+            ->assertSee('Filled from a photo. Confirmed field by field by Meera Kulkarni on 13 Nov 2026')
+            ->assertSee('Changed by hand later by Meera Kulkarni on 14 Nov 2026: Vendor bill no., Taxable value');
+
+        $approver->update(['locale' => 'hi']);
+        $this->actingAs($approver)->get(route('finance.project.vendor-bills.show', $bill))->assertOk()
+            ->assertSee('बाद में Meera Kulkarni ने 14 Nov 2026 को हाथ से बदला');
+    }
 }

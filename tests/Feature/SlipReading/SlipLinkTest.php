@@ -145,6 +145,70 @@ class SlipLinkTest extends SlipReadingTestCase
         $this->assertNotContains('unit_id', [...$slip->refresh()->confirmed['fields'], ...$slip->confirmed['typed_over']]);
     }
 
+    /** @return array<string, mixed> One line of a stored reading. */
+    private function line(string $description, string $qty, int $unitId, string $unit = 'bag'): array
+    {
+        return [
+            'description' => ['raw' => $description, 'parsed' => $description, 'value' => $description, 'state' => 'read', 'warnings' => []],
+            'qty' => ['raw' => $qty, 'parsed' => $qty, 'value' => $qty, 'state' => 'read', 'warnings' => [], 'had_comma' => false, 'script' => 'ascii'],
+            'unit' => ['raw' => $unit, 'parsed' => $unit, 'value' => $unit, 'state' => 'read', 'warnings' => [], 'known' => true, 'unit_id' => $unitId],
+        ];
+    }
+
+    public function test_only_the_line_the_form_took_the_quantity_and_unit_from_counts(): void
+    {
+        $twoLines = ['lines' => [$this->line('OPC 53', '120.000', $this->bag->id), $this->line('PPC', '40.000', $this->bag->id)]];
+        $rest = ['party_id', 'material_id', 'challan_date', 'challan_no', 'vehicle_no'];
+
+        // No line was picked, so the form filled neither: the same figures typed by hand are the person's own.
+        $slip = $this->storedReading($this->store, $twoLines);
+        $this->save($this->filled($slip, ['read_confirmed' => $rest]))->assertSessionHasNoErrors();
+        $this->assertSame([], array_values(array_intersect(['challan_qty', 'unit_id'], [...$slip->refresh()->confirmed['fields'], ...$slip->confirmed['typed_over']])));
+
+        // The second line picked: its quantity and unit are what the form filled.
+        $second = $this->storedReading($this->store, $twoLines);
+        $this->save($this->filled($second, ['read_line' => '1', 'challan_qty' => '40', 'read_confirmed' => $rest]))
+            ->assertSessionHasErrors(['challan_qty' => 'Confirm this against the photo.', 'unit_id' => 'Confirm this against the photo.']);
+        $this->save($this->filled($second, ['read_line' => '1', 'challan_qty' => '120', 'read_confirmed' => [...$rest, 'unit_id']]))->assertSessionHasNoErrors();
+        $this->assertContains('challan_qty', $second->refresh()->confirmed['typed_over']);
+
+        // A line the slip does not have, or a net weight it does not offer, is refused.
+        $third = $this->storedReading($this->store, $twoLines);
+        $this->save($this->filled($third, ['read_line' => '2', 'read_confirmed' => self::EVERY_FIELD]))->assertSessionHasErrors(['read_line' => 'This photo reading cannot be used for this form.']);
+        $this->save($this->filled($third, ['read_line' => 'weight', 'read_confirmed' => self::EVERY_FIELD]))->assertSessionHasErrors('read_line');
+        $this->save($this->filled($third, ['read_line' => 'net', 'read_confirmed' => self::EVERY_FIELD]))->assertSessionHasErrors('read_line');
+        $this->assertSame(SlipRead::READY, $third->refresh()->status);
+    }
+
+    public function test_the_weight_unit_counts_only_while_the_net_weight_is_offered(): void
+    {
+        // A slip whose weights did not add up: no net weight is offered, though its unit was read.
+        $kgUnit = ['raw' => 'kg', 'parsed' => 'kg', 'value' => 'kg', 'state' => 'read', 'warnings' => [], 'known' => true, 'unit_id' => $this->kg->id];
+        $fields = fn (?string $net) => [
+            'challan_no' => ['raw' => 'DC-0457', 'parsed' => 'DC-0457', 'value' => 'DC-0457', 'state' => 'read', 'warnings' => []],
+            'challan_date' => ['raw' => '11/11/2026', 'parsed' => '2026-11-11', 'value' => '2026-11-11', 'state' => 'read', 'warnings' => []],
+            'vehicle_no' => ['raw' => 'MH 12 AB 1234', 'parsed' => 'MH12AB1234', 'value' => 'MH12AB1234', 'state' => 'read', 'warnings' => []],
+            'net_weight' => ['raw' => '14,000', 'parsed' => '14000.000', 'value' => $net, 'state' => 'read', 'warnings' => []],
+            'weight_unit' => $kgUnit,
+        ];
+        $rest = ['party_id', 'material_id', 'challan_date', 'challan_no', 'vehicle_no'];
+
+        // One line of bags; the person keeps cement in its base unit, kg, which is also the slip's weight unit.
+        $slip = $this->storedReading($this->store, ['fields' => $fields(null), 'lines' => [$this->line('OPC 53', '120.000', $this->bag->id)]]);
+        $this->save($this->filled($slip, ['unit_id' => null, 'read_confirmed' => [...$rest, 'challan_qty']]))->assertSessionHasNoErrors();
+        $this->assertContains('unit_id', $slip->refresh()->confirmed['typed_over']);
+
+        // Without lines and without a net weight, nothing counts for the quantity or the unit.
+        $bare = $this->storedReading($this->store, ['fields' => $fields(null), 'lines' => []]);
+        $this->save($this->filled($bare, ['material_id' => $this->steel->id, 'unit_id' => null, 'challan_qty' => '14000', 'read_confirmed' => $rest]))->assertSessionHasNoErrors();
+        $this->assertSame([], array_values(array_intersect(['challan_qty', 'unit_id'], [...$bare->refresh()->confirmed['fields'], ...$bare->confirmed['typed_over']])));
+
+        // With the net weight offered, it and its unit are what the form fills.
+        $weighed = $this->storedReading($this->store, ['fields' => $fields('14000.000'), 'lines' => [], 'suggestions' => ['party' => ['id' => $this->vendor->id, 'name' => $this->vendor->name, 'by' => 'gstin'], 'materials' => []]]);
+        $this->save($this->filled($weighed, ['material_id' => $this->steel->id, 'unit_id' => null, 'challan_qty' => '14000', 'read_confirmed' => ['party_id', 'challan_date', 'challan_no', 'vehicle_no']]))
+            ->assertSessionHasErrors(['challan_qty' => 'Confirm this against the photo.', 'unit_id' => 'Confirm this against the photo.']);
+    }
+
     public function test_without_a_photo_of_its_own_the_challan_keeps_a_copy_of_the_photo_that_was_read(): void
     {
         $slip = $this->storedReading($this->store);
@@ -276,5 +340,24 @@ class SlipLinkTest extends SlipReadingTestCase
         $this->actingAs($engineer)->post(route('material_control.challans.bill.store', $challan), ['bill' => UploadedFile::fake()->image('bill.jpg'), 'read_id' => $slip->id])
             ->assertSessionHasNoErrors();
         $this->assertSame(SlipRead::READY, $slip->refresh()->status);
+    }
+
+    public function test_a_challans_bill_changed_by_hand_after_it_was_filled_from_a_photo_says_which_figures_changed(): void
+    {
+        $challan = app(DeliveryChallanService::class)->create($this->project, [
+            'party_id' => $this->vendor->id, 'material_id' => $this->cement->id, 'qty' => '10', 'challan_date' => '2026-11-11',
+        ], $this->owner);
+        $slip = $this->storedReading($this->owner, [], null, SlipRead::BILL);
+        $form = ['bill_no' => 'INV/0912', 'bill_date' => '2026-11-10', 'bill_amount' => '70800'];
+
+        $this->actingAs($this->owner)->post(route('material_control.challans.bill.store', $challan), [...$form, 'read_id' => $slip->id, 'read_confirmed' => ['bill_no', 'bill_date', 'bill_amount']])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($this->owner)->get(route('material_control.challans.show', $challan))->assertOk()->assertDontSee('Changed by hand later');
+
+        $this->actingAs($this->owner)->post(route('material_control.challans.bill.store', $challan), [...$form, 'bill_amount' => '70500'])->assertSessionHasNoErrors();
+
+        $this->assertSame(['bill_amount'], $slip->refresh()->confirmed['changed_later']['fields']);
+        $this->actingAs($this->owner)->get(route('material_control.challans.show', $challan))->assertOk()
+            ->assertSee('Changed by hand later by '.$this->owner->name.' on 13 Nov 2026: Amount');
     }
 }

@@ -5,6 +5,8 @@ namespace App\Services\SlipReading;
 use App\Models\DeliveryChallan;
 use App\Models\Material;
 use App\Models\SlipRead;
+use App\Models\User;
+use App\Services\Notify\Audience;
 use App\Support\Dec;
 use Normalizer;
 
@@ -82,11 +84,14 @@ class ChallanChecks
             }
         }
 
+        // None of the three weights is offered, and so neither is their unit.
         if ($this->weightsDisagree($fields)) {
-            foreach (self::WEIGHTS as $weight) {
+            foreach ([...self::WEIGHTS, 'weight_unit'] as $weight) {
                 $fields[$weight]['value'] = null;
                 $fields[$weight]['warnings'][] = 'weights_do_not_add_up';
             }
+
+            $fields['weight_unit']['unit_id'] = null;
 
             $warnings[] = ['code' => 'weights_do_not_add_up', 'params' => [], 'tick' => false];
         }
@@ -157,6 +162,9 @@ class ChallanChecks
     /**
      * Saved records this photo may duplicate. Each is a warning the person ticks; none stops anything.
      *
+     * The same supplier and number is looked for in the whole company, but the other challan's
+     * number is named only when the person reading sees its project.
+     *
      * @param  ?array{id:int}  $party
      * @return list<array<string, mixed>>
      */
@@ -167,11 +175,13 @@ class ChallanChecks
         $number = $fields['challan_no']['value'];
 
         if ($party !== null && $number !== null) {
-            $same = $posted()->where('party_id', $party['id'])->whereNotNull('challan_no')->get(['id', 'number', 'challan_no'])
+            $same = $posted()->where('party_id', $party['id'])->whereNotNull('challan_no')->get(['id', 'project_id', 'number', 'challan_no'])
                 ->first(fn (DeliveryChallan $challan) => self::plainText($challan->challan_no) === self::plainText($number));
 
             if ($same !== null) {
-                $warnings[] = ['code' => 'possible_duplicate', 'params' => ['number' => (string) $same->number], 'tick' => true];
+                $reader = User::query()->where('organization_id', $slip->organization_id)->find($slip->user_id);
+                $seen = $reader !== null && Audience::seesProject($reader, (int) $same->project_id);
+                $warnings[] = ['code' => 'possible_duplicate', 'params' => $seen ? ['number' => (string) $same->number] : [], 'tick' => true];
             }
         }
 

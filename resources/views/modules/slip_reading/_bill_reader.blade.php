@@ -11,6 +11,8 @@
     It only fills fields. Each one it fills carries a "read from photo" tag and must be changed or
     confirmed with "Matches the photo" before the form is saved; the server checks the same
     (SlipLink). A form sent back by the server shows the same reading again, with what was typed.
+    Reading again, a new reading and "Do not use this reading" put back what the fields held before
+    the reading filled them, unless the person has changed them since.
 --}}
 @php
     $billService = app(\App\Services\SlipReading\SlipReadService::class);
@@ -31,6 +33,7 @@
             'slow' => __('Still working. You can keep filling the form.'),
             'stopped' => __('Still working. Reload the page to see the reading.'),
             'failed' => __('The photo could not be read. You were not charged for it. Type the details yourself.'),
+            'failed_again' => __('The second reading could not be used. Type the details yourself.'),
             'network' => __('Your request did not reach the server. Check your connection and try again.'),
             'refused' => __('This could not be done. Reload the page and try again.'),
             'no_page' => __('The first page of this PDF could not be turned into a picture. Take a photo of the bill instead.'),
@@ -94,7 +97,9 @@
                 blocked: '',
                 data: null,
                 confirmed: [],
+                // Field => the value the reading put in, and what the field held before that.
                 filled: {},
+                before: {},
                 photo: null,
                 started: 0,
 
@@ -218,7 +223,7 @@
                             this.poll();
                         } else {
                             this.state = 'idle';
-                            this.message = data.read?.message || config.words.failed;
+                            this.message = data.read?.message || (Number(data.credits) > 0 ? config.words.failed_again : config.words.failed);
                         }
                     } catch (error) {
                         this.message = error.message;
@@ -253,8 +258,10 @@
 
                 async recheck() {
                     try {
+                        const data = await this.call('POST', address('recheck', this.data.id), new FormData());
+                        // What the first reading filled goes, so a value the second one does not offer is not left behind.
                         this.forgetFilled();
-                        this.data = await this.call('POST', address('recheck', this.data.id), new FormData());
+                        this.data = data;
                         this.watch();
                     } catch (error) {
                         this.message = error.message;
@@ -293,6 +300,10 @@
 
                     if (input.tagName === 'SELECT' && ![...input.options].some((option) => option.value === String(value))) {
                         return;
+                    }
+
+                    if (!Object.prototype.hasOwnProperty.call(this.before, name)) {
+                        this.before[name] = input.value;
                     }
 
                     input.value = String(value);
@@ -357,9 +368,19 @@
                     }
                 },
 
+                // Takes back what the reading put in: each field gets what it held before, unless the person has changed it since.
                 forgetFilled() {
+                    for (const name of Object.keys(this.filled)) {
+                        const input = this.input(name);
+
+                        if (input && !this.changed(name)) {
+                            input.value = this.before[name] ?? '';
+                        }
+                    }
+
                     this.confirmed = [];
                     this.filled = {};
+                    this.before = {};
                     this.blocked = '';
                 },
 
