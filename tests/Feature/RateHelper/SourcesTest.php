@@ -5,6 +5,7 @@ namespace Tests\Feature\RateHelper;
 use App\Models\RateLibraryItem;
 use App\Services\RateHelper\Contracts\RateSource;
 use App\Services\RateHelper\RateSources;
+use App\Services\RateHelper\RateSuggestionService;
 use App\Services\RateHelper\Sources\OwnBoqSource;
 use App\Services\RateHelper\Sources\OwnTenderSource;
 use App\Services\RateHelper\Sources\PurchasesSource;
@@ -14,6 +15,7 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use LogicException;
 use stdClass;
 
@@ -169,6 +171,54 @@ class SourcesTest extends RateHelperTestCase
 
         $forFew = $count($few);
         $forMany = $count($many);
+
+        $this->assertGreaterThan(0, $forFew);
+        $this->assertSame($forFew, $forMany, 'Ten times the lines must not mean more reads.');
+    }
+
+    public function test_starting_a_long_run_reads_each_source_once_not_once_per_line(): void
+    {
+        $cement = $this->material('Cement', 'bag');
+        $sand = $this->material('River sand', 'brass');
+        $this->purchase($cement, '100.000', '38000.00', '2026-10-01');
+        $this->challanBill($sand, '10.000', '42000.00', '2026-09-15');
+        $this->libraryRate('Waterproofing coat to terrace', 'sqm', '410.00');
+        $this->line('Waterproofing coat to terrace', 'sqm', '395.00', $this->other);
+        $this->tenderLine('Waterproofing coat to terrace', 'sqm', '430.00');
+
+        $lines = [];
+
+        foreach (range(1, 30) as $number) {
+            $lines[] = $line = $this->line('Waterproofing coat to terrace, bay '.$number, 'sqm');
+            $this->norm($line, $cement, '0.200000');
+            $this->norm($line, $sand, '0.010000');
+        }
+
+        // What building the shortlists reads. Saving the run writes one row per line, which is not a read.
+        $reads = function (array $items): int {
+            $this->actingAs($this->owner);
+            $queries = 0;
+            DB::listen(function (QueryExecuted $query) use (&$queries) {
+                if (preg_match('/^\s*select\b/i', $query->sql)) {
+                    $queries++;
+                }
+            });
+
+            $run = app(RateSuggestionService::class)->start($this->project, $this->owner, array_map(fn ($item) => $item->id, $items), (string) Str::uuid());
+            DB::getEventDispatcher()->forget(QueryExecuted::class);
+
+            $last = end($items);
+            $this->assertNotNull($this->refOf($run, $last, PurchasesSource::KEY, $last->id), 'The purchases source answered for every line.');
+            $this->assertCount(4, $this->shortlist($run, $last));
+
+            return $queries;
+        };
+
+        // A first run reads what is read once per request anyway (the person's company, the site texts).
+        $reads([$lines[0]]);
+
+        $forFew = $reads(array_slice($lines, 0, 3));
+        $forMany = $reads($lines);
 
         $this->assertGreaterThan(0, $forFew);
         $this->assertSame($forFew, $forMany, 'Ten times the lines must not mean more reads.');

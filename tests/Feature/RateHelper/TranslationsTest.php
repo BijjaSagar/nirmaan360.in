@@ -31,10 +31,11 @@ class TranslationsTest extends RateHelperTestCase
             return array_map(fn (string $key) => str_replace("\\'", "'", $key), $matches[1]);
         });
 
-        // Wording that reaches __() as a variable: the sources, the kinds of warning and the parts of a rate analysis.
+        // Wording that reaches __() as a variable: the sources, the kinds of warning, the words a warning may show and the parts of a rate analysis.
         return $strings
             ->merge(array_map(fn ($source) => $source->label(), app(RateSources::class)->open()))
             ->merge(TextGuards::KINDS)
+            ->merge(array_values(TextGuards::ALL_WORDS))
             ->merge(RateLibrarySource::PARTS)
             ->unique()->values()->all();
     }
@@ -134,6 +135,33 @@ class TranslationsTest extends RateHelperTestCase
             ->assertSee('हा दर स्वीकारा')
             ->assertDontSee('Government schedule')->assertDontSee('Accept this rate');
         $this->actingAs($this->pm)->get(route('boq.index', $this->project))->assertOk()->assertSee('दर सुचवा')->assertDontSee('Suggest rates');
+    }
+
+    public function test_all_leads_and_lifts_is_said_in_the_persons_language(): void
+    {
+        $line = $this->line('Earthwork in excavation in hard soil including all leads and lifts');
+        $this->libraryRate('Earthwork in excavation in hard soil', 'cum', '410.00');
+        $run = $this->startRun($this->pm, $line);
+
+        $this->actingAs($this->pm)->get(route('rate-suggestions.show', $run))->assertOk()
+            ->assertSee('this line: all leads · that rate: not stated')
+            ->assertSee('this line: all lifts · that rate: not stated');
+
+        $this->pm->update(['locale' => 'hi']);
+        $this->actingAs($this->pm)->get(route('rate-suggestions.show', $run))->assertOk()
+            ->assertSee('यह लाइन: सभी लीड · वह दर: लिखा नहीं है')
+            ->assertSee('यह लाइन: सभी लिफ्ट · वह दर: लिखा नहीं है')
+            ->assertDontSee('यह लाइन: all');
+
+        $this->pm->update(['locale' => 'mr']);
+        $this->actingAs($this->pm)->get(route('rate-suggestions.show', $run))->assertOk()
+            ->assertSee('ही ओळ: सर्व लीड · तो दर: नमूद नाही')
+            ->assertSee('ही ओळ: सर्व लिफ्ट · तो दर: नमूद नाही')
+            ->assertDontSee('ही ओळ: all');
+
+        // A figure as read stays as it is: "50 m" is the same in every language.
+        $this->assertSame('50 m', TextGuards::shown('lead', '50 m'));
+        $this->assertSame(array_keys(TextGuards::ALL_WORDS), array_values(array_intersect(array_keys(TextGuards::KINDS), array_keys(TextGuards::ALL_WORDS))), 'Words for "all" are given only for kinds that have it.');
     }
 
     public function test_wording_that_must_not_be_used_is_absent(): void

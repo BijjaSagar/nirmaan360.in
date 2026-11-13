@@ -268,12 +268,36 @@ abstract class RateHelperTestCase extends TestCase
         return null;
     }
 
+    /**
+     * Presses "Accept this rate" for this ref as this person, on the review screen as it is now: the
+     * form sends back the fingerprint of the figure it shows, as a browser would. Give 'shown' in
+     * $extra to press it on a page opened earlier.
+     */
     protected function accept(User $by, RateSuggestionRun $run, BoqItem $item, string $ref, array $extra = []): TestResponse
     {
-        return $this->actingAs($by)->post(route('rate-suggestions.lines.accept', [$run, $this->lineOf($run, $item)]), [
+        $line = $this->lineOf($run, $item);
+        $shown = array_key_exists('shown', $extra) ? [] : array_filter(['shown' => $this->shownOn($by, $run, $line, $ref)]);
+
+        return $this->actingAs($by)->post(route('rate-suggestions.lines.accept', [$run, $line]), [
             'candidate' => $ref,
             'mode' => RateSuggestionLine::SET_BOQ_RATE,
+            ...$shown,
             ...$extra,
         ]);
+    }
+
+    /** The fingerprint the review screen puts in the accept form of this ref on this line, or null when it offers no such form. */
+    protected function shownOn(User $by, RateSuggestionRun $run, RateSuggestionLine $line, string $ref): ?string
+    {
+        $response = $this->actingAs($by)->get(route('rate-suggestions.show', $run));
+
+        if (! $response->isOk()) {
+            return null;
+        }
+
+        $action = preg_quote(e(route('rate-suggestions.lines.accept', [$run, $line])), '#');
+        $form = '#<form method="POST" action="'.$action.'"(?:(?!</form>).)*?name="candidate" value="'.preg_quote($ref, '#').'">\s*<input type="hidden" name="shown" value="([0-9a-f]{64})">#s';
+
+        return preg_match($form, (string) $response->getContent(), $match) ? $match[1] : null;
     }
 }

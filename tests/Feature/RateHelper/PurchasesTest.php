@@ -6,6 +6,8 @@ use App\Models\BoqCurrentRate;
 use App\Models\RateSuggestionLine;
 use App\Services\RateHelper\RateSources;
 use App\Services\RateHelper\Sources\PurchasesSource;
+use App\Support\Dec;
+use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\DB;
 
 /** The material cost of a line at the company's own purchase prices: shown for reference, never a rate. */
@@ -100,6 +102,37 @@ class PurchasesTest extends RateHelperTestCase
 
         $this->assertSame([], $this->shortlist($run, $unbought));
         $this->assertSame([], $this->shortlist($run, $plain));
+    }
+
+    public function test_the_price_in_each_note_multiplies_out_to_the_amount_beside_it(): void
+    {
+        $line = $this->line('Brick masonry in CM 1:6');
+        $bricks = $this->material('Bricks', 'nos');
+        $cement = $this->material('Cement', 'kg');
+        $this->norm($line, $bricks, '500.000000');
+        $this->norm($line, $cement, '320.000000', '2.00');
+
+        // 10,000 bricks for 72,350.00 is 7.235 a brick; 2,500 kg of cement for 18,537.00 is 7.4148 a kg.
+        $this->purchase($bricks, '10000.000', '72350.00', '2026-10-01');
+        $this->purchase($cement, '2500.000', '18537.00', '2026-10-02');
+        $run = $this->startRun($this->pm, $line);
+
+        // 500 × 7.235 = 3,617.50 and 320 × 1.02 × 7.4148 = 2,420.19, not 500 × 7.24 or 326.4 × 7.41.
+        $this->actingAs($this->pm)->get(route('rate-suggestions.show', $run))->assertOk()
+            ->assertSee('₹6,037.69')
+            ->assertSeeInOrder(['Bricks', '₹3,617.50', '500 nos for one cum, plus 0% wastage, at ₹7.235 per nos.'])
+            ->assertSeeInOrder(['Cement', '₹2,420.19', '320 kg for one cum, plus 2% wastage, at ₹7.4148 per kg.'])
+            ->assertDontSee('₹7.24 per nos')->assertDontSee('₹7.41 per kg');
+
+        $figure = app(RateSources::class)->open()[PurchasesSource::KEY]->rateOf($this->pm, $line->id);
+
+        foreach ($figure->parts as $part) {
+            $this->assertSame(1, preg_match('/^([\d.]+) \S+ for one cum, plus ([\d.]+)% wastage, at ₹([\d,.]+) per /u', $part['note'], $shown), $part['note']);
+            [, $qty, $wastage, $price] = $shown;
+            $worked = Dec::money(Dec::of($qty)->multipliedBy(Dec::of($wastage)->dividedBy(100, 6, RoundingMode::HalfUp)->plus(1))->multipliedBy(Dec::of(str_replace(',', '', $price))));
+
+            $this->assertSame($part['amount'], $worked, 'Someone checking the note by hand gets the amount beside it: '.$part['note']);
+        }
     }
 
     public function test_the_price_is_per_base_unit_whatever_unit_the_order_was_written_in(): void

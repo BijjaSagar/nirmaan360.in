@@ -10,6 +10,7 @@ use App\Models\RateSuggestionLine;
 use App\Models\RateSuggestionRun;
 use App\Services\RateHelper\Sources\OwnBoqSource;
 use App\Services\RateHelper\Sources\RateLibrarySource;
+use App\Services\RateHelper\TextGuards;
 use Illuminate\Support\Facades\Route;
 
 /** Accepting one rate for one line, and skipping a line. */
@@ -88,6 +89,100 @@ class AcceptTest extends RateHelperTestCase
         $this->assertSame('6515.75', $this->lineOf($run, $line)->accepted_rate);
     }
 
+    public function test_a_rate_that_changed_after_the_page_was_opened_is_refused_and_not_written(): void
+    {
+        $line = $this->line('RCC M25 in slab');
+        $library = $this->libraryRate('RCC M25 in slab', 'cum', '5800.00');
+        $run = $this->startRun($this->qs, $line);
+        $ref = $this->refOf($run, $line, RateLibrarySource::KEY, $library->id);
+        $stored = $this->lineOf($run, $line);
+
+        // The QS opens the page at ₹5,800.00.
+        $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()->assertSee('₹5,800.00');
+        $seen = $this->shownOn($this->qs, $run, $stored, $ref);
+        $this->assertNotNull($seen);
+
+        // Someone else edits the row before the QS presses Accept on that page.
+        RateLibraryItem::withoutGlobalScopes()->whereKey($library->id)->update(['rate' => '58000.00']);
+
+        $changed = 'This rate or its description changed after you opened the page. Check what is shown now before you accept.';
+        $this->accept($this->qs, $run, $line, $ref, ['shown' => $seen])
+            ->assertRedirect(route('rate-suggestions.show', $run).'#line-'.$stored->id)
+            ->assertSessionHasErrors(['candidate' => $changed])
+            ->assertSessionMissing('success');
+
+        $this->assertSame('0.00', $line->fresh()->rate);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
+        $this->assertNull($this->lineOf($run, $line)->accepted_rate);
+        $this->assertSame(0, BoqRevision::withoutGlobalScopes()->where('boq_item_id', $line->id)->where('action', 'edited')->count());
+
+        // A form with no fingerprint, or one made up, is taken as out of date too. The number sent is never what is compared.
+        foreach ([null, '', str_repeat('0', 64), 'rate=58000.00'] as $shown) {
+            $this->accept($this->qs, $run, $line, $ref, ['shown' => $shown])->assertSessionHasErrors(['candidate' => $changed]);
+        }
+
+        // A change to the wording alone, with the same rate, is a change to what was approved as well.
+        $page = $this->shownOn($this->qs, $run, $stored, $ref);
+        RateLibraryItem::withoutGlobalScopes()->whereKey($library->id)->update(['item' => 'RCC M25 in slab and beams']);
+        $this->accept($this->qs, $run, $line, $ref, ['shown' => $page])->assertSessionHasErrors(['candidate' => $changed]);
+        $this->assertTrue($this->lineOf($run, $line)->isOpen());
+
+        // After looking again, the figure now on the page is the one accepted.
+        $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()->assertSee('₹58,000.00')->assertSee('RCC M25 in slab and beams');
+        $this->accept($this->qs, $run, $line, $ref)->assertSessionHasNoErrors()->assertSessionHas('success', 'Rate accepted.');
+        $this->assertSame('58000.00', $line->fresh()->rate);
+        $this->assertSame(['58000.00', $this->qs->id], [$this->lineOf($run, $line)->accepted_rate, $this->lineOf($run, $line)->accepted_by]);
+    }
+
+    public function test_a_refused_press_goes_back_to_its_own_line_and_says_why_there(): void
+    {
+        $slab = $this->line('RCC M25 in slab');
+        $plaster = $this->line('Cement plaster 12 mm thick', 'sqm');
+        $this->libraryRate('RCC M25 in slab', 'cum', '6200.00');
+        $library = $this->libraryRate('Cement plaster 12 mm thick', 'sqm', '340.00');
+        $run = $this->startRun($this->qs, $slab, $plaster);
+        $first = $this->lineOf($run, $slab);
+        $second = $this->lineOf($run, $plaster);
+        $seen = $this->shownOn($this->qs, $run, $second, 'C1');
+
+        $card = function (string $page, RateSuggestionLine $line): string {
+            $this->assertSame(1, preg_match('#<section class="card mb-4" id="line-'.$line->id.'">(.*?)</section>#s', $page, $match));
+
+            return $match[1];
+        };
+
+        $gone = 'This rate is no longer available to you. It may have been removed, changed or moved out of your projects.';
+        RateLibraryItem::withoutGlobalScopes()->whereKey($library->id)->delete();
+
+        // The page is read straight after the press, as the browser does. (Reading the session in the test
+        // first would turn its stored errors back into a bag, and the next request would then lose them.)
+        $this->accept($this->qs, $run, $plaster, 'C1', ['shown' => $seen])
+            ->assertRedirect(route('rate-suggestions.show', $run).'#line-'.$second->id);
+
+        $page = $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()->getContent();
+        $this->assertStringContainsString($gone, $card($page, $second), 'The reason is printed inside the line it is about.');
+        $this->assertStringNotContainsString($gone, $card($page, $first));
+
+        // Once read, it is not repeated on the next visit.
+        $page = $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()->getContent();
+        $this->assertStringNotContainsString($gone, $page);
+
+        // A request that fails the form rules, and a refused skip, go back to their line too.
+        $this->accept($this->qs, $run, $slab, 'C1', ['mode' => 'overwrite_everything'])
+            ->assertRedirect(route('rate-suggestions.show', $run).'#line-'.$first->id)
+            ->assertSessionHasErrors('mode');
+        $this->accept($this->qs, $run, $slab, 'C1')->assertSessionHasNoErrors();
+        $this->actingAs($this->qs)->post(route('rate-suggestions.lines.skip', [$run, $first]))
+            ->assertRedirect(route('rate-suggestions.show', $run).'#line-'.$first->id);
+        $page = $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()->getContent();
+        $this->assertStringContainsString('A rate was already accepted for this line.', $card($page, $first));
+        $this->assertStringNotContainsString('A rate was already accepted for this line.', $card($page, $second));
+
+        // A JSON caller still gets the refusal as an error response.
+        $this->actingAs($this->qs)->postJson(route('rate-suggestions.lines.accept', [$run, $first]), ['candidate' => 'C2', 'mode' => 'set_boq_rate'])
+            ->assertUnprocessable()->assertJsonValidationErrors(['candidate' => 'A rate was already accepted for this line.']);
+    }
+
     public function test_a_ref_that_is_not_on_the_lines_own_list_is_refused(): void
     {
         $slab = $this->line('RCC M25 in slab');
@@ -145,6 +240,36 @@ class AcceptTest extends RateHelperTestCase
         $this->accept($this->qs, $run, $second, $this->refOf($run, $second, RateLibrarySource::KEY, $same->id))->assertSessionHasNoErrors();
         $this->assertSame('6200.00', $second->fresh()->rate);
         $this->assertNotNull($clean);
+    }
+
+    public function test_a_long_line_description_is_shown_in_full_beside_its_warnings(): void
+    {
+        // The figures a warning is about often sit at the end of a long BOQ description.
+        $text = 'Providing and laying in position machine batched and machine mixed design mix cement concrete for reinforced cement concrete work in slabs, including pumping, '
+            .'admixtures, curing and finishing, 150 mm thick, M25 grade, all leads and lifts';
+        $this->assertGreaterThan(160, mb_strlen($text));
+        $this->assertSame(['150'], TextGuards::read(mb_substr($text, 160))['size']);
+
+        $line = $this->line($text);
+        $this->libraryRate('Reinforced cement concrete work in slabs, M25 grade, 125 mm thick', 'cum', '6200.00');
+        $run = $this->startRun($this->qs, $line);
+
+        $page = $this->actingAs($this->qs)->get(route('rate-suggestions.show', $run))->assertOk()
+            ->assertSee('Full description of this line')
+            ->assertSee($text)
+            ->assertSee('this line: 150 · that rate: 125')
+            ->assertSee('I checked grade, mix and thickness')
+            ->getContent();
+
+        // With something to check, the full text is open; the heading alone is cut short.
+        $this->assertMatchesRegularExpression('#<details [^>]*\bopen\b[^>]*>\s*<summary[^>]*>Full description of this line</summary>\s*<p[^>]*>'.preg_quote(e($text), '#').'</p>#', $page);
+
+        // A short description is the heading itself, with nothing more to open.
+        $short = $this->line('RCC M25 in slab');
+        $this->libraryRate('RCC M25 in slab', 'cum', '6100.00');
+        $this->actingAs($this->qs)->get(route('rate-suggestions.show', $this->startRun($this->qs, $short)))->assertOk()
+            ->assertSee('RCC M25 in slab')
+            ->assertDontSee('Full description of this line');
     }
 
     public function test_the_tick_is_judged_by_the_descriptions_as_they_are_when_accepting(): void
@@ -352,7 +477,7 @@ class AcceptTest extends RateHelperTestCase
         $this->assertTrue($this->lineOf($second, $plaster)->isOpen());
 
         // Through its own run it works.
-        $this->actingAs($this->qs)->post(route('rate-suggestions.lines.accept', [$second, $foreign]), ['candidate' => 'C1', 'mode' => 'set_boq_rate'])->assertSessionHasNoErrors();
+        $this->actingAs($this->qs)->post(route('rate-suggestions.lines.accept', [$second, $foreign]), ['candidate' => 'C1', 'mode' => 'set_boq_rate', 'shown' => $this->shownOn($this->qs, $second, $foreign, 'C1')])->assertSessionHasNoErrors();
         $this->assertSame('340.00', $plaster->fresh()->rate);
     }
 

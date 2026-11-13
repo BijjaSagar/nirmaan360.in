@@ -1,11 +1,13 @@
 @extends('layouts.app')
 @section('title', __('Rate suggestions'))
 @use('App\Models\RateSuggestionLine')
+@use('App\Services\RateHelper\TextGuards')
 @use('App\Support\Dec')
+@use('Illuminate\Support\Str')
 @section('content')
     @php
         $modes = [RateSuggestionLine::SET_BOQ_RATE => __('Set as the BOQ rate'), RateSuggestionLine::NOTE_CURRENT_RATE => __('Note as today\'s current rate')];
-        $values = fn (array $list) => $list === [] ? __('not stated') : implode(', ', $list);
+        $values = fn (string $kind, array $list) => $list === [] ? __('not stated') : implode(', ', array_map(fn (string $value) => TextGuards::shown($kind, $value), $list));
         $waiting = collect($lines)->filter(fn (array $entry) => $entry['line']->isOpen())->count();
     @endphp
 
@@ -45,12 +47,14 @@
         @php
             $line = $entry['line'];
             $item = $entry['item'];
+            $long = $item && mb_strlen((string) $item->description) > 160;
+            $warned = collect($entry['candidates'])->contains(fn (array $candidate) => $candidate['warnings'] !== []);
         @endphp
         <section class="card mb-4" id="line-{{ $line->id }}">
             <div class="card-head">
                 <h2 class="card-title min-w-0">
                     @if ($item)
-                        <span class="num text-xs text-ink-3">{{ $item->code }}</span> {{ \Illuminate\Support\Str::limit($item->description, 160) }}
+                        <span class="num text-xs text-ink-3">{{ $item->code }}</span> {{ Str::limit($item->description, 160) }}
                     @else
                         {{ __('A BOQ line that was removed') }}
                     @endif
@@ -63,6 +67,18 @@
                     <span class="stamp border-neel text-neel">{{ __('To decide') }}</span>
                 @endif
             </div>
+
+            @if ((int) session('refused_line') === $line->id && $errors->any())
+                <p class="border-b border-laterite bg-laterite/10 px-4 py-3 text-sm font-medium text-laterite-dark" role="alert">{{ $errors->first() }}</p>
+            @endif
+
+            @if ($long)
+                {{-- The warnings are read from the whole description, so the whole of it is here to check them against. --}}
+                <details class="border-b border-rule px-4 text-sm" @if ($warned && ! $line->isAccepted()) open @endif>
+                    <summary class="cursor-pointer py-3 text-ink-3">{{ __('Full description of this line') }}</summary>
+                    <p class="pb-2 text-ink-2">{{ $item->description }}</p>
+                </details>
+            @endif
 
             @if (! $item)
                 <p class="p-4 text-sm text-ink-3">{{ __('This BOQ line is no longer in the BOQ.') }}</p>
@@ -105,7 +121,7 @@
                                 @foreach ($candidate['warnings'] as $warning)
                                     <p class="mt-1.5 text-xs">
                                         <span class="stamp border-laterite text-laterite">{{ __($warning['label']) }}</span>
-                                        <span class="text-ink-2">{{ __('this line: :ours · that rate: :theirs', ['ours' => $values($warning['line']), 'theirs' => $values($warning['candidate'])]) }}</span>
+                                        <span class="text-ink-2">{{ __('this line: :ours · that rate: :theirs', ['ours' => $values($warning['kind'], $warning['line']), 'theirs' => $values($warning['kind'], $warning['candidate'])]) }}</span>
                                     </p>
                                 @endforeach
                                 @if ($figure->parts !== [])
@@ -117,6 +133,7 @@
                             <form method="POST" action="{{ route('rate-suggestions.lines.accept', [$run, $line]) }}" class="space-y-2 sm:col-span-2">
                                 @csrf
                                 <input type="hidden" name="candidate" value="{{ $candidate['ref'] }}">
+                                <input type="hidden" name="shown" value="{{ $figure->fingerprint() }}">
                                 <p class="num text-lg font-semibold">{{ inr($figure->rate) }} <span class="text-sm font-normal text-ink-3">/ {{ $figure->unit }}</span></p>
                                 @if ($can_note)
                                     <label class="label" for="{{ $field }}-mode">{{ __('What to do with it') }}</label>

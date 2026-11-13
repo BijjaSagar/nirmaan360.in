@@ -12,6 +12,7 @@ use App\Services\RateHelper\RateSuggestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /** Rate suggestions for BOQ lines, from the company's own records. The routes ask for boq.manage and money.view. */
@@ -49,19 +50,43 @@ class RateSuggestionController extends Controller
     public function accept(Request $request, RateSuggestionRun $run, RateSuggestionLine $line): RedirectResponse
     {
         $this->projectOf($run);
-        $data = $request->validate($this->acceptance->rules());
 
-        $this->acceptance->accept($request->user(), $run, $line, $data['candidate'], $data['mode'], $request->boolean('checked_warnings'));
+        try {
+            $data = $request->validate($this->acceptance->rules());
+            $this->acceptance->accept($request->user(), $run, $line, $data['candidate'], $data['mode'], $request->boolean('checked_warnings'), $data['shown'] ?? null);
+        } catch (ValidationException $refused) {
+            return $this->refused($request, $run, $line, $refused);
+        }
 
-        return redirect()->to(route('rate-suggestions.show', $run).'#line-'.$line->id)->with('success', __('Rate accepted.'));
+        return redirect()->to($this->atLine($run, $line))->with('success', __('Rate accepted.'));
     }
 
     public function skip(Request $request, RateSuggestionRun $run, RateSuggestionLine $line): RedirectResponse
     {
         $this->projectOf($run);
-        $this->acceptance->skip($request->user(), $run, $line);
 
-        return redirect()->to(route('rate-suggestions.show', $run).'#line-'.$line->id)->with('success', __('Line skipped.'));
+        try {
+            $this->acceptance->skip($request->user(), $run, $line);
+        } catch (ValidationException $refused) {
+            return $this->refused($request, $run, $line, $refused);
+        }
+
+        return redirect()->to($this->atLine($run, $line))->with('success', __('Line skipped.'));
+    }
+
+    private function atLine(RateSuggestionRun $run, RateSuggestionLine $line): string
+    {
+        return route('rate-suggestions.show', $run).'#line-'.$line->id;
+    }
+
+    /** A refusal goes back to the line it is about, and the screen prints it inside that line, so a long run need not be searched. */
+    private function refused(Request $request, RateSuggestionRun $run, RateSuggestionLine $line, ValidationException $refused): RedirectResponse
+    {
+        if ($request->expectsJson()) {
+            throw $refused;
+        }
+
+        return redirect()->to($this->atLine($run, $line))->withErrors($refused->errors())->with('refused_line', $line->id);
     }
 
     /** A run whose project was removed is gone with it. */

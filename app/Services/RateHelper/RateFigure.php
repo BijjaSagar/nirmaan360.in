@@ -2,6 +2,7 @@
 
 namespace App\Services\RateHelper;
 
+use App\Support\Dec;
 use Carbon\CarbonInterface;
 
 /**
@@ -33,6 +34,17 @@ final readonly class RateFigure
         public bool $incomplete = false,
         public array $parts = [],
     ) {}
+
+    /**
+     * What the person is shown of this figure, as one value the accept form sends back: the row, its
+     * rate, its unit and what it is for. Accepting compares it with the row as it is then, so a rate
+     * that changed after the page was opened is never written in the person's name. It is only
+     * compared, never read back as a rate.
+     */
+    public function fingerprint(): string
+    {
+        return hash('sha256', json_encode([$this->source, $this->rowId, Dec::money($this->rate), $this->unit, $this->description], JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR));
+    }
 
     /** Older than the number of days after which a rate is marked old. A figure with no date is not judged. */
     public function isOld(int $staleAfterDays, ?CarbonInterface $today = null): bool

@@ -19,7 +19,9 @@ use Illuminate\Validation\ValidationException;
  *
  * The rate that is written is read here, from the source row, as the person who is accepting. What
  * the list showed earlier is not trusted: a row that has gone, moved out of this person's reach or
- * changed its unit since then is refused.
+ * changed its unit since then is refused, and so is a row whose rate or description is no longer
+ * what the page showed. The form sends back the figure's fingerprint for that check only; no
+ * number from the browser is ever written.
  */
 class RateAcceptance
 {
@@ -36,16 +38,19 @@ class RateAcceptance
             'candidate' => ['required', 'string', 'max:12'],
             'mode' => ['required', Rule::in(RateSuggestionLine::MODES)],
             'checked_warnings' => ['nullable', 'boolean'],
+            // RateFigure::fingerprint() of what the page showed. A missing one counts as changed.
+            'shown' => ['nullable', 'string', 'max:64'],
         ];
     }
 
-    public function accept(User $viewer, RateSuggestionRun $run, RateSuggestionLine $line, string $ref, string $mode, bool $checkedWarnings): RateSuggestionLine
+    /** @param  string|null  $shown  The fingerprint of the figure on the person's screen when they pressed Accept. */
+    public function accept(User $viewer, RateSuggestionRun $run, RateSuggestionLine $line, string $ref, string $mode, bool $checkedWarnings, ?string $shown): RateSuggestionLine
     {
         if ($mode === RateSuggestionLine::NOTE_CURRENT_RATE && ! $this->review->canNote($viewer)) {
             throw new AuthorizationException(__('Noting a current rate needs access to the project budget.'));
         }
 
-        return DB::transaction(function () use ($viewer, $run, $line, $ref, $mode, $checkedWarnings) {
+        return DB::transaction(function () use ($viewer, $run, $line, $ref, $mode, $checkedWarnings, $shown) {
             $line = RateSuggestionLine::query()->where('run_id', $run->id)->lockForUpdate()->findOrFail($line->id);
 
             if ($line->isAccepted()) {
@@ -80,6 +85,11 @@ class RateAcceptance
 
             if (! $figure->acceptable) {
                 throw ValidationException::withMessages(['candidate' => __('This figure is shown for reference only and cannot be accepted as a rate.')]);
+            }
+
+            // The person approves the figure they saw. If someone edited the row since, they look again.
+            if ($shown === null || ! hash_equals($figure->fingerprint(), $shown)) {
+                throw ValidationException::withMessages(['candidate' => __('This rate or its description changed after you opened the page. Check what is shown now before you accept.')]);
             }
 
             if ($entry['warnings'] !== [] && ! $checkedWarnings) {

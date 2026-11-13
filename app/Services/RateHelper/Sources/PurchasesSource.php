@@ -73,6 +73,11 @@ class PurchasesSource implements BatchedRateSource
     /** At most one: the line's own material cost, which is not matched by description and so has no score. */
     public function candidates(User $viewer, BoqItem $item): iterable
     {
+        // The line was just read as this person by whoever asks, so it is not read again (one query per line on a long run).
+        if ($this->answers($viewer) && ! array_key_exists((int) $item->id, $this->items)) {
+            $this->items[(int) $item->id] = $item;
+        }
+
         if ($this->rateOf($viewer, (int) $item->id) !== null) {
             yield new RateCandidate(self::KEY, (int) $item->id);
         }
@@ -161,7 +166,7 @@ class PurchasesSource implements BatchedRateSource
                     'unit' => $unit,
                     'work' => $item->unit,
                     'wastage' => (string) Dec::of($norm->wastage_pct)->strippedOfTrailingZeros(),
-                    'rate' => Dec::indian($purchase['rate']),
+                    'rate' => self::price($purchase['rate']),
                     'document' => $purchase['document'],
                     'date' => $purchase['date']->format('d M Y'),
                     'basis' => $purchase['basis'],
@@ -188,6 +193,15 @@ class PurchasesSource implements BatchedRateSource
             incomplete: $incomplete,
             parts: $parts,
         );
+    }
+
+    /**
+     * A price per base unit, written with every decimal it was worked out to (at least two), so the
+     * quantity and price in the note multiply out to the amount beside it. 7.235 stays 7.235, not 7.24.
+     */
+    private static function price(BigDecimal $rate): string
+    {
+        return Dec::indian($rate, max(2, $rate->strippedOfTrailingZeros()->getScale()));
     }
 
     /**

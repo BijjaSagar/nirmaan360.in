@@ -23,6 +23,15 @@ final class TextGuards
         'lift' => 'Lift',
     ];
 
+    /** What "all leads" or "all lifts" is read as. It is a word, not a figure, so it is shown in the person's language. */
+    public const ALL = 'all';
+
+    /** Kind => English words for ALL on the screen, passed through __() where shown. */
+    public const ALL_WORDS = [
+        'lead' => 'all leads',
+        'lift' => 'all lifts',
+    ];
+
     private const NUMBER = '\d+(?:\.\d+)?';
 
     private const DISTANCE = '(km|kms|kilometres?|kilometers?|m|mtrs?|metres?|meters?|rmt)';
@@ -52,6 +61,12 @@ final class TextGuards
 
             return $values;
         }, $found);
+    }
+
+    /** One value of a warning as the screen shows it: a figure as read (M25, 1:4, 50 m), or ALL in the person's language. */
+    public static function shown(string $kind, string $value): string
+    {
+        return $value === self::ALL && isset(self::ALL_WORDS[$kind]) ? __(self::ALL_WORDS[$kind]) : $value;
     }
 
     /**
@@ -129,7 +144,7 @@ final class TextGuards
 
         if (preg_match('/(?<![\p{L}])all\s+'.$word.'s?(?![\p{L}])/iu', $text)
             || preg_match('/(?<![\p{L}])all\s+'.$other.'s?\s*(?:and|&|,)\s*'.$word.'s?(?![\p{L}])/iu', $text)) {
-            $found[] = 'all';
+            $found[] = self::ALL;
         }
 
         // "lead upto 50 m"
