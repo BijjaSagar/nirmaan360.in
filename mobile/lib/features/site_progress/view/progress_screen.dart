@@ -127,6 +127,7 @@ class _ProgressScroll extends StatelessWidget {
 
     return <Widget>[
       SliverToBoxAdapter(child: _SummaryCard(overview: overview)),
+      const SliverToBoxAdapter(child: _ProgressLinks()),
       SliverToBoxAdapter(child: _TabStrip(state: state, overview: overview)),
       ..._tab(context, l, state, overview),
       const SliverToBoxAdapter(child: SizedBox(height: N360Space.lg)),
@@ -139,7 +140,13 @@ class _ProgressScroll extends StatelessWidget {
 
     switch (state.tab) {
       case ProgressTab.floors:
-        if (overview.floors.isEmpty) return <Widget>[empty(l.progressNoFloorsTitle, l.progressNoFloorsMessage)];
+        if (overview.floors.isEmpty) {
+          // Whoever plans the work adds the floors here; everyone else is told whom to ask.
+          if (context.select((AppGate gate) => gate.state.can('progress.manage'))) {
+            return <Widget>[empty(l.floorSetupEmptyTitle, l.floorSetupEmptyMessage)];
+          }
+          return <Widget>[empty(l.progressNoFloorsTitle, l.progressNoFloorsMessage)];
+        }
         return <Widget>[_FloorList(floors: overview.floors)];
       case ProgressTab.stages:
         final StageTrade? trade = state.currentTrade;
@@ -221,6 +228,47 @@ class _SummaryCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The week's view for everyone, and floor set-up for those who plan the work.
+class _ProgressLinks extends StatelessWidget {
+  const _ProgressLinks();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool canManage = context.select((AppGate gate) => gate.state.can('progress.manage'));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.sm),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: GloveButton(
+              key: const ValueKey<String>('progress-week'),
+              label: l.progressWeekOpen,
+              icon: Icons.date_range_outlined,
+              kind: GloveButtonKind.secondary,
+              fullWidth: true,
+              onPressed: () => context.push(Routes.progressWeek),
+            ),
+          ),
+          if (canManage) ...<Widget>[
+            const SizedBox(width: N360Space.sm),
+            Expanded(
+              child: GloveButton(
+                key: const ValueKey<String>('progress-floor-setup'),
+                label: l.floorSetupOpen,
+                icon: Icons.layers_outlined,
+                kind: GloveButtonKind.secondary,
+                fullWidth: true,
+                onPressed: () => context.push(Routes.floorSetup),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

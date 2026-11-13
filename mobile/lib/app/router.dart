@@ -54,9 +54,13 @@ import '../features/settings/view/account_deletion_screen.dart';
 import '../features/settings/view/settings_screen.dart';
 import '../features/site_alerts/bloc/site_alerts_cubit.dart';
 import '../features/site_alerts/view/site_dashboard_screen.dart';
+import '../features/site_progress/view/floor_plan_screen.dart';
 import '../features/site_progress/view/floor_progress_screen.dart';
+import '../features/site_progress/view/floor_setup_screen.dart';
+import '../features/site_progress/view/floor_split_screen.dart';
 import '../features/site_progress/view/progress_form_screen.dart';
 import '../features/site_progress/view/progress_screen.dart';
+import '../features/site_progress/view/progress_week_screen.dart';
 import '../features/site_progress/view/stage_row_screen.dart';
 import '../features/site_tools/view/site_tools_screen.dart';
 import '../features/sync_center/view/sync_center_screen.dart';
@@ -303,6 +307,17 @@ GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
           _route('top-up', (_) => const TopUpScreen()),
         ],
       ),
+      // Floors and segments set up from the phone. `split` comes before
+      // `:floor/plan`, which would otherwise never see it.
+      _route(
+        Routes.floorSetup,
+        (_) => const FloorSetupScreen(),
+        routes: <RouteBase>[
+          _route('split', (_) => const FloorSplitScreen()),
+          _route(':floor/plan', (s) => FloorPlanScreen(floorId: int.parse(s.pathParameters['floor']!))),
+        ],
+      ),
+      _route(Routes.progressWeek, (s) => ProgressWeekScreen(date: s.uri.queryParameters['date'])),
     ],
   );
 }

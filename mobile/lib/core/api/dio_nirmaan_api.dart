@@ -1022,4 +1022,59 @@ class DioNirmaanApi implements NirmaanApi {
       return null;
     }
   }
+
+  // Setting up floors and segments (online only).
+
+  @override
+  Future<Map<String, dynamic>> addFloor(int projectId, {required String name, int? parentId, required String clientUuid}) =>
+      _postData('/projects/$projectId/floors', {'name': name, 'parent_id': parentId, 'client_uuid': clientUuid});
+
+  @override
+  Future<Map<String, dynamic>> renameFloor(int floorId, {required String name}) async {
+    final body = await _call(() => _dio.patch('/floors/$floorId', data: {'name': name}));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> setFloorTarget(int floorId, {required int boqItemId, required String plannedQty}) async {
+    final body = await _call(
+      () => _dio.put('/floors/$floorId/target', data: {'boq_item_id': boqItemId, 'planned_qty': plannedQty}),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> splitFloors(
+    int projectId, {
+    required List<int> floorIds,
+    List<int> boqItemIds = const <int>[],
+    bool allItems = false,
+  }) => _postData('/projects/$projectId/floors/split', {
+    'floor_ids': floorIds,
+    if (allItems) 'all_items': true else 'boq_item_ids': boqItemIds,
+  });
+
+  @override
+  Future<void> deleteFloor(int floorId) async {
+    await _call(() => _dio.delete('/floors/$floorId'));
+  }
+
+  @override
+  Future<Map<String, dynamic>> setProgressTimeFrame(int projectId, {String? startDate, int? plannedDays, String? deadlineDate}) async {
+    final body = await _call(
+      () => _dio.patch(
+        '/projects/$projectId/progress/time-frame',
+        data: {'start_date': startDate, 'planned_days': plannedDays, 'deadline_date': deadlineDate},
+      ),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> progressWeek(int projectId, {String? date}) async {
+    final body = await _call(
+      () => _dio.get('/projects/$projectId/progress/week', queryParameters: {'date': ?date}),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
 }

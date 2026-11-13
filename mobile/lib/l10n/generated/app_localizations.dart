@@ -3430,6 +3430,420 @@ abstract class AppLocalizations {
   /// **'Yesterday'**
   String get dprYesterdayTag;
 
+  /// No description provided for @floorPlanBoqQty.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ {qty} {unit}'**
+  String floorPlanBoqQty(String qty, String unit);
+
+  /// No description provided for @floorPlanEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add BOQ lines to the project first.'**
+  String get floorPlanEmptyMessage;
+
+  /// No description provided for @floorPlanEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No BOQ lines'**
+  String get floorPlanEmptyTitle;
+
+  /// No description provided for @floorPlanFloorDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} done on this floor'**
+  String floorPlanFloorDone(String percent);
+
+  /// No description provided for @floorPlanNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No line matches'**
+  String get floorPlanNoMatch;
+
+  /// No description provided for @floorPlanNotPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Not planned here'**
+  String get floorPlanNotPlanned;
+
+  /// No description provided for @floorPlanPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned {planned} {unit} · done {done}'**
+  String floorPlanPlanned(String planned, String unit, String done);
+
+  /// No description provided for @floorPlanQty.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned quantity on this floor ({unit})'**
+  String floorPlanQty(String unit);
+
+  /// No description provided for @floorPlanQtyHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 0 to remove it.'**
+  String get floorPlanQtyHelp;
+
+  /// No description provided for @floorPlanQtyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a quantity from zero up, with at most three decimals.'**
+  String get floorPlanQtyInvalid;
+
+  /// No description provided for @floorPlanSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned quantity saved.'**
+  String get floorPlanSaved;
+
+  /// No description provided for @floorPlanSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by code or name'**
+  String get floorPlanSearch;
+
+  /// No description provided for @floorPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned quantities'**
+  String get floorPlanTitle;
+
+  /// No description provided for @floorSetupAddFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Add floor'**
+  String get floorSetupAddFloor;
+
+  /// No description provided for @floorSetupAddSegments.
+  ///
+  /// In en, this message translates to:
+  /// **'Split into segments'**
+  String get floorSetupAddSegments;
+
+  /// No description provided for @floorSetupAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} added.'**
+  String floorSetupAdded(String name);
+
+  /// No description provided for @floorSetupChooseDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a date'**
+  String get floorSetupChooseDate;
+
+  /// No description provided for @floorSetupClearDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get floorSetupClearDate;
+
+  /// No description provided for @floorSetupDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned days'**
+  String get floorSetupDays;
+
+  /// No description provided for @floorSetupDaysInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter whole days, from 1 to 5000.'**
+  String get floorSetupDaysInvalid;
+
+  /// No description provided for @floorSetupDeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline'**
+  String get floorSetupDeadline;
+
+  /// No description provided for @floorSetupDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove floor'**
+  String get floorSetupDelete;
+
+  /// No description provided for @floorSetupDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The floor and the quantities planned on it are removed. A floor with work recorded on it, or with segments under it, cannot be removed.'**
+  String get floorSetupDeleteBody;
+
+  /// No description provided for @floorSetupDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get floorSetupDeleteConfirm;
+
+  /// No description provided for @floorSetupDeleteKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it'**
+  String get floorSetupDeleteKeep;
+
+  /// No description provided for @floorSetupDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String floorSetupDeleteTitle(String name);
+
+  /// No description provided for @floorSetupDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} removed.'**
+  String floorSetupDeleted(String name);
+
+  /// No description provided for @floorSetupEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the floors of this building. Split a floor into flats or segments to track each one.'**
+  String get floorSetupEmptyMessage;
+
+  /// No description provided for @floorSetupEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No floors yet'**
+  String get floorSetupEmptyTitle;
+
+  /// No description provided for @floorSetupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save. Try again.'**
+  String get floorSetupFailed;
+
+  /// No description provided for @floorSetupFloorName.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor name'**
+  String get floorSetupFloorName;
+
+  /// No description provided for @floorSetupFloorNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: Ground floor'**
+  String get floorSetupFloorNameHint;
+
+  /// No description provided for @floorSetupForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not allowed to do this.'**
+  String get floorSetupForbidden;
+
+  /// No description provided for @floorSetupLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the floors.'**
+  String get floorSetupLoadFailed;
+
+  /// No description provided for @floorSetupLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading floors'**
+  String get floorSetupLoading;
+
+  /// No description provided for @floorSetupNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name.'**
+  String get floorSetupNameRequired;
+
+  /// No description provided for @floorSetupNotPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing planned yet'**
+  String get floorSetupNotPlanned;
+
+  /// No description provided for @floorSetupOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet. Floors are set up online only.'**
+  String get floorSetupOffline;
+
+  /// No description provided for @floorSetupOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up floors'**
+  String get floorSetupOpen;
+
+  /// No description provided for @floorSetupOwnerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the company owner can remove a floor.'**
+  String get floorSetupOwnerNote;
+
+  /// No description provided for @floorSetupPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan quantities'**
+  String get floorSetupPlan;
+
+  /// No description provided for @floorSetupPlannedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 BOQ line planned} other{{count} BOQ lines planned}}'**
+  String floorSetupPlannedCount(int count);
+
+  /// No description provided for @floorSetupRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get floorSetupRename;
+
+  /// No description provided for @floorSetupRenameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename {name}'**
+  String floorSetupRenameTitle(String name);
+
+  /// No description provided for @floorSetupRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Name saved.'**
+  String get floorSetupRenamed;
+
+  /// No description provided for @floorSetupRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get floorSetupRetry;
+
+  /// No description provided for @floorSetupSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get floorSetupSave;
+
+  /// No description provided for @floorSetupSegmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 segment} other{{count} segments}}'**
+  String floorSetupSegmentCount(int count);
+
+  /// No description provided for @floorSetupSegmentsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 segment added.} other{{count} segments added.}}'**
+  String floorSetupSegmentsAdded(int count);
+
+  /// No description provided for @floorSetupSegmentsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat 101\nFlat 102'**
+  String get floorSetupSegmentsHint;
+
+  /// No description provided for @floorSetupSegmentsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment names, one per line'**
+  String get floorSetupSegmentsLabel;
+
+  /// No description provided for @floorSetupSegmentsNotAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not added: {names}'**
+  String floorSetupSegmentsNotAdded(String names);
+
+  /// No description provided for @floorSetupSegmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Segments of {name}'**
+  String floorSetupSegmentsTitle(String name);
+
+  /// No description provided for @floorSetupShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share BOQ across floors'**
+  String get floorSetupShare;
+
+  /// No description provided for @floorSetupStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get floorSetupStart;
+
+  /// No description provided for @floorSetupTimeFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Time frame'**
+  String get floorSetupTimeFrame;
+
+  /// No description provided for @floorSetupTimeFrameNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get floorSetupTimeFrameNone;
+
+  /// No description provided for @floorSetupTimeFrameSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Time frame saved.'**
+  String get floorSetupTimeFrameSaved;
+
+  /// No description provided for @floorSetupTimeFrameSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Start {start} · {days} days · deadline {deadline}'**
+  String floorSetupTimeFrameSummary(String start, String days, String deadline);
+
+  /// No description provided for @floorSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Floors and segments'**
+  String get floorSetupTitle;
+
+  /// No description provided for @floorSplitAllLines.
+  ///
+  /// In en, this message translates to:
+  /// **'All BOQ lines'**
+  String get floorSplitAllLines;
+
+  /// No description provided for @floorSplitDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 BOQ line shared.} other{{count} BOQ lines shared.}}'**
+  String floorSplitDone(int count);
+
+  /// No description provided for @floorSplitExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'Each chosen BOQ line is shared equally across the chosen floors and segments. What was planned for these lines on other floors is replaced.'**
+  String get floorSplitExplain;
+
+  /// No description provided for @floorSplitFloors.
+  ///
+  /// In en, this message translates to:
+  /// **'Floors and segments'**
+  String get floorSplitFloors;
+
+  /// No description provided for @floorSplitLines.
+  ///
+  /// In en, this message translates to:
+  /// **'BOQ lines'**
+  String get floorSplitLines;
+
+  /// No description provided for @floorSplitNeedFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one floor.'**
+  String get floorSplitNeedFloor;
+
+  /// No description provided for @floorSplitNeedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one BOQ line.'**
+  String get floorSplitNeedLine;
+
+  /// No description provided for @floorSplitSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Share equally'**
+  String get floorSplitSubmit;
+
+  /// No description provided for @floorSplitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share BOQ across floors'**
+  String get floorSplitTitle;
+
   /// No description provided for @inspectionCategoryGeneral.
   ///
   /// In en, this message translates to:
@@ -7609,7 +8023,7 @@ abstract class AppLocalizations {
   /// No description provided for @progressNoFloorsMessage.
   ///
   /// In en, this message translates to:
-  /// **'Ask your office to add floors and flats on the website.'**
+  /// **'Ask your project manager to add floors and flats.'**
   String get progressNoFloorsMessage;
 
   /// No description provided for @progressNoFloorsTitle.
@@ -7797,6 +8211,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Site progress'**
   String get progressTitle;
+
+  /// No description provided for @progressWeekDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done this week'**
+  String get progressWeekDone;
+
+  /// No description provided for @progressWeekEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 entry} other{{count} entries}}'**
+  String progressWeekEntries(int count);
+
+  /// No description provided for @progressWeekFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the week.'**
+  String get progressWeekFailed;
+
+  /// No description provided for @progressWeekLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{left} {unit} left · {percent} done'**
+  String progressWeekLeft(String left, String unit, String percent);
+
+  /// No description provided for @progressWeekMore.
+  ///
+  /// In en, this message translates to:
+  /// **'And {count} more'**
+  String progressWeekMore(int count);
+
+  /// No description provided for @progressWeekNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get progressWeekNext;
+
+  /// No description provided for @progressWeekNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 BOQ line not started} other{{count} BOQ lines not started}}'**
+  String progressWeekNotStarted(int count);
+
+  /// No description provided for @progressWeekNothingDone.
+  ///
+  /// In en, this message translates to:
+  /// **'No work entered this week.'**
+  String get progressWeekNothingDone;
+
+  /// No description provided for @progressWeekOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet. The weekly view needs a connection.'**
+  String get progressWeekOffline;
+
+  /// No description provided for @progressWeekOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get progressWeekOpen;
+
+  /// No description provided for @progressWeekPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get progressWeekPending;
+
+  /// No description provided for @progressWeekPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous week'**
+  String get progressWeekPrevious;
+
+  /// No description provided for @progressWeekQty.
+  ///
+  /// In en, this message translates to:
+  /// **'{qty} {unit} this week'**
+  String progressWeekQty(String qty, String unit);
+
+  /// No description provided for @progressWeekRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} to {end}'**
+  String progressWeekRange(String start, String end);
+
+  /// No description provided for @progressWeekTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get progressWeekTitle;
+
+  /// No description provided for @progressWeekUnderWay.
+  ///
+  /// In en, this message translates to:
+  /// **'Under way'**
+  String get progressWeekUnderWay;
 
   /// No description provided for @progressWorkDone.
   ///

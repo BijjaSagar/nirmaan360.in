@@ -333,6 +333,7 @@ class AppGate extends Cubit<GateState> {
     Routes.materialCount: 'material_control.count',
     Routes.materialChallan: 'material_control.view',
     Routes.materialBills: 'material_control.bills',
+    Routes.progressWeek: 'progress.view',
   };
 
   /// The location for [uri], or null to stay.
@@ -370,6 +371,8 @@ class AppGate extends Cubit<GateState> {
     if (Routes.isStockEntry(path) && !(s.canStockProcure && s.can('material_control.view'))) return Routes.home;
     if (path == Routes.siteTools && !s.hasSiteTools) return Routes.home;
     if (path == Routes.materialWastage && !s.canSeeWastage) return Routes.home;
+    // Floors are set up by the people who plan the work. The server refuses anyone else.
+    if (Routes.isFloorSetup(path) && !s.can('progress.manage')) return Routes.progress;
     if (path == Routes.siteDashboard && !s.canOpenSite) return Routes.home;
     // The portal belongs to contractor logins. The server would refuse the site team anyway.
     if (Routes.isPortal(path)) return Routes.home;

@@ -925,6 +925,195 @@
   "dprWriteToday": "Write today's report",
   "dprYesterdayLabel": "Yesterday",
   "dprYesterdayTag": "Yesterday",
+  "floorPlanBoqQty": "BOQ {qty} {unit}",
+  "@floorPlanBoqQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanEmptyMessage": "Add BOQ lines to the project first.",
+  "floorPlanEmptyTitle": "No BOQ lines",
+  "floorPlanFloorDone": "{percent} done on this floor",
+  "@floorPlanFloorDone": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanNoMatch": "No line matches",
+  "floorPlanNotPlanned": "Not planned here",
+  "floorPlanPlanned": "Planned {planned} {unit} · done {done}",
+  "@floorPlanPlanned": {
+    "placeholders": {
+      "planned": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "done": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanQty": "Planned quantity on this floor ({unit})",
+  "@floorPlanQty": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanQtyHelp": "Enter 0 to remove it.",
+  "floorPlanQtyInvalid": "Enter a quantity from zero up, with at most three decimals.",
+  "floorPlanSaved": "Planned quantity saved.",
+  "floorPlanSearch": "Search by code or name",
+  "floorPlanTitle": "Planned quantities",
+  "floorSetupAddFloor": "Add floor",
+  "floorSetupAddSegments": "Split into segments",
+  "floorSetupAdded": "{name} added.",
+  "@floorSetupAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupChooseDate": "Choose a date",
+  "floorSetupClearDate": "Clear",
+  "floorSetupDays": "Planned days",
+  "floorSetupDaysInvalid": "Enter whole days, from 1 to 5000.",
+  "floorSetupDeadline": "Deadline",
+  "floorSetupDelete": "Remove floor",
+  "floorSetupDeleteBody": "The floor and the quantities planned on it are removed. A floor with work recorded on it, or with segments under it, cannot be removed.",
+  "floorSetupDeleteConfirm": "Remove",
+  "floorSetupDeleteKeep": "Keep it",
+  "floorSetupDeleteTitle": "Remove {name}?",
+  "@floorSetupDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupDeleted": "{name} removed.",
+  "@floorSetupDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupEmptyMessage": "Add the floors of this building. Split a floor into flats or segments to track each one.",
+  "floorSetupEmptyTitle": "No floors yet",
+  "floorSetupFailed": "Could not save. Try again.",
+  "floorSetupFloorName": "Floor name",
+  "floorSetupFloorNameHint": "For example: Ground floor",
+  "floorSetupForbidden": "You are not allowed to do this.",
+  "floorSetupLoadFailed": "Could not load the floors.",
+  "floorSetupLoading": "Loading floors",
+  "floorSetupNameRequired": "Enter a name.",
+  "floorSetupNotPlanned": "Nothing planned yet",
+  "floorSetupOffline": "No internet. Floors are set up online only.",
+  "floorSetupOpen": "Set up floors",
+  "floorSetupOwnerNote": "Only the company owner can remove a floor.",
+  "floorSetupPlan": "Plan quantities",
+  "floorSetupPlannedCount": "{count, plural, =1{1 BOQ line planned} other{{count} BOQ lines planned}}",
+  "@floorSetupPlannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSetupRename": "Rename",
+  "floorSetupRenameTitle": "Rename {name}",
+  "@floorSetupRenameTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupRenamed": "Name saved.",
+  "floorSetupRetry": "Try again",
+  "floorSetupSave": "Save",
+  "floorSetupSegmentCount": "{count, plural, =1{1 segment} other{{count} segments}}",
+  "@floorSetupSegmentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSetupSegmentsAdded": "{count, plural, =1{1 segment added.} other{{count} segments added.}}",
+  "@floorSetupSegmentsAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSetupSegmentsHint": "Flat 101\nFlat 102",
+  "floorSetupSegmentsLabel": "Segment names, one per line",
+  "floorSetupSegmentsNotAdded": "Not added: {names}",
+  "@floorSetupSegmentsNotAdded": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupSegmentsTitle": "Segments of {name}",
+  "@floorSetupSegmentsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupShare": "Share BOQ across floors",
+  "floorSetupStart": "Start date",
+  "floorSetupTimeFrame": "Time frame",
+  "floorSetupTimeFrameNone": "Not set",
+  "floorSetupTimeFrameSaved": "Time frame saved.",
+  "floorSetupTimeFrameSummary": "Start {start} · {days} days · deadline {deadline}",
+  "@floorSetupTimeFrameSummary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      },
+      "deadline": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupTitle": "Floors and segments",
+  "floorSplitAllLines": "All BOQ lines",
+  "floorSplitDone": "{count, plural, =1{1 BOQ line shared.} other{{count} BOQ lines shared.}}",
+  "@floorSplitDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSplitExplain": "Each chosen BOQ line is shared equally across the chosen floors and segments. What was planned for these lines on other floors is replaced.",
+  "floorSplitFloors": "Floors and segments",
+  "floorSplitLines": "BOQ lines",
+  "floorSplitNeedFloor": "Choose at least one floor.",
+  "floorSplitNeedLine": "Choose at least one BOQ line.",
+  "floorSplitSubmit": "Share equally",
+  "floorSplitTitle": "Share BOQ across floors",
   "inspectionCategoryGeneral": "General",
   "inspectionCategoryPourCard": "Pour card",
   "inspectionCategoryPpe": "PPE",
@@ -2211,7 +2400,7 @@
   "progressLoading": "Loading progress",
   "progressNoDataMessage": "Connect to the internet once to load this project's progress. After that it works offline.",
   "progressNoDataTitle": "Not loaded yet",
-  "progressNoFloorsMessage": "Ask your office to add floors and flats on the website.",
+  "progressNoFloorsMessage": "Ask your project manager to add floors and flats.",
   "progressNoFloorsTitle": "No floors added yet",
   "progressNoPendingMessage": "Items marked pending on site will show here.",
   "progressNoPendingTitle": "Nothing pending",
@@ -2267,6 +2456,76 @@
     }
   },
   "progressTitle": "Site progress",
+  "progressWeekDone": "Done this week",
+  "progressWeekEntries": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@progressWeekEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressWeekFailed": "Could not load the week.",
+  "progressWeekLeft": "{left} {unit} left · {percent} done",
+  "@progressWeekLeft": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "progressWeekMore": "And {count} more",
+  "@progressWeekMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressWeekNext": "Next week",
+  "progressWeekNotStarted": "{count, plural, =1{1 BOQ line not started} other{{count} BOQ lines not started}}",
+  "@progressWeekNotStarted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressWeekNothingDone": "No work entered this week.",
+  "progressWeekOffline": "No internet. The weekly view needs a connection.",
+  "progressWeekOpen": "This week",
+  "progressWeekPending": "Pending",
+  "progressWeekPrevious": "Previous week",
+  "progressWeekQty": "{qty} {unit} this week",
+  "@progressWeekQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "progressWeekRange": "{start} to {end}",
+  "@progressWeekRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "progressWeekTitle": "Week",
+  "progressWeekUnderWay": "Under way",
   "progressWorkDone": "Work done",
   "projectEditLoading": "Opening the project…",
   "projectEditOffline": "A project can only be changed with network. Try again when you have signal.",

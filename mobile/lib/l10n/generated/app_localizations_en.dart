@@ -1907,6 +1907,276 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprYesterdayTag => 'Yesterday';
 
   @override
+  String floorPlanBoqQty(String qty, String unit) {
+    return 'BOQ $qty $unit';
+  }
+
+  @override
+  String get floorPlanEmptyMessage => 'Add BOQ lines to the project first.';
+
+  @override
+  String get floorPlanEmptyTitle => 'No BOQ lines';
+
+  @override
+  String floorPlanFloorDone(String percent) {
+    return '$percent done on this floor';
+  }
+
+  @override
+  String get floorPlanNoMatch => 'No line matches';
+
+  @override
+  String get floorPlanNotPlanned => 'Not planned here';
+
+  @override
+  String floorPlanPlanned(String planned, String unit, String done) {
+    return 'Planned $planned $unit · done $done';
+  }
+
+  @override
+  String floorPlanQty(String unit) {
+    return 'Planned quantity on this floor ($unit)';
+  }
+
+  @override
+  String get floorPlanQtyHelp => 'Enter 0 to remove it.';
+
+  @override
+  String get floorPlanQtyInvalid =>
+      'Enter a quantity from zero up, with at most three decimals.';
+
+  @override
+  String get floorPlanSaved => 'Planned quantity saved.';
+
+  @override
+  String get floorPlanSearch => 'Search by code or name';
+
+  @override
+  String get floorPlanTitle => 'Planned quantities';
+
+  @override
+  String get floorSetupAddFloor => 'Add floor';
+
+  @override
+  String get floorSetupAddSegments => 'Split into segments';
+
+  @override
+  String floorSetupAdded(String name) {
+    return '$name added.';
+  }
+
+  @override
+  String get floorSetupChooseDate => 'Choose a date';
+
+  @override
+  String get floorSetupClearDate => 'Clear';
+
+  @override
+  String get floorSetupDays => 'Planned days';
+
+  @override
+  String get floorSetupDaysInvalid => 'Enter whole days, from 1 to 5000.';
+
+  @override
+  String get floorSetupDeadline => 'Deadline';
+
+  @override
+  String get floorSetupDelete => 'Remove floor';
+
+  @override
+  String get floorSetupDeleteBody =>
+      'The floor and the quantities planned on it are removed. A floor with work recorded on it, or with segments under it, cannot be removed.';
+
+  @override
+  String get floorSetupDeleteConfirm => 'Remove';
+
+  @override
+  String get floorSetupDeleteKeep => 'Keep it';
+
+  @override
+  String floorSetupDeleteTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String floorSetupDeleted(String name) {
+    return '$name removed.';
+  }
+
+  @override
+  String get floorSetupEmptyMessage =>
+      'Add the floors of this building. Split a floor into flats or segments to track each one.';
+
+  @override
+  String get floorSetupEmptyTitle => 'No floors yet';
+
+  @override
+  String get floorSetupFailed => 'Could not save. Try again.';
+
+  @override
+  String get floorSetupFloorName => 'Floor name';
+
+  @override
+  String get floorSetupFloorNameHint => 'For example: Ground floor';
+
+  @override
+  String get floorSetupForbidden => 'You are not allowed to do this.';
+
+  @override
+  String get floorSetupLoadFailed => 'Could not load the floors.';
+
+  @override
+  String get floorSetupLoading => 'Loading floors';
+
+  @override
+  String get floorSetupNameRequired => 'Enter a name.';
+
+  @override
+  String get floorSetupNotPlanned => 'Nothing planned yet';
+
+  @override
+  String get floorSetupOffline => 'No internet. Floors are set up online only.';
+
+  @override
+  String get floorSetupOpen => 'Set up floors';
+
+  @override
+  String get floorSetupOwnerNote =>
+      'Only the company owner can remove a floor.';
+
+  @override
+  String get floorSetupPlan => 'Plan quantities';
+
+  @override
+  String floorSetupPlannedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count BOQ lines planned',
+      one: '1 BOQ line planned',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get floorSetupRename => 'Rename';
+
+  @override
+  String floorSetupRenameTitle(String name) {
+    return 'Rename $name';
+  }
+
+  @override
+  String get floorSetupRenamed => 'Name saved.';
+
+  @override
+  String get floorSetupRetry => 'Try again';
+
+  @override
+  String get floorSetupSave => 'Save';
+
+  @override
+  String floorSetupSegmentCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count segments',
+      one: '1 segment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String floorSetupSegmentsAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count segments added.',
+      one: '1 segment added.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get floorSetupSegmentsHint => 'Flat 101\nFlat 102';
+
+  @override
+  String get floorSetupSegmentsLabel => 'Segment names, one per line';
+
+  @override
+  String floorSetupSegmentsNotAdded(String names) {
+    return 'Not added: $names';
+  }
+
+  @override
+  String floorSetupSegmentsTitle(String name) {
+    return 'Segments of $name';
+  }
+
+  @override
+  String get floorSetupShare => 'Share BOQ across floors';
+
+  @override
+  String get floorSetupStart => 'Start date';
+
+  @override
+  String get floorSetupTimeFrame => 'Time frame';
+
+  @override
+  String get floorSetupTimeFrameNone => 'Not set';
+
+  @override
+  String get floorSetupTimeFrameSaved => 'Time frame saved.';
+
+  @override
+  String floorSetupTimeFrameSummary(
+    String start,
+    String days,
+    String deadline,
+  ) {
+    return 'Start $start · $days days · deadline $deadline';
+  }
+
+  @override
+  String get floorSetupTitle => 'Floors and segments';
+
+  @override
+  String get floorSplitAllLines => 'All BOQ lines';
+
+  @override
+  String floorSplitDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count BOQ lines shared.',
+      one: '1 BOQ line shared.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get floorSplitExplain =>
+      'Each chosen BOQ line is shared equally across the chosen floors and segments. What was planned for these lines on other floors is replaced.';
+
+  @override
+  String get floorSplitFloors => 'Floors and segments';
+
+  @override
+  String get floorSplitLines => 'BOQ lines';
+
+  @override
+  String get floorSplitNeedFloor => 'Choose at least one floor.';
+
+  @override
+  String get floorSplitNeedLine => 'Choose at least one BOQ line.';
+
+  @override
+  String get floorSplitSubmit => 'Share equally';
+
+  @override
+  String get floorSplitTitle => 'Share BOQ across floors';
+
+  @override
   String get inspectionCategoryGeneral => 'General';
 
   @override
@@ -4335,7 +4605,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get progressNoFloorsMessage =>
-      'Ask your office to add floors and flats on the website.';
+      'Ask your project manager to add floors and flats.';
 
   @override
   String get progressNoFloorsTitle => 'No floors added yet';
@@ -4440,6 +4710,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get progressTitle => 'Site progress';
+
+  @override
+  String get progressWeekDone => 'Done this week';
+
+  @override
+  String progressWeekEntries(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count entries',
+      one: '1 entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get progressWeekFailed => 'Could not load the week.';
+
+  @override
+  String progressWeekLeft(String left, String unit, String percent) {
+    return '$left $unit left · $percent done';
+  }
+
+  @override
+  String progressWeekMore(int count) {
+    return 'And $count more';
+  }
+
+  @override
+  String get progressWeekNext => 'Next week';
+
+  @override
+  String progressWeekNotStarted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count BOQ lines not started',
+      one: '1 BOQ line not started',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get progressWeekNothingDone => 'No work entered this week.';
+
+  @override
+  String get progressWeekOffline =>
+      'No internet. The weekly view needs a connection.';
+
+  @override
+  String get progressWeekOpen => 'This week';
+
+  @override
+  String get progressWeekPending => 'Pending';
+
+  @override
+  String get progressWeekPrevious => 'Previous week';
+
+  @override
+  String progressWeekQty(String qty, String unit) {
+    return '$qty $unit this week';
+  }
+
+  @override
+  String progressWeekRange(String start, String end) {
+    return '$start to $end';
+  }
+
+  @override
+  String get progressWeekTitle => 'Week';
+
+  @override
+  String get progressWeekUnderWay => 'Under way';
 
   @override
   String get progressWorkDone => 'Work done';

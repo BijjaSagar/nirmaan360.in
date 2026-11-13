@@ -174,4 +174,16 @@ abstract final class Routes {
 
   /// Wastage against the BOQ norms, read only. Needs `procurement.view` on a plan with `procurement`.
   static const materialWastage = '/material/wastage';
+
+  /// Setting up floors and segments, planning what is meant to be done on each
+  /// and sharing BOQ lines across them. All need `progress.manage`.
+  static const floorSetup = '/floor-setup';
+  static const floorSplit = '/floor-setup/split';
+  static String floorPlan(int floorId) => '/floor-setup/$floorId/plan';
+
+  /// True for the floor set-up pages, and no other path.
+  static bool isFloorSetup(String path) => path == floorSetup || path.startsWith('$floorSetup/');
+
+  /// The week's progress. Optional query: `date` (`yyyy-mm-dd`, any day of the week).
+  static const progressWeek = '/progress-week';
 }

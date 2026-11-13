@@ -4640,4 +4640,303 @@ class FakeApi implements NirmaanApi {
     return '${local.year}-${two(local.month)}-${two(local.day)}T'
         '${two(local.hour)}:${two(local.minute)}:${two(local.second)}+05:30';
   }
+
+  // Setting up floors and segments ---------------------------------------------
+  // Works on [progressFloorRows], so a refresh of the progress screen sees it.
+
+  /// Every `POST /projects/{project}/floors` that reached the server, newest last.
+  final List<Row> floorCreates = <Row>[];
+
+  /// Every `PATCH /floors/{floor}`, as (id, name).
+  final List<({int id, String name})> floorRenames = <({int id, String name})>[];
+
+  /// Every `PUT /floors/{floor}/target`, as (floor, item, qty).
+  final List<({int floorId, int itemId, String qty})> floorTargetPuts = <({int floorId, int itemId, String qty})>[];
+
+  /// Every `POST /projects/{project}/floors/split`.
+  final List<Row> floorSplits = <Row>[];
+
+  /// Every `DELETE /floors/{floor}` that reached the server.
+  final List<int> floorDeletes = <int>[];
+
+  /// Every `PATCH .../progress/time-frame`.
+  final List<Row> timeFrames = <Row>[];
+
+  /// The date of every `GET .../progress/week` (null for this week).
+  final List<String?> weekReads = <String?>[];
+
+  /// Planned quantity by floor id and BOQ item id, as the server holds it.
+  final Map<int, Map<int, String>> floorTargets = <int, Map<int, String>>{};
+
+  /// Floors with work recorded on them: the server refuses to remove these.
+  final Set<int> floorsWithWork = <int>{};
+
+  /// What `GET .../progress/week` answers; `start` and `end` follow the date asked.
+  Row progressWeekBody = {
+    'is_current': true,
+    'entry_count': 3,
+    'done': [
+      {
+        'id': 1, 'section': 'RCC', 'code': '2.1', 'description': 'RCC slab', 'unit': 'cum', 'qty': '100.000',
+        'done_qty': '40.000', 'balance_qty': '60.000', 'percent': '40.00', 'work_orders': <Row>[],
+        'week_qty': '15.000',
+        'floors': [
+          {'name': 'First floor › Flat 101', 'qty': '12.000'},
+        ],
+      },
+    ],
+    'pending': [
+      {'id': 70, 'item_code': '2.1', 'item_description': 'RCC slab', 'floor_name': 'First floor', 'remark': 'Shuttering left', 'work_date': '2026-11-08', 'entered_by_name': 'Amit'},
+    ],
+    'next': [
+      {'id': 1, 'section': 'RCC', 'code': '2.1', 'description': 'RCC slab', 'unit': 'cum', 'qty': '100.000', 'done_qty': '40.000', 'balance_qty': '60.000', 'percent': '40.00', 'work_orders': <Row>[]},
+    ],
+    'next_more': 0,
+    'not_started': 4,
+  };
+
+  /// The next floor is added but its answer never reaches the phone.
+  bool loseNextFloorResponse = false;
+
+  final Map<String, Row> _floorsByUuid = <String, Row>{};
+  int _floorSerial = 500;
+
+  Iterable<Row> _allFloors() sync* {
+    for (final Row floor in progressFloorRows) {
+      yield floor;
+      yield* (floor['children'] as List).cast<Row>();
+    }
+  }
+
+  Row _floorRow(int floorId) => _allFloors().firstWhere(
+    (f) => f['id'] == floorId,
+    orElse: () => throw const ServerFailure('Not found.', statusCode: 404),
+  );
+
+  /// The list a floor sits in. A floor's `children` may have been written as a
+  /// literal of a narrower element type, which would refuse a new row (and
+  /// still passes `is List<Row>`), so it is always put back as a `List<Row>`.
+  List<Row> _siblings(int? parentId) {
+    if (parentId == null) return progressFloorRows;
+    final Row parent = _floorRow(parentId);
+    final List<Row> typed = <Row>[...(parent['children'] as List).cast<Row>()];
+    parent['children'] = typed;
+    return typed;
+  }
+
+  void _assertFloorName(String name, int? parentId, {int? ignore}) {
+    if (name.trim().isEmpty) {
+      throw const ValidationFailure('The name field is required.', errors: {'name': ['The name field is required.']});
+    }
+    final bool taken = _siblings(parentId).any(
+      (f) => f['id'] != ignore && (f['name'] as String).toLowerCase() == name.trim().toLowerCase(),
+    );
+    if (taken) {
+      const String message = 'There is already a floor with this name here.';
+      throw const ValidationFailure(message, errors: {'name': [message]});
+    }
+  }
+
+  Row _floorOut(Row floor) => <String, dynamic>{
+    'id': floor['id'],
+    'client_uuid': floor['client_uuid'],
+    'project_id': floor['project_id'] ?? 1,
+    'name': floor['name'],
+    'parent_id': floor['parent_id'],
+    'sort': floor['sort'] ?? 1,
+  };
+
+  @override
+  Future<Map<String, dynamic>> addFloor(int projectId, {required String name, int? parentId, required String clientUuid}) async {
+    _guard();
+    _requireSetupPermission('progress.manage');
+    floorCreates.add(<String, dynamic>{'project_id': projectId, 'name': name, 'parent_id': parentId, 'client_uuid': clientUuid});
+    final Row? repeat = _floorsByUuid[clientUuid];
+    if (repeat != null) return _floorOut(repeat);
+    if (parentId != null) {
+      final Row? parent = progressFloorRows.where((f) => f['id'] == parentId).firstOrNull;
+      if (parent == null) {
+        const String message = 'The selected parent id is invalid.';
+        throw const ValidationFailure(message, errors: {'parent_id': [message]});
+      }
+    }
+    _assertFloorName(name, parentId);
+    final List<Row> siblings = _siblings(parentId);
+    final Row row = <String, dynamic>{
+      'id': _floorSerial++,
+      'client_uuid': clientUuid,
+      'project_id': projectId,
+      'name': name.trim(),
+      'parent_id': parentId,
+      'sort': siblings.length + 1,
+      'percent': '0.00',
+      'targets': 0,
+      'pending': 0,
+      'mep_pending': 0,
+      'children': <Row>[],
+    };
+    siblings.add(row);
+    _floorsByUuid[clientUuid] = row;
+    if (loseNextFloorResponse) {
+      loseNextFloorResponse = false;
+      throw const OfflineFailure();
+    }
+    return _floorOut(row);
+  }
+
+  @override
+  Future<Map<String, dynamic>> renameFloor(int floorId, {required String name}) async {
+    _guard();
+    _requireSetupPermission('progress.manage');
+    floorRenames.add((id: floorId, name: name));
+    final Row floor = _floorRow(floorId);
+    _assertFloorName(name, floor['parent_id'] as int?, ignore: floorId);
+    floor['name'] = name.trim();
+    return _floorOut(floor);
+  }
+
+  /// The floor as `GET /floors/{floor}/progress` gives it, with the targets set here.
+  Row floorDetailBody(int floorId) {
+    final Row floor = _floorRow(floorId);
+    final Map<int, String> targets = floorTargets[floorId] ?? const <int, String>{};
+    return <String, dynamic>{
+      ..._floorOut(floor),
+      'percent': floor['percent'],
+      'targets': targets.length,
+      'pending': floor['pending'] ?? 0,
+      'mep_pending': floor['mep_pending'] ?? 0,
+      'children': floor['children'],
+      'lines': <Row>[
+        for (final MapEntry<int, String> target in targets.entries)
+          () {
+            final Row item = progressItemRows.firstWhere((i) => i['id'] == target.key);
+            return <String, dynamic>{
+              'boq_item_id': target.key,
+              'code': item['code'],
+              'description': item['description'],
+              'unit': item['unit'],
+              'planned_qty': target.value,
+              'done_qty': '0.000',
+              'balance_qty': target.value,
+              'percent': '0.00',
+            };
+          }(),
+      ],
+      'pending_entries': <Row>[],
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> setFloorTarget(int floorId, {required int boqItemId, required String plannedQty}) async {
+    _guard();
+    _requireSetupPermission('progress.manage');
+    floorTargetPuts.add((floorId: floorId, itemId: boqItemId, qty: plannedQty));
+    _floorRow(floorId);
+    final Decimal? qty = Decimal.tryParse(plannedQty);
+    if (qty == null || qty < Decimal.zero) {
+      const String message = 'The planned qty field must be at least 0.';
+      throw const ValidationFailure(message, errors: {'planned_qty': [message]});
+    }
+    if (!progressItemRows.any((i) => i['id'] == boqItemId)) {
+      const String message = 'The selected boq item id is invalid.';
+      throw const ValidationFailure(message, errors: {'boq_item_id': [message]});
+    }
+    final Map<int, String> targets = floorTargets.putIfAbsent(floorId, () => <int, String>{});
+    if (qty == Decimal.zero) {
+      targets.remove(boqItemId);
+    } else {
+      targets[boqItemId] = qty.toStringAsFixed(3);
+    }
+    return floorDetailBody(floorId);
+  }
+
+  @override
+  Future<Map<String, dynamic>> splitFloors(
+    int projectId, {
+    required List<int> floorIds,
+    List<int> boqItemIds = const <int>[],
+    bool allItems = false,
+  }) async {
+    _guard();
+    _requireSetupPermission('progress.manage');
+    floorSplits.add(<String, dynamic>{'project_id': projectId, 'floor_ids': floorIds, 'boq_item_ids': boqItemIds, 'all_items': allItems});
+    if (floorIds.isEmpty) {
+      const String message = 'The floor ids field is required.';
+      throw const ValidationFailure(message, errors: {'floor_ids': [message]});
+    }
+    final List<int> itemIds = allItems ? progressItemRows.map((i) => i['id'] as int).toList() : boqItemIds;
+    if (itemIds.isEmpty) {
+      const String message = 'Choose at least one BOQ item and one floor.';
+      throw const ValidationFailure(message, errors: {'floor_ids': [message]});
+    }
+    for (final int itemId in itemIds) {
+      for (final Map<int, String> targets in floorTargets.values) {
+        targets.remove(itemId);
+      }
+      final Decimal total = Decimal.parse(progressItemRows.firstWhere((i) => i['id'] == itemId)['qty'] as String);
+      final BigInt thousandths = (total * Decimal.fromInt(1000)) ~/ Decimal.fromInt(floorIds.length);
+      final Decimal share = (Decimal.fromBigInt(thousandths) / Decimal.fromInt(1000)).toDecimal();
+      Decimal given = Decimal.zero;
+      for (final (int index, int floorId) in floorIds.indexed) {
+        final Decimal qty = index == floorIds.length - 1 ? total - given : share;
+        given += qty;
+        floorTargets.putIfAbsent(floorId, () => <int, String>{})[itemId] = qty.toStringAsFixed(3);
+      }
+    }
+    return <String, dynamic>{'count': itemIds.length, 'floors': progressFloorRows};
+  }
+
+  @override
+  Future<void> deleteFloor(int floorId) async {
+    _guard();
+    _requireSetupPermission('progress.manage');
+    if (user['is_owner'] != true) {
+      throw const ServerFailure('Only the company owner can remove a floor.', statusCode: 403);
+    }
+    final Row floor = _floorRow(floorId);
+    floorDeletes.add(floorId);
+    if ((floor['children'] as List).isNotEmpty) {
+      const String message = 'Remove the flats under this floor first.';
+      throw const ValidationFailure(message, errors: {'floor': [message]});
+    }
+    if (floorsWithWork.contains(floorId)) {
+      const String message = 'Work has been recorded on this floor, so it cannot be removed.';
+      throw const ValidationFailure(message, errors: {'floor': [message]});
+    }
+    _siblings(floor['parent_id'] as int?).remove(floor);
+    floorTargets.remove(floorId);
+  }
+
+  @override
+  Future<Map<String, dynamic>> setProgressTimeFrame(int projectId, {String? startDate, int? plannedDays, String? deadlineDate}) async {
+    _guard();
+    _requireSetupPermission('progress.manage');
+    timeFrames.add(<String, dynamic>{'start_date': startDate, 'planned_days': plannedDays, 'deadline_date': deadlineDate});
+    if (startDate != null && deadlineDate != null && DateTime.parse(deadlineDate).isBefore(DateTime.parse(startDate))) {
+      const String message = 'The deadline date field must be a date after or equal to start date.';
+      throw const ValidationFailure(message, errors: {'deadline_date': [message]});
+    }
+    progressSummaryBody = <String, dynamic>{
+      ...progressSummaryBody,
+      'start_date': startDate,
+      'planned_days': plannedDays,
+      'deadline_date': deadlineDate,
+    };
+    return progressSummaryBody;
+  }
+
+  @override
+  Future<Map<String, dynamic>> progressWeek(int projectId, {String? date}) async {
+    _guard();
+    weekReads.add(date);
+    final DateTime day = DateTime.parse(date ?? '2026-11-12');
+    final DateTime monday = day.subtract(Duration(days: day.weekday - DateTime.monday));
+    String iso(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return <String, dynamic>{
+      ...progressWeekBody,
+      'start': iso(monday),
+      'end': iso(monday.add(const Duration(days: 6))),
+      if (date != null) 'is_current': iso(monday) == '2026-11-09',
+    };
+  }
 }

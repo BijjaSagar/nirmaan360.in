@@ -635,4 +635,36 @@ abstract interface class NirmaanApi {
 
   /// `GET /projects/{project}/material-reconciliation?basis=`.
   Future<Map<String, dynamic>> materialReconciliation(int projectId, {String? basis});
+
+  // Setting up floors and segments (online only). Each answer is what the
+  // server now holds; nothing waits in the outbox. See docs/CONTRACT.md.
+
+  /// `POST /projects/{project}/floors`: a floor, or a segment under the floor
+  /// [parentId]. Returns `{id, client_uuid, project_id, name, parent_id, sort}`.
+  /// A repeated [clientUuid] returns the floor it made. `progress.manage`.
+  Future<Map<String, dynamic>> addFloor(int projectId, {required String name, int? parentId, required String clientUuid});
+
+  /// `PATCH /floors/{floor}`: renames it. Returns the same shape as [addFloor].
+  Future<Map<String, dynamic>> renameFloor(int floorId, {required String name});
+
+  /// `PUT /floors/{floor}/target`: what is planned for one BOQ line on the
+  /// floor; zero removes it. Returns the floor as `GET /floors/{floor}/progress`.
+  Future<Map<String, dynamic>> setFloorTarget(int floorId, {required int boqItemId, required String plannedQty});
+
+  /// `POST /projects/{project}/floors/split`: shares whole BOQ lines equally
+  /// across [floorIds] ([allItems], or the lines in [boqItemIds]). Returns
+  /// `{count, floors}`. Sending it again gives the same shares.
+  Future<Map<String, dynamic>> splitFloors(int projectId, {required List<int> floorIds, List<int> boqItemIds, bool allItems});
+
+  /// `DELETE /floors/{floor}`: the company owner only (403 for anyone else);
+  /// a floor with work recorded or segments under it is a 422 under `floor`.
+  Future<void> deleteFloor(int floorId);
+
+  /// `PATCH /projects/{project}/progress/time-frame`: all three are sent, null
+  /// clears one. Returns the progress summary.
+  Future<Map<String, dynamic>> setProgressTimeFrame(int projectId, {String? startDate, int? plannedDays, String? deadlineDate});
+
+  /// `GET /projects/{project}/progress/week`: the week (Monday to Sunday) that
+  /// holds [date], today when null.
+  Future<Map<String, dynamic>> progressWeek(int projectId, {String? date});
 }

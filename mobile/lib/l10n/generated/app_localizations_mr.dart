@@ -1880,6 +1880,264 @@ class AppLocalizationsMr extends AppLocalizations {
   String get dprYesterdayTag => 'काल';
 
   @override
+  String floorPlanBoqQty(String qty, String unit) {
+    return 'BOQ $qty $unit';
+  }
+
+  @override
+  String get floorPlanEmptyMessage => 'आधी प्रकल्पात BOQ आयटम जोडा.';
+
+  @override
+  String get floorPlanEmptyTitle => 'BOQ आयटम नाहीत';
+
+  @override
+  String floorPlanFloorDone(String percent) {
+    return 'या मजल्यावर $percent झाले';
+  }
+
+  @override
+  String get floorPlanNoMatch => 'जुळणारा आयटम नाही';
+
+  @override
+  String get floorPlanNotPlanned => 'इथे ठरवलेले नाही';
+
+  @override
+  String floorPlanPlanned(String planned, String unit, String done) {
+    return 'ठरवले $planned $unit · झाले $done';
+  }
+
+  @override
+  String floorPlanQty(String unit) {
+    return 'या मजल्यावरील ठरवलेले प्रमाण ($unit)';
+  }
+
+  @override
+  String get floorPlanQtyHelp => 'काढण्यासाठी 0 लिहा.';
+
+  @override
+  String get floorPlanQtyInvalid =>
+      'शून्य किंवा त्याहून जास्त प्रमाण लिहा, जास्तीत जास्त तीन दशांश.';
+
+  @override
+  String get floorPlanSaved => 'ठरवलेले प्रमाण जतन केले.';
+
+  @override
+  String get floorPlanSearch => 'कोड किंवा नावाने शोधा';
+
+  @override
+  String get floorPlanTitle => 'ठरवलेली प्रमाणे';
+
+  @override
+  String get floorSetupAddFloor => 'मजला जोडा';
+
+  @override
+  String get floorSetupAddSegments => 'भागांमध्ये विभागा';
+
+  @override
+  String floorSetupAdded(String name) {
+    return '$name जोडला.';
+  }
+
+  @override
+  String get floorSetupChooseDate => 'तारीख निवडा';
+
+  @override
+  String get floorSetupClearDate => 'काढा';
+
+  @override
+  String get floorSetupDays => 'नियोजित दिवस';
+
+  @override
+  String get floorSetupDaysInvalid => '1 ते 5000 पूर्ण दिवस लिहा.';
+
+  @override
+  String get floorSetupDeadline => 'अंतिम तारीख';
+
+  @override
+  String get floorSetupDelete => 'मजला काढा';
+
+  @override
+  String get floorSetupDeleteBody =>
+      'मजला आणि त्यावर ठरवलेली प्रमाणे काढली जातील. ज्या मजल्यावर काम नोंदले आहे किंवा ज्याखाली भाग आहेत तो काढता येत नाही.';
+
+  @override
+  String get floorSetupDeleteConfirm => 'काढा';
+
+  @override
+  String get floorSetupDeleteKeep => 'ठेवा';
+
+  @override
+  String floorSetupDeleteTitle(String name) {
+    return '$name काढायचा?';
+  }
+
+  @override
+  String floorSetupDeleted(String name) {
+    return '$name काढला.';
+  }
+
+  @override
+  String get floorSetupEmptyMessage =>
+      'या इमारतीचे मजले जोडा. प्रत्येक फ्लॅट किंवा भागाची प्रगती पाहण्यासाठी मजल्याचे भाग करा.';
+
+  @override
+  String get floorSetupEmptyTitle => 'अजून मजले नाहीत';
+
+  @override
+  String get floorSetupFailed => 'जतन झाले नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get floorSetupFloorName => 'मजल्याचे नाव';
+
+  @override
+  String get floorSetupFloorNameHint => 'उदा. तळमजला';
+
+  @override
+  String get floorSetupForbidden => 'हे करण्याची परवानगी नाही.';
+
+  @override
+  String get floorSetupLoadFailed => 'मजले लोड झाले नाहीत.';
+
+  @override
+  String get floorSetupLoading => 'मजले लोड होत आहेत';
+
+  @override
+  String get floorSetupNameRequired => 'नाव लिहा.';
+
+  @override
+  String get floorSetupNotPlanned => 'अजून काही नियोजन नाही';
+
+  @override
+  String get floorSetupOffline =>
+      'इंटरनेट नाही. मजले फक्त ऑनलाइन सेट करता येतात.';
+
+  @override
+  String get floorSetupOpen => 'मजले सेट करा';
+
+  @override
+  String get floorSetupOwnerNote => 'मजला फक्त कंपनीचा मालक काढू शकतो.';
+
+  @override
+  String get floorSetupPlan => 'प्रमाण ठरवा';
+
+  @override
+  String floorSetupPlannedCount(int count) {
+    return '$count BOQ आयटम नियोजित';
+  }
+
+  @override
+  String get floorSetupRename => 'नाव बदला';
+
+  @override
+  String floorSetupRenameTitle(String name) {
+    return '$name चे नाव बदला';
+  }
+
+  @override
+  String get floorSetupRenamed => 'नाव जतन केले.';
+
+  @override
+  String get floorSetupRetry => 'पुन्हा प्रयत्न करा';
+
+  @override
+  String get floorSetupSave => 'जतन करा';
+
+  @override
+  String floorSetupSegmentCount(int count) {
+    return '$count भाग';
+  }
+
+  @override
+  String floorSetupSegmentsAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count भाग जोडले.',
+      one: '1 भाग जोडला.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get floorSetupSegmentsHint => 'फ्लॅट 101\nफ्लॅट 102';
+
+  @override
+  String get floorSetupSegmentsLabel => 'भागांची नावे, एका ओळीत एक';
+
+  @override
+  String floorSetupSegmentsNotAdded(String names) {
+    return 'जोडले नाहीत: $names';
+  }
+
+  @override
+  String floorSetupSegmentsTitle(String name) {
+    return '$name चे भाग';
+  }
+
+  @override
+  String get floorSetupShare => 'BOQ मजल्यांमध्ये वाटा';
+
+  @override
+  String get floorSetupStart => 'सुरुवातीची तारीख';
+
+  @override
+  String get floorSetupTimeFrame => 'कालावधी';
+
+  @override
+  String get floorSetupTimeFrameNone => 'ठरवलेला नाही';
+
+  @override
+  String get floorSetupTimeFrameSaved => 'कालावधी जतन केला.';
+
+  @override
+  String floorSetupTimeFrameSummary(
+    String start,
+    String days,
+    String deadline,
+  ) {
+    return 'सुरुवात $start · $days दिवस · अंतिम तारीख $deadline';
+  }
+
+  @override
+  String get floorSetupTitle => 'मजले आणि भाग';
+
+  @override
+  String get floorSplitAllLines => 'सर्व BOQ आयटम';
+
+  @override
+  String floorSplitDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count BOQ आयटम वाटले.',
+      one: '1 BOQ आयटम वाटला.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get floorSplitExplain =>
+      'निवडलेला प्रत्येक BOQ आयटम निवडलेल्या मजल्यांत आणि भागांत समान वाटला जातो. या आयटमचे इतर मजल्यांवरचे नियोजन बदलले जाते.';
+
+  @override
+  String get floorSplitFloors => 'मजले आणि भाग';
+
+  @override
+  String get floorSplitLines => 'BOQ आयटम';
+
+  @override
+  String get floorSplitNeedFloor => 'किमान एक मजला निवडा.';
+
+  @override
+  String get floorSplitNeedLine => 'किमान एक BOQ आयटम निवडा.';
+
+  @override
+  String get floorSplitSubmit => 'समान वाटा';
+
+  @override
+  String get floorSplitTitle => 'BOQ मजल्यांमध्ये वाटा';
+
+  @override
   String get inspectionCategoryGeneral => 'सर्वसाधारण';
 
   @override
@@ -4294,7 +4552,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get progressNoFloorsMessage =>
-      'कार्यालयाला वेबसाइटवर मजले आणि फ्लॅट जोडायला सांगा.';
+      'प्रकल्प व्यवस्थापकाला मजले आणि फ्लॅट जोडायला सांगा.';
 
   @override
   String get progressNoFloorsTitle => 'अजून मजले जोडलेले नाहीत';
@@ -4399,6 +4657,79 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get progressTitle => 'साइट प्रगती';
+
+  @override
+  String get progressWeekDone => 'या आठवड्यात झाले';
+
+  @override
+  String progressWeekEntries(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count नोंदी',
+      one: '1 नोंद',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get progressWeekFailed => 'आठवडा लोड झाला नाही.';
+
+  @override
+  String progressWeekLeft(String left, String unit, String percent) {
+    return '$left $unit बाकी · $percent झाले';
+  }
+
+  @override
+  String progressWeekMore(int count) {
+    return 'आणखी $count';
+  }
+
+  @override
+  String get progressWeekNext => 'पुढील आठवडा';
+
+  @override
+  String progressWeekNotStarted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count BOQ आयटम सुरू झाले नाहीत',
+      one: '1 BOQ आयटम सुरू झाला नाही',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get progressWeekNothingDone => 'या आठवड्यात काम नोंदले नाही.';
+
+  @override
+  String get progressWeekOffline =>
+      'इंटरनेट नाही. आठवड्याचे दृश्य पाहण्यासाठी इंटरनेट लागते.';
+
+  @override
+  String get progressWeekOpen => 'हा आठवडा';
+
+  @override
+  String get progressWeekPending => 'बाकी';
+
+  @override
+  String get progressWeekPrevious => 'मागील आठवडा';
+
+  @override
+  String progressWeekQty(String qty, String unit) {
+    return 'या आठवड्यात $qty $unit';
+  }
+
+  @override
+  String progressWeekRange(String start, String end) {
+    return '$start ते $end';
+  }
+
+  @override
+  String get progressWeekTitle => 'आठवडा';
+
+  @override
+  String get progressWeekUnderWay => 'सुरू असलेले काम';
 
   @override
   String get progressWorkDone => 'झालेले काम';
