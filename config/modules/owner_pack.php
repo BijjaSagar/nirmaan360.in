@@ -42,4 +42,9 @@ return [
     // The largest stored photo the server opens to draw it again, in pixels. Opening one takes about
     // four bytes of memory a pixel, so this follows the memory a web request may use.
     'photo_max_pixels' => 17_000_000,
+
+    // The company's own folder for what this module draws from its records: the copy of each photo a shared
+    // weekly update has shown (App\Services\OwnerPack\SharedPhoto::COPIES). No table row names those files,
+    // so the folder is deleted whole when the company is erased.
+    'purge_directories' => ['org-{org}/owner-pack'],
 ];
