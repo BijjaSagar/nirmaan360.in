@@ -31,6 +31,7 @@ class TranslationsAndMenuTest extends ProjectSetupTestCase
             ...glob(resource_path('views/modules/project_setup/boq/*.blade.php')),
             app_path('Services/BoqService.php'),
             app_path('Http/Controllers/BoqController.php'),
+            app_path('Http/Controllers/Api/BoqItemApiController.php'),
             resource_path('views/boq/index.blade.php'),
         ];
         $texts = [];

@@ -38,6 +38,9 @@ final class UserPresenter
             'email' => $user->email,
             'role' => $user->role,
             'role_label' => $user->roleLabel(),
+            // The company's owner by built-in role; a custom role never is. The app offers owner-only actions, such as
+            // removing a BOQ line, on this. The server checks again on every such request.
+            'is_owner' => $user->role === 'owner' && $user->custom_role_id === null,
             'kind' => $user->isContractor() ? 'contractor' : 'staff',
             'contractor' => $party ? ['party_id' => $party->id, 'name' => $party->name] : null,
             'locale' => $user->locale,
