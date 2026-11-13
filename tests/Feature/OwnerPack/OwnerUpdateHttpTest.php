@@ -403,13 +403,16 @@ class OwnerUpdateHttpTest extends TestCase
         }
 
         $page->assertSee('name="fact_fingerprint" value="'.$ticks['fact_fingerprint'].'"', false);
+        $page->assertSee('name="text_fingerprint" value="'.$ticks['text_fingerprint'].'"', false);
         $this->assertContains('photo_2', $ticks['number_ticks']);
         $this->assertContains('pay_due', $ticks['number_ticks']);
 
-        // Without the ticks, or without the facts the page showed, nothing is approved.
-        $this->post(route('owner-updates.approve', $update), ['fact_fingerprint' => $ticks['fact_fingerprint'], 'number_ticks' => ['report_count']])->assertSessionHasErrors('number_ticks');
-        $this->post(route('owner-updates.approve', $update), ['number_ticks' => $ticks['number_ticks']])->assertSessionHasErrors('fact_fingerprint');
+        // Without the ticks, or without the facts and the text the page showed, nothing is approved.
+        $this->post(route('owner-updates.approve', $update), [...$ticks, 'number_ticks' => ['report_count']])->assertSessionHasErrors('number_ticks');
+        $this->post(route('owner-updates.approve', $update), ['number_ticks' => $ticks['number_ticks'], 'text_fingerprint' => $ticks['text_fingerprint']])->assertSessionHasErrors('fact_fingerprint');
+        $this->post(route('owner-updates.approve', $update), ['number_ticks' => $ticks['number_ticks'], 'fact_fingerprint' => $ticks['fact_fingerprint']])->assertSessionHasErrors('text_fingerprint');
         $this->post(route('owner-updates.approve', $update), [...$ticks, 'fact_fingerprint' => str_repeat('a', 64)])->assertSessionHasErrors('facts');
+        $this->post(route('owner-updates.approve', $update), [...$ticks, 'text_fingerprint' => str_repeat('a', 64)])->assertSessionHasErrors('facts');
         $this->assertSame(OwnerUpdate::DRAFT, $update->fresh()->status);
 
         $this->post(route('owner-updates.approve', $update), $ticks)->assertSessionHasNoErrors();
@@ -468,14 +471,36 @@ class OwnerUpdateHttpTest extends TestCase
         $this->week();
         $draft = $this->draftUpdate();
         $approved = $this->approvedUpdate();
+        [$shared] = $this->sharedUpdate();
         $this->actingAs($this->manager);
+        $again = route('owner-updates.create', [$this->project, 'week_start' => self::WEEK, 'language' => 'en']);
 
         $this->get(route('owner-updates.show', $draft))->assertOk()->assertDontSee('The records have changed since this draft was prepared.');
+        $this->get(route('owner-updates.show', $approved))->assertOk()->assertSee('Make a link</button>', false)->assertDontSee($again);
+        $this->get(route('owner-updates.show', $shared))->assertOk()->assertSee('Make a new link</button>', false)->assertDontSee($again);
 
         Dpr::where('status', 'IN_REVIEW')->sole()->update(['status' => 'APPROVED']);
 
         $this->get(route('owner-updates.show', $draft))->assertOk()->assertSee('The records have changed since this draft was prepared. Save the draft to read them again.');
-        $this->get(route('owner-updates.show', $approved))->assertOk()->assertSee('a new link cannot be made for it');
+
+        // The page offers no link it has just said cannot be made, and leads to a new update for the week instead.
+        $this->get(route('owner-updates.show', $approved))->assertOk()
+            ->assertSee('a new link cannot be made for it')
+            ->assertDontSee('Make a link</button>', false)
+            ->assertSee('Prepare a new update for this week')
+            ->assertSee($again);
+        $this->get(route('owner-updates.show', $shared))->assertOk()
+            ->assertDontSee('Make a new link</button>', false)
+            ->assertSee('Withdraw the link')
+            ->assertSee($again);
+        $this->get($again)->assertOk()->assertSee('name="week_start" type="date" value="'.self::WEEK.'"', false);
+        $this->get(route('owner-updates.create', [$this->project, 'week_start' => '2026-11-02', 'language' => 'mr']))->assertOk()
+            ->assertSee('name="week_start" type="date" value="2026-11-02"', false)
+            ->assertSee('<option value="mr" lang="mr" selected', false);
+        // A week that has not begun, or a language the update is not written in, is not taken from the address.
+        $this->get(route('owner-updates.create', [$this->project, 'week_start' => '2026-12-07', 'language' => 'fr']))->assertOk()
+            ->assertSee('name="week_start" type="date" value="'.self::WEEK.'"', false)
+            ->assertSee('<option value="en" lang="en" selected', false);
 
         // Sharing reads the records again and refuses; saving the draft catches up.
         $this->post(route('owner-updates.share', $approved))->assertSessionHasErrors('facts');
@@ -483,6 +508,31 @@ class OwnerUpdateHttpTest extends TestCase
 
         $this->patch(route('owner-updates.update', $draft), [])->assertSessionHasNoErrors();
         $this->get(route('owner-updates.show', $draft))->assertOk()->assertDontSee('The records have changed since this draft was prepared.')->assertSee('Approved daily reports of that week: ', false);
+    }
+
+    public function test_changing_the_week_on_the_page_keeps_the_ticked_photos_of_the_new_week_and_drops_the_rest(): void
+    {
+        ['photos' => [$footing, , $brickwork]] = $this->week();
+        $update = $this->draftUpdate(['photo_ids' => [$footing->id, $brickwork->id]], $this->engineer);
+        $this->actingAs($this->engineer);
+
+        // The Details form sends every field it shows, and the photos it shows ticked, whatever else was changed.
+        $this->get(route('owner-updates.show', $update))->assertOk()
+            ->assertSee('<input type="hidden" name="photo_ids" value="">', false)
+            ->assertSee('name="photo_ids[]" value="'.$footing->id.'" class="mt-0.5" checked', false);
+        $form = fn (string $week, array $ticked) => ['week_start' => $week, 'language' => 'en', 'opening' => '', 'next_week_text' => '', 'closing' => '', 'photo_ids' => array_map('strval', $ticked)];
+
+        // From the 9th to the 11th: Thursday's report is in both weeks, so its photo stays; Monday's goes with the old week.
+        $this->patch(route('owner-updates.update', $update), $form('2026-11-11', [$footing->id, $brickwork->id]))->assertSessionHasNoErrors();
+        $this->assertSame(['2026-11-11', [$brickwork->id]], [$update->fresh()->week_start->toDateString(), $update->fresh()->photoIds()]);
+
+        // A week back, where no approved report has a photo: nothing ticked on the page is kept.
+        $this->patch(route('owner-updates.update', $update), $form('2026-11-02', [$brickwork->id]))->assertSessionHasNoErrors();
+        $this->assertSame(['2026-11-02', []], [$update->fresh()->week_start->toDateString(), $update->fresh()->photoIds()]);
+
+        // With the week left as it is, a photo of another week is refused and nothing changes.
+        $this->patch(route('owner-updates.update', $update), $form('2026-11-02', [$brickwork->id]))->assertSessionHasErrors('photo_ids');
+        $this->assertSame(['2026-11-02', []], [$update->fresh()->week_start->toDateString(), $update->fresh()->photoIds()]);
     }
 
     public function test_the_menu_offers_weekly_updates_to_those_who_may_prepare_them(): void

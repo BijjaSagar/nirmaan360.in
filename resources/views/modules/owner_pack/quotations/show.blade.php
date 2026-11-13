@@ -24,7 +24,10 @@
     @if ($replacedBy !== null)
         <div class="mb-5 rounded-[3px] border border-haldi bg-haldi/10 px-3 py-2 text-sm">{{ __('This revision was replaced by revision :n. Its shared link says so and no longer shows the payment schedule.', ['n' => $replacedBy]) }}</div>
     @elseif ($openRevision !== null)
-        <div class="mb-5 rounded-[3px] border border-neel bg-neel/8 px-3 py-2 text-sm">{{ __('Revision :n is being prepared as a draft.', ['n' => $openRevision->revision]) }} <a href="{{ route('quotations.show', $openRevision) }}" class="link">{{ __('Open it') }}</a></div>
+        <div class="mb-5 rounded-[3px] border border-neel bg-neel/8 px-3 py-2 text-sm">
+            {{ __('Revision :n is being prepared as a draft.', ['n' => $openRevision->revision]) }} <a href="{{ route('quotations.show', $openRevision) }}" class="link">{{ __('Open it') }}</a>
+            <p class="mt-1 text-xs text-ink-2">{{ __('Until it is issued, mark the stages reached here. When it is issued, each mark goes to the stage of the new revision that is unchanged.') }}</p>
+        </div>
     @elseif ($draft && $quotation->revision > 1)
         <div class="mb-5 rounded-[3px] border border-neel bg-neel/8 px-3 py-2 text-sm">{{ __('This is a draft of revision :n. The earlier revision stays as issued, and its link keeps working, until this one is issued.', ['n' => $quotation->revision]) }}</div>
     @endif
@@ -111,20 +114,38 @@
                                 </form>
                             @endif
                         </div>
-                    @elseif ($canManage)
-                        <details class="mt-1">
-                            <summary class="link cursor-pointer text-xs">{{ __('Change') }}</summary>
-                            <form method="POST" action="{{ route('quotation-stages.update', $stage) }}" class="mt-2">
-                                @csrf @method('PATCH')
-                                @include('modules.owner_pack.quotations._stage-fields', ['stage' => $stage, 'key' => $loop->iteration, 'button' => new \Illuminate\Support\HtmlString('<button class="btn btn-ghost">'.e(__('Save stage')).'</button>')])
-                            </form>
-                            <form method="POST" action="{{ route('quotation-stages.destroy', $stage) }}" class="mt-2" onsubmit="return confirm(@js(__('Remove this stage?')))">@csrf @method('DELETE')<button class="btn btn-ghost py-1 text-xs">{{ __('Remove') }}</button></form>
-                        </details>
+                    @else
+                        @if ($mark = $carried['kept'][$stage->id] ?? null)
+                            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="stamp border-moss text-moss">{{ __('Reached on revision :n', ['n' => $carried['from']->revision]) }}</span>
+                                <span class="text-ink-3">{{ $date($mark->reached_on) }}@if ($mark->reachedBy) · {{ $mark->reachedBy->name }}@endif · {{ __('Kept when this revision is issued, unless the stage is changed.') }}</span>
+                            </div>
+                        @endif
+                        @if ($canManage)
+                            <details class="mt-1" @if (old('_form') === 'stage-'.$stage->id) open @endif>
+                                <summary class="link cursor-pointer text-xs">{{ __('Change') }}</summary>
+                                <form method="POST" action="{{ route('quotation-stages.update', $stage) }}" class="mt-2">
+                                    @csrf @method('PATCH')
+                                    @include('modules.owner_pack.quotations._stage-fields', ['stage' => $stage, 'key' => $loop->iteration, 'button' => new \Illuminate\Support\HtmlString('<button class="btn btn-ghost">'.e(__('Save stage')).'</button>')])
+                                </form>
+                                <form method="POST" action="{{ route('quotation-stages.destroy', $stage) }}" class="mt-2" onsubmit="return confirm(@js(__('Remove this stage?')))">@csrf @method('DELETE')<button class="btn btn-ghost py-1 text-xs">{{ __('Remove') }}</button></form>
+                            </details>
+                        @endif
                     @endif
                 </div>
             @empty
                 <p class="px-4 py-3 text-sm text-ink-3">{{ __('No payment stages. The quotation then states the total and no schedule.') }}</p>
             @endforelse
+            @if (($carried['dropped'] ?? []) !== [])
+                <div class="border-t border-rule bg-haldi/10 px-4 py-3 text-sm" role="status">
+                    <p>{{ __('These stages are marked as reached on revision :n, and no stage of this draft is the same. They are issued as not reached: mark them again once this revision is issued.', ['n' => $carried['from']->revision]) }}</p>
+                    <ul class="mt-1 list-disc pl-5 text-xs">
+                        @foreach ($carried['dropped'] as $mark)
+                            <li>{{ $mark->title }} · {{ $date($mark->reached_on) }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             @if ($stages->isNotEmpty())
                 <dl class="border-t border-rule text-sm">
                     <div class="flex justify-between px-4 py-2"><dt>{{ __('Total of the stages') }}</dt><dd class="num">{{ inr($stagesTotal) }}</dd></div>
@@ -136,7 +157,6 @@
             @if ($draft && $canManage)
                 <form method="POST" action="{{ route('quotations.stages.store', $quotation) }}" class="border-t border-rule p-4">
                     @csrf
-                    <input type="hidden" name="_form" value="add-stage">
                     <input type="hidden" name="client_uuid" value="{{ old('_form') === 'add-stage' ? old('client_uuid', (string) \Illuminate\Support\Str::uuid()) : (string) \Illuminate\Support\Str::uuid() }}">
                     <p class="mb-2 text-xs text-ink-3">{{ __('A stage is a share of the total or a typed amount. When every stage is a percentage they must add up to the whole of the total, and the last stage takes what is left so the stages add up to the paisa.') }}</p>
                     @include('modules.owner_pack.quotations._stage-fields', ['stage' => null, 'key' => 'new', 'button' => new \Illuminate\Support\HtmlString('<button class="btn btn-primary">'.e(__('Add stage')).'</button>')])
@@ -148,7 +168,16 @@
             <div class="card-head"><h2 class="card-title">{{ $draft ? __('Check and issue') : __('Cover note') }}</h2></div>
             <div class="space-y-3 p-4">
                 @if ($note === null)
-                    <p class="error">{{ __('The cover note cannot be shown from the saved figures. Save the draft again.') }}</p>
+                    @if ($draft && $canManage)
+                        <p class="error">{{ __('The cover note cannot be shown from the saved figures. Save the draft again.') }}</p>
+                    @elseif ($draft)
+                        <p class="error">{{ __('The cover note cannot be shown from the saved figures.') }}</p>
+                    @else
+                        <p class="error">{{ __('The cover note of this issued quotation cannot be shown now. Its lines, totals and stages above stand as issued.') }}</p>
+                        @if ($canManage && $replacedBy === null && $openRevision === null)
+                            <p class="text-sm text-ink-2">{{ __('To give the client a cover note, make a revision below and issue it.') }}</p>
+                        @endif
+                    @endif
                 @else
                     @if ($draft)
                         <p class="text-sm text-ink-2">{{ __('Every date, day count, quantity and amount, and the sentence that states it, is placed by the app from your records. Check the draft against your agreement before sending.') }}</p>
@@ -163,6 +192,7 @@
                         <form id="issue-form" method="POST" action="{{ route('quotations.issue', $quotation) }}">
                             @csrf
                             <input type="hidden" name="fact_fingerprint" value="{{ $note->fingerprint }}">
+                            <input type="hidden" name="text_fingerprint" value="{{ $textFingerprint }}">
                             <ul class="space-y-1.5 text-sm">
                                 @foreach ($tickList as $row)
                                     <li>

@@ -8,9 +8,12 @@ use App\Models\Project;
 use App\Services\OwnerPack\OwnerUpdateDocument;
 use App\Services\OwnerPack\OwnerUpdateService;
 use App\Services\OwnerPack\OwnerUpdateShareService;
+use App\Services\OwnerPack\ShownText;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -31,10 +34,17 @@ class OwnerUpdateController extends Controller
 
     public function create(Request $request, Project $project): View
     {
+        // An update whose records changed links here with its own week and language. Anything else in the address is ignored.
+        $asked = Validator::make($request->query(), [
+            'week_start' => ['date_format:Y-m-d', 'before_or_equal:today'],
+            'language' => [Rule::in(OwnerUpdate::LANGUAGES)],
+        ])->valid();
+        $language = $asked['language'] ?? $request->user()->locale;
+
         return view('modules.owner_pack.updates.create', [
             'project' => $project,
-            'language' => in_array($request->user()->locale, OwnerUpdate::LANGUAGES, true) ? $request->user()->locale : 'en',
-            'weekStart' => today()->startOfWeek()->toDateString(),
+            'language' => in_array($language, OwnerUpdate::LANGUAGES, true) ? $language : 'en',
+            'weekStart' => $asked['week_start'] ?? today()->startOfWeek()->toDateString(),
             'quotations' => Money::visible($request->user()) ? $this->service->standingQuotations($project->organization_id, $project->id) : collect(),
         ]);
     }
@@ -62,6 +72,7 @@ class OwnerUpdateController extends Controller
             'note' => $note,
             'body' => $draft ? [] : (array) $update->body_rendered,
             'tickList' => $note === null ? [] : $document->tickList($note, $sheet),
+            'textFingerprint' => $note === null ? null : ShownText::fingerprint($note),
             'work' => $document->workLines($sheet, app()->getLocale()),
             'photos' => $document->photos($sheet, app()->getLocale()),
             'current' => $this->service->isCurrent($update),

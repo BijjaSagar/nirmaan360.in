@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\OwnerPack\QuotationDocument;
 use App\Services\OwnerPack\QuotationService;
 use App\Services\OwnerPack\QuotationShareService;
+use App\Services\OwnerPack\ShownText;
 use Illuminate\Support\Str;
 use Tests\BuildsTenant;
 
@@ -98,13 +99,13 @@ trait BuildsOwnerPack
         ], $this->manager);
     }
 
-    /** @return array{fact_fingerprint: string, number_ticks: list<string>} What a person sends after ticking every figure on the page. */
+    /** @return array{fact_fingerprint: string, text_fingerprint: string, number_ticks: list<string>} What a person sends after ticking every figure on the page. */
     protected function allTicks(ClientQuotation $quotation): array
     {
         $quotation = $quotation->fresh();
         [$sheet, $note] = $this->quotations()->review($quotation);
 
-        return ['fact_fingerprint' => $note->fingerprint, 'number_ticks' => app(QuotationDocument::class)->ticksNeeded($note, $sheet)];
+        return ['fact_fingerprint' => $note->fingerprint, 'text_fingerprint' => ShownText::fingerprint($note), 'number_ticks' => app(QuotationDocument::class)->ticksNeeded($note, $sheet)];
     }
 
     protected function issued(?ClientQuotation $quotation = null): ClientQuotation

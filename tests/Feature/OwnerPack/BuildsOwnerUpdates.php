@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\OwnerPack\OwnerUpdateDocument;
 use App\Services\OwnerPack\OwnerUpdateService;
 use App\Services\OwnerPack\OwnerUpdateShareService;
+use App\Services\OwnerPack\ShownText;
 use App\Services\Wording\Fact;
 use App\Services\Wording\FactSheet;
 use App\Services\Wording\FactSource;
@@ -138,12 +139,12 @@ trait BuildsOwnerUpdates
         ], $by ?? $this->manager);
     }
 
-    /** @return array{fact_fingerprint: string, number_ticks: list<string>} What a person sends after ticking every figure, row and photo on the page. */
+    /** @return array{fact_fingerprint: string, text_fingerprint: string, number_ticks: list<string>} What a person sends after ticking every figure, row and photo on the page. */
     protected function updateTicks(OwnerUpdate $update): array
     {
         [$sheet, $note] = $this->updates()->review($update->fresh());
 
-        return ['fact_fingerprint' => $note->fingerprint, 'number_ticks' => app(OwnerUpdateDocument::class)->ticksNeeded($note, $sheet)];
+        return ['fact_fingerprint' => $note->fingerprint, 'text_fingerprint' => ShownText::fingerprint($note), 'number_ticks' => app(OwnerUpdateDocument::class)->ticksNeeded($note, $sheet)];
     }
 
     protected function approvedUpdate(?OwnerUpdate $update = null): OwnerUpdate

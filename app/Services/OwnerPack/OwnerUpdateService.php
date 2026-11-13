@@ -76,6 +76,7 @@ class OwnerUpdateService
     {
         return [
             'fact_fingerprint' => ['required', 'string', 'size:64'],
+            'text_fingerprint' => ['required', 'string', 'size:64'],
             'number_ticks' => ['nullable', 'array', 'max:2000'],
             'number_ticks.*' => ['string', 'max:300'],
         ];
@@ -137,9 +138,13 @@ class OwnerUpdateService
             $before = $this->summary($update);
             $sent = fn (string $field) => array_key_exists($field, $data);
 
+            $weekBefore = $update->week_start->toDateString();
+
             if ($sent('week_start')) {
                 [$update->week_start, $update->week_end] = $this->week($data['week_start']);
             }
+
+            $weekChanged = $update->week_start->toDateString() !== $weekBefore;
 
             if ($sent('language')) {
                 $update->language = $data['language'];
@@ -169,10 +174,11 @@ class OwnerUpdateService
 
             [$from, $to] = [$update->week_start->toDateString(), $update->week_end->toDateString()];
 
-            // Photos a form sent are checked one by one. Photos already kept are dropped quietly once
-            // they no longer belong to an approved report of the week, for example after the week was changed.
+            // Photos a form sent are checked one by one. Photos already kept are dropped quietly once they
+            // no longer belong to an approved report of the week. A form that changes the week still sends
+            // the ticks of the week it showed: those photos that fall in the new week stay, the rest go with it.
             $update->photo_ids = $sent('photo_ids')
-                ? $this->pickedPhotos($update->organization_id, $update->project_id, $from, $to, $data['photo_ids'] ?? [])
+                ? $this->pickedPhotos($update->organization_id, $update->project_id, $from, $to, $data['photo_ids'] ?? [], dropOutside: $weekChanged)
                 : array_values(array_intersect($update->photoIds(), $this->weekPhotos($update->organization_id, $update->project_id, $from, $to)->keys()->all()));
 
             $sheet = $this->readRecords($update);
@@ -194,9 +200,9 @@ class OwnerUpdateService
     }
 
     /**
-     * Approves a draft. The person has ticked every figure on a page that showed the facts with the
-     * fingerprint they send back. The records are read again; if anything differs from what was
-     * shown, or a figure is not ticked, nothing is approved.
+     * Approves a draft. The person has ticked every figure on a page that showed the facts and the text
+     * with the two fingerprints they send back. The records are read again and the text is written
+     * again; if anything differs from what was shown, or a figure is not ticked, nothing is approved.
      *
      * @throws ValidationException
      */
@@ -217,7 +223,9 @@ class OwnerUpdateService
 
             [$sheet, $document] = $this->checked($update, __('The records behind this draft have changed since it was prepared. Save the draft to read them again, then check it.'));
 
-            if (! $sheet->matches($data['fact_fingerprint'] ?? null)) {
+            // The page showed these figures and this text. The same figures in another language, or with
+            // another sentence about next week, are a change too: the person approves only what they read.
+            if (! $sheet->matches($data['fact_fingerprint'] ?? null) || ! ShownText::matches($document, $data['text_fingerprint'] ?? null)) {
                 throw ValidationException::withMessages(['facts' => __('This draft changed after the page was opened. Check the figures again, then approve it.')]);
             }
 
@@ -465,11 +473,12 @@ class OwnerUpdateService
      * report of this project that falls inside the week. Kept in the order of the reports.
      *
      * @param  array<int, mixed>  $ids
+     * @param  bool  $dropOutside  Leave out the ids outside the week instead of refusing them: the form showed another week.
      * @return list<int>
      *
      * @throws ValidationException
      */
-    private function pickedPhotos(int $organizationId, int $projectId, string $from, string $to, array $ids): array
+    private function pickedPhotos(int $organizationId, int $projectId, string $from, string $to, array $ids, bool $dropOutside = false): array
     {
         $ids = array_values(array_unique(array_map('intval', $ids)));
 
@@ -480,7 +489,7 @@ class OwnerUpdateService
         $week = $this->weekPhotos($organizationId, $projectId, $from, $to);
         $allowed = $week->keys()->all();
 
-        if (array_diff($ids, $allowed) !== []) {
+        if (! $dropOutside && array_diff($ids, $allowed) !== []) {
             throw ValidationException::withMessages(['photo_ids' => __('Pick photos only from the approved daily reports of this week.')]);
         }
 

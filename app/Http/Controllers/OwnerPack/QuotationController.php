@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Services\OwnerPack\QuotationDocument;
 use App\Services\OwnerPack\QuotationService;
 use App\Services\OwnerPack\QuotationShareService;
+use App\Services\OwnerPack\ShownText;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -55,6 +56,9 @@ class QuotationController extends Controller
             'stages' => $quotation->stages()->with('reachedBy')->get(),
             'note' => $note,
             'tickList' => $note === null ? [] : $document->tickList($note, $sheet),
+            'textFingerprint' => $note === null ? null : ShownText::fingerprint($note),
+            // On a draft revision: which stages marked on the revision it replaces keep their mark when it is issued.
+            'carried' => $quotation->isDraft() ? $this->service->reachedOnEarlier($quotation) : null,
             'replacedBy' => $this->service->replacedBy($quotation),
             'openRevision' => $this->service->openRevision($quotation),
             'shareUrl' => $shares->url($quotation),

@@ -88,6 +88,7 @@ class QuotationService
     {
         return [
             'fact_fingerprint' => ['required', 'string', 'size:64'],
+            'text_fingerprint' => ['required', 'string', 'size:64'],
             'number_ticks' => ['nullable', 'array', 'max:2000'],
             'number_ticks.*' => ['string', 'max:300'],
         ];
@@ -166,9 +167,10 @@ class QuotationService
     }
 
     /**
-     * Issues a draft. The person has ticked every figure on a page that showed the facts with the
-     * fingerprint they send back. The figures are worked out again from the rows; if anything
-     * differs from what was shown, or a figure is not ticked, nothing is issued.
+     * Issues a draft. The person has ticked every figure on a page that showed the facts and the text
+     * with the two fingerprints they send back. The figures are worked out again from the rows and the
+     * note is written again; if anything differs from what was shown, or a figure is not ticked,
+     * nothing is issued. A later revision takes the reached stages of the one it replaces (carryReached).
      *
      * @throws ValidationException
      */
@@ -189,7 +191,9 @@ class QuotationService
 
             [$sheet, $document] = $this->checked($quotation, __('The figures of this draft no longer match its lines and stages. Save the draft again and check it.'));
 
-            if (! $sheet->matches($data['fact_fingerprint'] ?? null)) {
+            // The page showed these figures and this text. The same figures in another language, or
+            // beside other sentences, are a change too.
+            if (! $sheet->matches($data['fact_fingerprint'] ?? null) || ! ShownText::matches($document, $data['text_fingerprint'] ?? null)) {
                 throw ValidationException::withMessages(['facts' => __('This draft changed after the page was opened. Check the figures again, then issue it.')]);
             }
 
@@ -197,6 +201,8 @@ class QuotationService
             $this->document->assertTicked($document, $sheet, $data['number_ticks'] ?? []);
 
             $needed = $this->document->ticksNeeded($document, $sheet);
+
+            $this->carryReached($quotation, $by);
 
             $quotation->update([
                 'status' => ClientQuotation::ISSUED,
@@ -264,9 +270,11 @@ class QuotationService
                 ]);
             }
 
+            // Which stages were reached is not copied. The issued revision stands, and its stages are
+            // marked there, until this one is issued; issue() then carries each mark across (carryReached).
             foreach ($this->stages($source) as $stage) {
                 ClientPaymentStage::create([
-                    ...$stage->only(['organization_id', 'project_id', 'title', 'basis', 'percent', 'amount', 'condition_text', 'sort', 'reached_on', 'reached_by']),
+                    ...$stage->only(['organization_id', 'project_id', 'title', 'basis', 'percent', 'amount', 'condition_text', 'sort']),
                     'quotation_id' => $copy->id,
                     'created_by' => $by->id,
                 ]);
@@ -337,7 +345,11 @@ class QuotationService
         });
     }
 
-    /** Records that a stage of an issued quotation has been reached, or takes that back. */
+    /**
+     * Records that a stage of an issued quotation has been reached, or takes that back. While a later
+     * revision is a draft this one still stands, so its stages are marked here and carried across when
+     * that revision is issued.
+     */
     public function markReached(ClientPaymentStage $stage, array $data, User $by): ClientPaymentStage
     {
         return DB::transaction(function () use ($stage, $data, $by) {
@@ -376,6 +388,120 @@ class QuotationService
         return $this->revisions($quotation)
             ->where('status', ClientQuotation::DRAFT)
             ->where('revision', '>', $quotation->revision)
+            ->orderByDesc('revision')
+            ->first();
+    }
+
+    /**
+     * For a draft revision: the issued revision it will replace, and where the stages marked as reached
+     * there go when this draft is issued. A mark goes to the stage of this draft that is the same stage:
+     * the same name, the same share or typed amount, and the same condition. A stage changed in the
+     * draft is issued as not reached, so a mark a person made never stands beside a stage they did not mark.
+     *
+     * "kept" maps the id of a stage of this draft to the reached stage it takes the mark from; "dropped"
+     * lists the reached stages that no stage of this draft is the same as. Null when no earlier revision was issued.
+     *
+     * @return array{from: ClientQuotation, kept: array<int, ClientPaymentStage>, dropped: list<ClientPaymentStage>}|null
+     */
+    public function reachedOnEarlier(ClientQuotation $draft): ?array
+    {
+        $from = $this->earlierIssued($draft);
+
+        if ($from === null) {
+            return null;
+        }
+
+        [$kept, $dropped] = $this->matchReached($this->stages($from)->load('reachedBy'), $this->stages($draft));
+
+        return ['from' => $from, 'kept' => $kept, 'dropped' => $dropped];
+    }
+
+    /**
+     * Sets on each stage of a revision being issued whether it was reached, as the revision it replaces
+     * says now. Marks made there while this one was a draft come across too, and so do marks taken back.
+     */
+    private function carryReached(ClientQuotation $quotation, User $by): void
+    {
+        $from = $this->earlierIssued($quotation);
+
+        if ($from === null) {
+            return;
+        }
+
+        // Held until this revision is issued: a stage being marked there now is either seen here, or
+        // waits and is then refused because this revision replaced it.
+        $from = $this->locked($from);
+        $stages = $this->stages($quotation);
+        [$kept, $dropped] = $this->matchReached($this->stages($from), $stages);
+
+        foreach ($stages as $stage) {
+            $mark = $kept[$stage->id] ?? null;
+            $stage->fill(['reached_on' => $mark?->reached_on, 'reached_by' => $mark?->reached_by]);
+
+            if ($stage->isDirty()) {
+                $stage->save();
+            }
+        }
+
+        if ($kept !== [] || $dropped !== []) {
+            AuditLog::record('quotation.reached_carried', $quotation, null, [
+                'from_revision' => $from->revision,
+                'carried' => array_values(array_map(fn (ClientPaymentStage $stage) => $stage->title, $kept)),
+                'not_carried' => array_map(fn (ClientPaymentStage $stage) => $stage->title, $dropped),
+            ], $by);
+        }
+    }
+
+    /**
+     * Pairs the stages of a revision with those of the revision before it, in order, each earlier stage
+     * at most once, and keeps the pairs whose earlier stage was reached.
+     *
+     * @param  Collection<int, ClientPaymentStage>  $earlier
+     * @param  Collection<int, ClientPaymentStage>  $stages
+     * @return array{0: array<int, ClientPaymentStage>, 1: list<ClientPaymentStage>}
+     */
+    private function matchReached(Collection $earlier, Collection $stages): array
+    {
+        $open = $earlier->values()->all();
+        $kept = [];
+
+        foreach ($stages as $stage) {
+            foreach ($open as $index => $old) {
+                if ($this->sameStage($old, $stage)) {
+                    unset($open[$index]);
+
+                    if ($old->isReached()) {
+                        $kept[$stage->id] = $old;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return [$kept, array_values(array_filter($open, fn (ClientPaymentStage $old) => $old->isReached()))];
+    }
+
+    /**
+     * Whether two stages are the same stage of the work. A percentage stage keeps its share when the
+     * total changes, so its amount is not compared; a typed amount is.
+     */
+    private function sameStage(ClientPaymentStage $a, ClientPaymentStage $b): bool
+    {
+        $text = fn (?string $value) => mb_strtolower((string) preg_replace('/\s+/u', ' ', trim((string) $value)));
+
+        return $text($a->title) === $text($b->title)
+            && $a->basis === $b->basis
+            && Dec::of($a->isPercent() ? $a->percent : $a->amount)->isEqualTo(Dec::of($b->isPercent() ? $b->percent : $b->amount))
+            && $text($a->condition_text) === $text($b->condition_text);
+    }
+
+    /** The latest issued revision before this one under the same number, or null. */
+    private function earlierIssued(ClientQuotation $quotation): ?ClientQuotation
+    {
+        return $this->revisions($quotation)
+            ->where('status', ClientQuotation::ISSUED)
+            ->where('revision', '<', $quotation->revision)
             ->orderByDesc('revision')
             ->first();
     }

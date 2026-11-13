@@ -13,6 +13,7 @@ use App\Services\OwnerPack\OwnerUpdateShareService;
 use App\Services\OwnerPack\QuotationDocument;
 use App\Services\OwnerPack\QuotationService;
 use App\Services\OwnerPack\QuotationShareService;
+use App\Services\OwnerPack\ShownText;
 use Illuminate\Support\Facades\Storage;
 
 /*
@@ -46,6 +47,7 @@ return function (): void {
     [$sheet, $note] = $service->review($quotation->fresh());
     $quotation = $service->issue($quotation, [
         'fact_fingerprint' => $note->fingerprint,
+        'text_fingerprint' => ShownText::fingerprint($note),
         'number_ticks' => app(QuotationDocument::class)->ticksNeeded($note, $sheet),
     ], $owner);
     $quotation = app(QuotationShareService::class)->share($quotation, $owner);
@@ -77,6 +79,7 @@ return function (): void {
     [$sheet, $note] = $updates->review($update);
     $update = $updates->approve($update, [
         'fact_fingerprint' => $note->fingerprint,
+        'text_fingerprint' => ShownText::fingerprint($note),
         'number_ticks' => app(OwnerUpdateDocument::class)->ticksNeeded($note, $sheet),
     ], $owner);
     $update = app(OwnerUpdateShareService::class)->share($update, $owner);

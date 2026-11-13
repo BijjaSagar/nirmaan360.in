@@ -162,6 +162,7 @@
                         <form id="approve-form" method="POST" action="{{ route('owner-updates.approve', $update) }}">
                             @csrf
                             <input type="hidden" name="fact_fingerprint" value="{{ $note->fingerprint }}">
+                            <input type="hidden" name="text_fingerprint" value="{{ $textFingerprint }}">
                             <ul class="space-y-1.5 text-sm">
                                 @foreach ($tickList as $row)
                                     <li>
@@ -198,8 +199,13 @@
                             <div class="flex flex-wrap gap-2">
                                 <a href="{{ $whatsappUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">{{ __('Send on WhatsApp') }}</a>
                                 <form method="POST" action="{{ route('owner-updates.share.revoke', $update) }}" onsubmit="return confirm(@js(__('Withdraw the link? The client will no longer be able to open it.')))">@csrf<button class="btn btn-danger">{{ __('Withdraw the link') }}</button></form>
-                                <form method="POST" action="{{ route('owner-updates.share', $update) }}" onsubmit="return confirm(@js(__('Make a new link? The link you sent earlier will stop working.')))">@csrf<button class="btn btn-ghost">{{ __('Make a new link') }}</button></form>
+                                @if ($current)
+                                    <form method="POST" action="{{ route('owner-updates.share', $update) }}" onsubmit="return confirm(@js(__('Make a new link? The link you sent earlier will stop working.')))">@csrf<button class="btn btn-ghost">{{ __('Make a new link') }}</button></form>
+                                @endif
                             </div>
+                            @unless ($current)
+                                @include('modules.owner_pack.updates._prepare-again', ['update' => $update, 'project' => $project])
+                            @endunless
                         @endif
                     @else
                         <p>
@@ -211,9 +217,12 @@
                                 {{ __('The link has passed its date. It no longer opens.') }}
                             @endif
                         </p>
-                        @if ($canApprove)
+                        @if ($canApprove && $current)
                             <form method="POST" action="{{ route('owner-updates.share', $update) }}">@csrf<button class="btn btn-primary">{{ __('Make a link') }}</button></form>
                             <p class="hint">{{ trans_choice('The link stays open for :count day and you send it yourself.|The link stays open for :count days and you send it yourself.', config('modules.owner_pack.share_link_days'), ['count' => config('modules.owner_pack.share_link_days')]) }}</p>
+                        @elseif ($canApprove)
+                            {{-- The records changed since approval, so a link would be refused: the way on is a new update for the week. --}}
+                            @include('modules.owner_pack.updates._prepare-again', ['update' => $update, 'project' => $project])
                         @endif
                     @endif
                 </div>

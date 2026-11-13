@@ -410,7 +410,7 @@ class QuotationServiceTest extends TestCase
         $this->assertNull($revision->number_ticks);
         $this->assertSame(['A-01', 'B-04', 'C-09'], $revision->items()->pluck('code')->all());
         $this->assertSame(['47354.15', '52615.67', '57877.35'], $revision->stages()->pluck('amount')->all());
-        $this->assertNotNull($revision->stages()->first()->reached_on);
+        $this->assertSame([null, null, null], $revision->stages()->pluck('reached_on')->all(), 'A draft holds no mark of its own: the issued revision still stands.');
         $this->assertNotSame($issued->fact_fingerprint, $revision->fact_fingerprint, 'The facts of a revision are its own rows.');
 
         // Asked again, with the same key or by another press, the same draft comes back.
@@ -427,11 +427,103 @@ class QuotationServiceTest extends TestCase
         $this->issued($revision);
         $this->assertSame(2, $this->quotations()->replacedBy($issued));
         $this->assertNull($this->quotations()->replacedBy($revision->fresh()));
+        $this->assertSame($this->manager->id, $revision->stages()->first()->reached_by, 'The mark came across when the revision was issued.');
 
         // Only the latest revision is revised, and a draft is changed directly.
         $this->assertSame(['quotation'], $this->refused(fn () => $this->quotations()->revise($issued, $this->manager)));
         $this->assertSame(['quotation'], $this->refused(fn () => $this->quotations()->revise($this->draft(), $this->manager)));
         $this->assertSame(3, $this->quotations()->revise($revision->fresh(), $this->manager)->revision);
+    }
+
+    public function test_issuing_is_refused_when_the_text_changed_but_not_the_figures(): void
+    {
+        $quotation = $this->withStages($this->draft());
+        $seen = $this->allTicks($quotation);
+
+        // Another manager switches the language while the first is still ticking. Every figure is the same.
+        $this->quotations()->update($quotation, ['language' => 'mr'], $this->owner);
+        $this->assertSame($seen['fact_fingerprint'], $this->allTicks($quotation)['fact_fingerprint']);
+        $this->assertSame(['facts'], $this->refused(fn () => $this->quotations()->issue($quotation, $seen, $this->manager)));
+
+        // Back in English, and with a closing sentence that states no figure.
+        $this->quotations()->update($quotation, ['language' => 'en', 'closing' => 'We look forward to building your home.'], $this->owner);
+        $this->assertSame([$seen['fact_fingerprint'], $seen['number_ticks']], [$this->allTicks($quotation)['fact_fingerprint'], $this->allTicks($quotation)['number_ticks']]);
+        $this->assertSame(['facts'], $this->refused(fn () => $this->quotations()->issue($quotation, $seen, $this->manager)));
+        $this->assertSame(ClientQuotation::DRAFT, $quotation->fresh()->status);
+
+        // The page as it now stands is issued.
+        $this->assertSame(ClientQuotation::ISSUED, $this->issued($quotation)->status);
+    }
+
+    public function test_a_stage_marked_while_the_next_revision_is_a_draft_is_carried_when_that_revision_is_issued(): void
+    {
+        $issued = $this->issued();
+        [$agreement, $plinth, $handover] = $issued->stages()->get()->all();
+        $this->quotations()->markReached($agreement, ['reached' => true, 'reached_on' => today()->subDays(5)->toDateString()], $this->manager);
+
+        $revision = $this->quotations()->revise($issued, $this->manager);
+
+        // The issued revision still stands while the draft is open: the plinth is reached and marked there,
+        // and a mark made by mistake on the last stage is taken back.
+        $this->quotations()->markReached($plinth, ['reached' => true, 'reached_on' => today()->subDay()->toDateString()], $this->owner);
+        $this->quotations()->markReached($handover, ['reached' => true], $this->manager);
+        $this->quotations()->markReached($handover, ['reached' => false], $this->manager);
+
+        $carried = $this->quotations()->reachedOnEarlier($revision);
+        $this->assertSame($issued->id, $carried['from']->id);
+        $this->assertSame([$agreement->id, $plinth->id], array_map(fn (ClientPaymentStage $stage) => $stage->id, array_values($carried['kept'])));
+        $this->assertSame([], $carried['dropped']);
+
+        // The draft adds GST of its own: every stage amount changes, but each stage keeps its share and so stays the same stage.
+        $this->quotations()->update($revision, ['gst_pct' => '1'], $this->manager);
+        $after = $this->issued($revision)->stages()->get();
+
+        $this->assertNotSame($issued->stages()->pluck('amount')->all(), $after->pluck('amount')->all());
+        $this->assertSame([today()->subDays(5)->toDateString(), today()->subDay()->toDateString(), null], $after->map(fn (ClientPaymentStage $stage) => $stage->reached_on?->toDateString())->all());
+        $this->assertSame([$this->manager->id, $this->owner->id, null], $after->pluck('reached_by')->all());
+
+        // Revision 1 is replaced now, so it takes no more marks; the trail says what came across.
+        $this->assertSame(['reached'], $this->refused(fn () => $this->quotations()->markReached($handover, ['reached' => true], $this->manager)));
+        $audit = AuditLog::withoutGlobalScopes()->where('action', 'quotation.reached_carried')->sole();
+        $this->assertSame([$revision->id, $this->manager->id, 1, ['On agreement', 'On completion of plinth'], []], [$audit->auditable_id, $audit->user_id, $audit->new_values['from_revision'], $audit->new_values['carried'], $audit->new_values['not_carried']]);
+    }
+
+    public function test_a_stage_changed_in_the_draft_revision_is_issued_as_not_reached(): void
+    {
+        $issued = $this->issued();
+        [$agreement, $plinth] = $issued->stages()->get()->all();
+        $this->quotations()->markReached($agreement, ['reached' => true], $this->manager);
+        $this->quotations()->markReached($plinth, ['reached' => true], $this->manager);
+
+        $revision = $this->quotations()->revise($issued, $this->owner);
+        [$sameAgreement, $newPlinth, $newHandover] = $revision->stages()->get()->all();
+
+        // The plinth stage becomes another stage, with a larger share taken from the last one. The first is
+        // only written in other letters and spacing, which leaves it the same stage.
+        $this->quotations()->updateStage($sameAgreement, ['title' => 'ON  agreement ', 'basis' => 'percent', 'percent' => '30'], $this->owner);
+        $this->quotations()->updateStage($newHandover, ['title' => 'On handing over', 'basis' => 'percent', 'percent' => '25'], $this->owner);
+        $this->quotations()->updateStage($newPlinth, ['title' => 'On completion of plinth and walls', 'basis' => 'percent', 'percent' => '45', 'condition_text' => 'Plinth beam cast and cured'], $this->owner);
+
+        $carried = $this->quotations()->reachedOnEarlier($revision->fresh());
+        $this->assertSame([$sameAgreement->id], array_keys($carried['kept']));
+        $this->assertSame([$plinth->id], array_map(fn (ClientPaymentStage $stage) => $stage->id, $carried['dropped']));
+
+        $after = $this->issued($revision)->stages()->get();
+        $this->assertSame([true, false, false], $after->map(fn (ClientPaymentStage $stage) => $stage->isReached())->all());
+        $this->assertSame(['On completion of plinth'], AuditLog::withoutGlobalScopes()->where('action', 'quotation.reached_carried')->sole()->new_values['not_carried']);
+
+        // A typed amount is the stage itself: the same name with another amount is another stage.
+        $draft = $this->draft();
+        $this->stage($draft, 'Advance', null, '20000');
+        $this->stage($draft, 'On plinth', null, '30000');
+        $first = $this->issued($draft);
+        foreach ($first->stages()->get() as $stage) {
+            $this->quotations()->markReached($stage, ['reached' => true], $this->manager);
+        }
+
+        $next = $this->quotations()->revise($first, $this->manager);
+        $this->quotations()->updateStage($next->stages()->get()[1], ['title' => 'On plinth', 'basis' => 'amount', 'amount' => '35000'], $this->manager);
+        $this->assertSame([true, false], $this->issued($next)->stages()->get()->map(fn (ClientPaymentStage $stage) => $stage->isReached())->all());
     }
 
     public function test_the_cover_note_is_written_in_hindi_and_marathi_with_plain_digits(): void

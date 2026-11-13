@@ -212,6 +212,14 @@ class OwnerUpdateServiceTest extends TestCase
         $this->assertSame([$brickwork->id], $update->photoIds());
         $this->assertSame([$thursday->id], [$brickwork->dpr_id]);
         $this->assertNotSame($monday->id, $thursday->id);
+
+        // The page sends the photos it showed ticked along with a new week. Those of the new week stay and
+        // the rest go with the old week; with the week unchanged, a photo of another week is still refused.
+        $update = $this->updates()->update($update, ['week_start' => self::WEEK, 'photo_ids' => [$footing->id, $brickwork->id]], $this->manager);
+        $update = $this->updates()->update($update, ['week_start' => '2026-11-12', 'photo_ids' => [$footing->id, $brickwork->id]], $this->manager);
+        $this->assertSame(['2026-11-12', [$brickwork->id]], [$update->week_start->toDateString(), $update->photoIds()]);
+        $this->assertRefused(fn () => $this->updates()->update($update, ['week_start' => '2026-11-12', 'photo_ids' => [$footing->id, $brickwork->id]], $this->manager), ['photo_ids']);
+        $this->assertRefused(fn () => $this->updates()->update($update, ['photo_ids' => [$footing->id]], $this->manager), ['photo_ids']);
     }
 
     public function test_the_percentage_is_printed_only_when_work_has_been_measured_and_approved(): void
@@ -455,6 +463,27 @@ class OwnerUpdateServiceTest extends TestCase
         $again = $this->updates()->approve($approved, ['fact_fingerprint' => str_repeat('0', 64), 'number_ticks' => []], $this->owner);
         $this->assertSame([$this->manager->id, $approved->approved_at->toIso8601String()], [$again->approved_by, $again->approved_at->toIso8601String()]);
         $this->assertSame(1, AuditLog::withoutGlobalScopes()->where('action', 'owner_update.approved')->count());
+    }
+
+    public function test_approval_is_refused_when_the_text_changed_but_not_the_figures(): void
+    {
+        $this->week();
+        $update = $this->draftUpdate();
+        $seen = $this->updateTicks($update);
+
+        // While the manager is ticking, the engineer saves the same draft in Marathi with a plan for next week
+        // that carries no figure. The figures, and so the ticks, are the same as on the manager's page.
+        $this->updates()->update($update, ['language' => 'mr', 'next_week_text' => 'Plinth beam and backfilling.'], $this->engineer);
+        $this->assertSame([$seen['fact_fingerprint'], $seen['number_ticks']], [$this->updateTicks($update)['fact_fingerprint'], $this->updateTicks($update)['number_ticks']]);
+
+        $refusal = $this->assertRefused(fn () => $this->updates()->approve($update, $seen, $this->manager), ['facts']);
+        $this->assertStringContainsString('changed after the page was opened', $refusal->errors()['facts'][0]);
+        $this->assertSame([OwnerUpdate::DRAFT, null], [$update->fresh()->status, $update->fresh()->body_rendered]);
+
+        // Read again, it is approved, and what is kept is the text the manager then read.
+        $approved = $this->updates()->approve($update, $this->updateTicks($update), $this->manager)->fresh();
+        $this->assertSame('mr', $approved->language);
+        $this->assertSame('Plinth beam and backfilling.', array_column($approved->body_rendered, 'text', 'id')['next_week']);
     }
 
     public function test_approval_is_refused_when_the_records_changed_after_the_draft_was_prepared(): void

@@ -10,6 +10,7 @@ use App\Services\Access\TeamAccessService;
 use App\Services\Wording\FactSheet;
 use App\Support\Modules;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -235,11 +236,14 @@ class QuotationHttpTest extends TestCase
         }
 
         $page->assertSee('name="fact_fingerprint" value="'.$ticks['fact_fingerprint'].'"', false);
+        $page->assertSee('name="text_fingerprint" value="'.$ticks['text_fingerprint'].'"', false);
         $page->assertSee('<mark class="rounded-[2px] bg-haldi/35 px-0.5" title="Quotation total">₹1,57,847.17</mark>.', false);
 
-        // Without the ticks nothing is issued.
-        $this->post(route('quotations.issue', $quotation), ['fact_fingerprint' => $ticks['fact_fingerprint'], 'number_ticks' => ['total']])->assertSessionHasErrors('number_ticks');
-        $this->post(route('quotations.issue', $quotation), ['number_ticks' => $ticks['number_ticks']])->assertSessionHasErrors('fact_fingerprint');
+        // Without the ticks, or without either fingerprint of what the page showed, nothing is issued.
+        $this->post(route('quotations.issue', $quotation), [...$ticks, 'number_ticks' => ['total']])->assertSessionHasErrors('number_ticks');
+        $this->post(route('quotations.issue', $quotation), ['number_ticks' => $ticks['number_ticks'], 'text_fingerprint' => $ticks['text_fingerprint']])->assertSessionHasErrors('fact_fingerprint');
+        $this->post(route('quotations.issue', $quotation), ['number_ticks' => $ticks['number_ticks'], 'fact_fingerprint' => $ticks['fact_fingerprint']])->assertSessionHasErrors('text_fingerprint');
+        $this->post(route('quotations.issue', $quotation), [...$ticks, 'text_fingerprint' => str_repeat('a', 64)])->assertSessionHasErrors('facts');
         $this->assertSame(ClientQuotation::DRAFT, $quotation->fresh()->status);
 
         $this->post(route('quotations.issue', $quotation), $ticks)->assertSessionHasNoErrors();
@@ -282,6 +286,102 @@ class QuotationHttpTest extends TestCase
         $this->post(route('quotations.stages.store', $quotation), $stage)->assertSessionHasNoErrors();
         $this->post(route('quotations.stages.store', $quotation), $stage)->assertSessionHasNoErrors();
         $this->assertSame(1, $quotation->stages()->count());
+    }
+
+    public function test_a_refused_change_to_a_stage_comes_back_open_in_that_stage_with_what_was_typed_and_why(): void
+    {
+        $quotation = $this->withStages($this->draft());
+        [$first, $second] = $quotation->stages()->get()->all();
+        $show = route('quotations.show', $quotation);
+        $this->actingAs($this->manager);
+        $open = '/<details class="mt-1"\s+open\s*>/';
+        $refused = fn (string $method, string $address, array $body) => $this->from($show)->followingRedirects()->{$method}($address, $body)->assertOk()->getContent();
+
+        $page = $this->get($show)->assertOk()->assertSee('name="_form" value="stage-'.$second->id.'"', false)->assertSee('name="_form" value="add-stage"', false);
+        $this->assertSame(0, preg_match_all($open, $page->getContent()));
+
+        $typed = ['_form' => 'stage-'.$second->id, 'title' => 'Plinth and walls', 'basis' => 'percent', 'percent' => '100.5', 'position' => '2', 'condition_text' => 'Walls up to lintel'];
+        $html = $refused('patch', route('quotation-stages.update', $second), $typed);
+        $message = e(__('validation.max.numeric', ['attribute' => 'percent', 'max' => 100]));
+
+        // Only that stage's form is open, it holds what was typed, and the reason stands beside the field as well as at the top.
+        $this->assertSame(1, preg_match_all($open, $html));
+        $this->assertSame(1, substr_count($html, 'value="Plinth and walls"'));
+        $this->assertStringContainsString('value="100.5"', $html);
+        $this->assertStringContainsString('value="Walls up to lintel"', $html);
+        $this->assertSame(1, substr_count($html, '<p class="error">'.$message.'</p>'));
+        $this->assertSame(2, substr_count($html, $message));
+        $this->assertStringContainsString('value="'.$first->title.'"', $html, 'The other stages show what is stored.');
+        $this->assertSame(['On completion of plinth', '33.3333'], [$second->fresh()->title, $second->fresh()->percent]);
+
+        // An amount stage left without its amount comes back as an amount stage.
+        $html = $refused('patch', route('quotation-stages.update', $second), [...$typed, 'basis' => 'amount', 'percent' => null, 'amount' => '']);
+        $this->assertSame(1, preg_match_all($open, $html));
+        $this->assertStringContainsString('x-data="{ basis: \'amount\' }"', $html);
+
+        // A refused new stage keeps its own form, and opens no stage.
+        $html = $refused('post', route('quotations.stages.store', $quotation), ['_form' => 'add-stage', 'title' => 'Extra', 'basis' => 'percent', 'percent' => '101', 'client_uuid' => (string) Str::uuid()]);
+        $this->assertSame(0, preg_match_all($open, $html));
+        $this->assertSame(1, substr_count($html, 'value="Extra"'));
+        $this->assertSame(1, substr_count($html, '<p class="error">'.$message.'</p>'));
+        $this->assertSame(3, $quotation->stages()->count());
+    }
+
+    public function test_an_issued_quotation_whose_note_cannot_be_shown_asks_for_no_save_it_cannot_take(): void
+    {
+        $issued = $this->issued();
+        // The facts kept with it no longer fit the cover note, as after a change of wording in the code.
+        DB::table('client_quotations')->where('id', $issued->id)->update(['facts' => json_encode([])]);
+        $this->actingAs($this->manager);
+
+        $this->get(route('quotations.show', $issued))->assertOk()
+            ->assertSee('The cover note of this issued quotation cannot be shown now. Its lines, totals and stages above stand as issued.')
+            ->assertSee('To give the client a cover note, make a revision below and issue it.')
+            ->assertSee('Make a revision')
+            ->assertSee('₹1,57,847.17')
+            ->assertDontSee('Save the draft again');
+
+        $this->actingAs($this->member($this->organization, 'accounts'))->get(route('quotations.show', $issued))->assertOk()
+            ->assertSee('The cover note of this issued quotation cannot be shown now.')
+            ->assertDontSee('make a revision below')
+            ->assertDontSee('Save the draft again');
+
+        // A draft can be saved, so there the page says so, to the person who may save it.
+        $draft = $this->draft();
+        DB::table('client_quotations')->where('id', $draft->id)->update(['facts' => json_encode([])]);
+        $this->actingAs($this->manager)->get(route('quotations.show', $draft))->assertOk()->assertSee('The cover note cannot be shown from the saved figures. Save the draft again.');
+        $this->actingAs($this->member($this->organization, 'qs'))->get(route('quotations.show', $draft))->assertOk()
+            ->assertSee('The cover note cannot be shown from the saved figures.')
+            ->assertDontSee('Save the draft again');
+    }
+
+    public function test_the_pages_say_where_a_stage_is_marked_while_the_next_revision_is_a_draft(): void
+    {
+        $issued = $this->issued();
+        [$agreement, $plinth] = $issued->stages()->get()->all();
+        $this->quotations()->markReached($agreement, ['reached' => true, 'reached_on' => '2026-11-02'], $this->manager);
+        $this->quotations()->markReached($plinth, ['reached' => true, 'reached_on' => '2026-11-05'], $this->manager);
+        $revision = $this->quotations()->revise($issued, $this->manager);
+        $this->quotations()->updateStage($revision->stages()->get()[1], ['title' => 'On completion of plinth and walls', 'basis' => 'percent', 'percent' => '33.3333', 'condition_text' => 'Plinth beam cast and cured'], $this->manager);
+        $this->actingAs($this->manager);
+
+        // The issued revision still takes marks, and says where they go.
+        $this->get(route('quotations.show', $issued))->assertOk()
+            ->assertSee('Until it is issued, mark the stages reached here. When it is issued, each mark goes to the stage of the new revision that is unchanged.')
+            ->assertSee('Mark as reached')
+            ->assertSee('Undo');
+
+        // The draft shows the mark it will keep, and the one it will not.
+        $this->get(route('quotations.show', $revision))->assertOk()
+            ->assertSee('Reached on revision 1')
+            ->assertSee('2 November 2026')
+            ->assertSee('Kept when this revision is issued, unless the stage is changed.')
+            ->assertSee('These stages are marked as reached on revision 1, and no stage of this draft is the same.')
+            ->assertSee('<li>On completion of plinth · 5 November 2026</li>', false);
+
+        $this->post(route('quotations.issue', $revision), $this->allTicks($revision))->assertSessionHasNoErrors();
+        $this->assertSame([true, false, false], $revision->stages()->get()->map(fn (ClientPaymentStage $stage) => $stage->isReached())->all());
+        $this->get(route('quotations.show', $revision))->assertOk()->assertSee('Reached')->assertSee('Not reached yet')->assertDontSee('Reached on revision 1');
     }
 
     public function test_an_issued_quotation_answers_409_to_every_change(): void
