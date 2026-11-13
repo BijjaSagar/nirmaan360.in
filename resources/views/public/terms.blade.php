@@ -26,7 +26,7 @@
     <p>We work to keep the service running, but it is provided as is and may sometimes be unavailable. To the extent the law allows, we are not liable for indirect losses arising from its use.</p>
 
     <h2>Ending your account</h2>
-    <p>You can stop using the service at any time. You can delete your account, or your company if you are its only owner, yourself in the app or on the website, as set out on our <a href="{{ route('account-deletion') }}" class="link">account deletion page</a>. An owner can export the company's data first under Account, Company data, on every plan except the offline plan.</p>
+    <p>You can stop using the service at any time. You can delete your account, or your company if you are its only owner, yourself in the app or on the website, as set out on our <a href="{{ route('account-deletion') }}" class="link">account deletion page</a>. An owner can export the company's data first under Account, Company data.</p>
 
     <h2>Governing law</h2>
     <p>These terms are governed by the laws of India.</p>

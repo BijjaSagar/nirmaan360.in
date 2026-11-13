@@ -242,5 +242,9 @@
     "By creating an account you agree to our": "खाता बनाने पर आप इनसे सहमत होते हैं:",
     "and": "और",
     "Already registered?": "पहले से खाता है?",
-    "Deleted user": "हटाया गया उपयोगकर्ता"
+    "Deleted user": "हटाया गया उपयोगकर्ता",
+    "Billing": "बिलिंग",
+    "Current plan": "मौजूदा प्लान",
+    "Trial ends on :date": "ट्रायल :date को ख़त्म होगा",
+    "Paid until :date": ":date तक भुगतान किया हुआ"
 }

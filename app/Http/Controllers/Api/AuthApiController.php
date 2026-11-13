@@ -66,4 +66,19 @@ class AuthApiController extends Controller
     {
         return response()->json(['user' => UserPresenter::present($request->user())]);
     }
+
+    /**
+     * GET /offline/status, which field app builds made while the offline plan existed (build 18 among them) ask after
+     * every sign-in and every few hours. There is no offline plan any more, so every company syncs and the answer is
+     * the one an online company always had. Those builds read only `offline`. A phone still holding a company that was on the offline plan reads
+     * `false` as "the company syncs now" and offers to upload what it holds; without this reply it never can.
+     */
+    public function syncMode(Request $request): JsonResponse
+    {
+        return response()->json([
+            'plan' => $request->user()->organization?->effectivePlan(),
+            'offline' => false,
+            'syncs' => true,
+        ]);
+    }
 }

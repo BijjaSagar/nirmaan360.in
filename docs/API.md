@@ -40,11 +40,21 @@ The same email is never accepted twice. If a reply is lost and the app sends the
 
 ## Plan refusals
 
-A reply under `/api/v1` that a plan stops never tells the person to upgrade, buy, renew or go to billing or pricing, because the app shows its `message` as it is. It says what the plan stops and that the company's owner can check the plan, for example a module outside the plan (403), the project limit (422 on `errors.plan`), the offline plan (403, `code` `offline_plan`) and no AI credits left (402, `reason` `no_credits`). The website keeps its own wording. The offline plan's reply still carries `upgrade_url`, unchanged. The phone-licence refusals (`device_limit` 409, `licence_revoked` 410) carry `manage_url`, which is `/offline/devices/phones`: a website page that lists only the company's phones and the button that frees one, with no plans, prices or upgrade button.
+A reply under `/api/v1` that a plan stops never tells the person to upgrade, buy, renew or go to billing or pricing, because the app shows its `message` as it is. It says what the plan stops and that the company's owner can check the plan, for example a module outside the plan (403), the project limit (422 on `errors.plan`) and no AI credits left (402, `reason` `no_credits`). The website keeps its own wording.
+
+## `GET /offline/status`
+
+There is no offline plan: every company syncs. Field app builds made while it existed (build 18 among them) still ask this after every sign-in and every few hours, for every company, and read only `offline`. The answer is always the one an online company had:
+
+```json
+{"plan": "contractor", "offline": false, "syncs": true}
+```
+
+A phone that still holds a company from the old offline plan reads `false` as "the company syncs now" and asks the owner before it uploads what it holds, so keep this endpoint until no phone runs one of those builds. The old licence endpoints (`/offline/public-key`, `/offline/devices/activate`, `/offline/devices/refresh`, `/offline/devices/release`) are gone and answer 404, and no reply carries the `offline_plan` code any more.
 
 ## Deleting an account
 
-Anyone signed in can delete their own account: staff of every role, contractor logins, and companies on the offline plan. There is no permission to check. The website has the same flow at `/account/delete`.
+Anyone signed in can delete their own account: staff of every role and contractor logins. There is no permission to check. The website has the same flow at `/account/delete`.
 
 The server decides what happens, under a lock on the company, and the app never chooses:
 - `account`: a member, or an owner while another **active** owner exists. The account is anonymised at once. Their name, email, mobile number, sign-ins, phones, notification settings and assistant chats are removed. Everything they recorded stays with the company and shows as "Deleted user".

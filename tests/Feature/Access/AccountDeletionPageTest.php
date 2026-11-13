@@ -163,49 +163,6 @@ class AccountDeletionPageTest extends TestCase
             ->assertSee('name="mode" value="company"', false);
     }
 
-    public function test_an_offline_plan_only_owner_can_cancel_on_the_website(): void
-    {
-        $offline = $this->tenant('Phone Co', 'offline');
-        $owner = $this->member($offline, 'owner');
-
-        $this->actingAs($owner)->post('/account/delete', ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'Phone Co'])
-            ->assertRedirect(route('login'))
-            ->assertSessionHas('success', fn (string $message) => str_ends_with($message, 'Sign in again before then to cancel.'));
-        $this->assertGuest();
-
-        // Signed in again, as the message says. Company data is closed on this plan, so the page neither links to it nor needs it.
-        $this->actingAs($owner->fresh());
-        $this->get('/company-data')->assertRedirect(route('offline.devices.index'));
-        $this->get('/account/delete')->assertOk()
-            ->assertSee('Cancel the deletion')
-            ->assertSee('action="'.route('account.cancel').'"', false)
-            ->assertSee('name="_method" value="DELETE"', false)
-            ->assertDontSee(route('notify.data.index'), false);
-
-        $this->delete('/account/delete')->assertRedirect(route('account.delete'))->assertSessionHas('success', 'Deletion cancelled. Your company stays as it is.');
-
-        $this->assertSame('cancelled', CompanyDeletionRequest::withoutGlobalScopes()->where('organization_id', $offline->id)->sole()->status);
-        $this->assertTrue($owner->fresh()->is_active);
-        $this->assertNull($owner->fresh()->anonymised_at);
-    }
-
-    public function test_the_offline_plan_page_does_not_send_the_owner_to_pages_the_plan_closes(): void
-    {
-        $offline = $this->tenant('Phone Co', 'offline');
-        $owner = $this->member($offline, 'owner');
-        $this->member($offline, 'engineer');
-
-        $this->actingAs($owner);
-        $this->get('/team')->assertRedirect(route('offline.devices.index'));
-        $this->get('/account/delete')->assertOk()
-            ->assertSee('You are the only owner of Phone Co')
-            ->assertSee('opening Account, Delete my account.')
-            ->assertDontSee('Want a copy first?')
-            ->assertDontSee('make another member an owner under Team first')
-            ->assertDontSee(route('notify.data.index'), false)
-            ->assertDontSee(route('team.index'), false);
-    }
-
     public function test_only_an_owner_can_cancel(): void
     {
         $party = Party::create(['organization_id' => $this->company->id, 'type' => 'subcontractor', 'name' => 'Shree Formwork']);
@@ -345,22 +302,6 @@ class AccountDeletionPageTest extends TestCase
         $this->post('/account/delete', ['mode' => 'account', 'password' => 'password'])->assertRedirect(route('login'));
         $this->assertGuest();
         $this->assertNotNull($contractor->fresh()->anonymised_at);
-    }
-
-    public function test_an_offline_plan_company_can_delete_too(): void
-    {
-        $offline = $this->tenant('Phone Co', 'offline');
-        $owner = $this->member($offline, 'owner');
-        $member = $this->member($offline, 'engineer');
-
-        $this->actingAs($member)->get('/offline/devices')->assertOk()->assertSee(route('account.delete'), false);
-        $this->get('/account/delete')->assertOk();
-        $this->post('/account/delete', ['mode' => 'account', 'password' => 'password'])->assertRedirect(route('login'));
-        $this->assertNotNull($member->fresh()->anonymised_at);
-
-        $this->actingAs($owner)->get('/account/delete')->assertOk()->assertSee('name="mode" value="company"', false);
-        $this->post('/account/delete', ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'Phone Co'])->assertRedirect(route('login'));
-        $this->assertSame('pending', CompanyDeletionRequest::withoutGlobalScopes()->where('organization_id', $offline->id)->sole()->status);
     }
 
     public function test_signed_out_visitors_are_sent_to_sign_in(): void

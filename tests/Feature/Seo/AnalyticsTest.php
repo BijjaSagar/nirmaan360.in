@@ -472,7 +472,7 @@ class AnalyticsTest extends TestCase
         }
 
         // Plans are sent by their key, which the admin cannot rename, not by the label on the website.
-        $this->assertSame(['free', 'contractor', 'business', 'offline'], $events['sign_up']['plan']);
+        $this->assertSame(['free', 'contractor', 'business'], $events['sign_up']['plan']);
         $this->assertNotContains('enterprise', $events['begin_checkout']['plan']);
         $this->assertNotContains('free', $events['begin_checkout']['plan']);
     }
@@ -495,11 +495,15 @@ class AnalyticsTest extends TestCase
         $this->assertSame('tab', $calculators->getAttribute(':data-track-calculator'), 'Alpine keeps the name in step with the open calculator.');
         $this->assertGreaterThan(5, $calculators->querySelectorAll('input, select')->length);
 
-        foreach (['free', 'contractor', 'business', 'offline'] as $plan) {
+        foreach (['free', 'contractor', 'business'] as $plan) {
             $form = $this->document($this->get("/register?plan={$plan}"))->querySelector('form[data-track="sign_up_start"]');
 
             $this->assertSame($plan, $form?->getAttribute('data-track-plan'));
             $this->assertNotNull($form->querySelector('input[name="email"]'));
         }
+
+        // A plan that is no longer sold counts as the default plan, the one the form then starts.
+        $form = $this->document($this->get('/register?plan=offline'))->querySelector('form[data-track="sign_up_start"]');
+        $this->assertSame('contractor', $form?->getAttribute('data-track-plan'));
     }
 }

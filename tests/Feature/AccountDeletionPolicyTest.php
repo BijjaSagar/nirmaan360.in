@@ -138,14 +138,13 @@ class AccountDeletionPolicyTest extends TestCase
         $this->get('/privacy')->assertOk()
             ->assertSee('any owner can cancel by signing in during that time: in the app under Settings, Delete account, or '.$where);
 
-        // The offline plan closes Company data but keeps the account pages, the cancel among them.
-        $offline = $this->tenant('Phone Co', 'offline');
-        $owner = $this->member($offline, 'owner');
-        app(CompanyDeletionService::class)->request($offline, $owner, 'Phone Co');
-        $this->actingAs($owner)->get('/company-data')->assertRedirect(route('offline.devices.index'));
-        $this->get(route('account.delete'))->assertOk()->assertSee('Cancel the deletion');
+        // The free plan, the smallest, opens the account pages, the cancel among them.
+        $free = $this->tenant('Phone Co', 'free');
+        $owner = $this->member($free, 'owner');
+        app(CompanyDeletionService::class)->request($free, $owner, 'Phone Co');
+        $this->actingAs($owner)->get(route('account.delete'))->assertOk()->assertSee('Cancel the deletion');
         $this->delete(route('account.cancel'))->assertRedirect(route('account.delete'));
-        $this->assertNull(app(CompanyDeletionService::class)->pending($offline->id));
+        $this->assertNull(app(CompanyDeletionService::class)->pending($free->id));
     }
 
     public function test_a_contractor_finds_delete_my_account_in_the_portal_menu_as_the_pages_say(): void
@@ -166,9 +165,9 @@ class AccountDeletionPolicyTest extends TestCase
         $party = Party::create(['organization_id' => $company->id, 'type' => 'subcontractor', 'name' => 'Shree Formwork']);
         $contractor = User::factory()->create(['organization_id' => $company->id, 'role' => User::CONTRACTOR_ROLE, 'contractor_party_id' => $party->id, 'is_active' => true]);
 
-        // A contractor login is kept to its portal, and the offline plan to its own pages, but public pages stay open.
+        // A contractor login is kept to its portal, but public pages stay open.
         $this->actingAs($contractor)->get('/delete-account')->assertOk()->assertSee('Delete your Nirmaan360 account');
-        $this->actingAs($this->member($this->tenant('Phone Co', 'offline'), 'owner'))->get('/delete-account')->assertOk();
+        $this->actingAs($this->member($this->tenant('Phone Co', 'free'), 'owner'))->get('/delete-account')->assertOk();
     }
 
     public function test_the_footer_the_privacy_policy_and_the_terms_link_to_it(): void

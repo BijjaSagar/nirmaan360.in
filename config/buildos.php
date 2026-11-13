@@ -81,20 +81,6 @@ return [
             'max_projects' => null,
             'features' => ['site', 'measurement', 'labour', 'petty_cash', 'billing', 'parties', 'api'],
         ],
-        // Runs on one phone with no server copy: the server signs a device licence and never syncs the company.
-        // Everything else about it lives in config/modules/offline_plan.php.
-        'offline' => [
-            'label' => 'Offline',
-            'tagline' => 'For one person who keeps everything on one phone',
-            'monthly' => 499,
-            'yearly' => 4990,
-            'buyable' => true,
-            'max_users' => 1,
-            'max_projects' => null,
-            // Phones that may hold a licence at the same time. Editable in the admin panel; null means no limit.
-            'max_devices' => 1,
-            'features' => ['site', 'measurement', 'labour', 'petty_cash'],
-        ],
     ],
 
     // Permissions are module.action strings. A trailing .* grants the whole module.

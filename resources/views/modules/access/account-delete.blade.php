@@ -25,7 +25,6 @@
                         @if ($deletedOnCancel)
                             <p class="rounded-[3px] border border-laterite bg-laterite/10 px-3 py-2 font-medium text-laterite-dark" role="alert">{{ __('Cancelling keeps the company. :name asked for their own account to be deleted, so it is deleted when you cancel.', ['name' => $deletedOnCancel->name]) }}</p>
                         @endif
-                        {{-- Cancelled here rather than on Company data, which the offline plan does not open. --}}
                         <form method="POST" action="{{ route('account.cancel') }}">
                             @csrf
                             @method('DELETE')
@@ -54,10 +53,8 @@
                         </p>
                         <p>{{ __('It is erased after :date. Until then the company keeps working, and you can cancel by signing in again and opening Account, Delete my account.', ['date' => $preview['erase_after']->format('d M Y')]) }}</p>
                         <p>{{ __('Records of payments your company made to :brand are kept, as Indian tax law requires.', ['brand' => config('buildos.brand')]) }}</p>
-                        @unless ($offline)
-                            <p>{{ __('Want a copy first? Export it from the Company data page.') }} <a href="{{ route('notify.data.index') }}" class="link">{{ __('Company data') }}</a></p>
-                            <p>{{ __('To keep the company going without you, make another member an owner under Team first, then delete your account here.') }} <a href="{{ route('team.index') }}" class="link">{{ __('Team') }}</a></p>
-                        @endunless
+                        <p>{{ __('Want a copy first? Export it from the Company data page.') }} <a href="{{ route('notify.data.index') }}" class="link">{{ __('Company data') }}</a></p>
+                        <p>{{ __('To keep the company going without you, make another member an owner under Team first, then delete your account here.') }} <a href="{{ route('team.index') }}" class="link">{{ __('Team') }}</a></p>
                     @else
                         <p class="font-semibold">{{ __('Your sign-in, name, email and mobile number are removed now. You cannot undo this.') }}</p>
                         <p>{{ __('Work you recorded for :company — reports, measurements, bills, attendance and photos — stays with the company, shown as "Deleted user".', ['company' => $company]) }}</p>

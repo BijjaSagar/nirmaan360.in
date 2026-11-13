@@ -8,7 +8,6 @@ use App\Models\CompanyDeletionRequest;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Access\AccountDeletionService;
-use App\Services\OfflinePlan\OfflinePlanPolicy;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -348,14 +347,12 @@ class CompanyDeletionService
     private function tellEveryone(Organization $organization, string $event, callable $words): void
     {
         $people = User::where('organization_id', $organization->id)->where('is_active', true)->orderBy('id')->get();
-        // The offline plan closes the Company data page, so its owners cancel from Delete my account instead.
-        $leaderUrl = app(OfflinePlanPolicy::class)->isOffline($organization) ? route('account.delete') : route('notify.data.index');
 
         foreach ($people as $user) {
             $leader = in_array($user->role, ['owner', 'admin'], true);
             [$title, $body] = $words($user->locale ?: config('app.locale'), $leader);
 
-            $this->notifier->send($user, new NotificationMessage(event: $event, title: $title, body: $body, url: $leader ? $leaderUrl : null, critical: true));
+            $this->notifier->send($user, new NotificationMessage(event: $event, title: $title, body: $body, url: $leader ? route('notify.data.index') : null, critical: true));
         }
     }
 }

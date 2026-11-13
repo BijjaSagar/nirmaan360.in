@@ -13,7 +13,6 @@ use App\Models\AuditLog;
 use App\Models\BoqItem;
 use App\Models\CompanyDeletionRequest;
 use App\Models\CustomRole;
-use App\Models\DeviceLicence;
 use App\Models\Dpr;
 use App\Models\ExpenseClaim;
 use App\Models\MeasurementEntry;
@@ -46,7 +45,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Tests\Feature\Api\ApiTestCase;
-use Tests\Feature\OfflinePlan\BuildsOfflineCompany;
 use Tests\Feature\SiteControl\BuildsMoneyWorld;
 
 /**
@@ -55,7 +53,7 @@ use Tests\Feature\SiteControl\BuildsMoneyWorld;
  */
 class AccountDeletionTest extends ApiTestCase
 {
-    use BuildsMoneyWorld, BuildsOfflineCompany;
+    use BuildsMoneyWorld;
 
     private const PATH = '/api/v1/auth/account/deletion';
 
@@ -234,11 +232,6 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame(['', [], null, null, null], [$run->input, $run->messages, $run->answer, $run->output, $run->agent_conversation_id]);
         $this->assertNull(DB::table('agent_steps')->where('agent_run_id', $run->id)->value('text'));
         $this->assertSame('Half the slab is cast.', AgentRun::withoutGlobalScopes()->where('user_id', $other->id)->value('answer'));
-
-        // The licence their phone held is freed, and kept as a record.
-        $licence = DeviceLicence::withoutGlobalScopes()->where('user_id', $member->id)->sole();
-        $this->assertSame([DeviceLicence::REVOKED, null, $member->id], [$licence->status, $licence->slot, $licence->revoked_by]);
-        $this->assertSame(DeviceLicence::ACTIVE, DeviceLicence::withoutGlobalScopes()->where('user_id', $other->id)->value('status'));
     }
 
     public function test_copies_of_their_email_and_name_are_scrubbed(): void
@@ -591,7 +584,6 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame(0, $this->owner->tokens()->count());
         $this->assertSame(0, DB::table('sessions')->where('user_id', $this->owner->id)->count());
         $this->assertSame(0, DB::table('device_tokens')->where('user_id', $this->owner->id)->count());
-        $this->assertSame(DeviceLicence::REVOKED, DeviceLicence::withoutGlobalScopes()->where('user_id', $this->owner->id)->value('status'));
 
         // The row itself stays as it was: the company still needs an owner who can sign in and cancel.
         $owner = $this->owner->fresh();
@@ -727,20 +719,6 @@ class AccountDeletionTest extends ApiTestCase
 
         $this->assertNull($contractor->fresh()->contractor_party_id);
         $this->assertCount(0, app(ContractorAccessService::class)->state($party)['logins']);
-    }
-
-    public function test_an_offline_plan_company_can_look_and_delete(): void
-    {
-        $offline = $this->offlineTenant('Phone Co');
-        $owner = $this->member($offline, 'owner');
-        $member = $this->member($offline, 'engineer');
-
-        $this->preview($this->token($member))->assertOk()->assertJsonPath('data.mode', 'account');
-        $this->deleteMember($member)->assertOk()->assertJsonPath('data.result', 'deleted');
-
-        $this->preview($this->token($owner))->assertOk()->assertJsonPath('data.mode', 'company');
-        $this->requestDeletion($this->token($owner), ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'Phone Co'])->assertOk()->assertJsonPath('data.result', 'scheduled');
-        $this->cancel($this->token($owner))->assertOk()->assertJsonPath('data.result', 'cancelled');
     }
 
     public function test_the_sixth_try_in_a_minute_is_refused(): void
@@ -1006,16 +984,18 @@ class AccountDeletionTest extends ApiTestCase
         $this->assertSame([['mode' => 'account', 'via' => 'support'], null], [$asha->new_values, $asha->user_id]);
     }
 
-    public function test_an_offline_plan_owner_is_pointed_at_delete_my_account_to_cancel(): void
+    public function test_the_only_owner_of_a_free_company_is_pointed_at_company_data_to_cancel(): void
     {
-        $offline = $this->offlineTenant('Phone Co');
-        $owner = $this->member($offline, 'owner');
-        $member = $this->member($offline, 'engineer');
+        // The plan a company left on the old offline plan was moved to. Company data is open on every plan.
+        $free = $this->tenant('Phone Co', 'free');
+        $owner = $this->member($free, 'owner');
+        $member = $this->member($free, 'engineer');
 
         $this->requestDeletion($this->token($owner), ['mode' => 'company', 'password' => 'password', 'confirm_name' => 'Phone Co'])->assertOk();
 
-        $this->assertSame(route('account.delete'), $owner->notifications()->sole()->data['url'], 'Company data is closed on the offline plan.');
+        $this->assertSame(route('notify.data.index'), $owner->notifications()->sole()->data['url']);
         $this->assertNull($member->notifications()->sole()->data['url']);
+        $this->cancel($this->token($owner))->assertOk()->assertJsonPath('data.result', 'cancelled');
     }
 
     public function test_support_scheduling_for_the_only_owner_takes_over_the_request_and_the_purge_emails_them(): void
@@ -1246,11 +1226,6 @@ class AccountDeletionTest extends ApiTestCase
             'max_steps' => 5, 'max_seconds' => 60, 'max_credits' => '1.0000', 'credits_used' => '0.2500', 'started_at' => now(), 'finished_at' => now(),
         ]);
         DB::table('agent_steps')->insert(['organization_id' => $org, 'agent_run_id' => $run->id, 'number' => 1, 'model' => 'claude-sonnet-5-5', 'text' => 'Half the slab is cast.', 'created_at' => now(), 'updated_at' => now()]);
-
-        DeviceLicence::withoutGlobalScopes()->create([
-            'organization_id' => $org, 'user_id' => $user->id, 'device_id' => 'phone-'.$user->id, 'device_name' => 'Pixel 8', 'status' => DeviceLicence::ACTIVE,
-            'slot' => $user->id, 'activated_at' => now(), 'expires_at' => now()->addDays(30),
-        ]);
     }
 
     /** @return array<string, int> */

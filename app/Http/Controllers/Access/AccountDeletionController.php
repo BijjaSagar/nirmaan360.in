@@ -6,7 +6,6 @@ use App\Exceptions\AccountDeletionChanged;
 use App\Http\Controllers\Controller;
 use App\Services\Access\AccountDeletionService;
 use App\Services\ContractorPortal\ContractorPortalService;
-use App\Services\OfflinePlan\OfflinePlanPolicy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +17,7 @@ class AccountDeletionController extends Controller
 {
     public function __construct(private AccountDeletionService $deletions) {}
 
-    public function show(Request $request, ContractorPortalService $portal, OfflinePlanPolicy $offlinePlan): View
+    public function show(Request $request, ContractorPortalService $portal): View
     {
         $user = $request->user();
         $preview = $this->deletions->preview($user);
@@ -29,8 +28,6 @@ class AccountDeletionController extends Controller
             'deletedOnCancel' => ($preview['pending']['can_cancel'] ?? false) ? $this->deletions->deletedIfCancelledBy($user) : null,
             // A contractor login sees the page in its own portal frame, without the company menu.
             'party' => $portal->partyFor($user),
-            // The offline plan opens neither Company data nor Team, so the page does not send people there.
-            'offline' => $user->organization !== null && $offlinePlan->isOffline($user->organization),
         ]);
     }
 
