@@ -83,21 +83,27 @@ return [
      * read while someone waits at a form, a BOQ or a tender runs for a long time in the background.
      * "notify" says whether the person who started a read is told when it finishes or pauses; a
      * read that takes seconds is watched on the form itself.
+     *
+     * The next four are for the shared upload, start and status routes. "picture_pass" is the pass
+     * an uploaded page picture is read with. "feature" is the plan feature of the module the kind
+     * belongs to, checked beside the AI feature. "own_only" keeps a read to the person who started
+     * it and to owners and admins: a slip or a bill is one person's work at a form. "keeps_source"
+     * lets the original PDF be stored beside the page pictures, for the record; it is never parsed.
      */
     'kinds' => [
-        'boq' => ['queue' => 'pages', 'notify' => true, 'passes' => [
+        'boq' => ['queue' => 'pages', 'notify' => true, 'picture_pass' => 'rows', 'feature' => 'reports', 'own_only' => false, 'keeps_source' => true, 'passes' => [
             'rows' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 9000, 'effort' => 'low', 'timeout' => 240, 'typical_output' => 4500, 'typical_seconds' => 75, 'then' => ['amounts'], 'stronger' => 'claude-opus-5-5'],
             'amounts' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1200, 'typical_seconds' => 20, 'stronger' => 'claude-sonnet-5-5'],
         ]],
-        'slip' => ['queue' => 'interactive', 'notify' => false, 'passes' => [
+        'slip' => ['queue' => 'interactive', 'notify' => false, 'picture_pass' => 'main', 'feature' => 'site_control', 'own_only' => true, 'keeps_source' => false, 'passes' => [
             'main' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90, 'typical_output' => 700, 'typical_seconds' => 15, 'stronger' => 'claude-sonnet-5-5'],
             'recheck' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90, 'typical_output' => 700, 'typical_seconds' => 15],
         ]],
-        'bill' => ['queue' => 'interactive', 'notify' => false, 'passes' => [
+        'bill' => ['queue' => 'interactive', 'notify' => false, 'picture_pass' => 'main', 'feature' => 'site_control', 'own_only' => true, 'keeps_source' => false, 'passes' => [
             'main' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1500, 'typical_seconds' => 30],
             'recheck' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 4000, 'effort' => 'low', 'timeout' => 120, 'typical_output' => 1500, 'typical_seconds' => 30],
         ]],
-        'tender' => ['queue' => 'pages', 'notify' => true, 'passes' => [
+        'tender' => ['queue' => 'pages', 'notify' => true, 'picture_pass' => 'image', 'feature' => 'crm', 'own_only' => false, 'keeps_source' => false, 'passes' => [
             'text' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 8000, 'effort' => 'low', 'timeout' => 240, 'typical_output' => 2500, 'typical_seconds' => 60],
             'image' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 6000, 'effort' => 'low', 'timeout' => 180, 'typical_output' => 1500, 'typical_seconds' => 40],
         ]],
@@ -194,4 +200,24 @@ return [
 
     // The platform admins are told at these percentages of a limit, and again when it stops the readers.
     'ceiling_notice_percents' => [50, 80],
+
+    /*
+     * Where the browser finds what pdf.js needs to draw scanned pages: the decoders for fax, JBIG2
+     * and JPEG 2000 pictures, the character maps, the standard fonts and the colour profile. The
+     * build copies them from the installed pdfjs-dist into this folder under public/ (see
+     * vite.config.js). The version here must be the installed one; a test compares the two.
+     */
+    'pdfjs_assets' => 'pdfjs-assets/6.5.438',
+
+    // The most one upload request may carry, in kilobytes: a page picture, and the original PDF kept for the record.
+    'upload' => ['page_kb' => 6144, 'source_kb' => 10240],
+
+    // A page whose answer was cut off can be read again as two halves. Each half is this much of the page, in parts per thousand, so the two overlap.
+    'half_page_share' => 550,
+
+    // "Read this page again" is offered this many times for a page the reader answered unusably.
+    'manual_retries' => 2,
+
+    // A read that is running, has sent nothing and was started this many seconds ago is reported as not started by the server yet.
+    'stalled_seconds' => 180,
 ];
