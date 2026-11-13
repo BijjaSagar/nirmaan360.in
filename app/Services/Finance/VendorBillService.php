@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\VendorBill;
 use App\Services\ApprovalService;
+use App\Services\SlipReading\SlipLink;
 use App\Support\Dec;
 use App\Support\Idempotent;
 use Brick\Math\BigDecimal;
@@ -19,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 
 class VendorBillService
 {
-    public function __construct(private ApprovalService $approvals) {}
+    public function __construct(private ApprovalService $approvals, private SlipLink $slips) {}
 
     public function rules(): array
     {
@@ -38,6 +39,8 @@ class VendorBillService
             'purchase_order_id' => ['nullable', 'integer', 'min:1'],
             'grn_id' => ['nullable', 'integer', 'min:1'],
             'client_uuid' => ['nullable', 'uuid'],
+            // A reading of the bill's photo that filled the form, and the fields a person confirmed against the photo.
+            ...SlipLink::rules(),
         ];
     }
 
@@ -68,7 +71,12 @@ class VendorBillService
         ];
     }
 
-    /** Save a draft. A repeated client_uuid returns the original row. */
+    /**
+     * Save a draft. A repeated client_uuid returns the original row, before anything else is checked.
+     *
+     * A form filled from a photo of the bill (read_id) must have every field the reading filled
+     * either typed over or confirmed against the photo (SlipLink); the reading then records which.
+     */
     public function create(Project $project, array $data, User $by): VendorBill
     {
         $uuid = $data['client_uuid'] ?? null;
@@ -77,11 +85,13 @@ class VendorBillService
             return $existing;
         }
 
-        return Idempotent::create(function () use ($project, $data, $by, $uuid) {
+        $link = $this->slips->check($project, $data, $by, SlipLink::VENDOR_BILL);
+
+        return Idempotent::create(function () use ($project, $data, $by, $uuid, $link) {
             $this->lockParty($data['party_id']);
             $this->refuseDuplicate($project->organization_id, $data['party_id'], $data['bill_no']);
 
-            return VendorBill::create([
+            $bill = VendorBill::create([
                 ...$this->attributes($data),
                 'organization_id' => $project->organization_id,
                 'project_id' => $project->id,
@@ -89,12 +99,25 @@ class VendorBillService
                 'created_by' => $by->id,
                 'client_uuid' => $uuid,
             ]);
+
+            if ($link !== null) {
+                $this->slips->used($link, $bill, $uuid, $by);
+            }
+
+            return $bill;
         }, fn () => $uuid ? $this->findByClientUuid($project->organization_id, $uuid) : null);
     }
 
-    public function update(VendorBill $bill, array $data): VendorBill
+    /**
+     * Change a draft or returned bill. A form filled from a photo of the bill is checked as on
+     * create; $by is the person saving, the signed-in person when not given.
+     */
+    public function update(VendorBill $bill, array $data, ?User $by = null): VendorBill
     {
-        return DB::transaction(function () use ($bill, $data) {
+        $by ??= auth()->user();
+        $link = $this->slips->check($bill->project, $data, $by, SlipLink::VENDOR_BILL, $bill);
+
+        return DB::transaction(function () use ($bill, $data, $by, $link) {
             $bill = VendorBill::lockForUpdate()->findOrFail($bill->id);
 
             if (! $bill->isEditable()) {
@@ -104,6 +127,10 @@ class VendorBillService
             $this->lockParty($data['party_id']);
             $this->refuseDuplicate($bill->organization_id, $data['party_id'], $data['bill_no'], $bill->id);
             $bill->update($this->attributes($data));
+
+            if ($link !== null) {
+                $this->slips->used($link, $bill, null, $by);
+            }
 
             return $bill;
         });

@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\Route;
  * by the form's script. Who may read which kind of slip (challan, bill) and who may open a reading
  * (its creator, an owner or an admin) is checked in the controller, because it depends on the kind.
  *
- * The names are not slip-reads.*: the website's card for this reader waits for "slip-reads.store",
- * and is switched on together with the reader itself (see config/modules/slip_reading.php).
+ * The names are not slip-reads.*: the website's tests (tests/Feature/Website/AiPagesTest.php) still
+ * hold "slip-reads.store" as the name of a reader not built. The website's card itself follows the
+ * reader kinds "slip" and "bill" (AiOffer), so it shows once a reader is registered
+ * (see config/modules/slip_reading.php).
  */
 Route::middleware(['feature:site_control', 'feature:ai_agents'])->name('slip-reading.')->controller(SlipReadController::class)->group(function () {
     // Only what sends the photo to the AI service carries the reader guard. Looking at a reading and discarding it never depend on it.

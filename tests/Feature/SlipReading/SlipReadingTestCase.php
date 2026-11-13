@@ -13,6 +13,7 @@ use App\Models\SlipRead;
 use App\Models\User;
 use App\Services\DocumentReading\AiDocumentConsent;
 use App\Services\DocumentReading\ReadFiles;
+use App\Services\SlipReading\BillReadKind;
 use App\Services\SlipReading\SlipChallanOffer;
 use App\Services\SlipReading\SlipReadKind;
 use Illuminate\Http\UploadedFile;
@@ -34,6 +35,9 @@ abstract class SlipReadingTestCase extends PageReadingTestCase
 {
     /** An invented GSTIN that passes the check: state 27, PAN ABCDE1234F. */
     protected const GSTIN = '27ABCDE1234F1Z0';
+
+    /** The invented company the bills below are made out to: state 27 too. */
+    protected const BUYER_GSTIN = '27PQRST6789K1ZW';
 
     protected Project $project;
 
@@ -110,6 +114,64 @@ abstract class SlipReadingTestCase extends PageReadingTestCase
             'weight_unit' => $this->cell(''),
             ...$overrides,
         ];
+    }
+
+    /**
+     * What the reader returns for a tax invoice of 200 bags of cement at 300 rupees, taxed within the
+     * state at 18 (CGST 5,400 and SGST 5,400), with overrides.
+     */
+    protected function billForm(array $overrides = []): array
+    {
+        return [
+            'doc_kind' => 'tax_invoice',
+            'supplier_name' => $this->cell('Godavari Cement Traders'),
+            'supplier_gstin' => $this->cell(self::GSTIN),
+            'buyer_gstin' => $this->cell(self::BUYER_GSTIN),
+            'bill_no' => $this->cell('INV/0912'),
+            'bill_date' => $this->cell('10-11-2026'),
+            'lines' => [$this->billLine('OPC 53 Grade Cement', '200', '300.00', '60,000.00')],
+            'taxable_total' => $this->cell('60,000.00'),
+            'cgst' => $this->cell('5,400.00'),
+            'sgst' => $this->cell('5,400.00'),
+            'igst' => $this->cell(''),
+            'round_off' => $this->cell(''),
+            'grand_total' => $this->cell('70,800.00'),
+            'eway_bill_no' => $this->cell(''),
+            ...$overrides,
+        ];
+    }
+
+    /** @return array<string, array{raw: string, state: string}> */
+    protected function billLine(string $description, string $qty, string $rate, string $amount, string $unit = 'Bags', string $hsn = '2523'): array
+    {
+        return [
+            'description' => $this->cell($description), 'hsn' => $this->cell($hsn), 'qty' => $this->cell($qty),
+            'unit' => $this->cell($unit), 'rate' => $this->cell($rate), 'amount' => $this->cell($amount),
+        ];
+    }
+
+    /** The bill reader registered beside the challan reader, as the module will register it. */
+    protected function withBillReader(): void
+    {
+        config(['modules.slip_reading.read_kinds' => [SlipReadKind::class, BillReadKind::class]]);
+    }
+
+    /** Sends a photo of a bill from a bill form, as the form's script does. */
+    protected function readBill(User $by, ?Project $project = null, array $data = []): TestResponse
+    {
+        return $this->readPhoto($by, $project, ['kind' => 'bill', ...$data]);
+    }
+
+    /** Reads a bill photo through the routes and runs its page job with this reply. */
+    protected function readyBill(User $by, ?array $form = null, ?Project $project = null): SlipRead
+    {
+        $this->willAnswer($this->reply($form ?? $this->billForm(), 'claude-sonnet-5-5'));
+        $id = $this->readBill($by, $project)->assertStatus(202)->json('id');
+        $slip = SlipRead::withoutGlobalScopes()->findOrFail($id);
+
+        $this->runPages($slip);
+
+        return $slip->refresh();
     }
 
     /** What the provider answers next, in turn; the last one repeats. */
@@ -222,6 +284,9 @@ abstract class SlipReadingTestCase extends PageReadingTestCase
             'fields' => $kind === SlipRead::BILL ? [
                 'bill_no' => $offered('INV/0912', 'INV/0912'),
                 'bill_date' => $offered('10-11-2026', '2026-11-10'),
+                'taxable_total' => $offered('60,000.00', '60000.00'),
+                'gst_pct' => [...$offered('', '18'), 'from' => ['taxable_total', 'cgst', 'sgst', 'igst'], 'worked_out' => true],
+                'supply_type' => [...$offered('', 'intra'), 'from' => ['cgst', 'sgst', 'igst'], 'worked_out' => true],
                 'grand_total' => $offered('70,800.00', '70800.00'),
             ] : [
                 'challan_no' => $offered('DC-0457', 'DC-0457'),

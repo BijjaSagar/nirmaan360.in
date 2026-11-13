@@ -1,19 +1,21 @@
 <?php
 
 /*
- * Reading a photo of a delivery challan or a weighbridge slip to fill the challan form before it is
- * saved. The photo is read by App\Services\SlipReading\SlipReadKind under the "slip" figures in
- * config/modules/document_reading.php; saving goes through the challan's own service, which checks
- * every field the photo filled (SlipLink).
+ * Reading a photo to fill a form before it is saved: a delivery challan or a weighbridge slip on the
+ * challan form (App\Services\SlipReading\SlipReadKind, the "slip" figures in
+ * config/modules/document_reading.php), and a supplier's bill on a challan's bill form or the vendor
+ * bill form (App\Services\SlipReading\BillReadKind, the "bill" figures). Saving goes through each
+ * form's own service, which checks every field the photo filled (SlipLink).
  *
- * The reader is built but not registered yet, so no company is offered it and nothing changes on
- * any screen. Registering it is these two lines:
+ * Both readers are built but not registered yet, so no company is offered them and nothing changes
+ * on any screen. Registering them is these two lines:
  *
- *     'read_kinds' => [\App\Services\SlipReading\SlipReadKind::class],
+ *     'read_kinds' => [\App\Services\SlipReading\SlipReadKind::class, \App\Services\SlipReading\BillReadKind::class],
  *     'reader_offers' => ['slip_challan' => \App\Services\SlipReading\SlipChallanOffer::class],
  *
- * It waits because the shared reader tests stand in for a "slip" kind of their own and assume that
- * no reader ships; those tests have to make room for a real one in the same change.
+ * They wait because the shared reader tests stand in for a "slip" kind of their own, use "bill" as
+ * the kind that is not deployed, and assume that no reader ships; those tests have to make room for
+ * real ones in the same change. A bill is read on the web only, so it has no offer for the field app.
  */
 return [
     'read_kinds' => [],

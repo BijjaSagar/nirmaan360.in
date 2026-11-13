@@ -62,21 +62,23 @@ class SlipLink
 
     /**
      * @param  array<string, mixed>  $data  The validated form.
+     * @param  ?User  $by  The person saving. With nobody, a form that names a reading is refused.
      * @param  ?Model  $record  The record being saved, when it exists already (a challan getting its bill, a bill being changed).
      * @return ?LinkedSlip Null when the form names no reading.
      *
      * @throws ValidationException
      */
-    public function check(Project $project, array $data, User $by, string $context, ?Model $record = null): ?LinkedSlip
+    public function check(Project $project, array $data, ?User $by, string $context, ?Model $record = null): ?LinkedSlip
     {
         if (blank($data['read_id'] ?? null)) {
             return null;
         }
 
-        $slip = SlipRead::withoutGlobalScopes()->where('organization_id', $by->organization_id)->find((int) $data['read_id']);
+        $slip = $by === null ? null : SlipRead::withoutGlobalScopes()->where('organization_id', $by->organization_id)->find((int) $data['read_id']);
 
-        if ($slip === null || (int) $slip->project_id !== (int) $project->id || (int) $slip->user_id !== (int) $by->id
-            || $slip->kind !== (self::SLIP_KINDS[$context] ?? null)) {
+        // A bill reading is money: someone who no longer sees money cannot save a form with one.
+        if ($by === null || $slip === null || (int) $slip->project_id !== (int) $project->id || (int) $slip->user_id !== (int) $by->id
+            || $slip->kind !== (self::SLIP_KINDS[$context] ?? null) || ! app(SlipReadService::class)->mayUseKind($by, $slip->kind)) {
             throw ValidationException::withMessages(['read_id' => __('This photo reading cannot be used for this form.')]);
         }
 
@@ -201,8 +203,11 @@ class SlipLink
         }
     }
 
-    /** The reading a saved record was filled from, if any. For a note to the people who look at or approve the record. */
-    public function readingOf(Model $record): ?SlipRead
+    /**
+     * The reading a saved record was filled from, if any. For a note to the people who look at or
+     * approve the record. A challan can have two: the challan's own, and its bill's (kind bill).
+     */
+    public function readingOf(Model $record, ?string $kind = null): ?SlipRead
     {
         $column = match (true) {
             $record instanceof DeliveryChallan => 'delivery_challan_id',
@@ -211,7 +216,8 @@ class SlipLink
         };
 
         return $column === null ? null : SlipRead::withoutGlobalScopes()->where('organization_id', $record->getAttribute('organization_id'))
-            ->where($column, $record->getKey())->where('status', SlipRead::USED)->latest('id')->first();
+            ->where($column, $record->getKey())->where('status', SlipRead::USED)->when($kind !== null, fn ($query) => $query->where('kind', $kind))
+            ->latest('id')->first();
     }
 
     private function usable(SlipRead $slip, string $context, array $data, ?Model $record): bool

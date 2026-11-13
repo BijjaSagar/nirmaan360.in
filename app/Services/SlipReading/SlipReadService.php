@@ -161,8 +161,9 @@ class SlipReadService
     }
 
     /**
-     * Has the stronger model read the photo again. Offered only after an arithmetic check failed,
-     * never for a GSTIN warning, never twice, and never to a company on a trial.
+     * Has the stronger model read the photo again. Offered only after an arithmetic check failed
+     * (a challan's weights; a bill's lines, taxable value or grand total), never for a GSTIN warning,
+     * never twice, never to a company on a trial, and only for a kind whose figures name a stronger model.
      *
      * @throws ReadRefused not_offered, or a refusal of the read's own retry.
      * @throws SpendRefused
@@ -303,7 +304,8 @@ class SlipReadService
             return false;
         }
 
-        $arithmetic = collect($slip->warnings ?? [])->contains(fn (array $warning) => in_array($warning['code'] ?? null, ChallanChecks::ARITHMETIC, true));
+        $codes = $slip->kind === SlipRead::BILL ? BillChecks::ARITHMETIC : ChallanChecks::ARITHMETIC;
+        $arithmetic = collect($slip->warnings ?? [])->contains(fn (array $warning) => in_array($warning['code'] ?? null, $codes, true));
 
         return $arithmetic && $this->desk->strongerOffered(Organization::findOrFail($slip->organization_id), $read, $page);
     }

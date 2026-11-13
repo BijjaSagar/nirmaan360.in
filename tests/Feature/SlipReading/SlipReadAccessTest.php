@@ -36,7 +36,7 @@ class SlipReadAccessTest extends SlipReadingTestCase
             }
         }
 
-        // The website's card for this reader waits for "slip-reads.store", which is registered together with the reader.
+        // The website's tests hold "slip-reads.store" as a reader not built; the card follows the reader kinds instead.
         $this->assertFalse(Route::has('slip-reads.store'));
     }
 
