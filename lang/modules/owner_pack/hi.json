@@ -229,6 +229,7 @@
     "The total of this quotation is {{total}}.": "इस कोटेशन का कुल योग {{total}} है।",
     "The translation is no longer printed. The line shows its description alone.": "अनुवाद अब नहीं छपता। पंक्ति में केवल उसका विवरण दिखता है।",
     "The translation of this line changed after the page was opened. Read it again before you accept it.": "पेज खुलने के बाद इस पंक्ति का अनुवाद बदल गया। स्वीकार करने से पहले इसे फिर से पढ़ें।",
+    "The translations did not fit in one answer, so none was kept. The next request sends fewer lines. You were not charged.": "सारे अनुवाद एक उत्तर में नहीं समाए, इसलिए कोई अनुवाद नहीं रखा गया। अगला अनुरोध कम पंक्तियाँ भेजेगा। आपसे कोई शुल्क नहीं लिया गया।",
     "The update as approved": "अपडेट, जैसा मंज़ूर हुआ",
     "The update cannot be shown from the saved figures. Save the draft again.": "सेव किए गए आँकड़ों से अपडेट नहीं दिखाया जा सकता। ड्राफ़्ट दोबारा सेव करें।",
     "The update covers seven days from this day. Only daily reports that are approved are read.": "अपडेट इस दिन से सात दिन का होता है। केवल मंज़ूर हुई दैनिक रिपोर्टें पढ़ी जाती हैं।",

@@ -107,7 +107,7 @@ class DescriptionTranslation implements ChecksTextAnswer, TextCallHandler
         }
 
         $language = (string) $quotation->language;
-        $lines = isset(self::LANGUAGES[$language]) ? $this->translations->toSend($quotation) : [];
+        $lines = isset(self::LANGUAGES[$language]) ? $this->translations->toSend($quotation, $call) : [];
 
         if ($lines === []) {
             throw new NothingToSend('nothing_to_write');
@@ -261,7 +261,7 @@ class DescriptionTranslation implements ChecksTextAnswer, TextCallHandler
             return null;
         }
 
-        return [self::attempt($call), (string) $quotation->language, $this->translations->toSend($quotation)];
+        return [self::attempt($call), (string) $quotation->language, $this->translations->toSend($quotation, $call)];
     }
 
     private function quotation(AiTextCall $call): ?ClientQuotation

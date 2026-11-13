@@ -31,6 +31,9 @@ class DescriptionTranslationTest extends OwnerPackAiTestCase
         'L5' => 'CM 1:6 मध्ये 230 mm जाड वीटकाम',
     ];
 
+    /** A Marathi translation of the long descriptions below, which carry no number. */
+    private const MR_LONG = 'पाया आणि जोत्यामध्ये साधे सिमेंट काँक्रीट पुरवणे आणि टाकणे, सेंटरिंग, शटरिंग, दाबणे आणि क्युरिंगसह, प्रभारी अभियंत्यांच्या सूचनेनुसार पूर्ण करणे';
+
     private ClientQuotation $quotation;
 
     protected function setUp(): void
@@ -54,6 +57,26 @@ class DescriptionTranslationTest extends OwnerPackAiTestCase
     private function lines(array $texts): array
     {
         return $this->answer(['lines' => array_map(fn ($ref, $text) => ['ref' => $ref, 'text' => $text], array_keys($texts), $texts)], 900, 400);
+    }
+
+    /** A draft Marathi quotation of this many lines, each with a description of about this many characters and no number. */
+    private function long(int $count, int $chars): ClientQuotation
+    {
+        $words = 'Providing and laying plain cement concrete in foundations and plinth, including centering, shuttering, compaction and curing, finished as directed by the engineer in charge. ';
+        $ids = [];
+
+        foreach (range(1, $count) as $n) {
+            $description = rtrim(mb_substr(str_repeat($words, intdiv($chars, mb_strlen($words)) + 1), 0, $chars));
+            $ids[] = $this->line($this->project, 'P-'.$n, $description, 'cum', '1.000', '100.00', 20 + $n)->id;
+        }
+
+        return $this->draft(['language' => 'mr', 'boq_item_ids' => $ids]);
+    }
+
+    /** @param  array<string, array{id: int, text: string}>  $batch */
+    private function answered(array $batch): array
+    {
+        return $this->lines(array_map(fn () => self::MR_LONG, $batch));
     }
 
     /** @return list<ClientQuotationItem> */
@@ -84,7 +107,7 @@ class DescriptionTranslationTest extends OwnerPackAiTestCase
 
         $call = AiTextCall::sole();
         $this->assertSame([DescriptionTranslation::PURPOSE, $this->quotation->getMorphClass(), $this->quotation->id, $this->project->id], [$call->purpose, $call->subject_type, $call->subject_id, $call->project_id]);
-        $this->get(route('quotations.show', $this->quotation))->assertOk()->assertSee('The AI is translating the descriptions. This page looks again by itself.');
+        $this->assertLooksAgainByItself($this->get(route('quotations.show', $this->quotation))->assertOk()->assertSee('The AI is translating the descriptions. This page looks again by itself.'));
 
         $this->runCall($call);
 
@@ -215,6 +238,113 @@ class DescriptionTranslationTest extends OwnerPackAiTestCase
         $this->assertSame([null, null, null, null, null, null], array_map(fn ($item) => $item->description_translated, $this->items()));
         $this->get(route('quotations.show', $this->quotation))->assertOk()
             ->assertSee('No translation the AI wrote kept the numbers, grades and ratios of its line, so none was kept. You were not charged.');
+    }
+
+    public function test_a_long_quotation_is_translated_a_few_lines_at_a_time_each_batch_fitting_in_one_answer(): void
+    {
+        $quotation = $this->long(20, 250);
+        $translations = app(QuotationTranslations::class);
+        $most = (int) TextRequest::figures(DescriptionTranslation::PURPOSE)['max_tokens'];
+        $first = $translations->toSend($quotation);
+
+        // The whole answer comes back in one piece, so one request sends no more than its translations can fill.
+        $this->assertNotEmpty($first);
+        $this->assertLessThan(20, count($first));
+        $this->actingAs($this->manager)->get(route('quotations.show', $quotation))->assertOk()
+            ->assertSee('Translate '.count($first).' lines with the AI');
+
+        $presses = 0;
+
+        while (collect($this->items($quotation))->contains(fn (ClientQuotationItem $item) => $item->description_translated === null)) {
+            $this->assertLessThan(20, ++$presses, 'Every request translates lines that were never translated.');
+            $batch = $translations->toSend($quotation->fresh());
+            $this->assertLessThanOrEqual(intdiv($most, 2), array_sum(array_map(fn (array $line) => mb_strlen($line['text']), $batch)));
+
+            $this->fakeModel([$this->answered($batch)]);
+            $this->translate($quotation)->assertStatus(202);
+            $call = AiTextCall::latest('id')->first();
+            $this->runCall($call);
+
+            $this->assertSame(AiTextCall::DONE, $call->fresh()->status);
+            $body = $this->sent[array_key_last($this->sent)];
+            $this->assertSame([], TextRequest::problems($body, DescriptionTranslation::PURPOSE));
+            $this->assertSame($most, $body['max_tokens']);
+            $this->assertStringContainsString('Translate the descriptions of these lines: '.implode(', ', array_keys($batch)).'.', $this->messageOf($body));
+        }
+
+        $this->assertSame(intdiv(20 + count($first) - 1, count($first)), $presses);
+        $this->assertCount($presses, $this->charges());
+    }
+
+    public function test_a_quotation_of_long_descriptions_sends_a_request_that_may_be_sent(): void
+    {
+        $quotation = $this->long(40, 950);
+        $this->fakeModel([$this->lines(['L1' => self::MR_LONG])]);
+
+        $this->translate($quotation)->assertStatus(202);
+        $call = AiTextCall::sole();
+        $this->runCall($call);
+
+        $body = $this->sent[0];
+        $this->assertSame([], TextRequest::problems($body, DescriptionTranslation::PURPOSE));
+        $this->assertLessThanOrEqual(TextRequest::longest(), TextRequest::chars($body)['all']);
+        $this->assertStringContainsString('Translate the descriptions of these lines: L1.', $this->messageOf($body));
+        $this->assertSame(AiTextCall::DONE, $call->fresh()->status);
+        $this->assertSame(self::MR_LONG, $this->items($quotation)[0]->description_translated);
+    }
+
+    public function test_after_an_answer_that_ran_out_of_room_the_next_request_sends_fewer_lines(): void
+    {
+        $quotation = $this->long(20, 250);
+        $translations = app(QuotationTranslations::class);
+        $first = $translations->toSend($quotation);
+
+        $cut = $this->answered($first);
+        $cut['stop_reason'] = 'max_tokens';
+        $this->fakeModel([$cut]);
+        $this->translate($quotation)->assertStatus(202);
+        $this->runCall(AiTextCall::sole());
+
+        $this->assertSame([AiTextCall::FAILED, 'cut_off'], [AiTextCall::sole()->status, AiTextCall::sole()->fail_reason]);
+        $this->assertSame([], $this->charges());
+        $this->assertSame([], array_values(array_filter(array_map(fn ($item) => $item->description_translated, $this->items($quotation)))));
+
+        // Pressing again does not send the same request to be cut off again: half of it goes.
+        $smaller = $translations->toSend($quotation->fresh());
+        $this->assertNotEmpty($smaller);
+        $this->assertLessThan(count($first), count($smaller));
+        $this->assertSame(array_slice(array_column($first, 'id'), 0, count($smaller)), array_column($smaller, 'id'));
+        $this->actingAs($this->manager)->get(route('quotations.show', $quotation))->assertOk()
+            ->assertSee('The translations did not fit in one answer, so none was kept. The next request sends fewer lines. You were not charged.')
+            ->assertSee('Translate '.count($smaller).' lines with the AI');
+
+        $this->fakeModel([$this->answered($smaller)]);
+        $this->translate($quotation)->assertStatus(202);
+        $call = AiTextCall::latest('id')->first();
+        $this->runCall($call);
+
+        $this->assertSame(AiTextCall::DONE, $call->fresh()->status);
+        $this->assertStringContainsString('Translate the descriptions of these lines: '.implode(', ', array_keys($smaller)).'.', $this->messageOf($this->sent[1]));
+
+        // Once an answer fits again, a request is as large as before.
+        $this->assertCount(count($first), $translations->toSend($quotation->fresh()));
+    }
+
+    public function test_an_answer_refused_for_anything_but_its_numbers_is_not_said_to_have_changed_them(): void
+    {
+        // English text, not a translation: the script is wrong, the numbers are not.
+        $this->fakeModel([$this->lines(['L1' => 'Digging for the foundation in every kind of soil', 'L2' => 'Bricks laid in a cement mortar'])]);
+
+        $this->translate()->assertStatus(202);
+        $call = AiTextCall::sole();
+        $this->runCall($call);
+        $this->runCall($call);
+
+        $this->assertSame([AiTextCall::REJECTED, 'rejected', ['L1' => ['script'], 'L2' => ['script']]], [$call->fresh()->status, $call->fresh()->fail_reason, $call->fresh()->correction]);
+        $this->assertSame([], $this->charges());
+        $this->get(route('quotations.show', $this->quotation))->assertOk()
+            ->assertSee('The AI could not translate the lines this time. You were not charged.')
+            ->assertDontSee('kept the numbers, grades and ratios');
     }
 
     public function test_what_can_be_translated(): void

@@ -12,15 +12,15 @@
         <div class="card-head"><h2 class="card-title">{{ __('Suggest groups with the AI') }}</h2></div>
         <div class="space-y-2 px-4 py-3 text-sm">
             @if ($waiting)
-                <p role="status">{{ __('The AI is grouping the notes of :count daily reports. This page looks again by itself.', ['count' => count($latest->reportIds())]) }}</p>
-                {{-- Looks again while the form is closed, so nothing typed in it is lost. --}}
-                <div x-data x-init="const look = () => form ? setTimeout(look, 5000) : location.reload(); setTimeout(look, 5000)"></div>
+                <p role="status">{{ trans_choice('The AI is grouping the notes of :count daily report. This page looks again by itself.|The AI is grouping the notes of :count daily reports. This page looks again by itself.', count($latest->reportIds()), ['count' => count($latest->reportIds())]) }}</p>
+                {{-- Also waits while an entry is in hand, or the form was opened by the person: it is open by itself on an empty register. --}}
+                @include('modules.site_diary._look-again', ['hold' => ($formHeld ? 'true' : 'false').' || (form && ! '.($formOpen ? 'true' : 'false').')'])
             @elseif ($latest?->status === \App\Models\HindranceSuggestion::DONE)
                 <p role="status">
                     @if ($latest->proposed === 0)
                         {{ __('The last request proposed no entry.') }}
                     @else
-                        {{ __('The last request proposed :count entries. They are listed under Waiting to be confirmed.', ['count' => $latest->proposed]) }}
+                        {{ trans_choice('The last request proposed :count entry. It is listed under Waiting to be confirmed.|The last request proposed :count entries. They are listed under Waiting to be confirmed.', $latest->proposed, ['count' => $latest->proposed]) }}
                     @endif
                 </p>
                 @if ($latest->left_out > 0)
@@ -46,7 +46,7 @@
                         @csrf
                         <input type="hidden" name="client_uuid" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                         <button class="btn btn-primary min-h-11">{{ __('Suggest groups') }}</button>
-                        <span class="text-xs text-ink-3">{{ __('Sends the notes of :count daily reports. Uses up to :credits AI credits.', ['count' => $grouping['reports'], 'credits' => $grouping['credits']]) }}</span>
+                        <span class="text-xs text-ink-3">{{ trans_choice('Sends the notes of :count daily report. Uses up to :credits AI credits.|Sends the notes of :count daily reports. Uses up to :credits AI credits.', $grouping['reports'], ['count' => $grouping['reports'], 'credits' => $grouping['credits']]) }}</span>
                     </form>
                 @endif
             @endif

@@ -14,6 +14,7 @@ use App\Services\DocumentReading\TextCalls;
 use App\Services\Wording\FactSheet;
 use App\Services\Wording\GuardViolation;
 use App\Services\Wording\SlotText;
+use App\Services\Wording\Violation;
 use App\Services\Wording\WordingDocument;
 use App\Services\Wording\WordingDraft;
 use App\Services\Wording\WordingException;
@@ -35,6 +36,12 @@ use InvalidArgumentException;
  */
 class PackDrafts
 {
+    /** The rules of Guard A that are about a figure: an answer refused for one of them stated a figure, or put a token in its place. */
+    private const FIGURE_RULES = [
+        Violation::TOKEN, Violation::DIGIT, Violation::CURRENCY, Violation::PERCENT, Violation::MONTH,
+        Violation::WEEKDAY, Violation::NUMBER_WORD, Violation::FIGURE_WORD, Violation::ROMAN,
+    ];
+
     public function __construct(
         private WordingService $wording,
         private TextCalls $calls,
@@ -185,7 +192,7 @@ class PackDrafts
         // A request that ended without its sentences being used, and nothing saved on the draft since.
         if ($call !== null && in_array($call->status, [AiTextCall::FAILED, AiTextCall::REJECTED], true)
             && ($record->updated_at === null || $call->updated_at === null || $call->updated_at->gte($record->updated_at))) {
-            $notUsed = self::notUsed((string) $call->fail_reason);
+            $notUsed = self::notUsed((string) $call->fail_reason, $call->correction);
         }
 
         return [
@@ -197,9 +204,21 @@ class PackDrafts
         ];
     }
 
-    /** Why the AI's sentences were not used, by the call's fail reason, in the reader's language. Nothing was charged for them. */
-    public static function notUsed(string $reason): string
+    /**
+     * Why the AI's sentences were not used, by the call's fail reason, in the reader's language. Nothing was charged for them.
+     *
+     * @param  ?array<string, list<string>>  $refused  What the first refused answer broke, as kept on the call. A figure is named
+     *                                                 only when one was what broke a rule; an empty or unreadable answer gets the plain sentence.
+     */
+    public static function notUsed(string $reason, ?array $refused = null): string
     {
+        $figure = array_intersect(self::FIGURE_RULES, array_merge(...array_values(array_map(fn ($rules) => (array) $rules, $refused ?? [])))) !== [];
+
+        // An answer refused for something else, with no sentence in it or text that could not be read, stated no figure.
+        if ($reason === 'rejected' && ! $figure) {
+            $reason = 'unusable';
+        }
+
         return match ($reason) {
             'rejected' => __('The sentences the AI wrote stated a figure, so the app kept its own sentences. You were not charged.'),
             'subject_changed', 'subject_gone' => __('The draft changed while the AI was writing, so its sentences were not used. You were not charged.'),

@@ -68,8 +68,8 @@ class OwnerUpdateAiDraftTest extends OwnerPackAiTestCase
         $call = AiTextCall::sole();
         $this->assertSame([WordingService::PURPOSE, $this->update->getMorphClass(), $this->update->id, $this->project->id], [$call->purpose, $call->subject_type, $call->subject_id, $call->project_id]);
 
-        $this->get(route('owner-updates.show', $this->update))->assertOk()
-            ->assertSee('The AI is writing the opening and the closing sentences. This page looks again by itself.');
+        $this->assertLooksAgainByItself($this->get(route('owner-updates.show', $this->update))->assertOk()
+            ->assertSee('The AI is writing the opening and the closing sentences. This page looks again by itself.'));
 
         $before = $this->updateTicks($this->update);
         $this->runCall($call);

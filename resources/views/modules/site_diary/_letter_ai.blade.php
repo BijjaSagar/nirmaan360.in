@@ -8,8 +8,7 @@
         <div class="space-y-2 px-4 py-3 text-sm">
             @if ($ai['writing'])
                 <p role="status">{{ __('The AI is writing the opening, the sentence before the list and the closing sentences. This page looks again by itself.') }}</p>
-                {{-- Looks again only while nothing is being changed below, so nothing typed is lost. --}}
-                <div x-data x-init="const look = () => document.querySelector('details[open]') ? setTimeout(look, 5000) : location.reload(); setTimeout(look, 5000)"></div>
+                @include('modules.site_diary._look-again')
             @else
                 @if ($ai['not_used'])
                     <p class="text-[#8a6208]" role="status">{{ $ai['not_used'] }}</p>

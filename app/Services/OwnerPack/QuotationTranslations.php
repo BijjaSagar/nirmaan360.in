@@ -10,6 +10,7 @@ use App\Models\ClientQuotationItem;
 use App\Models\User;
 use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\TextCalls;
+use App\Services\DocumentReading\TextOutcome;
 use App\Services\DocumentReading\TextRequest;
 use App\Support\Dec;
 use Brick\Math\RoundingMode;
@@ -30,6 +31,18 @@ class QuotationTranslations
     /** The languages a description is translated into: those of the quotation that are not English. */
     public const LANGUAGES = ['hi', 'mr'];
 
+    /** Characters of the answer around its lines: {"lines":[ and ]}. */
+    private const ANSWER_FRAME_CHARS = 16;
+
+    /** Characters of one line's place in the answer besides its text: {"ref":"L12","text":""}, and a little more. */
+    private const LINE_FRAME_CHARS = 32;
+
+    /** Characters of a request besides its lines' material: the tag around it, the request sentence and a corrective note. */
+    private const REQUEST_EXTRA_CHARS = 1200;
+
+    /** The most times one request's share is halved after requests that were cut off. */
+    private const MOST_HALVINGS = 3;
+
     public function __construct(
         private TextCalls $calls,
         private AiSpend $spend,
@@ -39,11 +52,16 @@ class QuotationTranslations
     /**
      * The lines one request sends, by ref: those with no accepted translation whose description can be
      * sent whole. Lines never translated come first, then lines whose translation waits for a person,
-     * each in the order of the quotation, up to the limit of one request.
+     * each in the order of the quotation, for as long as their translations fit in one answer and the
+     * request stays within what one text call may send. The rest go with the next request.
      *
+     * An answer that runs out of room is lost whole, so a request after one that was cut off sends half
+     * as many lines' worth, and again after each further one in a row.
+     *
+     * @param  ?AiTextCall  $for  The request these lines are for, when it exists: only the requests before it count.
      * @return array<string, array{id: int, text: string}> L1, L2 ... => the line's id and its description.
      */
-    public function toSend(ClientQuotation $quotation): array
+    public function toSend(ClientQuotation $quotation, ?AiTextCall $for = null): array
     {
         $waiting = $this->quotations->items($quotation)
             ->filter(fn (ClientQuotationItem $item) => $item->translation_accepted_at === null && self::sendable((string) $item->description))
@@ -54,10 +72,24 @@ class QuotationTranslations
             ->take(max(1, (int) config('modules.owner_pack.translation.most_lines')))
             ->values();
 
+        $room = intdiv(self::answerTokens(), 2 ** $this->cutOffsBefore($quotation, $for));
+        $longest = TextRequest::longest() - self::requestChars();
+        $answer = TextRequest::tokens(self::ANSWER_FRAME_CHARS);
+        $sent = 0;
         $lines = [];
 
-        foreach ($ordered as $index => $item) {
-            $lines['L'.($index + 1)] = ['id' => (int) $item->id, 'text' => (string) $item->description];
+        foreach ($ordered as $item) {
+            $ref = 'L'.(count($lines) + 1);
+            $text = (string) $item->description;
+            $answer += self::lineTokens($text);
+            $sent += self::sentChars($ref, $text);
+
+            // One line always goes: each that can be sent fits in an answer by itself.
+            if ($lines !== [] && ($answer > $room || $sent > $longest)) {
+                break;
+            }
+
+            $lines[$ref] = ['id' => (int) $item->id, 'text' => $text];
         }
 
         return $lines;
@@ -65,8 +97,9 @@ class QuotationTranslations
 
     /**
      * Whether a description can be sent for translation as it is: it has words, it is not longer than
-     * one request takes for a line, and nothing in it is a personal detail that would be taken out
-     * before sending. A translation of a description with a part missing could not be checked against it.
+     * one request takes for a line, its translation fits in one answer by itself, and nothing in it is a
+     * personal detail that would be taken out before sending. A translation of a description with a
+     * part missing could not be checked against it.
      */
     public static function sendable(string $description): bool
     {
@@ -76,7 +109,72 @@ class QuotationTranslations
             && mb_check_encoding($text, 'UTF-8')
             && preg_match('/\p{L}/u', $text) === 1
             && mb_strlen($text) <= (int) config('modules.owner_pack.translation.description_chars')
+            && TextRequest::tokens(self::ANSWER_FRAME_CHARS) + self::lineTokens($text) <= self::answerTokens()
             && TextRequest::withoutPersonalDetails($text) === $text;
+    }
+
+    /**
+     * The tokens one request's answer is planned to fill: a share of the most the purpose may write. The
+     * rest is room for the model's own thinking, which counts against the same limit, and for a
+     * translation that turns out longer than planned.
+     */
+    public static function answerTokens(): int
+    {
+        $most = (int) TextRequest::figures(DescriptionTranslation::PURPOSE)['max_tokens'];
+
+        return Dec::of($most)->multipliedBy(Dec::of(config('modules.owner_pack.translation.answer_share')))->toScale(0, RoundingMode::Down)->toInt();
+    }
+
+    /**
+     * The tokens the translation of one description is planned to take in the answer, with its place in
+     * the JSON. A translation is planned as longer than its description: Devanagari text takes more
+     * tokens than English text of the same length.
+     */
+    public static function lineTokens(string $description): int
+    {
+        $chars = Dec::of(mb_strlen($description))->multipliedBy(Dec::of(config('modules.owner_pack.translation.growth')))->toScale(0, RoundingMode::Up)->toInt();
+
+        return TextRequest::tokens($chars + self::LINE_FRAME_CHARS);
+    }
+
+    /** What every request sends besides its lines: the rules, the instructions, the form and the rest. */
+    private static function requestChars(): int
+    {
+        return mb_strlen(TextRequest::RULES."\n\n".trim(DescriptionTranslation::INSTRUCTIONS))
+            + mb_strlen((string) json_encode(DescriptionTranslation::schema(), JSON_UNESCAPED_UNICODE))
+            + self::REQUEST_EXTRA_CHARS;
+    }
+
+    /** What one line adds to a request: its entry in the material and its ref in the request sentence. */
+    private static function sentChars(string $ref, string $text): int
+    {
+        return mb_strlen((string) json_encode(['ref' => $ref, 'text' => $text], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) + mb_strlen($ref) + 4;
+    }
+
+    /** How many requests in a row, just before this one, were cut off because their answer ran out of room. */
+    private function cutOffsBefore(ClientQuotation $quotation, ?AiTextCall $for): int
+    {
+        $earlier = AiTextCall::withoutGlobalScopes()
+            ->where('organization_id', $quotation->organization_id)
+            ->where('purpose', DescriptionTranslation::PURPOSE)
+            ->where('subject_type', $quotation->getMorphClass())
+            ->where('subject_id', $quotation->id)
+            ->when($for?->getKey() !== null, fn ($query) => $query->where('id', '<', $for->getKey()))
+            ->latest('id')
+            ->limit(self::MOST_HALVINGS)
+            ->get(['status', 'fail_reason']);
+
+        $count = 0;
+
+        foreach ($earlier as $call) {
+            if ($call->status !== AiTextCall::FAILED || $call->fail_reason !== TextOutcome::CUT_OFF) {
+                break;
+            }
+
+            $count++;
+        }
+
+        return $count;
     }
 
     /**
@@ -180,19 +278,20 @@ class QuotationTranslations
         $organization = $user->organization;
         $draft = $quotation->isDraft();
         $translatable = $draft && in_array($quotation->language, self::LANGUAGES, true);
-        $lines = $translatable ? $this->toSend($quotation) : [];
-        $offered = $lines !== [] && $user->can('agents.use') && $this->spend->aiOn($organization);
         $call = $draft ? $this->latest($quotation) : null;
 
         if ($call !== null && $call->isOpen()) {
             $call = $this->calls->watch($call);
         }
 
+        // After the latest request is looked after: one that was just cut off makes the next one smaller.
+        $lines = $translatable ? $this->toSend($quotation) : [];
+        $offered = $lines !== [] && $user->can('agents.use') && $this->spend->aiOn($organization);
         $notUsed = null;
 
         if ($call !== null && in_array($call->status, [AiTextCall::FAILED, AiTextCall::REJECTED], true)
             && ($quotation->updated_at === null || $call->updated_at === null || $call->updated_at->gte($quotation->updated_at))) {
-            $notUsed = self::notUsed((string) $call->fail_reason);
+            $notUsed = self::notUsed((string) $call->fail_reason, $call->correction);
         }
 
         $chars = array_sum(array_map(fn (array $line) => mb_strlen($line['text']) + 40, $lines));
@@ -208,14 +307,22 @@ class QuotationTranslations
         ];
     }
 
-    /** Why the latest request brought no translation, by the call's fail reason, in the reader's language. Nothing was charged for it. */
-    public static function notUsed(string $reason): string
+    /**
+     * Why the latest request brought no translation, by the call's fail reason, in the reader's language. Nothing was charged for it.
+     *
+     * @param  ?array<string, list<string>>  $refused  What the first refused answer broke, as kept on the call. The numbers are named
+     *                                                 only when they were what broke a rule; an answer refused for anything else gets the plain sentence.
+     */
+    public static function notUsed(string $reason, ?array $refused = null): string
     {
-        return match ($reason) {
-            'rejected' => __('No translation the AI wrote kept the numbers, grades and ratios of its line, so none was kept. You were not charged.'),
-            'subject_changed', 'subject_gone' => __('The quotation changed while the AI was translating, so its translations were not used. You were not charged.'),
-            'nothing_to_write' => __('No line was waiting for a translation when the request was sent. You were not charged.'),
-            'not_started' => __('The server did not get to it in time, so nothing was sent. Ask again later.'),
+        $numbers = array_intersect([TranslationCheck::NUMBERS, TranslationCheck::GRADES], array_merge(...array_values(array_map(fn ($rules) => (array) $rules, $refused ?? [])))) !== [];
+
+        return match (true) {
+            $reason === 'rejected' && $numbers => __('No translation the AI wrote kept the numbers, grades and ratios of its line, so none was kept. You were not charged.'),
+            $reason === TextOutcome::CUT_OFF => __('The translations did not fit in one answer, so none was kept. The next request sends fewer lines. You were not charged.'),
+            in_array($reason, ['subject_changed', 'subject_gone'], true) => __('The quotation changed while the AI was translating, so its translations were not used. You were not charged.'),
+            $reason === 'nothing_to_write' => __('No line was waiting for a translation when the request was sent. You were not charged.'),
+            $reason === 'not_started' => __('The server did not get to it in time, so nothing was sent. Ask again later.'),
             default => __('The AI could not translate the lines this time. You were not charged.'),
         };
     }

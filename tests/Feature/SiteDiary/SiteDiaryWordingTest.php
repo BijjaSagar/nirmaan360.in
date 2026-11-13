@@ -63,13 +63,13 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         return $lines;
     }
 
-    /** @return list<string> Every text the module shows: the literals passed to __(), the names in its lists and the reminders. */
+    /** @return list<string> Every text the module shows: the literals passed to __() or trans_choice(), the names in its lists and the reminders. */
     private function usedTexts(): array
     {
         $texts = [];
 
         foreach ($this->sourceFiles() as $file) {
-            preg_match_all("/__\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", (string) file_get_contents($file), $matches);
+            preg_match_all("/(?:__|trans_choice)\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", (string) file_get_contents($file), $matches);
 
             foreach ($matches[1] as $text) {
                 $texts[] = str_replace("\\'", "'", $text);

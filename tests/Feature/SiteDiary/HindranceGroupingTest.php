@@ -304,6 +304,61 @@ class HindranceGroupingTest extends SiteDiaryAiTestCase
             ->assertDontSee('Suggest groups</button>', false);
     }
 
+    public function test_on_an_empty_register_the_waiting_page_still_looks_again_by_itself(): void
+    {
+        // The register's first use: its form stands open by itself, with nothing typed in it.
+        HindranceSource::query()->delete();
+        Hindrance::query()->delete();
+        $this->fakeModel([$this->grouped()]);
+        $this->ask()->assertStatus(202);
+
+        $page = $this->actingAs($this->pm)->get(route('site-diary.hindrances.index', $this->project))->assertOk()
+            ->assertSee('x-data="{ form: true }"', false)
+            ->assertSee('The AI is grouping the notes of 4 daily reports. This page looks again by itself.');
+        $this->assertSame('false || (form && ! true)', $this->heldBy($page->getContent()));
+
+        // An entry being changed holds it back; with entries, the form is closed until the person opens it.
+        $entry = $this->hindrance(['started_on' => '2026-02-20', 'ended_on' => '2026-02-21']);
+        $editing = $this->get(route('site-diary.hindrances.index', [$this->project, 'edit' => $entry->id]))->assertOk()->getContent();
+        $this->assertSame('true || (form && ! true)', $this->heldBy($editing));
+        $this->assertSame('false || (form && ! false)', $this->heldBy($this->get(route('site-diary.hindrances.index', $this->project))->getContent()));
+    }
+
+    /** What, besides the person being busy in the page, holds back the waiting page from loading again. */
+    private function heldBy(string $html): string
+    {
+        $this->assertSame(1, preg_match('/<div x-data data-look-again x-init="([^"]*)"/', $html, $script), 'The page looks again by itself.');
+        $script = html_entity_decode($script[1], ENT_QUOTES);
+        $this->assertStringContainsString("const page = \$el.closest('main');", $script);
+        $this->assertSame(1, preg_match('/changed \|\| \((.*?)\) \|\| page\?\.querySelector/', $script, $held));
+
+        return $held[1];
+    }
+
+    public function test_one_report_and_one_entry_are_named_in_the_singular(): void
+    {
+        $this->cite($this->hindrance(['started_on' => '2026-03-02', 'ended_on' => '2026-03-03']), $this->first, $this->second);
+
+        $this->actingAs($this->pm)->get(route('site-diary.hindrances.index', $this->project))->assertOk()
+            ->assertSee('Sends the notes of 1 daily report. Uses up to');
+
+        $this->fakeModel([$this->answer(['groups' => [['category' => 'weather', 'title' => 'Heavy rain stopped the concreting', 'members' => [['ref' => 'D1', 'quote' => 'Heavy rain']]]]])]);
+        $this->ask()->assertStatus(202);
+        $this->get(route('site-diary.hindrances.index', $this->project))->assertOk()
+            ->assertSee('The AI is grouping the notes of 1 daily report. This page looks again by itself.');
+
+        $this->runCalls();
+        $this->assertSame(1, HindranceSuggestion::sole()->proposed);
+        $this->get(route('site-diary.hindrances.index', $this->project))->assertOk()
+            ->assertSee('The last request proposed 1 entry. It is listed under Waiting to be confirmed.')
+            ->assertDontSee('1 entries');
+
+        $this->pm->update(['locale' => 'hi']);
+        $this->get(route('site-diary.hindrances.index', $this->project))->assertOk()->assertSee('पिछले अनुरोध से 1 प्रविष्टि प्रस्तावित हुई।');
+        $this->pm->update(['locale' => 'mr']);
+        $this->get(route('site-diary.hindrances.index', $this->project))->assertOk()->assertSee('मागील विनंतीतून 1 नोंद सुचवली गेली.');
+    }
+
     public function test_the_dates_asked_for_narrow_what_is_sent_and_an_empty_choice_sends_nothing(): void
     {
         $this->ask(['from' => '2026-03-04', 'to' => '2026-03-20'])->assertStatus(202);

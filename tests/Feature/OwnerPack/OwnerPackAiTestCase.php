@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -146,5 +147,28 @@ abstract class OwnerPackAiTestCase extends TestCase
     protected function calls(): int
     {
         return AiTextCall::withoutGlobalScopes()->count();
+    }
+
+    /**
+     * A page that waits for the AI loads itself again unless the person is busy in the page itself. The
+     * project menu beside it always keeps the group of the page open, so that may not hold it back.
+     */
+    protected function assertLooksAgainByItself(TestResponse $page): void
+    {
+        $html = $page->getContent();
+        $this->assertMatchesRegularExpression('/<details class="nav-group"[^>]*\sopen[\s>]/', $html, 'The menu keeps the group of the page open.');
+
+        preg_match_all('/<div x-data data-look-again x-init="([^"]*)"/', $html, $scripts);
+        $this->assertNotEmpty($scripts[1], 'The page looks again by itself.');
+
+        foreach ($scripts[1] as $script) {
+            $script = html_entity_decode($script, ENT_QUOTES);
+            $this->assertStringContainsString("const page = \$el.closest('main');", $script);
+            $this->assertStringContainsString("page?.querySelector('details[open]')", $script);
+            $this->assertStringNotContainsString('document.querySelector', $script);
+        }
+
+        $this->assertSame(1, preg_match('/<main\b.*<\/main>/s', $html, $main));
+        $this->assertDoesNotMatchRegularExpression('/<details\b[^>]*\sopen[\s>]/', $main[0], 'Nothing in the page itself is open, so it loads again.');
     }
 }

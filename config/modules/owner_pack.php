@@ -67,10 +67,18 @@ return [
         DescriptionTranslation::PURPOSE => [ClientQuotation::class => DescriptionTranslation::class],
     ],
 
-    // How much one translation request sends: the lines that wait for a translation, at most this many, and only
-    // descriptions up to this many characters (a longer one prints in its own words). Limits on the request only.
+    /*
+     * How much one translation request sends: the lines that wait for a translation, at most "most_lines" of them,
+     * and only descriptions up to "description_chars" characters (a longer one prints in its own words).
+     * The whole answer comes back in one piece, so the lines also stop once their translations would fill more than
+     * "answer_share" of what the translate purpose may write (its max_tokens in config/modules/document_reading.php);
+     * the rest is room for the model's thinking. A translation is planned as "growth" times as long as its
+     * description, at the tokens a character the readers price text at. Lines that do not fit go with the next request.
+     */
     'translation' => [
-        'most_lines' => 40,
+        'most_lines' => 20,
         'description_chars' => 1000,
+        'answer_share' => '0.6',
+        'growth' => '1.5',
     ],
 ];

@@ -9,8 +9,7 @@
         <div class="space-y-2 px-4 py-3 text-sm">
             @if ($ai['writing'])
                 <p role="status">{{ __('The AI is writing the opening and the closing sentences. This page looks again by itself.') }}</p>
-                {{-- Looks again only while nothing is being changed, so nothing typed is lost. --}}
-                <div x-data x-init="const look = () => document.querySelector('details[open]') || document.activeElement?.matches('input, textarea, select') ? setTimeout(look, 5000) : location.reload(); setTimeout(look, 5000)"></div>
+                @include('modules.owner_pack._look-again')
             @else
                 @if ($ai['not_used'])
                     <p class="text-[#8a6208]" role="status">{{ $ai['not_used'] }}</p>

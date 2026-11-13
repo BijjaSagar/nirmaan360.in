@@ -3,6 +3,7 @@
 namespace Tests\Feature\SiteDiary;
 
 use App\Models\AiTextCall;
+use App\Models\AuditLog;
 use App\Models\SiteLetter;
 use App\Services\DocumentReading\TextRequest;
 use App\Services\SiteDiary\LetterDrafts;
@@ -189,6 +190,47 @@ class LetterAiDraftTest extends SiteDiaryAiTestCase
         ])->assertSessionHasNoErrors();
         $this->ask()->assertStatus(422)->assertJsonValidationErrors('ai_reader');
         $this->assertSame(1, AiTextCall::withoutGlobalScopes()->count());
+    }
+
+    public function test_sentences_all_rewritten_while_the_ai_was_writing_are_kept_and_nothing_is_charged(): void
+    {
+        $this->fakeModel([$this->fine()]);
+        $this->ask()->assertStatus(202);
+
+        $chosen = app(SiteLetters::class)->chosenOf($this->letter);
+        $this->actingAs($this->pm)->patch(route('site-diary.letters.update', $this->letter), [
+            'hindrance_ids' => $chosen['hindrance_ids'], 'addressed_to' => $chosen['addressed_to'],
+            'slots' => ['opening' => 'महोदय, आमच्या कामातील अडचणी आपल्या निदर्शनास आणून देत आहोत.', 'linking' => 'खालील नोंदी पाहाव्यात.', 'closing' => 'कृपया पोच द्यावी.'],
+        ])->assertSessionHasNoErrors();
+        $saved = $this->letter->fresh()->only(['slots', 'body_rendered', 'fact_fingerprint', 'number_ticks']);
+        $prepared = AuditLog::where('action', 'site_letter.prepared_again')->count();
+
+        $this->runCall(AiTextCall::sole());
+
+        // Nothing the AI wrote is used, so the letter is not put together again and nobody pays for it.
+        $this->assertSame([AiTextCall::FAILED, 'subject_changed'], [AiTextCall::sole()->status, AiTextCall::sole()->fail_reason]);
+        $this->assertSame([], $this->charges());
+        $this->assertSame($saved, $this->letter->fresh()->only(['slots', 'body_rendered', 'fact_fingerprint', 'number_ticks']));
+        $this->assertSame(['edited', 'edited', 'edited'], array_column($this->letter->fresh()->slots, 'source'));
+        $this->assertSame($prepared, AuditLog::where('action', 'site_letter.prepared_again')->count());
+        $this->get(route('site-diary.letters.show', $this->letter))->assertOk()
+            ->assertSee('The letter changed while the AI was writing, so its sentences were not used. You were not charged.');
+    }
+
+    public function test_an_answer_with_no_sentence_in_it_is_not_said_to_have_stated_a_figure(): void
+    {
+        $this->fakeModel([$this->answer(['slots' => []])]);
+
+        $this->ask()->assertStatus(202);
+        $call = AiTextCall::sole();
+        $this->runCall($call);
+        $this->runCall($call);
+
+        $this->assertSame([AiTextCall::REJECTED, 'rejected', ['slots' => ['empty']]], [$call->fresh()->status, $call->fresh()->fail_reason, $call->fresh()->correction]);
+        $this->assertSame([], $this->charges());
+        $this->actingAs($this->pm)->get(route('site-diary.letters.show', $this->letter))->assertOk()
+            ->assertSee('The AI could not write the sentences this time, so the sentences of the app stand. You were not charged.')
+            ->assertDontSee('stated a figure');
     }
 
     public function test_a_letter_finalised_while_the_ai_was_writing_keeps_its_words_and_nothing_is_charged(): void

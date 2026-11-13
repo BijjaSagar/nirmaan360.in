@@ -9,7 +9,9 @@
         // The form is open when it is the thing in hand: an entry is being changed or corrected, a save was
         // refused, the reports are being filtered, or the register is still empty.
         // A refusal from the AI is about the grouping card, not the form.
-        $formOpen = $editing || $correcting || ($errors->any() && ! $errors->has('ai_reader')) || $entries->isEmpty() || $shown['from'] || $shown['to'];
+        // Held: what loading the page again would lose, an entry being changed or corrected or a refused save with what was typed.
+        $formHeld = $editing || $correcting || ($errors->any() && ! $errors->has('ai_reader'));
+        $formOpen = $formHeld || $entries->isEmpty() || $shown['from'] || $shown['to'];
     @endphp
     <div x-data="{ form: {{ $formOpen ? 'true' : 'false' }} }">
     <x-page-header :title="__('Hindrance register')" :subtitle="$project->name">

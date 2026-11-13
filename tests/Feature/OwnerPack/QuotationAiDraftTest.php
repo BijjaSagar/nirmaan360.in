@@ -58,9 +58,9 @@ class QuotationAiDraftTest extends OwnerPackAiTestCase
         $this->assertNull($this->quotation->fresh()->slots, 'Until the AI answers, the cover note is as it was.');
 
         // The page waits for the answer and looks again by itself.
-        $this->get(route('quotations.show', $this->quotation))->assertOk()
+        $this->assertLooksAgainByItself($this->get(route('quotations.show', $this->quotation))->assertOk()
             ->assertSee('The AI is writing the opening and the closing sentences. This page looks again by itself.')
-            ->assertDontSee('Write them with the AI');
+            ->assertDontSee('Write them with the AI'));
 
         // A page opened now, before the sentences come, ticks the figures of the text as it then stood.
         $before = $this->allTicks($this->quotation);
@@ -148,6 +148,25 @@ class QuotationAiDraftTest extends OwnerPackAiTestCase
         Carbon::setTestNow(now()->addMinutes(2));
         $this->patch(route('quotations.update', $this->quotation), ['client_name' => 'Anil and Sunita Deshmukh', 'language' => 'mr'])->assertSessionHasNoErrors();
         $this->get(route('quotations.show', $this->quotation))->assertOk()->assertDontSee('The sentences the AI wrote stated a figure');
+    }
+
+    public function test_an_answer_with_no_sentence_in_it_is_not_said_to_have_stated_a_figure(): void
+    {
+        foreach (['no sentence' => ['slots' => []], 'only slots that are not asked for' => ['slots' => [['id' => 'signature', 'text' => 'आपला विश्वासू']]]] as $case => $form) {
+            AiTextCall::withoutGlobalScopes()->delete();
+            $this->fakeModel([$this->answer($form)]);
+
+            $this->ask()->assertStatus(202);
+            $call = AiTextCall::sole();
+            $this->runCall($call);
+            $this->runCall($call);
+
+            $this->assertSame([AiTextCall::REJECTED, 'rejected', ['slots' => ['empty']]], [$call->fresh()->status, $call->fresh()->fail_reason, $call->fresh()->correction], $case);
+            $this->assertSame([], $this->charges(), $case);
+            $this->actingAs($this->manager)->get(route('quotations.show', $this->quotation))->assertOk()
+                ->assertSee('The AI could not write the sentences this time, so the sentences of the app stand. You were not charged.')
+                ->assertDontSee('stated a figure');
+        }
     }
 
     public function test_a_sentence_the_person_rewrote_is_kept_and_with_both_rewritten_nothing_is_asked(): void

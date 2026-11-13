@@ -4,6 +4,7 @@ namespace App\Services\SiteDiary;
 
 use App\Exceptions\ImmutableRecordException;
 use App\Models\AiTextCall;
+use App\Models\Project;
 use App\Models\SiteLetter;
 use App\Models\User;
 use App\Services\DocumentReading\NothingToSend;
@@ -42,6 +43,11 @@ class LetterWording extends WordingCall
         }
 
         $letter = $this->letter($call) ?? throw new NothingToSend;
+
+        // Held the way every change to a letter is, by its project, until the call ends: a sentence a person saves
+        // meanwhile is either seen below as theirs or saved after the AI's.
+        Project::withoutGlobalScopes()->where('organization_id', $call->organization_id)->whereKey($letter->project_id)->lockForUpdate()->first();
+        $letter->refresh();
         $by = $call->user_id === null ? null : User::withoutGlobalScopes()->where('organization_id', $call->organization_id)->find($call->user_id);
 
         if ($by === null) {
@@ -55,6 +61,12 @@ class LetterWording extends WordingCall
             if (($kept[$id]['source'] ?? null) !== SlotText::EDITED) {
                 $texts[$id] = $text;
             }
+        }
+
+        // A person rewrote every sentence the AI wrote while it was writing: nothing of it is used, so the
+        // letter is not put together again and the call ends uncharged, as when the letter changed.
+        if ($texts === []) {
+            throw new NothingToSend('subject_changed');
         }
 
         try {

@@ -16,7 +16,7 @@
             <p class="text-ink-2">{{ __('A translation is printed only after you accept its line, and always beside the description. The app checks that its numbers, grades and ratios are those of the description, in the same order; it cannot check that the words mean the same, so read each one.') }}</p>
             @if ($translation['writing'])
                 <p role="status">{{ __('The AI is translating the descriptions. This page looks again by itself.') }}</p>
-                <div x-data x-init="const look = () => document.querySelector('details[open]') || document.activeElement?.matches('input, textarea, select') ? setTimeout(look, 5000) : location.reload(); setTimeout(look, 5000)"></div>
+                @include('modules.owner_pack._look-again')
             @else
                 @if ($translation['not_used'])
                     <p class="text-[#8a6208]" role="status">{{ $translation['not_used'] }}</p>
