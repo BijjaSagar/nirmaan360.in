@@ -11,6 +11,7 @@ use App\Services\BoqScan\BoqReadKind;
 use App\Services\BoqScan\BoqScanConfirm;
 use App\Services\BoqScan\BoqScanPresenter;
 use App\Services\BoqScan\BoqScanReview;
+use App\Services\BoqScan\BoqScanScreen;
 use App\Services\DocumentReading\ReadAccess;
 use App\Services\DocumentReading\ReadRefused;
 use App\Services\DocumentReading\ReadStatus;
@@ -18,10 +19,13 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 /**
- * The scanned BOQ reader on the web: create a read for a project, then review it one document page
- * at a time and write it to the BOQ. Every answer is JSON; the review screen calls these.
+ * The scanned BOQ reader on the web: the scan screen of a project, the screen of one read (its
+ * progress, then its review), creating a read, and the review's steps one document page at a time
+ * until the read is written to the BOQ. Apart from the two screens every answer is JSON; the
+ * screens call these.
  *
  * Uploading pages, the price, starting and the status are the shared read routes. Only creating a
  * read sends anything anywhere; reviewing, correcting and confirming never depend on the provider,
@@ -35,7 +39,22 @@ class BoqScanController extends Controller
         private BoqScanReview $review,
         private BoqScanPresenter $presenter,
         private BoqScanConfirm $confirmer,
+        private BoqScanScreen $screen,
     ) {}
+
+    /** The scan screen. When a scan cannot be started now it says why and what to do, never an error. */
+    public function create(Request $request, Project $project): View
+    {
+        return view('modules.boq_scan.create', $this->screen->create($project, $request->user()));
+    }
+
+    /** One read: uploading and starting it, its progress, its review, or how it ended. */
+    public function show(Request $request, DocumentRead $read): View
+    {
+        $this->scan($request, $read);
+
+        return view('modules.boq_scan.show', $this->screen->show($read, $request->user()));
+    }
 
     public function store(Request $request, Project $project): JsonResponse
     {

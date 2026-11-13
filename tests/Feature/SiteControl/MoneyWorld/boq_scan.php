@@ -7,8 +7,8 @@ use App\Services\DocumentReading\AiDocumentConsent;
 
 /*
  * The scanned BOQ reader with one read of the company's project ready for review: a line read with
- * the BOQ rate and its amount, so the review's JSON carries rupee figures. The walks check that the
- * owner gets the review and that no role without money.view gets a figure of it.
+ * the BOQ rate and its amount, so the review screen and its JSON carry rupee figures. The walks check
+ * that the owner gets the review and that no role without money.view gets a figure of it.
  *
  * The module registers its reader kind only once its screens are in place, so the walk registers it
  * here, as a company that uses the reader would have it.
@@ -58,6 +58,7 @@ return function (): void {
     ]);
 
     $this->rows[DocumentRead::class] ??= $read;
+    $this->routeParams['boq-scans.show'] = ['read' => $read];
     $this->routeParams['boq-scans.rows'] = ['read' => $read];
     $this->routeQueries['boq-scans.rows'] = ['page_no' => 1];
     $this->routeParams['api.boq-scans.show'] = ['read' => $read];

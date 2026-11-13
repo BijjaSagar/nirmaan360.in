@@ -17,6 +17,7 @@ class BoqScanTranslationsTest extends BoqScanTestCase
         return [
             ...array_map(fn ($file) => $file->getPathname(), File::allFiles(app_path('Services/BoqScan'))),
             ...array_map(fn ($file) => $file->getPathname(), File::allFiles(app_path('Http/Controllers/BoqScan'))),
+            ...array_map(fn ($file) => $file->getPathname(), File::allFiles(resource_path('views/modules/boq_scan'))),
         ];
     }
 
@@ -39,7 +40,7 @@ class BoqScanTranslationsTest extends BoqScanTestCase
     public function test_every_string_is_translated_into_hindi_and_marathi_in_the_modules_own_files(): void
     {
         $strings = $this->moduleStrings();
-        $this->assertGreaterThan(50, count($strings));
+        $this->assertGreaterThan(200, count($strings));
 
         foreach (['hi', 'mr'] as $locale) {
             $translations = $this->own($locale);

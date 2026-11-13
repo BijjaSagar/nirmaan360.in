@@ -13,6 +13,7 @@ use App\Services\BoqScan\BoqScanIngest;
 use App\Services\BoqScan\ScanReconciler;
 use App\Services\BoqScan\ScanState;
 use App\Services\DocumentReading\AiDocumentConsent;
+use Illuminate\Support\Facades\Route;
 use Tests\Feature\DocumentReading\PageReadingTestCase;
 
 /**
@@ -36,6 +37,17 @@ abstract class BoqScanTestCase extends PageReadingTestCase
         config(['modules.reader_stand_ins.read_kinds' => [], 'modules.boq_scan.read_kinds' => [BoqReadKind::class]]);
 
         $this->project = $this->makeProject($this->organization, ['code' => 'NB1', 'name' => 'North Block']);
+    }
+
+    /**
+     * The scan screen is registered only while the kind is registered in the module's config file,
+     * and the app was booted before setUp registered it. This loads the module's routes again, inside
+     * the signed-in group routes/web.php puts them in, as a company with the reader has them.
+     */
+    protected function withScanScreen(): void
+    {
+        Route::middleware(['web', 'auth', 'active'])->group(base_path('routes/modules/boq_scan.php'));
+        Route::getRoutes()->refreshNameLookups();
     }
 
     /** A BOQ read of the project, ready for review unless told otherwise. */
