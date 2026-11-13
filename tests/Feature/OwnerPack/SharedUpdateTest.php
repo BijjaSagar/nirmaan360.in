@@ -6,6 +6,7 @@ use App\Models\Dpr;
 use App\Models\DprPhoto;
 use App\Models\OwnerUpdate;
 use App\Services\Access\TeamAccessService;
+use App\Services\Notify\CompanyDeletionService;
 use App\Services\Notify\TenantData;
 use App\Services\OwnerPack\OwnerUpdateShareService;
 use App\Services\OwnerPack\SharedPhoto;
@@ -14,6 +15,7 @@ use App\Support\PlatformSettings;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -112,6 +114,18 @@ class SharedUpdateTest extends TestCase
         $this->assertStringContainsString('private', (string) $response->headers->get('Cache-Control'));
     }
 
+    /** A photo may stay in the visitor's own browser for a few minutes, never in a shared cache, and stays out of search engines. */
+    private function assertPhotoHeaders(TestResponse $response): void
+    {
+        $response->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        $response->assertHeader('Referrer-Policy', 'no-referrer');
+        $cache = (string) $response->headers->get('Cache-Control');
+        $this->assertStringContainsString('private', $cache);
+        $this->assertStringContainsString('max-age=300', $cache);
+        $this->assertStringNotContainsString('public', $cache);
+        $this->assertStringNotContainsString('s-maxage', $cache);
+    }
+
     /** @return list<string> The address of every picture on the page, as written. */
     private function pictures(TestResponse $page): array
     {
@@ -182,7 +196,7 @@ class SharedUpdateTest extends TestCase
 
         foreach ($pictures as $address) {
             $picture = $this->get($address)->assertOk()->assertHeader('Content-Type', 'image/jpeg')->assertHeader('X-Content-Type-Options', 'nosniff');
-            $this->assertHiddenByHeaders($picture);
+            $this->assertPhotoHeaders($picture);
             $this->assertSame([120, 80, 'image/jpeg'], array_values(array_intersect_key(getimagesizefromstring($picture->getContent()), [0 => 0, 1 => 0, 'mime' => 0])));
         }
 
@@ -825,7 +839,9 @@ class SharedUpdateTest extends TestCase
         $this->assertSame('image/jpeg', getimagesizefromstring($sent)['mime']);
         $this->get($url)->assertOk()->assertSee('Becomes a text file')->assertSee('A PNG');
 
-        // On a server without the image functions no photo is sent, rather than the stored file as it is.
+        // On a server without the image functions no photo is sent, rather than the stored file as it is. (A copy drawn
+        // earlier on a server that had them is a drawn picture and may be sent; this one has none.)
+        Storage::deleteDirectory('org-'.$this->organization->id.'/owner-pack');
         $this->app->bind(SharedPhoto::class, fn () => new class extends SharedPhoto
         {
             protected static function canRedraw(): bool
@@ -862,5 +878,126 @@ class SharedUpdateTest extends TestCase
         // The limit follows the configured memory, not a figure in the code.
         config(['modules.owner_pack.photo_max_pixels' => 40_000_000]);
         $this->assertSame([$tooLarge->id], $this->draftUpdate(['photo_ids' => [$tooLarge->id]])->photoIds());
+    }
+
+    /** A SharedPhoto that counts how often a stored photo is decoded and drawn again. */
+    private function countingPhotos(): SharedPhoto
+    {
+        $photos = new class extends SharedPhoto
+        {
+            public int $drawn = 0;
+
+            public function jpeg(string $path): ?string
+            {
+                $this->drawn++;
+
+                return parent::jpeg($path);
+            }
+        };
+
+        $this->app->instance(SharedPhoto::class, $photos);
+
+        return $photos;
+    }
+
+    public function test_a_photo_is_drawn_once_and_then_sent_from_the_copy_kept_for_the_company(): void
+    {
+        ['reports' => [$monday]] = $this->week();
+        $stored = $this->jpeg(1200, 800, $this->exif(6).$this->otherMetadata());
+        $photo = $this->photo($monday, 'Taken on a phone', $stored);
+        [$update] = $this->sharedUpdate($this->approvedUpdate($this->draftUpdate(['photo_ids' => [$photo->id]])));
+        $this->signOut();
+        $photos = $this->countingPhotos();
+        $copy = SharedPhoto::copyPath($this->organization->id, $photo->id, $photo->path);
+        $this->assertStringStartsWith('org-'.$this->organization->id.'/owner-pack/', $copy);
+        $this->assertFalse(Storage::exists($copy));
+
+        $first = $this->get($this->shares()->photoUrl($update, $photo->id))->assertOk();
+        $this->assertSame(1, $photos->drawn);
+        $this->assertPhotoHeaders($first);
+        $this->assertTrue(Storage::exists($copy), 'The drawn copy is kept in the company\'s folder.');
+        $this->assertSame($first->getContent(), Storage::get($copy));
+
+        // What is kept is the drawn picture, with nothing of the stored file but its pixels.
+        foreach (['Exif', 'Test camera', 'xmpmeta', 'Invented Person'] as $carried) {
+            $this->assertStringNotContainsString($carried, (string) Storage::get($copy));
+        }
+
+        // Every later request, a reload or another visitor with the link, is sent the copy without decoding the photo again.
+        foreach (range(1, 3) as $again) {
+            $later = $this->get($this->shares()->photoUrl($update, $photo->id))->assertOk();
+            $this->assertSame($first->getContent(), $later->getContent());
+            $this->assertSame((string) strlen($first->getContent()), $later->headers->get('Content-Length'));
+            $this->assertPhotoHeaders($later);
+        }
+
+        $this->assertSame(1, $photos->drawn);
+        $this->assertSame($stored, Storage::get($photo->path), 'The stored file is left as it is.');
+
+        // Drawn at another size, the photo is drawn once more and kept beside the first copy.
+        config(['modules.owner_pack.photo_edge' => 600]);
+        $smaller = $this->get($this->shares()->photoUrl($update, $photo->id))->assertOk()->getContent();
+        $this->get($this->shares()->photoUrl($update, $photo->id))->assertOk();
+        $this->assertSame(2, $photos->drawn);
+        $this->assertSame([400, 600], array_slice(getimagesizefromstring($smaller), 0, 2));
+
+        // The stored file gone: the photo is not sent, even though a copy of it is kept.
+        Storage::delete($photo->path);
+        $this->assertSame('', $this->get($this->shares()->photoUrl($update, $photo->id))->assertNotFound()->getContent());
+    }
+
+    public function test_a_withdrawn_or_expired_link_is_refused_as_before_even_with_the_copy_kept(): void
+    {
+        [$update, $url, $photos] = $this->sharedWeek();
+        $this->signOut();
+        $counting = $this->countingPhotos();
+        $photoUrl = $this->shares()->photoUrl($update, $photos[0]->id);
+        $copy = SharedPhoto::copyPath($this->organization->id, $photos[0]->id, $photos[0]->path);
+
+        $this->get($photoUrl)->assertOk();
+        $this->assertTrue(Storage::exists($copy));
+
+        // Withdrawn: the same plain page as before, with nothing read and nothing drawn.
+        $this->shares()->revoke($update, $this->manager);
+        $this->assertInactive($this->get($photoUrl));
+        $this->assertTrue(Storage::exists($copy));
+        $this->assertSame(1, $counting->drawn);
+
+        // A new link sends the kept copy; past its date it is refused as before.
+        [$update] = $this->sharedUpdate($update->fresh());
+        $newPhotoUrl = $this->shares()->photoUrl($update, $photos[0]->id);
+        $this->get($newPhotoUrl)->assertOk();
+        $this->assertSame(1, $counting->drawn);
+
+        $this->travel(15)->days();
+        $this->assertInactive($this->get($newPhotoUrl));
+        $this->assertInactive($this->get($photoUrl));
+
+        // A properly signed address with another token, or for a photo the update does not name, is refused too.
+        $this->assertInactive($this->get(URL::signedRoute('owner-updates.shared.photo', ['id' => $update->id, 'token' => Str::random(40), 'photo' => $photos[0]->id])));
+        $this->assertSame(1, $counting->drawn);
+    }
+
+    public function test_the_kept_copies_go_with_the_company(): void
+    {
+        [$update, , $photos] = $this->sharedWeek();
+        $this->signOut();
+        $copy = SharedPhoto::copyPath($this->organization->id, $photos[0]->id, $photos[0]->path);
+        $this->get($this->shares()->photoUrl($update, $photos[0]->id))->assertOk();
+        $this->assertTrue(Storage::exists($copy));
+
+        // Another company's copy stays.
+        Storage::put('org-'.($this->organization->id + 1000).'/owner-pack/shared-photos/1-other.jpg', 'another company');
+
+        $owner = $this->member($this->organization, 'owner');
+        app(CompanyDeletionService::class)->request($this->organization, $owner, $this->organization->name);
+        $this->travel(CompanyDeletionService::GRACE_DAYS + 1)->days();
+        Auth::forgetGuards();
+        $this->assertSame(1, app(CompanyDeletionService::class)->purgeDue());
+
+        $this->assertFalse(Storage::exists($copy));
+        $this->assertSame([], Storage::allFiles('org-'.$this->organization->id));
+        $this->assertTrue(Storage::exists('org-'.($this->organization->id + 1000).'/owner-pack/shared-photos/1-other.jpg'));
+        $this->assertContains('org-{org}/owner-pack', config('modules.owner_pack.purge_directories'));
     }
 }
