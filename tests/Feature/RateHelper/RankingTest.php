@@ -27,6 +27,7 @@ use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -302,6 +303,32 @@ class RankingTest extends RateHelperTestCase
         $uuid = RateSuggestionRanking::withoutGlobalScopes()->value('client_uuid');
         $this->rank($this->qs, $otherRun, ['client_uuid' => $uuid])->assertUnprocessable()->assertJsonValidationErrors('client_uuid');
         $this->rank($this->qs, $run, ['client_uuid' => 'not-a-uuid'])->assertUnprocessable()->assertJsonValidationErrors('client_uuid');
+    }
+
+    public function test_ranking_counts_on_the_text_call_counter_and_not_on_the_plain_one(): void
+    {
+        $this->aiOn();
+        [$run] = $this->slabRun($this->qs);
+
+        // The plain per-person counter other screens share is full, and ranking still answers.
+        $shared = sha1((string) $this->qs->id);
+
+        foreach (range(1, 500) as $hit) {
+            RateLimiter::hit($shared, 60);
+        }
+
+        $this->rank($this->qs, $run)->assertStatus(202);
+
+        // The text call counter allows twenty a minute.
+        foreach (range(2, 20) as $attempt) {
+            $this->rank($this->qs, $run)->assertStatus(202);
+        }
+
+        $this->rank($this->qs, $run)->assertStatus(429);
+        $this->assertSame(1, AiTextCall::withoutGlobalScopes()->count());
+
+        // Another person has a counter of their own.
+        $this->rank($this->owner, $run)->assertStatus(202);
     }
 
     public function test_refs_that_were_not_sent_are_dropped_and_a_note_with_a_figure_currency_or_month_is_dropped(): void

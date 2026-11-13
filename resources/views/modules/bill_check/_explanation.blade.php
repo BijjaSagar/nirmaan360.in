@@ -2,7 +2,9 @@
     The findings of the check explained in plain words, inside the pre-check card. Needs $checkId.
     In the reader's own language unless they pick another with ?explain=hi. Without the AI every finding
     is explained in the app's own words; the button asks a model to write what each kind of finding
-    means. Every finding and every figure is placed by the app, in the form the reader may see.
+    means. Every finding and every figure is placed by the app, in the form the reader may see. A sentence
+    a model wrote is marked where it stands: past the kinds a model is asked about, or where it left one
+    out, the app's own sentence stands and is not marked.
 --}}
 @php
     $explained = app(\App\Services\BillCheck\Explain\BillCheckExplanations::class)->forCard($checkId, auth()->user(), request()->query('explain'));
@@ -25,7 +27,7 @@
             @foreach ($explained['paragraphs'] as $paragraph)
                 <div class="mt-3">
                     @if ($paragraph['about'] !== null)
-                        <p class="text-ink-2">{{ $paragraph['about'] }}</p>
+                        <p class="text-ink-2">{{ $paragraph['about'] }}@if ($paragraph['about_source'] === 'ai') <span class="whitespace-nowrap text-xs text-ink-3" lang="{{ app()->getLocale() }}">· {{ __('Written by AI') }}</span>@endif</p>
                     @endif
                     <p class="mt-1 font-medium">{{ $paragraph['finding'] }}</p>
                 </div>
@@ -34,7 +36,7 @@
 
         <p class="mt-3 text-xs text-ink-3">
             {{ $explained['source'] === 'ai'
-                ? __('The sentence before each finding was written by AI. The findings and every figure in them are placed by the app from the check.')
+                ? __('Sentences marked “Written by AI” were written by AI. Every other sentence, the findings and every figure in them are placed by the app from the check.')
                 : __('Explained in the app\'s own words. Every figure is placed by the app from the check.') }}
         </p>
 

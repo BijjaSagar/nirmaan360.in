@@ -13,15 +13,19 @@ use App\Services\Access\TeamAccessService;
 use App\Services\Agents\CreditService;
 use App\Services\BillCheck\Explain\FindingTopics;
 use App\Services\BillCheck\Flag;
+use App\Services\BillCheck\FlagCatalog;
 use App\Services\DocumentReading\TextCallRunner;
 use App\Services\DocumentReading\TextRequest;
 use App\Services\Wording\WordingRequest;
+use App\Support\Dec;
 use App\Support\PlatformSettings;
+use Brick\Math\RoundingMode;
 use Illuminate\Http\Client\Request;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
 /**
@@ -39,6 +43,12 @@ class BillCheckExplanationTest extends BillCheckTestCase
         'about_unconfirmed_term' => 'ही कपात करारनाम्याशी अजून पडताळलेली नाही. करारनामा पाहून ती निश्चित करा.',
         'about_overlap' => 'दुसऱ्या चालू बिलाचा कालावधी या बिलाशी जुळतो. तेच काम दोनदा लागले नाही ना ते पाहा.',
         'about_no_photo' => 'काही मोजमापांना फोटो नाहीत. क्लायंट ते मागू शकतो.',
+    ];
+
+    /** One made-up value for each kind of figure, as in BillCheckWordingTest. */
+    private const SAMPLES = [
+        'money' => '12345.67', 'pct' => '7.25', 'source' => 'Sample agreement, part Z', 'qty' => '3.500',
+        'ratio' => '9.5', 'count' => 4, 'date' => '2026-11-30', 'text' => 'XYZ-9', 'head' => 'retention',
     ];
 
     private RaBill $bill;
@@ -466,5 +476,118 @@ class BillCheckExplanationTest extends BillCheckTestCase
             ->assertSee(__(FindingTopics::about('line_amount'), [], 'mr'))
             ->assertSee('Writing it with AI is part of the Business and Enterprise plans.')
             ->assertDontSee('Write it in plain words with AI');
+    }
+
+    public function test_a_second_press_from_another_page_or_another_person_while_the_ai_writes_makes_no_second_call(): void
+    {
+        // Every page draws the button with a client_uuid of its own: two tabs, or two people, send two.
+        $first = $this->ask($this->pm, 'mr', ['client_uuid' => (string) Str::uuid()])->assertStatus(202)->json('call_id');
+        $held = AiTextCall::withoutGlobalScopes()->findOrFail($first)->max_credits;
+
+        $this->ask($this->pm, 'mr', ['client_uuid' => (string) Str::uuid()])->assertStatus(202)->assertJsonPath('call_id', $first)->assertJsonPath('status', 'drafting');
+        $this->ask($this->qs, 'mr', ['client_uuid' => (string) Str::uuid()])->assertStatus(202)->assertJsonPath('call_id', $first);
+        $this->actingAs($this->owner)->from(route('ra-bills.show', $this->bill))
+            ->post(route('bill-checks.explain', $this->stored), ['locale' => 'mr', 'client_uuid' => (string) Str::uuid()])
+            ->assertRedirect()->assertSessionHas('success', 'The AI is writing the explanation. It appears here when it is ready.');
+
+        $this->assertSame(1, AiTextCall::withoutGlobalScopes()->count());
+        $this->assertSame(1, AuditLog::withoutGlobalScopes()->where('action', 'bill_check.explanation_asked')->count());
+        $this->assertSame((string) Dec::of('500')->minus($held)->toScale(4), app(CreditService::class)->free($this->org), 'One call is held, once.');
+
+        // Another language is another explanation, with its own call.
+        $uuid = (string) Str::uuid();
+        $hindi = $this->ask($this->qs, 'hi', ['client_uuid' => $uuid])->assertStatus(202)->json('call_id');
+        $this->assertNotSame($first, $hindi);
+
+        // A client_uuid of that other call is still refused here, while the first call is open.
+        $this->ask($this->pm, 'mr', ['client_uuid' => $uuid])->assertUnprocessable()->assertJsonValidationErrors('client_uuid');
+
+        // Once the call has ended, a press finds the explanation written and asks nothing.
+        $this->fakeModel([$this->slots(self::MR)]);
+        $this->runCall($first);
+        $this->ask($this->qs, 'mr', ['client_uuid' => (string) Str::uuid()])->assertOk()->assertJsonPath('call_id', $first)->assertJsonPath('status', 'done');
+        $this->assertSame(2, AiTextCall::withoutGlobalScopes()->count());
+        Http::assertSentCount(1);
+    }
+
+    public function test_the_credits_on_the_button_are_what_a_press_holds_however_many_kinds_of_finding_the_check_has(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+
+        // Every finding the catalogue knows: more kinds than a model is asked about, so the longest request a check sends.
+        $every = $this->storedCheck($this->bill, array_map(function (string $code) {
+            $definition = FlagCatalog::definition($code);
+
+            return new Flag($code.':1', $code, $definition['level'], array_map(fn (string $type) => self::SAMPLES[$type], $definition['params']));
+        }, array_keys(FlagCatalog::DEFINITIONS)));
+
+        foreach ([[$this->stored, 'mr'], [$every, 'mr'], [$every, 'en']] as [$check, $locale]) {
+            $shown = $this->actingAs($this->pm)->getJson(route('bill-checks.explanation', ['check' => $check, 'locale' => $locale]))
+                ->assertOk()->assertJsonPath('can.ask', true)->json('credits');
+
+            $call = AiTextCall::withoutGlobalScopes()->findOrFail(
+                $this->actingAs($this->pm)->postJson(route('bill-checks.explain', $check), ['locale' => $locale])->assertStatus(202)->json('call_id')
+            );
+
+            // "Uses up to" is the hold, rounded up to a whole credit: never less than what the press holds and may charge.
+            $this->assertSame((string) Dec::of($call->max_credits)->toScale(0, RoundingMode::Ceiling)->toScale(4), $shown, "check {$check->id} {$locale}");
+        }
+
+        $this->assertGreaterThan(4, (float) $call->max_credits, 'The longest request holds more than a usual one.');
+    }
+
+    public function test_only_the_sentences_a_model_wrote_are_marked_as_written_by_ai(): void
+    {
+        // Three kinds are asked about; the model writes two of them. The third, and the kind past the limit, keep the app's own sentence.
+        config(['modules.bill_check.explain.model_topics' => 3]);
+        $call = $this->ask($this->pm, 'en')->assertStatus(202)->json('call_id');
+        $written = [
+            'about_line_amount' => 'The amount on this line is not its quantity times its rate. See whether the rate or the quantity was changed by hand.',
+            'about_overlap' => 'Another open bill covers part of the same period. Make sure the same work is not billed again.',
+        ];
+        $this->fakeModel([$this->slots($written)]);
+        $this->runCall($call);
+
+        $read = $this->read($this->pm, 'en')->assertOk()->assertJsonPath('source', 'ai');
+        $paragraphs = $read->json('paragraphs');
+
+        $this->assertSame(['ai', null, 'template', 'ai', 'template'], array_column($paragraphs, 'about_source'));
+        $this->assertSame([
+            $written['about_line_amount'], null, FindingTopics::about('unconfirmed_term'), $written['about_overlap'], FindingTopics::about('no_photo'),
+        ], array_column($paragraphs, 'about'));
+
+        $page = $this->actingAs($this->pm)->get(route('ra-bills.show', $this->bill).'?explain=en')->assertOk()
+            ->assertSee('Sentences marked “Written by AI” were written by AI. Every other sentence, the findings and every figure in them are placed by the app from the check.')
+            ->assertDontSee('The sentence before each finding was written by AI');
+        $this->assertSame(2, substr_count($page->getContent(), '· Written by AI'), 'Only the two sentences the model wrote are marked.');
+
+        // In Hindi the mark and the line about it are in the reader's language.
+        $this->pm->update(['locale' => 'hi']);
+        $hindi = $this->actingAs($this->pm->fresh())->get(route('ra-bills.show', $this->bill).'?explain=en')->assertOk()
+            ->assertSee(__('Sentences marked “Written by AI” were written by AI. Every other sentence, the findings and every figure in them are placed by the app from the check.', [], 'hi'));
+        $this->assertSame(2, substr_count($hindi->getContent(), '· AI ने लिखा'));
+    }
+
+    public function test_asking_counts_on_the_text_call_counter_and_not_on_the_plain_one(): void
+    {
+        // The plain per-person counter other screens share is full, and asking still answers.
+        $shared = sha1((string) $this->pm->id);
+
+        foreach (range(1, 500) as $hit) {
+            RateLimiter::hit($shared, 60);
+        }
+
+        $this->ask($this->pm)->assertStatus(202);
+
+        // The text call counter allows twenty a minute.
+        foreach (range(2, 20) as $attempt) {
+            $this->ask($this->pm)->assertStatus(202);
+        }
+
+        $this->ask($this->pm)->assertStatus(429);
+        $this->assertSame(1, AiTextCall::withoutGlobalScopes()->count());
+
+        // Another person has a counter of their own.
+        $this->ask($this->qs)->assertStatus(202);
     }
 }

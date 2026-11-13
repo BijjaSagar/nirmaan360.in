@@ -125,6 +125,30 @@ class BillCheckWordingTest extends BillCheckTestCase
         }
     }
 
+    public function test_a_repeated_measurement_is_entered_more_than_once_in_every_language_never_twice(): void
+    {
+        // "Twice" states a figure, so the English finding says "more than once". Its Hindi and Marathi say what it says,
+        // as the sentence on that kind of finding does, and no line of the module says "twice" or "double" instead.
+        $finding = FlagCatalog::definition('E2')['text'];
+        $about = FindingTopics::about(FindingTopics::of('E2'));
+
+        $this->assertStringContainsString('more than once', $finding);
+        $this->assertStringContainsString('more than once', $about);
+
+        foreach (['hi' => 'एक से ज़्यादा बार', 'mr' => 'एकापेक्षा जास्त वेळा'] as $locale => $moreThanOnce) {
+            $this->assertStringContainsString($moreThanOnce, __($finding, [], $locale), $locale);
+            $this->assertStringContainsString($moreThanOnce, __($about, [], $locale), $locale);
+        }
+
+        foreach (['hi' => ['दो बार', 'दुगना', 'दुगुना', 'दोगुना'], 'mr' => ['दोनदा', 'दोन वेळा', 'दुप्पट']] as $locale => $twice) {
+            foreach ($this->own($locale) as $english => $translated) {
+                foreach ($twice as $word) {
+                    $this->assertStringNotContainsString($word, $translated, "{$locale}: {$english}");
+                }
+            }
+        }
+    }
+
     public function test_the_module_gives_no_text_of_another_module_a_second_meaning(): void
     {
         foreach (['hi', 'mr'] as $locale) {

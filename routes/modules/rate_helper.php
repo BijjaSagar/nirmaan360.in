@@ -14,9 +14,10 @@ Route::middleware(['feature:reports', 'can:boq.manage', 'can:money.view'])->name
     Route::get('/rate-suggestions/{run}', [RateSuggestionController::class, 'show'])->name('show');
 
     // The AI puts each line's candidates in order. Only asking makes a model call, so only that route carries the AI plan,
-    // the gate, the AI permission and the text call throttle. Where it stands is read without any of them.
+    // the gate, the AI permission and the text call throttle ("ai-text", one counter for every route that starts a
+    // text call). Where it stands is read without any of them.
     Route::post('/rate-suggestions/{run}/rank', [RateRankingController::class, 'store'])
-        ->middleware(['feature:ai_agents', RequireAiReader::class.':text', 'can:agents.use', 'throttle:10,1,ai-text'])
+        ->middleware(['feature:ai_agents', RequireAiReader::class.':text', 'can:agents.use', 'throttle:20,1,ai-text'])
         ->name('rank');
     Route::get('/rate-suggestions/{run}/ranking', [RateRankingController::class, 'show'])->name('ranking');
 

@@ -67,7 +67,7 @@
     "Item :item: billed so far :cumulative :unit, but its BOQ quantity is zero.": "आयटम :item: आतापर्यंत :cumulative :unit चे बिल झाले आहे, पण त्याचे BOQ प्रमाण शून्य आहे.",
     "Item :item: billed so far :cumulative :unit, which is above the :limit :unit that the term entered for this contract allows.": "आयटम :item: आतापर्यंत :cumulative :unit चे बिल झाले आहे, जे या करारासाठी नोंदवलेल्या अटीने दिलेल्या :limit :unit च्या मुभेपेक्षा जास्त आहे.",
     "Item :item: billed so far :cumulative :unit. The term entered for this contract allows :allowed above the quantity, which is :limit :unit (:source, in force from :from).": "आयटम :item: आतापर्यंत :cumulative :unit चे बिल झाले आहे. या करारासाठी नोंदवलेली अट प्रमाणापेक्षा :allowed वरपर्यंत मुभा देते, म्हणजे :limit :unit (:source, :from पासून लागू).",
-    "Item :item: identical approved measurements dated :date, each :qty :unit: :count. Check that the same work was not entered more than once.": "आयटम :item: :date तारखेची एकसारखी मंजूर मोजमापे, प्रत्येकी :qty :unit: :count. तेच काम दोनदा नोंदवले गेले नाही ना, हे तपासा.",
+    "Item :item: identical approved measurements dated :date, each :qty :unit: :count. Check that the same work was not entered more than once.": "आयटम :item: :date तारखेची एकसारखी मंजूर मोजमापे, प्रत्येकी :qty :unit: :count. तेच काम एकापेक्षा जास्त वेळा नोंदवले गेले नाही ना, हे तपासा.",
     "Item :item: its rate has changed since this bill was worked out.": "आयटम :item: हे बिल काढल्यानंतर त्याचा दर बदलला आहे.",
     "Item :item: measurements on this bill that were marked as a deviation from the BOQ quantity: :count, together :qty :unit.": "आयटम :item: या बिलातील, BOQ प्रमाणापासून तफावत म्हणून खूण केलेली मोजमापे: :count, मिळून :qty :unit.",
     "Item :item: previous :prev plus this bill :current is :expected, but the cumulative quantity shows :stored.": "आयटम :item: मागील :prev आणि या बिलातील :current मिळून :expected होते, पण संचयी प्रमाण :stored दिसते.",
@@ -107,6 +107,7 @@
     "Previous figures are taken from the earlier bills of the same contract. When an earlier bill was cancelled or changed after this one was made, the previous figures on this bill are out of date. Making this bill again brings them up to date.": "मागील आकडे याच कराराच्या आधीच्या बिलांवरून घेतले जातात. हे बिल तयार झाल्यानंतर आधीचे एखादे बिल रद्द झाले किंवा बदलले असेल, तर या बिलावरील मागील आकडे जुने झाले आहेत. हे बिल पुन्हा तयार केल्याने ते अद्ययावत होतात.",
     "Require it before submitting": "पाठवण्यापूर्वी ती आवश्यक करा",
     "Retention held on the earlier bills is :expected, but this bill releases :stored.": "आधीच्या बिलांवर रोखलेले रिटेन्शन :expected आहे, पण हे बिल :stored सोडते.",
+    "Sentences marked “Written by AI” were written by AI. Every other sentence, the findings and every figure in them are placed by the app from the check.": "“AI ने लिहिले” अशी खूण असलेली वाक्ये AI ने लिहिली आहेत. इतर प्रत्येक वाक्य, बाबी आणि त्यांतील प्रत्येक आकडा ॲपने तपासणीतून मांडला आहे.",
     "Some measurements on this bill have no photo or sketch. Clients often ask for them when they check a bill.": "या बिलातील काही मोजमापांसोबत फोटो किंवा स्केच नाही. बिल तपासताना क्लायंट अनेकदा ते मागतात.",
     "Something this bill depends on has changed since the check. Check it again.": "तपासणीनंतर, हे बिल ज्यावर अवलंबून आहे असे काहीतरी बदलले आहे. पुन्हा तपासणी करा.",
     "The AI is writing the explanation. It appears here when it is ready.": "AI हे स्पष्टीकरण लिहीत आहे. तयार झाल्यावर ते इथे दिसेल.",
@@ -139,7 +140,6 @@
     "The quantity billed so far is above the quantity in the BOQ or the work order. It can be genuine extra work, but extra work usually needs an approved variation or the agreement of the other party. Check the measurements and the variation papers before the bill goes out.": "आतापर्यंत बिल केलेले प्रमाण BOQ किंवा वर्क ऑर्डरमधील प्रमाणापेक्षा जास्त आहे. हे खरेच जादा काम असू शकते, पण जादा कामासाठी सहसा मंजूर व्हेरिएशन किंवा दुसऱ्या पक्षाची संमती लागते. बिल पाठवण्यापूर्वी मोजमापे आणि व्हेरिएशनची कागदपत्रे तपासा.",
     "The rate on the BOQ or the work order has changed since this bill was made. Check which rate the bill should carry before it goes out.": "हे बिल तयार झाल्यानंतर BOQ किंवा वर्क ऑर्डरमधील दर बदलला आहे. बिल पाठवण्यापूर्वी त्यावर कोणता दर असावा ते तपासा.",
     "The retention released on this bill is not the retention held on the earlier bills.": "या बिलावर सोडलेले रिटेन्शन हे आधीच्या बिलांवर रोखलेल्या रिटेन्शनइतके नाही.",
-    "The sentence before each finding was written by AI. The findings and every figure in them are placed by the app from the check.": "प्रत्येक बाबीपूर्वीचे वाक्य AI ने लिहिले आहे. बाबी आणि त्यांतील प्रत्येक आकडा ॲपने तपासणीतून मांडला आहे.",
     "The terms saved with this bill name a deduction the app cannot work out, so its deductions were not checked.": "या बिलासोबत जतन केलेल्या अटींमध्ये अशा कपातीचे नाव आहे जी ॲप काढू शकत नाही, त्यामुळे त्याच्या कपाती तपासल्या गेल्या नाहीत.",
     "The total of deductions on this bill is not what the terms saved with it give.": "या बिलावरील कपातींची एकूण ही त्यासोबत जतन केलेल्या अटींनुसार येणारी नाही.",
     "The work order of this bill is no longer in the records, so the checks against its contract were left out.": "या बिलाचा वर्क ऑर्डर आता नोंदींमध्ये नाही, त्यामुळे त्याच्या कराराशी संबंधित तपासण्या वगळल्या गेल्या.",
@@ -167,6 +167,7 @@
     "Write a remark of at least :min characters.": "किमान :min अक्षरांचा शेरा लिहा.",
     "Write it in plain words with AI": "AI कडून सोप्या शब्दांत लिहून घ्या",
     "Writing it with AI is part of the Business and Enterprise plans.": "AI कडून लिहून घेणे Business आणि Enterprise प्लॅनमध्ये समाविष्ट आहे.",
+    "Written by AI": "AI ने लिहिले",
     "Your company requires this check: a bill can be submitted only after every finding is acknowledged.": "तुमच्या कंपनीत ही तपासणी आवश्यक आहे: प्रत्येक बाब \"पाहिली\" म्हणून नोंदवल्यावरच बिल पाठवता येते.",
     "Your remark on this finding": "या बाबीवर तुमचा शेरा"
 }

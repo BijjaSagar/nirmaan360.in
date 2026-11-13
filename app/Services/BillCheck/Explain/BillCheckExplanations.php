@@ -8,11 +8,13 @@ use App\Models\BillCheck;
 use App\Models\BillCheckExplanation;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Agents\CreditService;
 use App\Services\BillCheck\Flag;
 use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\ReadRefused;
 use App\Services\DocumentReading\SpendRefused;
 use App\Services\DocumentReading\TextCalls;
+use App\Services\DocumentReading\TextRequest;
 use App\Services\Wording\FactFormat;
 use App\Services\Wording\GuardViolation;
 use App\Services\Wording\RenderedSlot;
@@ -20,10 +22,12 @@ use App\Services\Wording\Renderer;
 use App\Services\Wording\Slot;
 use App\Services\Wording\SlotText;
 use App\Services\Wording\WordingException;
+use App\Services\Wording\WordingRequest;
 use App\Services\Wording\WordingService;
 use App\Support\Idempotent;
 use App\Support\Money;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -47,6 +51,7 @@ class BillCheckExplanations
         private Renderer $renderer,
         private TextCalls $calls,
         private AiSpend $spend,
+        private CreditService $credits,
     ) {}
 
     /** The language an explanation is shown in when none was picked: the reader's own, if the app writes it. */
@@ -64,7 +69,9 @@ class BillCheckExplanations
     /**
      * Has a model write the topic sentences of the explanation in this language. Returns the
      * explanation, its call and whether a call was made now. When the explanation in this language
-     * already stands in a model's words nothing is asked again, and nothing is charged.
+     * already stands in a model's words nothing is asked again, and nothing is charged. While a call
+     * for it is waiting or running, that call is returned: a second press from another page or another
+     * person brings its own client_uuid, and would otherwise make and pay for a second call.
      *
      * @return array{0: BillCheckExplanation, 1: ?AiTextCall, 2: bool}
      *
@@ -87,7 +94,23 @@ class BillCheckExplanations
             return [$explanation, $this->latestCall($explanation), false];
         }
 
-        $call = app(WordingService::class)->draft(WordingService::PURPOSE, $document->type, $document->sheet, $locale, $explanation, $by, ['client_uuid' => $clientUuid]);
+        $organization = Organization::findOrFail($check->organization_id);
+
+        $call = DB::transaction(function () use ($check, $document, $locale, $explanation, $by, $clientUuid, $organization) {
+            // The wallet's lock, which TextCalls::start takes too, so two presses at once are one after the other:
+            // the second one finds the first one's call here. Nothing in this transaction writes to the explanation,
+            // so the lock order is the one start() keeps (the wallet, then the call) and never the job's reverse.
+            $this->credits->wallet($organization);
+
+            $open = $this->latestCall($explanation);
+
+            // A client_uuid sent before is left to start(): it returns that request's own call, or refuses one of another record.
+            if ($open !== null && $open->isOpen() && ($clientUuid === null || ! $this->uuidTaken($check, $clientUuid))) {
+                return $open;
+            }
+
+            return app(WordingService::class)->draft(WordingService::PURPOSE, $document->type, $document->sheet, $locale, $explanation, $by, ['client_uuid' => $clientUuid]);
+        });
 
         if ($call->wasRecentlyCreated) {
             AuditLog::record('bill_check.explanation_asked', $explanation, null, [
@@ -129,7 +152,7 @@ class BillCheckExplanations
             'call_id' => $call?->id,
             'paragraphs' => $paragraphs,
             'can' => ['ask' => $mayAsk],
-            'credits' => $mayAsk ? $this->calls->upTo(WordingService::PURPOSE) : null,
+            'credits' => $mayAsk ? $this->upTo($check, $locale) : null,
         ];
     }
 
@@ -155,6 +178,19 @@ class BillCheckExplanations
 
             return null;
         }
+    }
+
+    /**
+     * The button's "Uses up to :count AI credits": the most a press can hold and charge, sized from the
+     * request a press sends for this check, as TextCalls::start sizes the hold. A check with many kinds
+     * of finding sends more than a usual call, so a usual size would show less than is held.
+     */
+    private function upTo(BillCheck $check, string $locale): string
+    {
+        $document = $this->documents->forModel($check, $locale);
+        $chars = $document === null ? null : TextRequest::chars(WordingRequest::body(new AiTextCall(['purpose' => WordingService::PURPOSE]), $document))['all'];
+
+        return $this->calls->upTo(WordingService::PURPOSE, $chars);
     }
 
     /** Whether this person's company has the AI wording but its plan stops them, for the line that says which plans have it. */
@@ -194,8 +230,8 @@ class BillCheckExplanations
             $number = ExplanationDocument::findingNumber($slot->id);
 
             if ($number === null) {
-                $about = $slot->text;
-                $fromModel = $fromModel || ($slot->type === Slot::FREE && $slot->source === SlotText::AI);
+                $about = $slot;
+                $fromModel = $fromModel || self::byModel($slot);
 
                 continue;
             }
@@ -207,17 +243,30 @@ class BillCheckExplanations
         return [$paragraphs, $fromModel ? BillCheckExplanation::AI : BillCheckExplanation::TEMPLATE, $document->type->freeSlots() !== []];
     }
 
-    /** @return array{flag_key: ?string, code: ?string, level: ?string, about: ?string, finding: string, text: string} */
-    private function paragraph(?Flag $flag, RenderedSlot $slot, ?string $about): array
+    /**
+     * One finding, with the topic sentence before it when it is the first of its topic. about_source
+     * says who wrote that sentence: a model's text that stands is 'ai'; the app's own sentence, past
+     * the topics a model is asked about, left out by the model or kept out by a guard, is 'template'.
+     *
+     * @return array{flag_key: ?string, code: ?string, level: ?string, about: ?string, about_source: ?string, finding: string, text: string}
+     */
+    private function paragraph(?Flag $flag, RenderedSlot $slot, ?RenderedSlot $about): array
     {
         return [
             'flag_key' => $flag?->key,
             'code' => $flag?->code,
             'level' => $flag?->level,
-            'about' => $about,
+            'about' => $about?->text,
+            'about_source' => $about === null ? null : (self::byModel($about) ? BillCheckExplanation::AI : BillCheckExplanation::TEMPLATE),
             'finding' => $slot->text,
-            'text' => $about === null ? $slot->text : $about."\n".$slot->text,
+            'text' => $about === null ? $slot->text : $about->text."\n".$slot->text,
         ];
+    }
+
+    /** Whether a model wrote this sentence, as it is shown. */
+    private static function byModel(RenderedSlot $slot): bool
+    {
+        return $slot->type === Slot::FREE && $slot->source === SlotText::AI;
     }
 
     private function mayAsk(?User $viewer): bool
@@ -253,6 +302,12 @@ class BillCheckExplanations
             ]),
             fn () => $this->find($check, $locale),
         );
+    }
+
+    /** Whether a call of the company was already made with this client_uuid. */
+    private function uuidTaken(BillCheck $check, string $clientUuid): bool
+    {
+        return AiTextCall::withoutGlobalScopes()->where('organization_id', $check->organization_id)->where('client_uuid', $clientUuid)->exists();
     }
 
     /** The newest text call about this explanation: the one open now, or the one that wrote it. */

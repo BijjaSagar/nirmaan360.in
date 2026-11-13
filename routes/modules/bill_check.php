@@ -18,10 +18,11 @@ Route::middleware('feature:billing')->name('bill-checks.')->group(function () {
 
     // The findings explained in plain words. Reading needs nothing but the bill: without the AI every finding is
     // explained in the app's own words. Only asking for it written with AI makes a model call, so only that route
-    // carries the AI plan, the gate, the AI permission and the text call throttle.
+    // carries the AI plan, the gate, the AI permission and the text call throttle. Its counter ("ai-text", twenty a
+    // minute per person) is one for every route that starts a text call, and is not the plain per-person counter.
     Route::get('/bill-checks/{check}/explanation', [BillCheckExplanationController::class, 'show'])->middleware('can:ra_bill.view')->name('explanation');
     Route::post('/bill-checks/{check}/explain', [BillCheckExplanationController::class, 'store'])
-        ->middleware(['feature:ai_agents', RequireAiReader::class.':text', 'can:agents.use', 'can:ra_bill.generate', 'throttle:10,1,ai-text'])
+        ->middleware(['feature:ai_agents', RequireAiReader::class.':text', 'can:agents.use', 'can:ra_bill.generate', 'throttle:20,1,ai-text'])
         ->name('explain');
 
     // Owner and admin only: nobody else holds settings.manage, and a person limited to chosen projects never does.
