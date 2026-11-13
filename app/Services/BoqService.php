@@ -91,7 +91,7 @@ class BoqService
      */
     public function mayDeleteFromApp(User $user): bool
     {
-        return $user->role === 'owner' && $user->custom_role_id === null && $user->is_active;
+        return $user->isOwner() && $user->is_active;
     }
 
     /**
