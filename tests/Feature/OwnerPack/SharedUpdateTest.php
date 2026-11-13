@@ -978,6 +978,31 @@ class SharedUpdateTest extends TestCase
         $this->assertSame(1, $counting->drawn);
     }
 
+    public function test_a_kept_copy_cut_short_is_never_sent_and_a_copy_is_moved_into_place_whole(): void
+    {
+        [$update, , $photos] = $this->sharedWeek();
+        $this->signOut();
+        $counting = $this->countingPhotos();
+        $photoUrl = $this->shares()->photoUrl($update, $photos[0]->id);
+        $copy = SharedPhoto::copyPath($this->organization->id, $photos[0]->id, $photos[0]->path);
+
+        $whole = (string) $this->get($photoUrl)->assertOk()->getContent();
+        $this->assertSame(1, $counting->drawn);
+
+        // Half a copy, as a request arriving while another writes it in place, or a write cut short, would find it.
+        Storage::put($copy, substr($whole, 0, intdiv(strlen($whole), 2)));
+        $again = $this->get($photoUrl)->assertOk();
+        $this->assertSame($whole, $again->getContent(), 'The whole photo is sent, drawn again, never the half copy.');
+        $this->assertPhotoHeaders($again);
+        $this->assertSame(2, $counting->drawn);
+        $this->assertSame($whole, Storage::get($copy), 'The half copy is replaced by a whole one.');
+
+        // Written under a name of its own and moved into place: the folder holds the copy and nothing half written.
+        $this->assertSame([$copy], Storage::files(dirname($copy)));
+        $this->get($photoUrl)->assertOk();
+        $this->assertSame(2, $counting->drawn);
+    }
+
     public function test_the_kept_copies_go_with_the_company(): void
     {
         [$update, , $photos] = $this->sharedWeek();

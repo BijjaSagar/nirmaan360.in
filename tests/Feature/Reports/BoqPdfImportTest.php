@@ -688,13 +688,13 @@ class BoqPdfImportTest extends ReportsTestCase
     /** A signature block in the old font below the last row, with a phone number under the amount column. */
     private const OLD_FONT_SIGNATURE = 'BT /F2 9 Tf 1 0 0 1 400 640 Tm (For Old font firm) Tj 1 0 0 1 400 626 Tm (Old font proprietor) Tj 1 0 0 1 480 612 Tm (9800000001) Tj ET'."\n";
 
-    /** @param  list<list<string>>  $items  @return array<int, array<int, string>> The grid of the heading and these rows. */
+    /** @param  list<list<string>>  $items  @return array<int, array<int, ?string>> The grid of the heading and these rows, an empty cell as null. */
     private function estimateGrid(array $items): array
     {
         $grid = [1 => array_combine(range(1, 6), self::ESTIMATE_HEADING)];
 
         foreach ($items as $index => $item) {
-            $grid[$index + 2] = array_combine(range(1, 6), $item);
+            $grid[$index + 2] = array_combine(range(1, 6), array_map(fn (string $cell) => $cell === '' ? null : $cell, $item));
         }
 
         return $grid;
@@ -760,6 +760,105 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->assertTrue($junk->ok());
         $this->assertSame([2 => 'Note written between the rows', 5 => 'see drawing'], array_filter($junk->grid[3]));
         $this->assertSame($items[1], array_values($junk->grid[4]));
+    }
+
+    public function test_the_letterhead_and_footer_of_every_page_stay_out_when_the_heading_is_printed_once(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['fonts' => ['F2' => 'ABCDEF+Kruti#20Dev#20010'], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $items = array_slice(self::LETTERHEAD_ITEMS, 0, 4);
+        $withoutPhone = fn (string $page) => str_replace(' 1 0 0 1 480 800 Tm (9800000000) Tj', '', $page);
+
+        // As Excel and Word print a long table on letterhead paper: the heading on the first page only.
+        foreach (['with a phone number' => fn (string $page) => $page, 'without one' => $withoutPhone] as $case => $letterhead) {
+            $estimate = $read([
+                $letterhead($this->letterheadPage([self::ESTIMATE_HEADING, $items[0], $items[1]])),
+                $letterhead($this->letterheadPage([$items[2], $items[3]])),
+            ]);
+            $this->assertTrue($estimate->ok(), "{$case}: ".$estimate->error);
+            $this->assertSame($this->estimateGrid($items), $estimate->grid, "{$case}: the letterhead and the footer are no rows.");
+        }
+
+        // A footer in the old font with a PIN code under the amount, printed on each page: no row, and the file imports.
+        $footer = 'BT /F2 8 Tf 1 0 0 1 120 40 Tm (Old font footer line) Tj 1 0 0 1 480 40 Tm (400000) Tj ET'."\n";
+        $footed = $read([$this->tableCells([self::ESTIMATE_HEADING, $items[0], $items[1]]).$footer, $this->tableCells([$items[2], $items[3]]).$footer]);
+        $this->assertTrue($footed->ok(), (string) $footed->error);
+        $this->assertSame($this->estimateGrid($items), $footed->grid);
+
+        // Printed once, it cannot be told from a lump-sum row of the table, so the old font in it refuses the file, as before.
+        $once = $read([$this->tableCells([self::ESTIMATE_HEADING, $items[0], $items[1]]).$footer, $this->tableCells([$items[2], $items[3]])]);
+        $this->assertFalse($once->ok());
+        $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $once->error);
+    }
+
+    public function test_rows_of_the_table_in_an_old_font_are_refused_however_far_below_the_other_rows(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['fonts' => ['F2' => 'ABCDEF+Kruti#20Dev#20010'], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $items = self::LETTERHEAD_ITEMS;
+
+        // Items 4 and 5 drawn in the old font after a gap of three rows at the foot of the page, as a new section would sit.
+        $page = $this->tableCells([self::ESTIMATE_HEADING, $items[0], $items[1], $items[2]]).$this->tableCells([$items[3], $items[4]], 640, [0 => 'F2', 1 => 'F2']);
+
+        foreach (['on one page' => [$page], 'going on to a page without the heading' => [$page, $this->tableCells([$items[5]])], 'going on under the heading printed again' => [$page, $this->tableCells([self::ESTIMATE_HEADING, $items[5]])]] as $case => $pages) {
+            $refused = $read($pages);
+            $this->assertFalse($refused->ok(), $case);
+            $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $refused->error, $case);
+        }
+    }
+
+    public function test_a_typed_table_keeps_every_row_whatever_the_gaps_between_its_parts(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $item = fn (int $number, string $what, string $qty = '10', string $rate = '100') => [(string) $number, $what.' item '.$number, $qty, $rate, 'cu.m', (string) ((int) $qty * (int) $rate)];
+        $civil = array_map(fn (int $number) => $item($number, 'Civil'), range(1, 8));
+        $electrical = array_map(fn (int $number) => $item($number, 'Electrical', '2', '500'), range(9, 11));
+        $section = ['', 'ELECTRICAL WORKS', '', '', '', ''];
+
+        // A last section set off by four blank rows, on the last page or at the foot of a page whose table goes on under its heading.
+        $page = $this->tableCells([self::ESTIMATE_HEADING, ...$civil]).$this->tableCells([$section, ...$electrical], 760 - 18 * 13);
+        $plumbing = array_map(fn (int $number) => $item($number, 'Plumbing', '1', '700'), range(12, 14));
+
+        // Without rules a title line joins the description of the row under it, as it always has.
+        $read9 = $electrical;
+        $read9[0][1] = 'ELECTRICAL WORKS '.$read9[0][1];
+
+        $onePage = $read([$page]);
+        $this->assertTrue($onePage->ok(), (string) $onePage->error);
+        $this->assertSame($this->estimateGrid([...$civil, ...$read9]), $onePage->grid);
+
+        $twoPages = $read([$page, $this->tableCells([self::ESTIMATE_HEADING, ...$plumbing])]);
+        $this->assertTrue($twoPages->ok(), (string) $twoPages->error);
+        $this->assertSame($this->estimateGrid([...$civil, ...$read9, ...$plumbing]), $twoPages->grid);
+
+        // Part A going on at the top of page 2, then Part B under its own heading lower down that page.
+        $partB = ['', 'PART B ELECTRICAL', '', '', '', ''];
+        $parts = $read([
+            $this->tableCells([self::ESTIMATE_HEADING, ...array_slice($civil, 0, 4)]),
+            $this->tableCells(array_slice($civil, 4, 3), 780).$this->tableCells([$partB], 700).$this->tableCells([self::ESTIMATE_HEADING, ...array_slice($electrical, 0, 2)], 680),
+        ]);
+        $this->assertTrue($parts->ok(), (string) $parts->error);
+        $this->assertSame($this->estimateGrid([...array_slice($civil, 0, 7), $partB, ...array_slice($electrical, 0, 2)]), $parts->grid);
+    }
+
+    public function test_descriptions_under_a_centred_heading_are_read_with_or_without_rules(): void
+    {
+        $rows = [
+            ['Description of Items', 'Qty.', 'Rate', 'Unit', 'Amount in Rs.'],
+            ['Excavation for foundation in soft murum including lift and lead up to 50 m', '10', '350', 'cu.m', '3500'],
+            ['Providing and fixing flush door', '3', '4000', 'door', '12000'],
+            ['Brick masonry in cement mortar 1:6', '20', '5200', 'cu.m', '104000'],
+        ];
+        $grid = [];
+
+        foreach ($rows as $index => $row) {
+            $grid[$index + 1] = array_combine(range(1, 5), $row);
+        }
+
+        // dompdf centres a heading cell, so the heading starts far to the right of the descriptions under it.
+        foreach ([true, false] as $borders) {
+            $read = app(BoqPdfReader::class)->read($this->pdf($rows, ['borders' => $borders, 'title' => false, 'words' => false])->getRealPath());
+            $this->assertTrue($read->ok(), (string) $read->error);
+            $this->assertSame($grid, $read->grid, $borders ? 'With rules.' : 'Without rules.');
+        }
     }
 
     public function test_each_piece_of_text_is_in_the_font_that_draws_it_after_q_and_q_and_with_quote_operators(): void

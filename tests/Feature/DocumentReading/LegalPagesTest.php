@@ -237,13 +237,16 @@ class LegalPagesTest extends ReadingTestCase
         $this->release();
         $this->deployVoice(false);
 
-        // The voice endpoint alone makes the switch appear, so readers are spoken of; voice notes are not yet.
+        // The voice endpoint before the acceptance test is no reader: neither readers nor voice notes are spoken of.
+        $text = $this->text('/privacy');
+        $this->assertStringNotContainsString(self::VOICE_SENTENCE, $text);
+        $this->assertStringNotContainsStringIgnoringCase('reader', $text);
+
+        // Accepted, it is a reader, and the only one: the switch appears, and both are spoken of.
+        $this->deployVoice(true);
         $text = $this->text('/privacy');
         $this->assertStringContainsString(self::READER_SENTENCES[0], $text);
-        $this->assertStringNotContainsString(self::VOICE_SENTENCE, $text);
-
-        $this->deployVoice(true);
-        $this->assertStringContainsString(self::VOICE_SENTENCE, $this->text('/privacy'));
+        $this->assertStringContainsString(self::VOICE_SENTENCE, $text);
 
         // Accepted for voice, but the readers were switched off again: nothing about either.
         app(PlatformSettings::class)->set(['ai_readers_released' => '0']);

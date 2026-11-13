@@ -66,7 +66,22 @@ class AiPagesTest extends TestCase
 
     private const NOT_LIVE_INTRO = 'These agents work on the records already in your account. None of them are live yet. Tell us which one would save you the most time.';
 
-    private const LIVE_TAG = 'Part of the Business and Enterprise plans';
+    private const LIVE_TAG = 'AI agents in the Business and Enterprise plans';
+
+    private const NOT_LIVE_TAG = 'AI agents in early access';
+
+    /** The contact page's line, its AI topic and its search description, with no key saved and with one. */
+    private const CONTACT_EARLY = [
+        'Larger rollouts, AI early access or a question about the product. Leave your details and we will get back to you.',
+        'AI agent early access',
+        'Talk to the :brand team about a larger rollout, AI agent early access or a question about the product. Leave your details and we will get back to you.',
+    ];
+
+    private const CONTACT_LIVE = [
+        'Larger rollouts, the AI agents or a question about the product. Leave your details and we will get back to you.',
+        'The AI agents',
+        'Talk to the :brand team about a larger rollout, the AI agents or a question about the product. Leave your details and we will get back to you.',
+    ];
 
     private const HELPERS = 'Helpers that work from your own records';
 
@@ -258,7 +273,7 @@ class AiPagesTest extends TestCase
 
         $page = $this->get('/ai')->assertOk()
             ->assertSee('None of them are live yet')
-            ->assertSee('Early access')
+            ->assertSee(self::NOT_LIVE_TAG)
             ->assertSee('Request early access')
             ->assertDontSee(self::LIVE_INTRO)
             ->assertDontSee(self::LIVE_TAG)
@@ -285,7 +300,7 @@ class AiPagesTest extends TestCase
             ->assertSee(self::LIVE_INTRO)
             ->assertSee('href="'.url('/pricing').'"', false)
             ->assertSee('See pricing')
-            ->assertDontSee('Early access')
+            ->assertDontSee(self::NOT_LIVE_TAG)
             ->assertDontSee('early access')
             ->assertDontSee('Request early access')
             ->assertDontSee('None of them are live yet');
@@ -293,7 +308,7 @@ class AiPagesTest extends TestCase
         // Not released: only a helper that works from the company's own records, and only once its module is in.
         $this->assertOnlyLandedCards($page, self::CODE_ONLY);
 
-        $this->get('/')->assertOk()->assertSee(self::LIVE_TAG)->assertDontSee('Early access');
+        $this->get('/')->assertOk()->assertSee(self::LIVE_TAG)->assertDontSee(self::NOT_LIVE_TAG);
 
         $this->get('/pricing')->assertOk()
             ->assertSee(self::PRICING_AGENTS)
@@ -316,20 +331,26 @@ class AiPagesTest extends TestCase
         $this->assertStringStartsWith('Enterprise', config('buildos.plans.enterprise.label'));
     }
 
-    public function test_a_reader_or_helper_is_shown_only_once_its_route_is_deployed(): void
+    public function test_a_helper_is_shown_once_its_route_is_deployed_and_a_reader_once_its_kind_is(): void
     {
         $this->connect();
         $this->release();
-        $this->deployReaderKinds();
 
         $this->assertEqualsCanonicalizing([...self::BUILT_ROUTES, ...self::NOT_BUILT_ROUTES, AiOffer::VOICE_ROUTE], array_values(self::CARD_ROUTES), 'Every card is listed with the route it waits for.');
         $this->assertEqualsCanonicalizing([...self::CODE_ONLY, ...self::NEEDS_MODEL, 'Voice DPR'], array_keys(self::CARD_ROUTES));
 
-        // Before anything is stood in for, the page shows the modules that have really landed, and no other.
-        $waiting = $this->notLanded(['RA bill pre-check', 'Rate helper', 'Home-owner pack', 'Challan and bill photo', 'Tender reader', 'Voice DPR']);
+        // Before anything is stood in for, the page shows the helpers that have really landed, and no reader.
         $this->assertOnlyLandedCards($this->get('/ai')->assertOk(), [...self::CODE_ONLY, ...self::NEEDS_MODEL]);
 
-        $this->deploy('boq-scans.create');
+        // A route by a reader's design name shows nothing: a reader's card waits for its kind, as every other place does.
+        $this->deploy(...self::NOT_BUILT_ROUTES);
+        $page = $this->get('/ai')->assertOk()->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false);
+
+        foreach ([...self::NEEDS_MODEL, 'Voice DPR'] as $card) {
+            $page->assertDontSee($card);
+        }
+
+        $this->deployReaderKinds();
 
         $page = $this->get('/ai')->assertOk()
             ->assertSee('<h2 class="text-[30px]">Readers</h2>', false)
@@ -337,13 +358,10 @@ class AiPagesTest extends TestCase
             ->assertSee('Hindrance register and letters')
             ->assertSee('Keeps a dated register from your daily reports')
             ->assertSee('Scanned BOQ reader')
-            ->assertSee('you confirm every line before anything is saved');
+            ->assertSee('you confirm every line before anything is saved')
+            ->assertDontSee('Voice DPR');
 
-        foreach ($waiting as $card) {
-            $page->assertDontSee($card);
-        }
-
-        foreach ($this->landed(['RA bill pre-check', 'Rate helper', 'Home-owner pack', 'Challan and bill photo', 'Tender reader']) as $card) {
+        foreach ([...self::NEEDS_MODEL, ...$this->landed(self::CODE_ONLY)] as $card) {
             $page->assertSee($card);
         }
     }
@@ -487,11 +505,14 @@ class AiPagesTest extends TestCase
         $this->release();
         $this->deploy(AiOffer::VOICE_ROUTE);
 
-        // Voice counts as a reader by its route, so the readers are on; its card waits for the acceptance test.
-        $this->assertTrue(app(AiOffer::class)->readersOn());
+        // Voice counts as a reader only once the acceptance test is recorded, for this card and for every other place.
+        $this->assertFalse(app(AiOffer::class)->readersOn());
         $this->get('/ai')->assertOk()->assertDontSee('Voice DPR')->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false)->assertSee(self::HELPERS);
+        $this->get('/pricing')->assertOk()->assertSee(self::PRICING_AGENTS)->assertDontSee('readers');
 
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
+        $this->assertTrue(app(AiOffer::class)->readersOn());
+        $this->get('/pricing')->assertOk()->assertSee(self::PRICING_READERS);
 
         $this->get('/ai')->assertOk()
             ->assertSee('<h2 class="text-[30px]">Readers</h2>', false)
@@ -525,17 +546,19 @@ class AiPagesTest extends TestCase
         $this->get('/pricing')->assertOk()->assertSee(self::PRICING_AGENTS)->assertDontSee('readers');
         $this->release();
 
-        // The voice endpoint counts as a reader too, as it does for the company's consent switch.
+        // The voice endpoint counts as a reader too once the acceptance test is recorded, as it does for the company's consent switch.
         config(['modules.boq_scan.read_kinds' => []]);
         $this->get('/pricing')->assertOk()->assertSee(self::PRICING_AGENTS)->assertDontSee('readers');
         $this->deploy(AiOffer::VOICE_ROUTE);
+        $this->get('/pricing')->assertOk()->assertSee(self::PRICING_AGENTS)->assertDontSee('readers');
+        $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
         $this->get('/pricing')->assertOk()->assertSee(self::PRICING_READERS);
     }
 
     public function test_the_home_page_uses_the_same_agent_lines_and_an_answer_the_agent_can_give(): void
     {
         $page = $this->get('/')->assertOk()
-            ->assertSee('Early access')
+            ->assertSee(self::NOT_LIVE_TAG)
             ->assertSee('These are built on your BOQ, measurements and bills.')
             ->assertSee('Tower B मध्ये या महिन्यात किती काँक्रीट मोजले गेले?')
             ->assertSee('The 4 measurement entries are linked below.')
@@ -676,7 +699,7 @@ class AiPagesTest extends TestCase
      */
     public function test_the_tag_intro_button_and_pricing_line_agree_in_each_key_state_in_every_language(): void
     {
-        $early = ['Early access', 'Request early access', self::NOT_LIVE_INTRO, self::PRICING_NOT_LIVE];
+        $early = [self::NOT_LIVE_TAG, 'Request early access', self::NOT_LIVE_INTRO, self::PRICING_NOT_LIVE];
         $live = [self::LIVE_TAG, self::LIVE_INTRO];
         $words = fn (array $lines, string $locale) => array_map(fn (string $line) => __($line, [], $locale), $lines);
 
@@ -706,7 +729,28 @@ class AiPagesTest extends TestCase
                     $pricing->assertDontSee($line);
                 }
 
-                $home->assertSee(__($key ? self::LIVE_TAG : 'Early access', [], $locale));
+                $home->assertSee(__($key ? self::LIVE_TAG : self::NOT_LIVE_TAG, [], $locale));
+
+                // The contact page offers early access only while the agents cannot run, in its text, its form and its search description.
+                $this->asNewVisitor();
+                $contact = $this->get($prefix.'/contact')->assertOk();
+                $brand = ['brand' => config('buildos.brand')];
+
+                foreach ($key ? self::CONTACT_LIVE : self::CONTACT_EARLY as $line) {
+                    $contact->assertSee(__($line, $brand, $locale));
+                }
+
+                // The other state's line and description; its short topic is read from the form's option below.
+                foreach ([0, 2] as $index) {
+                    $contact->assertDontSee(__(($key ? self::CONTACT_EARLY : self::CONTACT_LIVE)[$index], $brand, $locale));
+                }
+
+                $this->assertMatchesRegularExpression('/<option value="ai_early_access"[^>]*>'.preg_quote(e(__($key ? self::CONTACT_LIVE[1] : self::CONTACT_EARLY[1], [], $locale)), '/').'<\/option>/u', (string) $contact->getContent());
+
+                // The tag above the cards speaks of the agents only: the helpers under it are neither early access nor
+                // limited to the Business and Enterprise plans.
+                $this->assertStringStartsWith('AI agents ', app(AiOffer::class)->tag());
+                $ai->assertSee('<p class="tag-soon">'.e(__(app(AiOffer::class)->tag(), [], $locale)).'</p>', false);
                 $pricing->assertSee(__($key ? self::PRICING_AGENTS : self::PRICING_NOT_LIVE, [], $locale));
 
                 // The agents' own lines are the same on the home page in both states.
@@ -719,10 +763,15 @@ class AiPagesTest extends TestCase
             }
 
             if ($key) {
-                foreach (['/ai', '/', '/pricing'] as $path) {
-                    $this->asNewVisitor();
-                    $html = (string) $this->get($path)->assertOk()->getContent();
-                    $this->assertDoesNotMatchRegularExpression('/early access|not live yet|not part of these plans yet/i', $html, "{$path} with a key");
+                // No public page says early access or not live next to the working agents, in any language.
+                foreach (['en' => '', 'hi' => '/hi', 'mr' => '/mr'] as $locale => $prefix) {
+                    $early = implode('|', array_map(fn (string $line) => preg_quote(__($line, [], $locale), '/'), ['early access', 'Early access', 'Request early access', 'AI agent early access', self::NOT_LIVE_TAG]));
+
+                    foreach (['/ai', '/', '/pricing', '/contact'] as $path) {
+                        $this->asNewVisitor();
+                        $html = (string) $this->get($prefix.$path)->assertOk()->getContent();
+                        $this->assertDoesNotMatchRegularExpression('/early access|not live yet|not part of these plans yet|'.$early.'/iu', $html, "{$prefix}{$path} with a key");
+                    }
                 }
             }
         }
