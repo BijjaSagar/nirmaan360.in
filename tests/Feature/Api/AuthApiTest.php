@@ -32,6 +32,7 @@ class AuthApiTest extends ApiTestCase
             'asset.log', 'checklist.fill', 'procurement.stock',
             'contractor_portal.view',
             'alerts.view', 'alerts.manage',
+            'procurement.view',
         ], array_keys($can));
         $this->assertFalse($can['money.view']);
         $this->assertTrue($can['progress.create']);

@@ -59,6 +59,11 @@ class DeliveryChallan extends Model
         return $this->belongsTo(MaterialUnit::class, 'unit_id');
     }
 
+    public function billAttacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'bill_attached_by');
+    }
+
     public function shortDeliveries(): HasMany
     {
         return $this->hasMany(MaterialShortDelivery::class)->orderBy('id');

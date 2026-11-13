@@ -53,6 +53,7 @@ class MoneyVisibilityTest extends TestCase
         'ratelib.search' => ['q' => 'rcc'],
         'reports.xlsx' => ['report' => 'boq_ledger'],
         'reports.pdf' => ['report' => 'boq_ledger'],
+        'api/v1/projects/{project}/material-control/bills' => ['show' => 'attached'],
     ];
 
     /**
@@ -106,6 +107,8 @@ class MoneyVisibilityTest extends TestCase
         'api/v1/sync/pull' => ['boq_rate', 'other_wallet'],
         'api/v1/projects/{project}/petty-cash' => ['other_wallet'],
         'api/v1/approvals' => ['bill_net'],
+        'api/v1/delivery-challans/{deliveryChallan}' => ['challan_bill'],
+        'api/v1/projects/{project}/material-control/bills' => ['challan_bill'],
     ];
 
     protected function setUp(): void
