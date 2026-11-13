@@ -194,10 +194,14 @@ class BoqReadKind implements DescribesTrialResult, ReadKind
         ];
     }
 
-    /** A page the reader calls blank is not charged. The second reading always is. */
+    /**
+     * A page the reader calls blank, and on which it found no rows, is not charged. An answer that
+     * calls the page blank but lists rows is charged like any other page, since its rows are staged
+     * for the review. The second reading always is.
+     */
     public function chargeable(DocumentReadPage $page): bool
     {
-        return ! ($page->pass === self::ROWS && ($page->result['page_kind'] ?? null) === self::PAGE_BLANK);
+        return ! ($page->pass === self::ROWS && ($page->result['page_kind'] ?? null) === self::PAGE_BLANK && ($page->result['rows'] ?? []) === []);
     }
 
     public function pageRead(DocumentReadPage $page): void

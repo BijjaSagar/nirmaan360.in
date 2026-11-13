@@ -130,7 +130,7 @@ class BoqScanTranslationsTest extends BoqScanTestCase
         }
 
         foreach ($this->moduleStrings() as $line) {
-            $this->assertDoesNotMatchRegularExpression('/\b(verified|guarantee|accurate|correct reading|found on the page)\b/i', $line, $line);
+            $this->assertDoesNotMatchRegularExpression('/\b(verified|guarantee|accurate|correct reading|found on the page|free credits?)\b/i', $line, $line);
         }
 
         // The instructions the reader gets are the same for every company and name none.

@@ -26,7 +26,8 @@
 @endif
 
 @can('boq.manage')
-    @include('modules.boq_scan.partials.kept-pdf', ['minutes' => $scanScreen->limits()['minutes']])
+    {{-- The copy is kept whether or not the scan reader is installed, so nothing here asks for the reader kind. --}}
+    @include('modules.boq_scan.partials.kept-pdf', ['minutes' => \App\Services\Reports\BoqPdfImport::TTL_MINUTES])
     <script>
         (() => {
             const form = document.getElementById('boq-import-form');

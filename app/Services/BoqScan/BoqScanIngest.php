@@ -55,7 +55,13 @@ class BoqScanIngest
     /**
      * Works out again, for every row a person did not type over, its item code, its section and an
      * add-on's percentage, in the order the rows stand. A single letter under a numbered line takes
-     * that line's number; a heading with no item number names the section of the rows below it.
+     * that line's number, also when that line is a heading with no figures of its own ("3 Earthwork
+     * in excavation" over "(a)" and "(b)"); a heading with no item number names the section of the
+     * rows below it and ends the lettered run.
+     *
+     * The code says which BOQ line a row becomes and the section is written with it, so a confirmed
+     * row whose code or section changes here is no longer confirmed: a person confirms it again as
+     * it now stands.
      */
     public function derive(DocumentRead $read): void
     {
@@ -90,9 +96,17 @@ class BoqScanIngest
                     $section = mb_substr(trim((string) $row->description), 0, 120);
                 }
 
-                $parent = null;
+                // A numbered head the lettered rows below belong to; any other heading ends the run.
+                $parent = $code !== null && self::numbered($code) ? $code : null;
             } elseif ($code !== null && self::numbered($code) && ItemNumber::letters((string) $row->item_no_raw) === null) {
                 $parent = $code;
+            }
+
+            $moved = (array_key_exists('code', $changes) && $changes['code'] !== $row->code)
+                || (array_key_exists('section', $changes) && $changes['section'] !== $row->section);
+
+            if ($moved && $row->confirmed_at !== null) {
+                $changes += ['confirmed_by' => null, 'confirmed_at' => null, 'confirmed_mode' => null];
             }
 
             $this->saveChanged($row, $changes);

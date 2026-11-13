@@ -395,6 +395,39 @@ class BoqScanScreensTest extends BoqScanTestCase
         Http::assertNothingSent();
     }
 
+    public function test_the_boq_in_excel_page_keeps_a_copy_of_a_chosen_pdf_while_no_scan_reader_is_installed(): void
+    {
+        $this->hookPartials();
+        // The reader taken out again: the hook partials stay, and the page must not depend on the kind.
+        config(['modules.boq_scan.read_kinds' => [], 'modules.reader_stand_ins.read_kinds' => []]);
+        $this->assertFalse(app(BoqScanScreen::class)->installed());
+        $pm = $this->member($this->organization, 'pm');
+
+        $this->actingAs($pm)->get(route('boq.excel.index', $this->project))->assertOk()
+            ->assertDontSee('data-boq-scan-offer', false)
+            ->assertSee('window.BoqScanKeptPdf', false)
+            ->assertSee('boq-pdf:'.$pm->id.':'.$this->project->id, false);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_the_price_of_a_scan_calls_the_credits_left_to_spend_available_in_every_language(): void
+    {
+        $this->withScanScreen();
+        $url = route('boq-scans.create', $this->project);
+
+        $this->actingAs($this->owner)->get($url)->assertOk()
+            ->assertSee('Credits available: :credits.', false)
+            ->assertDontSee('Free credits', false);
+
+        // The same words in Hindi and Marathi: credits that can be used now, not credits given at no charge.
+        foreach (['hi' => 'उपलब्ध क्रेडिट: :credits।', 'mr' => 'उपलब्ध क्रेडिट: :credits.'] as $locale => $line) {
+            $this->assertSame($line, __('Credits available: :credits.', [], $locale));
+        }
+
+        Http::assertNothingSent();
+    }
+
     public function test_the_pages_of_a_text_pdf_are_drawn_beside_its_preview_from_the_browsers_own_copy(): void
     {
         $this->hookPartials();

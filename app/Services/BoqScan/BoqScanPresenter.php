@@ -173,7 +173,7 @@ class BoqScanPresenter
             ])->values()->all(),
             'parts' => (array) ($info['parts'] ?? []),
             'extra_amount_rows' => array_values((array) ($info['extra_amount_rows'] ?? [])),
-            'no_lines' => isset($info['no_lines']),
+            'no_lines' => ScanReconciler::noLines($info, $state->live->where('page_no', $number)),
             'flags' => $this->flags($state->pageFlags($number)),
             'confirm_clean' => $state->pageMayConfirmClean($number) && $state->cleanRowsOf($number)->isNotEmpty(),
             'clean_rows' => $state->cleanRowsOf($number)->count(),
@@ -184,7 +184,7 @@ class BoqScanPresenter
     private function pages(DocumentRead $read, ScanState $state): array
     {
         $readings = DocumentReadPage::withoutGlobalScopes()->where('organization_id', $read->organization_id)->where('document_read_id', $read->id)
-            ->where('pass', BoqReadKind::ROWS)->get(['id', 'page_no', 'status']);
+            ->where('pass', BoqReadKind::ROWS)->get(['id', 'page_no', 'part', 'status']);
         $total = max((int) $read->pages_total, (int) $readings->max('page_no'), (int) $state->live->max('page_no'));
         $pages = [];
 
@@ -207,9 +207,16 @@ class BoqScanPresenter
         return $pages;
     }
 
-    /** One word for where the first reading of a page stands: read when any part of it was read. */
+    /**
+     * One word for where the first reading of a page stands: failed while a part of it failed and
+     * was not read since, else read when any part of it was read.
+     */
     private function statusOf($readings): ?string
     {
+        if (ScanReconciler::unreadPart($readings) !== null) {
+            return DocumentReadPage::FAILED;
+        }
+
         foreach (self::STATUSES as $status) {
             if ($readings->contains(fn ($page) => $page->status === $status)) {
                 return $status;

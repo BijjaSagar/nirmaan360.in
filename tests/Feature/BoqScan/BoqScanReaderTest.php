@@ -128,6 +128,23 @@ class BoqScanReaderTest extends BoqScanTestCase
         $this->assertSame(DocumentReadPage::READ, $blank->fresh()->status);
     }
 
+    public function test_an_answer_that_calls_a_page_blank_but_lists_rows_is_charged_like_any_page(): void
+    {
+        $read = $this->readAt();
+        $page = $this->storedPage($read, 1);
+        // Text printed on the page may steer the reader to call it blank while it still returns the table's rows.
+        $this->fakeReader([$this->reply(['page_kind' => 'blank', 'column_order' => [], 'rows' => $this->rowsForm()['rows']])]);
+
+        $this->readPage($page);
+
+        $this->assertSame(DocumentReadPage::READ, $page->fresh()->status);
+        $this->assertGreaterThan(0, (float) $page->fresh()->credits, 'Rows that can be written to the BOQ are never read for free.');
+        $this->assertCount(1, $this->usageLines($this->organization));
+        $this->assertSame(1, BoqScanRow::withoutGlobalScopes()->where('document_read_id', $read->id)->count());
+        // It gets no second reading, as any page that is not a table: its lines carry the unverified-amount tick.
+        $this->assertSame(0, DocumentReadPage::withoutGlobalScopes()->where('document_read_id', $read->id)->where('pass', 'amounts')->count());
+    }
+
     public function test_an_unusable_answer_is_not_charged_and_its_cost_comes_off_the_hold(): void
     {
         $read = $this->readAt();

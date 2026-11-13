@@ -4,6 +4,7 @@ namespace Tests\Feature\BoqScan;
 
 use App\Models\BoqScanRow;
 use App\Models\DocumentRead;
+use App\Models\DocumentReadPage;
 use App\Services\BoqScan\AmountPairing;
 use App\Services\BoqScan\BoqScanIngest;
 use App\Services\BoqScan\BoqScanReview;
@@ -149,6 +150,70 @@ class BoqScanChecksTest extends BoqScanTestCase
         $this->assertContains(ScanFlag::AMOUNT_MISMATCH, $this->codesOn($read, '1'));
     }
 
+    public function test_lettered_rows_under_a_numbered_heading_with_no_figures_take_its_number(): void
+    {
+        $read = $this->scan();
+        $this->stage($read, 1, [
+            ['3', 'Earthwork in excavation for foundations', '', '', '', 'heading'],
+            ['(a)', 'In ordinary soil', 'cum', '120.500', '450.00'],
+            ['(b)', 'In hard murum', 'cum', '40.000', '610.00'],
+            ['4', 'Cement concrete', '', '', '', 'heading'],
+            ['(a)', 'PCC 1:4:8 below footings', 'cum', '12.000', '5200.00'],
+            ['(b)', 'RCC M20 in footings', 'cum', '18.000', '7400.00'],
+            ['', 'STEEL WORK', '', '', '', 'heading'],
+            ['(c)', 'Extra for lifts', 'kg', '100.000', '12.00'],
+        ], null);
+
+        $rows = BoqScanRow::withoutGlobalScopes()->where('document_read_id', $read->id)->orderBy('sort')->get();
+        $this->assertSame(['3', '3a', '3b', '4', '4a', '4b', null, 'c'], $rows->pluck('code')->all());
+        // Numbered the way the Excel import numbers them, so no code repeats.
+        $this->assertNotContains(ScanFlag::CODE_PROBLEM, $this->codesOn($read, $rows[1]));
+        $this->assertNotContains(ScanFlag::CODE_PROBLEM, $this->codesOn($read, $rows[4]));
+
+        // A head the reader called a line, with no figures, made a heading by a person: the codes stay.
+        $item = $this->scan();
+        $this->stage($item, 1, [
+            ['3', 'Earthwork in excavation for foundations', '', '', ''],
+            ['(a)', 'In ordinary soil', 'cum', '120.500', '450.00'],
+        ], null);
+        $this->assertContains(ScanFlag::MISSING_REQUIRED, $this->codesOn($item, '3'));
+        $this->review()->update($item, $this->row($item, '3'), ['kind' => BoqScanRow::HEADING], $this->owner);
+        $this->assertSame('3a', $this->row($item, '(a)')->code);
+    }
+
+    public function test_a_confirmed_row_whose_code_or_section_is_worked_out_anew_is_no_longer_confirmed(): void
+    {
+        $read = $this->scan();
+        $this->stage($read, 1, [
+            ['', 'EARTHWORK', '', '', '', 'heading'],
+            ['1', 'Excavation in ordinary soil', 'cum', '120.500', '450.00'],
+            ['2', 'Filling with murum in layers', 'cum', '80.000', '300.00'],
+            ['3', 'Earthwork in excavation for foundations', '', '', ''],
+            ['(a)', 'In ordinary soil', 'cum', '12.000', '450.00'],
+            ['(b)', 'In hard murum', 'cum', '4.000', '610.00'],
+        ], [['1', '54,225.00'], ['2', '24,000.00'], ['', '', 'read', 3], ['(a)', '5,400.00', 'read', 4], ['(b)', '2,440.00', 'read', 5]]);
+        $this->assertSame('3a', $this->row($read, '3a')->code);
+
+        foreach (['1', '2', '3a', '3b'] as $code) {
+            $this->review()->confirmRow($read, $this->row($read, $code), $this->owner);
+        }
+
+        // Row 3 has no figures, so it is left out: its lettered rows now hang from row 2 and must be confirmed again as they stand.
+        $this->review()->exclude($read, $this->row($read, '3'), $this->owner);
+        $this->assertSame(['2a', '2b'], [$this->row($read, '(a)')->code, $this->row($read, '(b)')->code]);
+        $this->assertNull($this->row($read, '(a)')->confirmed_at);
+        $this->assertNull($this->row($read, '(b)')->confirmed_mode);
+        $this->assertContains(ScanFlag::UNCONFIRMED_ROW, $this->codesOn($read, '(a)'));
+        $this->assertNotNull($this->row($read, '1')->confirmed_at, 'A row whose code and section stand stays confirmed.');
+        $this->assertFalse($this->state($read)->summary['can_confirm']);
+
+        // The heading above is corrected: the section of every row below it changes, and so does what they were confirmed as.
+        $heading = BoqScanRow::withoutGlobalScopes()->where('document_read_id', $read->id)->where('kind', BoqScanRow::HEADING)->sole();
+        $this->review()->update($read, $heading, ['description' => 'EARTHWORK IN FOUNDATIONS'], $this->owner);
+        $this->assertSame('EARTHWORK IN FOUNDATIONS', $this->row($read, '1')->section);
+        $this->assertNull($this->row($read, '1')->confirmed_at);
+    }
+
     public function test_an_override_needs_quantity_and_rate_typed_first(): void
     {
         $read = $this->scan();
@@ -247,6 +312,40 @@ class BoqScanChecksTest extends BoqScanTestCase
         $this->review()->acknowledge($read, ['flag' => ScanFlag::COLUMNS_SUSPECT, 'page_no' => 1], $this->owner);
         $this->assertNotContains(ScanFlag::COLUMNS_SUSPECT, array_column($this->state($read)->pageFlags(1), 'code'));
         $this->assertFalse($this->state($read)->pageMayConfirmClean(1), 'Checked, the page is still confirmed one line at a time.');
+    }
+
+    public function test_rows_brought_back_on_a_page_marked_as_having_no_lines_are_checked_like_any_other(): void
+    {
+        $read = $this->scan();
+        $this->stage($read, 1, [
+            ['1', 'Excavation in ordinary soil', 'cum', '120.50', '450.000'],
+            ['2', 'Filling with murum in layers', 'cum', '80.00', '300.000'],
+            ['3', 'PCC 1:4:8 below footings', 'cum', '12.00', '520.000'],
+        ], [['1', '54,225.00'], ['2', '24,000.00'], ['3', '6,240.00']]);
+        $this->assertContains(ScanFlag::COLUMNS_SUSPECT, array_column($this->state($read)->pageFlags(1), 'code'));
+
+        // Marked by mistake: the rows are left out and nothing on the page stops.
+        $this->review()->noLines($read, 1, $this->owner);
+        $this->assertSame([], $this->state($read)->pageFlags(1));
+
+        // The rows are brought back as lines: quantity and rate are in doubt again until a person checks them.
+        foreach (['1', '2', '3'] as $code) {
+            $this->review()->update($read, $this->row($read, $code), ['kind' => BoqScanRow::ITEM], $this->owner);
+        }
+
+        $state = $this->state($read);
+        $this->assertContains(ScanFlag::COLUMNS_SUSPECT, array_column($state->pageFlags(1), 'code'));
+        $this->assertFalse($state->canConfirm($this->row($read, '1')));
+        $this->assertFalse($state->pageMayConfirmClean(1), 'A page once marked as having no lines is confirmed line by line.');
+        $this->actingAs($this->owner)->getJson(route('boq-scans.rows', [$read, 'page_no' => 1]))->assertOk()->assertJsonPath('page.no_lines', false);
+
+        // Every row left out again: the mark stands once more.
+        foreach (['1', '2', '3'] as $code) {
+            $this->review()->exclude($read, $this->row($read, $code), $this->owner);
+        }
+
+        $this->assertSame([], $this->state($read)->pageFlags(1));
+        $this->actingAs($this->owner)->getJson(route('boq-scans.rows', [$read, 'page_no' => 1]))->assertOk()->assertJsonPath('page.no_lines', true);
     }
 
     public function test_a_line_of_the_boq_that_has_records_keeps_its_unit_and_its_approved_quantity(): void
@@ -391,6 +490,56 @@ class BoqScanChecksTest extends BoqScanTestCase
         $this->assertSame(1, $this->state($read)->summary['pages_unresolved']);
 
         $this->review()->noLines($read, 2, $this->owner);
+        $this->assertSame(0, $this->state($read)->summary['pages_unresolved']);
+    }
+
+    public function test_a_page_read_as_two_halves_stops_while_one_half_could_not_be_read(): void
+    {
+        $read = $this->scan();
+        $this->cleanPage($read);
+        // Page 2 was cut off, so it was read as two halves: the whole page's reading is set aside, the top half is read and the bottom half fails.
+        $this->makePage($read, 2, ['pass' => 'rows', 'status' => DocumentReadPage::SUPERSEDED, 'fail_reason' => 'cut_off']);
+        $this->stage($read, 2, [
+            ['4', 'Brick masonry in CM 1:6', 'cum', '30.000', '6200.00'],
+            ['5', 'Plaster 12 mm in CM 1:4', 'sqm', '210.000', '310.00'],
+        ], [['4', '1,86,000.00'], ['5', '65,100.00']], part: 'top');
+        $bottom = $this->makePage($read, 2, ['pass' => 'rows', 'part' => 'bottom', 'part_top' => 450, 'part_height' => 550, 'image_height' => 2000, 'status' => DocumentReadPage::FAILED, 'fail_reason' => 'invalid_output']);
+        $this->confirmAll($read);
+
+        $state = $this->state($read);
+        $unresolved = collect($state->pageFlags(2))->firstWhere('code', ScanFlag::PAGE_UNRESOLVED);
+        $this->assertSame(['reason' => 'invalid_output'], $unresolved['params'] ?? null, 'A half that could not be read leaves the page unresolved.');
+        $this->assertSame(1, $state->summary['pages_unresolved']);
+        $this->assertFalse($state->summary['can_confirm']);
+        $this->assertSame([], $this->state($read)->pageFlags(1), 'A page read whole is not touched.');
+
+        // The review shows the page as not read, beside the reading of each half.
+        $page = $this->actingAs($this->owner)->getJson(route('boq-scans.rows', [$read, 'page_no' => 2]))->assertOk();
+        $page->assertJsonPath('page.status', DocumentReadPage::FAILED)->assertJsonPath('pages.1.status', DocumentReadPage::FAILED);
+
+        // The bottom half read again: the page is whole.
+        $cell = fn (string $raw) => ['raw' => $raw, 'state' => 'read'];
+        $bottom->forceFill(['status' => DocumentReadPage::READ, 'fail_reason' => null, 'result' => ['page_kind' => 'boq_table', 'column_order' => ['item_no', 'description', 'unit', 'qty', 'rate', 'amount'], 'rows' => [
+            ['row_no' => 1, 'kind' => 'item', 'y_top' => 100, 'y_bottom' => 160, 'item_no' => $cell('6'), 'description' => $cell('Waterproofing of the terrace'), 'unit' => $cell('sqm'), 'qty' => $cell('95.000'), 'rate' => $cell('540.00')],
+        ]]])->save();
+        $this->ingest($bottom, $read);
+        $this->assertSame('6', $this->row($read, '6')->code);
+        $this->assertNotContains(ScanFlag::PAGE_UNRESOLVED, array_column($this->state($read)->pageFlags(2), 'code'));
+        $this->assertSame(0, $this->state($read)->summary['pages_unresolved']);
+    }
+
+    public function test_a_half_that_failed_is_also_resolved_by_a_row_typed_by_hand(): void
+    {
+        $read = $this->scan();
+        $this->cleanPage($read);
+        $this->makePage($read, 2, ['pass' => 'rows', 'status' => DocumentReadPage::SUPERSEDED, 'fail_reason' => 'cut_off']);
+        $this->stage($read, 2, [['4', 'Brick masonry in CM 1:6', 'cum', '30.000', '6200.00']], [['4', '1,86,000.00']], part: 'top');
+        $this->makePage($read, 2, ['pass' => 'rows', 'part' => 'bottom', 'part_top' => 450, 'part_height' => 550, 'status' => DocumentReadPage::FAILED, 'fail_reason' => 'worker_lost']);
+        // A bottom half uploaded for a page that was never split does not count on page 1.
+        $this->makePage($read, 1, ['pass' => 'rows', 'part' => 'bottom', 'part_top' => 450, 'part_height' => 550, 'status' => DocumentReadPage::SKIPPED]);
+        $this->assertSame(1, $this->state($read)->summary['pages_unresolved']);
+
+        $this->review()->add($read, ['client_uuid' => (string) Str::uuid(), 'page_no' => 2, 'after_row_id' => $this->row($read, '4')->id, 'code' => '7', 'description' => 'Skirting in kota stone', 'unit' => 'm', 'qty' => '40', 'rate' => '180.00'], $this->owner);
         $this->assertSame(0, $this->state($read)->summary['pages_unresolved']);
     }
 

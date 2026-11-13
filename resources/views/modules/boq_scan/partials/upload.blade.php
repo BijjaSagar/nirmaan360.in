@@ -42,7 +42,7 @@
             'pagesLine' => __(':pages pages will be read, in about :minutes minutes.'),
             'estimate' => __('Estimated credits: :credits.'),
             'rupees' => __('About ₹:rupees.'),
-            'free' => __('Free credits: :credits.'),
+            'free' => __('Credits available: :credits.'),
             'notEnough' => __('Your credits cover :count of these pages now.'),
             'start' => __('Read :count pages'),
             'nothing' => __('No page is uploaded yet.'),

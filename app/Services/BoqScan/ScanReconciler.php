@@ -422,7 +422,9 @@ class ScanReconciler
             $clean[$number] = ! $suspect[$number] && $extras === [] && ! isset($info['no_lines']) && $onPage->isNotEmpty();
             $list = [];
 
-            if (isset($info['no_lines'])) {
+            // "No BOQ lines" stands only while every row of the page is left out. A row brought back
+            // is a line again, and the page's checks stand for it like on any other page.
+            if (self::noLines($info, $onPage)) {
                 $flags[$number] = [];
 
                 continue;
@@ -445,10 +447,9 @@ class ScanReconciler
                 }
             }
 
-            $anyRead = $readings->contains(fn ($page) => $page->status === DocumentReadPage::READ);
-            $failed = $readings->where('status', DocumentReadPage::FAILED)->sortByDesc('id')->first();
+            $failed = self::unreadPart($readings);
 
-            if (! $anyRead && $failed !== null && ! $onPage->contains(fn (BoqScanRow $row) => ! $row->fromReader())) {
+            if ($failed !== null && ! $onPage->contains(fn (BoqScanRow $row) => ! $row->fromReader())) {
                 $list[] = ScanFlag::make(ScanFlag::PAGE_UNRESOLVED, ScanFlag::BLOCK, ['reason' => (string) $failed->fail_reason]);
             }
 
@@ -474,6 +475,38 @@ class ScanReconciler
         }
 
         return ['flags' => $flags, 'clean' => $clean, 'suspect' => $suspect];
+    }
+
+    /**
+     * Whether a page stands as having no BOQ lines: a person said so and every row of it is still
+     * left out.
+     *
+     * @param  array<string, mixed>  $info  The page's review state.
+     * @param  Collection<int, BoqScanRow>  $onPage  The page's rows that are not left out.
+     */
+    public static function noLines(array $info, Collection $onPage): bool
+    {
+        return isset($info['no_lines']) && $onPage->isEmpty();
+    }
+
+    /**
+     * The failed first reading of a part of the page that no reading of the same part replaced, if
+     * any. Each part counts on its own: a page read as two halves is read only when both halves
+     * are. The whole page's reading set aside for its halves, and halves uploaded but never sent,
+     * do not count.
+     *
+     * @param  Collection<int, DocumentReadPage>  $readings  The page's first readings.
+     */
+    public static function unreadPart(Collection $readings): ?DocumentReadPage
+    {
+        return $readings->whereNotIn('status', [DocumentReadPage::SKIPPED, DocumentReadPage::SUPERSEDED])
+            ->groupBy(fn (DocumentReadPage $page) => (string) $page->part)
+            ->map(fn (Collection $part) => $part->contains(fn (DocumentReadPage $page) => $page->status === DocumentReadPage::READ)
+                ? null
+                : $part->where('status', DocumentReadPage::FAILED)->sortByDesc('id')->first())
+            ->filter()
+            ->sortByDesc('id')
+            ->first();
     }
 
     /**
