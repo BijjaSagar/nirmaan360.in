@@ -120,7 +120,7 @@
                     };
                     $tone = match (true) {
                         $left === null => 'text-ink-3',
-                        $entry['cited'] => 'text-ink',
+                        in_array($deadline->code, $entry['given'], true) => 'text-ink',
                         $left < 0 => 'text-laterite',
                         $left <= $near => 'text-[#8a6208]',
                         default => 'text-ink',

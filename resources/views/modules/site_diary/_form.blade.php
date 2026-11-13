@@ -2,20 +2,35 @@
     The form that makes an entry from daily reports, changes one ($editing), or corrects one that a
     letter cites ($correcting). It starts empty: no category, date or name is filled in for the user.
     A blank start or end takes the date of the first or last ticked report, and the hint says so.
+
+    When the form comes back with what the person sent (a refused save, or "Show" for other dates), every
+    box shows what they sent, an unticked one included. Only a form opened afresh shows the saved entry.
 --}}
 @php
     $with = $editing ?? $correcting;
+    // The form sends still_going_on every time, ticked or not, so finding it says the person's own input came back.
+    $returned = session()->hasOldInput('still_going_on');
     $value = fn (string $field) => old($field, $with?->{$field});
     $date = fn (string $field) => old($field, $with?->{$field}?->format('Y-m-d'));
-    $ticked = array_map('intval', (array) old('dpr_ids', $with ? $with->sources->pluck('dpr_id')->all() : []));
-    $ongoing = (bool) old('still_going_on', $with?->isOngoing() ?? false);
+    $ticked = array_map('intval', $returned ? (array) old('dpr_ids', []) : ($with ? $with->sources->pluck('dpr_id')->all() : []));
+    $ongoing = $returned ? (bool) old('still_going_on') : ($with?->isOngoing() ?? false);
     $listed = $candidates['reports']->pluck('id')->all();
     // Reports the entry cites that can no longer be chosen: removed, or with nothing under hindrances any more.
     $dropped = $with ? $with->sources->reject(fn ($source) => in_array((int) $source->dpr_id, $listed, true)) : collect();
     $back = route('site-diary.hindrances.index', $project);
 @endphp
 
-<form method="GET" action="{{ $back }}" class="mb-2 flex flex-wrap items-end gap-2 text-sm">
+{{-- "Show" sends the entry form along, so what was ticked and typed comes back with the reports of those dates. Without scripts it only changes the list. --}}
+<form method="GET" action="{{ $back }}" class="mb-2 flex flex-wrap items-end gap-2 text-sm" x-data="{
+    keep(event) {
+        const entry = document.getElementById('entry-form');
+        if (! entry) return;
+        event.preventDefault();
+        for (const name of ['from', 'to']) entry.elements.namedItem(name).value = event.target.elements.namedItem(name).value;
+        for (const name of ['from', 'to', 'show_reports']) entry.elements.namedItem(name).disabled = false;
+        entry.submit();
+    },
+}" x-on:submit="keep($event)">
     @if ($editing)<input type="hidden" name="edit" value="{{ $editing->id }}">@endif
     @if ($correcting)<input type="hidden" name="correct" value="{{ $correcting->id }}">@endif
     <x-field :label="__('Show reports from')">
@@ -37,6 +52,10 @@
     @if ($correcting)
         <input type="hidden" name="supersedes_id" value="{{ $correcting->id }}">
     @endif
+    {{-- Switched on only by "Show" above: then nothing is saved and the form comes back as it is. --}}
+    <input type="hidden" name="show_reports" value="1" disabled>
+    <input type="hidden" name="from" value="" disabled>
+    <input type="hidden" name="to" value="" disabled>
 
     <div class="card-head flex-wrap gap-2">
         <h2 class="card-title">
@@ -123,6 +142,7 @@
         </x-field>
 
         <label class="flex min-h-11 items-center gap-2 text-sm font-medium sm:col-span-2">
+            <input type="hidden" name="still_going_on" value="0">
             <input type="checkbox" name="still_going_on" value="1" class="size-5" x-model="ongoing" @checked($ongoing)>
             {{ __('Still going on. It has no end date yet and is counted up to today.') }}
         </label>

@@ -7,10 +7,12 @@ use App\Models\Hindrance;
 use App\Models\Party;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\SiteDiary\HindranceRegister;
 use App\Services\SiteDiary\NoticeDeadline;
 use App\Services\SiteDiary\NoticeDeadlines;
 use App\Services\SiteDiary\NoticePart;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use InvalidArgumentException;
 
@@ -317,6 +319,34 @@ class NoticeDeadlineTest extends SiteDiaryTestCase
 
         $this->hindrance(['started_on' => '2026-03-12', 'ended_on' => null]);
         $this->page()->assertSee('23 Mar 2026')->assertSee('Notice dates');
+    }
+
+    public function test_the_terms_are_read_once_for_a_whole_register_and_each_entry_gets_those_in_force_on_its_first_day(): void
+    {
+        $this->notice();
+        $this->notice(['code' => 'eot_notice', 'label' => 'Notice for extension of time', 'days' => 30, 'effective_from' => '2026-03-05']);
+        // Typed but not confirmed: it does not count.
+        $this->notice(['days' => 4, 'confirmed_by' => null, 'confirmed_at' => null]);
+        $entries = collect(['2026-03-01', '2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06', '2026-03-07'])
+            ->map(fn (string $day) => $this->hindrance(['started_on' => $day, 'ended_on' => null]));
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $found = app(NoticeDeadlines::class)->forMany($this->project, $entries);
+        $register = app(HindranceRegister::class)->entries($this->project, today());
+        $reads = collect(DB::getQueryLog())->filter(fn (array $query) => str_contains($query['query'], 'contract_terms'))->count();
+        DB::disableQueryLog();
+
+        $this->assertSame(2, $reads, 'One read for the seven entries, and one for the register page.');
+
+        foreach ($entries as $entry) {
+            $codes = array_map(fn (NoticeDeadline $deadline) => $deadline->code.' '.$deadline->date->toDateString(), $found[$entry->id]);
+            $this->assertSame($codes, array_map(fn (NoticeDeadline $deadline) => $deadline->code.' '.$deadline->date->toDateString(), $this->deadlines($entry)), 'The same as asking for the entry by itself.');
+            $this->assertSame($codes, array_map(fn (NoticeDeadline $deadline) => $deadline->code.' '.$deadline->date->toDateString(), $register->firstWhere('hindrance.id', $entry->id)['deadlines']));
+        }
+
+        $this->assertSame(['delay_notice 2026-03-15'], array_map(fn (NoticeDeadline $deadline) => $deadline->code.' '.$deadline->date->toDateString(), $found[$entries[3]->id]));
+        $this->assertSame(['eot_notice 2026-04-04', 'delay_notice 2026-03-16'], array_map(fn (NoticeDeadline $deadline) => $deadline->code.' '.$deadline->date->toDateString(), $found[$entries[4]->id]));
     }
 
     public function test_dates_are_worked_out_for_one_project_at_a_time(): void

@@ -216,6 +216,34 @@ class BillCheckHttpTest extends BillCheckTestCase
         $this->actingAs($this->pm)->postJson($url, ['flag_key' => 'T1:gst', 'remark' => 'Agreed on site'])->assertCreated()->assertJsonPath('flag_key', 'T1:gst');
     }
 
+    public function test_someone_who_may_not_see_money_gets_back_no_remark_of_another_person(): void
+    {
+        $check = $this->check($this->bill, $this->pm);
+        $url = route('bill-checks.acks.store', $check);
+        // Made up for the test: a remark with an amount in it, as people write them.
+        $remark = 'Client agreed, Rs 4,12,500 held back';
+
+        $this->actingAs($this->qs)->postJson($url, ['flag_key' => 'T1:tds', 'remark' => $remark])->assertCreated()->assertJsonPath('remark', $remark);
+
+        // A custom role that makes bills but sees no money: the card leaves the remark out, and so does acknowledging again.
+        $clerk = $this->holding(['project.view', 'ra_bill.view', 'ra_bill.generate']);
+        $this->actingAs($clerk);
+        $card = $this->getJson(route('bill-checks.show', $this->bill))->assertOk();
+        $this->assertNull(collect($card->json('check.flags'))->firstWhere('key', 'T1:tds')['ack']['remark']);
+
+        $again = $this->postJson($url, ['flag_key' => 'T1:tds', 'remark' => 'Anything at all'])->assertOk()
+            ->assertJsonPath('flag_key', 'T1:tds')->assertJsonPath('remark', null)->assertJsonPath('user_id', $this->qs->id);
+        $this->assertStringNotContainsString('4,12,500', $again->getContent());
+        $this->assertSame(1, BillCheckAck::withoutGlobalScopes()->where('flag_key', 'T1:tds')->count());
+
+        // What they write themselves comes back to them.
+        $this->postJson($url, ['flag_key' => 'T1:gst', 'remark' => 'Seen on site'])->assertCreated()->assertJsonPath('remark', 'Seen on site');
+        $this->postJson($url, ['flag_key' => 'T1:gst', 'remark' => 'Pressed twice'])->assertOk()->assertJsonPath('remark', 'Seen on site');
+
+        // Someone who may see money reads every remark.
+        $this->actingAs($this->pm)->postJson($url, ['flag_key' => 'T1:tds', 'remark' => 'Another remark'])->assertOk()->assertJsonPath('remark', $remark);
+    }
+
     public function test_only_a_finding_of_that_check_that_needs_it_can_be_acknowledged(): void
     {
         // Three measurements with no photo give a note beside the four findings to tick.

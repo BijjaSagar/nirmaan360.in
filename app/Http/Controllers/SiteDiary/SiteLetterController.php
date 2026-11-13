@@ -33,6 +33,8 @@ class SiteLetterController extends Controller
             'seesMoney' => Money::visible($user),
             'today' => today(),
             ...$this->names(),
+            // The languages a new letter may be prepared in. Letters already prepared keep theirs, named from the full list.
+            'offered' => $this->letters->languages(),
         ]);
     }
 

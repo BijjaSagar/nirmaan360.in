@@ -213,6 +213,15 @@ class ContractTermsWordingTest extends ContractTermsTestCase
 
         $this->actingAs($this->engineer)->get(route('projects.show', $this->project))->assertOk()->assertDontSee($link, false)->assertDontSee('Contract terms');
 
+        // The page also needs money.view, which a custom role can leave out. The menu then leaves the page out too.
+        $noMoney = $this->holding(['project.view', 'contract_terms.view', 'contract_terms.manage']);
+        $this->actingAs($noMoney)->get($link)->assertForbidden();
+        $this->get(route('projects.show', $this->project))->assertOk()->assertDontSee($link, false)->assertDontSee('Contract terms');
+
+        $withMoney = $this->holding(['project.view', 'contract_terms.view', 'money.view']);
+        $this->actingAs($withMoney)->get($link)->assertOk();
+        $this->get(route('projects.show', $this->project))->assertOk()->assertSee($link, false)->assertSee('Contract terms');
+
         $free = $this->tenant('Free Co', 'free');
         $project = $this->makeProject($free);
         $this->actingAs($this->member($free, 'owner'))->get(route('projects.show', $project))->assertOk()->assertDontSee(route('contract-terms.index', $project), false);

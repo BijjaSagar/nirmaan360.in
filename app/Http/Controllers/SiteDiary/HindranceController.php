@@ -33,8 +33,9 @@ class HindranceController extends Controller
         $editing = $canMake ? $this->entryOf($project, $request->query('edit'), locked: false) : null;
         $correcting = $canMake && $editing === null ? $this->entryOf($project, $request->query('correct'), locked: true) : null;
 
-        $day = fn (string $key) => is_string($request->query($key)) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->query($key)) === 1 ? $request->query($key) : null;
-        $shown = ['from' => $day('from'), 'to' => $day('to')];
+        $shown = ['from' => self::day($request->query('from')), 'to' => self::day($request->query('to'))];
+        // Reports ticked on the form a moment ago stay listed when it comes back: after a refused save, or after showing other dates.
+        $kept = array_values(array_filter(array_map(fn ($id) => filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]), (array) $request->old('dpr_ids', []))));
 
         $seesTerms = $user->can('contract_terms.view') && Money::visible($user)
             && $user->organization->allowsFeature('billing') && Route::has('contract-terms.index');
@@ -44,7 +45,7 @@ class HindranceController extends Controller
             'entries' => $entries,
             'total' => $register->total($entries->where('counts', true)->pluck('hindrance'), $today),
             'noticeTerms' => $deadlines->entered($project),
-            'candidates' => $canMake ? $register->candidates($project, $shown['from'], $shown['to'], $editing ?? $correcting) : null,
+            'candidates' => $canMake ? $register->candidates($project, $shown['from'], $shown['to'], $editing ?? $correcting, $kept) : null,
             'shown' => $shown,
             'editing' => $editing,
             'correcting' => $correcting,
@@ -63,6 +64,10 @@ class HindranceController extends Controller
 
     public function store(Request $request, Project $project): RedirectResponse
     {
+        if ($request->has('show_reports')) {
+            return $this->showReports($request, $project, null);
+        }
+
         $hindrance = $this->hindrances->create($project, $request->validate($this->hindrances->rules($project, $request->all())), $request->user());
 
         return redirect()->to(route('site-diary.hindrances.index', $project).'#hindrance-'.$hindrance->id)
@@ -72,6 +77,11 @@ class HindranceController extends Controller
     public function update(Request $request, Hindrance $hindrance): RedirectResponse
     {
         $project = $this->projectOf($hindrance);
+
+        if ($request->has('show_reports')) {
+            return $this->showReports($request, $project, $hindrance);
+        }
+
         $this->hindrances->update($hindrance, $request->validate($this->hindrances->rules($project, $request->all(), $hindrance)), $request->user());
 
         return redirect()->to(route('site-diary.hindrances.index', $project).'#hindrance-'.$hindrance->id)
@@ -92,6 +102,31 @@ class HindranceController extends Controller
         $this->hindrances->dismiss($hindrance);
 
         return back()->with('success', __('Entry dismissed. It stays in the register and is no longer counted.'));
+    }
+
+    /**
+     * The form's "Show" for daily reports of other dates. Nothing is saved: the register opens again with
+     * the reports of those dates listed, and with everything the person ticked and typed still in the form.
+     */
+    private function showReports(Request $request, Project $project, ?Hindrance $editing): RedirectResponse
+    {
+        $correcting = $request->input('supersedes_id');
+
+        $query = array_filter([
+            'edit' => $editing?->id,
+            'correct' => $editing === null && is_string($correcting) && ctype_digit($correcting) ? $correcting : null,
+            'from' => self::day($request->input('from')),
+            'to' => self::day($request->input('to')),
+        ]);
+
+        return redirect()->to(route('site-diary.hindrances.index', [$project, ...$query]).'#entry-form')
+            ->withInput($request->except(['_token', '_method', 'from', 'to', 'show_reports']));
+    }
+
+    /** A day as the date fields send it, or null. */
+    private static function day(mixed $value): ?string
+    {
+        return is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : null;
     }
 
     /** An entry outlives its project only as a record: once the project is removed, it cannot be changed. */

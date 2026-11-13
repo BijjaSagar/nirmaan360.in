@@ -6,18 +6,42 @@ use App\Models\Alert;
 use App\Models\ContractTerm;
 use App\Models\Hindrance;
 use App\Models\Project;
+use App\Models\SiteLetter;
+use App\Models\SiteLetterHindrance;
 use App\Services\SiteAlerts\AlertEngine;
+use App\Services\SiteDiary\HindranceRegister;
+use App\Services\SiteDiary\Hindrances;
 use App\Services\SiteDiary\NoticeDeadlineSource;
+use App\Services\SiteDiary\SiteLetters;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * The reminder of a notice date. The notice periods (11 and 4 days) are invented for the test; the
- * reminder window is the app's own setting in config/modules/site_diary.php.
+ * The reminder of a notice date. The notice periods (11, 9, 7 and 4 days) are invented for the test;
+ * the reminder window is the app's own setting in config/modules/site_diary.php.
  */
-class NoticeDeadlineAlertTest extends SiteDiaryTestCase
+class NoticeDeadlineAlertTest extends SiteLetterTestCase
 {
+    /** A letter of this kind citing these entries, prepared and finalised by the project manager as the letters page does. */
+    private function letter(string $type, Hindrance ...$entries): SiteLetter
+    {
+        $letter = $this->draft($type, ['hindrance_ids' => array_map(fn (Hindrance $entry) => $entry->id, $entries)]);
+
+        return app(SiteLetters::class)->finalise($letter, $this->ticks($letter), $this->pm);
+    }
+
+    /** @return list<string> The references of the reminders that are open. */
+    private function openReferences(): array
+    {
+        return $this->reminders()->where('status', Alert::OPEN)->pluck('reference')->values()->all();
+    }
+
+    private function extensionNotice(array $attributes = []): void
+    {
+        $this->notice(['code' => 'eot_notice', 'label' => 'Notice for extension of time', ...$attributes]);
+    }
+
     private function scan(string $today, ?Project $project = null): void
     {
         app(AlertEngine::class)->scanProject(($project ?? $this->project)->fresh(), Carbon::parse($today.' 06:00:00', 'Asia/Kolkata'));
@@ -120,7 +144,7 @@ class NoticeDeadlineAlertTest extends SiteDiaryTestCase
         $this->assertNull($this->open());
     }
 
-    public function test_only_a_confirmed_entry_that_no_letter_cites_is_reminded_of(): void
+    public function test_only_a_confirmed_entry_whose_notice_no_finalised_letter_gave_is_reminded_of(): void
     {
         $this->notice();
         $dates = ['started_on' => '2026-03-12', 'ended_on' => null];
@@ -129,8 +153,10 @@ class NoticeDeadlineAlertTest extends SiteDiaryTestCase
         $this->hindrance([...$dates, ...$unconfirmed, 'status' => Hindrance::PROPOSED, 'proposed_by' => Hindrance::BY_AI]);
         $this->hindrance([...$dates, ...$unconfirmed, 'status' => Hindrance::DISMISSED]);
         $this->hindrance($dates)->delete();
-        // A finalised letter cites this one, and the next is the correction that stands in its place.
-        $cited = $this->hindrance([...$dates, 'locked_at' => now()]);
+        // A finalised notice of delay cites this one. The next is the correction that stands in its place: it is
+        // the same hindrance, so the notice of delay was given for it too.
+        $cited = $this->entry('2026-03-12', null);
+        $this->letter(self::DELAY, $cited);
         $this->hindrance([...$dates, 'supersedes_id' => $cited->id]);
         // The date of this one is still far away, and this one's passed long ago.
         $this->hindrance(['started_on' => '2026-03-19', 'ended_on' => null]);
@@ -139,7 +165,7 @@ class NoticeDeadlineAlertTest extends SiteDiaryTestCase
         $this->scan(self::TODAY);
         $this->assertCount(0, $this->reminders());
 
-        $entry = $this->hindrance($dates);
+        $entry = $this->entry('2026-03-12', null);
         $this->scan(self::TODAY);
         $this->assertSame('hindrance:'.$entry->id.':delay_notice', $this->reminders()->sole()->reference);
 
@@ -148,14 +174,90 @@ class NoticeDeadlineAlertTest extends SiteDiaryTestCase
         $this->scan(self::TODAY);
         $this->assertNull($this->open());
 
-        // Back in the register, it is reminded of again, until a letter cites it.
+        // Back in the register, it is reminded of again, until a finalised letter cites it. A draft gives no notice.
         $entry->update(['status' => Hindrance::CONFIRMED]);
+        $draft = $this->draft(self::DELAY, ['hindrance_ids' => [$entry->id]]);
         $this->scan(self::TODAY);
         $this->assertNotNull($this->open());
 
-        $entry->update(['locked_at' => now()]);
+        app(SiteLetters::class)->finalise($draft, $this->ticks($draft), $this->pm);
         $this->scan(self::TODAY);
         $this->assertNull($this->open());
+    }
+
+    public function test_a_correction_that_records_the_end_of_an_entry_a_notice_of_delay_cites_is_reminded_of_the_extension_of_time(): void
+    {
+        // A notice of delay counted from the start, a notice for extension of time counted from the end.
+        $this->agreement();
+        $this->notice();
+        $this->extensionNotice(['days' => 7, 'counted_from' => 'hindrance_end']);
+
+        // Still going on: the notice of delay falls on 23 March, the other cannot be worked out yet.
+        $entry = $this->entry('2026-03-12', null);
+        $this->scan(self::TODAY);
+        $this->assertSame(['hindrance:'.$entry->id.':delay_notice'], $this->openReferences());
+
+        // The notice of delay goes out and locks the entry.
+        $this->letter(self::DELAY, $entry);
+        $this->assertNotNull($entry->refresh()->locked_at);
+        $this->scan(self::TODAY);
+        $this->assertSame([], $this->openReferences());
+
+        // The hindrance ended on 19 March. The locked entry cannot take its end date, so a correction records it, as the register's form does.
+        $correction = app(Hindrances::class)->create($this->project, $this->form([$entry->sources->first()->dpr_id], [
+            'supersedes_id' => $entry->id, 'started_on' => '2026-03-12', 'ended_on' => '2026-03-19',
+        ]), $this->pm);
+
+        // Seven days from the end gives 26 March. The notice of delay was given for this hindrance, so it is not asked for again.
+        $this->scan(self::TODAY);
+        $alert = $this->open();
+        $this->assertSame(['hindrance:'.$correction->id.':eot_notice'], $this->openReferences());
+        $this->assertSame(['Extension of time notice: date coming up', '2026-03-26', 6], [$alert->title, $alert->data['date'], $alert->data['days_left']]);
+
+        // The register shades only the notice that was given.
+        $row = app(HindranceRegister::class)->entries($this->project, today())->firstWhere('hindrance.id', $correction->id);
+        $this->assertSame(['delay_notice'], $row['given']);
+
+        // The request for extension of time cites the correction, and the reminder closes.
+        $this->letter(self::EOT, $correction);
+        $this->scan(self::TODAY);
+        $this->assertSame([], $this->openReferences());
+        $row = app(HindranceRegister::class)->entries($this->project, today())->firstWhere('hindrance.id', $correction->id);
+        $this->assertSame(['eot_notice', 'delay_notice'], $row['given']);
+    }
+
+    public function test_each_letter_gives_its_own_notice_and_leaves_the_other_reminder_open(): void
+    {
+        // Both counted from the start: 21 March for the extension of time, 23 March for the notice of delay.
+        $this->agreement();
+        $this->notice();
+        $this->extensionNotice(['days' => 9]);
+        $entry = $this->entry('2026-03-12', null);
+
+        $this->scan(self::TODAY);
+        $this->assertSame(['hindrance:'.$entry->id.':eot_notice', 'hindrance:'.$entry->id.':delay_notice'], $this->openReferences());
+
+        // A notice of delay asks for no more time.
+        $this->letter(self::DELAY, $entry);
+        $this->scan(self::TODAY);
+        $this->assertSame(['hindrance:'.$entry->id.':eot_notice'], $this->openReferences(), 'The entry is locked, and its extension of time is still to be asked for.');
+
+        $this->letter(self::EOT, $entry);
+        $this->scan(self::TODAY);
+        $this->assertSame([], $this->openReferences());
+
+        // Another company's letter gives no notice here, even with a citation row that names our entry.
+        $other = $this->entry('2026-03-12', null);
+        [$rivalOrg, $rivalOwner, $rivalProject] = $this->rival();
+        $this->notice([], $rivalProject);
+        $theirs = $this->entry('2026-03-12', null, [], null, $rivalProject);
+        $letter = $this->draft(self::DELAY, ['hindrance_ids' => [$theirs->id]], $rivalOwner, $rivalProject);
+        app(SiteLetters::class)->finalise($letter, $this->ticks($letter), $rivalOwner);
+        SiteLetterHindrance::withoutGlobalScopes()->create(['organization_id' => $rivalOrg->id, 'project_id' => $rivalProject->id, 'site_letter_id' => $letter->id, 'hindrance_id' => $other->id]);
+
+        Auth::forgetGuards();
+        $this->scan(self::TODAY);
+        $this->assertSame(['hindrance:'.$other->id.':eot_notice', 'hindrance:'.$other->id.':delay_notice'], $this->openReferences());
     }
 
     public function test_each_notice_of_one_entry_has_its_own_reminder(): void

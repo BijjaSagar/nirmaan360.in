@@ -313,8 +313,11 @@ class Hindrances
             default => $reports->last()->report_date->toDateString(),
         };
 
+        // Two typed dates in the wrong order are refused by the rules, so here one of the two came from a report.
         if ($end !== null && $end < $start) {
-            throw ValidationException::withMessages(['ended_on' => __('The last chosen report is dated before the start date. Type the day the hindrance ended, or tick that it is still going on.')]);
+            throw ValidationException::withMessages(filled($data['ended_on'] ?? null)
+                ? ['started_on' => __('The end date you typed is before the first chosen report, whose date is taken as the start. Type the day the hindrance started, or choose the reports again.')]
+                : ['ended_on' => __('The last chosen report is dated before the start date. Type the day the hindrance ended, or tick that it is still going on.')]);
         }
 
         $responsible = trim((string) ($data['responsible'] ?? ''));

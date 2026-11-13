@@ -57,6 +57,38 @@ class ContractTerms
     }
 
     /**
+     * Every confirmed term of one contract, whatever its dates, in the order effective() gives.
+     * For a caller that needs the terms in force on many days: one query, then
+     * inForce() for each day gives what effective() would give for it.
+     *
+     * @param  list<string>|null  $kinds  Only these kinds, or every kind.
+     * @return Collection<int, ContractTerm>
+     */
+    public function confirmed(Project $project, ?WorkOrder $workOrder, ?array $kinds = null): Collection
+    {
+        if ($workOrder !== null && (int) $workOrder->project_id !== (int) $project->id) {
+            throw new InvalidArgumentException('The work order belongs to another project.');
+        }
+
+        return $this->ofContract($project->organization_id, $project->id, $workOrder?->id)
+            ->whereNotNull('confirmed_at')
+            ->when($kinds !== null, fn (Builder $query) => $query->whereIn('kind', $kinds))
+            ->orderBy('kind')->orderBy('code')->orderBy('effective_from')->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * The terms of a list read with confirmed() that are in force on a day, in the same order.
+     *
+     * @param  Collection<int, ContractTerm>  $terms
+     * @return Collection<int, ContractTerm>
+     */
+    public static function inForce(Collection $terms, CarbonInterface $on): Collection
+    {
+        return $terms->filter(fn (ContractTerm $term) => $term->covers($on))->values();
+    }
+
+    /**
      * What a term must hold, which depends on its kind, its code and how a deduction is worked out.
      * A field that does not belong to the kind is left out of the validated data and saved empty.
      *

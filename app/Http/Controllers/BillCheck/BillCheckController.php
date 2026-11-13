@@ -7,6 +7,7 @@ use App\Models\BillCheck;
 use App\Models\RaBill;
 use App\Services\BillCheck\BillChecks;
 use App\Services\BillCheck\CheckPresenter;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,12 +42,16 @@ class BillCheckController extends Controller
             'remark.min' => __('Write a remark of at least :min characters.'),
         ]);
 
-        $ack = $this->checks->acknowledge($check, $data['flag_key'], $data['remark'], $request->user());
+        $user = $request->user();
+        $ack = $this->checks->acknowledge($check, $data['flag_key'], $data['remark'], $user);
 
         if ($request->expectsJson()) {
+            // A remark is free text and may carry amounts, so someone else's goes only to a reader who may see money, as on the card.
+            $readsRemark = Money::visible($user) || (int) $ack->user_id === (int) $user->id;
+
             return response()->json([
                 'flag_key' => $ack->flag_key,
-                'remark' => $ack->remark,
+                'remark' => $readsRemark ? $ack->remark : null,
                 'user_id' => $ack->user_id,
                 'created_at' => $ack->created_at?->toIso8601String(),
             ], $ack->wasRecentlyCreated ? 201 : 200);

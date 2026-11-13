@@ -108,7 +108,12 @@ class HindranceRegisterServiceTest extends SiteDiaryTestCase
         $this->assertSame($expected, $entries->where('counts', true)->pluck('hindrance.id')->all());
         $this->assertSame($correction->id, $entries->firstWhere('hindrance.id', $corrected->id)['corrected_by']->id);
         $this->assertNull($entries->firstWhere('hindrance.id', $citedAgain->id)['corrected_by'], 'A dismissed correction corrects nothing.');
-        $this->assertSame([$cited->id, $corrected->id, $correction->id, $citedAgain->id], $entries->where('cited', true)->where('hindrance.status', Hindrance::CONFIRMED)->pluck('hindrance.id')->all());
+        // A notice counts as given only from a finalised letter that cites the entry or the entry it corrects, not from
+        // a lock or from being a correction (NoticeDeadlineAlertTest goes through the letters).
+        $this->notice();
+        $entries = app(HindranceRegister::class)->entries($this->project, $this->today());
+        $this->assertCount(4, $entries->where('counts', true)->filter(fn (array $row) => $row['deadlines'] !== []));
+        $this->assertSame([], $entries->pluck('given')->flatten()->all());
     }
 
     public function test_only_entries_that_count_carry_notice_dates(): void

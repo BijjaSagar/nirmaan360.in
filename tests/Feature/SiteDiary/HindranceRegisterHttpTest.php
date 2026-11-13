@@ -150,7 +150,11 @@ class HindranceRegisterHttpTest extends SiteDiaryTestCase
         $post(['still_going_on' => '1', 'ended_on' => '2026-03-10'])->assertSessionHasErrors('ended_on');
         $post(['still_going_on' => 'perhaps'])->assertSessionHasErrors('still_going_on');
         // The start is typed after the last ticked report and no end is given.
-        $post(['started_on' => '2026-03-10'])->assertSessionHasErrors('ended_on');
+        $post(['started_on' => '2026-03-10'])->assertSessionHasErrors(['ended_on' => 'The last chosen report is dated before the start date. Type the day the hindrance ended, or tick that it is still going on.']);
+        // The end is typed before the first ticked report and no start is given: the start taken from the report is what to change.
+        $post(['ended_on' => '2026-03-01'])
+            ->assertSessionHasErrors(['started_on' => 'The end date you typed is before the first chosen report, whose date is taken as the start. Type the day the hindrance started, or choose the reports again.'])
+            ->assertSessionDoesntHaveErrors('ended_on');
 
         // Reports: at least one, of this project, still there and still saying something.
         $post([], [])->assertSessionHasErrors('dpr_ids');
@@ -634,6 +638,85 @@ class HindranceRegisterHttpTest extends SiteDiaryTestCase
         $this->assertSame(1, substr_count($newest, 'name="dpr_ids[]"'));
         $this->assertSame(1, preg_match('/name="dpr_ids\[\]" value="'.$other->id.'"/', $newest));
         $this->assertNotNull($elsewhere->id);
+    }
+
+    public function test_a_refused_save_brings_the_form_back_as_it_was_sent_not_as_it_was_saved(): void
+    {
+        $first = $this->dpr('2026-03-02', 'Podium slab drawings not received');
+        $second = $this->dpr('2026-03-03', 'Drawings still awaited');
+        $entry = $this->cite($this->hindrance(['started_on' => '2026-03-02', 'ended_on' => null]), $first, $second);
+        $edit = $this->index(['edit' => $entry->id]);
+        $update = route('site-diary.hindrances.update', $entry);
+        $sent = ['category' => 'drawings_or_decisions', 'description' => 'Podium slab drawings awaited', 'started_on' => '2026-03-02', 'ended_on' => '2026-03-09', 'still_going_on' => '0'];
+
+        // The box is sent even when it is not ticked, so the page can tell an unticked box from one that was never sent.
+        $this->actingAs($this->engineer)->get($edit)->assertOk()->assertSee('<input type="hidden" name="still_going_on" value="0">', false);
+
+        // "Still going on" unticked, the end typed, and every report unticked: refused for the reports.
+        $this->from($edit)->patch($update, $sent)->assertRedirect($edit)->assertSessionHasErrors('dpr_ids');
+
+        $html = $this->get($edit)->assertOk()->getContent();
+        $this->assertStringContainsString('x-data="{ ongoing: false }"', $html, 'The end date field is not switched off again.');
+        $this->assertSame(0, preg_match('/name="still_going_on" value="1"[^>]*checked/', $html));
+        $this->assertSame(1, preg_match('/name="ended_on" type="date" max="2026-03-20" value="2026-03-09"/', $html));
+        $this->assertSame(0, preg_match('/name="dpr_ids\[\]"[^>]*checked/', $html), 'The reports the person unticked stay unticked.');
+
+        // Sent again with the reports, the end date that was typed is saved.
+        $this->from($edit)->patch($update, [...$sent, 'dpr_ids' => [$first->id, $second->id]])->assertSessionHasNoErrors();
+        $this->assertSame('2026-03-09', $entry->refresh()->ended_on->toDateString());
+
+        // Opened afresh, the form shows the entry as saved.
+        $html = $this->get($edit)->assertOk()->getContent();
+        $this->assertSame(2, preg_match_all('/name="dpr_ids\[\]"[^>]*checked/', $html));
+        $this->assertStringContainsString('x-data="{ ongoing: false }"', $html);
+    }
+
+    public function test_showing_reports_of_other_dates_saves_nothing_and_keeps_what_was_ticked_and_typed(): void
+    {
+        $january = $this->dpr('2026-01-10', 'Crane breakdown');
+        $march = $this->dpr('2026-03-12', 'Podium slab drawings not received');
+        $window = ['from' => '2026-01-01', 'to' => '2026-01-31'];
+
+        // "Show" sends the entry form along, switched to showing reports; without that switch a save is a save.
+        $this->actingAs($this->engineer)->get($this->index())->assertOk()
+            ->assertSee('x-on:submit="keep($event)"', false)
+            ->assertSee('<input type="hidden" name="show_reports" value="1" disabled>', false);
+
+        $typed = $this->form([$march], ['category' => 'weather', 'description' => 'Typed before showing older reports', 'responsible' => 'Client', 'started_on' => '2026-03-12', 'still_going_on' => '1']);
+        $this->post($this->store(), [...$typed, 'show_reports' => '1', ...$window])
+            ->assertRedirect($this->index($window).'#entry-form')->assertSessionHasNoErrors();
+        $this->assertSame(0, Hindrance::withoutGlobalScopes()->count(), 'Nothing is saved.');
+
+        $html = $this->get($this->index($window))->assertOk()->getContent();
+        $this->assertSame(1, preg_match('/name="dpr_ids\[\]" value="'.$january->id.'" class="mt-0.5 size-5 shrink-0" >/', $html), 'The report of those dates is listed, not ticked.');
+        $this->assertSame(1, preg_match('/name="dpr_ids\[\]" value="'.$march->id.'"[^>]*checked/', $html), 'The report ticked before stays listed and ticked.');
+        $this->assertStringContainsString('Typed before showing older reports</textarea>', $html);
+        $this->assertStringContainsString('value="Client"', $html);
+        $this->assertSame(1, preg_match('/<option value="weather" selected/', $html));
+        $this->assertSame(1, preg_match('/name="started_on" type="date" max="2026-03-20" value="2026-03-12"/', $html));
+        $this->assertStringContainsString('x-data="{ ongoing: true }"', $html);
+        $this->assertStringContainsString('name="client_uuid" value="'.$typed['client_uuid'].'"', $html);
+
+        // Saved with the January report added, the entry is made once.
+        $this->post($this->store(), [...$typed, 'dpr_ids' => [$january->id, $march->id]])->assertSessionHasNoErrors();
+        $entry = Hindrance::withoutGlobalScopes()->sole();
+        $this->assertSame(['2026-01-10', '2026-03-12'], $entry->sources()->orderBy('report_date')->get()->map(fn ($source) => $source->report_date->toDateString())->all());
+
+        // Changing an entry, the form stays on that entry; correcting a locked one, on the correction.
+        $this->patch(route('site-diary.hindrances.update', $entry), ['category' => 'weather', 'description' => 'Changed', 'dpr_ids' => [$march->id], 'show_reports' => '1', 'from' => '2026-01-01'])
+            ->assertRedirect($this->index(['edit' => $entry->id, 'from' => '2026-01-01']).'#entry-form');
+        $this->assertSame('Typed before showing older reports', $entry->refresh()->description);
+
+        $locked = $this->cite($this->hindrance(['locked_at' => now()]), $march);
+        $this->post($this->store(), $this->form([$march], ['supersedes_id' => (string) $locked->id, 'show_reports' => '1', 'to' => 'not a day']))
+            ->assertRedirect($this->index(['correct' => $locked->id]).'#entry-form');
+        $this->assertSame(0, Hindrance::withoutGlobalScopes()->where('supersedes_id', $locked->id)->count());
+
+        // Only those who keep the register reach it, and only for their own company.
+        $this->actingAs($this->qs)->post($this->store(), [...$typed, 'show_reports' => '1'])->assertForbidden();
+        [, $rivalOwner] = $this->rival();
+        $this->actingAs($rivalOwner)->patch(route('site-diary.hindrances.update', $entry), ['show_reports' => '1'])->assertNotFound();
+        $this->actingAs($rivalOwner)->post($this->store(), [...$typed, 'show_reports' => '1'])->assertNotFound();
     }
 
     public function test_the_menu_offers_the_register_to_those_who_may_open_it(): void

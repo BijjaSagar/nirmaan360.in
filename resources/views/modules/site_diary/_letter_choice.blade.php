@@ -24,10 +24,17 @@
             @enderror
         @endforeach
 
+        @php
+            // On the new-letter form the list holds every entry that counts; a notice of delay shows only those still going on.
+            $noneOngoing = $kind === null && ! $entries->contains(fn ($entry) => $entry->isOngoing());
+        @endphp
         @if ($entries->isEmpty())
             <p class="px-4 py-3 text-sm text-ink-3">{{ __('The register has no confirmed entry that this letter can cite.') }}</p>
         @else
-            <div class="mt-2 max-h-[70vh] overflow-y-auto border-t border-rule">
+            @if ($noneOngoing)
+                <p class="px-4 py-3 text-sm text-ink-3" x-show="type === 'delay_notice'" x-cloak>{{ __('No confirmed entry of the register is still going on, so a notice of delay has nothing to cite. A request for extension of time can cite entries that have ended.') }}</p>
+            @endif
+            <div class="mt-2 max-h-[70vh] overflow-y-auto border-t border-rule" @if ($noneOngoing) x-show="type !== 'delay_notice'" @endif>
                 @foreach ($entries as $entry)
                     <label class="flex min-h-11 cursor-pointer gap-3 border-b border-rule px-4 py-2 text-sm last:border-b-0" @if ($kind === null && ! $entry->isOngoing()) x-show="type !== 'delay_notice'" @endif>
                         <input type="checkbox" name="hindrance_ids[]" value="{{ $entry->id }}" class="mt-0.5 size-5 shrink-0" @checked(in_array($entry->id, $tickedEntries, true))

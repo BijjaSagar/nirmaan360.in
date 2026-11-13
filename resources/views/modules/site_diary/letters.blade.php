@@ -40,7 +40,7 @@
                 <x-field :label="__('Language of the letter')" name="language">
                     <select id="language" name="language" class="input min-h-11" required>
                         <option value="">{{ __('Choose') }}</option>
-                        @foreach ($languages as $code => $name)
+                        @foreach (array_intersect_key($languages, array_flip($offered)) as $code => $name)
                             <option value="{{ $code }}" @selected(old('language') === $code)>{{ $name }}</option>
                         @endforeach
                     </select>

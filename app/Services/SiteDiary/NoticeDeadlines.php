@@ -5,6 +5,8 @@ namespace App\Services\SiteDiary;
 use App\Models\ContractTerm;
 use App\Models\Hindrance;
 use App\Models\Project;
+use App\Models\SiteLetter;
+use App\Models\SiteLetterHindrance;
 use App\Services\ContractTerms\ContractTerms;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -19,11 +21,17 @@ use InvalidArgumentException;
  * days entered is added to the day the person said the count starts on. With no such term there
  * is no date. The terms used are the ones in force on the day the hindrance started.
  *
- * Asks ContractTerms::effective(), which filters by company and project itself, so the answer is
- * the same from the scheduler, where nobody is signed in.
+ * Reads the terms through ContractTerms, which filters by company and project itself, so the
+ * answer is the same from the scheduler, where nobody is signed in.
  */
 class NoticeDeadlines
 {
+    /** Notice => the kind of letter the app drafts that gives it. */
+    public const LETTERS = [
+        'eot_notice' => SiteLetter::EOT_REQUEST,
+        'delay_notice' => SiteLetter::DELAY_NOTICE,
+    ];
+
     public function __construct(private ContractTerms $terms) {}
 
     /**
@@ -37,13 +45,15 @@ class NoticeDeadlines
     }
 
     /**
-     * The same for several entries of one project, reading the terms once for each starting day.
+     * The same for several entries of one project. The confirmed terms of the client contract are
+     * read once, and the ones in force on each starting day are picked from them.
      *
      * @param  iterable<Hindrance>  $hindrances
      * @return array<int, list<NoticeDeadline>> Hindrance id => its notice dates.
      */
     public function forMany(Project $project, iterable $hindrances): array
     {
+        $terms = null;
         $inForce = [];
         $found = [];
 
@@ -52,12 +62,94 @@ class NoticeDeadlines
                 throw new InvalidArgumentException('The hindrance belongs to another project.');
             }
 
+            // Only notice periods and the agreement details a period can count from are used.
+            $terms ??= $this->terms->confirmed($project, null, ['notice', 'reference']);
             $day = $hindrance->started_on->toDateString();
-            $inForce[$day] ??= $this->terms->effective($project, null, $hindrance->started_on);
+            $inForce[$day] ??= ContractTerms::inForce($terms, $hindrance->started_on);
             $found[$hindrance->id] = $this->deadlines($hindrance, $inForce[$day]);
         }
 
         return $found;
+    }
+
+    /**
+     * The kinds of finalised letter that cite each entry, or an entry it corrects: a correction is the
+     * same hindrance with its record put right, so a letter that cited the corrected entry still counts.
+     * Filters by company and project itself, so it gives the same answer with nobody signed in.
+     *
+     * @param  iterable<Hindrance>  $hindrances
+     * @return array<int, list<string>> Hindrance id => letter types, as SiteLetter names them. Empty when no finalised letter cites it.
+     */
+    public function letters(Project $project, iterable $hindrances): array
+    {
+        $found = [];
+
+        foreach ($hindrances as $hindrance) {
+            $found[$hindrance->id] = [];
+        }
+
+        if ($found === []) {
+            return $found;
+        }
+
+        $finalised = SiteLetter::withoutGlobalScopes()
+            ->where('organization_id', $project->organization_id)
+            ->where('project_id', $project->id)
+            ->where('status', SiteLetter::FINALISED)
+            ->pluck('type', 'id');
+
+        if ($finalised->isEmpty()) {
+            return $found;
+        }
+
+        $citedBy = [];
+
+        SiteLetterHindrance::withoutGlobalScopes()
+            ->where('organization_id', $project->organization_id)
+            ->where('project_id', $project->id)
+            ->whereIn('site_letter_id', $finalised->keys())
+            ->get(['site_letter_id', 'hindrance_id'])
+            ->each(function (SiteLetterHindrance $citation) use (&$citedBy, $finalised) {
+                $citedBy[(int) $citation->hindrance_id][] = (string) $finalised[$citation->site_letter_id];
+            });
+
+        // Entry => the entry it corrects, removed entries included.
+        $corrects = Hindrance::withoutGlobalScopes()
+            ->where('organization_id', $project->organization_id)
+            ->where('project_id', $project->id)
+            ->whereNotNull('supersedes_id')
+            ->pluck('supersedes_id', 'id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        foreach (array_keys($found) as $id) {
+            $types = [];
+            $seen = [];
+
+            for ($at = (int) $id; $at !== 0 && ! isset($seen[$at]); $at = $corrects[$at] ?? 0) {
+                $seen[$at] = true;
+                array_push($types, ...($citedBy[$at] ?? []));
+            }
+
+            $found[$id] = array_values(array_unique($types));
+        }
+
+        return $found;
+    }
+
+    /**
+     * Whether a finalised letter already gave this notice, going by the kinds of letter that cite the
+     * entry (see letters()). Each notice has its letter: a notice of delay does not request more time,
+     * so it leaves the reminder for the extension of time open. A notice with no letter of its own is
+     * taken as given by any finalised letter that cites the entry.
+     *
+     * @param  list<string>  $letters
+     */
+    public static function given(string $notice, array $letters): bool
+    {
+        $own = self::LETTERS[$notice] ?? null;
+
+        return $own === null ? $letters !== [] : in_array($own, $letters, true);
     }
 
     /**

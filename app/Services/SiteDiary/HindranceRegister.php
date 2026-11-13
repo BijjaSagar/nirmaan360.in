@@ -41,6 +41,7 @@ class HindranceRegister
 
         $counts = $all->filter(fn (Hindrance $entry) => $entry->isConfirmed() && ! $correctionOf->has($entry->id))->keyBy('id');
         $deadlines = $this->deadlines->forMany($project, $counts);
+        $letters = $this->deadlines->letters($project, $counts);
         $reportDays = $this->reportDays($project);
 
         return $all->map(fn (Hindrance $entry) => [
@@ -48,8 +49,11 @@ class HindranceRegister
             'hindrance' => $entry,
             'counts' => $counts->has($entry->id),
             'corrected_by' => $correctionOf->get($entry->id),
-            // A letter cites the entry itself, or the entry it corrects.
-            'cited' => $entry->isLocked() || $entry->supersedes_id !== null,
+            // The notices a finalised letter citing the entry, or the entry it corrects, already gave.
+            'given' => array_values(array_map(
+                fn (NoticeDeadline $deadline) => $deadline->code,
+                array_filter($deadlines[$entry->id] ?? [], fn (NoticeDeadline $deadline) => NoticeDeadlines::given($deadline->code, $letters[$entry->id] ?? [])),
+            )),
             'deadlines' => $deadlines[$entry->id] ?? [],
         ]);
     }
@@ -148,9 +152,10 @@ class HindranceRegister
      * entry can be made from. Each comes with the entries that already cite it.
      *
      * @param  Hindrance|null  $with  An entry being changed or corrected: the reports it cites are always listed.
+     * @param  list<int>  $keep  Reports ticked on the form that came back: always listed too, when they are of this project.
      * @return array{reports: Collection<int, Dpr>, used: array<int, list<int>>, more: bool}
      */
-    public function candidates(Project $project, ?string $from = null, ?string $to = null, ?Hindrance $with = null): array
+    public function candidates(Project $project, ?string $from = null, ?string $to = null, ?Hindrance $with = null, array $keep = []): array
     {
         $limit = max(1, (int) config('modules.site_diary.candidates_shown', 200));
 
@@ -171,13 +176,11 @@ class HindranceRegister
         $more = $reports->count() > $limit;
         $reports = $reports->take($limit)->filter(fn (Dpr $report) => Hindrances::saysSomething($report->hindrances));
 
-        if ($with !== null) {
-            $cited = $with->sources->pluck('dpr_id')->map(fn ($id) => (int) $id)->all();
-            $missing = array_diff($cited, $reports->pluck('id')->all());
+        $always = [...($with?->sources->pluck('dpr_id')->all() ?? []), ...$keep];
+        $missing = array_values(array_diff(array_unique(array_map('intval', $always)), $reports->pluck('id')->all()));
 
-            if ($missing !== []) {
-                $reports = $reports->concat($query()->whereIn('id', $missing)->get()->filter(fn (Dpr $report) => Hindrances::saysSomething($report->hindrances)));
-            }
+        if ($missing !== []) {
+            $reports = $reports->concat($query()->whereIn('id', $missing)->get()->filter(fn (Dpr $report) => Hindrances::saysSomething($report->hindrances)));
         }
 
         $reports = $reports->sortBy([['report_date', 'desc'], ['id', 'desc']])->values();

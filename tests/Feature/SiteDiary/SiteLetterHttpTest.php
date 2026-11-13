@@ -12,6 +12,7 @@ use App\Services\SiteDiary\LetterLayout;
 use App\Services\SiteDiary\NoticeDeadlineSource;
 use App\Services\SiteDiary\SiteLetters;
 use App\Services\Wording\SlotText;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
@@ -921,5 +922,69 @@ class SiteLetterHttpTest extends SiteLetterTestCase
             ->assertSessionHasErrors(['hindrance_ids' => 'देरी की सूचना में उन पुष्टि की हुई प्रविष्टियों का हवाला होता है जो अभी जारी हैं। चुनी गई प्रविष्टियों में से कोई इस बीच खत्म हो गई, खारिज हुई या सुधारी गई है। प्रविष्टियाँ फिर से चुनें।']);
 
         $this->assertNotNull(Str::uuid());
+    }
+
+    public function test_on_the_live_site_a_letter_is_offered_in_hindi_or_marathi_only_once_its_wording_is_reviewed(): void
+    {
+        $this->agreement();
+        $entry = $this->entry('2026-03-02', '2026-03-06');
+        $this->actingAs($this->pm);
+        $options = function (): array {
+            preg_match('/<select id="language".*?<\/select>/s', $this->get($this->index())->assertOk()->getContent(), $select);
+            preg_match_all('/<option value="([a-z]+)"/', $select[0], $values);
+
+            return $values[1];
+        };
+        $prepare = fn (string $language) => $this->post($this->store(), $this->letterForm(self::EOT, ['language' => $language, 'hindrance_ids' => [$entry->id]]));
+
+        // Anywhere but the live site, staging included, every language is offered so that its wording can be read.
+        $this->assertSame(['en', 'mr', 'hi'], $options());
+        $this->assertSame([], config('modules.site_diary.letter_languages_reviewed'), 'No language is marked reviewed by default.');
+
+        // The live site checks the form's token, which the test environment leaves out.
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->withoutMiddleware(PreventRequestForgery::class);
+        $this->assertSame(['en'], $options());
+
+        foreach (['hi', 'mr'] as $language) {
+            $prepare($language)->assertSessionHasErrors('language');
+        }
+
+        $this->assertSame(0, SiteLetter::count());
+        $prepare('en')->assertSessionHasNoErrors();
+
+        // Once a native reader has reviewed Marathi, the owner lists it, and only it.
+        config(['modules.site_diary.letter_languages_reviewed' => ['mr']]);
+        $this->assertSame(['en', 'mr'], $options());
+        $prepare('mr')->assertSessionHasNoErrors();
+        $prepare('hi')->assertSessionHasErrors('language');
+        $this->assertSame(['en', 'mr'], SiteLetter::orderBy('id')->pluck('language')->all());
+
+        // A draft keeps its language, and its list shows it by name.
+        $this->get($this->index())->assertOk()->assertSee('मराठी');
+    }
+
+    public function test_a_notice_of_delay_with_no_entry_still_going_on_says_so_instead_of_an_empty_list(): void
+    {
+        $this->entry('2026-03-02', '2026-03-06');
+        $this->entry('2026-03-09', '2026-03-10');
+        $message = 'No confirmed entry of the register is still going on, so a notice of delay has nothing to cite. A request for extension of time can cite entries that have ended.';
+
+        // Shown for a notice of delay in place of the list, which then holds nothing it could show.
+        $hidesList = '/overflow-y-auto border-t border-rule"\s+x-show="type !== \'delay_notice\'"/';
+        $page = $this->actingAs($this->pm)->get($this->index())->assertOk()
+            ->assertSee('x-show="type === \'delay_notice\'" x-cloak>'.$message.'</p>', false)
+            ->assertDontSee('The register has no confirmed entry that this letter can cite.');
+        $this->assertMatchesRegularExpression($hidesList, $page->getContent());
+        $this->assertSame(2, substr_count($page->getContent(), 'name="hindrance_ids[]"'));
+
+        // With one entry still going on there is something to cite, and the list shows it.
+        $this->entry('2026-03-12', null);
+        $page = $this->get($this->index())->assertOk()->assertDontSee($message);
+        $this->assertDoesNotMatchRegularExpression($hidesList, $page->getContent());
+
+        $this->pm->update(['locale' => 'mr']);
+        Hindrance::query()->whereNull('ended_on')->update(['ended_on' => '2026-03-14']);
+        $this->get($this->index())->assertOk()->assertSee('नोंदवहीतील कोणतीही निश्चित नोंद अजून सुरू नाही');
     }
 }

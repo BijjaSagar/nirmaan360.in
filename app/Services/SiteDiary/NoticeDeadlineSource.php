@@ -10,10 +10,11 @@ use App\Services\SiteAlerts\Finding;
 use Carbon\CarbonInterface;
 
 /**
- * Reminds people of a notice date that is close. A reminder is raised for a confirmed hindrance
- * that no finalised letter cites, when the date worked out from the notice periods entered under
- * Contract terms is near or has just passed. With no confirmed notice period there is no date and
- * so no reminder.
+ * Reminds people of a notice date that is close. A reminder is raised for each notice of a confirmed
+ * hindrance that counts, when the date worked out from the notice periods entered under Contract
+ * terms is near or has just passed, until a finalised letter that gives that notice cites the entry
+ * or the entry it corrects. A notice of delay leaves the reminder for the extension of time open, and
+ * the other way round. With no confirmed notice period there is no date and so no reminder.
  *
  * How early the reminder opens and how long it stays after the date are the app's own settings in
  * config/modules/site_diary.php. They are not periods from any agreement.
@@ -58,23 +59,22 @@ class NoticeDeadlineSource implements AlertSource
         $before = max(0, (int) config('modules.site_diary.remind_days_before'));
         $after = max(0, (int) config('modules.site_diary.remind_days_after'));
 
-        // An entry a letter cites is locked, and a correction stands in for the cited entry it corrects.
-        $entries = $this->hindrances->standing($project)
-            ->whereNull('locked_at')
-            ->whereNull('supersedes_id')
-            ->get();
+        // Locked entries and corrections too: a letter of one kind gives one notice, and once an entry is locked
+        // its end date can be recorded only on a correction, which the next notice is often counted from.
+        $entries = $this->hindrances->standing($project)->get();
 
         if ($entries->isEmpty()) {
             return;
         }
 
         $found = $this->deadlines->forMany($project, $entries);
+        $letters = $this->deadlines->letters($project, $entries);
 
         foreach ($entries as $entry) {
             foreach ($found[$entry->id] as $deadline) {
                 $left = $deadline->daysLeft($today);
 
-                if ($left === null || $left > $before || $left < -$after) {
+                if ($left === null || $left > $before || $left < -$after || NoticeDeadlines::given($deadline->code, $letters[$entry->id])) {
                     continue;
                 }
 

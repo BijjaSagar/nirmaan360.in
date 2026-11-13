@@ -62,7 +62,7 @@ class SiteLetters
             // Sent by the form, so pressing the button twice prepares one letter.
             'client_uuid' => $letter === null ? ['required', 'uuid'] : $leftOut,
             'type' => $letter === null ? ['required', 'string', Rule::in(SiteLetter::TYPES)] : $leftOut,
-            'language' => $letter === null ? ['required', 'string', Rule::in(FactFormat::LOCALES)] : $leftOut,
+            'language' => $letter === null ? ['required', 'string', Rule::in($this->languages())] : $leftOut,
             'addressed_to' => ['nullable', 'string', 'max:200'],
             'hindrance_ids' => $leftOut,
             'bill_ids' => $leftOut,
@@ -83,6 +83,25 @@ class SiteLetters
         }
 
         return $rules;
+    }
+
+    /**
+     * The languages a letter may be prepared in. The fixed sentences of a Hindi or Marathi letter wait for a
+     * native reader's review, so on the live site only English and the languages config lists as reviewed are
+     * offered. Everywhere else every language is, so that the wording can be read before it is released.
+     * A draft keeps the language it was prepared in.
+     *
+     * @return list<string>
+     */
+    public function languages(): array
+    {
+        if (! app()->isProduction()) {
+            return FactFormat::LOCALES;
+        }
+
+        $reviewed = (array) config('modules.site_diary.letter_languages_reviewed', []);
+
+        return array_values(array_filter(FactFormat::LOCALES, fn (string $code) => $code === 'en' || in_array($code, $reviewed, true)));
     }
 
     /** Whether this person may read a letter of this kind: a payment follow-up is nothing but money. */

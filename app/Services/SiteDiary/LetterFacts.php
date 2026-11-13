@@ -317,10 +317,11 @@ class LetterFacts
     {
         $terms = [];
         $inForce = [];
+        $periods = $entries->isEmpty() ? collect() : $this->terms->confirmed($project, null, ['notice']);
 
         foreach ($entries as $entry) {
             $day = $entry->started_on->toDateString();
-            $inForce[$day] ??= $this->terms->effective($project, null, $entry->started_on, 'notice');
+            $inForce[$day] ??= ContractTerms::inForce($periods, $entry->started_on);
 
             foreach ($inForce[$day]->where('code', $notice) as $term) {
                 $terms[$term->id] = $term;

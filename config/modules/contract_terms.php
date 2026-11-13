@@ -18,8 +18,9 @@ return [
         'accounts' => ['contract_terms.view'],
     ],
 
+    // Offered only to someone who may open the page: a custom role can hold contract_terms.view without money.view.
     'nav' => [
-        ['place' => 'project', 'group' => 'Finance', 'label' => 'Contract terms', 'route' => 'contract-terms.index', 'active' => 'contract-terms.*', 'can' => 'contract_terms.view', 'order' => 25],
+        ['place' => 'project', 'group' => 'Finance', 'label' => 'Contract terms', 'route' => 'contract-terms.index', 'active' => 'contract-terms.*', 'can' => ['contract_terms.view', 'money.view'], 'order' => 25],
     ],
 
     'kinds' => [

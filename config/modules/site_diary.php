@@ -57,6 +57,11 @@ return [
         'finalised' => 'Finalised',
     ],
 
+    // The fixed sentences of a Hindi or Marathi letter wait for a native reader to review them. On the live site
+    // letters are offered in English and in the languages listed here, as en, hi or mr, once their wording is
+    // reviewed. Everywhere else, staging included, every language is offered so that the wording can be read.
+    'letter_languages_reviewed' => array_values(array_filter(array_map('trim', explode(',', (string) env('SITE_LETTER_LANGUAGES_REVIEWED', ''))))),
+
     'alert_sources' => [
         NoticeDeadlineSource::class,
     ],
