@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\MaterialControl;
 
+use App\Models\CustomRole;
 use App\Models\DeliveryChallan;
 use App\Models\Material;
 use App\Models\MaterialFlagReason;
@@ -241,6 +242,32 @@ class MaterialLoopApiTest extends TestCase
         $this->assertNotSame($engineer->id, $this->owner->id);
     }
 
+    public function test_remarks_and_notes_that_name_money_are_kept_for_money_view(): void
+    {
+        $challan = $this->deliver($this->bags, '40', null, ['remarks' => 'Driver asked Rs 500 for unloading.']);
+        $plain = $this->deliver($this->bags, '10', null, ['remarks' => 'Unloaded 40 bags at gate 2.']);
+        $this->signIn('pm');
+        $this->postJson(self::API.'/delivery-challans/'.$challan->id.'/short', [
+            'client_uuid' => (string) Str::uuid(), 'short_qty' => '2', 'found_on' => today()->toDateString(), 'note' => 'Supplier will credit ₹760.',
+        ])->assertCreated()->assertJsonPath('data.note', 'Supplier will credit ₹760.');
+
+        foreach (['engineer', 'store', 'viewer'] as $role) {
+            $this->signIn($role);
+            $this->getJson(self::API.'/delivery-challans/'.$challan->id)->assertOk()
+                ->assertJsonPath('data.remarks', null)
+                ->assertJsonPath('data.shorts.0.note', null)
+                ->assertJsonPath('data.shorts.0.short_qty', '2.000')
+                ->assertDontSee('500')->assertDontSee('760');
+            // Ordinary words about quantities are not money.
+            $this->getJson(self::API.'/delivery-challans/'.$plain->id)->assertOk()->assertJsonPath('data.remarks', 'Unloaded 40 bags at gate 2.');
+        }
+
+        $this->signIn('accounts');
+        $this->getJson(self::API.'/delivery-challans/'.$challan->id)->assertOk()
+            ->assertJsonPath('data.remarks', 'Driver asked Rs 500 for unloading.')
+            ->assertJsonPath('data.shorts.0.note', 'Supplier will credit ₹760.');
+    }
+
     public function test_a_challan_is_out_of_reach_of_another_company_and_of_people_limited_to_other_projects(): void
     {
         $challan = $this->deliver($this->bags, '10');
@@ -257,6 +284,40 @@ class MaterialLoopApiTest extends TestCase
 
         $this->signIn('engineer', $this->limitedTo('engineer', $this->project));
         $this->getJson($url)->assertOk();
+    }
+
+    public function test_a_challan_and_its_bill_file_need_their_permissions_and_stay_inside_the_company(): void
+    {
+        $challan = $this->deliver($this->bags, '10');
+        Storage::put('org/bill.jpg', 'x');
+        $this->billed($challan);
+        $url = self::API.'/delivery-challans/'.$challan->id;
+
+        // A role with no material_control.view reads nothing, not even the quantities.
+        $role = CustomRole::create(['organization_id' => $this->organization->id, 'name' => 'Time keeper', 'permissions' => ['project.view', 'attendance.view'], 'created_by' => $this->owner->id]);
+        $keeper = $this->member($this->organization, 'viewer');
+        $keeper->forceFill(['custom_role_id' => $role->id])->save();
+        $this->signIn('viewer', $keeper->refresh());
+        $this->getJson($url)->assertForbidden();
+        $this->getJson($url.'/bill')->assertForbidden();
+
+        // The file is for money.view inside the company, and for nobody outside it.
+        $this->signIn('accounts');
+        $this->get($url.'/bill')->assertOk();
+
+        foreach (['engineer', 'store', 'viewer'] as $role) {
+            $this->signIn($role);
+            $this->getJson($url.'/bill')->assertForbidden();
+        }
+
+        $other = $this->makeProject($this->organization, ['name' => 'Other site']);
+        $this->signIn('accounts', $this->limitedTo('accounts', $other));
+        $this->getJson($url.'/bill')->assertNotFound();
+
+        $this->signIn('owner', $this->member($this->tenant('Other Co'), 'owner'));
+        $this->getJson($url.'/bill')->assertNotFound();
+        $this->post($url.'/bill', ['bill' => UploadedFile::fake()->image('bill.jpg')], ['Accept' => 'application/json'])->assertNotFound();
+        $this->assertSame('org/bill.jpg', DeliveryChallan::withoutGlobalScopes()->findOrFail($challan->id)->bill_path);
     }
 
     // G3: attaching the bill
@@ -380,6 +441,13 @@ class MaterialLoopApiTest extends TestCase
             $this->signIn($role);
             $this->postJson($url, ['client_uuid' => (string) Str::uuid(), 'short_qty' => '1', 'found_on' => today()->toDateString()])->assertForbidden();
         }
+
+        // A reversed challan takes no more shortages.
+        $gone = $this->deliver($this->bags, '10');
+        app(DeliveryChallanService::class)->reverse($gone, 'Wrong site', $this->owner);
+        $this->signIn('pm');
+        $this->postJson(self::API.'/delivery-challans/'.$gone->id.'/short', ['client_uuid' => (string) Str::uuid(), 'short_qty' => '1', 'found_on' => today()->toDateString()])
+            ->assertStatus(422)->assertJsonValidationErrors('status');
 
         // A client_uuid used on one challan cannot be replayed onto another.
         $this->signIn('pm');

@@ -325,3 +325,19 @@ The percentages, `advance_amount`, `deduction_basis` (`gross` or `running`) and 
 ```
 
 Sending the same choice again returns the same work order with 200. A replaced quote, or one from another tender, answers 422 on `bid_id`. A tender that is no longer open answers 422 on `tender`.
+
+## Material loop from site
+
+Seven routes that let the field app answer a material flag, attach a bill, report a short delivery and read wastage against the BOQ norm. They reuse the web's services and permissions; request and reply shapes are in `mobile/docs/CONTRACT.md`, section 5.
+
+| Route | Permission | Service |
+| --- | --- | --- |
+| `POST /projects/{project}/material-control/reasons` | `material_control.reason` | `MaterialCheckService::addReason` |
+| `GET /delivery-challans/{deliveryChallan}` | `material_control.view` | `MaterialControlPresenter::challanDetail` |
+| `POST /delivery-challans/{deliveryChallan}/bill` | `material_control.bills` | `DeliveryChallanService::attachBill` |
+| `GET /delivery-challans/{deliveryChallan}/bill` | `material_control.view` and `money.view` | the stored file |
+| `POST /delivery-challans/{deliveryChallan}/short` | `material_control.challan` | `ShortDeliveryService::report` |
+| `GET /projects/{project}/material-control/bills` | `material_control.bills` | bills pending, or `?show=attached` |
+| `GET /projects/{project}/material-reconciliation` | `procurement.view` | `ReconciliationService`, read only |
+
+The first six sit behind `feature:site_control`, the last behind `feature:procurement`. A reason and a short need a `client_uuid` and answer a repeat with the first row (201, then 200); the lookup runs before the field rules, and a `client_uuid` from another project or challan is a 422. Attaching a bill creates no record: it replaces the file and takes no `client_uuid`. Bill number, date, amount and `has_bill_file` leave the server only with `money.view`, and are read from a request only with it. A remark, reversal reason or short-delivery note that names a rupee figure is sent as `null` without `money.view`. The reconciliation carries quantities only. `procurement.view` is now one of the `can` keys in `GET /me`.

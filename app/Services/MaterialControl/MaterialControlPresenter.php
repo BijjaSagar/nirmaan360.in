@@ -6,6 +6,7 @@ use App\Models\DeliveryChallan;
 use App\Models\MaterialFlagReason;
 use App\Models\MaterialShortDelivery;
 use App\Models\MaterialStockCheck;
+use App\Services\Notify\MoneyMention;
 use Carbon\CarbonInterface;
 
 /** Shapes records for the mobile API. Bill details leave the server only with money.view. */
@@ -69,6 +70,8 @@ class MaterialControlPresenter
     /**
      * One challan in full for the field app: names, remarks, who did what, the shortages found on it
      * and whether its bill has come. Whether a bill file exists is for money.view only, like the file.
+     * Remarks and notes are words a person typed, so one that names a rupee figure is also kept for
+     * money.view: the key stays and its text is null.
      *
      * @return array<string, mixed>
      */
@@ -81,16 +84,16 @@ class MaterialControlPresenter
             'material' => $challan->material?->name,
             'unit' => $challan->unit?->code,
             'store' => $challan->store?->name,
-            'remarks' => $challan->remarks,
+            'remarks' => $this->words($challan->remarks, $withMoney),
             'created_by' => $challan->creator?->name,
             'created_at' => $challan->created_at?->toIso8601String(),
             'bill_attached_by' => $challan->billAttacher?->name,
             'bill_attached_at' => $challan->bill_attached_at?->toIso8601String(),
             'reversed_by' => $challan->reverser?->name,
             'reversed_at' => $challan->reversed_at?->toDateString(),
-            'reversal_reason' => $challan->reversal_reason,
+            'reversal_reason' => $this->words($challan->reversal_reason, $withMoney),
             'supplier_warning' => $supplierWarning,
-            'shorts' => $challan->shortDeliveries->map(fn (MaterialShortDelivery $short) => $this->shortDelivery($short))->values()->all(),
+            'shorts' => $challan->shortDeliveries->map(fn (MaterialShortDelivery $short) => $this->shortDelivery($short, $withMoney))->values()->all(),
         ];
 
         if ($withMoney) {
@@ -122,7 +125,7 @@ class MaterialControlPresenter
     }
 
     /** @return array<string, mixed> */
-    public function shortDelivery(MaterialShortDelivery $short): array
+    public function shortDelivery(MaterialShortDelivery $short, bool $withMoney): array
     {
         return [
             'id' => $short->id,
@@ -134,7 +137,7 @@ class MaterialControlPresenter
             'short_qty' => $short->short_qty,
             'short_base_qty' => $short->short_base_qty,
             'found_on' => $short->found_on?->toDateString(),
-            'note' => $short->note,
+            'note' => $this->words($short->note, $withMoney),
             // Found at the gate, it was never in stock. Found later, stock was corrected.
             'at_entry' => ! $short->ledger_posted,
             'status' => $short->status,
@@ -156,5 +159,11 @@ class MaterialControlPresenter
             'created_by' => $reason->creator?->name,
             'created_at' => $reason->created_at?->toIso8601String(),
         ];
+    }
+
+    /** Free text for someone without money.view: withheld when it names a rupee figure. */
+    private function words(?string $text, bool $withMoney): ?string
+    {
+        return $text !== null && ! $withMoney && MoneyMention::in($text) ? null : $text;
     }
 }

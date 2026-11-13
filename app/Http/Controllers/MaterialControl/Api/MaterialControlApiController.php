@@ -178,7 +178,7 @@ class MaterialControlApiController extends Controller
         }
 
         return response()->json([
-            'data' => $this->presenter->shortDelivery($short->load('creator')),
+            'data' => $this->presenter->shortDelivery($short->load('creator'), $this->money($request)),
             'challan' => $this->detail($deliveryChallan->fresh(), $request),
         ], $short->wasRecentlyCreated ? 201 : 200);
     }

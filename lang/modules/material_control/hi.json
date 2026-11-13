@@ -156,6 +156,7 @@
     "This challan has been reversed.": "यह चालान उलटा जा चुका है।",
     "This document has already been reversed.": "यह दस्तावेज़ पहले ही उलटा जा चुका है।",
     "This gap has since closed, so no reason is needed.": "यह अंतर अब बंद हो चुका है, कारण की ज़रूरत नहीं।",
+    "This record belongs to another challan.": "यह रिकॉर्ड किसी दूसरे चालान का है।",
     "This record belongs to another project.": "यह रिकॉर्ड किसी दूसरी परियोजना का है।",
     "This takes the quantity out of stock and counts against the supplier.": "इससे मात्रा स्टॉक से घटेगी और सप्लायर के खाते में गिनी जाएगी।",
     "This was extra work, not in the BOQ": "यह अतिरिक्त काम था, BOQ में नहीं",
