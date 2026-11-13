@@ -3,6 +3,7 @@
 namespace Tests\Feature\BillCheck;
 
 use App\Services\BillCheck\BillChecks;
+use App\Services\BillCheck\Explain\FindingTopics;
 use App\Services\BillCheck\Flag;
 use App\Services\BillCheck\FlagCatalog;
 use App\Services\BillCheck\FlagText;
@@ -30,14 +31,17 @@ class BillCheckWordingTest extends BillCheckTestCase
         return [
             ...glob(app_path('Services/BillCheck/*.php')),
             ...glob(app_path('Services/BillCheck/Checks/*.php')),
+            ...glob(app_path('Services/BillCheck/Explain/*.php')),
             ...glob(app_path('Http/Controllers/BillCheck/*.php')),
             ...glob(resource_path('views/modules/bill_check/*.blade.php')),
             app_path('Models/BillCheck.php'),
             app_path('Models/BillCheckAck.php'),
             app_path('Models/BillCheckPolicy.php'),
+            app_path('Models/BillCheckExplanation.php'),
             config_path('modules/bill_check.php'),
             base_path('routes/modules/bill_check.php'),
             database_path('migrations/2027_01_14_100002_create_bill_check_tables.php'),
+            database_path('migrations/2027_01_14_100003_create_bill_check_explanations_table.php'),
         ];
     }
 
@@ -65,7 +69,7 @@ class BillCheckWordingTest extends BillCheckTestCase
         return $lines;
     }
 
-    /** @return list<string> Every text the module shows: the literals passed to __(), every sentence of the catalogue and the deduction names. */
+    /** @return list<string> Every text the module shows: the literals passed to __(), every sentence of the catalogue, the deduction names and what each kind of finding means. */
     private function usedTexts(): array
     {
         $texts = [];
@@ -78,7 +82,7 @@ class BillCheckWordingTest extends BillCheckTestCase
             }
         }
 
-        return array_values(array_unique([...$texts, ...FlagCatalog::sentences(), ...array_values(FlagCatalog::HEADS)]));
+        return array_values(array_unique([...$texts, ...FlagCatalog::sentences(), ...array_values(FlagCatalog::HEADS), ...FindingTopics::sentences()]));
     }
 
     /** A finding of this kind with a made-up value for every figure it carries. */
@@ -233,6 +237,7 @@ class BillCheckWordingTest extends BillCheckTestCase
         $shown = [
             'the texts' => implode("\n", $this->usedTexts()),
             'the card' => (string) file_get_contents(resource_path('views/modules/bill_check/_card.blade.php')),
+            'the explanation' => (string) file_get_contents(resource_path('views/modules/bill_check/_explanation.blade.php')),
             'the Hindi file' => (string) file_get_contents(lang_path('modules/bill_check/hi.json')),
             'the Marathi file' => (string) file_get_contents(lang_path('modules/bill_check/mr.json')),
         ];

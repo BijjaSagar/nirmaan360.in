@@ -65,6 +65,8 @@
             <p class="border-b border-rule px-4 py-3 text-sm">{{ __('These checks found nothing on this bill.') }}</p>
         @endforelse
 
+        @include('modules.bill_check._explanation', ['checkId' => $check['id']])
+
         @if ($sheet !== null && $sheet['lines'] !== null)
             <div class="border-b border-rule">
                 <h3 class="eyebrow px-4 pt-3 text-ink-3">
