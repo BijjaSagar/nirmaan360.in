@@ -24,6 +24,12 @@ class BillingPayment extends Model
         ];
     }
 
+    /** Paid but bought no period: it was for a plan no longer offered (BillingService::markPaid), so it is due a refund. */
+    public function isRefundDue(): bool
+    {
+        return $this->status === 'paid' && $this->period_end === null;
+    }
+
     /** The amount in paise, as the payment gateway expects it. */
     public function paise(): string
     {

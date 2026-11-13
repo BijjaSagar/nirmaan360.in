@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Models\BillingPayment;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\BillingService;
@@ -321,5 +322,97 @@ class OfflinePlanRemovedTest extends TestCase
         $this->getJson('/api/v1/sync/pull')->assertOk();
         $this->getJson('/api/v1/offline/status')->assertOk()->assertJsonPath('offline', false)->assertJsonPath('syncs', true);
         $this->assertSame(config('buildos.plans.free'), $organization->planConfig());
+    }
+
+    public function test_the_admin_panel_and_billing_open_for_a_company_still_marked_offline_and_show_it_on_free(): void
+    {
+        // A sign-up in the deploy window, or a payment the old code took after the migration ran.
+        $late = $this->tenant('Late Co', 'offline');
+        $late->forceFill(['plan_status' => 'trial', 'trial_ends_at' => now()->addDays(20), 'paid_until' => now()->addMonth(), 'billing_cycle' => 'monthly'])->save();
+        $this->assertFalse($late->hasOfferedPlan());
+        $this->assertFalse($late->isOnTrial());
+        $this->assertSame('free', $late->effectivePlan());
+        $this->assertTrue($this->tenant('Deccan Builders', 'contractor')->hasOfferedPlan());
+
+        $admin = $this->member($this->tenant('Platform Co', 'contractor'), 'owner');
+        $admin->forceFill(['is_platform_admin' => true])->save();
+        $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('Late Co')
+            ->assertSee('<option value="free" selected>', false)
+            ->assertDontSee('<option value="offline"', false);
+
+        // The owner fixes it from the admin panel.
+        $this->patch(route('admin.organizations.update', $late), ['plan' => 'contractor', 'plan_status' => 'trial', 'trial_ends_at' => now()->addDays(30)->toDateString()])->assertRedirect();
+        $this->assertSame(['contractor', 'trial'], [$late->fresh()->plan, $late->fresh()->plan_status]);
+
+        $late->refresh()->forceFill(['plan' => 'offline'])->save();
+        $this->assertNotNull($late->paid_until);
+        $this->actingAs($this->member($late, 'owner'))->get('/billing')->assertOk()
+            ->assertSee(__(config('buildos.plans.free.label')))
+            ->assertSee('Free plan')
+            ->assertDontSee('Trial ends on')
+            ->assertDontSee('Trial to')
+            ->assertDontSee('Paid until');
+    }
+
+    private function removedPlanPayment(Organization $organization, User $owner, string $orderId): BillingPayment
+    {
+        // A checkout for the old plan opened before the deploy; startCheckout() refuses the plan now.
+        return BillingPayment::withoutGlobalScopes()->create([
+            'organization_id' => $organization->id, 'user_id' => $owner->id, 'plan' => 'offline', 'cycle' => 'monthly',
+            'base_amount' => '499.00', 'gst_amount' => '89.82', 'total_amount' => '588.82', 'gateway_order_id' => $orderId,
+        ]);
+    }
+
+    public function test_a_checkout_for_the_removed_plan_paid_later_changes_no_plan_and_is_marked_for_a_refund(): void
+    {
+        config(['services.razorpay.key_id' => 'rzp_test_key', 'services.razorpay.key_secret' => 'test_secret', 'services.razorpay.webhook_secret' => 'hook_secret']);
+
+        // Paid in a checkout tab left open: a company already paying for Contractor keeps it exactly.
+        $paying = $this->tenant('Deccan Builders', 'contractor');
+        $until = now()->addDays(20)->startOfSecond();
+        $paying->forceFill(['paid_until' => $until, 'billing_cycle' => 'yearly'])->save();
+        $owner = $this->member($paying, 'owner');
+        $payment = $this->removedPlanPayment($paying, $owner, 'order_old_1');
+        $fields = ['razorpay_order_id' => 'order_old_1', 'razorpay_payment_id' => 'pay_old_1', 'razorpay_signature' => hash_hmac('sha256', 'order_old_1|pay_old_1', 'test_secret')];
+
+        $this->actingAs($owner)->post('/billing/confirm', $fields)->assertRedirect('/billing')
+            ->assertSessionHas('success', 'Payment received, but that plan is no longer offered, so your plan has not changed. We will contact you about a refund.');
+        $this->post('/billing/confirm', $fields)->assertRedirect('/billing');
+
+        $payment->refresh();
+        $this->assertSame(['paid', 'pay_old_1', null], [$payment->status, $payment->gateway_payment_id, $payment->period_end]);
+        $this->assertNotNull($payment->paid_at);
+        $this->assertTrue($payment->isRefundDue());
+        $paying->refresh();
+        $this->assertSame(['contractor', 'active', 'yearly', null], [$paying->plan, $paying->plan_status, $paying->billing_cycle, $paying->trial_ends_at]);
+        $this->assertTrue($paying->paid_until->equalTo($until));
+
+        $logs = AuditLog::withoutGlobalScopes()->where('organization_id', $paying->id)->whereIn('action', ['billing.paid', 'billing.paid_for_removed_plan'])->get();
+        $this->assertSame(['billing.paid_for_removed_plan'], $logs->pluck('action')->all(), 'Once, though the browser reported it twice');
+        $this->assertSame(['plan' => 'offline', 'cycle' => 'monthly', 'total' => '588.82', 'reason' => 'plan_not_offered', 'refund_due' => true], $logs->first()->new_values);
+
+        $this->get('/billing')->assertOk()->assertSee('Contractor')->assertSeeInOrder(['offline · Monthly', '—', '588.82', 'pay_old_1']);
+
+        // Reported only by the webhook: a free company stays on free.
+        $free = $this->tenant('Small Co', 'free');
+        $late = $this->removedPlanPayment($free, $this->member($free, 'owner'), 'order_old_2');
+        $this->app['auth']->forgetGuards();
+        $raw = json_encode(['event' => 'payment.captured', 'payload' => ['payment' => ['entity' => ['id' => 'pay_old_2', 'order_id' => 'order_old_2', 'amount' => 58882]]]]);
+        $this->call('POST', '/api/v1/webhooks/razorpay', [], [], [], [
+            'CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_X_RAZORPAY_SIGNATURE' => hash_hmac('sha256', $raw, 'hook_secret'),
+        ], $raw)->assertOk()->assertJsonPath('status', 'ok');
+
+        $this->assertTrue($late->fresh()->isRefundDue());
+        $this->assertSame(['free', 'active', null, null], [$free->fresh()->plan, $free->fresh()->plan_status, $free->fresh()->paid_until, $free->fresh()->billing_cycle]);
+
+        // The platform admin sees which payments to refund.
+        $admin = $this->member($this->tenant('Platform Co', 'contractor'), 'owner');
+        $admin->forceFill(['is_platform_admin' => true])->save();
+        $this->actingAs($admin)->get('/admin')->assertOk()->assertSeeInOrder(['Recent payments', 'Refund due']);
+        $this->assertSame(2, substr_count($this->get('/admin')->getContent(), 'Refund due'));
+
+        // An ordinary payment for an offered plan still activates it and is not marked.
+        $this->assertFalse(BillingPayment::withoutGlobalScopes()->make(['status' => 'paid', 'period_end' => now()->addMonth()])->isRefundDue());
+        $this->assertFalse(BillingPayment::withoutGlobalScopes()->make(['status' => 'created'])->isRefundDue());
     }
 }

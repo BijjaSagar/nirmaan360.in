@@ -246,5 +246,7 @@
     "Billing": "बिलिंग",
     "Current plan": "मौजूदा प्लान",
     "Trial ends on :date": "ट्रायल :date को ख़त्म होगा",
-    "Paid until :date": ":date तक भुगतान किया हुआ"
+    "Paid until :date": ":date तक भुगतान किया हुआ",
+    "Payment received, but that plan is no longer offered, so your plan has not changed. We will contact you about a refund.": "भुगतान मिला, लेकिन वह प्लान अब उपलब्ध नहीं है, इसलिए आपका प्लान नहीं बदला। रिफंड के बारे में हम आपसे संपर्क करेंगे।",
+    "Refund due": "रिफंड बाकी"
 }
