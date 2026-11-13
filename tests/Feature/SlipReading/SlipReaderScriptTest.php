@@ -332,10 +332,14 @@ class SlipReaderScriptTest extends SlipReadingTestCase
         $this->assertContains('taxable_amount', $vendorSaved['payload']['read_confirmed']);
         $this->assertContains('bill_no', $vendorSaved['payload']['read_confirmed']);
 
-        $this->actingAs($accounts)->from(route('finance.project.vendor-bills.create', $this->project))
+        $saved = $this->actingAs($accounts)->from(route('finance.project.vendor-bills.create', $this->project))
             ->post(route('finance.project.vendor-bills.store', $this->project), array_filter($vendorSaved['payload'], fn ($value) => $value !== ''))
             ->assertSessionHasNoErrors();
         $this->assertSame(SlipRead::USED, $reading->refresh()->status);
+
+        // The accountant, who does not open the ledger (money.overview), lands on the bill and reads how it was filled.
+        $this->assertFalse($accounts->can('money.overview'));
+        $this->actingAs($accounts)->get((string) $saved->headers->get('Location'))->assertOk()->assertSee('Filled from a photo');
     }
 
     public function test_a_supplier_typed_as_read_can_be_confirmed_though_another_was_found_by_its_gstin(): void

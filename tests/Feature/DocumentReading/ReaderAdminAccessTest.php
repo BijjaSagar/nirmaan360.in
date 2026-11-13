@@ -97,6 +97,9 @@ class ReaderAdminAccessTest extends ReaderTrialTestCase
 
         $this->assertFalse(app(AiSpend::class)->switchedOn());
         $this->assertFalse(app(AiSpend::class)->readersOn());
+
+        // The platform admin's tabs lead to it.
+        $this->actingAs($this->admin)->get(route('admin.index'))->assertOk()->assertSee('href="'.route('ai-reader.admin.index').'"', false);
     }
 
     public function test_a_page_picture_is_served_only_under_its_own_dry_run(): void
