@@ -441,6 +441,11 @@ class TextCallStartTest extends TextCallTestCase
     {
         $forReads = new class extends FakeTextHandler {};
 
+        // Only the stand-ins: real modules' handlers (such as the pre-check's explanation) are set aside.
+        foreach (array_keys(config('modules', [])) as $module) {
+            config(["modules.{$module}.text_calls" => []]);
+        }
+
         config(['modules.text_stand_ins.text_calls' => ['rate_match' => FakeTextHandler::class, 'wording' => [DocumentRead::class => $forReads::class]]]);
         config(['modules.more_stand_ins.text_calls' => ['rate_match' => FakeTextHandler::class, 'wording' => ['App\Models\SiteLetter' => FakeTextHandler::class]]]);
 

@@ -43,6 +43,14 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         return AiDocumentSettings::withoutGlobalScopes()->where('organization_id', ($organization ?? $this->organization)->id)->first();
     }
 
+    /** Sets aside the text calls real modules register (such as the pre-check's explanation), so only the stand-ins count. */
+    private function withoutRealTextCalls(): void
+    {
+        foreach (array_keys(config('modules', [])) as $module) {
+            config(["modules.{$module}.text_calls" => []]);
+        }
+    }
+
     private function settings(): ReaderSettings
     {
         return app(ReaderSettings::class);
@@ -153,6 +161,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
     public function test_with_no_reader_deployed_the_page_says_so_and_nothing_can_be_accepted(): void
     {
         config(['modules.reader_stand_ins.read_kinds' => []]);
+        $this->withoutRealTextCalls();
 
         $this->assertFalse($this->settings()->readerDeployed());
         $this->assertFalse($this->settings()->offered());
@@ -519,6 +528,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
     public function test_the_limits_form_lists_the_deployed_features_with_their_usual_limits(): void
     {
         // The stand-in readers are a BOQ, a slip and a tender reader. Nothing else is deployed.
+        $this->withoutRealTextCalls();
         $this->assertSame(['boq', 'slip', 'tender'], $this->settings()->features());
 
         $page = $this->actingAs($this->owner)->get(self::PAGE)->assertOk()
