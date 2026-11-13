@@ -132,7 +132,7 @@
     "The register has no confirmed entry that this letter can cite.": "या पत्रात उल्लेख करता येईल अशी कोणतीही निश्चित नोंद नोंदवहीत नाही.",
     "No confirmed entry of the register is still going on, so a notice of delay has nothing to cite. A request for extension of time can cite entries that have ended.": "नोंदवहीतील कोणतीही निश्चित नोंद अजून सुरू नाही, त्यामुळे विलंबाच्या सूचनेत उल्लेख करण्यासारखे काही नाही. मुदतवाढीच्या विनंतीत संपलेल्या नोंदींचा उल्लेख करता येतो.",
     "Client bills this letter follows up": "ज्या क्लायंट बिलांच्या थकबाकीसाठी हे पत्र आहे ती बिले",
-    "Approved client bills of this project with an amount outstanding, going by the receipts recorded in the app. A payment that is not recorded here is not known to the app.": "ॲपमध्ये नोंदवलेल्या जमेनुसार थकबाकी असलेली या प्रोजेक्टची मंजूर क्लायंट बिले. इथे न नोंदवलेले पेमेंट ॲपला माहीत नसते.",
+    "Approved client bills of this project that are not marked paid and have an amount outstanding, going by the receipts recorded in the app. A payment that is not recorded here is not known to the app.": "अदा केले म्हणून नोंदलेली नाहीत आणि ॲपमध्ये नोंदवलेल्या जमेनुसार थकबाकी असलेली या प्रोजेक्टची मंजूर क्लायंट बिले. इथे न नोंदवलेले पेमेंट ॲपला माहीत नसते.",
     "No approved client bill of this project has an amount outstanding.": "या प्रोजेक्टच्या कोणत्याही मंजूर क्लायंट बिलावर थकबाकी नाही.",
     "Outstanding: :amount": "थकबाकी: :amount",
     "Letters": "पत्रे",

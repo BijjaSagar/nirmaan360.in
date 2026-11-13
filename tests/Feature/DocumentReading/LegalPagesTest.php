@@ -5,6 +5,9 @@ namespace Tests\Feature\DocumentReading;
 use App\Services\DocumentReading\AiDocumentConsent;
 use App\Services\DocumentReading\ReaderSettings;
 use App\Services\Notify\CompanyDeletionService;
+use App\Services\OwnerPack\OwnerUpdateShareService;
+use App\Services\OwnerPack\QuotationShareService;
+use App\Services\Reports\DprReportService;
 use App\Services\Website\AiOffer;
 use App\Support\PlatformSettings;
 use Illuminate\Support\Facades\Http;
@@ -42,10 +45,13 @@ class LegalPagesTest extends ReadingTestCase
      */
     private const RETENTION = 'The provider states that it deletes what it receives through its API within 30 days, except in the cases its policy lists, such as when it needs to keep something longer to enforce its usage policy or the law requires it.';
 
-    /** The paragraph as the live site has said it since the agents were named, kept word for word until a reader is offered. */
-    private const WHO_AGENTS = 'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website use an AI model provider, Anthropic: when a company uses the agents, what is asked of them and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that does not use the agents.';
+    /**
+     * The paragraph shown until a reader is offered: the live site's words since the agents were named, with every
+     * kind of link a company can share named in its first sentences, since quotation and weekly update links go live with it.
+     */
+    private const WHO_AGENTS = 'Your project records are visible only to people in your company account, and to anyone who has a link your company shares: a client sign-off link for a bill, or a link to a daily report, a quotation or a weekly update. Anyone with such a link can open what it shows until the link stops working after a set number of days, and a quotation or weekly update link can be withdrawn sooner. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website use an AI model provider, Anthropic: when a company uses the agents, what is asked of them and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that does not use the agents.';
 
-    private const WHO_READERS = 'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website and the AI readers use an AI model provider, Anthropic: when a company uses them, what is asked of them, the pages, photos and text sent to a reader, and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that uses neither.';
+    private const WHO_READERS = 'Your project records are visible only to people in your company account, and to anyone who has a link your company shares: a client sign-off link for a bill, or a link to a daily report, a quotation or a weekly update. Anyone with such a link can open what it shows until the link stops working after a set number of days, and a quotation or weekly update link can be withdrawn sooner. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website and the AI readers use an AI model provider, Anthropic: when a company uses them, what is asked of them, the pages, photos and text sent to a reader, and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that uses neither.';
 
     private const WHERE_AGENTS = 'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider\'s servers outside India. '.self::RETENTION;
 
@@ -85,6 +91,21 @@ class LegalPagesTest extends ReadingTestCase
         return html_entity_decode((string) preg_replace('/\s+/', ' ', strip_tags($match[1])), ENT_QUOTES);
     }
 
+    public function test_every_kind_of_link_the_policy_names_opens_without_an_account_and_stops_working(): void
+    {
+        // A client sign-off link, a daily report, a quotation and a weekly update: each is a signed address anyone holding it can open.
+        foreach (['client.bill', 'dprs.shared', 'quotations.shared', 'owner-updates.shared', 'owner-updates.shared.photo'] as $name) {
+            $route = Route::getRoutes()->getByName($name);
+            $this->assertNotNull($route, $name);
+            $this->assertContains('signed', $route->gatherMiddleware(), $name);
+        }
+
+        // Each stops working after a set number of days. Quotation and weekly update links can be withdrawn sooner.
+        $this->assertGreaterThan(0, DprReportService::LINK_DAYS);
+        $this->assertGreaterThan(0, (int) config('modules.owner_pack.share_link_days'));
+        $this->assertTrue(method_exists(QuotationShareService::class, 'revoke') && method_exists(OwnerUpdateShareService::class, 'revoke'));
+    }
+
     public function test_the_policy_names_the_ai_provider_for_the_agents_before_any_reader_exists(): void
     {
         $this->assertFalse(app(ReaderSettings::class)->offered());
@@ -92,7 +113,7 @@ class LegalPagesTest extends ReadingTestCase
         $text = $this->text('/privacy');
 
         $this->assertStringContainsString(self::USE, $text);
-        // The live site's own paragraph about who sees the records, word for word.
+        // The live site's own paragraph about who sees the records, with the links a company shares.
         $this->assertStringContainsString(self::WHO_AGENTS, $text);
         $this->assertStringContainsString(self::WHERE_AGENTS, $text);
 

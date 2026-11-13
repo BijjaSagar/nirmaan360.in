@@ -53,9 +53,9 @@ class AiPagesTest extends TestCase
         'Voice DPR' => AiOffer::VOICE_ROUTE,
     ];
 
-    private const OWNER_PACK_LANGUAGES = 'A quotation, a stage-payment schedule and a weekly update in Marathi, Hindi or English, with the figures taken from your approved records.';
+    private const OWNER_PACK_LANGUAGES = 'A quotation from your BOQ with a stage-payment schedule, and a weekly update of the work in your approved daily reports and measurements, in Marathi, Hindi or English.';
 
-    private const OWNER_PACK_NO_LANGUAGES = 'A quotation, a stage-payment schedule and a weekly update for the home owner, with the figures taken from your approved records.';
+    private const OWNER_PACK_NO_LANGUAGES = 'For the home owner: a quotation from your BOQ with a stage-payment schedule, and a weekly update of the work in your approved daily reports and measurements.';
 
     private const LIVE_INTRO = 'These work on the records already in your account. What the AI prepares is saved as a draft and marked as one. Nothing is approved, posted to stock, billed or sent outside your company until a person confirms it.';
 

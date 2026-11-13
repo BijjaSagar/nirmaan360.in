@@ -69,6 +69,10 @@ class SiteLetterHttpTest extends SiteLetterTestCase
         $unpaid = $this->clientBill('SG1/RA/1', '250000.00');
         $paid = $this->clientBill('SG1/RA/2', '4000.00');
         $this->receipt($paid, '4000.00');
+        // Marked paid with the button on its RA bill page, which records no receipt.
+        $marked = $this->clientBill('SG1/RA/3', '9000.00');
+        $this->actingAs($this->pm)->post(route('ra-bills.paid', $marked))->assertRedirect();
+        $this->assertSame('PAID', $marked->fresh()->status);
 
         $page = $this->actingAs($this->pm)->get($this->index())->assertOk()
             ->assertSee('Prepare a letter')
@@ -83,6 +87,7 @@ class SiteLetterHttpTest extends SiteLetterTestCase
             ->assertDontSee('Entry of the other project')
             ->assertSee('SG1/RA/1')->assertSee('Outstanding: ₹2,50,000.00')
             ->assertDontSee('SG1/RA/2')
+            ->assertDontSee('SG1/RA/3')->assertDontSee('₹9,000.00')
             ->assertSee(route('site-diary.hindrances.index', $this->project), false);
 
         $html = $page->getContent();

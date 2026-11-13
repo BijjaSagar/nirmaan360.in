@@ -59,7 +59,7 @@
 @if ($showsBills)
     <fieldset class="border-t border-rule" @if ($kind === null) x-show="type === 'payment_followup'" x-cloak @endif>
         <legend class="label px-4 pt-3">{{ __('Client bills this letter follows up') }}</legend>
-        <p class="hint px-4">{{ __('Approved client bills of this project with an amount outstanding, going by the receipts recorded in the app. A payment that is not recorded here is not known to the app.') }}</p>
+        <p class="hint px-4">{{ __('Approved client bills of this project that are not marked paid and have an amount outstanding, going by the receipts recorded in the app. A payment that is not recorded here is not known to the app.') }}</p>
         @foreach (['bill_ids', 'bill_ids.*'] as $field)
             @error($field)
                 <p class="error px-4">{{ $message }}</p>

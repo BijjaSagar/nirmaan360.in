@@ -611,6 +611,48 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->assertStringContainsString('Could not find the heading row in the PDF', session('boq_import.errors.0.message'));
     }
 
+    public function test_an_old_font_outside_the_table_or_only_listed_beside_a_page_does_not_stop_a_typed_table(): void
+    {
+        $rows = [
+            self::ESTIMATE_HEADING,
+            ['1', 'Excavation for foundation', '10', '350', 'cu.m', '3500'],
+            ['2', 'Providing and fixing flush door', '3', '4000', 'door', '12000'],
+        ];
+        $grid = [
+            1 => [1 => 'Sr. No.', 2 => 'Description of Items', 3 => 'Qty.', 4 => 'Rate', 5 => 'Unit', 6 => 'Amount in Rs.'],
+            2 => [1 => '1', 2 => 'Excavation for foundation', 3 => '10', 4 => '350', 5 => 'cu.m', 6 => '3500'],
+            3 => [1 => '2', 2 => 'Providing and fixing flush door', 3 => '3', 4 => '4000', 5 => 'door', 6 => '12000'],
+        ];
+        $old = ['fonts' => ['F2' => 'SHREE-DEV-0714'], 'picture' => 'none'];
+        $read = fn (string|array $content, array $options = []) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($content, [...$old, ...$options]), 'estimate.pdf')->getRealPath());
+
+        // The same typed table, with an old font only listed beside the page, or on the page tree above it.
+        foreach ([false, true] as $inherited) {
+            $plain = $read($this->tableCells($rows), ['inherited' => $inherited]);
+            $this->assertTrue($plain->ok(), (string) $plain->error);
+            $this->assertSame($grid, $plain->grid);
+        }
+
+        // A Marathi title in the old font above the table, and a whole cover page in it before the table.
+        $title = $read($this->textLines(['Old font title line', 'Old font office name'], 0, 810, 'F2').$this->tableCells($rows));
+        $this->assertTrue($title->ok(), (string) $title->error);
+        $this->assertSame($grid, $title->grid);
+
+        $cover = $read([$this->textLines(array_fill(0, 12, 'Old font cover page'), 0, 800, 'F2'), $this->tableCells($rows)]);
+        $this->assertTrue($cover->ok(), (string) $cover->error);
+        $this->assertSame($grid, $cover->grid);
+        $this->assertSame(2, $cover->pages);
+
+        // Text the table would take in, drawn in the old font: one description, the heading, or a line below the rows.
+        foreach ([$this->tableCells($rows, 760, [2 => 'F2']), $this->tableCells($rows, 760, [0 => 'F2']), $this->tableCells($rows).$this->textLines(['Old font signature'], 0, 600, 'F2')] as $content) {
+            $refused = $read($content);
+            $this->assertFalse($refused->ok());
+            $this->assertTrue($refused->scanned);
+            $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $refused->error);
+            $this->assertSame([], $refused->grid);
+        }
+    }
+
     public function test_the_reader_for_scans_is_named_only_where_it_is_installed(): void
     {
         $project = $this->makeProject($this->org);

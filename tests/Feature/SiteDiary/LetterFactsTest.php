@@ -2,10 +2,13 @@
 
 namespace Tests\Feature\SiteDiary;
 
+use App\Models\ClientReceipt;
 use App\Models\ContractTerm;
 use App\Models\Hindrance;
 use App\Models\Organization;
 use App\Models\RaBill;
+use App\Services\Finance\SettlementService;
+use App\Services\RaBillService;
 use App\Services\SiteDiary\LetterFacts;
 use App\Services\Wording\Fact;
 use App\Services\Wording\FactSheet;
@@ -375,6 +378,21 @@ class LetterFactsTest extends SiteLetterTestCase
         $refused($this->clientBill('SG2/RA/1', '20000.00', [], '0', $this->makeProject($this->org, ['code' => 'SG2'])));
         [, , $rivalProject] = $this->rival();
         $refused($this->clientBill('RV1/RA/1', '20000.00', [], '0', $rivalProject));
+
+        // Marked paid on its RA bill page, which writes no receipt, with or without a part receipt first.
+        // The finance screens still count it as owed, but the company has said it was paid, so no letter asks for it.
+        $marked = $this->clientBill('SG1/RA/5', '20000.00');
+        app(RaBillService::class)->markPaid($marked);
+        $partThenMarked = $this->clientBill('SG1/RA/6', '20000.00');
+        $this->receipt($partThenMarked, '5000.00');
+        app(RaBillService::class)->markPaid($partThenMarked);
+
+        $this->assertSame(0, ClientReceipt::withoutGlobalScopes()->where('ra_bill_id', $marked->id)->count());
+        $owed = app(SettlementService::class)->clientBills($this->org->id, $this->project->id)->keyBy(fn (array $row) => $row['bill']->id);
+        $this->assertSame(['20000.00', '15000.00'], [$owed[$marked->id]['outstanding'], $owed[$partThenMarked->id]['outstanding']]);
+        $refused($marked);
+        $refused($partThenMarked);
+        $this->assertSame([$unpaid->id], app(LetterFacts::class)->unpaidBills($this->project)->keys()->all());
 
         $this->assertSame(['bill_ids'], array_keys($this->refusal(fn () => $this->facts(self::PAYMENT, ['bill_ids' => []]))));
         $this->assertSame('50000.00', $this->facts(self::PAYMENT, ['bill_ids' => [$unpaid->id]])->get('total_outstanding')->value);

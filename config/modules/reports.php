@@ -17,8 +17,9 @@ return [
 
     /*
      * Font families that print Marathi or Hindi without Unicode: the PDF holds Latin letters and the
-     * font draws them as Devanagari, so the text cannot be read back as typed. A page that uses one is
-     * not read as text (App\Services\Reports\PdfTextLayer). Each entry is words of a font name, in any
+     * font draws them as Devanagari, so the text cannot be read back as typed. A BOQ PDF whose table has
+     * text drawn in one is refused; a font only listed beside a page, or used only above the table, is
+     * not (App\Services\Reports\PdfTextLayer, BoqPdfReader). Each entry is words of a font name, in any
      * letter case, with or without spaces or hyphens between them.
      *
      * This is a starter list from general knowledge, not a complete one, and it needs a review by

@@ -20,8 +20,9 @@ return [
         'engineer' => ['owner_pack.progress'],
     ],
 
+    // Offered only to someone who may open the page: a custom role can hold owner_pack.view without money.view.
     'nav' => [
-        ['place' => 'project', 'group' => 'Home owner', 'label' => 'Quotations', 'route' => 'quotations.index', 'active' => 'quotations.*', 'can' => 'owner_pack.view', 'order' => 10],
+        ['place' => 'project', 'group' => 'Home owner', 'label' => 'Quotations', 'route' => 'quotations.index', 'active' => 'quotations.*', 'can' => ['owner_pack.view', 'money.view'], 'order' => 10],
         ['place' => 'project', 'group' => 'Home owner', 'label' => 'Weekly updates', 'route' => 'owner-updates.index', 'active' => 'owner-updates.*', 'can' => 'owner_pack.progress', 'order' => 20],
     ],
     'icons' => [],

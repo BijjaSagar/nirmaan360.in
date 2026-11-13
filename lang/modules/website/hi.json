@@ -58,7 +58,7 @@
     "Hindrance register and letters": "रुकावट रजिस्टर और पत्र",
     "Keeps a dated register from your daily reports and drafts extension, delay and payment letters with every date and figure taken from your records.": "आपकी रोज़ की रिपोर्ट से तारीख़वार रजिस्टर रखता है और समय बढ़ाने, देरी और भुगतान के पत्रों का ड्राफ़्ट बनाता है, जिनमें हर तारीख़ और आँकड़ा आपके रिकॉर्ड से लिया जाता है।",
     "Home-owner pack": "घर-मालिक पैक",
-    "A quotation, a stage-payment schedule and a weekly update in Marathi, Hindi or English, with the figures taken from your approved records.": "मराठी, हिन्दी या अंग्रेज़ी में कोटेशन, चरण-वार भुगतान की सूची और साप्ताहिक अपडेट, जिनके आँकड़े आपके मंज़ूर रिकॉर्ड से लिए जाते हैं।",
+    "A quotation from your BOQ with a stage-payment schedule, and a weekly update of the work in your approved daily reports and measurements, in Marathi, Hindi or English.": "आपके BOQ से बना कोटेशन, चरण-वार भुगतान की सूची के साथ, और आपकी मंज़ूर रोज़ की रिपोर्ट और मंज़ूर माप में दर्ज काम का साप्ताहिक अपडेट, मराठी, हिन्दी या अंग्रेज़ी में।",
     "Voice DPR": "बोलकर DPR",
     "Speak the day's report in Marathi, Hindi or English in the field app, on phones that can turn speech into text by themselves. It becomes a draft for you to check and send.": "फ़ील्ड ऐप में दिन की रिपोर्ट मराठी, हिन्दी या अंग्रेज़ी में बोलें, उन फ़ोन पर जो बोली को ख़ुद ही टेक्स्ट में बदल सकते हैं। यह एक ड्राफ़्ट बनता है, जिसे आप जाँचकर भेजते हो।",
     "Estimator": "एस्टिमेटर",
@@ -122,5 +122,5 @@
     "Net (cut − fill)": "शुद्ध (कटाई − भराई)",
     "These are planning estimates. Check them against your drawings, specifications and site conditions before ordering.": "ये योजना बनाने के लिए अंदाज़े हैं। ऑर्डर देने से पहले इन्हें अपनी ड्रॉइंग, स्पेसिफ़िकेशन और साइट की हालत से मिला लें।",
     "Track these quantities against your BOQ.": "इन मात्राओं का हिसाब अपने BOQ के सामने रखें।",
-    "A quotation, a stage-payment schedule and a weekly update for the home owner, with the figures taken from your approved records.": "घर के मालिक के लिए कोटेशन, चरण-वार भुगतान की सूची और साप्ताहिक अपडेट, जिनके आँकड़े आपके मंज़ूर रिकॉर्ड से लिए जाते हैं।"
+    "For the home owner: a quotation from your BOQ with a stage-payment schedule, and a weekly update of the work in your approved daily reports and measurements.": "घर के मालिक के लिए: आपके BOQ से बना कोटेशन, चरण-वार भुगतान की सूची के साथ, और आपकी मंज़ूर रोज़ की रिपोर्ट और मंज़ूर माप में दर्ज काम का साप्ताहिक अपडेट।"
 }

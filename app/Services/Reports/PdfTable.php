@@ -32,6 +32,9 @@ final class PdfTable
     /** @var list<array{page: int, y: float, size: float, pieces: list<array<string, mixed>>, cells: array<int, list<array<string, mixed>>>}> */
     private array $body = [];
 
+    /** @var list<int> The lines the heading spans, by their place among the lines of the pages. */
+    private array $headingLines = [];
+
     /**
      * @param  list<array{pieces: list<array{x: float, x1: float, y: float, size: float, text: string}>, h: list<array{0: float, 1: float, 2: float}>, v: list<array{0: float, 1: float, 2: float}>}>  $pages
      */
@@ -44,10 +47,13 @@ final class PdfTable
         $heading = $this->heading();
 
         if ($heading === null) {
+            $this->headingLines = $this->body = [];
+
             return [];
         }
 
         [$cells, $headingLines] = $heading;
+        $this->headingLines = $headingLines;
         $this->body = $this->body($headingLines, $cells);
         [$x0, $x1] = $this->span($cells);
         $bands = $this->ruleBands($cells, $headingLines, $x0, $x1) ?? $this->gapBands($cells, $x0, $x1);
@@ -70,6 +76,24 @@ final class PdfTable
         }
 
         return $grid;
+    }
+
+    /**
+     * Whether a piece of text the grid is made from carries this mark, as the caller set it on the
+     * pieces: a piece of the heading or of a line after it. A title or anything else above the heading
+     * is not in the grid. Asked after grid(); false when no heading was found.
+     */
+    public function keeps(string $mark): bool
+    {
+        foreach ([...array_map(fn (int $index) => $this->lines[$index], $this->headingLines), ...$this->body] as $line) {
+            foreach ($line['pieces'] as $piece) {
+                if (! empty($piece[$mark])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /** A rough width for a run of text in a proportional font, in points. Only used to judge overlaps and gaps. */

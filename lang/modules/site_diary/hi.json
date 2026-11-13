@@ -132,7 +132,7 @@
     "The register has no confirmed entry that this letter can cite.": "रजिस्टर में ऐसी कोई पुष्टि की हुई प्रविष्टि नहीं है जिसका हवाला यह पत्र दे सके।",
     "No confirmed entry of the register is still going on, so a notice of delay has nothing to cite. A request for extension of time can cite entries that have ended.": "रजिस्टर की कोई भी पुष्टि की हुई प्रविष्टि अभी जारी नहीं है, इसलिए देरी की सूचना में हवाला देने के लिए कुछ नहीं है। समय-वृद्धि के अनुरोध में खत्म हो चुकी प्रविष्टियों का हवाला दिया जा सकता है।",
     "Client bills this letter follows up": "वे क्लाइंट बिल जिनके बकाया के लिए यह पत्र है",
-    "Approved client bills of this project with an amount outstanding, going by the receipts recorded in the app. A payment that is not recorded here is not known to the app.": "इस प्रोजेक्ट के वे स्वीकृत क्लाइंट बिल जिन पर ऐप में दर्ज प्राप्तियों के हिसाब से राशि बकाया है। जो भुगतान यहाँ दर्ज नहीं है, उसकी जानकारी ऐप को नहीं है।",
+    "Approved client bills of this project that are not marked paid and have an amount outstanding, going by the receipts recorded in the app. A payment that is not recorded here is not known to the app.": "इस प्रोजेक्ट के वे स्वीकृत क्लाइंट बिल जो भुगतान हुआ दर्ज नहीं हैं और जिन पर ऐप में दर्ज प्राप्तियों के हिसाब से राशि बकाया है। जो भुगतान यहाँ दर्ज नहीं है, उसकी जानकारी ऐप को नहीं है।",
     "No approved client bill of this project has an amount outstanding.": "इस प्रोजेक्ट के किसी स्वीकृत क्लाइंट बिल पर कोई राशि बकाया नहीं है।",
     "Outstanding: :amount": "बकाया: :amount",
     "Letters": "पत्र",

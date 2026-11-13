@@ -15,8 +15,8 @@ use Throwable;
  * This class pulls both out of each page with smalot/pdfparser, pure PHP, and PdfTable puts
  * the table back together. The result is the same grid an Excel sheet gives, so the same
  * checks run on it. A scanned PDF is an image and has no text to read, so it is refused. So is a
- * PDF whose text was put there by a machine or by an old non-Unicode font (PdfTextLayer): that
- * text is not what the page shows, and its figures must not be taken as typed.
+ * PDF whose text was put there by a machine, or whose table is drawn in an old non-Unicode font
+ * (PdfTextLayer): that text is not what the page shows, and its figures must not be taken as typed.
  *
  * The file is untrusted: it is capped in size, pages and text, every stream is capped when
  * unpacked, the time spent is bounded, and any failure inside the parser is an ordinary error.
@@ -94,6 +94,7 @@ final class BoqPdfReader
 
         $read = [];
         $pieces = 0;
+        $oldFontPieces = 0;
         $machineText = false;
 
         foreach ($pages as $page) {
@@ -102,17 +103,18 @@ final class BoqPdfReader
             }
 
             try {
-                $text = $this->pieces($page);
                 $tokens = self::tokens($page);
-                $rules = $this->rules($tokens, $text['rotation']);
                 $layer = $this->layer->inspect($page, $tokens);
+                $text = $this->pieces($page, $layer['legacy_fonts']);
+                $rules = $this->rules($tokens, $text['rotation']);
             } catch (Throwable) {
                 return BoqPdfRead::failed($this->unreadable());
             }
 
             unset($tokens);
-            $machineText = $machineText || $layer['invisible'] || $layer['legacy_font'];
+            $machineText = $machineText || $layer['invisible'];
             $pieces += count($text['pieces']);
+            $oldFontPieces += $text['old_font'];
 
             if ($pieces > self::MAX_PIECES) {
                 return BoqPdfRead::failed($this->slow());
@@ -126,7 +128,7 @@ final class BoqPdfReader
             return BoqPdfRead::failed(__('This PDF has no text in it, so it is a scanned copy or a picture. Its figures cannot be read. Please upload the Excel file of the estimate instead.'), scanned: true);
         }
 
-        // Text is there, but on at least one page a machine wrote it or an old font draws it as other letters.
+        // Text is there, but on at least one page a machine wrote it over the picture of the page.
         if ($machineText) {
             return BoqPdfRead::failed($this->machineText(), scanned: true);
         }
@@ -135,9 +137,17 @@ final class BoqPdfReader
         gc_collect_cycles();
 
         try {
-            $grid = (new PdfTable($read))->grid();
+            $table = new PdfTable($read);
+            $grid = $table->grid();
         } catch (Throwable) {
             return BoqPdfRead::failed($this->unreadable());
+        }
+
+        // An old font draws other letters than the file holds. The file is refused when any text drawn in
+        // one would go into the table, or when no table is found and most of its text is drawn in one.
+        // A title or a cover page above the table, or a font only listed beside a page, changes nothing.
+        if ($table->keeps('old_font') || ($grid === [] && $oldFontPieces * 100 >= $pieces * PdfTextLayer::LEGACY_SHARE)) {
+            return BoqPdfRead::failed($this->machineText(), scanned: true);
         }
 
         if ($grid === []) {
@@ -148,18 +158,28 @@ final class BoqPdfReader
     }
 
     /**
-     * Every piece of text on the page with where it sits, its size and an estimate of its width.
+     * Every piece of text on the page with where it sits, its size, an estimate of its width, and
+     * whether one of the page's old fonts drew it.
      *
-     * @return array{pieces: list<array{x: float, x1: float, y: float, size: float, text: string}>, rotation: int}
+     * @param  list<string>  $oldFonts  From PdfTextLayer::inspect(), as PdfTextLayer::fontKey() spells them.
+     * @return array{pieces: list<array{x: float, x1: float, y: float, size: float, text: string, old_font: bool}>, rotation: int, old_font: int}
      */
-    private function pieces(Page $page): array
+    private function pieces(Page $page, array $oldFonts = []): array
     {
         $raw = $page->getDataTm();
         $pieces = [];
         $rotated = 0;
         $lastSize = 10.0;
+        $oldFonts = array_fill_keys($oldFonts, true);
+        // pdfparser names the font of a piece shown with Tj or TJ. A piece shown with ' or " is in the font selected last.
+        $font = null;
+        $inOldFont = 0;
 
         foreach ($raw as $item) {
+            if (isset($item[2]) && is_scalar($item[2])) {
+                $font = PdfTextLayer::fontKey((string) $item[2]);
+            }
+
             $tm = $item[0] ?? null;
             $text = trim((string) ($item[1] ?? ''));
 
@@ -186,7 +206,9 @@ final class BoqPdfReader
                 $rotated += $b > 0 ? 1 : -1;
             }
 
-            $pieces[] = ['x' => $x, 'y' => $y, 'size' => $size, 'text' => preg_replace('/\s+/u', ' ', $text) ?? $text];
+            $old = $font !== null && isset($oldFonts[$font]);
+            $inOldFont += $old ? 1 : 0;
+            $pieces[] = ['x' => $x, 'y' => $y, 'size' => $size, 'text' => preg_replace('/\s+/u', ' ', $text) ?? $text, 'old_font' => $old];
         }
 
         // A landscape page drawn sideways reads top to bottom along x. Turn it so that y runs down the table again.
@@ -197,7 +219,7 @@ final class BoqPdfReader
             $piece['x1'] = $piece['x'] + PdfTable::width($piece['text'], $piece['size']);
         }
 
-        return ['pieces' => $pieces, 'rotation' => $rotation];
+        return ['pieces' => $pieces, 'rotation' => $rotation, 'old_font' => $inOldFont];
     }
 
     /** @return array{0: float, 1: float} */

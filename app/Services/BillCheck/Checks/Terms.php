@@ -190,7 +190,8 @@ final class Terms extends Check
      * T4: earlier approved client bills that are not fully paid although the payment period a person
      * confirmed for the contract has run out. The period is counted from the bill's date, which is
      * the day it was approved, as the finance screens date it. Read from the finance records, so a
-     * company without that module has nothing to compare.
+     * company without that module has nothing to compare. A bill marked paid on its RA bill page is
+     * paid here too, whatever its receipts add up to (SettlementService::clientBillsOwed()).
      *
      * @return list<Flag>
      */
@@ -202,10 +203,10 @@ final class Terms extends Check
 
         $flags = [];
 
-        foreach (app(SettlementService::class)->clientBills($facts->bill->organization_id, $facts->bill->project_id) as $position) {
+        foreach (app(SettlementService::class)->clientBillsOwed($facts->bill->organization_id, $facts->bill->project_id) as $position) {
             $earlier = $position['bill'];
 
-            if ($earlier->id >= $facts->bill->id || ! Dec::of($position['outstanding'])->isPositive()) {
+            if ($earlier->id >= $facts->bill->id) {
                 continue;
             }
 

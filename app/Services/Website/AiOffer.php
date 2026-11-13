@@ -52,7 +52,7 @@ class AiOffer
         'bill-checks.run' => ['clipboard', 'RA bill pre-check', 'Re-adds the bill, compares it with earlier bills, the BOQ and approved measurements, and explains each finding in Marathi, Hindi or English.', false],
         'rate-suggestions.store' => ['rupee', 'Rate helper', 'Suggests rates from your own rate library and past work, with the source and date on every figure. You accept each line yourself.', false],
         'site-diary.hindrances.index' => ['flag', 'Hindrance register and letters', 'Keeps a dated register from your daily reports and drafts extension, delay and payment letters with every date and figure taken from your records.', false],
-        self::OWNER_PACK_ROUTE => ['calendar', 'Home-owner pack', 'A quotation, a stage-payment schedule and a weekly update in Marathi, Hindi or English, with the figures taken from your approved records.', false],
+        self::OWNER_PACK_ROUTE => ['calendar', 'Home-owner pack', 'A quotation from your BOQ with a stage-payment schedule, and a weekly update of the work in your approved daily reports and measurements, in Marathi, Hindi or English.', false],
         self::VOICE_ROUTE => ['phone', 'Voice DPR', 'Speak the day\'s report in Marathi, Hindi or English in the field app, on phones that can turn speech into text by themselves. It becomes a draft for you to check and send.', true],
     ];
 
@@ -63,7 +63,7 @@ class AiOffer
      */
     private const OWNER_PACK_ROUTE = 'owner-updates.index';
 
-    private const OWNER_PACK_UNNAMED_LANGUAGES = 'A quotation, a stage-payment schedule and a weekly update for the home owner, with the figures taken from your approved records.';
+    private const OWNER_PACK_UNNAMED_LANGUAGES = 'For the home owner: a quotation from your BOQ with a stage-payment schedule, and a weekly update of the work in your approved daily reports and measurements.';
 
     /** Autonomy level => name on the website, what it means. A level the agents do not have is never shown. */
     private const LEVELS = [

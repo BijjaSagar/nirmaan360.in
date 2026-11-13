@@ -96,13 +96,14 @@ class LetterFacts
 
     /**
      * Client bills of the project with something still outstanding, oldest first, each with its position.
+     * A bill marked paid on its RA bill page is left out even when no receipt adds up to it: the letter
+     * never asks for money the company has said it was paid.
      *
-     * @return Collection<int, array<string, mixed>> Keyed by bill id. See SettlementService::clientBills().
+     * @return Collection<int, array<string, mixed>> Keyed by bill id. See SettlementService::clientBillsOwed().
      */
     public function unpaidBills(Project $project): Collection
     {
-        return $this->settlement->clientBills($project->organization_id, $project->id)
-            ->filter(fn (array $row) => Dec::of($row['outstanding'])->isPositive())
+        return $this->settlement->clientBillsOwed($project->organization_id, $project->id)
             ->keyBy(fn (array $row) => (int) $row['bill']->id);
     }
 

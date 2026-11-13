@@ -14,12 +14,13 @@ use Smalot\PdfParser\Parser;
 trait WritesPdfByHand
 {
     /**
-     * The options: "font" is the name the PDF gives the font. "picture" is where the image is listed:
-     * on the page, inside a form the page paints, or nowhere. "inherited" puts the resources on the
-     * page tree instead of the page. "typed" false leaves /Type /XObject off the image, as a PDF may.
+     * The options: "font" is the name the PDF gives the font. "fonts" lists more fonts beside it, by the
+     * name the content stream selects them with. "picture" is where the image is listed: on the page,
+     * inside a form the page paints, or nowhere. "inherited" puts the resources on the page tree instead
+     * of the page. "typed" false leaves /Type /XObject off the image, as a PDF may.
      *
      * @param  string|list<string>  $content  The content stream of the page, or of each page. /F1 is the font, /Im0 the picture and /Fm0 a form that paints the picture.
-     * @param  array{font?: string, picture?: 'page'|'form'|'none', inherited?: bool, typed?: bool}  $options
+     * @param  array{font?: string, fonts?: array<string, string>, picture?: 'page'|'form'|'none', inherited?: bool, typed?: bool}  $options
      */
     protected function handPdf(string|array $content, array $options = []): string
     {
@@ -29,7 +30,14 @@ trait WritesPdfByHand
             'form' => '/XObject << /Fm0 5 0 R >>',
             default => '',
         };
-        $resources = '/Resources << /Font << /F1 3 0 R >> '.$xobjects.' >>';
+        $fonts = '/F1 3 0 R';
+        $number = 6 + 2 * count($pages);
+
+        foreach (array_keys($options['fonts'] ?? []) as $name) {
+            $fonts .= ' /'.$name.' '.$number++.' 0 R';
+        }
+
+        $resources = '/Resources << /Font << '.$fonts.' >> '.$xobjects.' >>';
         $inherited = $options['inherited'] ?? false;
         $form = 'q 595 0 0 842 0 0 cm /Im0 Do Q';
         $kids = [];
@@ -49,6 +57,10 @@ trait WritesPdfByHand
         foreach (array_values($pages) as $i => $stream) {
             $objects[] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents '.(7 + $i * 2).' 0 R '.($inherited ? '' : $resources).' >>';
             $objects[] = '<< /Length '.strlen($stream).' >>'."\nstream\n".$stream."\nendstream";
+        }
+
+        foreach ($options['fonts'] ?? [] as $base) {
+            $objects[] = '<< /Type /Font /Subtype /Type1 /BaseFont /'.$base.' >>';
         }
 
         $pdf = "%PDF-1.4\n";
@@ -80,12 +92,36 @@ trait WritesPdfByHand
      *
      * @param  list<string>  $lines
      */
-    protected function textLines(array $lines, int $mode = 0, int $top = 800): string
+    protected function textLines(array $lines, int $mode = 0, int $top = 800, string $font = 'F1'): string
     {
-        $text = 'BT '.$mode.' Tr /F1 10 Tf 40 '.$top.' Td ';
+        $text = 'BT '.$mode.' Tr /'.$font.' 10 Tf 40 '.$top.' Td ';
 
         foreach ($lines as $line) {
             $text .= '('.$line.') Tj 0 -14 Td ';
+        }
+
+        return $text.'ET'."\n";
+    }
+
+    /**
+     * A table drawn cell by cell, each cell a piece of its own at the left of its column, as a program prints one.
+     *
+     * @param  list<list<string>>  $rows  The heading first.
+     * @param  array<int, string>  $fonts  Row number => the font that row is drawn in. The others are in /F1.
+     */
+    protected function tableCells(array $rows, int $top = 760, array $fonts = []): string
+    {
+        $columns = [40, 80, 300, 350, 410, 480];
+        $text = 'BT 0 Tr ';
+
+        foreach ($rows as $index => $row) {
+            $text .= '/'.($fonts[$index] ?? 'F1').' 9 Tf ';
+
+            foreach ($row as $column => $cell) {
+                if ($cell !== '') {
+                    $text .= '1 0 0 1 '.$columns[$column].' '.($top - 18 * $index).' Tm ('.$cell.') Tj ';
+                }
+            }
         }
 
         return $text.'ET'."\n";

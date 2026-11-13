@@ -21,11 +21,19 @@ use Smalot\PdfParser\PDFObject;
  * Neither can be read as typed text. Both checks are rules of thumb. They can miss a file, for
  * example text placed under the picture in the ordinary mode, or a font family that is not in
  * the list. Passing them says only that neither sign was found.
+ *
+ * An old font counts only where the page's own text is drawn in it, as Tf selects it. A font that
+ * is only listed in the page's resources, or in those of the page tree above it, draws nothing.
+ * Which of the drawn text matters is for the caller to say: BoqPdfReader refuses a file only when
+ * such text would go into the table it reads.
  */
 final class PdfTextLayer
 {
     /** A page is taken as a picture with machine text when at least this share of its text is drawn invisibly, out of 100. */
     public const INVISIBLE_SHARE = 80;
+
+    /** A file in which no table is found is taken as one in an old font when at least this share of its pieces of text is drawn in one, out of 100. */
+    public const LEGACY_SHARE = 50;
 
     /** Text rendering mode 3: neither filled nor stroked, so nothing is drawn. */
     private const INVISIBLE_MODE = 3;
@@ -39,15 +47,34 @@ final class PdfTextLayer
     private const PARENT_DEPTH = 32;
 
     /**
+     * invisible: the page paints a picture and nearly all of its text is drawn in the invisible mode.
+     * legacy_fonts: the fonts of the old families that draw text on the page, by the name its content
+     * stream gives them (as fontKey() spells it), so the caller can tell which pieces of text they drew.
+     *
      * @param  list<string>|null  $tokens  The page's content stream as BoqPdfReader::tokens() gives it, when the caller has it already.
-     * @return array{invisible: bool, legacy_font: bool}
+     * @return array{invisible: bool, legacy_fonts: list<string>}
      */
     public function inspect(Page $page, ?array $tokens = null): array
     {
+        $tokens ??= BoqPdfReader::tokens($page);
+        $text = $this->text($tokens);
+        $resources = $this->resources($page);
+
         return [
-            'invisible' => $this->invisible($page, $tokens ?? BoqPdfReader::tokens($page)),
-            'legacy_font' => $this->legacyFont($page),
+            'invisible' => $text['shown'] > 0
+                && $text['hidden'] * 100 >= $text['shown'] * self::INVISIBLE_SHARE
+                && $this->paintsImage($tokens, $resources, self::FORM_DEPTH),
+            'legacy_fonts' => $this->legacyFonts($resources, $text['fonts']),
         ];
+    }
+
+    /**
+     * A font's name as a content stream gives it to Tf, without the slash and with a character
+     * spelled #xx written out, so the name pdfparser reports for a piece of text compares equal.
+     */
+    public static function fontKey(string $name): string
+    {
+        return (string) preg_replace_callback('/#([0-9A-Fa-f]{2})/', fn (array $match) => chr((int) hexdec($match[1])), ltrim(trim($name), '/'));
     }
 
     /**
@@ -82,18 +109,23 @@ final class PdfTextLayer
     }
 
     /**
-     * The page paints a picture and nearly all of its text is drawn in the invisible mode.
-     * The mode is part of the graphics state, so it is saved and restored with q and Q.
+     * How many pieces of text the page shows, how many of them in the invisible mode, and the fonts
+     * Tf had selected for them. The mode and the font are part of the graphics state, so both are
+     * saved and restored with q and Q.
      *
      * @param  list<string>  $tokens
+     * @return array{shown: int, hidden: int, fonts: array<string, true>} fonts: by the name the stream gives, without the slash.
      */
-    private function invisible(Page $page, array $tokens): bool
+    private function text(array $tokens): array
     {
         $mode = 0;
+        $font = null;
+        $fonts = [];
         $saved = [];
         $shown = 0;
         $hidden = 0;
         $number = null;
+        $name = null;
         $count = count($tokens);
 
         for ($i = 0; $i < $count; $i++) {
@@ -106,20 +138,28 @@ final class PdfTextLayer
                 continue;
             }
 
-            if ($first === '(' || $first === '<' || $first === '/' || $first === '[' || $first === ']' || $first === '{' || $first === '}' || $first === '%' || $first === '>') {
+            if ($first === '/') {
+                $name = substr($token, 1);
+
+                continue;
+            }
+
+            if ($first === '(' || $first === '<' || $first === '[' || $first === ']' || $first === '{' || $first === '}' || $first === '%' || $first === '>') {
                 continue;
             }
 
             if ($token === 'q') {
-                $saved[] = $mode;
+                $saved[] = [$mode, $font];
 
                 if (count($saved) > 64) {
                     array_shift($saved);
                 }
             } elseif ($token === 'Q') {
-                $mode = array_pop($saved) ?? $mode;
+                [$mode, $font] = array_pop($saved) ?? [$mode, $font];
             } elseif ($token === 'Tr') {
                 $mode = $number === null ? $mode : (int) (float) $number;
+            } elseif ($token === 'Tf') {
+                $font = $name ?? $font;
             } elseif ($token === 'ID') {
                 // Inline image data runs until EI and can contain anything.
                 while (++$i < $count && $tokens[$i] !== 'EI') {
@@ -127,14 +167,17 @@ final class PdfTextLayer
             } elseif (in_array($token, self::SHOW_TEXT, true)) {
                 $shown++;
                 $hidden += $mode === self::INVISIBLE_MODE ? 1 : 0;
+
+                if ($font !== null) {
+                    $fonts[$font] = true;
+                }
             }
 
             $number = null;
+            $name = null;
         }
 
-        return $shown > 0
-            && $hidden * 100 >= $shown * self::INVISIBLE_SHARE
-            && $this->paintsImage($tokens, $this->resources($page), self::FORM_DEPTH);
+        return ['shown' => $shown, 'hidden' => $hidden, 'fonts' => $fonts];
     }
 
     /**
@@ -182,19 +225,27 @@ final class PdfTextLayer
         return false;
     }
 
-    /** Any font the page lists is one of the non-Unicode families. */
-    private function legacyFont(Page $page): bool
+    /**
+     * Of the fonts that draw text on the page, those of the non-Unicode families. A font that is only
+     * listed beside the page, or on the page tree above it, draws nothing and is not among them.
+     *
+     * @param  array<string, true>  $drawing  The fonts Tf selected for text, by the name the stream gives.
+     * @return list<string> As fontKey() spells them.
+     */
+    private function legacyFonts(?Header $resources, array $drawing): array
     {
-        $resources = $this->resources($page);
         $fonts = $resources === null ? null : $this->dictionary($resources->get('Font'));
+        $legacy = [];
 
-        foreach ($fonts?->getElements() ?? [] as $font) {
+        foreach (array_keys($drawing) as $name) {
+            $font = $fonts === null ? null : $this->named($fonts, (string) $name);
+
             if ($font instanceof PDFObject && $font->has('BaseFont') && self::isLegacyFont($this->name($font->get('BaseFont')))) {
-                return true;
+                $legacy[] = self::fontKey((string) $name);
             }
         }
 
-        return false;
+        return array_values(array_unique($legacy));
     }
 
     /**

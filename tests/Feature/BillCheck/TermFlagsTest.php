@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\BillCheck;
 
+use App\Models\ClientReceipt;
 use App\Models\ContractTerm;
 use App\Models\RaBill;
 use App\Services\BillCheck\Flag;
 use App\Services\Finance\SettlementService;
+use App\Services\RaBillService;
 use Illuminate\Support\Carbon;
 
 /**
@@ -269,6 +271,26 @@ class TermFlagsTest extends BillCheckTestCase
 
         // A longer period that has not run out yet leaves nothing to say either.
         $this->assertSame(17, $term->days);
+    }
+
+    public function test_t4_takes_a_bill_marked_paid_on_its_page_as_paid_although_no_receipt_was_recorded(): void
+    {
+        $this->confirmFormPercentages();
+
+        $this->measure('20', ['measured_on' => '2026-11-05']);
+        $this->travelTo(Carbon::parse('2026-11-25 10:00:00'));
+        $first = $this->approveBill($this->clientBill('2026-11-01', '2026-11-15'));
+        $this->travelTo(Carbon::parse('2026-12-20 11:00:00'));
+        $this->measure('5', ['measured_on' => '2026-11-20']);
+        $bill = $this->clientBill('2026-11-16', '2026-11-30');
+        $this->term(['kind' => 'payment_period', 'code' => 'payment_due', 'label' => 'Payment due', 'method' => null, 'pct' => null, 'base' => null, 'days' => 17, 'counted_from' => 'bill_date']);
+        $this->assertSame(["T4:{$first->id}"], $this->keys($bill));
+
+        // The button on the RA bill page writes no receipt. The finance screens still count the bill as owed; the pre-check does not.
+        app(RaBillService::class)->markPaid($first->fresh());
+        $this->assertSame(0, ClientReceipt::withoutGlobalScopes()->where('ra_bill_id', $first->id)->count());
+        $this->assertSame('47040.00', app(SettlementService::class)->clientBills($this->org->id, $this->project->id)->first()['outstanding']);
+        $this->assertNotFound($bill, 'T4');
     }
 
     public function test_t4_is_quiet_while_the_period_has_not_run_out(): void

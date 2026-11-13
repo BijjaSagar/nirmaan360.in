@@ -16,7 +16,7 @@ class PdfTextLayerTest extends ReportsTestCase
 
     private const LINES = ['Sr. No.', 'Description of Items', 'Excavation for foundation', 'Cement concrete'];
 
-    /** @return array{invisible: bool, legacy_font: bool} */
+    /** @return array{invisible: bool, legacy_fonts: list<string>} */
     private function inspect(string $content, array $options = []): array
     {
         return app(PdfTextLayer::class)->inspect($this->parsedPage($this->handPdf($content, $options)));
@@ -26,7 +26,7 @@ class PdfTextLayerTest extends ReportsTestCase
     {
         $scan = $this->pagePicture().$this->textLines(self::LINES, 3);
 
-        $this->assertSame(['invisible' => true, 'legacy_font' => false], $this->inspect($scan));
+        $this->assertSame(['invisible' => true, 'legacy_fonts' => []], $this->inspect($scan));
 
         // The same when the resources sit on the page tree, when the image does not name its type, and when a form paints it.
         $this->assertTrue($this->inspect($scan, ['inherited' => true])['invisible']);
@@ -40,7 +40,7 @@ class PdfTextLayerTest extends ReportsTestCase
 
     public function test_typed_text_is_not_flagged_with_or_without_a_picture(): void
     {
-        $none = ['invisible' => false, 'legacy_font' => false];
+        $none = ['invisible' => false, 'legacy_fonts' => []];
 
         // Ordinary text, and ordinary text on a page with a logo or a letterhead.
         $this->assertSame($none, $this->inspect($this->textLines(self::LINES), ['picture' => 'none']));
@@ -122,22 +122,44 @@ class PdfTextLayerTest extends ReportsTestCase
         $this->assertSame($legacy, PdfTextLayer::isLegacyFont($name));
     }
 
-    public function test_a_page_that_lists_an_old_font_is_flagged_even_when_its_text_shows(): void
+    public function test_a_page_whose_text_is_drawn_in_an_old_font_names_that_font_even_when_its_text_shows(): void
     {
-        // A name in a PDF spells a space as #20.
-        $this->assertSame(['invisible' => false, 'legacy_font' => true], $this->inspect($this->textLines(self::LINES), ['font' => 'ABCDEF+Kruti#20Dev#20010', 'picture' => 'none']));
-        $this->assertTrue($this->inspect($this->textLines(self::LINES), ['font' => 'SHREE-DEV-0714', 'inherited' => true])['legacy_font']);
-        $this->assertFalse($this->inspect($this->textLines(self::LINES), ['font' => 'Helvetica'])['legacy_font']);
+        // A name in a PDF spells a space as #20. The font is named as the page's content selects it.
+        $this->assertSame(['invisible' => false, 'legacy_fonts' => ['F1']], $this->inspect($this->textLines(self::LINES), ['font' => 'ABCDEF+Kruti#20Dev#20010', 'picture' => 'none']));
+        $this->assertSame(['F1'], $this->inspect($this->textLines(self::LINES), ['font' => 'SHREE-DEV-0714', 'inherited' => true])['legacy_fonts']);
+        $this->assertSame([], $this->inspect($this->textLines(self::LINES), ['font' => 'Helvetica'])['legacy_fonts']);
+    }
+
+    public function test_an_old_font_counts_only_where_tf_selects_it_for_text(): void
+    {
+        $listed = ['fonts' => ['F2' => 'SHREE-DEV-0714'], 'picture' => 'none'];
+
+        // Listed beside the page, or on the page tree above it, and never selected: it draws nothing.
+        $this->assertSame([], $this->inspect($this->textLines(self::LINES), $listed)['legacy_fonts']);
+        $this->assertSame([], $this->inspect($this->textLines(self::LINES), [...$listed, 'inherited' => true])['legacy_fonts']);
+
+        // One heading line drawn in it, and the rest of the page in another font: that font, and only it.
+        $heading = $this->textLines(['Marathi heading'], 0, 820, 'F2').$this->textLines(self::LINES);
+        $this->assertSame(['F2'], $this->inspect($heading, $listed)['legacy_fonts']);
+        $this->assertSame(['F2'], $this->inspect($heading, [...$listed, 'inherited' => true])['legacy_fonts']);
+
+        // Selected with nothing shown in it, or inside q ... Q, which gives the font before it back.
+        $this->assertSame([], $this->inspect('BT /F2 10 Tf ET '.$this->textLines(self::LINES), $listed)['legacy_fonts']);
+        $this->assertSame([], $this->inspect('BT /F1 10 Tf ET q BT /F2 10 Tf ET Q BT 40 700 Td (after the Q) Tj ET', $listed)['legacy_fonts']);
+
+        // The name pdfparser gives a piece of text and the name in the stream are spelled alike.
+        $this->assertSame('F2', PdfTextLayer::fontKey('/F2'));
+        $this->assertSame('Old Font', PdfTextLayer::fontKey('Old#20Font'));
     }
 
     public function test_the_font_list_is_read_from_the_module_settings(): void
     {
         $this->assertContains('kruti dev', config('modules.reports.legacy_font_patterns'));
-        $this->assertFalse($this->inspect($this->textLines(self::LINES), ['font' => 'Helvetica'])['legacy_font']);
+        $this->assertSame([], $this->inspect($this->textLines(self::LINES), ['font' => 'Helvetica'])['legacy_fonts']);
 
         config(['modules.reports.legacy_font_patterns' => ['helvetica']]);
 
-        $this->assertTrue($this->inspect($this->textLines(self::LINES), ['font' => 'Helvetica'])['legacy_font']);
+        $this->assertSame(['F1'], $this->inspect($this->textLines(self::LINES), ['font' => 'Helvetica'])['legacy_fonts']);
         $this->assertFalse(PdfTextLayer::isLegacyFont('KrutiDev010'));
 
         // An empty entry matches nothing.
@@ -154,7 +176,7 @@ class PdfTextLayerTest extends ReportsTestCase
             $html = '<html><body style="font-family:DejaVu Sans">'.$logo.'<p>Estimate for a sample bungalow</p><table><tr><th>Sr. No.</th><th>Description</th></tr><tr><td>1</td><td>Excavation for foundation</td></tr></table></body></html>';
             $page = $this->parsedPage(Pdf::loadHTML($html)->setPaper('a4')->output());
 
-            $this->assertSame(['invisible' => false, 'legacy_font' => false], app(PdfTextLayer::class)->inspect($page));
+            $this->assertSame(['invisible' => false, 'legacy_fonts' => []], app(PdfTextLayer::class)->inspect($page));
         }
     }
 }

@@ -203,6 +203,18 @@ class QuotationHttpTest extends TestCase
 
         $this->actingAs($this->manager)->get(route('projects.show', $this->project))->assertOk()->assertSee(route('quotations.index', $this->project));
         $this->actingAs($this->member($this->organization, 'engineer'))->get(route('projects.show', $this->project))->assertOk()->assertDontSee(route('quotations.index', $this->project));
+
+        // Every quotation page also needs money.view, which a role can be given the pack without. The menu then leaves Quotations out too.
+        config(['buildos.roles.engineer.permissions' => [...config('buildos.roles.engineer.permissions'), 'owner_pack.view']]);
+        $noMoney = $this->member($this->organization, 'engineer');
+        $this->assertTrue($noMoney->can('owner_pack.view'));
+        $this->assertFalse($noMoney->can('money.view'));
+        $this->actingAs($noMoney)->get(route('quotations.index', $this->project))->assertForbidden();
+        $this->get(route('projects.show', $this->project))->assertOk()->assertDontSee(route('quotations.index', $this->project));
+
+        foreach (['accounts', 'qs'] as $role) {
+            $this->actingAs($this->member($this->organization, $role))->get(route('projects.show', $this->project))->assertOk()->assertSee(route('quotations.index', $this->project));
+        }
     }
 
     public function test_the_manager_takes_a_quotation_from_the_form_to_a_shared_link(): void
