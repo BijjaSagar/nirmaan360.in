@@ -99,7 +99,8 @@
                     </tbody>
                 </table>
             </div>
-            <p class="mt-5 text-center text-[15px] text-ink-3">{{ __('AI agents are in early access and are not part of these plans yet. Prices are in Indian rupees.') }}</p>
+            {{-- AiOffer names the agents as part of a plan only while they can run, and readers only once one is deployed and released. --}}
+            <p class="mt-5 text-center text-[15px] text-ink-3">{{ __(app(\App\Services\Website\AiOffer::class)->pricingLine()) }}</p>
         </div>
     </section>
 

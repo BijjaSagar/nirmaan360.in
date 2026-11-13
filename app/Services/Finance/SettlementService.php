@@ -80,6 +80,24 @@ class SettlementService
     }
 
     /**
+     * Client RA bills the client still owes on, with their position: approved, not marked paid, and
+     * with something outstanding after the receipts recorded on them.
+     *
+     * The RA bill page can mark a bill paid without a receipt. Such a bill is paid as far as the
+     * company has said, so anything that asks the client for money or warns of a late payment leaves
+     * it out, whatever its receipts add up to. The project ledger still counts it among the bills
+     * marked paid without entries.
+     *
+     * @return Collection<int, array{bill:RaBill, receivable:string, received:string, tds:string, settled:string, outstanding:string, cash_expected:string, retention:string}>
+     */
+    public function clientBillsOwed(int $organizationId, ?int $projectId = null): Collection
+    {
+        return $this->clientBills($organizationId, $projectId)
+            ->filter(fn (array $row) => $row['bill']->status !== 'PAID' && Dec::of($row['outstanding'])->isPositive())
+            ->values();
+    }
+
+    /**
      * Vendor bills and subcontractor RA bills that count as billed, with their position.
      * Reversed bills stay in the list so a reversal cancels them in every total.
      *

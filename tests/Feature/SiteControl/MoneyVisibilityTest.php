@@ -29,13 +29,14 @@ use Tests\TestCase;
  * including CSV, spreadsheet and PDF downloads.
  *
  * Routes added later are covered without any change here. A route whose parameters cannot be filled
- * from the fixtures fails the walk and names the model that needs a row in BuildsMoneyWorld.
+ * from the fixtures fails the walk and names itself, so its model can be given a row: a module does
+ * that in its own file in MoneyWorld/, where it also lists the routes of its own that serve a file.
  */
 class MoneyVisibilityTest extends TestCase
 {
     use BuildsMoneyWorld, RefreshDatabase;
 
-    /** Routes that serve a stored file or hand off to an outside service, so there is no page to read. */
+    /** Routes that serve a stored file or hand off to an outside service, so there is no page to read. Modules add theirs through $this->skippedRoutes. */
     private const SKIPPED = [
         'storage.local' => 'serves a file from local storage',
         'sso.redirect' => 'hands off to the identity provider',
@@ -216,11 +217,11 @@ class MoneyVisibilityTest extends TestCase
                 $uri = (string) preg_replace('/\{'.preg_quote($name, '/').'\??\}/', (string) $value, $uri);
             }
 
-            $url = '/'.$uri.(isset(self::QUERY[$label]) ? '?'.http_build_query(self::QUERY[$label]) : '');
+            $url = '/'.$uri.$this->queryFor($route, self::QUERY);
             $responses[] = [$label, $isApi ? $this->getJson($url) : $this->get($url)];
         }
 
-        $this->assertSame([], $unresolved, 'These routes could not be visited. Add a row for their model to BuildsMoneyWorld, or list them in SKIPPED with a reason: '.implode(', ', $unresolved));
+        $this->assertSame([], $unresolved, $this->unfilledRoutes($unresolved));
 
         return $responses;
     }
@@ -243,7 +244,7 @@ class MoneyVisibilityTest extends TestCase
 
             $label = $route->getName() ?: $route->uri();
 
-            if (isset(self::SKIPPED[$label]) || isset(self::SKIPPED[$route->uri()])) {
+            if ($this->skipsRoute($route, array_keys(self::SKIPPED))) {
                 continue;
             }
 
@@ -257,8 +258,9 @@ class MoneyVisibilityTest extends TestCase
     }
 
     /**
-     * Fills each route parameter from the fixtures: a plain value by name, else the row for the
-     * model the controller asks for. Null when a parameter has nothing to fill it.
+     * Fills each route parameter from the fixtures: a value a module gave for this route, a plain
+     * value by name, else the row for the model the controller asks for. Null when a parameter has
+     * nothing to fill it.
      *
      * @return array<string, string|int>|null
      */
@@ -273,7 +275,7 @@ class MoneyVisibilityTest extends TestCase
         $values = [];
 
         foreach ($route->parameterNames() as $name) {
-            $value = $this->params[$name] ?? null;
+            $value = $this->givenParameter($route, $name);
             $class = $classes[$name] ?? null;
 
             if ($value === null && $class !== null && is_subclass_of($class, Model::class)) {

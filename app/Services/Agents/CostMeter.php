@@ -16,12 +16,19 @@ class CostMeter
     public function __construct(private PlatformSettings $settings) {}
 
     /**
-     * @param  array{input:int,output:int,cache_read:int,cache_write:int}  $usage
+     * @param  array{input:int,output:int,cache_read:int,cache_write:int,cache_write_1h?:int}  $usage  One call's tokens, never a total over several calls: a model with a long-prompt price is priced call by call.
      * @return string US dollars at list price, six decimals.
      */
     public function usd(string $model, array $usage): string
     {
         $rates = config("modules.agents.pricing.{$model}") ?? throw new RuntimeException("No price set for model {$model}.");
+
+        // The prompt is everything sent in, cached or not. What the model wrote back does not count toward it.
+        $prompt = (int) ($usage['input'] ?? 0) + (int) ($usage['cache_read'] ?? 0) + (int) ($usage['cache_write'] ?? 0) + (int) ($usage['cache_write_1h'] ?? 0);
+
+        if (isset($rates['long_prompt']) && $prompt > (int) $rates['long_prompt']['over']) {
+            $rates = $rates['long_prompt'];
+        }
 
         $total = BigDecimal::zero();
 

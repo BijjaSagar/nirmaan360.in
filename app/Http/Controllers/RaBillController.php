@@ -6,6 +6,7 @@ use App\Models\Project;
 use App\Models\RaBill;
 use App\Models\WorkOrder;
 use App\Services\ApprovalService;
+use App\Services\BillCheck\BillCheckGate;
 use App\Services\RaBillService;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -78,6 +79,7 @@ class RaBillController extends Controller
 
     public function submit(Request $request, RaBill $bill, ApprovalService $approvals): RedirectResponse
     {
+        app(BillCheckGate::class)->assertMaySubmit($bill, $request->user());
         $approvals->submit($bill, $request->user());
 
         return back()->with('success', __('Bill submitted for approval.'));

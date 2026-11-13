@@ -157,7 +157,7 @@ class GatewayAndAdminTest extends AgentTestCase
         $this->assertSame('0.012000', $meter->usd('claude-sonnet-5-5', ['input' => 1000, 'output' => 1000, 'cache_read' => 0, 'cache_write' => 0]));
         $this->assertSame('0.024000', $meter->usd('claude-opus-5-5', ['input' => 1000, 'output' => 1000, 'cache_read' => 0, 'cache_write' => 0]));
         $this->assertSame('0.000600', $meter->usd('claude-haiku-5-5', ['input' => 1000, 'output' => 1000, 'cache_read' => 0, 'cache_write' => 0]));
-        $this->assertSame('0.002700', $meter->usd('claude-sonnet-5-5', ['input' => 0, 'output' => 0, 'cache_read' => 1000, 'cache_write' => 1000]));
+        $this->assertSame('0.002600', $meter->usd('claude-sonnet-5-5', ['input' => 0, 'output' => 0, 'cache_read' => 1000, 'cache_write' => 1000]));
     }
 
     public function test_credits_follow_the_rate_and_margin_and_round_up(): void

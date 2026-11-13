@@ -8,6 +8,7 @@ use App\Services\Reports\BoqPdfImport;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -36,13 +37,20 @@ class BoqPdfImportController extends Controller
             'preview' => $this->import->preview($project, $entry),
             'money' => Money::visible($request->user()),
             'shownErrors' => self::SHOWN_ERRORS,
+            'languages' => BoqPdfImport::languages(),
         ]);
     }
 
     public function confirm(Request $request, Project $project): RedirectResponse
     {
         $token = $request->input('token');
-        $result = $this->import->confirm($project, $request->user(), is_string($token) ? $token : null);
+
+        try {
+            $result = $this->import->confirm($project, $request->user(), is_string($token) ? $token : null, $request->only(['printed_language', 'pages_checked', 'ack_notes', 'total_reason']));
+        } catch (ValidationException $missing) {
+            // Back to the preview, which is still staged, with what was answered and what is missing.
+            throw $missing->redirectTo(route('boq.pdf.preview', $project));
+        }
 
         if ($result === null) {
             return $this->expired($project);

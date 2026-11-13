@@ -18,6 +18,13 @@
 
     <h2>Check your figures</h2>
     <p>Nirmaan360 helps you prepare measurements, bills and calculations. You remain responsible for checking them against your contracts, drawings, codes and tax rules before you rely on them.</p>
+    {{-- Readers are named only once a company can use one: the same test its own switch is shown by. Each form is one whole text, so Hindi and Marathi can say it in their own order. --}}
+    {{-- The terms are in English. The Hindi and Marathi line is used only once a reader is offered, which the platform admin does after a native reader has checked it; until then this stays English too. --}}
+    @if (app(\App\Services\DocumentReading\ReaderSettings::class)->offered())
+    <p>{{ __('AI agents and readers can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.') }}</p>
+    @else
+    <p>AI agents can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.</p>
+    @endif
 
     <h2>Acceptable use</h2>
     <p>Do not misuse the service, try to reach another company's data, or interfere with its operation. We may suspend accounts that do.</p>

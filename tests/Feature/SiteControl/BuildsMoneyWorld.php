@@ -109,7 +109,10 @@ use App\Services\ContractorControl\ContractorPaymentService;
 use App\Services\MaterialControl\DeliveryChallanService;
 use App\Services\SiteProgress\FloorService;
 use App\Support\Dec;
+use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Routing\Route as RouteDefinition;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\BuildsTenant;
@@ -118,6 +121,10 @@ use Tests\BuildsTenant;
  * One company holding every kind of record a site role can reach, with an unmistakable rupee figure
  * in every money column. Each figure has eight digits that appear nowhere else in the fixtures, so a
  * page, file or payload that carries one of them has leaked money.
+ *
+ * A module adds its own records without editing this trait or the tests that walk the routes: it puts
+ * a file in MoneyWorld/, named after the module. See buildModuleWorlds(). Those records are then part
+ * of the company in every test that builds it, the company purge and member deletion tests included.
  */
 trait BuildsMoneyWorld
 {
@@ -191,6 +198,25 @@ trait BuildsMoneyWorld
 
     /** @var array<string, string> Route parameters that are plain values rather than models. */
     protected array $params = [];
+
+    /**
+     * Routes the walks leave out because they serve a stored file, so there is no page to read.
+     * A module's file in MoneyWorld/ lists its own here.
+     *
+     * @var array<string, string> Route name, or URI for a route with no name => the reason.
+     */
+    protected array $skippedRoutes = [];
+
+    /**
+     * Values for one route only, which win over $rows and $params there. For a module whose routes
+     * bind a model another route also binds but need a different row of it.
+     *
+     * @var array<string, array<string, Model|string|int>> Route name or URI => parameter => row or plain value.
+     */
+    protected array $routeParams = [];
+
+    /** @var array<string, array<string, mixed>> Route name or URI => the query string it needs before it answers with a page. */
+    protected array $routeQueries = [];
 
     protected function buildMoneyWorld(): void
     {
@@ -476,6 +502,195 @@ trait BuildsMoneyWorld
 
         // Parameters that are plain values: the asset tag, an agent key, and the ids the public API and signed links take.
         $this->params = ['tag' => $asset->tag, 'agent' => 'project_brain', 'integration' => 'fcm', 'id' => $dpr->id, 'projectId' => $project->id, 'dprId' => $dpr->id, 'billId' => $bill->id];
+
+        $this->buildModuleWorlds();
+    }
+
+    /**
+     * Runs every file in MoneyWorld/, in name order, on top of the records above. Each file returns a
+     * closure, which runs with $this set to the test, the owner signed in and storage faked:
+     *
+     *     return function (): void {
+     *         $row = YourModel::create(['organization_id' => $this->organization->id, 'project_id' => $this->project->id, ...]);
+     *         $this->rows[YourModel::class] = $row;
+     *         $this->skippedRoutes['your-module.file'] = 'serves a stored file';
+     *     };
+     *
+     * It may read $this->organization, $this->project, $this->users and $this->rows, and add to
+     * $this->rows (a row for every model its GET routes bind), $this->params, $this->skippedRoutes,
+     * $this->routeParams and $this->routeQueries. It only adds: an entry that is already there stays
+     * as it is, so a model another file may have filed is filed with ??=, and a route that needs a
+     * row of its own gets it through $this->routeParams. A money column takes a figure from
+     * self::MONEY, so a leak of it is caught by the walk.
+     *
+     * Name order is not the order modules depend on each other, so a file creates what its own
+     * records need and does not count on another module's file having run.
+     */
+    protected function buildModuleWorlds(): void
+    {
+        foreach ($this->moneyWorldFiles() as $file) {
+            $name = 'MoneyWorld/'.basename($file);
+            // Loaded from a static closure, so the file's own lines see neither this test nor these variables.
+            $build = (static fn () => require $file)();
+
+            if (! $build instanceof Closure) {
+                $this->fail("{$name} must return a closure. It is run with \$this set to the test, once the core records exist.");
+            }
+
+            $before = ['rows' => $this->rows, 'params' => $this->params, 'skippedRoutes' => $this->skippedRoutes, 'routeParams' => $this->routeParams, 'routeQueries' => $this->routeQueries];
+            $build->call($this);
+            $this->checkModuleWorld($name, $before);
+        }
+    }
+
+    /** @return list<string> One file per module, in name order on every machine. */
+    private function moneyWorldFiles(): array
+    {
+        $files = glob($this->moneyWorldFolder().'/*.php') ?: [];
+        sort($files, SORT_STRING);
+
+        return $files;
+    }
+
+    /** Where the module files live. The folder need not exist while no module has one. */
+    protected function moneyWorldFolder(): string
+    {
+        return __DIR__.'/MoneyWorld';
+    }
+
+    /**
+     * Stops a module file that would quietly weaken the walks: one that replaces what was there, files
+     * something under the wrong kind of key, or names a route that does not exist.
+     *
+     * @param  array<string, array<array-key, mixed>>  $before  The five lists as they stood before the file ran.
+     */
+    private function checkModuleWorld(string $file, array $before): void
+    {
+        $added = [];
+
+        foreach ($before as $list => $entries) {
+            foreach ($entries as $key => $value) {
+                if (! array_key_exists($key, $this->{$list}) || $value !== $this->{$list}[$key]) {
+                    $this->fail("{$file} replaced or removed \$this->{$list}['{$key}'], which the core fixtures or a module file earlier in name order had set. A module file only adds entries: file a model that may be there already with ??=, and give a route that needs another row its own through \$this->routeParams.");
+                }
+            }
+
+            $added[$list] = array_diff_key($this->{$list}, $entries);
+        }
+
+        foreach ($added['rows'] as $class => $row) {
+            if (! is_string($class) || ! is_subclass_of($class, Model::class) || ! $row instanceof $class || ! $row->exists) {
+                $this->fail("{$file}: \$this->rows takes a model class as the key and a saved row of that model as the value. Check the entry '{$class}'.");
+            }
+        }
+
+        foreach ($added['params'] as $name => $value) {
+            if (! is_string($name) || ! (is_string($value) || is_int($value))) {
+                $this->fail("{$file}: \$this->params takes a route parameter name as the key and a plain value. Check the entry '{$name}'.");
+            }
+        }
+
+        foreach ($added['skippedRoutes'] as $label => $reason) {
+            if (! is_string($label) || ! is_string($reason) || trim($reason) === '') {
+                $this->fail("{$file}: \$this->skippedRoutes takes a route name or URI as the key and the reason as the value. Check the entry '{$label}'.");
+            }
+        }
+
+        foreach (['routeParams', 'routeQueries'] as $list) {
+            foreach ($added[$list] as $label => $values) {
+                if (! is_string($label) || ! is_array($values) || $values === []) {
+                    $this->fail("{$file}: \$this->{$list} takes a route name or URI as the key and a list of values. Check the entry '{$label}'.");
+                }
+            }
+        }
+
+        foreach ($added['routeParams'] as $label => $values) {
+            foreach ($values as $name => $value) {
+                if (! is_string($name) || ! (is_string($value) || is_int($value) || ($value instanceof Model && $value->exists))) {
+                    $this->fail("{$file}: \$this->routeParams['{$label}'] takes a parameter name as the key and a saved row or a plain value. Check the entry '{$name}'.");
+                }
+            }
+        }
+
+        $named = array_keys($added['skippedRoutes'] + $added['routeParams'] + $added['routeQueries']);
+        $unknown = $named === [] ? [] : array_diff($named, $this->labelsOfGetRoutes());
+
+        if ($unknown !== []) {
+            $this->fail("{$file} names routes that are not GET routes, by name or by URI: ".implode(', ', $unknown));
+        }
+    }
+
+    /** @return list<string> Every name and every URI a GET route goes by. */
+    private function labelsOfGetRoutes(): array
+    {
+        $labels = [];
+
+        foreach (Route::getRoutes() as $route) {
+            if (in_array('GET', $route->methods(), true)) {
+                array_push($labels, ...$this->labelsOf($route));
+            }
+        }
+
+        return $labels;
+    }
+
+    /**
+     * Whether a walk leaves this route out: it is on the walk's own list, or a module listed it.
+     *
+     * @param  list<string>  $own  Route names and URIs the walk itself leaves out.
+     */
+    protected function skipsRoute(RouteDefinition $route, array $own): bool
+    {
+        return array_intersect($this->labelsOf($route), [...$own, ...array_keys($this->skippedRoutes)]) !== [];
+    }
+
+    /**
+     * The value a route parameter is filled with before the model the controller asks for is looked
+     * at: what a module gave for this route, else the plain value every route gets. Null for neither.
+     */
+    protected function givenParameter(RouteDefinition $route, string $name): string|int|null
+    {
+        $value = $this->params[$name] ?? null;
+
+        foreach ($this->labelsOf($route) as $label) {
+            $value = $this->routeParams[$label][$name] ?? $value;
+        }
+
+        return $value instanceof Model ? $value->getRouteKey() : $value;
+    }
+
+    /**
+     * The query string a route is visited with, question mark included, or nothing.
+     *
+     * @param  array<string, array<string, mixed>>  $own  The walk's own list, which a module's entry for the same route does not replace.
+     */
+    protected function queryFor(RouteDefinition $route, array $own): string
+    {
+        foreach ([$own, $this->routeQueries] as $list) {
+            foreach ($this->labelsOf($route) as $label) {
+                if (isset($list[$label])) {
+                    return '?'.http_build_query($list[$label]);
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * What to do about routes a walk could not visit because a parameter of theirs had no value.
+     *
+     * @param  list<string>  $labels
+     */
+    protected function unfilledRoutes(array $labels): string
+    {
+        return 'These routes could not be visited, because a parameter of theirs has no value. In the module\'s file in tests/Feature/SiteControl/MoneyWorld (in BuildsMoneyWorld itself for a core record), file a row for the model in $this->rows, or give a plain value in $this->params or $this->routeParams. A route that serves a file is listed in $this->skippedRoutes instead, with the reason: '.implode(', ', $labels);
+    }
+
+    /** @return list<string> What a route may be listed under: its URI, and its name when it has one. */
+    private function labelsOf(RouteDefinition $route): array
+    {
+        return array_values(array_filter([$route->uri(), $route->getName()]));
     }
 
     /** The eight digits that identify a figure, however it is grouped or rounded on a page. */

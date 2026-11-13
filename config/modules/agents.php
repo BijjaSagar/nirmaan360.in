@@ -21,11 +21,16 @@ return [
         ['place' => 'project', 'label' => 'Ask my project', 'route' => 'agents.ask', 'active' => 'agents.ask', 'can' => 'agents.use', 'order' => 10],
     ],
 
-    // US dollars per million tokens, at Anthropic's list price.
+    // US dollars per million tokens, at Anthropic's list price. cache_write is the five-minute cache.
+    // cache_write_1h is the one-hour cache: nothing uses it yet, so no call is charged at it.
     'pricing' => [
-        'claude-sonnet-5-5' => ['input' => '2.00', 'output' => '10.00', 'cache_write' => '2.50', 'cache_read' => '0.20'],
-        'claude-opus-5-5' => ['input' => '4.00', 'output' => '20.00', 'cache_write' => '5.00', 'cache_read' => '0.20'],
-        'claude-haiku-5-5' => ['input' => '0.10', 'output' => '0.50', 'cache_write' => '0.125', 'cache_read' => '0.01'],
+        'claude-sonnet-5-5' => ['input' => '2.00', 'output' => '10.00', 'cache_write' => '2.50', 'cache_read' => '0.10', 'cache_write_1h' => '4.00'],
+        'claude-opus-5-5' => ['input' => '4.00', 'output' => '20.00', 'cache_write' => '5.00', 'cache_read' => '0.20', 'cache_write_1h' => '8.00'],
+        'claude-haiku-5-5' => [
+            'input' => '0.10', 'output' => '0.50', 'cache_write' => '0.125', 'cache_read' => '0.01', 'cache_write_1h' => '0.20',
+            // One call whose prompt (input, cache reads and cache writes together) is over this many tokens pays these prices for all of it.
+            'long_prompt' => ['over' => 100000, 'input' => '0.50', 'output' => '2.50', 'cache_write' => '0.625', 'cache_read' => '0.05', 'cache_write_1h' => '1.00'],
+        ],
     ],
 
     // Credits charged = dollars × usd_inr × margin ÷ credit_inr. The admin screen can change the first two.

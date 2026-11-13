@@ -3,6 +3,7 @@
 namespace App\Services\SiteControl;
 
 use App\Models\BoqItem;
+use App\Models\MeasurementEntry;
 use App\Models\ProgressEntry;
 use App\Models\Project;
 use App\Models\WorkOrder;
@@ -46,6 +47,39 @@ class WorkProgress
         }
 
         return $this->percent($earned, $total);
+    }
+
+    /**
+     * Value of the work that has been measured and approved, as a share of the value of the BOQ.
+     * Each line counts its approved measured quantity, never more than its BOQ quantity, at its BOQ
+     * rate. Every line of the BOQ is in the whole, measured or not.
+     *
+     * Null when no measurement of the project is approved yet or the BOQ has no value: there is then
+     * nothing to state, and a caller must not print a percentage.
+     */
+    public function measuredPercent(Project $project): ?string
+    {
+        $approved = MeasurementEntry::where('project_id', $project->id)
+            ->where('status', 'APPROVED')
+            ->selectRaw('boq_item_id, SUM(qty) as measured')
+            ->groupBy('boq_item_id')
+            ->pluck('measured', 'boq_item_id');
+
+        if ($approved->isEmpty()) {
+            return null;
+        }
+
+        $total = BigDecimal::zero();
+        $earned = BigDecimal::zero();
+
+        foreach (BoqItem::where('project_id', $project->id)->get(['id', 'qty', 'rate']) as $item) {
+            $qty = Dec::of($item->qty);
+            $rate = Dec::of($item->rate);
+            $total = $total->plus($qty->multipliedBy($rate));
+            $earned = $earned->plus($this->capped(Dec::of(Dec::qty($approved[$item->id] ?? 0)), $qty)->multipliedBy($rate));
+        }
+
+        return $total->isPositive() ? $this->percent($earned, $total) : null;
     }
 
     /**
