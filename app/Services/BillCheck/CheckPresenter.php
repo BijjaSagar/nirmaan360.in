@@ -22,6 +22,21 @@ class CheckPresenter
     public function __construct(private BillChecks $checks, private FlagText $text, private TermText $terms) {}
 
     /**
+     * What the card on the bill page shows, or null when the bill has no card: a bill that can no longer
+     * be checked (submitted, approved or paid) and was never checked has nothing to say and nothing to
+     * press, so the card and the company's switch inside it stay off that bill. A draft or returned bill,
+     * which can still be checked, and any bill with a stored check have the card.
+     *
+     * @return array{check: ?array<string, mixed>, required: bool, can: array{run: bool, acknowledge: bool, set_policy: bool}}|null
+     */
+    public function card(RaBill $bill, ?User $viewer): ?array
+    {
+        $presented = $this->present($bill, $viewer);
+
+        return $presented['check'] !== null || $bill->isEditable() ? $presented : null;
+    }
+
+    /**
      * @return array{check: ?array<string, mixed>, required: bool, can: array{run: bool, acknowledge: bool, set_policy: bool}}
      */
     public function present(RaBill $bill, ?User $viewer): array

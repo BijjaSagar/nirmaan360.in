@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Access\TeamAccessService;
 use App\Services\ApprovalService;
 use App\Services\BillCheck\BillChecks;
+use App\Services\BillCheck\CheckPresenter;
 use App\Services\BillCheck\RaBillPreCheck;
 use App\Services\RaBillService;
 use Illuminate\Support\Facades\URL;
@@ -430,6 +431,63 @@ class BillCheckHttpTest extends BillCheckTestCase
         $this->actingAs($this->owner)->get($page)->assertOk()->assertSee('Make it optional');
         $this->actingAs($this->pm)->get($page)->assertOk()
             ->assertSee('Your company requires this check: a bill can be submitted only after every finding is acknowledged.')->assertDontSee('Make it optional');
+    }
+
+    public function test_a_bill_that_can_no_longer_be_checked_and_never_was_has_no_card_and_no_switch(): void
+    {
+        $page = route('ra-bills.show', $this->bill);
+        $card = ['Bill pre-check', 'This bill has not been checked yet.', 'Check this bill', 'Require it before submitting', 'Make it optional', route('bill-checks.policy')];
+        $seesCard = fn (string $content) => array_values(array_filter($card, fn (string $text) => str_contains($content, $text)));
+
+        // A draft can still be checked: the card and, for the owner, the company's switch are there.
+        $this->assertNotSame([], $seesCard((string) $this->actingAs($this->owner)->get($page)->assertOk()->getContent()));
+        $this->assertSame(0, BillCheck::withoutGlobalScopes()->count(), 'Opening the page checks nothing.');
+
+        // Submitted, approved and paid without a check: no card at all, so no "not checked yet" with nothing to press, and no switch.
+        $approval = app(ApprovalService::class)->submit($this->bill, $this->owner);
+        $this->assertSame('IN_REVIEW', $this->bill->refresh()->status);
+
+        $approve = function () use (&$approval) {
+            while ($approval && $approval->status === 'IN_REVIEW') {
+                $approval = app(ApprovalService::class)->act($approval, $this->owner, 'approve');
+            }
+
+            $this->assertSame('APPROVED', $this->bill->refresh()->status);
+        };
+
+        foreach (['submitted' => fn () => null, 'approved' => $approve, 'paid' => fn () => app(RaBillService::class)->markPaid($this->bill->refresh())] as $state => $step) {
+            $step();
+
+            foreach ([$this->owner, $this->pm, $this->accounts, $this->viewer] as $reader) {
+                $this->assertSame([], $seesCard((string) $this->actingAs($reader)->get($page)->assertOk()->getContent()), "{$state}, read by {$reader->role}");
+            }
+        }
+
+        $this->assertSame('PAID', $this->bill->refresh()->status);
+        $this->assertNull(app(CheckPresenter::class)->card($this->bill, $this->owner));
+
+        // The switch stays off by default and changes nothing while off: the bill went through its chain unchecked.
+        $this->assertFalse(app(BillChecks::class)->isRequired($this->org->id));
+        $this->assertSame(0, BillCheck::withoutGlobalScopes()->count());
+
+        // The JSON for the card is as it was.
+        $this->actingAs($this->owner)->getJson(route('bill-checks.show', $this->bill))->assertOk()
+            ->assertExactJson(['check' => null, 'required' => false, 'can' => ['run' => false, 'acknowledge' => false, 'set_policy' => true]]);
+    }
+
+    public function test_a_bill_checked_as_a_draft_keeps_its_card_after_it_is_submitted(): void
+    {
+        $this->check($this->bill, $this->pm);
+        app(ApprovalService::class)->submit($this->bill, $this->owner);
+        $this->assertSame('IN_REVIEW', $this->bill->refresh()->status);
+
+        // The findings stay readable, with nothing to press but the owner's switch.
+        $this->actingAs($this->owner)->get(route('ra-bills.show', $this->bill))->assertOk()
+            ->assertSee('Bill pre-check')->assertSee('Checked on')->assertDontSee('This bill has not been checked yet.')
+            ->assertDontSee('Check again')->assertDontSee('Check this bill')
+            ->assertSee('Require it before submitting');
+        $this->actingAs($this->viewer)->get(route('ra-bills.show', $this->bill))->assertOk()->assertSee('Bill pre-check')->assertDontSee('Require it before submitting');
+        $this->assertNotNull(app(CheckPresenter::class)->card($this->bill, $this->pm));
     }
 
     public function test_the_card_shows_the_sheet_of_other_deductions_only_with_money(): void

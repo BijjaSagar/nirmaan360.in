@@ -2,11 +2,11 @@
     The pre-check card on the RA bill page. Needs $bill.
     Everything shown comes through CheckPresenter, which leaves rupee figures, contract percentages and
     words from contract terms out for a reader without money.view. This card is not part of the client's
-    sign-off page.
+    sign-off page. A bill that can no longer be checked and never was has no card (CheckPresenter::card).
 --}}
 @php
-    $billCheck = app(\App\Services\BillCheck\CheckPresenter::class)->present($bill, auth()->user());
-    $check = $billCheck['check'];
+    $billCheck = app(\App\Services\BillCheck\CheckPresenter::class)->card($bill, auth()->user());
+    $check = $billCheck['check'] ?? null;
     $sheet = $check['expected'] ?? null;
     $levels = [
         'blocking' => ['border-laterite text-laterite', __('Does not match')],
@@ -14,6 +14,7 @@
         'note' => ['border-ink-3 text-ink-3', __('For information')],
     ];
 @endphp
+@if ($billCheck !== null)
 <section class="card" id="bill-check">
     <div class="card-head">
         <h2 class="card-title">{{ __('Bill pre-check') }}</h2>
@@ -125,3 +126,4 @@
         <p class="border-t border-rule bg-paper/50 px-4 py-3 text-xs text-ink-3">{{ __('Your company requires this check: a bill can be submitted only after every finding is acknowledged.') }}</p>
     @endif
 </section>
+@endif
