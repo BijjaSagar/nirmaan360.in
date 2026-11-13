@@ -3,7 +3,11 @@
 namespace App\Services\MaterialControl;
 
 use App\Models\DeliveryChallan;
+use App\Models\MaterialFlagReason;
+use App\Models\MaterialShortDelivery;
 use App\Models\MaterialStockCheck;
+use App\Services\Notify\MoneyMention;
+use Carbon\CarbonInterface;
 
 /** Shapes records for the mobile API. Bill details leave the server only with money.view. */
 class MaterialControlPresenter
@@ -61,5 +65,105 @@ class MaterialControlPresenter
             'variance_qty' => $check->variance_qty,
             'status' => $check->status,
         ];
+    }
+
+    /**
+     * One challan in full for the field app: names, remarks, who did what, the shortages found on it
+     * and whether its bill has come. Whether a bill file exists is for money.view only, like the file.
+     * Remarks and notes are words a person typed, so one that names a rupee figure is also kept for
+     * money.view: the key stays and its text is null.
+     *
+     * @return array<string, mixed>
+     */
+    public function challanDetail(DeliveryChallan $challan, bool $withMoney, ?string $supplierWarning = null): array
+    {
+        $challan->loadMissing('supplier', 'material', 'unit', 'store', 'creator', 'reverser', 'billAttacher', 'shortDeliveries.creator');
+
+        $data = [
+            ...$this->challan($challan, $withMoney),
+            'material' => $challan->material?->name,
+            'unit' => $challan->unit?->code,
+            'store' => $challan->store?->name,
+            'remarks' => $this->words($challan->remarks, $withMoney),
+            'created_by' => $challan->creator?->name,
+            'created_at' => $challan->created_at?->toIso8601String(),
+            'bill_attached_by' => $challan->billAttacher?->name,
+            'bill_attached_at' => $challan->bill_attached_at?->toIso8601String(),
+            'reversed_by' => $challan->reverser?->name,
+            'reversed_at' => $challan->reversed_at?->toDateString(),
+            'reversal_reason' => $this->words($challan->reversal_reason, $withMoney),
+            'supplier_warning' => $supplierWarning,
+            'shorts' => $challan->shortDeliveries->map(fn (MaterialShortDelivery $short) => $this->shortDelivery($short, $withMoney))->values()->all(),
+        ];
+
+        if ($withMoney) {
+            $data['has_bill_file'] = $challan->bill_path !== null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * A row of the bills list: the challan, its names, and how long the bill has been waiting.
+     * The alert counts from the challan date, so the days here do too.
+     *
+     * @return array<string, mixed>
+     */
+    public function billRow(DeliveryChallan $challan, bool $withMoney, CarbonInterface $today, int $alertAfterDays): array
+    {
+        $days = $challan->billPending() && $challan->challan_date
+            ? (int) max(0, $challan->challan_date->copy()->startOfDay()->diffInDays($today->copy()->startOfDay(), false))
+            : null;
+
+        return [
+            ...$this->challan($challan, $withMoney),
+            'material' => $challan->material?->name,
+            'unit' => $challan->unit?->code,
+            'days_waiting' => $days,
+            'overdue' => $days !== null && $days >= $alertAfterDays,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function shortDelivery(MaterialShortDelivery $short, bool $withMoney): array
+    {
+        return [
+            'id' => $short->id,
+            'client_uuid' => $short->client_uuid,
+            'project_id' => $short->project_id,
+            'delivery_challan_id' => $short->delivery_challan_id,
+            'material_id' => $short->material_id,
+            'unit_id' => $short->unit_id,
+            'short_qty' => $short->short_qty,
+            'short_base_qty' => $short->short_base_qty,
+            'found_on' => $short->found_on?->toDateString(),
+            'note' => $this->words($short->note, $withMoney),
+            // Found at the gate, it was never in stock. Found later, stock was corrected.
+            'at_entry' => ! $short->ledger_posted,
+            'status' => $short->status,
+            'created_by' => $short->creator?->name,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function reason(MaterialFlagReason $reason): array
+    {
+        return [
+            'id' => $reason->id,
+            'client_uuid' => $reason->client_uuid,
+            'project_id' => $reason->project_id,
+            'material_id' => $reason->material_id,
+            'flag_type' => $reason->flag_type,
+            'gap_qty' => $reason->gap_qty,
+            'reason' => $reason->reason,
+            'created_by' => $reason->creator?->name,
+            'created_at' => $reason->created_at?->toIso8601String(),
+        ];
+    }
+
+    /** Free text for someone without money.view: withheld when it names a rupee figure. */
+    private function words(?string $text, bool $withMoney): ?string
+    {
+        return $text !== null && ! $withMoney && MoneyMention::in($text) ? null : $text;
     }
 }

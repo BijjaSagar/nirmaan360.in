@@ -6,11 +6,19 @@ use App\Models\Approval;
 use App\Models\ApprovalStep;
 use App\Models\BillNote;
 use App\Models\BoqItem;
+use App\Models\ContractorPayment;
 use App\Models\Dpr;
+use App\Models\Indent;
+use App\Models\IndentItem;
 use App\Models\MeasurementEntry;
 use App\Models\RaBill;
+use App\Models\Rfi;
 use App\Models\User;
+use App\Models\VendorBill;
 use App\Services\ApprovalService;
+use App\Services\ContractorControl\PaymentAheadGuard;
+use App\Services\ContractorControl\WorkPaymentRatio;
+use App\Support\Dec;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +38,10 @@ final class ApprovalPresenter
             Dpr::class => ['project', 'creator', 'manpower', 'workItems.boqItem', 'photos'],
             RaBill::class => ['project', 'party'],
             BillNote::class => ['project', 'party', 'bill'],
+            ContractorPayment::class => ['project', 'workOrder', 'party', 'boqItem', 'milestone', 'enteredBy'],
+            VendorBill::class => ['project', 'party'],
+            Indent::class => ['project', 'store', 'creator', 'items.material', 'items.unit', 'items.boqItem'],
+            Rfi::class => ['project', 'raiser'],
         ]);
 
         $boqIds = $approvals->pluck('approvable')->filter(fn ($document) => $document instanceof MeasurementEntry)->pluck('boq_item_id')->unique();
@@ -56,7 +68,7 @@ final class ApprovalPresenter
                 'current_role' => $approval->currentRole(),
                 'current_role_label' => $approval->currentRoleLabel(),
                 'can_act' => $service->canAct($approval, $user),
-                'document' => self::document($approval->approvable, $ledger),
+                'document' => self::document($approval, $ledger, $user),
                 'steps' => $approval->steps->map(self::step(...))->all(),
             ])
             ->values()
@@ -81,13 +93,19 @@ final class ApprovalPresenter
         return $document->currentApproval?->steps->where('action', 'return')->last()?->remark;
     }
 
-    private static function document(Model $document, Collection $ledger): array
+    private static function document(Approval $approval, Collection $ledger, User $user): array
     {
+        $document = $approval->approvable;
+
         return match (true) {
             $document instanceof MeasurementEntry => self::measurement($document, $ledger),
             $document instanceof Dpr => self::dpr($document),
             $document instanceof RaBill => self::raBill($document),
             $document instanceof BillNote => self::billNote($document),
+            $document instanceof ContractorPayment => self::contractorPayment($document, $approval, $user),
+            $document instanceof VendorBill => self::vendorBill($document, $user),
+            $document instanceof Indent => self::indent($document),
+            $document instanceof Rfi => self::rfi($document),
             default => [],
         };
     }
@@ -166,6 +184,182 @@ final class ApprovalPresenter
             'deduction_total' => Money::orNull($bill->deduction_total),
             'gst_amount' => Money::orNull($bill->gst_amount),
             'net_payable' => Money::orNull($bill->net_payable),
+        ];
+    }
+
+    /**
+     * A contractor payment request, with what approving it would do to the contract: the same work % against
+     * paid % the contractor board shows (WorkPaymentRatio). Work % goes to every approver; the amount, the
+     * payment's details and every paid figure only to someone with money.view, as null otherwise.
+     * owner_override says how the payment-ahead rule (PaymentAheadGuard) meets this approver.
+     */
+    private static function contractorPayment(ContractorPayment $payment, Approval $approval, User $user): array
+    {
+        $money = Money::visible($user);
+        $impact = app(WorkPaymentRatio::class)->impact($payment);
+        $order = $payment->workOrder;
+        // The rule is only ever asked about a payment still waiting: a decided one is past it.
+        $check = $approval->status === 'IN_REVIEW' ? app(PaymentAheadGuard::class)->assess($payment) : null;
+
+        return [
+            'id' => $payment->id,
+            'number' => $payment->number,
+            'status' => $payment->status,
+            'work_order' => ['id' => $order?->id, 'number' => $order?->number, 'title' => $order?->title],
+            'contractor' => $payment->party?->name,
+            'against' => self::paymentAgainst($payment, $impact['item']),
+            'paid_on' => $payment->paid_on?->toDateString(),
+            'entered_by' => $payment->enteredBy?->name,
+            'work_pct' => $impact['now']['work_pct'],
+            'balance_work_pct' => $impact['now']['balance_work_pct'],
+            'amount' => $money ? $payment->amount : null,
+            'is_advance' => $money ? $payment->is_advance : null,
+            'mode' => $money ? $payment->mode : null,
+            'paid_to' => $money ? $payment->paid_to : null,
+            // Free text, which may quote a price.
+            'notes' => $money ? $payment->notes : null,
+            'has_bill' => $money ? $payment->bill_path !== null : null,
+            'paid_pct' => $money ? $impact['now']['paid_pct'] : null,
+            'impact' => $money ? ContractorControlPresenter::impact($impact) : null,
+            // The guard's own figures, in rupees: value of work done against paid so far and paid if approved.
+            'check' => $money && $check ? self::paymentCheck($check) : null,
+            'owner_override' => self::ownerOverride($check, $approval, $user),
+        ];
+    }
+
+    /**
+     * How PaymentAheadGuard meets this approver, so the app can offer what the server will accept.
+     * "needed": approving now is refused (422 on override_reason) unless the owner approves with a written reason.
+     * "allowed": this person is that owner. "message": why, or, before the last approval level, a warning that
+     * the last one will need the owner. Without money.view the message carries no figure.
+     *
+     * @param  array<string, mixed>|null  $check  PaymentAheadGuard::assess(), or null once the payment is decided.
+     * @return array{needed: bool, allowed: bool, message: ?string}
+     */
+    private static function ownerOverride(?array $check, Approval $approval, User $user): array
+    {
+        if (! ($check['blocked'] ?? false)) {
+            return ['needed' => false, 'allowed' => false, 'message' => null];
+        }
+
+        // The rule runs at the final approval only, as in ApprovalService::applyAction.
+        if (! $approval->isFinalLevel()) {
+            return [
+                'needed' => false,
+                'allowed' => false,
+                'message' => __('As it stands, the last approval of this payment will need the owner, with a written reason: it would put payment ahead of the work done beyond this project\'s limit.'),
+            ];
+        }
+
+        return [
+            'needed' => true,
+            'allowed' => $user->isOwner(),
+            'message' => PaymentAheadGuard::blockedMessage($check, Money::visible($user)),
+        ];
+    }
+
+    /** PaymentAheadGuard::assess() for someone who may see money. Every figure here is money or a paid percent. */
+    private static function paymentCheck(array $check): array
+    {
+        return [
+            'contract_value' => $check['contract_value'],
+            'work_done' => $check['work_done'],
+            'work_pct' => $check['work_pct'],
+            'paid' => $check['paid'],
+            'paid_pct' => $check['paid_pct'],
+            'paid_after' => $check['paid_after'],
+            'paid_pct_after' => $check['paid_pct_after'],
+            'gap_after' => $check['gap_after'],
+            'limit_pct' => $check['limit_pct'],
+            'blocked' => $check['blocked'],
+        ];
+    }
+
+    /** What the payment is for: one BOQ line of the contract, one part of it, or the contract in general. */
+    private static function paymentAgainst(ContractorPayment $payment, ?array $line): array
+    {
+        if ($payment->boqItem) {
+            return [
+                'type' => 'boq_item',
+                'code' => $payment->boqItem->code,
+                'description' => $payment->boqItem->description,
+                'unit' => $payment->boqItem->unit,
+                'work_pct' => $line['work_pct'] ?? null,
+            ];
+        }
+
+        if ($payment->milestone) {
+            return ['type' => 'part', 'title' => $payment->milestone->title, 'done' => $payment->milestone->isDone()];
+        }
+
+        return ['type' => 'contract'];
+    }
+
+    /**
+     * A supplier's bill against the project. Every amount, and the free text that may quote one, is null
+     * without money.view; the rates of GST and TDS are not money and always go.
+     */
+    private static function vendorBill(VendorBill $bill, User $user): array
+    {
+        $money = Money::visible($user);
+        $gst = Dec::of($bill->cgst_amount)->plus(Dec::of($bill->sgst_amount))->plus(Dec::of($bill->igst_amount));
+
+        return [
+            'id' => $bill->id,
+            'number' => $bill->bill_no,
+            'party_name' => $bill->party?->name,
+            'bill_date' => $bill->bill_date?->toDateString(),
+            'due_date' => $bill->due_date?->toDateString(),
+            'cost_head' => $bill->cost_head,
+            'supply_type' => $bill->supply_type,
+            'gst_pct' => $bill->gst_pct,
+            'tds_section' => $bill->tds_section,
+            'tds_pct' => $bill->tds_pct,
+            'description' => $money ? $bill->description : null,
+            'remarks' => $money ? $bill->remarks : null,
+            'taxable_amount' => $money ? $bill->taxable_amount : null,
+            'gst_amount' => $money ? Dec::money($gst) : null,
+            'total_amount' => $money ? $bill->total_amount : null,
+            'tds_amount' => $money ? $bill->tds_amount : null,
+            'net_payable' => $money ? $bill->net_payable : null,
+        ];
+    }
+
+    /** A request for material from site. Quantities only: an indent carries no price. */
+    private static function indent(Indent $indent): array
+    {
+        return [
+            'id' => $indent->id,
+            'number' => $indent->number,
+            'store' => $indent->store?->name,
+            'required_by' => $indent->required_by?->toDateString(),
+            'remarks' => $indent->remarks,
+            'created_by_name' => $indent->creator?->name,
+            'items' => $indent->items->map(fn (IndentItem $line) => [
+                'material' => $line->material?->name,
+                'material_code' => $line->material?->code,
+                'qty' => $line->qty,
+                'unit' => $line->unit?->code,
+                'boq_item' => $line->boqItem ? ['code' => $line->boqItem->code, 'description' => $line->boqItem->description] : null,
+                'remarks' => $line->remarks,
+            ])->all(),
+        ];
+    }
+
+    /** A request for information, approved before it goes out. The answer comes after approval. */
+    private static function rfi(Rfi $rfi): array
+    {
+        return [
+            'id' => $rfi->id,
+            'number' => $rfi->number,
+            'subject' => $rfi->subject,
+            'question' => $rfi->question,
+            'drawing_ref' => $rfi->drawing_ref,
+            'location' => $rfi->location,
+            'addressed_to' => $rfi->addressed_to,
+            'priority' => $rfi->priority,
+            'required_by' => $rfi->required_by?->toDateString(),
+            'raised_by_name' => $rfi->raiser?->name,
         ];
     }
 }

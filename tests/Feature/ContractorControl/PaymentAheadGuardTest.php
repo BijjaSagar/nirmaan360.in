@@ -280,7 +280,7 @@ class PaymentAheadGuardTest extends TestCase
         foreach ([$this->manager, $this->owner] as $user) {
             Sanctum::actingAs($user);
 
-            // The app has no override field: the owner overrides on the website.
+            // With no reason sent, the owner is refused too. With one, see ContractorPaymentOverrideApiTest.
             $this->postJson('/api/v1/approvals/'.$payment->currentApproval->id.'/act', ['action' => 'approve'])
                 ->assertUnprocessable()
                 ->assertJsonStructure(['message', 'errors' => ['override_reason']]);

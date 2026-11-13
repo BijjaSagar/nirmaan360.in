@@ -31,9 +31,19 @@ class ApprovalApiController extends Controller
             'action' => ['required', Rule::in(['approve', 'return', 'reject'])],
             'remark' => ['nullable', 'string', 'max:1000'],
             'client_uuid' => ['nullable', 'uuid'],
+            // The owner's written reason for approving a contractor payment ahead of the work done.
+            'override_reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $approval = $this->service->act($approval, $request->user(), $data['action'], $data['remark'] ?? null, $data['client_uuid'] ?? null);
+        // The same service call as the website, so the document's ApprovalGuard decides here too.
+        $approval = $this->service->act(
+            $approval,
+            $request->user(),
+            $data['action'],
+            $data['remark'] ?? null,
+            $data['client_uuid'] ?? null,
+            ['override_reason' => $data['override_reason'] ?? null],
+        );
 
         return response()->json(['data' => ApprovalPresenter::collection(new Collection([$approval]), $request->user())[0]]);
     }

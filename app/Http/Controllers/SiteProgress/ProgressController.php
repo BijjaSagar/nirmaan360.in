@@ -35,11 +35,7 @@ class ProgressController extends Controller
 
     public function schedule(Request $request, Project $project): RedirectResponse
     {
-        $data = $request->validate([
-            'start_date' => ['nullable', 'date'],
-            'planned_days' => ['nullable', 'integer', 'min:1', 'max:5000'],
-            'deadline_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-        ]);
+        $data = $request->validate(self::timeFrameRules());
 
         $project->update($data);
 
@@ -64,6 +60,16 @@ class ProgressController extends Controller
             'project' => $project,
             'week' => $this->report->week($project, $day),
         ]);
+    }
+
+    /** The project's time frame. The same for the web form and the mobile API. */
+    public static function timeFrameRules(): array
+    {
+        return [
+            'start_date' => ['nullable', 'date'],
+            'planned_days' => ['nullable', 'integer', 'min:1', 'max:5000'],
+            'deadline_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+        ];
     }
 
     /** Floors and flats for a select, parents first. */

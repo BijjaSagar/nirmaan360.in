@@ -150,4 +150,37 @@ final class SiteProgressPresenter
     {
         return ['id' => $floor->id, 'name' => $floor->name, 'parent_id' => $floor->parent_id];
     }
+
+    /** A floor or segment as the set-up screens write it. */
+    public static function floorSetup(ProjectFloor $floor): array
+    {
+        return [
+            'id' => $floor->id,
+            'client_uuid' => $floor->client_uuid,
+            'project_id' => $floor->project_id,
+            'name' => $floor->name,
+            'parent_id' => $floor->parent_id,
+            'sort' => (int) $floor->sort,
+        ];
+    }
+
+    /** ProgressReport::week(): quantities and percentages only. */
+    public static function week(array $week): array
+    {
+        return [
+            'start' => $week['start']->toDateString(),
+            'end' => $week['end']->toDateString(),
+            'is_current' => (bool) $week['is_current'],
+            'entry_count' => (int) $week['entry_count'],
+            'done' => $week['done']->map(fn (array $row) => [
+                ...self::item($row),
+                'week_qty' => $row['week_qty'],
+                'floors' => array_map(fn (array $floor) => ['name' => $floor['name'], 'qty' => $floor['qty']], $row['floors']),
+            ])->values()->all(),
+            'pending' => $week['pending']->map(self::pendingEntry(...))->values()->all(),
+            'next' => $week['next']->map(self::item(...))->values()->all(),
+            'next_more' => (int) $week['next_more'],
+            'not_started' => (int) $week['not_started'],
+        ];
+    }
 }

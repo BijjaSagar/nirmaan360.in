@@ -352,7 +352,8 @@ final class ContractorControlPresenter
         ];
     }
 
-    private static function impact(array $impact): array
+    /** What approving a payment would do to its contract, as WorkPaymentRatio::impact gives it. Money only. */
+    public static function impact(array $impact): array
     {
         return [
             'now' => self::moneyFigures($impact['now']) + ['work_pct' => $impact['now']['work_pct']],
