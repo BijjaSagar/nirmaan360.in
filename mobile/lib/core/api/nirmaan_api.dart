@@ -667,4 +667,23 @@ abstract interface class NirmaanApi {
   /// `GET /projects/{project}/progress/week`: the week (Monday to Sunday) that
   /// holds [date], today when null.
   Future<Map<String, dynamic>> progressWeek(int projectId, {String? date});
+
+  // Report files (routes/api_modules/reports.php): the website's DPR PDF, its
+  // WhatsApp link and the measurement sheet. Online only, on a plan with
+  // `reports`. The app writes the files to its temporary folder, never to the
+  // database.
+
+  /// `GET /dprs/{dpr}/pdf` (`dpr.view`): the same PDF the website gives.
+  Future<Uint8List> dprPdfBytes(int dprId);
+
+  /// `POST /dprs/{dpr}/share-link` (`dpr.view`): `{url, text, whatsapp_url,
+  /// expires_at, link_days, filename}`. `url` is the website's signed
+  /// `/shared/dprs/{id}` link, `text` the website's WhatsApp message ending in
+  /// it, written in [locale] (`en`, `mr` or `hi`) when given.
+  Future<Map<String, dynamic>> dprShareLink(int dprId, {String? locale});
+
+  /// `GET /projects/{project}/measurement-sheet.pdf?from=&to=` (`measurement.view`),
+  /// dates as `YYYY-MM-DD`. Rates and amounts only for `money.view`, decided by
+  /// the server.
+  Future<Uint8List> measurementSheetBytes(int projectId, {required String from, required String to});
 }

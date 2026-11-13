@@ -48,14 +48,20 @@ import 'push/push_service.dart';
 import 'readers/readers.dart';
 import 'session/current_user.dart';
 
-/// Deletes the temporary folder that holds company data: quotation files
-/// handed to another app. Never throws.
+/// Deletes the temporary folders that hold company data: quotation files and
+/// report PDFs handed to another app. Never throws.
 Future<void> clearCompanyTempFiles(Future<String> Function() tempDirectory) async {
   try {
     final String root = await tempDirectory();
-    final Directory dir = Directory('$root${Platform.pathSeparator}${AppConfig.quotationFolder}');
-    // Synchronous on purpose: a small folder, and it runs inside the sign-out.
-    if (dir.existsSync()) dir.deleteSync(recursive: true);
+    for (final String folder in <String>[AppConfig.quotationFolder, AppConfig.reportFolder]) {
+      try {
+        final Directory dir = Directory('$root${Platform.pathSeparator}$folder');
+        // Synchronous on purpose: small folders, and it runs inside the sign-out.
+        if (dir.existsSync()) dir.deleteSync(recursive: true);
+      } on Object {
+        // One folder that will not go must not keep the other.
+      }
+    }
   } on Object {
     // Best effort: the operating system clears the temporary folder too.
   }

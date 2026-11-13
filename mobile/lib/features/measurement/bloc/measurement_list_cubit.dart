@@ -14,6 +14,7 @@ class MeasurementListState extends Equatable {
     required this.today,
     this.loading = true,
     this.projectName,
+    this.projectId,
     this.rows = const [],
     this.boq = const {},
     this.filter,
@@ -23,6 +24,9 @@ class MeasurementListState extends Equatable {
   final String today;
   final bool loading;
   final String? projectName;
+
+  /// The project the book is for, once known: the measurement sheet asks for it.
+  final int? projectId;
 
   /// Every entry of the project, newest first.
   final List<SyncedRecord<MeasurementRow>> rows;
@@ -45,6 +49,7 @@ class MeasurementListState extends Equatable {
     bool? online,
     bool? loading,
     String? projectName,
+    int? projectId,
     List<SyncedRecord<MeasurementRow>>? rows,
     Map<int, BoqItemRow>? boq,
     Object? filter = _keep,
@@ -54,6 +59,7 @@ class MeasurementListState extends Equatable {
       today: today,
       loading: loading ?? this.loading,
       projectName: projectName ?? this.projectName,
+      projectId: projectId ?? this.projectId,
       rows: rows ?? this.rows,
       boq: boq ?? this.boq,
       filter: identical(filter, _keep) ? this.filter : filter as String?,
@@ -63,7 +69,7 @@ class MeasurementListState extends Equatable {
   static const Object _keep = Object();
 
   @override
-  List<Object?> get props => [online, today, loading, projectName, rows, boq, filter];
+  List<Object?> get props => [online, today, loading, projectName, projectId, rows, boq, filter];
 }
 
 class MeasurementListCubit extends Cubit<MeasurementListState> {
@@ -92,7 +98,7 @@ class MeasurementListCubit extends Cubit<MeasurementListState> {
     }
     if (project.id == _projectId) return;
     _projectId = project.id;
-    if (!isClosed) emit(state.copyWith(projectName: project.name));
+    if (!isClosed) emit(state.copyWith(projectName: project.name, projectId: project.id));
 
     _rows?.cancel();
     _rows = _services.measurements.watchByProject(project.id).listen((rows) {

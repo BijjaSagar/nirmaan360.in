@@ -17,6 +17,10 @@ abstract final class AppConfig {
   /// files handed to another app. Signing out and deleting the account clear it.
   static const String quotationFolder = 'quotations';
 
+  /// The folder in the temporary directory for report PDFs (a DPR, a
+  /// measurement sheet) handed to another app. Cleared with [quotationFolder].
+  static const String reportFolder = 'reports';
+
   /// Name of the sqlite file in the app documents directory.
   static const String databaseName = 'nirmaan360';
 

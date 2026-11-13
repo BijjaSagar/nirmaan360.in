@@ -3340,6 +3340,54 @@ abstract class AppLocalizations {
   /// **'Send report'**
   String get dprSendReport;
 
+  /// No description provided for @dprShareAfterSend.
+  ///
+  /// In en, this message translates to:
+  /// **'You can share this report once it has reached the office.'**
+  String get dprShareAfterSend;
+
+  /// No description provided for @dprShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get the report. Try again.'**
+  String get dprShareFailed;
+
+  /// No description provided for @dprShareLinkNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{The WhatsApp link opens the PDF for 1 day. Anyone who has the link can open it.} other{The WhatsApp link opens the PDF for {days} days. Anyone who has the link can open it.}}'**
+  String dprShareLinkNote(int days);
+
+  /// No description provided for @dprShareNeedsInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing needs internet.'**
+  String get dprShareNeedsInternet;
+
+  /// No description provided for @dprShareNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This report cannot be shared from your account.'**
+  String get dprShareNotAllowed;
+
+  /// No description provided for @dprSharePdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Share PDF'**
+  String get dprSharePdf;
+
+  /// No description provided for @dprShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this report'**
+  String get dprShareTitle;
+
+  /// No description provided for @dprShareWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Share on WhatsApp'**
+  String get dprShareWhatsApp;
+
   /// No description provided for @dprSiteClosedWrite.
   ///
   /// In en, this message translates to:
@@ -6405,6 +6453,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share of BOQ'**
   String get measurementShareOfBoq;
+
+  /// No description provided for @measurementSheetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet PDF'**
+  String get measurementSheetAction;
+
+  /// No description provided for @measurementSheetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get the sheet. Try again.'**
+  String get measurementSheetFailed;
+
+  /// No description provided for @measurementSheetFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get measurementSheetFrom;
+
+  /// No description provided for @measurementSheetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved measurements for the dates you choose, grouped by BOQ item.'**
+  String get measurementSheetHint;
+
+  /// No description provided for @measurementSheetNeedsInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'The sheet needs internet.'**
+  String get measurementSheetNeedsInternet;
+
+  /// No description provided for @measurementSheetNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This sheet cannot be shared from your account.'**
+  String get measurementSheetNotAllowed;
+
+  /// No description provided for @measurementSheetShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share PDF'**
+  String get measurementSheetShare;
+
+  /// No description provided for @measurementSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement sheet PDF'**
+  String get measurementSheetTitle;
+
+  /// No description provided for @measurementSheetTo.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get measurementSheetTo;
+
+  /// No description provided for @measurementSheetTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many measurements in these dates. Choose a shorter period.'**
+  String get measurementSheetTooLong;
 
   /// No description provided for @measurementStampSent.
   ///

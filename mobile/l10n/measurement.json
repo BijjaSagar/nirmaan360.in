@@ -513,5 +513,55 @@
     "en": "Could not add the photo. Try again.",
     "mr": "फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.",
     "hi": "फ़ोटो जोड़ी नहीं जा सकी। फिर से कोशिश करें।"
+  },
+  "measurementSheetAction": {
+    "en": "Sheet PDF",
+    "mr": "शीट PDF",
+    "hi": "शीट PDF"
+  },
+  "measurementSheetTitle": {
+    "en": "Measurement sheet PDF",
+    "mr": "मोजमाप शीट PDF",
+    "hi": "माप शीट PDF"
+  },
+  "measurementSheetHint": {
+    "en": "Approved measurements for the dates you choose, grouped by BOQ item.",
+    "mr": "निवडलेल्या तारखांची मंजूर मोजमापे, BOQ बाबीनुसार.",
+    "hi": "चुनी गई तारीखों के स्वीकृत माप, BOQ आइटम के अनुसार."
+  },
+  "measurementSheetFrom": {
+    "en": "From",
+    "mr": "पासून",
+    "hi": "से"
+  },
+  "measurementSheetTo": {
+    "en": "To",
+    "mr": "पर्यंत",
+    "hi": "तक"
+  },
+  "measurementSheetShare": {
+    "en": "Share PDF",
+    "mr": "PDF पाठवा",
+    "hi": "PDF भेजें"
+  },
+  "measurementSheetNeedsInternet": {
+    "en": "The sheet needs internet.",
+    "mr": "शीटसाठी इंटरनेट हवे.",
+    "hi": "शीट के लिए इंटरनेट चाहिए."
+  },
+  "measurementSheetFailed": {
+    "en": "Could not get the sheet. Try again.",
+    "mr": "शीट मिळाली नाही. पुन्हा प्रयत्न करा.",
+    "hi": "शीट नहीं मिली. फिर से कोशिश करें."
+  },
+  "measurementSheetTooLong": {
+    "en": "Too many measurements in these dates. Choose a shorter period.",
+    "mr": "या तारखांमध्ये खूप मोजमापे आहेत. कमी कालावधी निवडा.",
+    "hi": "इन तारीखों में बहुत ज़्यादा माप हैं. छोटी अवधि चुनें."
+  },
+  "measurementSheetNotAllowed": {
+    "en": "This sheet cannot be shared from your account.",
+    "mr": "तुमच्या खात्यातून ही शीट पाठवता येत नाही.",
+    "hi": "आपके खाते से यह शीट नहीं भेजी जा सकती."
   }
 }

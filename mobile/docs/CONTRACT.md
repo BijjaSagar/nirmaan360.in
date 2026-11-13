@@ -630,6 +630,24 @@ The app:
 - All three offer Send back, Approve and Reject, each remark sheet with reasons that fit the document. A rejected one cannot be corrected and sent again on the server, which is what the reject sheet says.
 - Raising any of these from the phone is not part of this: an indent is gap G5, vendor bills and RFIs stay on the website.
 
+### Sharing a DPR and the measurement sheet (online only)
+
+The website's three report buttons, for the phone. Routes are in `routes/api_modules/reports.php` (`Reports/Api/ReportShareApiController`), behind the same plan and permissions as the website: every one needs the `reports` plan feature (Contractor plan and above), so a Free company gets 403 and the app shows no button (`ReportShare.allowed`: `features` has `reports`, the permission below, not a contractor login). Nothing here is stored in Drift or queued: the files are made on the server from the server's copy, written to `<temp>/reports/` (`AppConfig.reportFolder`, cleared at sign-out and account deletion with the quotation files) and handed to the phone's share sheet through `share_plus`.
+
+| Method | Path | Needs | Answer |
+|---|---|---|---|
+| GET | `/dprs/{dpr}/pdf` | `dpr.view`, `site` | The DPR as `application/pdf` (attachment `DPR-<date>-<id>.pdf`), the same file as the website's PDF button. It carries no rupee figure |
+| POST | `/dprs/{dpr}/share-link` | `dpr.view`, `site` | `{data: {url, text, whatsapp_url, expires_at, link_days, filename}}`. Body: optional `locale` (`en`, `mr`, `hi`), 422 for any other. 30 a minute per person |
+| GET | `/projects/{project}/measurement-sheet.pdf?from=YYYY-MM-DD&to=YYYY-MM-DD` | `measurement.view`, `measurement` | Approved entries of the period grouped by BOQ line, as `application/pdf`. Both dates required, `to` not before `from` (422 `errors.from` / `errors.to`); more than 600 entries is 422 `errors.to` |
+
+**The link.** `url` is the website's own signed `/shared/dprs/{id}?expires=&signature=` address, the one behind the website's "Share on WhatsApp" button: it opens that one DPR's PDF without a sign-in, for `link_days` (7) days, and nothing else. A changed id or signature is 403; it answers 404 once the DPR is deleted or the company's plan no longer has `reports`. `text` is the website's WhatsApp message (company, project, date, status, weather, manpower, up to five work rows, then the link), written in `locale` when sent, otherwise in the account's language; it has no rupee figure. `whatsapp_url` is `https://wa.me/?text=` with that same message. `expires_at` is ISO 8601. The app shares `text` through the share sheet (`ReportShare.shareDprLink`) and passes the language it is showing. Asking again makes a new link; old ones keep working until they expire. There is no way to revoke one link.
+
+**Who and what.** Another company's DPR or project, or one outside the projects a person is limited to, is 404; without the permission 403; a contractor login 403. The measurement sheet carries rates, amounts and the total value only for `money.view`, decided by the server (`Money::visible`); everyone else gets the same sheet with quantities only. The app never asks which.
+
+**Refusals on a file request.** These two GETs are read as bytes, and a refusal still comes back as JSON; `DioNirmaanApi._reportBytes` reads it as JSON first, so a 422 is a `ValidationFailure` and a 403 a `ServerFailure` like anywhere else.
+
+**In the app.** DPR detail (`features/dpr/view/widgets/dpr_share_card.dart`) has a "Share this report" card with "Share PDF" and "Share on WhatsApp". Both wait until the report is on the server with nothing unsent (`serverId` set, sync state synced) and the phone is online, and say which is missing. The measurement book's top bar has "Sheet PDF" (`features/measurement/view/widgets/sheet_pdf_sheet.dart`): From and To default to the first of this month and today, as on the website, and the two never cross. `ReportShare.tempDirectory` and `ReportShare.shareOut` are the test seams; `FakeApi` has `grantReports()`, `dprPdfReads`, `dprShareLinkCalls`, `measurementSheetReads`, `reportFailure` and `reportGate`.
+
 ## 3. App layout
 
 Flutter 3.44, feature-first, BLoC (Cubits are fine), Drift, Dio, go_router.

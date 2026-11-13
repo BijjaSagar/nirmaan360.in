@@ -889,6 +889,21 @@
   "dprSendAgain": "Send again",
   "dprSendFailed": "Could not save this report. Try again.",
   "dprSendReport": "Send report",
+  "dprShareAfterSend": "You can share this report once it has reached the office.",
+  "dprShareFailed": "Could not get the report. Try again.",
+  "dprShareLinkNote": "{days, plural, =1{The WhatsApp link opens the PDF for 1 day. Anyone who has the link can open it.} other{The WhatsApp link opens the PDF for {days} days. Anyone who has the link can open it.}}",
+  "@dprShareLinkNote": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dprShareNeedsInternet": "Sharing needs internet.",
+  "dprShareNotAllowed": "This report cannot be shared from your account.",
+  "dprSharePdf": "Share PDF",
+  "dprShareTitle": "Share this report",
+  "dprShareWhatsApp": "Share on WhatsApp",
   "dprSiteClosedWrite": "Site closed? Write the reason",
   "dprSyncAttention": "Needs attention",
   "dprSyncPhoneOnly": "Phone only",
@@ -1779,6 +1794,16 @@
   "measurementSendForApproval": "Send for approval",
   "measurementSendsWhenOnline": "Not sent yet. It will go for approval when network returns.",
   "measurementShareOfBoq": "Share of BOQ",
+  "measurementSheetAction": "Sheet PDF",
+  "measurementSheetFailed": "Could not get the sheet. Try again.",
+  "measurementSheetFrom": "From",
+  "measurementSheetHint": "Approved measurements for the dates you choose, grouped by BOQ item.",
+  "measurementSheetNeedsInternet": "The sheet needs internet.",
+  "measurementSheetNotAllowed": "This sheet cannot be shared from your account.",
+  "measurementSheetShare": "Share PDF",
+  "measurementSheetTitle": "Measurement sheet PDF",
+  "measurementSheetTo": "To",
+  "measurementSheetTooLong": "Too many measurements in these dates. Choose a shorter period.",
   "measurementStampSent": "Sent",
   "measurementSubmitWaitingTitle": "Waiting to go for approval",
   "measurementSyncAttention": "Needs a look",

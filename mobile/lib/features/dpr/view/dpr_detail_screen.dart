@@ -8,6 +8,7 @@ import '../../projects/data/project_repository.dart' show BoqLine;
 import '../bloc/dpr_detail_cubit.dart';
 import '../data/dpr_repository.dart';
 import 'widgets/dpr_format.dart';
+import 'widgets/dpr_share_card.dart';
 import 'widgets/dpr_ui.dart';
 import 'widgets/photo_strip.dart';
 import 'widgets/work_rows.dart' show DprBoqPercent;
@@ -261,6 +262,11 @@ class _DprDetailBody extends StatelessWidget {
               ),
       ),
     );
+
+    // The website's PDF and WhatsApp buttons, for a plan with reports.
+    if (DprShareCard.shows(services)) {
+      add(DprShareCard(record: record, online: state.online));
+    }
 
     return ListView(
       padding: EdgeInsets.only(

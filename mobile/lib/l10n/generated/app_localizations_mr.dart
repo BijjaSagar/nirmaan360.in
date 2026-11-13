@@ -1829,6 +1829,34 @@ class AppLocalizationsMr extends AppLocalizations {
   String get dprSendReport => 'अहवाल पाठवा';
 
   @override
+  String get dprShareAfterSend =>
+      'हा अहवाल कार्यालयात पोहोचल्यावर पाठवता येईल.';
+
+  @override
+  String get dprShareFailed => 'अहवाल मिळाला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String dprShareLinkNote(int days) {
+    return 'WhatsApp लिंकने PDF $days दिवस उघडेल. लिंक असलेला कोणीही तो उघडू शकतो.';
+  }
+
+  @override
+  String get dprShareNeedsInternet => 'पाठवण्यासाठी इंटरनेट हवे.';
+
+  @override
+  String get dprShareNotAllowed =>
+      'तुमच्या खात्यातून हा अहवाल पाठवता येत नाही.';
+
+  @override
+  String get dprSharePdf => 'PDF पाठवा';
+
+  @override
+  String get dprShareTitle => 'हा अहवाल पाठवा';
+
+  @override
+  String get dprShareWhatsApp => 'WhatsApp वर पाठवा';
+
+  @override
   String get dprSiteClosedWrite => 'साइट बंद? कारण लिहा';
 
   @override
@@ -3585,6 +3613,39 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get measurementShareOfBoq => 'BOQ मधील वाटा';
+
+  @override
+  String get measurementSheetAction => 'शीट PDF';
+
+  @override
+  String get measurementSheetFailed => 'शीट मिळाली नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get measurementSheetFrom => 'पासून';
+
+  @override
+  String get measurementSheetHint =>
+      'निवडलेल्या तारखांची मंजूर मोजमापे, BOQ बाबीनुसार.';
+
+  @override
+  String get measurementSheetNeedsInternet => 'शीटसाठी इंटरनेट हवे.';
+
+  @override
+  String get measurementSheetNotAllowed =>
+      'तुमच्या खात्यातून ही शीट पाठवता येत नाही.';
+
+  @override
+  String get measurementSheetShare => 'PDF पाठवा';
+
+  @override
+  String get measurementSheetTitle => 'मोजमाप शीट PDF';
+
+  @override
+  String get measurementSheetTo => 'पर्यंत';
+
+  @override
+  String get measurementSheetTooLong =>
+      'या तारखांमध्ये खूप मोजमापे आहेत. कमी कालावधी निवडा.';
 
   @override
   String get measurementStampSent => 'पाठवले';

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show jsonDecode, utf8;
 import 'dart:io' show HttpDate;
 import 'dart:typed_data';
 
@@ -1076,5 +1077,54 @@ class DioNirmaanApi implements NirmaanApi {
       () => _dio.get('/projects/$projectId/progress/week', queryParameters: {'date': ?date}),
     );
     return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  // Report files (routes/api_modules/reports.php). -----------------------------
+
+  @override
+  Future<Uint8List> dprPdfBytes(int dprId) => _reportBytes('/dprs/$dprId/pdf');
+
+  @override
+  Future<Map<String, dynamic>> dprShareLink(int dprId, {String? locale}) =>
+      _postData('/dprs/$dprId/share-link', <String, dynamic>{'locale': ?locale});
+
+  @override
+  Future<Uint8List> measurementSheetBytes(int projectId, {required String from, required String to}) =>
+      _reportBytes('/projects/$projectId/measurement-sheet.pdf', query: <String, dynamic>{'from': from, 'to': to});
+
+  /// A generated file. A refusal comes back as JSON even though bytes were
+  /// asked for, so it is read as JSON first and translated like any other.
+  Future<Uint8List> _reportBytes(String path, {Map<String, dynamic>? query}) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        queryParameters: query,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(response.data ?? const []);
+    } on DioException catch (e) {
+      final Response<dynamic>? response = e.response;
+      final Object? body = response?.data;
+      if (response != null && body is List<int>) {
+        Object? decoded;
+        try {
+          decoded = jsonDecode(utf8.decode(body));
+        } on FormatException {
+          decoded = null;
+        }
+        throw _translate(
+          e.copyWith(
+            response: Response<dynamic>(
+              requestOptions: response.requestOptions,
+              data: decoded,
+              statusCode: response.statusCode,
+              statusMessage: response.statusMessage,
+              headers: response.headers,
+            ),
+          ),
+        );
+      }
+      throw _translate(e);
+    }
   }
 }

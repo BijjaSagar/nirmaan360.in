@@ -1844,6 +1844,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dprSendReport => 'Send report';
 
   @override
+  String get dprShareAfterSend =>
+      'You can share this report once it has reached the office.';
+
+  @override
+  String get dprShareFailed => 'Could not get the report. Try again.';
+
+  @override
+  String dprShareLinkNote(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other:
+          'The WhatsApp link opens the PDF for $days days. Anyone who has the link can open it.',
+      one:
+          'The WhatsApp link opens the PDF for 1 day. Anyone who has the link can open it.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dprShareNeedsInternet => 'Sharing needs internet.';
+
+  @override
+  String get dprShareNotAllowed =>
+      'This report cannot be shared from your account.';
+
+  @override
+  String get dprSharePdf => 'Share PDF';
+
+  @override
+  String get dprShareTitle => 'Share this report';
+
+  @override
+  String get dprShareWhatsApp => 'Share on WhatsApp';
+
+  @override
   String get dprSiteClosedWrite => 'Site closed? Write the reason';
 
   @override
@@ -3638,6 +3674,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get measurementShareOfBoq => 'Share of BOQ';
+
+  @override
+  String get measurementSheetAction => 'Sheet PDF';
+
+  @override
+  String get measurementSheetFailed => 'Could not get the sheet. Try again.';
+
+  @override
+  String get measurementSheetFrom => 'From';
+
+  @override
+  String get measurementSheetHint =>
+      'Approved measurements for the dates you choose, grouped by BOQ item.';
+
+  @override
+  String get measurementSheetNeedsInternet => 'The sheet needs internet.';
+
+  @override
+  String get measurementSheetNotAllowed =>
+      'This sheet cannot be shared from your account.';
+
+  @override
+  String get measurementSheetShare => 'Share PDF';
+
+  @override
+  String get measurementSheetTitle => 'Measurement sheet PDF';
+
+  @override
+  String get measurementSheetTo => 'To';
+
+  @override
+  String get measurementSheetTooLong =>
+      'Too many measurements in these dates. Choose a shorter period.';
 
   @override
   String get measurementStampSent => 'Sent';

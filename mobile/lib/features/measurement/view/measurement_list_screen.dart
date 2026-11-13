@@ -12,6 +12,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../bloc/measurement_book.dart';
 import '../bloc/measurement_list_cubit.dart';
 import 'widgets/book_kit.dart';
+import 'widgets/sheet_pdf_sheet.dart';
 
 /// The measurement book: one list to a day.
 class MeasurementListScreen extends StatelessWidget {
@@ -67,6 +68,7 @@ class _BookView extends StatelessWidget {
                     title: l.measurementBookTitle,
                     onBack: canGoBack ? () => context.pop() : null,
                     leading: canGoBack ? null : const BrandMark(size: 28),
+                    trailing: _sheetTile(context, l, state),
                   ),
                   if (!state.online) OfflineBanner(label: l.measurementOffline, detail: l.measurementOfflineDetail),
                   _Filters(state: state),
@@ -87,6 +89,18 @@ class _BookView extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  /// The website's measurement sheet PDF, on a plan with reports.
+  Widget? _sheetTile(BuildContext context, AppLocalizations l, MeasurementListState state) {
+    final int? projectId = state.projectId;
+    if (projectId == null || !measurementSheetAllowed(context.read<AppServices>())) return null;
+    return N360TopTile(
+      key: const ValueKey<String>('measurement-sheet-pdf'),
+      icon: Icons.picture_as_pdf_outlined,
+      label: l.measurementSheetAction,
+      onTap: () => showMeasurementSheetPdf(context, projectId: projectId, today: state.today),
     );
   }
 

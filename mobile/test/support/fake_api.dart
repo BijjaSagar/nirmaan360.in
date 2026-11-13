@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert' show base64Decode, jsonDecode, jsonEncode;
+import 'dart:convert' show base64Decode, jsonDecode, jsonEncode, utf8;
 import 'dart:math' show atan2, cos, max, min, pi, sin, sqrt;
 import 'dart:typed_data';
 
@@ -4938,5 +4938,74 @@ class FakeApi implements NirmaanApi {
       'end': iso(monday.add(const Duration(days: 6))),
       if (date != null) 'is_current': iso(monday) == '2026-11-09',
     };
+  }
+
+  // Report files (routes/api_modules/reports.php) -----------------------------
+
+  /// Gives the signed-in user's company the `reports` plan feature, as the
+  /// Contractor plan and above have it. Call before the session starts.
+  void grantReports() {
+    final features = (user['organization'] as Map)['features'] as List;
+    if (!features.contains('reports')) features.add('reports');
+  }
+
+  /// What `GET /dprs/{id}/pdf` and the measurement sheet answer.
+  Uint8List reportPdf = Uint8List.fromList(utf8.encode('%PDF-1.4 fake report'));
+
+  /// The next report call (either PDF or the link) throws this instead.
+  ApiFailure? reportFailure;
+
+  /// Holds every report call until completed, to see the screen wait.
+  Completer<void>? reportGate;
+
+  /// DPR server ids whose PDF was read, in order.
+  final List<int> dprPdfReads = <int>[];
+
+  /// `(dprId, locale)` of every share-link request, in order.
+  final List<({int dprId, String? locale})> dprShareLinkCalls = <({int dprId, String? locale})>[];
+
+  /// `(projectId, from, to)` of every measurement sheet read, in order.
+  final List<({int projectId, String from, String to})> measurementSheetReads =
+      <({int projectId, String from, String to})>[];
+
+  Future<void> _reportCall() async {
+    _guard();
+    final ApiFailure? failure = reportFailure;
+    if (failure != null) {
+      reportFailure = null;
+      throw failure;
+    }
+    final Completer<void>? gate = reportGate;
+    if (gate != null) await gate.future;
+  }
+
+  @override
+  Future<Uint8List> dprPdfBytes(int dprId) async {
+    await _reportCall();
+    dprPdfReads.add(dprId);
+    return reportPdf;
+  }
+
+  @override
+  Future<Map<String, dynamic>> dprShareLink(int dprId, {String? locale}) async {
+    await _reportCall();
+    dprShareLinkCalls.add((dprId: dprId, locale: locale));
+    final String url = 'https://nirmaan360.in/shared/dprs/$dprId?expires=1795199137&signature=abc123';
+    final String text = 'Acme Infra · Daily progress report\nFull report (PDF, link works for 7 days):\n$url';
+    return <String, dynamic>{
+      'url': url,
+      'text': text,
+      'whatsapp_url': 'https://wa.me/?text=${Uri.encodeComponent(text)}',
+      'expires_at': '2026-11-16T10:00:00+05:30',
+      'link_days': 7,
+      'filename': 'DPR-$dprId.pdf',
+    };
+  }
+
+  @override
+  Future<Uint8List> measurementSheetBytes(int projectId, {required String from, required String to}) async {
+    await _reportCall();
+    measurementSheetReads.add((projectId: projectId, from: from, to: to));
+    return reportPdf;
   }
 }

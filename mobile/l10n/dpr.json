@@ -439,5 +439,50 @@
     "en": "Nothing recorded",
     "mr": "काहीही नोंदवलेले नाही",
     "hi": "कुछ दर्ज नहीं"
+  },
+  "dprShareTitle": {
+    "en": "Share this report",
+    "mr": "हा अहवाल पाठवा",
+    "hi": "यह रिपोर्ट भेजें"
+  },
+  "dprSharePdf": {
+    "en": "Share PDF",
+    "mr": "PDF पाठवा",
+    "hi": "PDF भेजें"
+  },
+  "dprShareWhatsApp": {
+    "en": "Share on WhatsApp",
+    "mr": "WhatsApp वर पाठवा",
+    "hi": "WhatsApp पर भेजें"
+  },
+  "dprShareLinkNote": {
+    "en": "{days, plural, =1{The WhatsApp link opens the PDF for 1 day. Anyone who has the link can open it.} other{The WhatsApp link opens the PDF for {days} days. Anyone who has the link can open it.}}",
+    "mr": "WhatsApp लिंकने PDF {days} दिवस उघडेल. लिंक असलेला कोणीही तो उघडू शकतो.",
+    "hi": "WhatsApp लिंक से PDF {days} दिन तक खुलेगी. जिसके पास लिंक है, वह इसे खोल सकता है.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dprShareAfterSend": {
+    "en": "You can share this report once it has reached the office.",
+    "mr": "हा अहवाल कार्यालयात पोहोचल्यावर पाठवता येईल.",
+    "hi": "यह रिपोर्ट दफ़्तर पहुँचने के बाद भेज सकते हैं."
+  },
+  "dprShareNeedsInternet": {
+    "en": "Sharing needs internet.",
+    "mr": "पाठवण्यासाठी इंटरनेट हवे.",
+    "hi": "भेजने के लिए इंटरनेट चाहिए."
+  },
+  "dprShareFailed": {
+    "en": "Could not get the report. Try again.",
+    "mr": "अहवाल मिळाला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "रिपोर्ट नहीं मिली. फिर से कोशिश करें."
+  },
+  "dprShareNotAllowed": {
+    "en": "This report cannot be shared from your account.",
+    "mr": "तुमच्या खात्यातून हा अहवाल पाठवता येत नाही.",
+    "hi": "आपके खाते से यह रिपोर्ट नहीं भेजी जा सकती."
   }
 }
