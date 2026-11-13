@@ -219,6 +219,8 @@ class ReaderSettings
     /**
      * The features that can spend in this deployment, each of which may have a daily budget:
      * the reader kinds that are registered, then the purposes a text call handler is registered for.
+     * Voice counts only once it is deployed (AiSpend::voiceDeployed), as it does for every other place:
+     * until then it cannot spend, so there is no limit to set for it.
      *
      * @return list<string>
      */
@@ -228,7 +230,7 @@ class ReaderSettings
 
         foreach (config('modules', []) as $module) {
             foreach (array_keys($module['text_calls'] ?? []) as $purpose) {
-                if (is_string($purpose)) {
+                if (is_string($purpose) && ($purpose !== AiSpend::VOICE || $this->spend->voiceDeployed())) {
                     $deployed[] = $purpose;
                 }
             }

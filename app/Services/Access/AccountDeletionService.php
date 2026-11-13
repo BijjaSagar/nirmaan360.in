@@ -310,6 +310,7 @@ class AccountDeletionService
         }
 
         $this->scrubAgentRuns($organizationId, $userId);
+        $this->scrubVoiceDrafts($organizationId, $userId);
         DB::table('notifications')->where('notifiable_type', $user->getMorphClass())->where('notifiable_id', $userId)->delete();
     }
 
@@ -319,6 +320,13 @@ class AccountDeletionService
         $runs = DB::table('agent_runs')->where('organization_id', $organizationId)->where('user_id', $userId);
         DB::table('agent_steps')->where('organization_id', $organizationId)->whereIn('agent_run_id', (clone $runs)->select('id'))->update(['text' => null]);
         (clone $runs)->update(['input' => '', 'messages' => '[]', 'answer' => null, 'output' => null]);
+    }
+
+    /** The words they spoke for voice reports, and what was made of them. The rows stay for the credits their calls used. */
+    private function scrubVoiceDrafts(int $organizationId, int $userId): void
+    {
+        DB::table('dpr_voice_drafts')->where('organization_id', $organizationId)->where('user_id', $userId)
+            ->update(['transcript' => null, 'proposal' => null, 'checks' => null, 'text_purged_at' => now(), 'updated_at' => now()]);
     }
 
     /** Ways in, ways to reach them, and what was only theirs. Plain queries, so nothing writes audit rows full of the old values. */
@@ -350,6 +358,7 @@ class AccountDeletionService
         $email = User::normaliseEmail($oldEmail);
 
         $this->scrubAgentRuns($organizationId, $user->id);
+        $this->scrubVoiceDrafts($organizationId, $user->id);
 
         // Their own invitation, and any earlier one sent to the same address in this company.
         $invitations = DB::table('team_invitations')
