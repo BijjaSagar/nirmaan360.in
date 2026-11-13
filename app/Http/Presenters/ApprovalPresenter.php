@@ -8,11 +8,16 @@ use App\Models\BillNote;
 use App\Models\BoqItem;
 use App\Models\ContractorPayment;
 use App\Models\Dpr;
+use App\Models\Indent;
+use App\Models\IndentItem;
 use App\Models\MeasurementEntry;
 use App\Models\RaBill;
+use App\Models\Rfi;
 use App\Models\User;
+use App\Models\VendorBill;
 use App\Services\ApprovalService;
 use App\Services\ContractorControl\WorkPaymentRatio;
+use App\Support\Dec;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +38,9 @@ final class ApprovalPresenter
             RaBill::class => ['project', 'party'],
             BillNote::class => ['project', 'party', 'bill'],
             ContractorPayment::class => ['project', 'workOrder', 'party', 'boqItem', 'milestone', 'enteredBy'],
+            VendorBill::class => ['project', 'party'],
+            Indent::class => ['project', 'store', 'creator', 'items.material', 'items.unit', 'items.boqItem'],
+            Rfi::class => ['project', 'raiser'],
         ]);
 
         $boqIds = $approvals->pluck('approvable')->filter(fn ($document) => $document instanceof MeasurementEntry)->pluck('boq_item_id')->unique();
@@ -94,6 +102,9 @@ final class ApprovalPresenter
             $document instanceof RaBill => self::raBill($document),
             $document instanceof BillNote => self::billNote($document),
             $document instanceof ContractorPayment => self::contractorPayment($document, $user),
+            $document instanceof VendorBill => self::vendorBill($document, $user),
+            $document instanceof Indent => self::indent($document),
+            $document instanceof Rfi => self::rfi($document),
             default => [],
         };
     }
@@ -231,5 +242,73 @@ final class ApprovalPresenter
         }
 
         return ['type' => 'contract'];
+    }
+
+    /**
+     * A supplier's bill against the project. Every amount, and the free text that may quote one, is null
+     * without money.view; the rates of GST and TDS are not money and always go.
+     */
+    private static function vendorBill(VendorBill $bill, User $user): array
+    {
+        $money = Money::visible($user);
+        $gst = Dec::of($bill->cgst_amount)->plus(Dec::of($bill->sgst_amount))->plus(Dec::of($bill->igst_amount));
+
+        return [
+            'id' => $bill->id,
+            'number' => $bill->bill_no,
+            'party_name' => $bill->party?->name,
+            'bill_date' => $bill->bill_date?->toDateString(),
+            'due_date' => $bill->due_date?->toDateString(),
+            'cost_head' => $bill->cost_head,
+            'supply_type' => $bill->supply_type,
+            'gst_pct' => $bill->gst_pct,
+            'tds_section' => $bill->tds_section,
+            'tds_pct' => $bill->tds_pct,
+            'description' => $money ? $bill->description : null,
+            'remarks' => $money ? $bill->remarks : null,
+            'taxable_amount' => $money ? $bill->taxable_amount : null,
+            'gst_amount' => $money ? Dec::money($gst) : null,
+            'total_amount' => $money ? $bill->total_amount : null,
+            'tds_amount' => $money ? $bill->tds_amount : null,
+            'net_payable' => $money ? $bill->net_payable : null,
+        ];
+    }
+
+    /** A request for material from site. Quantities only: an indent carries no price. */
+    private static function indent(Indent $indent): array
+    {
+        return [
+            'id' => $indent->id,
+            'number' => $indent->number,
+            'store' => $indent->store?->name,
+            'required_by' => $indent->required_by?->toDateString(),
+            'remarks' => $indent->remarks,
+            'created_by_name' => $indent->creator?->name,
+            'items' => $indent->items->map(fn (IndentItem $line) => [
+                'material' => $line->material?->name,
+                'material_code' => $line->material?->code,
+                'qty' => $line->qty,
+                'unit' => $line->unit?->code,
+                'boq_item' => $line->boqItem ? ['code' => $line->boqItem->code, 'description' => $line->boqItem->description] : null,
+                'remarks' => $line->remarks,
+            ])->all(),
+        ];
+    }
+
+    /** A request for information, approved before it goes out. The answer comes after approval. */
+    private static function rfi(Rfi $rfi): array
+    {
+        return [
+            'id' => $rfi->id,
+            'number' => $rfi->number,
+            'subject' => $rfi->subject,
+            'question' => $rfi->question,
+            'drawing_ref' => $rfi->drawing_ref,
+            'location' => $rfi->location,
+            'addressed_to' => $rfi->addressed_to,
+            'priority' => $rfi->priority,
+            'required_by' => $rfi->required_by?->toDateString(),
+            'raised_by_name' => $rfi->raiser?->name,
+        ];
     }
 }
