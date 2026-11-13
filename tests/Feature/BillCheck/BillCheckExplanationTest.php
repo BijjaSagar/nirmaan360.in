@@ -3,23 +3,29 @@
 namespace Tests\Feature\BillCheck;
 
 use App\Jobs\DocumentReading\RunTextCall;
+use App\Models\AgentCreditWallet;
 use App\Models\AiTextCall;
 use App\Models\AuditLog;
 use App\Models\BillCheck;
 use App\Models\BillCheckExplanation;
+use App\Models\Organization;
 use App\Models\RaBill;
 use App\Models\User;
 use App\Services\Access\TeamAccessService;
 use App\Services\Agents\CreditService;
+use App\Services\BillCheck\Explain\BillCheckExplanations;
 use App\Services\BillCheck\Explain\FindingTopics;
 use App\Services\BillCheck\Flag;
 use App\Services\BillCheck\FlagCatalog;
+use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\TextCallRunner;
 use App\Services\DocumentReading\TextRequest;
+use App\Services\RazorpayGateway;
 use App\Services\Wording\WordingRequest;
 use App\Support\Dec;
 use App\Support\PlatformSettings;
 use Brick\Math\RoundingMode;
+use Closure;
 use Illuminate\Http\Client\Request;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
@@ -507,6 +513,45 @@ class BillCheckExplanationTest extends BillCheckTestCase
         $this->runCall($first);
         $this->ask($this->qs, 'mr', ['client_uuid' => (string) Str::uuid()])->assertOk()->assertJsonPath('call_id', $first)->assertJsonPath('status', 'done');
         $this->assertSame(2, AiTextCall::withoutGlobalScopes()->count());
+        Http::assertSentCount(1);
+    }
+
+    public function test_a_press_that_waited_on_the_wallet_while_the_call_was_written_asks_for_nothing_more(): void
+    {
+        $first = $this->ask($this->pm, 'mr', ['client_uuid' => (string) Str::uuid()])->assertStatus(202)->json('call_id');
+        $this->fakeModel([$this->slots(self::MR)]);
+
+        // The second press has read the explanation while the AI was still writing it. It then waits on the company's
+        // wallet while the call is settled: the call ends and its sentences are written just before the press gets the lock.
+        $settled = false;
+        $settle = function () use ($first, &$settled): void {
+            if (! $settled) {
+                $settled = true;
+                $this->runCall($first);
+            }
+        };
+        $this->app->bind(CreditService::class, fn ($app) => new class($app->make(RazorpayGateway::class), $app->make(AiSpend::class), $settle) extends CreditService
+        {
+            public function __construct(RazorpayGateway $gateway, AiSpend $spend, private Closure $before)
+            {
+                parent::__construct($gateway, $spend);
+            }
+
+            public function wallet(Organization $organization): AgentCreditWallet
+            {
+                ($this->before)();
+
+                return parent::wallet($organization);
+            }
+        });
+
+        [$explanation, $call, $asked] = app(BillCheckExplanations::class)->ask($this->stored, 'mr', $this->qs, (string) Str::uuid());
+
+        $this->assertTrue($settled, 'The call was written while the press waited.');
+        $this->assertFalse($asked);
+        $this->assertSame([BillCheckExplanation::AI, $first], [$explanation->source, $call?->id]);
+        $this->assertSame(1, AiTextCall::withoutGlobalScopes()->count(), 'No second call is made, held or charged.');
+        $this->assertSame(1, AuditLog::withoutGlobalScopes()->where('action', 'bill_check.explanation_asked')->count());
         Http::assertSentCount(1);
     }
 

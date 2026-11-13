@@ -62,11 +62,15 @@ return [
     ],
 
     /*
-     * The case endings a two-letter Devanagari word may carry and still be the same word: भिंत said
-     * as "भिंतीचं" or "भिंतीला". Vowel signs before the ending are allowed as well ("ईंटों", "भिंती").
-     * Any other longer word is a different word: "पर" is not in "परवा".
+     * What may follow a two-letter Devanagari word inside a longer word that still names it, on either side
+     * (said, or written in the line): vowel signs, then at most one word for the work done with it
+     * (context_heads: वीटकाम, रंगकाम, खडीकरण), then vowel signs and at most one case ending (context_endings:
+     * भिंतीचं, भिंतीला, छतावरील, ईंटों). Any other longer word is a different word: "पर" is not in "परवा",
+     * nor "तार" in "तारीख".
      */
-    'context_endings' => ['चं', 'चा', 'ची', 'चे', 'च्या', 'त', 'ना', 'नी', 'ने', 'मध्ये', 'ला', 'वर', 'साठी'],
+    'context_heads' => ['करण', 'काम'],
+
+    'context_endings' => ['चं', 'चा', 'ची', 'चे', 'च्या', 'त', 'तील', 'ना', 'नी', 'ने', 'मधील', 'मध्ये', 'ला', 'वर', 'वरील', 'साठी'],
 
     // How many words may stand between a number and the trade or unit it is tied to.
     'anchor_words' => 6,

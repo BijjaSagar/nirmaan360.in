@@ -278,6 +278,66 @@ class SlipReaderScriptTest extends SlipReadingTestCase
         $this->assertSame([null, SlipRead::READY], [$challan->refresh()->bill_no, $slip->refresh()->status]);
     }
 
+    public function test_a_bill_figure_written_another_way_is_still_the_reading_on_the_page_as_on_the_server(): void
+    {
+        $this->withBillReader();
+        $challan = app(DeliveryChallanService::class)->create($this->project, [
+            'party_id' => $this->vendor->id, 'material_id' => $this->cement->id, 'qty' => '10', 'challan_date' => '2026-11-11',
+        ], $this->owner);
+        $slip = $this->readyBill($this->owner);
+        $page = $this->actingAs($this->owner)->get(route('material_control.challans.show', $challan))->assertOk();
+
+        // 70800 is the reading's 70800.00 and " inv/0912 " its INV/0912, as SlipLink counts them: the page asks to
+        // confirm them against the photo, and does not call them changed.
+        [$typed, $blocked, $saved] = $this->browse([[
+            'name' => 'challan bill',
+            'factory' => 'slipBillReader',
+            ...$this->reader($page, 'slipBillReader'),
+            'inputs' => ['bill_no' => '', 'bill_date' => '', 'bill_amount' => ''],
+            'files' => ['bill'],
+            'responses' => $this->answers($slip, $this->owner),
+            'steps' => [['call', 'read'], ['flush'], ['type', 'bill_amount', '70800'], ['type', 'bill_no', ' inv/0912 '], ['snap'], ['submit'], ['confirmNeeded'], ['submit']],
+        ]])['challan bill'];
+
+        $this->assertSame(3, count(array_keys($typed['buttons'], 'Matches the photo', true)), implode(' | ', $typed['buttons']));
+        $this->assertTrue($blocked['prevented'], 'Save waits for the confirmations the server asks for.');
+        $this->assertFalse($saved['prevented'], (string) $saved['blocked']);
+        $this->assertEqualsCanonicalizing(['bill_no', 'bill_date', 'bill_amount'], $saved['payload']['read_confirmed']);
+
+        $this->actingAs($this->owner)->from(route('material_control.challans.show', $challan))
+            ->post(route('material_control.challans.bill.store', $challan), $saved['payload'])->assertSessionHasNoErrors();
+        $this->assertSame(['70800.00', SlipRead::USED], [(string) $challan->refresh()->bill_amount, $slip->refresh()->status]);
+
+        // The vendor bill form, for the accountant: the taxable value and the bill number alike.
+        $accounts = $this->member($this->organization, 'accounts');
+        $reading = $this->readyBill($accounts);
+        $form = $this->actingAs($accounts)->get(route('finance.project.vendor-bills.create', $this->project))->assertOk();
+        $choices = fn (array $values) => ['value' => '', 'options' => ['', ...array_map('strval', $values)]];
+
+        [$vendorSaved] = $this->browse([[
+            'name' => 'vendor bill',
+            'factory' => 'slipBillReader',
+            ...$this->reader($form, 'slipBillReader'),
+            'inputs' => [
+                'party_id' => $choices([$this->vendor->id]), 'bill_no' => '', 'bill_date' => '', 'taxable_amount' => '',
+                'gst_pct' => $choices(config('modules.finance.gst_rates')), 'supply_type' => $choices(['intra', 'inter']),
+                'cost_head' => 'Materials', 'client_uuid' => (string) Str::uuid(),
+            ],
+            'files' => ['slip_bill_photo'],
+            'responses' => $this->answers($reading, $accounts),
+            'steps' => [['call', 'read'], ['flush'], ['type', 'taxable_amount', '60000'], ['type', 'bill_no', 'inv/0912'], ['confirmNeeded'], ['submit']],
+        ]])['vendor bill'];
+
+        $this->assertFalse($vendorSaved['prevented'], (string) $vendorSaved['blocked']);
+        $this->assertContains('taxable_amount', $vendorSaved['payload']['read_confirmed']);
+        $this->assertContains('bill_no', $vendorSaved['payload']['read_confirmed']);
+
+        $this->actingAs($accounts)->from(route('finance.project.vendor-bills.create', $this->project))
+            ->post(route('finance.project.vendor-bills.store', $this->project), array_filter($vendorSaved['payload'], fn ($value) => $value !== ''))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(SlipRead::USED, $reading->refresh()->status);
+    }
+
     public function test_a_supplier_typed_as_read_can_be_confirmed_though_another_was_found_by_its_gstin(): void
     {
         $slip = $this->readyReading($this->store);

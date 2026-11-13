@@ -102,6 +102,13 @@ class BillCheckExplanations
             // so the lock order is the one start() keeps (the wallet, then the call) and never the job's reverse.
             $this->credits->wallet($organization);
 
+            // A press that read the explanation before a call settled may have waited here while the call was
+            // written: TextCallRunner::settle takes the same lock first and writes the sentences as 'ai' before it
+            // lets go. Read again under the lock, so that press finds them written and asks for nothing.
+            if ($explanation->refresh()->source === BillCheckExplanation::AI) {
+                return $this->latestCall($explanation);
+            }
+
             $open = $this->latestCall($explanation);
 
             // A client_uuid sent before is left to start(): it returns that request's own call, or refuses one of another record.
@@ -111,6 +118,10 @@ class BillCheckExplanations
 
             return app(WordingService::class)->draft(WordingService::PURPOSE, $document->type, $document->sheet, $locale, $explanation, $by, ['client_uuid' => $clientUuid]);
         });
+
+        if ($call === null) {
+            return [$explanation->refresh(), null, false];
+        }
 
         if ($call->wasRecentlyCreated) {
             AuditLog::record('bill_check.explanation_asked', $explanation, null, [

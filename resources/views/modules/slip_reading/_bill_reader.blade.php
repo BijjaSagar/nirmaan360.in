@@ -95,6 +95,27 @@
         function slipBillReader(config) {
             const address = (name, id) => config.urls[name].replace('__SLIP__', encodeURIComponent(id));
 
+            // Values as the server compares them (SlipLink): text in upper case with single spaces, a date as typed,
+            // money to two places rounded half up on the digits as typed, ids as whole numbers. Nothing is null.
+            // So "70800" is the reading's "70800.00" and " inv/0912 " its "INV/0912": still to be confirmed, not changed.
+            const plain = (value) => String(value ?? '').replace(/[\s\p{Z}]+/gu, ' ').trim().toUpperCase() || null;
+            const money = (value) => {
+                const match = /^([+-]?)(\d*)(?:\.(\d*))?$/.exec(String(value ?? '').trim());
+
+                if (!match || (match[2] === '' && (match[3] ?? '') === '')) {
+                    return null;
+                }
+
+                const thousandths = BigInt((match[2] || '0') + ((match[3] ?? '') + '000').slice(0, 3));
+                const hundredths = ((thousandths + 5n) / 10n).toString().padStart(3, '0');
+                const sign = match[1] === '-' && /[1-9]/.test(hundredths) ? '-' : '';
+
+                return `${sign}${hundredths.slice(0, -2)}.${hundredths.slice(-2)}`;
+            };
+            const whole = (value) => (/^\d+$/.test(String(value ?? '').trim()) ? String(parseInt(String(value).trim(), 10)) : null);
+            const canonical = { party_id: whole, bill_no: plain, bill_date: (value) => String(value ?? '').trim() || null, bill_amount: money, taxable_amount: money, gst_pct: money, supply_type: plain };
+            const same = (name, a, b) => (canonical[name] ?? ((value) => String(value ?? '')))(a) === (canonical[name] ?? ((value) => String(value ?? '')))(b);
+
             return {
                 state: 'idle',
                 message: '',
@@ -359,7 +380,7 @@
                 edited(input) {
                     const name = input?.name;
 
-                    if (name && this.filled[name] !== undefined && String(input.value) !== this.filled[name]) {
+                    if (name && this.filled[name] !== undefined && !same(name, input.value, this.filled[name])) {
                         this.unconfirm(name);
                     }
                 },
@@ -367,7 +388,7 @@
                 changed(name) {
                     const input = this.input(name);
 
-                    return Boolean(input) && this.filled[name] !== undefined && String(input.value) !== this.filled[name];
+                    return Boolean(input) && this.filled[name] !== undefined && !same(name, input.value, this.filled[name]);
                 },
 
                 // Saving waits until every filled field is confirmed or changed and every warning that asks for a tick has one.

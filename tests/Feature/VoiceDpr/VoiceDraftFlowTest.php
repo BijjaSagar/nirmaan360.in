@@ -11,6 +11,7 @@ use App\Models\DprWorkItem;
 use App\Services\DocumentReading\AiDocumentConsent;
 use App\Services\DocumentReading\ShapeCheck;
 use App\Services\DocumentReading\TextRequest;
+use App\Services\VoiceDpr\VoiceContext;
 use App\Services\VoiceDpr\VoiceDraftCall;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use ReflectionMethod;
 
 /**
  * A spoken report from the phone to the proposal and back: what is stored, what is sent to the model,
@@ -204,6 +206,40 @@ class VoiceDraftFlowTest extends VoiceDprTestCase
 
         foreach ([$withLabour, $groundFloor, $roof, $wallPlaster, $bars, $tiles] as $unnamed) {
             $this->assertNotContains($unnamed->id, [...$this->draft($marathi)->checks['refs'], ...$this->draft($hindi)->checks['refs']], $unnamed->description);
+        }
+    }
+
+    public function test_a_two_letter_word_names_its_compounds_and_inflections_on_either_side_and_no_other_longer_word(): void
+    {
+        $brickwork = $this->line($this->project, 'BW-14', 'वीटकाम 230 मिमी जाडीचे', 'cum', '6150.00');
+        $painting = $this->line($this->project, 'PT-15', 'रंगकाम', 'sqm', '95.00');
+        $roof = $this->line($this->project, 'RC-16', 'छत M20', 'cum', '7300.00');
+        $bricks = $this->line($this->project, 'BW-17', 'वीट पुरवठा', 'nos', '9.00');
+        $mesh = $this->line($this->project, 'FN-18', 'तार जाळी', 'sqm', '240.00');
+
+        // The short word is said, the line has the compound: वीट names वीटकाम, रंग names रंगकाम. तारीख is not तार:
+        // neither a stop word, a unit nor a number, so only the rule for a short word inside a longer one keeps it out.
+        $said = $this->send($this->engineer, $this->payload(['transcript' => 'आज वीट तीन घनमीटर, भिंतीला रंग दिला. तारीख पाच.']))->assertStatus(202)->json('id');
+        $this->assertEqualsCanonicalizing([$brickwork->id, $painting->id, $bricks->id], $this->draft($said)->checks['refs']);
+
+        // The line has the short word, the longer one is said: छतावरील names छत, वीटकामाचे names वीट; तारखेला is not तार.
+        $written = $this->send($this->engineer, $this->payload(['transcript' => 'छतावरील पाणी काढले. वीटकामाचे मोजमाप तारखेला होईल.']))->assertStatus(202)->json('id');
+        $this->assertEqualsCanonicalizing([$roof->id, $bricks->id, $brickwork->id], $this->draft($written)->checks['refs']);
+
+        $this->assertNotContains($mesh->id, [...$this->draft($said)->checks['refs'], ...$this->draft($written)->checks['refs']]);
+
+        // The rule itself, in both orders: what may follow a short word is vowel signs, one head of work and one case ending.
+        $same = new ReflectionMethod(VoiceContext::class, 'same');
+        $context = app(VoiceContext::class);
+
+        foreach ([['वीट', 'वीटकाम'], ['रंग', 'रंगकाम'], ['माती', 'मातीकाम'], ['खडी', 'खडीकरण'], ['छत', 'छतावरील'], ['भिंत', 'भिंतीवरील'], ['भिंत', 'भिंतीचं'], ['ईंट', 'ईंटों'], ['वीट', 'वीटकामाचे'], ['भिंत', 'भिंतीमधील']] as [$short, $long]) {
+            $this->assertTrue($same->invoke($context, $short, $long), "{$short} / {$long}");
+            $this->assertTrue($same->invoke($context, $long, $short), "{$long} / {$short}");
+        }
+
+        foreach ([['तार', 'तारीख'], ['तार', 'तारखेला'], ['पर', 'परवा'], ['बार', 'बारीक'], ['छत', 'छत्री']] as [$short, $long]) {
+            $this->assertFalse($same->invoke($context, $short, $long), "{$short} / {$long}");
+            $this->assertFalse($same->invoke($context, $long, $short), "{$long} / {$short}");
         }
     }
 

@@ -175,9 +175,11 @@ class VoiceContext
      * "काँक्रीटचे" said for "काँक्रीट", "plaster" for "plastering".
      *
      * A word of fewer than min_letters letters (a Devanagari word of two syllables) is too short to be
-     * read inside any longer word: "पर" would be found in "परवा" and "तार" in "तारीख". It matches itself,
-     * or itself with vowel signs and at most one case ending from context_endings: "भिंतीचं" for भिंत,
-     * "ईंटों" for ईंट. The short words that name no work (वर, पर, सह, कर) are stop words on both sides.
+     * read inside any longer word: "पर" would be found in "परवा" and "तार" in "तारीख". It is the same word
+     * only as itself, or followed by vowel signs, at most one head from context_heads and at most one case
+     * ending from context_endings, whichever of the two words is the longer: "वीट" is "वीटकाम" and
+     * "वीटकाम" is "वीट", "छत" is "छतावरील", "भिंत" is "भिंतीचं", "ईंट" is "ईंटों". The short words that
+     * name no work (वर, पर, सह, कर) are stop words on both sides.
      */
     private function same(string $a, string $b): bool
     {
@@ -195,9 +197,24 @@ class VoiceContext
             return true;
         }
 
-        $ending = (string) preg_replace('/^\p{M}+/u', '', substr($long, strlen($short)));
+        return $this->onlyAnEnding(substr($long, strlen($short)));
+    }
 
-        return $ending === '' || in_array($ending, array_map(fn ($end) => SpokenNumbers::lower((string) $end), (array) config('modules.voice_dpr.context_endings')), true);
+    /** Whether what follows a short word is vowel signs, at most one head of work and at most one case ending. */
+    private function onlyAnEnding(string $rest): bool
+    {
+        $listed = fn (string $key) => array_map(fn ($word) => SpokenNumbers::lower((string) $word), (array) config("modules.voice_dpr.{$key}"));
+        $rest = (string) preg_replace('/^\p{M}+/u', '', $rest);
+
+        foreach ($listed('context_heads') as $head) {
+            if ($head !== '' && str_starts_with($rest, $head)) {
+                $rest = (string) preg_replace('/^\p{M}+/u', '', substr($rest, strlen($head)));
+
+                break;
+            }
+        }
+
+        return $rest === '' || in_array($rest, $listed('context_endings'), true);
     }
 
     private static function letters(string $word): int
