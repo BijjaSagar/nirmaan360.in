@@ -13,6 +13,7 @@ use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\BoqPdfImport;
 use App\Services\Reports\BoqPdfReader;
 use App\Support\Dec;
+use App\Support\PlatformSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Testing\TestResponse;
+use Tests\Feature\DocumentReading\Support\FakeKind;
 
 /**
  * A BOQ read from a PDF. The PDFs are made here with dompdf, in the two layouts people upload:
@@ -816,6 +818,13 @@ class BoqPdfImportTest extends ReportsTestCase
         // The module that reads scans brings this route. Until it is there, nobody is sent to it.
         Route::get('/projects/{project}/boq-scans/create', fn () => '')->name('boq-scans.create');
         Route::getRoutes()->refreshNameLookups();
+
+        // Nor while the readers are off for the company: the same test as its consent switch (AiSpend::readersOn).
+        $this->actingAs($this->pm);
+        $this->assertFalse(BoqPdfReader::hasScanReader());
+        app(PlatformSettings::class)->set(['ai_readers_released' => '1', 'ai_tier_monthly_cap_usd' => '1000', 'anthropic_api_key' => 'test-key-value']);
+        $this->assertFalse(BoqPdfReader::hasScanReader(), 'No BOQ reader kind is registered.');
+        config(['modules.boq_scan.read_kinds' => [FakeKind::class]]);
         $this->assertTrue(BoqPdfReader::hasScanReader());
 
         $this->uploadAs($this->pm, $project, $this->upload($scan, 'scan.pdf'));
@@ -824,6 +833,12 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->uploadAs($this->pm, $project, $this->pdf($this->estimate()));
         $this->confirm($project, ['printed_language' => 'mr'])->assertSessionHasErrors(['printed_language' => "This PDF's text does not read as Marathi or Hindi. Read it as a scan."]);
         $this->nothingWritten($project);
+
+        // The key taken away: the readers are off, and the scan is not offered again.
+        app(PlatformSettings::class)->set(['anthropic_api_key' => null]);
+        $this->assertFalse(BoqPdfReader::hasScanReader());
+        $this->uploadAs($this->pm, $project, $this->upload($scan, 'scan.pdf'));
+        $this->assertStringNotContainsString('Read it as a scan', session('boq_import.errors.0.message'));
     }
 
     public function test_the_scan_module_can_put_its_offer_and_the_pages_of_the_pdf_on_these_screens(): void

@@ -58,7 +58,9 @@ final class Modules
     }
 
     /**
-     * Menu items for one part of the sidebar, limited to what the company's plan includes.
+     * Menu items for one part of the sidebar, limited to what the company's plan includes. An item with
+     * "when" => [class, method] is shown only while that method, given the company, answers true. It is
+     * asked on every page, so it must answer from settings already in memory, without a query.
      *
      * @return list<array{label:string,route:string,active:string,can:?string,group:?string}>
      */
@@ -72,7 +74,7 @@ final class Modules
             }
 
             foreach ($module['nav'] ?? [] as $item) {
-                if ($item['place'] === $place) {
+                if ($item['place'] === $place && self::shows($item, $organization)) {
                     $items[] = ['can' => null, 'group' => self::PROJECT_GROUPS[$key] ?? '', 'order' => 100, 'active' => $item['route'], ...$item];
                 }
             }
@@ -87,6 +89,18 @@ final class Modules
         usort($items, fn ($a, $b) => $rank($a) <=> $rank($b));
 
         return $items;
+    }
+
+    /** @param  array<string, mixed>  $item */
+    private static function shows(array $item, Organization $organization): bool
+    {
+        if (! isset($item['when'])) {
+            return true;
+        }
+
+        [$class, $method] = $item['when'];
+
+        return (bool) app($class)->{$method}($organization);
     }
 
     /** @return array<string, string> */

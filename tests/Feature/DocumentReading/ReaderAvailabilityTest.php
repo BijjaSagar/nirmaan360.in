@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use LogicException;
+use Tests\Feature\DocumentReading\Support\FakeKind;
 use Tests\Feature\DocumentReading\Support\FakeOffer;
 
 /** What the field app is told before it shows any AI button: GET /api/v1/document-reading/status. */
@@ -80,9 +81,20 @@ class ReaderAvailabilityTest extends PageReadingTestCase
         $this->ask($this->owner)->assertOk()->assertJson(['released' => false, 'connected' => true, 'can' => ['boq_scan' => true]]);
         $settings->set(['ai_readers_released' => '1']);
 
+        // "released" is the one test of whether the readers are on (AiSpend::readersOn), so with no key it is false too.
         $settings->set(['anthropic_api_key' => null]);
-        $this->ask($this->owner)->assertOk()->assertJson(['released' => true, 'connected' => false]);
+        $this->ask($this->owner)->assertOk()->assertJson(['released' => false, 'connected' => false]);
         $this->connect();
+        $this->ask($this->owner)->assertOk()->assertJson(['released' => true, 'connected' => true]);
+
+        // And with no reader deployed, or none the company's plan has the module for.
+        config(['modules.reader_stand_ins.read_kinds' => []]);
+        $this->ask($this->owner)->assertOk()->assertJson(['released' => false, 'connected' => true]);
+        config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class]]);
+        $this->ask($this->owner)->assertOk()->assertJson(['released' => true]);
+        config(['modules.document_reading.kinds.boq.feature' => 'feature_no_plan_has']);
+        $this->ask($this->owner)->assertOk()->assertJson(['released' => false]);
+        config(['modules.document_reading.kinds.boq.feature' => 'reports']);
 
         // The provider is refusing every call for now. The app is not told why.
         ProviderBlock::set(ModelGatewayException::BILLING);
@@ -102,6 +114,7 @@ class ReaderAvailabilityTest extends PageReadingTestCase
         $owner = $this->member($small, 'owner');
 
         $this->ask($owner)->assertOk()->assertJson([
+            'released' => false,
             'plan' => false,
             'consent' => ['enabled' => false, 'version' => null, 'current' => false],
             'can' => ['boq_scan' => false, 'slip_challan' => false, 'voice_dpr' => false],

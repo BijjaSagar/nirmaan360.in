@@ -20,7 +20,8 @@ use LogicException;
  * What a company's owner or admin decides about the readers: whether its pages, photos and text may
  * be sent to the AI provider at all, and how much a read, a person and the company may spend.
  *
- * Nothing here is offered before a reader is deployed and the platform admin has released the readers.
+ * Nothing here is offered while the readers are off: AiSpend::readersOn() is the one test, the same
+ * one the public website, the privacy policy and terms, the menu and the phone's status answer use.
  */
 class ReaderSettings
 {
@@ -34,28 +35,30 @@ class ReaderSettings
         private ReadKinds $kinds,
     ) {}
 
-    /** Whether any feature that sends a company's documents, photos or spoken words exists in this deployment. */
-    public function readerDeployed(): bool
+    /** Whether any feature that sends a company's documents, photos or spoken words exists in this deployment, or for this company's plan. */
+    public function readerDeployed(?Organization $organization = null): bool
     {
-        return collect(config('modules', []))->pluck('read_kinds')->filter()->isNotEmpty() || Route::has(AiOffer::VOICE_ROUTE);
+        return $this->spend->readerDeployed($organization);
     }
 
     /**
-     * Whether the consent switch is shown: a reader is deployed and the readers are released.
-     * The public privacy policy and terms use the same answer for their sentences about readers.
+     * Whether the consent switch is shown, and the company's menu entry for it: the readers are on for
+     * this company (AiSpend::readersOn). Without a company, as the public privacy policy and terms ask
+     * it for their sentences about readers, the plan is not part of the answer.
      */
-    public function offered(): bool
+    public function offered(?Organization $organization = null): bool
     {
-        return $this->readerDeployed() && $this->spend->released();
+        return $this->spend->readersOn($organization);
     }
 
     /**
-     * Whether a company may set its spending limits: the readers are released and something that
-     * spends is deployed. A text feature can be there before any reader is.
+     * Whether a company may set its spending limits: the same release, connection and plan as the
+     * readers (AiSpend::aiOn), and something that spends is deployed. A text feature can be there before
+     * any reader is.
      */
-    public function limitsOffered(): bool
+    public function limitsOffered(?Organization $organization = null): bool
     {
-        return $this->spend->released() && $this->features() !== [];
+        return $this->spend->aiOn($organization) && $this->features() !== [];
     }
 
     /** Voice notes are deployed, and the platform admin has recorded that speech stays on the phone. */
@@ -118,7 +121,7 @@ class ReaderSettings
     {
         $this->assertOwnCompany($organization, $by);
 
-        if (! $this->offered()) {
+        if (! $this->offered($organization)) {
             throw ValidationException::withMessages(['accept' => __('No reader is switched on yet.')]);
         }
 
@@ -274,7 +277,7 @@ class ReaderSettings
     {
         $this->assertOwnCompany($organization, $by);
 
-        if (! $this->limitsOffered()) {
+        if (! $this->limitsOffered($organization)) {
             throw ValidationException::withMessages(['budgets' => __('No reader is switched on yet.')]);
         }
 

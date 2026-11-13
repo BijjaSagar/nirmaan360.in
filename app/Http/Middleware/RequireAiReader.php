@@ -24,9 +24,14 @@ use Symfony\Component\HttpFoundation\Response;
  *   RequireAiReader::class.':consent'  the call sends a page, a photo, document text or spoken words
  *   RequireAiReader::class.':text'     the call sends only labels and descriptions the code prepared
  *
+ * The first checks are the parts of AiSpend::readersOn(), the one test of whether the readers are on
+ * that the website, the consent switch, the menu and the phone's status answer use, taken one at a
+ * time so that each has its own refusal.
+ *
  * Refusals, in this order. The phone and any request that asks for JSON get the code; a browser is
  * sent back to the page it came from with the sentence.
- *   409 not_released      the platform admin has not released the readers
+ *   409 not_released      the platform admin has not released the readers, or (":consent") no reader
+ *                         is deployed for the company's plan
  *   409 not_connected     no key is saved, or the provider is refusing every call for now
  *   403                   the company's plan has no AI features
  *   409 company_limit     the platform admin has switched the readers off for this company (limit: blocked)
@@ -70,6 +75,10 @@ class RequireAiReader
 
         // The phone and any JSON request are never told to upgrade: see PlanWording.
         abort_unless($organization->allowsFeature('ai_agents'), 403, PlanWording::moduleNotIncluded());
+
+        if ($needs === self::CONSENT && ! $this->spend->readerDeployed($organization)) {
+            return $this->refuse($request, SpendRefused::NOT_RELEASED, __('The readers are not switched on yet.'));
+        }
 
         $settings = AiDocumentSettings::withoutGlobalScopes()->where('organization_id', $organization->id)->first();
 

@@ -4,6 +4,7 @@ namespace Tests\Feature\Website;
 
 use App\Models\ContactRequest;
 use App\Services\Agents\Autonomy;
+use App\Services\DocumentReading\AiSpend;
 use App\Services\Website\AiOffer;
 use App\Support\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,12 +12,16 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 use Tests\BuildsTenant;
+use Tests\Feature\DocumentReading\Support\FakeKind;
+use Tests\Feature\DocumentReading\Support\FakeSlipKind;
+use Tests\Feature\DocumentReading\Support\FakeTextKind;
 use Tests\TestCase;
 
 /**
  * What the website says about AI on the AI page, the home page and the pricing page.
- * It may describe only what is built, name it as live only while it can run, and show a reader or helper
- * only once that feature is deployed and, where it needs the AI model, released by the platform admin.
+ * It may describe only what is built, name it as live only while it can run, and show a helper only once
+ * its module is deployed and a reader only while the readers are on (AiSpend::readersOn). With no key
+ * saved the pages say early access; with one, nothing on them says early access or not live.
  */
 class AiPagesTest extends TestCase
 {
@@ -57,7 +62,13 @@ class AiPagesTest extends TestCase
 
     private const OWNER_PACK_NO_LANGUAGES = 'For the home owner: a quotation from your BOQ with a stage-payment schedule, and a weekly update of the work in your approved daily reports and measurements.';
 
-    private const LIVE_INTRO = 'These work on the records already in your account. What the AI prepares is saved as a draft and marked as one. Nothing is approved, posted to stock, billed or sent outside your company until a person confirms it.';
+    private const LIVE_INTRO = 'The agents work on the records already in your account. What an agent prepares is saved as a draft and marked as one, and nothing it prepares is approved, posted to stock, billed or sent outside your company until a person confirms it.';
+
+    private const NOT_LIVE_INTRO = 'These agents work on the records already in your account. None of them are live yet. Tell us which one would save you the most time.';
+
+    private const LIVE_TAG = 'Part of the Business and Enterprise plans';
+
+    private const HELPERS = 'Helpers that work from your own records';
 
     private const PRICING_NOT_LIVE = 'AI agents are in early access and are not part of these plans yet. Prices are in Indian rupees.';
 
@@ -83,9 +94,16 @@ class AiPagesTest extends TestCase
         $this->settings(['anthropic_api_key' => 'test-key-value']);
     }
 
+    /** What the platform admin does: the release switch, with the provider's monthly cap on record. */
     private function release(): void
     {
-        $this->settings([AiOffer::RELEASED => '1']);
+        $this->settings([AiOffer::RELEASED => '1', 'ai_tier_monthly_cap_usd' => '1000']);
+    }
+
+    /** Stands in for the reader modules: the kinds they register. Without one, no reader is deployed. */
+    private function deployReaderKinds(): void
+    {
+        config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class, FakeTextKind::class, FakeSlipKind::class]]);
     }
 
     /** Stands in for a later module going live: a route with the name its card waits for. */
@@ -119,11 +137,13 @@ class AiPagesTest extends TestCase
         return array_values(array_diff($cards, $this->landed($cards)));
     }
 
-    /** The page shows the cards of the modules that have landed among $offered, with their heading, and no other card. */
+    /** The page shows the cards of the modules that have landed among $offered, under the helpers' heading, and no other card. */
     private function assertOnlyLandedCards(TestResponse $page, array $offered): void
     {
         $landed = $this->landed($offered);
-        $landed === [] ? $page->assertDontSee('Readers and helpers') : $page->assertSee('Readers and helpers');
+        $landed === [] ? $page->assertDontSee(self::HELPERS) : $page->assertSee(self::HELPERS);
+        // No reader is among them, so the page never says "Readers".
+        $page->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false);
 
         foreach ($landed as $card) {
             $page->assertSee($card);
@@ -229,17 +249,20 @@ class AiPagesTest extends TestCase
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
         $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
-        config(['modules.boq_scan.read_kinds' => ['boq' => 'BoqKind']]);
+        $this->deployReaderKinds();
 
         $offer = app(AiOffer::class);
         $this->assertFalse($offer->agentsLive());
-        $this->assertFalse($offer->readersReleased());
-        $this->assertFalse($offer->readerDeployed());
+        $this->assertFalse($offer->readersOn());
+        $this->assertTrue(app(AiSpend::class)->readerDeployed());
 
         $page = $this->get('/ai')->assertOk()
             ->assertSee('None of them are live yet')
             ->assertSee('Early access')
-            ->assertDontSee(self::LIVE_INTRO);
+            ->assertSee('Request early access')
+            ->assertDontSee(self::LIVE_INTRO)
+            ->assertDontSee(self::LIVE_TAG)
+            ->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false);
 
         foreach ([...self::NEEDS_MODEL, 'Voice DPR'] as $card) {
             $page->assertDontSee($card);
@@ -256,13 +279,21 @@ class AiPagesTest extends TestCase
     {
         $this->connect();
 
+        // Working: the tag, the intro and the button say so, and nothing says early access or not live.
         $page = $this->get('/ai')->assertOk()
+            ->assertSee(self::LIVE_TAG)
             ->assertSee(self::LIVE_INTRO)
-            ->assertSee('Early access')
+            ->assertSee('href="'.url('/pricing').'"', false)
+            ->assertSee('See pricing')
+            ->assertDontSee('Early access')
+            ->assertDontSee('early access')
+            ->assertDontSee('Request early access')
             ->assertDontSee('None of them are live yet');
 
         // Not released: only a helper that works from the company's own records, and only once its module is in.
         $this->assertOnlyLandedCards($page, self::CODE_ONLY);
+
+        $this->get('/')->assertOk()->assertSee(self::LIVE_TAG)->assertDontSee('Early access');
 
         $this->get('/pricing')->assertOk()
             ->assertSee(self::PRICING_AGENTS)
@@ -289,6 +320,7 @@ class AiPagesTest extends TestCase
     {
         $this->connect();
         $this->release();
+        $this->deployReaderKinds();
 
         $this->assertEqualsCanonicalizing([...self::BUILT_ROUTES, ...self::NOT_BUILT_ROUTES, AiOffer::VOICE_ROUTE], array_values(self::CARD_ROUTES), 'Every card is listed with the route it waits for.');
         $this->assertEqualsCanonicalizing([...self::CODE_ONLY, ...self::NEEDS_MODEL, 'Voice DPR'], array_keys(self::CARD_ROUTES));
@@ -300,7 +332,8 @@ class AiPagesTest extends TestCase
         $this->deploy('boq-scans.create');
 
         $page = $this->get('/ai')->assertOk()
-            ->assertSee('Readers and helpers')
+            ->assertSee('<h2 class="text-[30px]">Readers</h2>', false)
+            ->assertSee(self::HELPERS)
             ->assertSee('Hindrance register and letters')
             ->assertSee('Keeps a dated register from your daily reports')
             ->assertSee('Scanned BOQ reader')
@@ -318,6 +351,7 @@ class AiPagesTest extends TestCase
     public function test_a_card_that_needs_the_model_waits_for_the_release_switch(): void
     {
         $this->deploy(...self::NOT_BUILT_ROUTES);
+        $this->deployReaderKinds();
         $this->connect();
 
         $sees = function (array $shown, array $hidden) {
@@ -342,12 +376,25 @@ class AiPagesTest extends TestCase
         }
 
         $this->release();
-        $this->assertTrue(app(AiOffer::class)->readersReleased());
+        $this->assertTrue(app(AiOffer::class)->readersOn());
         $sees([...self::CODE_ONLY, ...self::NEEDS_MODEL], ['Voice DPR']);
 
-        // Taking the release back hides them again.
+        // Taking the release back hides them again, and so does taking the monthly cap or the key away.
         $this->settings([AiOffer::RELEASED => null]);
         $sees(self::CODE_ONLY, self::NEEDS_MODEL);
+
+        $this->release();
+        $this->settings(['ai_tier_monthly_cap_usd' => null]);
+        $sees(self::CODE_ONLY, self::NEEDS_MODEL);
+
+        $this->release();
+        $this->settings(['anthropic_api_key' => null]);
+        $sees(self::CODE_ONLY, self::NEEDS_MODEL);
+
+        // Each reader's card waits for its own kind: with only the BOQ reader registered, only its card shows.
+        $this->connect();
+        config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class]]);
+        $sees(['Scanned BOQ reader'], ['Challan and bill photo', 'Tender reader']);
 
         Http::assertNothingSent();
     }
@@ -372,7 +419,7 @@ class AiPagesTest extends TestCase
         $this->assertFalse(Route::has('hindrances.index'));
 
         $assertCards = function (string $state) {
-            $page = $this->get('/ai')->assertOk()->assertSee('Readers and helpers');
+            $page = $this->get('/ai')->assertOk()->assertSee(self::HELPERS)->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false);
 
             foreach (self::CODE_ONLY as $card) {
                 $page->assertSee($card);
@@ -382,7 +429,8 @@ class AiPagesTest extends TestCase
                 $page->assertDontSee($card);
             }
 
-            $this->assertSame(self::CODE_ONLY, array_column(app(AiOffer::class)->cards(), 1), $state);
+            $this->assertSame(self::CODE_ONLY, array_column(app(AiOffer::class)->helpers(), 1), $state);
+            $this->assertSame([], app(AiOffer::class)->readers(), $state);
         };
 
         $assertCards('with no key');
@@ -437,16 +485,16 @@ class AiPagesTest extends TestCase
     {
         $this->connect();
         $this->release();
-        $others = [...self::CODE_ONLY, ...self::NEEDS_MODEL];
         $this->deploy(AiOffer::VOICE_ROUTE);
 
-        $page = $this->get('/ai')->assertOk()->assertDontSee('Voice DPR');
-        // The heading is there only for the other cards whose modules have landed.
-        $this->landed($others) === [] ? $page->assertDontSee('Readers and helpers') : $page->assertSee('Readers and helpers');
+        // Voice counts as a reader by its route, so the readers are on; its card waits for the acceptance test.
+        $this->assertTrue(app(AiOffer::class)->readersOn());
+        $this->get('/ai')->assertOk()->assertDontSee('Voice DPR')->assertDontSee('<h2 class="text-[30px]">Readers</h2>', false)->assertSee(self::HELPERS);
 
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
 
         $this->get('/ai')->assertOk()
+            ->assertSee('<h2 class="text-[30px]">Readers</h2>', false)
             ->assertSee('Voice DPR')
             ->assertSee('on phones that can turn speech into text by themselves')
             ->assertSee('It becomes a draft for you to check and send.');
@@ -466,11 +514,16 @@ class AiPagesTest extends TestCase
 
         // A reader kind registered by a module, but not released.
         $this->settings([AiOffer::RELEASED => null]);
-        config(['modules.boq_scan.read_kinds' => ['boq' => 'BoqKind']]);
+        config(['modules.boq_scan.read_kinds' => [FakeKind::class]]);
         $this->get('/pricing')->assertOk()->assertSee(self::PRICING_AGENTS)->assertDontSee('readers');
 
         $this->release();
         $this->get('/pricing')->assertOk()->assertSee(self::PRICING_READERS);
+
+        // Released and deployed, but without the provider's monthly cap on record the readers are not on.
+        $this->settings(['ai_tier_monthly_cap_usd' => null]);
+        $this->get('/pricing')->assertOk()->assertSee(self::PRICING_AGENTS)->assertDontSee('readers');
+        $this->release();
 
         // The voice endpoint counts as a reader too, as it does for the company's consent switch.
         config(['modules.boq_scan.read_kinds' => []]);
@@ -510,8 +563,9 @@ class AiPagesTest extends TestCase
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
         $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
+        $this->deployReaderKinds();
 
-        $texts = [...$offer->everyLine(), 'Agents', 'Readers and helpers'];
+        $texts = $offer->everyLine();
 
         foreach (['/ai', '/', '/pricing'] as $path) {
             $texts = [...$texts, ...$this->recorded(fn () => $this->get($path)->assertOk())];
@@ -535,9 +589,9 @@ class AiPagesTest extends TestCase
 
         // And the pages do show them in that language.
         $this->asNewVisitor();
-        $this->get('/hi/ai')->assertOk()->assertSee('रीडर और सहायक')->assertSee('बोलकर DPR')->assertDontSee('Readers and helpers')->assertDontSee('None of them are live yet');
+        $this->get('/hi/ai')->assertOk()->assertSee('आपके अपने रिकॉर्ड से काम करने वाले सहायक')->assertSee('बोलकर DPR')->assertDontSee(self::HELPERS)->assertDontSee('None of them are live yet');
         $this->asNewVisitor();
-        $this->get('/mr/ai')->assertOk()->assertSee('रीडर आणि मदतनीस')->assertSee('घरमालक पॅक')->assertDontSee('Scanned BOQ reader');
+        $this->get('/mr/ai')->assertOk()->assertSee('तुमच्या स्वतःच्या नोंदींवरून काम करणारे मदतनीस')->assertSee('घरमालक पॅक')->assertDontSee('Scanned BOQ reader');
         $this->asNewVisitor();
         $this->get('/mr/pricing')->assertOk()->assertSee('AI एजंट आणि रीडर बिझनेस आणि एंटरप्राइज प्लॅनचा भाग आहेत')->assertDontSee(self::PRICING_READERS);
     }
@@ -557,9 +611,11 @@ class AiPagesTest extends TestCase
 
         $this->get('/ai')->assertOk()->assertSee('Request early access')->assertSee('href="'.$link.'"', false);
 
+        // Once the agents work, the page no longer asks for early access: the button leads to the plans that have them.
         $this->connect();
         $this->release();
-        $this->get('/ai')->assertOk()->assertSee('Request early access')->assertSee('href="'.$link.'"', false);
+        $this->get('/ai')->assertOk()->assertDontSee('Request early access')->assertDontSee('href="'.$link.'"', false)->assertSee('href="'.url('/pricing').'"', false);
+        $this->settings(['anthropic_api_key' => null]);
 
         $this->get('/contact?type=ai_early_access')->assertOk();
         $this->assertMatchesRegularExpression('/<option value="ai_early_access"\s+selected/', $this->get('/contact?type=ai_early_access')->getContent(), 'The form opens on the AI request.');
@@ -612,5 +668,69 @@ class AiPagesTest extends TestCase
         $this->assertSame(['guaranteed', 'the only'], BannedWording::found('The only reader with guaranteed results.'));
         $this->assertSame([], BannedWording::found('Payments, bill approvals and approved measurements always need a person. Only website pages are counted.'));
         $this->assertGreaterThan(15, count(BannedWording::phrases()));
+    }
+
+    /**
+     * The tag, the intro, the button, the home page's tag and the pricing line say the same thing in each state of
+     * the key, in every language: early access while no key is saved, and nothing of early access once one is.
+     */
+    public function test_the_tag_intro_button_and_pricing_line_agree_in_each_key_state_in_every_language(): void
+    {
+        $early = ['Early access', 'Request early access', self::NOT_LIVE_INTRO, self::PRICING_NOT_LIVE];
+        $live = [self::LIVE_TAG, self::LIVE_INTRO];
+        $words = fn (array $lines, string $locale) => array_map(fn (string $line) => __($line, [], $locale), $lines);
+
+        foreach (['with no key' => false, 'with a key' => true] as $state => $key) {
+            $this->settings(['anthropic_api_key' => $key ? 'test-key-value' : null]);
+
+            foreach (['en' => '', 'hi' => '/hi', 'mr' => '/mr'] as $locale => $prefix) {
+                $this->asNewVisitor();
+                $ai = $this->get($prefix.'/ai')->assertOk();
+                $this->asNewVisitor();
+                $home = $this->get($prefix.'/')->assertOk();
+                $this->asNewVisitor();
+                $pricing = $this->get($prefix.'/pricing')->assertOk();
+
+                [$shown, $hidden] = $key ? [$live, $early] : [$early, $live];
+
+                foreach ($words(array_slice($shown, 0, 3), $locale) as $line) {
+                    $ai->assertSee($line);
+                }
+
+                // The button: a request for early access, or the plans the agents are part of. The home page has its own pricing button.
+                $key ? $ai->assertSee(__('See pricing', [], $locale)) : $ai->assertDontSee(__('See pricing', [], $locale));
+
+                foreach ($words($hidden, $locale) as $line) {
+                    $ai->assertDontSee($line);
+                    $home->assertDontSee($line);
+                    $pricing->assertDontSee($line);
+                }
+
+                $home->assertSee(__($key ? self::LIVE_TAG : 'Early access', [], $locale));
+                $pricing->assertSee(__($key ? self::PRICING_AGENTS : self::PRICING_NOT_LIVE, [], $locale));
+
+                // The agents' own lines are the same on the home page in both states.
+                foreach (app(AiOffer::class)->agents() as [, $name, $text]) {
+                    $home->assertSee(__($name, [], $locale))->assertSee(__($text, [], $locale));
+                }
+
+                // The helpers are never called AI on the page, and the readers' heading waits for a reader.
+                $ai->assertSee(__(self::HELPERS, [], $locale))->assertDontSee('<h2 class="text-[30px]">'.__('Readers', [], $locale).'</h2>', false);
+            }
+
+            if ($key) {
+                foreach (['/ai', '/', '/pricing'] as $path) {
+                    $this->asNewVisitor();
+                    $html = (string) $this->get($path)->assertOk()->getContent();
+                    $this->assertDoesNotMatchRegularExpression('/early access|not live yet|not part of these plans yet/i', $html, "{$path} with a key");
+                }
+            }
+        }
+
+        // The sentence that says the work is a draft names the agents, never the helpers or "the AI" at large.
+        $this->assertStringStartsWith('The agents work on the records', self::LIVE_INTRO);
+        $this->assertStringContainsString('What an agent prepares', self::LIVE_INTRO);
+        $this->assertStringNotContainsString('the AI', self::LIVE_INTRO);
+        $this->assertStringNotContainsString('AI', self::HELPERS);
     }
 }

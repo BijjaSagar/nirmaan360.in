@@ -34,7 +34,8 @@ class ReaderAvailability
         $plan = (bool) $organization?->allowsFeature('ai_agents');
 
         return [
-            'released' => $this->spend->released(),
+            // The one test of whether the readers are on, as the consent switch, the menu and the website ask it.
+            'released' => $organization !== null && $this->spend->readersOn($organization),
             'connected' => $this->gateway->isConnected() && ProviderBlock::current() === null,
             'plan' => $plan,
             'consent' => $organization === null ? ['enabled' => false, 'version' => null, 'current' => false] : $this->settings->consent($organization),

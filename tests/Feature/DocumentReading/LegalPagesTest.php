@@ -63,6 +63,9 @@ class LegalPagesTest extends ReadingTestCase
         $this->withoutVite();
         // Showing a public page must never reach the AI provider.
         Http::fake();
+        // A key is saved in these tests, so a reader is named once it is deployed and released. Without one the readers
+        // are not on and no page names them: ReaderReleaseTest flips each part of the test.
+        $this->connect();
     }
 
     private function deployReader(): void

@@ -32,6 +32,8 @@ return [
         'accounts' => ['crm.view'],
     ],
     // place: "project" (inside a project, the route receives the project) or "company".
+    // An item may add 'when' => [SomeClass::class, 'method']: shown only while app(SomeClass)->method($organization)
+    // is true. It runs on every page, so it must answer from cached settings and config, without a query.
     'nav' => [
         ['place' => 'company', 'group' => 'Sales', 'label' => 'Tenders', 'route' => 'crm.tenders.index', 'active' => 'crm.tenders.*', 'can' => 'crm.view', 'order' => 10],
     ],

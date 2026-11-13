@@ -33,7 +33,7 @@ final class SeoText
         ],
         'ai' => [
             'title' => 'AI agents for construction paperwork',
-            'description' => 'AI agents for construction paperwork, from daily reports to RA bills, with a person approving every result. Now taking early access requests.',
+            'description' => 'AI agents for construction paperwork, from daily reports to RA bills, with a person approving every result.',
         ],
         'contact' => [
             'title' => 'Contact the :brand team',

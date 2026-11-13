@@ -45,8 +45,9 @@
         'owner' => ['chart', 'Owner', 'Know where the money stands without calling site.', ['Budget against total spend', 'Which contractor is paid ahead of work', 'Progress on every active project', 'Full audit log of who changed what']],
         'accounts' => ['rupee', 'Accounts', 'Bills that add up the first time.', ['Challans marked bill pending until the invoice comes', 'Payments by cash, bank or UPI, each against a contract', 'Retention, advance recovery, TDS and GST applied in your contract order', 'Bill PDFs for clients and subcontractors']],
     ];
-    // The same four lines as the AI page, so the two pages cannot say different things.
-    $agents = app(\App\Services\Website\AiOffer::class)->agents();
+    // The same four lines and the same tag as the AI page, so the two pages cannot say different things.
+    $aiOffer = app(\App\Services\Website\AiOffer::class);
+    $agents = $aiOffer->agents();
     $trial = ['days' => config('buildos.trial_days')];
 @endphp
 
@@ -449,12 +450,12 @@
 </section>
 @endif
 
-{{-- AI: the four agents that are built, labelled as early access. The chat is an example with sample data, and asks only what Project Brain can look up. --}}
+{{-- AI: the four agents that are built, labelled as early access until a key is saved and as part of the plans after. The chat is an example with sample data, and asks only what Project Brain can look up. --}}
 @if (site_on('ai'))
 <section class="site-panel bg-sage">
     <div class="site-wrap grid gap-12 py-16 lg:grid-cols-[1fr_1.15fr] lg:gap-16 lg:py-24">
         <div>
-            <p class="tag-soon bg-white/60">{{ __('Early access') }}</p>
+            <p class="tag-soon bg-white/60">{{ __($aiOffer->tag()) }}</p>
             <h2 class="mt-4 text-[clamp(2rem,3.8vw,3rem)]">{{ __('AI agents that do site paperwork, with you approving the result.') }}</h2>
             <p class="mt-4 text-[18px] leading-relaxed text-ink-2">{{ __('These are built on your BOQ, measurements and bills. An agent drafts, and a person approves. Anything that moves money stays with you.') }}</p>
             <div class="mock mt-8 max-w-md p-5">

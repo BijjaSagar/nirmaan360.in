@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use App\Services\DocumentReading\AiSpend;
 use Illuminate\Support\Facades\Route;
 use Smalot\PdfParser\Config;
 use Smalot\PdfParser\Page;
@@ -394,10 +395,14 @@ final class BoqPdfReader
         return $matches[0];
     }
 
-    /** Whether the reader for scans and photos is part of this installation. A message names it only then. */
+    /**
+     * Whether a scan can be read for the person asking: the reader for scans and photos is part of this
+     * installation and the readers are on for their company's BOQ reader, by the same test every other
+     * place uses (AiSpend::readersOn). A message names it only then.
+     */
     public static function hasScanReader(): bool
     {
-        return Route::has(self::SCAN_READER_ROUTE);
+        return Route::has(self::SCAN_READER_ROUTE) && app(AiSpend::class)->readersOn(auth()->user()?->organization, 'boq');
     }
 
     private static function stream(Page $page): string

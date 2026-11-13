@@ -1,16 +1,18 @@
 @extends('layouts.public')
 @section('content')
 @php
-    // Every line comes from AiOffer, which lists only what is built and, for readers and helpers, deployed and released.
+    // Every line comes from AiOffer, which lists only what is built and deployed, names readers only while they are on,
+    // and makes the tag, the intro and the button say the same thing: early access with no key saved, working with one.
     $offer = app(\App\Services\Website\AiOffer::class);
-    $groups = array_filter(['Agents' => $offer->agents(), 'Readers and helpers' => $offer->cards()]);
+    $groups = $offer->groups();
+    [$actionLabel, $actionRoute, $actionParameters] = $offer->action();
 @endphp
 <section>
     <div class="site-wrap pt-14 pb-14 text-center lg:pt-24 lg:pb-20">
-        <p class="tag-soon">{{ __('Early access') }}</p>
+        <p class="tag-soon">{{ __($offer->tag()) }}</p>
         <h1 class="mx-auto mt-5 max-w-4xl text-[clamp(2.75rem,6.4vw,5rem)] leading-[1.05]">{{ __('The paperwork gets drafted. You still sign it.') }}</h1>
         <p class="mx-auto mt-6 max-w-2xl text-[18px] leading-relaxed text-ink-2">{{ __($offer->intro()) }}</p>
-        <a href="{{ route('contact', ['type' => 'ai_early_access']) }}" class="site-btn site-btn-primary mt-8 px-6 py-3">{{ __('Request early access') }}</a>
+        <a href="{{ route($actionRoute, $actionParameters) }}" class="site-btn site-btn-primary mt-8 px-6 py-3">{{ __($actionLabel) }}</a>
     </div>
 </section>
 

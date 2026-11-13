@@ -319,6 +319,6 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         }
 
         // The public AI page shows "Hindrance register and letters" while the register's route exists, by its real name.
-        $this->assertContains(['flag', 'Hindrance register and letters', 'Keeps a dated register from your daily reports and drafts extension, delay and payment letters with every date and figure taken from your records.'], app(AiOffer::class)->cards());
+        $this->assertContains(['flag', 'Hindrance register and letters', 'Keeps a dated register from your daily reports and drafts extension, delay and payment letters with every date and figure taken from your records.'], app(AiOffer::class)->helpers());
     }
 }

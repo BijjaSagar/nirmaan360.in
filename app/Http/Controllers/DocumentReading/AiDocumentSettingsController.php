@@ -19,7 +19,7 @@ class AiDocumentSettingsController extends Controller
     public function edit(Request $request, ReaderSettings $settings): View
     {
         $organization = $request->user()->organization;
-        $offered = $settings->offered();
+        $offered = $settings->offered($organization);
         $row = $settings->of($organization);
         $locale = app()->getLocale();
 
@@ -31,7 +31,7 @@ class AiDocumentSettingsController extends Controller
             'noticeLocale' => $locale,
             'noticeHash' => $offered ? AiDocumentConsent::hash($settings->notice($locale)) : null,
             'consentedBy' => $row?->consented_by ? $organization->users()->find($row->consented_by) : null,
-            'limits' => $settings->limitsOffered() ? $settings->limits($organization) : null,
+            'limits' => $settings->limitsOffered($organization) ? $settings->limits($organization) : null,
             'showReadMaximum' => $settings->hasReadKinds(),
         ]);
     }

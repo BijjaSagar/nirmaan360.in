@@ -7,8 +7,10 @@ use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Agents\ModelGateway;
 use App\Services\Notify\NotificationMessage;
 use App\Services\Notify\Notifier;
+use App\Services\Website\AiOffer;
 use App\Support\Dec;
 use App\Support\PlatformSettings;
 use Brick\Math\BigDecimal;
@@ -38,15 +40,68 @@ class AiSpend
 
     private const TRIAL_PAGES = 'reader_trial_pages';
 
-    public function __construct(private PlatformSettings $settings) {}
+    public function __construct(private PlatformSettings $settings, private ModelGateway $gateway) {}
 
     /**
-     * Readers are offered to companies only after the platform admin has switched them on, and only
-     * while the provider's monthly cap is on record: without it there is no monthly limit to hold to.
+     * The one test of whether the readers are on. The public website (its cards and the pricing line),
+     * a company's consent switch and its menu entry, the privacy policy and the terms, the phone's status
+     * answer and the offer to read a PDF as a scan all ask this, so they cannot disagree. The gates
+     * (RequireAiReader, PageReader, TextCallRunner, assertRoom) check the same parts one at a time,
+     * because each part has its own refusal: released(), then the model connected, then the plan, and
+     * a reader route exists only once its kind is deployed.
+     *
+     * On means all of these hold:
+     * - the platform admin has released the readers and the provider's monthly cap is on record (released()),
+     * - the AI model is connected: a key is saved,
+     * - for a company, its plan has the AI features,
+     * - a reader is deployed: the kind asked about, or with none any reader kind or the voice notes
+     *   route; for a company, a kind counts only when its plan has the module the kind belongs to.
+     */
+    public function readersOn(?Organization $organization = null, ?string $kind = null): bool
+    {
+        return $this->aiOn($organization) && $this->readerDeployed($organization, $kind);
+    }
+
+    /**
+     * The parts of readersOn() that are not about a reader: released, connected and, for a company, its
+     * plan. Spending limits ask this with the features that can spend, which may be text calls only.
+     */
+    public function aiOn(?Organization $organization = null): bool
+    {
+        return $this->released()
+            && $this->gateway->isConnected()
+            && ($organization === null || $organization->allowsFeature('ai_agents'));
+    }
+
+    /**
+     * Whether a reader is deployed: the kind asked about, or with none any reader kind or the voice notes
+     * route. For a company, a kind counts only when its plan has the module the kind belongs to.
+     */
+    public function readerDeployed(?Organization $organization = null, ?string $kind = null): bool
+    {
+        $allowed = function (string $key) use ($organization): bool {
+            $feature = config("modules.document_reading.kinds.{$key}.feature");
+
+            return $organization === null || ! is_string($feature) || $organization->allowsFeature($feature);
+        };
+
+        $kinds = array_keys(app(ReadKinds::class)->all());
+
+        if ($kind !== null) {
+            return in_array($kind, $kinds, true) && $allowed($kind);
+        }
+
+        return array_filter($kinds, $allowed) !== [] || Route::has(AiOffer::VOICE_ROUTE);
+    }
+
+    /**
+     * Part of readersOn(): the platform admin has switched the readers on, and the provider's monthly cap
+     * is on record, since without it there is no monthly limit to hold to. A gate asks this on its own to
+     * refuse with not_released.
      */
     public function released(): bool
     {
-        return (string) $this->settings->get('ai_readers_released', '0') === '1' && $this->monthlyCap() !== null;
+        return (string) $this->settings->get(AiOffer::RELEASED, '0') === '1' && $this->monthlyCap() !== null;
     }
 
     /**

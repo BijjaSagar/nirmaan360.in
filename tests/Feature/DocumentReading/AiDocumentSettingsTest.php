@@ -135,6 +135,19 @@ class AiDocumentSettingsTest extends PageReadingTestCase
 
         $this->assertSame('AI दस्तावेज़ रीडर', __('AI document readers', [], 'hi'));
         $this->assertSame('AI दस्तऐवज रीडर', __('AI document readers', [], 'mr'));
+
+        // With no reader deployed, as on the day this branch goes live, no owner or admin is shown the entry.
+        config(['modules.reader_stand_ins.read_kinds' => []]);
+        $this->assertSame([], $entry($this->organization));
+        $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertDontSee(route('ai-documents.edit'), false)->assertDontSee('AI document readers');
+        $this->actingAs($this->member($this->organization, 'admin'))->get('/dashboard')->assertOk()->assertDontSee('AI document readers');
+
+        // Nor with a reader deployed but the readers not released.
+        config(['modules.reader_stand_ins.read_kinds' => [Support\FakeKind::class]]);
+        $this->assertCount(1, $entry($this->organization));
+        app(PlatformSettings::class)->set(['ai_readers_released' => '0']);
+        $this->assertSame([], $entry($this->organization));
+        $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertDontSee('AI document readers');
     }
 
     public function test_with_no_reader_deployed_the_page_says_so_and_nothing_can_be_accepted(): void
