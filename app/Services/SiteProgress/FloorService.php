@@ -8,7 +8,9 @@ use App\Models\MepStageCell;
 use App\Models\ProgressEntry;
 use App\Models\Project;
 use App\Models\ProjectFloor;
+use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
+use App\Support\Idempotent;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -26,19 +28,53 @@ class FloorService
         ];
     }
 
+    /** What is planned for one BOQ line on a floor. The same for the web form and the mobile API. */
+    public function targetRules(ProjectFloor $floor): array
+    {
+        return [
+            'boq_item_id' => ['bail', 'required', 'integer', Rule::exists('boq_items', 'id')->where('project_id', $floor->project_id)->whereNull('deleted_at')],
+            'planned_qty' => ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:99999999'],
+        ];
+    }
+
+    /** Sharing BOQ lines equally across floors. The same for the web form and the mobile API. */
+    public function splitRules(Project $project): array
+    {
+        return [
+            'all_items' => ['nullable', 'boolean'],
+            'boq_item_ids' => ['nullable', 'array'],
+            'boq_item_ids.*' => ['integer', Rule::exists('boq_items', 'id')->where('project_id', $project->id)->whereNull('deleted_at')],
+            'floor_ids' => ['required', 'array', 'min:1'],
+            'floor_ids.*' => ['integer', Rule::exists('project_floors', 'id')->where('project_id', $project->id)],
+        ];
+    }
+
+    /** Add a floor, or a flat (segment) under one. A repeated client_uuid returns the floor it made. */
     public function create(Project $project, array $data): ProjectFloor
     {
+        $uuid = $data['client_uuid'] ?? null;
+
+        if ($uuid && ($existing = $this->findByUuid($project->organization_id, $uuid))) {
+            return $existing->project_id === $project->id
+                ? $existing
+                : throw ValidationException::withMessages(['client_uuid' => [__('Record not found on the server.')]]);
+        }
+
         $parentId = $data['parent_id'] ?? null;
         $name = trim($data['name']);
         $this->assertNameFree($project, $parentId, $name);
 
-        return ProjectFloor::create([
-            'organization_id' => $project->organization_id,
-            'project_id' => $project->id,
-            'parent_id' => $parentId,
-            'name' => $name,
-            'sort' => ((int) ProjectFloor::where('project_id', $project->id)->where('parent_id', $parentId)->max('sort')) + 1,
-        ]);
+        return Idempotent::create(
+            fn () => ProjectFloor::create([
+                'organization_id' => $project->organization_id,
+                'project_id' => $project->id,
+                'parent_id' => $parentId,
+                'name' => $name,
+                'sort' => ((int) ProjectFloor::where('project_id', $project->id)->where('parent_id', $parentId)->max('sort')) + 1,
+                'client_uuid' => $uuid,
+            ]),
+            fn () => $this->findByUuid($project->organization_id, (string) $uuid),
+        );
     }
 
     public function update(ProjectFloor $floor, array $data): ProjectFloor
@@ -158,6 +194,14 @@ class FloorService
 
             return $count;
         });
+    }
+
+    /** A repeat is looked up across the company, then checked against the person's project limit. */
+    private function findByUuid(int $organizationId, string $uuid): ?ProjectFloor
+    {
+        return ClientUuidRepeat::reachable(
+            ProjectFloor::withoutGlobalScopes()->where('organization_id', $organizationId)->where('client_uuid', $uuid)->first()
+        );
     }
 
     private function assertNameFree(Project $project, mixed $parentId, string $name, ?int $ignore = null): void

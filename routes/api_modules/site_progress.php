@@ -25,3 +25,15 @@ Route::middleware('feature:site_control')->group(function () {
     Route::post('/stage-cells/{cell}/photos', [StageApiController::class, 'storePhoto'])->middleware('can:progress.create');
     Route::get('/floors/{floor}/before-finishing', [StageApiController::class, 'beforeFinishing'])->middleware('can:progress.view');
 });
+
+// Setting up and planning floors and segments from the phone, with the web's rules. Removing a floor is owner-only,
+// checked in the controller (progress.manage alone is not enough).
+Route::middleware('feature:site_control')->group(function () {
+    Route::post('/projects/{project}/floors', [ProgressApiController::class, 'storeFloor'])->middleware('can:progress.manage');
+    Route::post('/projects/{project}/floors/split', [ProgressApiController::class, 'splitFloors'])->middleware('can:progress.manage');
+    Route::patch('/floors/{floor}', [ProgressApiController::class, 'updateFloor'])->middleware('can:progress.manage');
+    Route::put('/floors/{floor}/target', [ProgressApiController::class, 'floorTarget'])->middleware('can:progress.manage');
+    Route::delete('/floors/{floor}', [ProgressApiController::class, 'destroyFloor'])->middleware('can:progress.manage');
+    Route::patch('/projects/{project}/progress/time-frame', [ProgressApiController::class, 'timeFrame'])->middleware('can:progress.manage');
+    Route::get('/projects/{project}/progress/week', [ProgressApiController::class, 'week'])->middleware('can:progress.view');
+});

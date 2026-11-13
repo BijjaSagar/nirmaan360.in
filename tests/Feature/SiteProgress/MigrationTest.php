@@ -49,4 +49,29 @@ class MigrationTest extends SiteProgressTestCase
         $this->assertTrue(Schema::hasColumn('project_floors', 'parent_id'));
         $this->assertSame(2, ProjectFloor::where('name', 'like', 'Passage%')->count());
     }
+
+    public function test_the_floor_client_uuid_migration_can_be_rolled_back_and_run_again(): void
+    {
+        $migration = require database_path('migrations/2027_01_09_300001_add_client_uuid_to_project_floors.php');
+        $this->floor('1st floor');
+
+        $migration->down();
+        $this->assertFalse(Schema::hasColumn('project_floors', 'client_uuid'));
+        $this->assertSame(1, DB::table('project_floors')->count());
+
+        $migration->up();
+        $this->assertTrue(Schema::hasColumn('project_floors', 'client_uuid'));
+        DB::table('project_floors')->update(['client_uuid' => '7b0c2a52-3d39-4f43-9c39-3a5d0f2b8e11']);
+
+        // The key is per company: the same uuid twice in one company is refused.
+        try {
+            DB::transaction(fn () => DB::table('project_floors')->insert([
+                'organization_id' => $this->organization->id, 'project_id' => $this->project->id, 'name' => '2nd floor', 'sort' => 2,
+                'client_uuid' => '7b0c2a52-3d39-4f43-9c39-3a5d0f2b8e11',
+            ]));
+            $this->fail('The unique key on organization and client_uuid is missing.');
+        } catch (UniqueConstraintViolationException) {
+            // As intended.
+        }
+    }
 }
