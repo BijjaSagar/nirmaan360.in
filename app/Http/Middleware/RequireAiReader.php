@@ -8,6 +8,7 @@ use App\Services\DocumentReading\AiDocumentConsent;
 use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\ProviderBlock;
 use App\Services\DocumentReading\SpendRefused;
+use App\Support\PlanWording;
 use Closure;
 use Illuminate\Http\Request;
 use LogicException;
@@ -67,7 +68,8 @@ class RequireAiReader
             return $this->refuse($request, self::NOT_CONNECTED, __('The AI service is not available right now. Try again later.'));
         }
 
-        abort_unless($organization->allowsFeature('ai_agents'), 403, __('Your plan does not include this module. Upgrade to continue.'));
+        // The phone and any JSON request are never told to upgrade: see PlanWording.
+        abort_unless($organization->allowsFeature('ai_agents'), 403, PlanWording::moduleNotIncluded());
 
         $settings = AiDocumentSettings::withoutGlobalScopes()->where('organization_id', $organization->id)->first();
 

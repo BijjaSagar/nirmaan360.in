@@ -223,17 +223,17 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertNotNull($row->consented_at);
         $this->assertNull($row->withdrawn_at);
         $this->assertTrue(AiDocumentConsent::current($this->organization));
-        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v1', 'current' => true], $this->settings()->consent($this->organization));
+        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v2', 'current' => true], $this->settings()->consent($this->organization));
 
         $audit = collect($this->audits('ai_documents.consent_on'))->sole();
         $this->assertSame(['enabled' => false, 'version' => null], $audit->old_values);
-        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v1', 'locale' => 'en', 'sha256' => hash('sha256', $notice)], $audit->new_values);
+        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v2', 'locale' => 'en', 'sha256' => hash('sha256', $notice)], $audit->new_values);
         $this->assertSame([$this->organization->id, $this->owner->id, $row->id], [$audit->organization_id, $audit->user_id, $audit->auditable_id]);
         $this->assertStringNotContainsString('Anthropic', (string) json_encode($audit->getAttributes()));
 
         $this->actingAs($this->owner)->get(self::PAGE)->assertOk()
             ->assertSee('Switched on by '.$this->owner->name)
-            ->assertSee('Notice version: ai-docs-v1.')
+            ->assertSee('Notice version: ai-docs-v2.')
             ->assertSee('Switch the readers off')
             ->assertDontSee('name="accept"', false);
     }
@@ -369,7 +369,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         // What was agreed to stays on record.
         $this->assertSame([AiDocumentConsent::VERSION, AiDocumentConsent::notice('en')], [$row->consent_version, $row->consent_text]);
         $this->assertFalse(AiDocumentConsent::current($this->organization));
-        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v1', 'current' => false], $this->settings()->consent($this->organization));
+        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v2', 'current' => false], $this->settings()->consent($this->organization));
 
         foreach (DocumentRead::OPEN as $status) {
             $read = $reads[$status]->fresh();
@@ -400,8 +400,8 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertTrue(AiDocumentConsent::current($other));
 
         $off = collect($this->audits('ai_documents.consent_off'))->sole();
-        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v1'], $off->old_values);
-        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v1'], $off->new_values);
+        $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v2'], $off->old_values);
+        $this->assertSame(['enabled' => false, 'version' => 'ai-docs-v2'], $off->new_values);
         $this->assertSame([$this->organization->id, $this->owner->id], [$off->organization_id, $off->user_id]);
 
         $cancels = collect($this->audits('ai.read_cancelled'));
@@ -461,7 +461,7 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertTrue(AiDocumentConsent::current($this->organization));
         $audit = collect($this->audits('ai_documents.consent_on'))->sole();
         $this->assertSame(['enabled' => true, 'version' => 'ai-docs-v0'], $audit->old_values);
-        $this->assertSame('ai-docs-v1', $audit->new_values['version']);
+        $this->assertSame('ai-docs-v2', $audit->new_values['version']);
     }
 
     public function test_one_company_never_changes_or_sees_another_companys_switch(): void
@@ -648,8 +648,8 @@ class AiDocumentSettingsTest extends PageReadingTestCase
         $this->assertNull(AiDocumentConsent::agreedVersion($this->organization));
 
         $this->switchOn();
-        $this->assertSame('ai-docs-v1', AiDocumentConsent::agreedVersion($this->organization));
-        $this->assertSame('ai-docs-v1', AiDocumentConsent::agreedVersion($this->organization->id));
+        $this->assertSame('ai-docs-v2', AiDocumentConsent::agreedVersion($this->organization));
+        $this->assertSame('ai-docs-v2', AiDocumentConsent::agreedVersion($this->organization->id));
 
         // Another company's agreement is not this one's.
         $this->assertNull(AiDocumentConsent::agreedVersion($this->tenant('Godavari Infra')));

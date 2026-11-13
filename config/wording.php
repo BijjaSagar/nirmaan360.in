@@ -22,6 +22,16 @@
 
 return [
 
+    // The fixed sentences of a document for a client or another party (a site letter, a quotation's cover note,
+    // a weekly update) are written by the engineers, and their Hindi and Marathi wait for a native reader's review.
+    // On the live site such a document is offered in English and in the languages listed here for its kind, as hi
+    // or mr, once its wording is reviewed. Everywhere else, staging included, every language is offered so that
+    // the wording can be read. See App\Services\Wording\ReviewedLanguages.
+    'reviewed_languages' => [
+        'site_letters' => array_values(array_filter(array_map('trim', explode(',', (string) env('SITE_LETTER_LANGUAGES_REVIEWED', ''))))),
+        'owner_pack' => array_values(array_filter(array_map('trim', explode(',', (string) env('OWNER_PACK_LANGUAGES_REVIEWED', ''))))),
+    ],
+
     // Longest text a model may put into one free sentence block. Longer text is cut at a word.
     'free_slot_max_chars' => 1200,
 

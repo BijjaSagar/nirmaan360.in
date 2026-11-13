@@ -10,7 +10,7 @@
 // stores only its own copy.
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import PdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?worker';
-import { ReaderError, refusalOf, uploadFailure, worthRetrying } from './errors.js';
+import { ReaderError, refusalOf, unreached, uploadFailure, worthRetrying } from './errors.js';
 import { imageTokens, photoSize, targetSize, TOKEN_VECTORS, VECTORS } from './size.js';
 
 export { ReaderError };
@@ -73,6 +73,19 @@ function address(name, readId, pageId = null) {
     return template.replace('__READ__', encodeURIComponent(readId)).replace('__PAGE__', encodeURIComponent(pageId ?? ''));
 }
 
+/**
+ * fetch() for the reader's addresses. A request that never reached the server (no connection, the
+ * address could not be reached) becomes a ReaderError with the partial's sentence about the
+ * connection, never the browser's own English.
+ */
+async function reach(url, init) {
+    try {
+        return await fetch(url, init);
+    } catch (error) {
+        throw unreached(error, words);
+    }
+}
+
 /** One call to a reader route. A refusal becomes a ReaderError carrying the server's code, details and sentence. */
 async function call(method, url, body = undefined) {
     const headers = {
@@ -87,7 +100,7 @@ async function call(method, url, body = undefined) {
         payload = JSON.stringify(body);
     }
 
-    const response = await fetch(url, { method, credentials: 'same-origin', headers, body: payload });
+    const response = await reach(url, { method, credentials: 'same-origin', headers, body: payload });
 
     if (response.status === 204) {
         return null;
@@ -96,7 +109,7 @@ async function call(method, url, body = undefined) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        // A failure that is not one of the module's own refusals gets a sentence of the partial, never a bare code or the framework's English.
+        // The server's own sentence when it sent one; otherwise a sentence of the partial, never a bare code or the framework's English.
         throw refusalOf(response.status, data, words);
     }
 
@@ -506,7 +519,7 @@ export async function uploadPhotos(readId, files, options = {}) {
  * read. page is an entry of failed_pages from the status, with can_split true.
  */
 export async function halves(readId, page, options = {}) {
-    const response = await fetch(address('image', readId, page.id), { credentials: 'same-origin', headers: { Accept: 'image/jpeg' } });
+    const response = await reach(address('image', readId, page.id), { credentials: 'same-origin', headers: { Accept: 'image/jpeg' } });
 
     if (!response.ok) {
         throw new ReaderError('image_failed', words('image_failed'), {}, response.status);

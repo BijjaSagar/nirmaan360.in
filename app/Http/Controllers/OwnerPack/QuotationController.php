@@ -10,6 +10,7 @@ use App\Services\OwnerPack\QuotationDocument;
 use App\Services\OwnerPack\QuotationService;
 use App\Services\OwnerPack\QuotationShareService;
 use App\Services\OwnerPack\ShownText;
+use App\Services\Wording\ReviewedLanguages;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -33,7 +34,7 @@ class QuotationController extends Controller
             'project' => $project,
             'boqItems' => $project->boqItems()->orderBy('sort')->orderBy('id')->get(),
             'clients' => $this->clients(),
-            'language' => in_array($request->user()->locale, ClientQuotation::LANGUAGES, true) ? $request->user()->locale : 'en',
+            'language' => ReviewedLanguages::starting(ReviewedLanguages::OWNER_PACK, $request->user()->locale, ClientQuotation::LANGUAGES),
         ]);
     }
 

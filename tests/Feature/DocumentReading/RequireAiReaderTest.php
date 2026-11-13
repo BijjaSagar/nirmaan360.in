@@ -151,7 +151,8 @@ class RequireAiReaderTest extends PageReadingTestCase
 
         $this->web($owner)->assertForbidden();
         $this->web($owner, 'text')->assertForbidden();
-        $this->api($owner)->assertForbidden()->assertJsonPath('message', 'Your plan does not include this module. Upgrade to continue.');
+        // The phone is never told to upgrade (App\Support\PlanWording).
+        $this->api($owner)->assertForbidden()->assertJsonPath('message', "Your company's plan does not include this module. Your company's owner can check the plan.");
         $this->assertSame(0, $this->reached);
     }
 

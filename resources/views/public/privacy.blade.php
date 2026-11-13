@@ -28,27 +28,28 @@
         <li>A notification token for your phone, only after you turn on alerts in the app. It is used only to deliver your notifications through Google Firebase Cloud Messaging.</li>
     </ul>
 
+    {{-- What the provider says about keeping and training on what it receives is said as its own commercial policy and model-training pages state it (privacy.claude.com, read 13 Nov 2026). Check both before changing a word. --}}
     <h2>How we use it</h2>
-    <p>{{ __('We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that it does not use what it receives through this service to train its models.', [], $aiLocale) }}</p>
+    <p>{{ __('We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that, by default, it does not use what it receives through its commercial service to train its models.', [], $aiLocale) }}</p>
 
     @if (app(\App\Services\Seo\Analytics::class)->measurementId())
     {{-- Only shown while Google Analytics is switched on in /admin/seo. --}}
     <h2>Analytics cookies</h2>
-    <p>If you choose Accept on the cookie question, we use Google Analytics to count visits to our website{{ app(\App\Services\Seo\Analytics::class)->includesApp() ? ' and to screens inside the app' : '' }}, and to see which pages are used. It sets cookies only after you accept. We do not send Google your name, email, mobile number, company or project details, or any amounts. You can change your choice at any time from Cookie settings at the bottom of the page.</p>
+    <p>If you choose Accept on the cookie question, we use Google Analytics to count visits to our website{{ app(\App\Services\Seo\Analytics::class)->includesApp() ? ' and to the signed-in pages of the website' : '' }}, and to see which pages are used. It sets cookies only after you accept. We do not send Google your name, email, mobile number, company or project details, or any amounts. You can change your choice at any time from Cookie settings at the bottom of the page.</p>
     @endif
 
     <h2>Who can see your records</h2>
     @if ($readers)
-    <p>{{ __('Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents and readers, only when your company uses them. They handle data only so that we can run the service.') }}</p>
+    <p>{{ __('Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website and the AI readers use an AI model provider, Anthropic: when a company uses them, what is asked of them, the pages, photos and text sent to a reader, and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that uses neither.') }}</p>
     @else
-    <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents, only when your company uses them. They handle data only so that we can run the service.</p>
+    <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website use an AI model provider, Anthropic: when a company uses the agents, what is asked of them and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that does not use the agents.</p>
     @endif
 
     <h2>Where your data is stored</h2>
     @if ($readers)
-    <p>{{ __('Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent or reader, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer. Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.') }}</p>
+    <p>{{ __('Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent or reader, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes what it receives through its API within 30 days, except in the cases its policy lists, such as when it needs to keep something longer to enforce its usage policy or the law requires it. Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.') }}</p>
     @else
-    <p>Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider's servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer.</p>
+    <p>Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider's servers outside India. The provider states that it deletes what it receives through its API within 30 days, except in the cases its policy lists, such as when it needs to keep something longer to enforce its usage policy or the law requires it.</p>
     @endif
 
     <h2>Your rights</h2>

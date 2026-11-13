@@ -27,7 +27,8 @@ final class ReadWords
     {
         return match ($reason) {
             DocumentRead::PAUSE_CREDIT_CAP => __('It reached the credit limit set for this document. Continue it with a new limit to read the remaining pages.', [], $locale),
-            DocumentRead::PAUSE_WALLET => __('Your company has no AI credits left. Buy credits, then continue.', [], $locale),
+            // Shown in the field app and sent to phones too, so it never says buy: see PlanWording.
+            DocumentRead::PAUSE_WALLET => __('Your company has no AI credits left. Your company\'s owner can check the credits.', [], $locale),
             DocumentRead::PAUSE_STARTER_GONE => __('The person who started it can no longer use the reader. Someone else must start it again.', [], $locale),
             DocumentRead::PAUSE_CONSENT_OFF => __('Your company has not agreed to the current notice for sending documents to the AI service. An owner or admin can do that in Settings.', [], $locale),
             DocumentRead::PAUSE_PLAN => __('Your plan no longer includes the AI readers.', [], $locale),

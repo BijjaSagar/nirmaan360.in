@@ -16,6 +16,7 @@ use App\Services\Wording\FactSheet;
 use App\Services\Wording\FinalCheck;
 use App\Services\Wording\GuardViolation;
 use App\Services\Wording\Rendered;
+use App\Services\Wording\ReviewedLanguages;
 use App\Services\Wording\WordingException;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
@@ -63,7 +64,7 @@ class QuotationService
 
         return [
             // Only what a form sends is changed, so each field is checked only when it is there.
-            ...array_map(fn (array $rules) => ['sometimes', ...$rules], $this->headerRules($quotation->organization_id)),
+            ...array_map(fn (array $rules) => ['sometimes', ...$rules], $this->headerRules($quotation->organization_id, $quotation->language)),
             'boq_item_ids' => ['sometimes', ...$this->lineRules()],
             'boq_item_ids.*' => $this->lineRule($quotation->organization_id, $quotation->project_id),
             'opening' => $text,
@@ -725,13 +726,17 @@ class QuotationService
         return $values;
     }
 
-    /** @return array<string, mixed> */
-    private function headerRules(int $organizationId): array
+    /**
+     * The language is one offered for documents a client reads (ReviewedLanguages); a draft may keep the one it has.
+     *
+     * @return array<string, mixed>
+     */
+    private function headerRules(int $organizationId, ?string $current = null): array
     {
         return [
             'party_id' => ['bail', 'nullable', 'integer', Rule::exists('parties', 'id')->where('organization_id', $organizationId)->where('type', 'client')->whereNull('deleted_at')],
             'client_name' => ['nullable', 'required_without:party_id', 'string', 'max:160', $this->validText()],
-            'language' => ['required', Rule::in(ClientQuotation::LANGUAGES)],
+            'language' => ['required', Rule::in(ReviewedLanguages::allowed(ReviewedLanguages::OWNER_PACK, ClientQuotation::LANGUAGES, $current))],
             // Typed for this quotation. Left empty, the amounts are quoted without GST.
             'gst_pct' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
             'valid_until' => ['nullable', 'date', 'after_or_equal:today'],

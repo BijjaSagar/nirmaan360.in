@@ -1,7 +1,7 @@
 {
     ":count line|:count lines": ":count पंक्ति|:count पंक्तियाँ",
     ":count photo|:count photos": ":count फ़ोटो|:count फ़ोटो",
-    ":from to :to": ":from से :to",
+    ":from to :to": ":from से :to तक",
     ":pct of the total": "कुल का :pct",
     "A link is open until :date. Anyone who has the link can read this quotation without signing in, so send it only to your client.": "एक लिंक :date तक खुला है। जिसके पास यह लिंक है वह साइन इन किए बिना यह कोटेशन पढ़ सकता है, इसलिए इसे केवल अपने क्लाइंट को भेजें।",
     "A link is open until :date. Anyone who has the link can read this update and see its photos without signing in, so send it only to your client.": "एक लिंक :date तक खुला है। जिसके पास यह लिंक है वह साइन इन किए बिना यह अपडेट पढ़ सकता है और इसकी फ़ोटो देख सकता है, इसलिए इसे केवल अपने क्लाइंट को भेजें।",

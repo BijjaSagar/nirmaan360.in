@@ -9,6 +9,7 @@ use App\Services\OwnerPack\OwnerUpdateDocument;
 use App\Services\OwnerPack\OwnerUpdateService;
 use App\Services\OwnerPack\OwnerUpdateShareService;
 use App\Services\OwnerPack\ShownText;
+use App\Services\Wording\ReviewedLanguages;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,13 +38,13 @@ class OwnerUpdateController extends Controller
         // An update whose records changed links here with its own week and language. Anything else in the address is ignored.
         $asked = Validator::make($request->query(), [
             'week_start' => ['date_format:Y-m-d', 'before_or_equal:today'],
-            'language' => [Rule::in(OwnerUpdate::LANGUAGES)],
+            'language' => [Rule::in(ReviewedLanguages::offered(ReviewedLanguages::OWNER_PACK, OwnerUpdate::LANGUAGES))],
         ])->valid();
         $language = $asked['language'] ?? $request->user()->locale;
 
         return view('modules.owner_pack.updates.create', [
             'project' => $project,
-            'language' => in_array($language, OwnerUpdate::LANGUAGES, true) ? $language : 'en',
+            'language' => ReviewedLanguages::starting(ReviewedLanguages::OWNER_PACK, $language, OwnerUpdate::LANGUAGES),
             'weekStart' => $asked['week_start'] ?? today()->startOfWeek()->toDateString(),
             'quotations' => Money::visible($request->user()) ? $this->service->standingQuotations($project->organization_id, $project->id) : collect(),
         ]);

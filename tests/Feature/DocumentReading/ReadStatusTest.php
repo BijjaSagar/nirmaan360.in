@@ -104,7 +104,7 @@ class ReadStatusTest extends ReadRoutesTestCase
         $paused = $this->draftWithPages(2, ['status' => DocumentRead::PAUSED, 'pause_reason' => 'wallet', 'credits_cap' => '30']);
 
         $this->web($this->owner, 'GET', $paused, '/status')->assertOk()->assertJson([
-            'status' => 'paused', 'pause_reason' => 'wallet', 'message' => 'Your company has no AI credits left. Buy credits, then continue.',
+            'status' => 'paused', 'pause_reason' => 'wallet', 'message' => 'Your company has no AI credits left. Your company\'s owner can check the credits.',
             'eta_minutes' => null, 'can_resume' => true, 'can_cancel' => true, 'pages_left' => 2,
         ]);
 
@@ -119,8 +119,8 @@ class ReadStatusTest extends ReadRoutesTestCase
         // In the person's own language.
         $this->owner->update(['locale' => 'hi']);
         $words = $this->web($this->owner->refresh(), 'GET', $paused, '/status')->json('message');
-        $this->assertSame(__('Your company has no AI credits left. Buy credits, then continue.', [], 'hi'), $words);
-        $this->assertNotSame('Your company has no AI credits left. Buy credits, then continue.', $words);
+        $this->assertSame(__('Your company has no AI credits left. Your company\'s owner can check the credits.', [], 'hi'), $words);
+        $this->assertNotSame('Your company has no AI credits left. Your company\'s owner can check the credits.', $words);
     }
 
     public function test_a_read_the_server_has_not_picked_up_is_reported_as_stalled(): void

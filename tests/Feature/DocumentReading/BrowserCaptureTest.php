@@ -129,6 +129,11 @@ class BrowserCaptureTest extends TestCase
         app()->setLocale('en');
     }
 
+    /**
+     * The person reads the server's own sentence whenever it sent one, with or without a code; a
+     * sentence of the partial for anything the framework or a proxy answered; and the partial's
+     * sentence about the connection when the request never reached the server.
+     */
     public function test_a_failure_without_a_sentence_of_the_modules_own_is_told_in_the_persons_language(): void
     {
         $node = (new ExecutableFinder)->find('node');
@@ -147,7 +152,10 @@ class BrowserCaptureTest extends TestCase
         // Every word the error handling may ask for is one the partial carries.
         preg_match_all("/return '([a-z_]+)';/", $this->source('resources/js/reader/errors.js'), $asked);
         $this->assertNotEmpty($asked[1]);
-        $this->assertSame([], array_values(array_diff([...$asked[1], 'upload_failed'], array_keys($words))));
+        $this->assertSame([], array_values(array_diff([...$asked[1], 'upload_failed', 'network'], array_keys($words))));
+        $this->assertStringContainsString("export const NETWORK = 'network';", $this->source('resources/js/reader/errors.js'));
+        $plan = __('Your company\'s plan does not include this module. Your company\'s owner can check the plan.', [], 'mr');
+        $this->assertNotSame('Your company\'s plan does not include this module. Your company\'s owner can check the plan.', $plan);
 
         $answers = [
             'proxy_502' => [502, null],
@@ -161,17 +169,30 @@ class BrowserCaptureTest extends TestCase
             'gone_404' => [404, ['message' => 'Not Found']],
             'own_refusal' => [409, ['code' => 'wrong_state', 'message' => 'आपल्या भाषेतील वाक्य', 'status' => 'running']],
             'form_check' => [422, ['message' => 'The image field is required.', 'errors' => ['image' => ['चित्र निवडा.']]]],
+            // A refusal with only a sentence the app wrote, already in the person's language: the plan, or a 409 of its own.
+            'plan_403' => [403, ['message' => $plan]],
+            'own_sentence_409' => [409, ['message' => 'हे वाचन आता बदलता येत नाही.']],
+            'english_own_403' => [403, ['message' => 'Your company\'s plan does not include this module. Your company\'s owner can check the plan.']],
+            // The framework's own messages, which are not written for a person.
+            'model_404' => [404, ['message' => 'No query results for model [App\\Models\\DocumentRead] 12']],
+            'route_404' => [404, ['message' => 'The route document-reads/12/nothing could not be found.']],
+            'method_405' => [405, ['message' => 'The GET method is not supported for route document-reads/12/start. Supported methods: POST.']],
+            'debug_500' => [500, ['message' => 'SQLSTATE[23000]: Integrity constraint violation']],
+            'signed_out_401' => [401, ['message' => 'Unauthenticated.']],
         ];
 
-        $program = 'import { ReaderError, refusalOf, uploadFailure, worthRetrying } from "./resources/js/reader/errors.js";'
+        $program = 'import { ReaderError, refusalOf, unreached, uploadFailure, worthRetrying } from "./resources/js/reader/errors.js";'
             .'const words = JSON.parse(process.argv[1]); const answers = JSON.parse(process.argv[2]);'
             .'const say = (key, values = {}) => Object.entries(values).reduce((line, [name, value]) => line.replaceAll(`:${name}`, String(value)), words[key] ?? key);'
             .'const out = {};'
             .'for (const [name, [status, body]] of Object.entries(answers)) { const error = refusalOf(status, body ?? {}, say); out[name] = { code: error.code, message: error.message, retry: worthRetrying(error), ok: error instanceof ReaderError }; }'
             .'out.after_proxy = uploadFailure(refusalOf(502, {}, say), 7, say);'
             .'out.after_network = uploadFailure(new TypeError("Failed to fetch"), 7, say);'
+            .'const lost = unreached(new TypeError("Failed to fetch"), say); out.unreached = { code: lost.code, message: lost.message, retry: worthRetrying(lost), ok: lost instanceof ReaderError, status: lost.status };'
+            .'out.after_unreached = uploadFailure(lost, 7, say);'
+            .'out.unreached_twice = unreached(lost, say) === lost;'
             .'out.after_not_stored = uploadFailure(refusalOf(503, { code: "not_stored", message: "जतन झाले नाही" }, say), 7, say);'
-            .'for (const key of ["after_proxy", "after_network", "after_not_stored"]) { out[key] = { code: out[key].code, message: out[key].message }; }'
+            .'for (const key of ["after_proxy", "after_network", "after_unreached", "after_not_stored"]) { out[key] = { code: out[key].code, message: out[key].message }; }'
             .'console.log(JSON.stringify(out));';
 
         $run = new Process([$node, '--input-type=module', '-e', $program, json_encode($words, JSON_UNESCAPED_UNICODE), json_encode($answers, JSON_UNESCAPED_UNICODE)], base_path());
@@ -191,6 +212,14 @@ class BrowserCaptureTest extends TestCase
             'gone_404' => ['http_404', $said('This document is no longer here. Reload the page.'), false],
             'own_refusal' => ['wrong_state', 'आपल्या भाषेतील वाक्य', false],
             'form_check' => ['http_422', 'चित्र निवडा.', false],
+            'plan_403' => ['http_403', $plan, false],
+            'own_sentence_409' => ['http_409', 'हे वाचन आता बदलता येत नाही.', false],
+            'english_own_403' => ['http_403', 'Your company\'s plan does not include this module. Your company\'s owner can check the plan.', false],
+            'model_404' => ['http_404', $said('This document is no longer here. Reload the page.'), false],
+            'route_404' => ['http_404', $said('This document is no longer here. Reload the page.'), false],
+            'method_405' => ['http_405', $said('Something went wrong on our side. Try again in a few minutes.'), false],
+            'debug_500' => ['http_500', $said('Something went wrong on our side. Try again in a few minutes.'), true],
+            'signed_out_401' => ['http_401', $said('You have been signed out. Sign in again, then try once more.'), false],
         ];
 
         foreach ($expected as $name => [$code, $message, $retry]) {
@@ -202,11 +231,20 @@ class BrowserCaptureTest extends TestCase
         $page7 = __('Page :n could not be uploaded. Check your connection and try again.', ['n' => 7], 'mr');
         $this->assertSame(['code' => 'upload_failed', 'message' => $page7], $got['after_proxy']);
         $this->assertSame(['code' => 'upload_failed', 'message' => $page7], $got['after_network']);
+        $this->assertSame(['code' => 'upload_failed', 'message' => $page7], $got['after_unreached']);
+
+        // A request that never reached the server, from any call: the connection sentence, tried again by an upload.
+        $this->assertSame(['code' => 'network', 'message' => $said('Your request did not reach the server. Check your connection and try again.'), 'retry' => true, 'ok' => true, 'status' => 0], $got['unreached']);
+        $this->assertTrue($got['unreached_twice'], 'A refusal already worded is passed on as it is.');
         $this->assertSame(['code' => 'not_stored', 'message' => 'जतन झाले नाही'], $got['after_not_stored']);
 
         // No English from the framework, and no bare code, reaches the person.
         foreach ($got as $name => $error) {
-            foreach (['Server Error', 'CSRF token mismatch.', 'Too Many Attempts.', 'This action is unauthorized.', 'Not Found'] as $english) {
+            if (! is_array($error)) {
+                continue;
+            }
+
+            foreach (['Server Error', 'CSRF token mismatch.', 'Too Many Attempts.', 'This action is unauthorized.', 'Not Found', 'No query results', 'could not be found', 'not supported for route', 'SQLSTATE', 'Unauthenticated', 'Failed to fetch'] as $english) {
                 $this->assertStringNotContainsString($english, $error['message'], $name);
             }
 
@@ -218,6 +256,11 @@ class BrowserCaptureTest extends TestCase
         $this->assertStringContainsString("from './errors.js'", $script);
         $this->assertStringContainsString('throw refusalOf(response.status, data, words);', $script);
         $this->assertStringContainsString('throw uploadFailure(last, pageNo, words);', $script);
+        // Every request goes through the one place that turns a request that never arrived into the connection sentence.
+        $this->assertSame(1, substr_count($script, 'await fetch('), 'Only reach() calls fetch().');
+        $this->assertStringContainsString('throw unreached(error, words);', $script);
+        $this->assertStringContainsString("const response = await reach(url, { method, credentials: 'same-origin', headers, body: payload });", $script);
+        $this->assertStringContainsString("const response = await reach(address('image', readId, page.id),", $script);
         $this->assertStringNotContainsString('super(message || code)', $script.$this->source('resources/js/reader/errors.js'));
     }
 

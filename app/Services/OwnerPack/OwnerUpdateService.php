@@ -15,6 +15,7 @@ use App\Services\Wording\FactSheet;
 use App\Services\Wording\FinalCheck;
 use App\Services\Wording\GuardViolation;
 use App\Services\Wording\Rendered;
+use App\Services\Wording\ReviewedLanguages;
 use App\Services\Wording\TypedNumber;
 use App\Services\Wording\WordingException;
 use App\Support\ClientUuidRepeat;
@@ -52,7 +53,8 @@ class OwnerUpdateService
     {
         return [
             'week_start' => ['required', 'date', 'before_or_equal:today'],
-            'language' => ['required', Rule::in(OwnerUpdate::LANGUAGES)],
+            // Offered for documents a client reads (ReviewedLanguages).
+            'language' => ['required', Rule::in(ReviewedLanguages::offered(ReviewedLanguages::OWNER_PACK, OwnerUpdate::LANGUAGES))],
             ...$this->optionalRules($project->organization_id, $project->id),
             'client_uuid' => ['nullable', 'uuid'],
         ];
@@ -65,7 +67,8 @@ class OwnerUpdateService
         return [
             // Only what a form sends is changed, so each field is checked only when it is there.
             'week_start' => ['sometimes', 'required', 'date', 'before_or_equal:today'],
-            'language' => ['sometimes', 'required', Rule::in(OwnerUpdate::LANGUAGES)],
+            // A draft may keep the language it has; a change goes only to one that is offered.
+            'language' => ['sometimes', 'required', Rule::in(ReviewedLanguages::allowed(ReviewedLanguages::OWNER_PACK, OwnerUpdate::LANGUAGES, $update->language))],
             ...$this->optionalRules($update->organization_id, $update->project_id),
             'opening' => $text,
             'closing' => $text,

@@ -10,6 +10,7 @@ use App\Services\Agents\CreditService;
 use App\Services\Agents\ModelGateway;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
+use App\Support\PlanWording;
 use Brick\Math\RoundingMode;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
@@ -175,7 +176,7 @@ class TextCalls
         }
 
         if (! $organization->allowsFeature('ai_agents')) {
-            throw new AuthorizationException(__('Your plan does not include this module. Upgrade to continue.'));
+            throw new AuthorizationException(PlanWording::moduleNotIncluded());
         }
 
         if (AiDocumentConsent::covers($purpose) && ! AiDocumentConsent::current($organization)) {

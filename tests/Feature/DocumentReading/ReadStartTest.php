@@ -215,7 +215,7 @@ class ReadStartTest extends ReadRoutesTestCase
 
         $this->web($this->owner, 'POST', $read, '/start')->assertStatus(402)->assertExactJson([
             'code' => 'no_credits', 'limit' => 'wallet', 'pages_that_fit' => 1,
-            'message' => 'Your company does not have enough AI credits for this. Buy more or choose fewer pages.',
+            'message' => 'Your company does not have enough AI credits for this. Choose fewer pages, or ask your company\'s owner to check the credits.',
         ]);
 
         // Someone who is not an owner or admin may hold only part of the wallet, so the rest stays free for other work.

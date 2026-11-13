@@ -162,7 +162,8 @@ class ReadRoutesAccessTest extends ReadRoutesTestCase
 
         foreach ([false, true] as $api) {
             foreach ($routes as $route) {
-                $this->hit($this->owner, $api, $read, $route)->assertForbidden()->assertJson(['message' => 'Your plan does not include this module. Upgrade to continue.']);
+                // Both ask for JSON, so neither is told to upgrade (App\Support\PlanWording).
+                $this->hit($this->owner, $api, $read, $route)->assertForbidden()->assertJson(['message' => "Your company's plan does not include this module. Your company's owner can check the plan."]);
             }
         }
 

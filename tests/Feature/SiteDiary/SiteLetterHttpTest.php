@@ -939,7 +939,7 @@ class SiteLetterHttpTest extends SiteLetterTestCase
 
         // Anywhere but the live site, staging included, every language is offered so that its wording can be read.
         $this->assertSame(['en', 'mr', 'hi'], $options());
-        $this->assertSame([], config('modules.site_diary.letter_languages_reviewed'), 'No language is marked reviewed by default.');
+        $this->assertSame([], config('wording.reviewed_languages.site_letters'), 'No language is marked reviewed by default.');
 
         // The live site checks the form's token, which the test environment leaves out.
         $this->app->detectEnvironment(fn () => 'production');
@@ -954,7 +954,7 @@ class SiteLetterHttpTest extends SiteLetterTestCase
         $prepare('en')->assertSessionHasNoErrors();
 
         // Once a native reader has reviewed Marathi, the owner lists it, and only it.
-        config(['modules.site_diary.letter_languages_reviewed' => ['mr']]);
+        config(['wording.reviewed_languages.site_letters' => ['mr']]);
         $this->assertSame(['en', 'mr'], $options());
         $prepare('mr')->assertSessionHasNoErrors();
         $prepare('hi')->assertSessionHasErrors('language');

@@ -2,7 +2,8 @@
 @php
     // An existing draft shows what it holds, empty included. Only the new form starts from the project's client.
     $value = fn (string $field, mixed $default = null) => old($field, $quotation !== null ? $quotation->{$field} : $default);
-    $languages = array_intersect_key(config('buildos.locales'), array_flip(\App\Models\ClientQuotation::LANGUAGES));
+    // Only the languages offered for documents a client reads; a draft keeps the one it has.
+    $languages = array_intersect_key(config('buildos.locales'), array_flip(\App\Services\Wording\ReviewedLanguages::allowed(\App\Services\Wording\ReviewedLanguages::OWNER_PACK, \App\Models\ClientQuotation::LANGUAGES, $quotation?->language)));
 @endphp
 <x-field :label="__('Client from your list')" name="party_id" :hint="__('Optional. The name below is what the quotation prints.')">
     <select id="party_id" name="party_id" class="input">

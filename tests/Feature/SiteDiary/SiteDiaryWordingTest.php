@@ -8,6 +8,7 @@ use App\Models\SiteLetter;
 use App\Services\Access\PermissionCatalog;
 use App\Services\SiteDiary\LetterLayout;
 use App\Services\SiteDiary\NoticeDeadlineSource;
+use App\Services\Website\AiOffer;
 use Illuminate\Support\Facades\Route;
 use Tests\Feature\Website\BannedWording;
 
@@ -288,7 +289,7 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         $this->assertSame(config('modules.site_control.plans'), config('modules.site_diary.plans'));
     }
 
-    public function test_every_route_of_the_module_is_guarded_and_none_goes_by_the_name_the_website_card_waits_for(): void
+    public function test_every_route_of_the_module_is_guarded_and_the_register_opens_the_website_card(): void
     {
         $routes = collect(Route::getRoutes())->filter(fn ($route) => str_starts_with((string) $route->getName(), 'site-diary.'));
 
@@ -317,9 +318,7 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
             $this->assertSame([], array_values(array_filter($middleware, fn ($entry) => is_string($entry) && (str_contains($entry, 'ai_agents') || str_contains($entry, 'RequireAiReader') || str_contains($entry, 'agents.use')))), $name);
         }
 
-        // The public AI page shows "Hindrance register and letters" once a route named hindrances.index exists.
-        // Three tests of that page (tests/Feature/Website/AiPagesTest.php) expect no such route until they add one
-        // themselves, so the module does not take the name. Switching the card on needs that file changed as well.
-        $this->assertFalse(Route::has('hindrances.index'));
+        // The public AI page shows "Hindrance register and letters" while the register's route exists, by its real name.
+        $this->assertContains(['flag', 'Hindrance register and letters', 'Keeps a dated register from your daily reports and drafts extension, delay and payment letters with every date and figure taken from your records.'], app(AiOffer::class)->cards());
     }
 }

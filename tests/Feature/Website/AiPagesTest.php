@@ -29,28 +29,33 @@ class AiPagesTest extends TestCase
         'stock-outs', 'issue slips', 'AI roadmap', 'planned feature', 'We are building these', 'are being built',
     ];
 
-    /** Cards that work from the company's own records, with no AI model. */
+    /** Cards that work from the company's own records, with no AI model. Each of these modules is built. */
     private const CODE_ONLY = ['RA bill pre-check', 'Rate helper', 'Hindrance register and letters', 'Home-owner pack'];
 
-    /** Cards that send a page, a photo or words to the AI model. */
+    /** Cards that send a page, a photo or words to the AI model. None of these readers is built yet. */
     private const NEEDS_MODEL = ['Scanned BOQ reader', 'Challan and bill photo', 'Tender reader'];
 
-    private const WEB_ROUTES = [
-        'boq-scans.create', 'slip-reads.store', 'tender-reads.show', 'bill-checks.store',
-        'rate-suggestions.store', 'hindrances.index', 'owner-updates.index',
-    ];
+    /** The routes the built helpers' cards wait for: the names their modules really register. */
+    private const BUILT_ROUTES = ['bill-checks.run', 'rate-suggestions.store', 'site-diary.hindrances.index', 'owner-updates.index'];
+
+    /** The routes the readers not built yet wait for, by the names the design gives them. The tests stand in for them. */
+    private const NOT_BUILT_ROUTES = ['boq-scans.create', 'slip-reads.store', 'tender-reads.show'];
 
     /** Card => the route it waits for. */
     private const CARD_ROUTES = [
         'Scanned BOQ reader' => 'boq-scans.create',
         'Challan and bill photo' => 'slip-reads.store',
         'Tender reader' => 'tender-reads.show',
-        'RA bill pre-check' => 'bill-checks.store',
+        'RA bill pre-check' => 'bill-checks.run',
         'Rate helper' => 'rate-suggestions.store',
-        'Hindrance register and letters' => 'hindrances.index',
+        'Hindrance register and letters' => 'site-diary.hindrances.index',
         'Home-owner pack' => 'owner-updates.index',
         'Voice DPR' => AiOffer::VOICE_ROUTE,
     ];
+
+    private const OWNER_PACK_LANGUAGES = 'A quotation, a stage-payment schedule and a weekly update in Marathi, Hindi or English, with the figures taken from your approved records.';
+
+    private const OWNER_PACK_NO_LANGUAGES = 'A quotation, a stage-payment schedule and a weekly update for the home owner, with the figures taken from your approved records.';
 
     private const LIVE_INTRO = 'These work on the records already in your account. What the AI prepares is saved as a draft and marked as one. Nothing is approved, posted to stock, billed or sent outside your company until a person confirms it.';
 
@@ -195,7 +200,7 @@ class AiPagesTest extends TestCase
         $this->connect();
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $this->deploy(AiOffer::VOICE_ROUTE, ...self::WEB_ROUTES);
+        $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
 
         $visit('with everything deployed and released');
     }
@@ -223,7 +228,7 @@ class AiPagesTest extends TestCase
         // Even with every later module in place and the release switch set, no key means nothing can run.
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $this->deploy(AiOffer::VOICE_ROUTE, ...self::WEB_ROUTES);
+        $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
         config(['modules.boq_scan.read_kinds' => ['boq' => 'BoqKind']]);
 
         $offer = app(AiOffer::class);
@@ -285,14 +290,14 @@ class AiPagesTest extends TestCase
         $this->connect();
         $this->release();
 
-        $this->assertEqualsCanonicalizing([...self::WEB_ROUTES, AiOffer::VOICE_ROUTE], array_values(self::CARD_ROUTES), 'Every card is listed with the route it waits for.');
+        $this->assertEqualsCanonicalizing([...self::BUILT_ROUTES, ...self::NOT_BUILT_ROUTES, AiOffer::VOICE_ROUTE], array_values(self::CARD_ROUTES), 'Every card is listed with the route it waits for.');
         $this->assertEqualsCanonicalizing([...self::CODE_ONLY, ...self::NEEDS_MODEL, 'Voice DPR'], array_keys(self::CARD_ROUTES));
 
         // Before anything is stood in for, the page shows the modules that have really landed, and no other.
         $waiting = $this->notLanded(['RA bill pre-check', 'Rate helper', 'Home-owner pack', 'Challan and bill photo', 'Tender reader', 'Voice DPR']);
         $this->assertOnlyLandedCards($this->get('/ai')->assertOk(), [...self::CODE_ONLY, ...self::NEEDS_MODEL]);
 
-        $this->deploy('hindrances.index', 'boq-scans.create');
+        $this->deploy('boq-scans.create');
 
         $page = $this->get('/ai')->assertOk()
             ->assertSee('Readers and helpers')
@@ -312,7 +317,7 @@ class AiPagesTest extends TestCase
 
     public function test_a_card_that_needs_the_model_waits_for_the_release_switch(): void
     {
-        $this->deploy(...self::WEB_ROUTES);
+        $this->deploy(...self::NOT_BUILT_ROUTES);
         $this->connect();
 
         $sees = function (array $shown, array $hidden) {
@@ -345,6 +350,87 @@ class AiPagesTest extends TestCase
         $sees(self::CODE_ONLY, self::NEEDS_MODEL);
 
         Http::assertNothingSent();
+    }
+
+    /**
+     * Each helper that is built shows its card by the real name of the route its module registers, with no
+     * stand-in, key or release needed: it works from the company's own records. The readers and voice are
+     * not built, so no route of theirs exists and their cards stay hidden whatever is switched on.
+     */
+    public function test_every_built_helper_shows_its_card_by_the_real_name_of_its_route_and_nothing_unbuilt_does(): void
+    {
+        foreach (self::BUILT_ROUTES as $route) {
+            $this->assertTrue(Route::has($route), "{$route} is registered by its module.");
+        }
+
+        foreach ([...self::NOT_BUILT_ROUTES, AiOffer::VOICE_ROUTE] as $route) {
+            $this->assertFalse(Route::has($route), "{$route} belongs to a reader that is not built yet.");
+        }
+
+        // The names the design first gave two of them are not the ones their modules use, and nothing waits for those.
+        $this->assertFalse(Route::has('bill-checks.store'));
+        $this->assertFalse(Route::has('hindrances.index'));
+
+        $assertCards = function (string $state) {
+            $page = $this->get('/ai')->assertOk()->assertSee('Readers and helpers');
+
+            foreach (self::CODE_ONLY as $card) {
+                $page->assertSee($card);
+            }
+
+            foreach ([...self::NEEDS_MODEL, 'Voice DPR'] as $card) {
+                $page->assertDontSee($card);
+            }
+
+            $this->assertSame(self::CODE_ONLY, array_column(app(AiOffer::class)->cards(), 1), $state);
+        };
+
+        $assertCards('with no key');
+
+        $this->connect();
+        $assertCards('connected');
+
+        $this->release();
+        $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
+        $assertCards('connected, released and voice accepted');
+
+        $this->get('/ai')->assertOk()
+            ->assertSee('Re-adds the bill, compares it with earlier bills, the BOQ and approved measurements')
+            ->assertSee('Suggests rates from your own rate library and past work')
+            ->assertSee('Keeps a dated register from your daily reports')
+            ->assertSee(self::OWNER_PACK_LANGUAGES);
+
+        Http::assertNothingSent();
+    }
+
+    /**
+     * The home-owner pack's card names Marathi, Hindi and English only while a quotation and an update can be
+     * prepared in each. On the live site Hindi and Marathi wait for a native reader's review, so until both are
+     * listed as reviewed the card names no language.
+     */
+    public function test_the_home_owner_pack_card_names_a_language_only_once_its_documents_can_be_written_in_it(): void
+    {
+        // Anywhere but the live site every language is offered, so that the wording can be read.
+        $this->get('/ai')->assertOk()->assertSee(self::OWNER_PACK_LANGUAGES)->assertDontSee(self::OWNER_PACK_NO_LANGUAGES);
+
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->assertSame([], config('wording.reviewed_languages.owner_pack'), 'No language is marked reviewed by default.');
+        $this->get('/ai')->assertOk()->assertSee(self::OWNER_PACK_NO_LANGUAGES)->assertDontSee(self::OWNER_PACK_LANGUAGES)->assertDontSee('Marathi, Hindi or English, with the figures');
+
+        config(['wording.reviewed_languages.owner_pack' => ['mr']]);
+        $this->get('/ai')->assertOk()->assertSee(self::OWNER_PACK_NO_LANGUAGES);
+
+        // Letters being reviewed says nothing about the owner pack's documents.
+        config(['wording.reviewed_languages.site_letters' => ['hi', 'mr']]);
+        $this->get('/ai')->assertOk()->assertSee(self::OWNER_PACK_NO_LANGUAGES);
+
+        config(['wording.reviewed_languages.owner_pack' => ['mr', 'hi']]);
+        $this->get('/ai')->assertOk()->assertSee(self::OWNER_PACK_LANGUAGES);
+
+        // In Marathi too.
+        config(['wording.reviewed_languages.owner_pack' => []]);
+        $this->asNewVisitor();
+        $this->get('/mr/ai')->assertOk()->assertSee(__(self::OWNER_PACK_NO_LANGUAGES, [], 'mr'))->assertDontSee(__(self::OWNER_PACK_LANGUAGES, [], 'mr'));
     }
 
     public function test_the_voice_card_also_waits_for_the_acceptance_test_on_real_phones(): void
@@ -423,7 +509,7 @@ class AiPagesTest extends TestCase
         $this->connect();
         $this->release();
         $this->settings([AiOffer::VOICE_ACCEPTED => '1']);
-        $this->deploy(AiOffer::VOICE_ROUTE, ...self::WEB_ROUTES);
+        $this->deploy(AiOffer::VOICE_ROUTE, ...self::NOT_BUILT_ROUTES);
 
         $texts = [...$offer->everyLine(), 'Agents', 'Readers and helpers'];
 

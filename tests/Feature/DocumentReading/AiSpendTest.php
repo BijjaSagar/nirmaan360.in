@@ -366,8 +366,10 @@ class AiSpendTest extends ReadingTestCase
         $this->assertSame(['AI क्रेडिट कम बचे हैं'], $this->noticesOf($hindi));
 
         $body = json_decode(DB::table('notifications')->where('notifiable_id', $hindi->id)->value('data'), true);
-        $this->assertSame('100 से कम AI क्रेडिट इस्तेमाल के लिए बचे हैं। रीडर और एजेंट चलते रहें, इसके लिए क्रेडिट खरीदें।', $body['body']);
-        $this->assertSame(route('agent-credits.index'), $body['url']);
+        $this->assertSame('100 से कम AI क्रेडिट इस्तेमाल के लिए बचे हैं। जब कोई नहीं बचेगा, तो और क्रेडिट जुड़ने तक AI का काम रुका रहेगा।', $body['body']);
+        // A phone shows it as a push, so it neither says buy nor links to the page that sells credits (App Store guideline 3.1.1).
+        $this->assertNull($body['url'] ?? null);
+        $this->assertStringNotContainsString('खरीद', $body['body']);
 
         $this->travel(1)->days();
         $this->spend()->afterSpend($this->organization, 'boq', '12');

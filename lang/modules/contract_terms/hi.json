@@ -49,7 +49,6 @@
     "Counted from: :start": "गिनती यहाँ से: :start",
     "Group :group: :choice": "समूह :group: :choice",
     "From :from": ":from से",
-    ":from to :to": ":from से :to तक",
     "Term saved. It counts once someone confirms it against the agreement.": "शर्त सेव हो गई। जब कोई इसे अनुबंध से मिलाकर पुष्टि करेगा, तभी यह गिनी जाएगी।",
     "Term changed. Its confirmation was removed, so confirm it against the agreement again.": "शर्त बदल दी गई। इसकी पुष्टि हट गई है, इसलिए इसे अनुबंध से मिलाकर फिर पुष्टि करें।",
     "Term saved.": "शर्त सेव हो गई।",

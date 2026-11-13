@@ -11,7 +11,8 @@
         $canApprove = $user->can('owner_pack.manage') && $user->can('money.view');
         $seesPhotos = $user->can('dpr.view');
         $date = fn ($day) => FactFormat::display(Fact::DATE, $day->toDateString(), app()->getLocale());
-        $languages = array_intersect_key(config('buildos.locales'), array_flip(\App\Models\OwnerUpdate::LANGUAGES));
+        // Only the languages offered for documents a client reads; the draft keeps the one it has.
+        $languages = array_intersect_key(config('buildos.locales'), array_flip(\App\Services\Wording\ReviewedLanguages::allowed(\App\Services\Wording\ReviewedLanguages::OWNER_PACK, \App\Models\OwnerUpdate::LANGUAGES, $update->language)));
         $picked = array_map('intval', (array) old('photo_ids', $update->photoIds()));
         // Ticks come back after a refusal, except when the figures themselves changed: then each one is checked afresh.
         $ticked = $errors->has('facts') ? [] : array_filter((array) old('number_ticks', []), 'is_string');

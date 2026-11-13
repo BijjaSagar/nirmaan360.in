@@ -92,7 +92,7 @@ class ReadingTranslationsTest extends TestCase
 
         foreach ([
             'AI agents and readers can be wrong.',
-            'for the AI agents and readers, only when your company uses them.',
+            'The AI agents on the website and the AI readers use an AI model provider, Anthropic',
             'When you use an AI agent or reader, what it needs',
             'We do not use your records to train AI models.',
             'Pages, photos and document text sent to an AI reader',
@@ -103,7 +103,7 @@ class ReadingTranslationsTest extends TestCase
 
         foreach ([
             'AI agents can be wrong.',
-            'for the AI agents, only when your company uses them.',
+            'The AI agents on the website use an AI model provider, Anthropic',
             'When you use an AI agent, what it needs',
         ] as $part) {
             $this->assertSame([], array_values(array_filter($texts, fn (string $text) => str_contains($text, $part))), "Shown before a reader is offered, so it stays English: {$part}");
@@ -111,6 +111,25 @@ class ReadingTranslationsTest extends TestCase
             foreach (['hi', 'mr'] as $locale) {
                 $this->assertSame([], array_values(array_filter(array_keys($this->lines($locale)), fn (string $text) => str_contains($text, $part))), "No {$locale} line waits unused for: {$part}");
             }
+        }
+    }
+
+    /**
+     * The reader's refusals, status sentences and notices reach the field app (its API, the bell and push),
+     * and the app may not send anyone to pay outside it (App Store guideline 3.1.1; see App\Support\PlanWording).
+     * So nothing the module says tells a person to buy, upgrade or renew, in any language.
+     */
+    public function test_nothing_the_module_says_tells_a_person_to_buy_or_upgrade(): void
+    {
+        $said = [...$this->usedTexts(), ...array_values($this->lines('hi')), ...array_values($this->lines('mr'))];
+
+        foreach ($said as $text) {
+            $this->assertDoesNotMatchRegularExpression('/\b(buy|upgrade|renew|purchase)\b|अपग्रेड|ख़रीद|खरीद|खरेदी/iu', $text, $text);
+        }
+
+        // The plan refusals use the app's wording, which picks its words by the request.
+        foreach ([app_path('Http/Middleware/RequireAiReader.php'), app_path('Services/DocumentReading/ReadAccess.php'), app_path('Services/DocumentReading/TextCalls.php')] as $file) {
+            $this->assertStringContainsString('PlanWording::moduleNotIncluded()', (string) file_get_contents($file), basename($file));
         }
     }
 

@@ -576,8 +576,8 @@ class SharedUpdateTest extends TestCase
         $this->get($this->pictures($page)[0])->assertOk();
     }
 
-    /** As for a shared quotation: the two gates that run for every signed-in request turn these visitors round before the page. */
-    public function test_a_portal_login_and_an_offline_plan_member_are_turned_round_by_the_existing_gates_and_shown_nothing(): void
+    /** As for a shared quotation: the gate that runs for every signed-in request turns a portal login round before the page. */
+    public function test_a_portal_login_is_turned_round_by_the_existing_gate_and_shown_nothing(): void
     {
         [$update, $url, $photos] = $this->sharedWeek();
         $photoUrl = $this->shares()->photoUrl($update, $photos[0]->id);
@@ -587,10 +587,6 @@ class SharedUpdateTest extends TestCase
             $portal = $this->actingAs($this->member($elsewhere, 'contractor'))->get($address);
             $portal->assertRedirect(route('contractor-portal.home'));
             $this->assertNothingOfOurs($portal);
-
-            $offline = $this->actingAs($this->member($this->tenant('Pocket Site '.Str::random(4), 'offline'), 'owner'))->get($address);
-            $offline->assertRedirect(route('offline.devices.index'));
-            $this->assertNothingOfOurs($offline);
         }
 
         $this->signOut();

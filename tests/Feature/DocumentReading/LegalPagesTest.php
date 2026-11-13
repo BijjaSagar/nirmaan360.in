@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\DocumentReading;
 
+use App\Services\DocumentReading\AiDocumentConsent;
 use App\Services\DocumentReading\ReaderSettings;
 use App\Services\Notify\CompanyDeletionService;
 use App\Services\Website\AiOffer;
@@ -19,13 +20,36 @@ use Tests\Feature\Website\BannedWording;
 class LegalPagesTest extends ReadingTestCase
 {
     private const READER_SENTENCES = [
-        'for the AI agents and readers, only when your company uses them',
+        'The AI agents on the website and the AI readers use an AI model provider, Anthropic',
         'When you use an AI agent or reader, what it needs is processed',
         'Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.',
         'Pages, photos and document text sent to an AI reader, and what the reader read from them, are part of the company\'s records.',
     ];
 
     private const VOICE_SENTENCE = 'The text of voice notes you spoke into the app is deleted with your account, and with the company when it is erased.';
+
+    /**
+     * What the provider says about training on what it receives, as its model-training page says it
+     * (privacy.claude.com, "Is my data used for model training?", read 13 Nov 2026): by default it does not.
+     */
+    private const USE = 'We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that, by default, it does not use what it receives through its commercial service to train its models.';
+
+    /**
+     * How long the provider keeps what it receives, as its commercial retention page says it for the API
+     * (privacy.claude.com, "How long do you store my organization's data?", read 13 Nov 2026): deleted
+     * within 30 days, except in the cases it lists, among them keeping it longer to enforce its usage
+     * policy and as the law requires.
+     */
+    private const RETENTION = 'The provider states that it deletes what it receives through its API within 30 days, except in the cases its policy lists, such as when it needs to keep something longer to enforce its usage policy or the law requires it.';
+
+    /** The paragraph as the live site has said it since the agents were named, kept word for word until a reader is offered. */
+    private const WHO_AGENTS = 'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website use an AI model provider, Anthropic: when a company uses the agents, what is asked of them and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that does not use the agents.';
+
+    private const WHO_READERS = 'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website and the AI readers use an AI model provider, Anthropic: when a company uses them, what is asked of them, the pages, photos and text sent to a reader, and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that uses neither.';
+
+    private const WHERE_AGENTS = 'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider\'s servers outside India. '.self::RETENTION;
+
+    private const WHERE_READERS = 'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent or reader, what it needs is processed on the provider\'s servers outside India. '.self::RETENTION.' Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.';
 
     protected function setUp(): void
     {
@@ -67,9 +91,10 @@ class LegalPagesTest extends ReadingTestCase
 
         $text = $this->text('/privacy');
 
-        $this->assertStringContainsString('We do not sell your data. We do not use your records to train AI models. The AI provider states that it does not use what it receives through this service to train its models.', $text);
-        $this->assertStringContainsString('phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents, only when your company uses them. They handle data only so that we can run the service.', $text);
-        $this->assertStringContainsString('When you use an AI agent, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer.', $text);
+        $this->assertStringContainsString(self::USE, $text);
+        // The live site's own paragraph about who sees the records, word for word.
+        $this->assertStringContainsString(self::WHO_AGENTS, $text);
+        $this->assertStringContainsString(self::WHERE_AGENTS, $text);
 
         // The old sentence offered an opt-in that never existed.
         $this->assertStringNotContainsString('unless you opt in', $text);
@@ -109,7 +134,78 @@ class LegalPagesTest extends ReadingTestCase
         $this->assertStringNotContainsString(self::VOICE_SENTENCE, $text);
         // What was said without a reader is still said.
         $this->assertStringContainsString('We do not use your records to train AI models.', $text);
-        $this->assertStringContainsString('The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer.', $text);
+        $this->assertStringContainsString(self::RETENTION, $text);
+        $this->assertStringContainsString(self::USE, $text);
+    }
+
+    /**
+     * Every sentence about how long the provider keeps what it receives, and whether it trains on it, says
+     * what its own pages say (see RETENTION and USE), in each state of the page, in each language, and in
+     * the notice a company agrees to. The older line named only flagged content as kept longer, and said
+     * nothing of the law or of the other cases the provider lists, so it is gone everywhere.
+     */
+    public function test_what_the_provider_keeps_and_trains_on_is_said_as_its_own_pages_say_it(): void
+    {
+        $older = ['safety systems flag', 'deletes this within 30 days', 'through this service to train', 'through this service within 30 days'];
+
+        $before = $this->text('/privacy');
+        $this->assertSame(1, substr_count($before, self::RETENTION));
+        $this->assertSame(1, substr_count($before, 'by default, it does not use what it receives through its commercial service to train its models.'));
+
+        $this->release();
+        $this->deployReader();
+
+        foreach (['en', 'hi', 'mr'] as $locale) {
+            $this->withSession(['locale' => $locale]);
+            $page = $this->article('/privacy');
+            $where = __(self::WHERE_READERS, [], $locale);
+            $use = __(self::USE, [], $locale);
+
+            $this->assertStringContainsString($where, $page, $locale);
+            $this->assertStringContainsString($use, $page, $locale);
+            $this->assertStringContainsString('30', $where, $locale);
+
+            foreach ($older as $phrase) {
+                $this->assertStringNotContainsString($phrase, $page, $locale);
+            }
+        }
+
+        // The Hindi and Marathi lines name the same cases: the provider's own policy, its usage policy, the law, and "by default" for training.
+        $named = [
+            'hi' => ['उसकी नीति', 'उपयोग नीति', 'कानून', 'डिफ़ॉल्ट रूप से'],
+            'mr' => ['त्यांच्या धोरणात', 'वापर धोरण', 'कायद्याने', 'डिफॉल्टनुसार'],
+        ];
+        $consent = 'Anthropic states that it deletes what it receives through its API within 30 days, except in the cases its policy lists, such as when it needs to keep something longer to enforce its usage policy or the law requires it, and that by default it does not use it to train its models.';
+
+        $this->assertContains($consent, AiDocumentConsent::sentences('en'));
+
+        foreach ($named as $locale => $words) {
+            $lines = [__(self::WHERE_READERS, [], $locale), __($consent, [], $locale)];
+
+            foreach ($lines as $line) {
+                $this->assertStringContainsString('30', $line, $locale);
+
+                foreach (array_slice($words, 0, 3) as $word) {
+                    $this->assertStringContainsString($word, $line, "{$locale}: {$line}");
+                }
+            }
+
+            $this->assertStringContainsString($words[3], __(self::USE, [], $locale));
+            $this->assertStringContainsString($words[3], __($consent, [], $locale));
+            $this->assertContains(__($consent, [], $locale), AiDocumentConsent::sentences($locale));
+
+            // No line of the module still says the older thing in any language.
+            $file = (string) file_get_contents(lang_path("modules/document_reading/{$locale}.json"));
+
+            foreach ($older as $phrase) {
+                $this->assertStringNotContainsString($phrase, $file, $locale);
+            }
+
+            $this->assertStringNotContainsString('सुरक्षा प्रणाली', $file, $locale);
+        }
+
+        // A new wording of the notice is a new version, so no company stays agreed to the older one.
+        $this->assertSame('ai-docs-v2', AiDocumentConsent::VERSION);
     }
 
     public function test_voice_notes_are_named_only_once_they_are_offered(): void
@@ -174,7 +270,9 @@ class LegalPagesTest extends ReadingTestCase
         $this->get('/terms')->assertOk()
             ->assertSee($page, false)
             ->assertSee('You can delete your account, or your company if you are its only owner, yourself in the app or on the website')
-            ->assertSee('An owner can export the company\'s data first under Account, Company data, on every plan except the offline plan.', false);
+            // There is no offline plan any more, so every owner can export.
+            ->assertSee('An owner can export the company\'s data first under Account, Company data.', false)
+            ->assertDontSee('offline plan');
     }
 
     public function test_neither_page_says_what_must_not_be_said_in_any_state(): void
@@ -209,9 +307,9 @@ class LegalPagesTest extends ReadingTestCase
     {
         $agents = [
             'privacy' => [
-                'We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that it does not use what it receives through this service to train its models.',
-                'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents, only when your company uses them. They handle data only so that we can run the service.',
-                'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer.',
+                self::USE,
+                self::WHO_AGENTS,
+                self::WHERE_AGENTS,
             ],
             'terms' => ['AI agents can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.'],
         ];
@@ -242,9 +340,9 @@ class LegalPagesTest extends ReadingTestCase
     {
         $readers = [
             'privacy' => [
-                'We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models. The AI provider states that it does not use what it receives through this service to train its models.',
-                'Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and an AI model provider (Anthropic) for the AI agents and readers, only when your company uses them. They handle data only so that we can run the service.',
-                'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent or reader, what it needs is processed on the provider\'s servers outside India. The provider states that it deletes this within 30 days, except content its safety systems flag, which can be kept longer. Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.',
+                self::USE,
+                self::WHO_READERS,
+                self::WHERE_READERS,
                 'Pages, photos and document text sent to an AI reader, and what the reader read from them, are part of the company\'s records. They stay with the company when one person\'s account is deleted, and are erased with the company.',
             ],
             'terms' => ['AI agents and readers can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.'],

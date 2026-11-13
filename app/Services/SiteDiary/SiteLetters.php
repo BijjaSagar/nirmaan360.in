@@ -17,6 +17,7 @@ use App\Services\Wording\FinalCheck;
 use App\Services\Wording\GuardViolation;
 use App\Services\Wording\Rendered;
 use App\Services\Wording\Renderer;
+use App\Services\Wording\ReviewedLanguages;
 use App\Services\Wording\SlotText;
 use App\Services\Wording\TypedNumber;
 use App\Support\ClientUuidRepeat;
@@ -87,21 +88,14 @@ class SiteLetters
 
     /**
      * The languages a letter may be prepared in. The fixed sentences of a Hindi or Marathi letter wait for a
-     * native reader's review, so on the live site only English and the languages config lists as reviewed are
-     * offered. Everywhere else every language is, so that the wording can be read before it is released.
-     * A draft keeps the language it was prepared in.
+     * native reader's review, by the rule every document for a client or another party follows: see
+     * ReviewedLanguages. A draft keeps the language it was prepared in.
      *
      * @return list<string>
      */
     public function languages(): array
     {
-        if (! app()->isProduction()) {
-            return FactFormat::LOCALES;
-        }
-
-        $reviewed = (array) config('modules.site_diary.letter_languages_reviewed', []);
-
-        return array_values(array_filter(FactFormat::LOCALES, fn (string $code) => $code === 'en' || in_array($code, $reviewed, true)));
+        return ReviewedLanguages::offered(ReviewedLanguages::SITE_LETTERS, FactFormat::LOCALES);
     }
 
     /** Whether this person may read a letter of this kind: a payment follow-up is nothing but money. */

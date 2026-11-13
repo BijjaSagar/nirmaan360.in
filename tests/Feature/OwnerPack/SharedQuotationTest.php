@@ -355,12 +355,12 @@ class SharedQuotationTest extends TestCase
     }
 
     /**
-     * The link is for people with no account. Two kinds of signed-in visitor never reach the page,
-     * because gates that run for every signed-in request turn them round first: a subcontractor's
-     * portal login, and a member of a company on the offline plan. They are sent to their own start
-     * page and shown nothing. Signed out, the same link opens for them.
+     * The link is for people with no account. A subcontractor's portal login never reaches the page,
+     * because the gate that runs for every signed-in request turns it round first: it is sent to its
+     * own start page and shown nothing. Signed out, the same link opens for it. (There is no offline
+     * plan any more, so its gate is gone: a member of a company left on it is on the free plan.)
      */
-    public function test_a_portal_login_and_an_offline_plan_member_are_turned_round_by_the_existing_gates_and_shown_nothing(): void
+    public function test_a_portal_login_is_turned_round_by_the_existing_gate_and_shown_nothing(): void
     {
         [, $url] = $this->shared();
         $elsewhere = $this->tenant('Konkan Builders', 'business');
@@ -368,10 +368,6 @@ class SharedQuotationTest extends TestCase
         $portal = $this->actingAs($this->member($elsewhere, 'contractor'))->get($url);
         $portal->assertRedirect(route('contractor-portal.home'));
         $this->assertNothingOfOurs($portal);
-
-        $offline = $this->actingAs($this->member($this->tenant('Pocket Site', 'offline'), 'owner'))->get($url);
-        $offline->assertRedirect(route('offline.devices.index'));
-        $this->assertNothingOfOurs($offline);
 
         $this->signOut();
         $this->get($url)->assertOk()->assertSee('Anil Deshmukh');

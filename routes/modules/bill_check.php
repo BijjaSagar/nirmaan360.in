@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Route;
 // RA bill pre-check. This file is included inside the signed-in, active-user group of routes/web.php.
 // It rides on the billing plan feature and on the bill's own permissions, so it adds none.
 
-// The first route is named bill-checks.run, not bill-checks.store: the website's AI page shows its
-// "RA bill pre-check" card as soon as a route called bill-checks.store exists (App\Services\Website\AiOffer).
+// The website's AI page shows its "RA bill pre-check" card while the route named bill-checks.run exists
+// (App\Services\Website\AiOffer). Renaming it hides the card.
 
 Route::middleware('feature:billing')->name('bill-checks.')->group(function () {
     Route::post('/ra-bills/{bill}/check', [BillCheckController::class, 'store'])->middleware('can:ra_bill.generate')->name('run');

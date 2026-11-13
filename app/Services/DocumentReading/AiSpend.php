@@ -281,8 +281,9 @@ class AiSpend
                 $this->tellOwners($organization, fn (string $locale) => new NotificationMessage(
                     event: 'ai.low_credits',
                     title: __('AI credits are running low', [], $locale),
-                    body: __('Fewer than :credits AI credits are free to use. Buy credits to keep the readers and agents working.', ['credits' => Dec::indian($low, 0)], $locale),
-                    url: Route::has('agent-credits.index') ? route('agent-credits.index') : null,
+                    // A phone shows this as a push, so it never says buy and carries no link to the page that sells
+                    // credits (App Store guideline 3.1.1; see PlanWording). It names no reader before one is offered.
+                    body: __('Fewer than :credits AI credits are free to use. When none are left, AI work stops until more credits are added.', ['credits' => Dec::indian($low, 0)], $locale),
                 ));
             }
         });

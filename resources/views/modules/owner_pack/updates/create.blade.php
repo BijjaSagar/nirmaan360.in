@@ -1,7 +1,8 @@
 @extends('layouts.app')
 @section('title', __('Prepare update'))
 @section('content')
-    @php $languages = array_intersect_key(config('buildos.locales'), array_flip(\App\Models\OwnerUpdate::LANGUAGES)); @endphp
+    {{-- Only the languages offered for documents a client reads. --}}
+    @php $languages = array_intersect_key(config('buildos.locales'), array_flip(\App\Services\Wording\ReviewedLanguages::offered(\App\Services\Wording\ReviewedLanguages::OWNER_PACK, \App\Models\OwnerUpdate::LANGUAGES))); @endphp
 
     <x-page-header :title="__('Prepare update')" :subtitle="$project->name" />
 

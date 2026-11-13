@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\DocumentReading\Contracts\ReadKind;
 use App\Services\Notify\Audience;
+use App\Support\PlanWording;
 
 /** Who may work with a read. Usable on the queue, where nobody is signed in. */
 final class ReadAccess
@@ -58,7 +59,8 @@ final class ReadAccess
         abort_unless(
             ! is_string($feature) || (bool) Organization::find($read->organization_id)?->allowsFeature($feature),
             403,
-            __('Your plan does not include this module. Upgrade to continue.')
+            // The phone and any JSON request are never told to upgrade: see PlanWording.
+            PlanWording::moduleNotIncluded()
         );
 
         return $kind;
