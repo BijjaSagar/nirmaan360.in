@@ -10,7 +10,7 @@ import '../data/approval_repository.dart';
 enum InboxFailure { offline, session, server }
 
 /// What the detail screen did, so the inbox can show the item leaving.
-enum ApprovalAction { approved, sentBack }
+enum ApprovalAction { approved, sentBack, rejected }
 
 class ApprovalOutcome {
   const ApprovalOutcome(this.approvalId, this.action);

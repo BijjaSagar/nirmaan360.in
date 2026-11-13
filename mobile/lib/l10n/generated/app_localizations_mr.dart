@@ -352,6 +352,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsDocBillNote => 'क्रेडिट / डेबिट नोट';
 
   @override
+  String get approvalsDocContractorPayment => 'ठेकेदाराचे पेमेंट';
+
+  @override
   String get approvalsDocDpr => 'दैनिक अहवाल';
 
   @override
@@ -504,6 +507,60 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsParty => 'पक्षकार';
 
   @override
+  String approvalsPayAhead(String gap) {
+    return 'मंजूर केल्यास पेमेंट झालेल्या कामापेक्षा $gap अंकांनी पुढे जाईल.';
+  }
+
+  @override
+  String get approvalsPayContractor => 'ठेकेदार';
+
+  @override
+  String get approvalsPayInStep =>
+      'मंजूर केले तरी पेमेंट झालेल्या कामाच्या आत राहते.';
+
+  @override
+  String approvalsPayOverLimit(String limit) {
+    return 'हे या प्रकल्पाच्या $limit अंकांच्या मर्यादेपलीकडे आहे.';
+  }
+
+  @override
+  String get approvalsPayOverrideApprove => 'विशेष मंजुरीने मंजूर करा';
+
+  @override
+  String get approvalsPayOverrideOwnerTitle => 'तुमची लेखी विशेष मंजुरी लागेल';
+
+  @override
+  String get approvalsPayOverrideReasonHelp =>
+      'किमान एक पूर्ण वाक्य लिहा. ते पेमेंटसोबत आणि ऑडिट नोंदीत ठेवले जाते.';
+
+  @override
+  String get approvalsPayOverrideReasonLabel => 'मालकाचे कारण';
+
+  @override
+  String get approvalsPayOverrideReasonTitle =>
+      'हे पेमेंट झालेल्या कामापेक्षा पुढे का जाऊ शकते?';
+
+  @override
+  String get approvalsPayOverrideShort => 'किमान 4 शब्द आणि 20 अक्षरे.';
+
+  @override
+  String get approvalsPayOverrideTitle => 'हे फक्त मालकच मंजूर करू शकतात';
+
+  @override
+  String get approvalsPayPaidAfter => 'मंजूर केल्यास दिलेले';
+
+  @override
+  String get approvalsPayPaidNow => 'आतापर्यंत दिले';
+
+  @override
+  String approvalsPayRatio(String paid, String work) {
+    return 'दिले $paid, काम $work';
+  }
+
+  @override
+  String get approvalsPayWorkVsPaid => 'काम विरुद्ध दिलेले पैसे';
+
+  @override
   String get approvalsPeriod => 'कालावधी';
 
   @override
@@ -513,10 +570,16 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsReasonAmounts => 'रकमा जुळत नाहीत';
 
   @override
+  String get approvalsReasonBillMissing => 'बिल किंवा पावती नाही';
+
+  @override
   String get approvalsReasonDeductions => 'वजावटी तपासा';
 
   @override
   String get approvalsReasonDimensions => 'मापे तपासा';
+
+  @override
+  String get approvalsReasonDuplicate => 'आधीच दिले आहे, किंवा दोनदा मागितले';
 
   @override
   String get approvalsReasonLocation => 'ठिकाण स्पष्ट लिहा';
@@ -526,6 +589,10 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsReasonNote => 'कारण स्पष्ट नाही';
+
+  @override
+  String get approvalsReasonPaymentAhead =>
+      'पेमेंट झालेल्या कामापेक्षा पुढे आहे';
 
   @override
   String get approvalsReasonPeriod => 'बिलाचा कालावधी चुकला आहे';
@@ -540,6 +607,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsReasonWorkDetail => 'कामाचा अधिक तपशील लिहा';
 
   @override
+  String get approvalsReasonWorkNotDone => 'यासाठीचे काम अजून झालेले नाही';
+
+  @override
   String get approvalsReasonWrongItem => 'BOQ ओळ चुकली आहे';
 
   @override
@@ -547,6 +617,22 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsRefreshing => 'ताजे करत आहे';
+
+  @override
+  String get approvalsReject => 'नाकारा';
+
+  @override
+  String get approvalsRejectHelp =>
+      'नाकारलेला दस्तऐवज कायमचा बंद होतो. तो दुरुस्त करून पुन्हा पाठवता येत नाही. एक कारण निवडा किंवा स्वतः लिहा.';
+
+  @override
+  String get approvalsRejectHint => 'का नाकारले';
+
+  @override
+  String get approvalsRejectTitle => 'का नाकारत आहात?';
+
+  @override
+  String get approvalsRejectedToast => 'तुमच्या शेऱ्यासह नाकारले.';
 
   @override
   String get approvalsRemarkHint => 'काय दुरुस्त करायचे';

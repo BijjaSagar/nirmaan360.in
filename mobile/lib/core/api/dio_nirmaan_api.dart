@@ -288,11 +288,18 @@ class DioNirmaanApi implements NirmaanApi {
     required String action,
     required String clientUuid,
     String? remark,
+    String? overrideReason,
   }) async {
     final body = await _call(
       () => _dio.post(
         '/approvals/$approvalId/act',
-        data: {'action': action, 'remark': remark, 'client_uuid': clientUuid},
+        data: {
+          'action': action,
+          'remark': remark,
+          'client_uuid': clientUuid,
+          // Only on the owner's approval of a contractor payment ahead of the work done.
+          'override_reason': ?overrideReason,
+        },
       ),
     );
     return (body['data'] as Map).cast<String, dynamic>();

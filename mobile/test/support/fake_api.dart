@@ -293,6 +293,9 @@ class FakeApi implements NirmaanApi {
   final List<Row> uploads = [];
   final List<Row> approvalInbox = [];
   final Map<String, Row> _approvalActs = {};
+
+  /// Every decision the server applied, in order: id, action, remark, override_reason.
+  final List<Map<String, Object?>> approvalActLog = [];
   final Map<String, Row> _workersByUuid = {};
 
   /// Every `push` body received, in order, for assertions.
@@ -1356,10 +1359,12 @@ class FakeApi implements NirmaanApi {
     required String action,
     required String clientUuid,
     String? remark,
+    String? overrideReason,
   }) async {
     _guard();
     final previous = _approvalActs[clientUuid];
     if (previous != null) return previous;
+    approvalActLog.add({'id': approvalId, 'action': action, 'remark': remark, 'override_reason': overrideReason});
     final item = approvalInbox.firstWhere(
       (a) => a['id'] == approvalId,
       orElse: () => {'id': approvalId},

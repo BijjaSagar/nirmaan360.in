@@ -133,9 +133,16 @@ class _LoseFirstActResponse implements NirmaanApi {
     required String action,
     required String clientUuid,
     String? remark,
+    String? overrideReason,
   }) async {
     uuids.add(clientUuid);
-    final result = await _inner.actOnApproval(approvalId, action: action, clientUuid: clientUuid, remark: remark);
+    final result = await _inner.actOnApproval(
+      approvalId,
+      action: action,
+      clientUuid: clientUuid,
+      remark: remark,
+      overrideReason: overrideReason,
+    );
     if (uuids.length == 1) throw const OfflineFailure('Response lost');
     return result;
   }

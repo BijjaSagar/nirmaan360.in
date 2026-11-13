@@ -508,5 +508,148 @@
     "en": "Waiting on others",
     "mr": "इतरांकडे बाकी",
     "hi": "दूसरों के पास बाकी"
+  },
+  "approvalsDocContractorPayment": {
+    "en": "Contractor payment",
+    "mr": "ठेकेदाराचे पेमेंट",
+    "hi": "ठेकेदार भुगतान"
+  },
+  "approvalsReject": {
+    "en": "Reject",
+    "mr": "नाकारा",
+    "hi": "अस्वीकार करें"
+  },
+  "approvalsRejectTitle": {
+    "en": "Why reject it?",
+    "mr": "का नाकारत आहात?",
+    "hi": "अस्वीकार क्यों कर रहे हैं?"
+  },
+  "approvalsRejectHelp": {
+    "en": "A rejected document is closed for good. It cannot be corrected and sent again. Pick a reason or write your own.",
+    "mr": "नाकारलेला दस्तऐवज कायमचा बंद होतो. तो दुरुस्त करून पुन्हा पाठवता येत नाही. एक कारण निवडा किंवा स्वतः लिहा.",
+    "hi": "अस्वीकार किया गया दस्तावेज़ हमेशा के लिए बंद हो जाता है। उसे ठीक करके दोबारा नहीं भेजा जा सकता। एक कारण चुनें या खुद लिखें।"
+  },
+  "approvalsRejectHint": {
+    "en": "Why it is rejected",
+    "mr": "का नाकारले",
+    "hi": "क्यों अस्वीकार किया"
+  },
+  "approvalsRejectedToast": {
+    "en": "Rejected with your remark.",
+    "mr": "तुमच्या शेऱ्यासह नाकारले.",
+    "hi": "आपकी टिप्पणी के साथ अस्वीकार किया।"
+  },
+  "approvalsReasonWorkNotDone": {
+    "en": "The work for this is not done yet",
+    "mr": "यासाठीचे काम अजून झालेले नाही",
+    "hi": "इसका काम अभी पूरा नहीं हुआ"
+  },
+  "approvalsReasonPaymentAhead": {
+    "en": "Payment is ahead of the work done",
+    "mr": "पेमेंट झालेल्या कामापेक्षा पुढे आहे",
+    "hi": "भुगतान हुए काम से आगे है"
+  },
+  "approvalsReasonBillMissing": {
+    "en": "Bill or receipt is missing",
+    "mr": "बिल किंवा पावती नाही",
+    "hi": "बिल या रसीद नहीं है"
+  },
+  "approvalsReasonDuplicate": {
+    "en": "Already paid, or asked for twice",
+    "mr": "आधीच दिले आहे, किंवा दोनदा मागितले",
+    "hi": "पहले ही दिया जा चुका है, या दो बार माँगा गया"
+  },
+  "approvalsPayWorkVsPaid": {
+    "en": "Work against paid",
+    "mr": "काम विरुद्ध दिलेले पैसे",
+    "hi": "काम बनाम भुगतान"
+  },
+  "approvalsPayPaidNow": {
+    "en": "Paid so far",
+    "mr": "आतापर्यंत दिले",
+    "hi": "अब तक दिया"
+  },
+  "approvalsPayPaidAfter": {
+    "en": "Paid if approved",
+    "mr": "मंजूर केल्यास दिलेले",
+    "hi": "मंज़ूर करने पर भुगतान"
+  },
+  "approvalsPayRatio": {
+    "en": "Paid {paid}, work {work}",
+    "mr": "दिले {paid}, काम {work}",
+    "hi": "भुगतान {paid}, काम {work}",
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "work": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayAhead": {
+    "en": "Approving puts payment {gap} points ahead of the work done.",
+    "mr": "मंजूर केल्यास पेमेंट झालेल्या कामापेक्षा {gap} अंकांनी पुढे जाईल.",
+    "hi": "मंज़ूर करने पर भुगतान हुए काम से {gap} अंक आगे हो जाएगा।",
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayOverLimit": {
+    "en": "That is beyond this project's limit of {limit} points.",
+    "mr": "हे या प्रकल्पाच्या {limit} अंकांच्या मर्यादेपलीकडे आहे.",
+    "hi": "यह इस प्रोजेक्ट की {limit} अंक की सीमा से ज़्यादा है।",
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayInStep": {
+    "en": "Approving keeps payment within the work done.",
+    "mr": "मंजूर केले तरी पेमेंट झालेल्या कामाच्या आत राहते.",
+    "hi": "मंज़ूर करने पर भी भुगतान हुए काम के अंदर रहता है।"
+  },
+  "approvalsPayOverrideTitle": {
+    "en": "Only the owner can approve this",
+    "mr": "हे फक्त मालकच मंजूर करू शकतात",
+    "hi": "इसे सिर्फ़ मालिक मंज़ूर कर सकते हैं"
+  },
+  "approvalsPayOverrideOwnerTitle": {
+    "en": "Your written override is needed",
+    "mr": "तुमची लेखी विशेष मंजुरी लागेल",
+    "hi": "आपकी लिखित विशेष मंज़ूरी चाहिए"
+  },
+  "approvalsPayOverrideReasonTitle": {
+    "en": "Why may this payment go ahead of the work done?",
+    "mr": "हे पेमेंट झालेल्या कामापेक्षा पुढे का जाऊ शकते?",
+    "hi": "यह भुगतान हुए काम से आगे क्यों जा सकता है?"
+  },
+  "approvalsPayOverrideReasonHelp": {
+    "en": "Write at least one full sentence. It is kept with the payment and in the audit log.",
+    "mr": "किमान एक पूर्ण वाक्य लिहा. ते पेमेंटसोबत आणि ऑडिट नोंदीत ठेवले जाते.",
+    "hi": "कम से कम एक पूरा वाक्य लिखें। यह भुगतान के साथ और ऑडिट लॉग में रखा जाता है।"
+  },
+  "approvalsPayOverrideReasonLabel": {
+    "en": "Owner's reason",
+    "mr": "मालकाचे कारण",
+    "hi": "मालिक का कारण"
+  },
+  "approvalsPayOverrideShort": {
+    "en": "At least 4 words and 20 letters.",
+    "mr": "किमान 4 शब्द आणि 20 अक्षरे.",
+    "hi": "कम से कम 4 शब्द और 20 अक्षर।"
+  },
+  "approvalsPayOverrideApprove": {
+    "en": "Approve with override",
+    "mr": "विशेष मंजुरीने मंजूर करा",
+    "hi": "विशेष मंज़ूरी से मंज़ूर करें"
+  },
+  "approvalsPayContractor": {
+    "en": "Contractor",
+    "mr": "ठेकेदार",
+    "hi": "ठेकेदार"
   }
 }

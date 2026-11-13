@@ -214,6 +214,7 @@
   "approvalsDeviationBody": "Goes over the BOQ quantity plus tolerance. Project manager must approve.",
   "approvalsDocBill": "RA bill",
   "approvalsDocBillNote": "Credit or debit note",
+  "approvalsDocContractorPayment": "Contractor payment",
   "approvalsDocDpr": "Daily report",
   "approvalsDocIndent": "Indent",
   "approvalsDocMeasurement": "Measurement",
@@ -271,21 +272,69 @@
   "approvalsOpen": "Open",
   "approvalsOpenOnWeb": "This document cannot be shown on the phone yet. Please review and approve it on the website.",
   "approvalsParty": "Party",
+  "approvalsPayAhead": "Approving puts payment {gap} points ahead of the work done.",
+  "@approvalsPayAhead": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayContractor": "Contractor",
+  "approvalsPayInStep": "Approving keeps payment within the work done.",
+  "approvalsPayOverLimit": "That is beyond this project's limit of {limit} points.",
+  "@approvalsPayOverLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayOverrideApprove": "Approve with override",
+  "approvalsPayOverrideOwnerTitle": "Your written override is needed",
+  "approvalsPayOverrideReasonHelp": "Write at least one full sentence. It is kept with the payment and in the audit log.",
+  "approvalsPayOverrideReasonLabel": "Owner's reason",
+  "approvalsPayOverrideReasonTitle": "Why may this payment go ahead of the work done?",
+  "approvalsPayOverrideShort": "At least 4 words and 20 letters.",
+  "approvalsPayOverrideTitle": "Only the owner can approve this",
+  "approvalsPayPaidAfter": "Paid if approved",
+  "approvalsPayPaidNow": "Paid so far",
+  "approvalsPayRatio": "Paid {paid}, work {work}",
+  "@approvalsPayRatio": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "work": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayWorkVsPaid": "Work against paid",
   "approvalsPeriod": "Period",
   "approvalsPhotos": "Photos",
   "approvalsReasonAmounts": "Amounts do not match",
+  "approvalsReasonBillMissing": "Bill or receipt is missing",
   "approvalsReasonDeductions": "Check the deductions",
   "approvalsReasonDimensions": "Check the dimensions",
+  "approvalsReasonDuplicate": "Already paid, or asked for twice",
   "approvalsReasonLocation": "Write the location clearly",
   "approvalsReasonManpower": "Manpower count is wrong",
   "approvalsReasonNote": "Reason is not clear",
+  "approvalsReasonPaymentAhead": "Payment is ahead of the work done",
   "approvalsReasonPeriod": "Billing period is wrong",
   "approvalsReasonPhotos": "Add photos",
   "approvalsReasonQuantityHigh": "Quantity looks too high",
   "approvalsReasonWorkDetail": "Add more work detail",
+  "approvalsReasonWorkNotDone": "The work for this is not done yet",
   "approvalsReasonWrongItem": "Wrong BOQ line",
   "approvalsRefresh": "Refresh",
   "approvalsRefreshing": "Refreshing",
+  "approvalsReject": "Reject",
+  "approvalsRejectHelp": "A rejected document is closed for good. It cannot be corrected and sent again. Pick a reason or write your own.",
+  "approvalsRejectHint": "Why it is rejected",
+  "approvalsRejectTitle": "Why reject it?",
+  "approvalsRejectedToast": "Rejected with your remark.",
   "approvalsRemarkHint": "What needs fixing",
   "approvalsRemarkLabel": "Remark",
   "approvalsRemarks": "Remarks",

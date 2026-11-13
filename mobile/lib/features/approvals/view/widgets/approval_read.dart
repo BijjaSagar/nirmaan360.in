@@ -46,6 +46,9 @@ ApprovalFigure? figureOf(ApprovalRow row, AppLocalizations l) {
     case 'bill_note':
       final Money? total = readMoney(doc['total_amount']);
       return total == null ? null : ApprovalFigure(total.inr());
+    case 'contractor':
+      final Money? amount = readMoney(doc['amount']);
+      return amount == null ? null : ApprovalFigure(amount.inr());
     case 'dpr':
       final String? total = readText(doc['manpower_total']);
       return total == null ? null : ApprovalFigure(total, unit: l.approvalsWorkers);
@@ -53,7 +56,7 @@ ApprovalFigure? figureOf(ApprovalRow row, AppLocalizations l) {
   return null;
 }
 
-bool isMoneyDoc(String docType) => docType == 'ra_bill' || docType == 'bill_note';
+bool isMoneyDoc(String docType) => docType == 'ra_bill' || docType == 'bill_note' || docType == 'contractor';
 
 /// A measurement's size against its BOQ line, for a progress mark.
 class ApprovalShare {
@@ -91,6 +94,10 @@ String headlineOf(ApprovalRow row) {
       final String? number = readText(doc['number']);
       final String? party = readText(doc['party_name']);
       if (number != null && party != null) return '$number · $party';
+    case 'contractor':
+      final String? number = readText(doc['number']);
+      final String? contractor = readText(doc['contractor']);
+      if (number != null && contractor != null) return '$number · $contractor';
   }
   return row.title;
 }
@@ -119,6 +126,7 @@ String docTypeWord(AppLocalizations l, String docType) => switch (docType) {
   'dpr' => l.approvalsDocDpr,
   'ra_bill' => l.approvalsDocBill,
   'bill_note' => l.approvalsDocBillNote,
+  'contractor' => l.approvalsDocContractorPayment,
   'vendor_bill' => l.approvalsDocVendorBill,
   'indent' => l.approvalsDocIndent,
   'rfi' => l.approvalsDocRfi,
@@ -130,6 +138,7 @@ IconData docTypeIcon(String docType) => switch (docType) {
   'dpr' => Icons.assignment,
   'ra_bill' => Icons.request_quote,
   'bill_note' => Icons.receipt_long,
+  'contractor' => Icons.payments_outlined,
   'vendor_bill' => Icons.receipt,
   'indent' => Icons.inventory_2_outlined,
   'rfi' => Icons.help_outline,

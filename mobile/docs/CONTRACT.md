@@ -116,6 +116,7 @@ After a deletion the app drops its push token locally only (the server already r
 - `measurement`: `{id, boq_item: {code, description, unit}, measured_on, location, description, nos, length, breadth, depth, is_deduction, qty, deviation, remarks, balance_qty}`
 - `dpr`: `{id, report_date, weather, summary, hindrances, manpower_total, manpower: [{trade, count}], work_items: [{code, description, unit, qty}], photos: [{id}], created_by_name}`
 - `ra_bill`: `{id, number, type, period_from, period_to, party_name, gross_amount, deduction_total, gst_amount, net_payable}`
+- `contractor`: a contractor payment request, see "Approving a contractor payment" below.
 
 ### `GET /sync/pull?since=<server_time of last pull>`
 
@@ -576,6 +577,40 @@ Credits are strings with four places after the point, sent back as the quote wro
 **Watching a read.** `ReadWatcher` (`lib/core/readers/read_watch.dart`, through `AppServices.readers.watch`) asks at once, then every 3 s for 30 s, then every 10 s, and stops at 10 minutes with `ReadWatchStop.stillWorking`: the screen says "Still working. Pull to refresh." (`readerStillWorking`), and the server sends a notification when the read is done. It stops as soon as the read is not `preparing` or `running` (`settled`). A missed answer (offline, 429, 5xx) is reported and the watch goes on, waiting at least as long as a 429's `Retry-After`; a 401, 403, 404 or 410 ends it (`refused`). The server moves a read along on every status request, so watching keeps it going even when its scheduler is not running.
 
 **Photos for a reader.** `PhotoCapture.capture(mode: CaptureMode.document)` takes the picture at up to 1900 px on the long side and JPEG quality 85: 1900 x 1900 is 4,624 tokens, so a page of any shape fits the reader without being cut down again. Field photos, slips included, stay at 1600 px and quality 70. The picker copies the photo's metadata, location included, into the file; the phone does not strip it, because the server removes it and turns the picture upright before it stores or sends anything.
+
+### Approving a contractor payment (online only)
+
+No new route: the request is an ordinary item in `GET /approvals` (and the pull's `approvals`) with `doc_type: "contractor"`, and `POST /approvals/{id}/act` decides it. Who may act is the server's: `contractor.approve` (PM, owner, admin), at the company's approval level for `contractor` (default `['pm']`), never the person who raised it unless owner or admin. `approve`, `return` and `reject` all work; `return` and `reject` need a remark (422 on `remark` without one). A returned payment can be corrected on the website; a rejected one is closed for good.
+
+`document` (built by `ApprovalPresenter::contractorPayment`):
+
+```json
+{
+  "id": 31, "number": "CP-12", "status": "IN_REVIEW",
+  "work_order": { "id": 5, "number": "WO-4", "title": "Flooring" },
+  "contractor": "Ganesh Builders",
+  "against": { "type": "boq_item", "code": "2.1", "description": "...", "unit": "cum", "work_pct": "70.00" },
+  "paid_on": "2026-11-08", "entered_by": "Sachin More",
+  "work_pct": "70.00", "balance_work_pct": "30.00",
+  "amount": "20000.00", "is_advance": false, "mode": "upi", "paid_to": "Ganesh",
+  "notes": "Second running bill", "has_bill": true, "paid_pct": "60.00",
+  "impact": { "now": {...}, "after": {...}, "item": {...} },
+  "owner_override": { "needed": false, "allowed": false, "message": null }
+}
+```
+
+- `against.type` is `boq_item` (with that line's `work_pct`), `part` (`{type, title, done}`) or `contract` (`{type}` alone).
+- `work_pct` and `balance_work_pct` are the contract's, the same figures the contractor board sends, and go to every approver.
+- `amount`, `is_advance`, `mode`, `paid_to`, `notes` (free text, which may quote a price), `has_bill`, `paid_pct` and `impact` are null without `money.view`. The keys stay.
+- `impact` is the website's "If approved", from `WorkPaymentRatio::impact`: `now` is the contract as the board shows it, `after` the contract with this payment counted (null once the payment is no longer `IN_REVIEW`), `item` the BOQ line the payment is against (null for an advance, a part or the whole contract). Each holds `contract_value, paid, advance, paid_pct, gap_pct, ratio_status (green|red|none), over_limit, limit_pct, label, balance_work_value, balance_money, short_by, work_pct`.
+- `owner_override` is always `{needed: false, allowed: false, message: null}` on this server. It is for the owner-override rule (branch `fix/web-money-rules`): once that rule is merged, `needed` is true when approving now would put payment beyond the project's limit ahead of work done, `allowed` is true when the person reading is the owner, and `message` says why in percentages only. The owner then sends `override_reason` (at least 20 characters and 4 words) with `action: approve`; the app sends it only in that case. Until the server reads `override_reason` the key is ignored.
+
+The app (`features/approvals`):
+
+- `reviewableHere` is true for a payment when `amount` came, so someone without `money.view` is sent to the website, as for a bill.
+- The detail screen shows work done, paid so far and paid if approved as bars, with a warning when approving puts payment ahead of work (red when beyond the limit), the money rows, the line the payment is against, the payment's details and "View bill" (`GET /contractor-payments/{id}/bill`).
+- Buttons: Send back and Approve, and Reject under them. Reject asks for a remark in a sheet that says a rejected payment is closed for good. Other document types keep Send back only.
+- `owner_override.needed` and not `allowed`: Approve is not offered and the message shows. `needed` and `allowed`: the button reads "Approve with override" and asks for the reason first.
 
 ## 3. App layout
 

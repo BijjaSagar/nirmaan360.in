@@ -351,6 +351,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsDocBillNote => 'Credit or debit note';
 
   @override
+  String get approvalsDocContractorPayment => 'Contractor payment';
+
+  @override
   String get approvalsDocDpr => 'Daily report';
 
   @override
@@ -503,6 +506,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsParty => 'Party';
 
   @override
+  String approvalsPayAhead(String gap) {
+    return 'Approving puts payment $gap points ahead of the work done.';
+  }
+
+  @override
+  String get approvalsPayContractor => 'Contractor';
+
+  @override
+  String get approvalsPayInStep =>
+      'Approving keeps payment within the work done.';
+
+  @override
+  String approvalsPayOverLimit(String limit) {
+    return 'That is beyond this project\'s limit of $limit points.';
+  }
+
+  @override
+  String get approvalsPayOverrideApprove => 'Approve with override';
+
+  @override
+  String get approvalsPayOverrideOwnerTitle =>
+      'Your written override is needed';
+
+  @override
+  String get approvalsPayOverrideReasonHelp =>
+      'Write at least one full sentence. It is kept with the payment and in the audit log.';
+
+  @override
+  String get approvalsPayOverrideReasonLabel => 'Owner\'s reason';
+
+  @override
+  String get approvalsPayOverrideReasonTitle =>
+      'Why may this payment go ahead of the work done?';
+
+  @override
+  String get approvalsPayOverrideShort => 'At least 4 words and 20 letters.';
+
+  @override
+  String get approvalsPayOverrideTitle => 'Only the owner can approve this';
+
+  @override
+  String get approvalsPayPaidAfter => 'Paid if approved';
+
+  @override
+  String get approvalsPayPaidNow => 'Paid so far';
+
+  @override
+  String approvalsPayRatio(String paid, String work) {
+    return 'Paid $paid, work $work';
+  }
+
+  @override
+  String get approvalsPayWorkVsPaid => 'Work against paid';
+
+  @override
   String get approvalsPeriod => 'Period';
 
   @override
@@ -512,10 +570,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsReasonAmounts => 'Amounts do not match';
 
   @override
+  String get approvalsReasonBillMissing => 'Bill or receipt is missing';
+
+  @override
   String get approvalsReasonDeductions => 'Check the deductions';
 
   @override
   String get approvalsReasonDimensions => 'Check the dimensions';
+
+  @override
+  String get approvalsReasonDuplicate => 'Already paid, or asked for twice';
 
   @override
   String get approvalsReasonLocation => 'Write the location clearly';
@@ -525,6 +589,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsReasonNote => 'Reason is not clear';
+
+  @override
+  String get approvalsReasonPaymentAhead => 'Payment is ahead of the work done';
 
   @override
   String get approvalsReasonPeriod => 'Billing period is wrong';
@@ -539,6 +606,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsReasonWorkDetail => 'Add more work detail';
 
   @override
+  String get approvalsReasonWorkNotDone => 'The work for this is not done yet';
+
+  @override
   String get approvalsReasonWrongItem => 'Wrong BOQ line';
 
   @override
@@ -546,6 +616,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsRefreshing => 'Refreshing';
+
+  @override
+  String get approvalsReject => 'Reject';
+
+  @override
+  String get approvalsRejectHelp =>
+      'A rejected document is closed for good. It cannot be corrected and sent again. Pick a reason or write your own.';
+
+  @override
+  String get approvalsRejectHint => 'Why it is rejected';
+
+  @override
+  String get approvalsRejectTitle => 'Why reject it?';
+
+  @override
+  String get approvalsRejectedToast => 'Rejected with your remark.';
 
   @override
   String get approvalsRemarkHint => 'What needs fixing';

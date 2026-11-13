@@ -221,6 +221,7 @@ abstract interface class NirmaanApi {
     required String action,
     required String clientUuid,
     String? remark,
+    String? overrideReason,
   });
 
   /// Returns the created worker row. Idempotent on `clientUuid`.

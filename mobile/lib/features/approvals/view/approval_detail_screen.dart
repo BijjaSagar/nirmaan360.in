@@ -12,6 +12,7 @@ import '../bloc/approvals_inbox_cubit.dart';
 import '../data/approval_repository.dart';
 import 'widgets/approval_document.dart';
 import 'widgets/approval_read.dart';
+import 'widgets/owner_override_sheet.dart';
 import 'widgets/send_back_sheet.dart';
 
 /// One document, in full, with the decision under the thumb. Approving is the
@@ -43,10 +44,18 @@ class _DetailView extends StatelessWidget {
     }
   }
 
-  Future<void> _approve(BuildContext context) async {
+  Future<void> _approve(BuildContext context, ApprovalRow row) async {
     final ApprovalDetailCubit cubit = context.read<ApprovalDetailCubit>();
     final AppLocalizations l = AppLocalizations.of(context);
-    final ActResult result = await cubit.approve();
+    final OwnerOverride override = row.ownerOverride;
+    String? reason;
+    if (override.needed) {
+      // Only the owner is offered Approve here, and only with a written reason.
+      if (!override.allowed) return;
+      reason = await showOwnerOverrideSheet(context, message: override.message);
+      if (reason == null || !context.mounted) return;
+    }
+    final ActResult result = await cubit.approve(overrideReason: reason);
     if (result != ActResult.done || !context.mounted) return;
     await showStampThud(context, StampKind.approved, l.statusApproved);
     if (context.mounted) _leave(context, ApprovalOutcome(approvalId, ApprovalAction.approved));
@@ -62,6 +71,18 @@ class _DetailView extends StatelessWidget {
     N360Haptics.success();
     showPaperToast(context, l.approvalsSentBackToast, kind: PaperToastKind.success);
     _leave(context, ApprovalOutcome(approvalId, ApprovalAction.sentBack));
+  }
+
+  Future<void> _reject(BuildContext context, ApprovalRow row) async {
+    final ApprovalDetailCubit cubit = context.read<ApprovalDetailCubit>();
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String? remark = await showRejectSheet(context, docType: row.docType);
+    if (remark == null || !context.mounted) return;
+    final ActResult result = await cubit.reject(remark);
+    if (result != ActResult.done || !context.mounted) return;
+    N360Haptics.success();
+    showPaperToast(context, l.approvalsRejectedToast, kind: PaperToastKind.success);
+    _leave(context, ApprovalOutcome(approvalId, ApprovalAction.rejected));
   }
 
   @override
@@ -126,8 +147,9 @@ class _DetailView extends StatelessWidget {
                     if (state.canAct || state.finished)
                       _ActionBar(
                         state: state,
-                        onApprove: () => _approve(context),
+                        onApprove: () => _approve(context, row),
                         onSendBack: () => _sendBack(context, row),
+                        onReject: row.rejectableHere ? () => _reject(context, row) : null,
                       ),
                   ],
                 ),
@@ -299,11 +321,14 @@ class _FailureSlip extends StatelessWidget {
 }
 
 class _ActionBar extends StatelessWidget {
-  const _ActionBar({required this.state, required this.onApprove, required this.onSendBack});
+  const _ActionBar({required this.state, required this.onApprove, required this.onSendBack, this.onReject});
 
   final ApprovalDetailState state;
   final VoidCallback onApprove;
   final VoidCallback onSendBack;
+
+  /// Null for documents the phone only sends back.
+  final VoidCallback? onReject;
 
   @override
   Widget build(BuildContext context) {
@@ -311,6 +336,8 @@ class _ActionBar extends StatelessWidget {
     // Once the server has accepted, the stamp's overlay holds the taps. The
     // buttons keep their look so the page does not change under the stamp.
     final bool enabled = state.actionsEnabled || state.finished;
+    final VoidCallback? reject = onReject;
+    final OwnerOverride override = state.item?.ownerOverride ?? const OwnerOverride();
     return N360ActionBar(
       above: !state.online
           ? Row(
@@ -338,20 +365,34 @@ class _ActionBar extends StatelessWidget {
                   onPressed: enabled ? onSendBack : null,
                 ),
               ),
-              const SizedBox(width: N360Space.sm),
-              Expanded(
-                child: GloveButton(
-                  key: const ValueKey<String>('approval-approve'),
-                  label: l.approvalsApprove,
-                  icon: Icons.task_alt,
-                  large: true,
-                  fullWidth: true,
-                  loading: state.acting,
-                  onPressed: enabled ? onApprove : null,
+              // Past the owner-override rule, only the owner is offered Approve.
+              if (!state.approveBlocked) ...<Widget>[
+                const SizedBox(width: N360Space.sm),
+                Expanded(
+                  child: GloveButton(
+                    key: const ValueKey<String>('approval-approve'),
+                    label: override.needed ? l.approvalsPayOverrideApprove : l.approvalsApprove,
+                    icon: Icons.task_alt,
+                    large: true,
+                    fullWidth: true,
+                    loading: state.acting,
+                    onPressed: enabled ? onApprove : null,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
+          if (reject != null) ...<Widget>[
+            const SizedBox(height: N360Space.xs),
+            GloveButton(
+              key: const ValueKey<String>('approval-reject'),
+              label: l.approvalsReject,
+              icon: Icons.block,
+              kind: GloveButtonKind.ghost,
+              fullWidth: true,
+              onPressed: enabled ? reject : null,
+            ),
+          ],
         ],
       ),
     );

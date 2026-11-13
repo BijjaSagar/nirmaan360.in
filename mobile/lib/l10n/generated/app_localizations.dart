@@ -640,6 +640,12 @@ abstract class AppLocalizations {
   /// **'Credit or debit note'**
   String get approvalsDocBillNote;
 
+  /// No description provided for @approvalsDocContractorPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractor payment'**
+  String get approvalsDocContractorPayment;
+
   /// No description provided for @approvalsDocDpr.
   ///
   /// In en, this message translates to:
@@ -898,6 +904,96 @@ abstract class AppLocalizations {
   /// **'Party'**
   String get approvalsParty;
 
+  /// No description provided for @approvalsPayAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Approving puts payment {gap} points ahead of the work done.'**
+  String approvalsPayAhead(String gap);
+
+  /// No description provided for @approvalsPayContractor.
+  ///
+  /// In en, this message translates to:
+  /// **'Contractor'**
+  String get approvalsPayContractor;
+
+  /// No description provided for @approvalsPayInStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Approving keeps payment within the work done.'**
+  String get approvalsPayInStep;
+
+  /// No description provided for @approvalsPayOverLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'That is beyond this project\'s limit of {limit} points.'**
+  String approvalsPayOverLimit(String limit);
+
+  /// No description provided for @approvalsPayOverrideApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve with override'**
+  String get approvalsPayOverrideApprove;
+
+  /// No description provided for @approvalsPayOverrideOwnerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your written override is needed'**
+  String get approvalsPayOverrideOwnerTitle;
+
+  /// No description provided for @approvalsPayOverrideReasonHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Write at least one full sentence. It is kept with the payment and in the audit log.'**
+  String get approvalsPayOverrideReasonHelp;
+
+  /// No description provided for @approvalsPayOverrideReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner\'s reason'**
+  String get approvalsPayOverrideReasonLabel;
+
+  /// No description provided for @approvalsPayOverrideReasonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why may this payment go ahead of the work done?'**
+  String get approvalsPayOverrideReasonTitle;
+
+  /// No description provided for @approvalsPayOverrideShort.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 4 words and 20 letters.'**
+  String get approvalsPayOverrideShort;
+
+  /// No description provided for @approvalsPayOverrideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the owner can approve this'**
+  String get approvalsPayOverrideTitle;
+
+  /// No description provided for @approvalsPayPaidAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid if approved'**
+  String get approvalsPayPaidAfter;
+
+  /// No description provided for @approvalsPayPaidNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid so far'**
+  String get approvalsPayPaidNow;
+
+  /// No description provided for @approvalsPayRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid {paid}, work {work}'**
+  String approvalsPayRatio(String paid, String work);
+
+  /// No description provided for @approvalsPayWorkVsPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Work against paid'**
+  String get approvalsPayWorkVsPaid;
+
   /// No description provided for @approvalsPeriod.
   ///
   /// In en, this message translates to:
@@ -916,6 +1012,12 @@ abstract class AppLocalizations {
   /// **'Amounts do not match'**
   String get approvalsReasonAmounts;
 
+  /// No description provided for @approvalsReasonBillMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill or receipt is missing'**
+  String get approvalsReasonBillMissing;
+
   /// No description provided for @approvalsReasonDeductions.
   ///
   /// In en, this message translates to:
@@ -927,6 +1029,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Check the dimensions'**
   String get approvalsReasonDimensions;
+
+  /// No description provided for @approvalsReasonDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Already paid, or asked for twice'**
+  String get approvalsReasonDuplicate;
 
   /// No description provided for @approvalsReasonLocation.
   ///
@@ -945,6 +1053,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reason is not clear'**
   String get approvalsReasonNote;
+
+  /// No description provided for @approvalsReasonPaymentAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is ahead of the work done'**
+  String get approvalsReasonPaymentAhead;
 
   /// No description provided for @approvalsReasonPeriod.
   ///
@@ -970,6 +1084,12 @@ abstract class AppLocalizations {
   /// **'Add more work detail'**
   String get approvalsReasonWorkDetail;
 
+  /// No description provided for @approvalsReasonWorkNotDone.
+  ///
+  /// In en, this message translates to:
+  /// **'The work for this is not done yet'**
+  String get approvalsReasonWorkNotDone;
+
   /// No description provided for @approvalsReasonWrongItem.
   ///
   /// In en, this message translates to:
@@ -987,6 +1107,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refreshing'**
   String get approvalsRefreshing;
+
+  /// No description provided for @approvalsReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get approvalsReject;
+
+  /// No description provided for @approvalsRejectHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A rejected document is closed for good. It cannot be corrected and sent again. Pick a reason or write your own.'**
+  String get approvalsRejectHelp;
+
+  /// No description provided for @approvalsRejectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Why it is rejected'**
+  String get approvalsRejectHint;
+
+  /// No description provided for @approvalsRejectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why reject it?'**
+  String get approvalsRejectTitle;
+
+  /// No description provided for @approvalsRejectedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected with your remark.'**
+  String get approvalsRejectedToast;
 
   /// No description provided for @approvalsRemarkHint.
   ///

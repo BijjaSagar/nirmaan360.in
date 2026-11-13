@@ -1,11 +1,18 @@
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/app_services.dart';
 import '../../../../core/design/design.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/sync/clock.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../measurement/bloc/measurement_book.dart';
+import '../../../contractor_control/view/widgets/contractor_kit.dart';
 import '../../../measurement/view/widgets/book_kit.dart';
+import '../../../site_progress/data/progress_models.dart' show percentText;
+import '../../../site_progress/view/widgets/progress_widgets.dart' show percentFraction;
 import '../../data/approval_repository.dart';
 import 'approval_read.dart';
 
@@ -24,6 +31,7 @@ class ApprovalDocument extends StatelessWidget {
       'dpr' => _DprDoc(doc: row.document, today: today),
       'ra_bill' => _BillDoc(doc: row.document, today: today),
       'bill_note' => _BillNoteDoc(doc: row.document),
+      'contractor' => _ContractorPaymentDoc(doc: row.document, today: today, ownerOverride: row.ownerOverride),
       _ => const _WebOnlyDoc(),
     };
   }
@@ -218,6 +226,299 @@ class _BillNoteDoc extends StatelessWidget {
   String _signed(Money value) {
     final String text = value.inr();
     return text.startsWith('₹-') ? '−₹${text.substring(2)}' : '+$text';
+  }
+}
+
+/// A contractor payment request: what it is for, and what approving it does to
+/// the contract, as work done against paid. The figures are the server's own,
+/// the same ones the contractor board shows.
+class _ContractorPaymentDoc extends StatelessWidget {
+  const _ContractorPaymentDoc({required this.doc, required this.today, required this.ownerOverride});
+
+  final Map<String, dynamic> doc;
+  final String today;
+  final OwnerOverride ownerOverride;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final Map<String, dynamic> order = readMap(doc['work_order']);
+    final String contract = <String>[?readText(order['number']), ?readText(order['title'])].join(' · ');
+    final String? contractor = readText(doc['contractor']);
+    final String? paidOn = readText(doc['paid_on']);
+    final String? enteredBy = readText(doc['entered_by']);
+    final String? mode = readText(doc['mode']);
+    final String? paidTo = readText(doc['paid_to']);
+    final String? notes = readText(doc['notes']);
+    final Money? amount = readMoney(doc['amount']);
+    final int? paymentId = doc['id'] is num ? (doc['id'] as num).toInt() : null;
+    final bool hasBill = doc['has_bill'] == true;
+    final String? message = ownerOverride.message;
+
+    final List<Widget> details = <Widget>[
+      if (contract.isNotEmpty) BookRow.words(label: l.contractorContract, value: contract),
+      if (contractor != null) BookRow.words(label: l.approvalsPayContractor, value: contractor),
+      _againstRow(l, readMap(doc['against'])),
+      if (paidOn != null) BookRow.words(label: l.contractorPaidOn, value: dayLabel(context, paidOn, today)),
+      if (enteredBy != null) BookRow.words(label: l.contractorEnteredBy, value: enteredBy),
+      if (doc['is_advance'] is bool)
+        BookRow.words(
+          label: l.contractorKind,
+          value: doc['is_advance'] == true ? l.contractorKindAdvance : l.contractorKindWork,
+        ),
+      if (mode != null) BookRow.words(label: l.contractorMode, value: l.paymentModeWord(mode)),
+      if (paidTo != null) BookRow.words(label: l.contractorPaidTo, value: paidTo),
+      if (notes != null) ...<Widget>[
+        _Heading(l.contractorNotes),
+        Text(notes, style: N360Type.body),
+        const SizedBox(height: N360Space.sm),
+      ],
+      if (amount != null)
+        BookRow(
+          label: l.contractorAmountLabel,
+          total: true,
+          value: amount.inr(),
+          valueStyle: N360Type.figure,
+          ruled: false,
+        ),
+      if (hasBill && paymentId != null) ...<Widget>[
+        const SizedBox(height: N360Space.sm),
+        GloveButton(
+          key: const ValueKey<String>('approval-view-bill'),
+          label: l.contractorViewBill,
+          icon: Icons.receipt_long_outlined,
+          kind: GloveButtonKind.secondary,
+          fullWidth: true,
+          onPressed: () => _viewBill(context, paymentId),
+        ),
+      ],
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (ownerOverride.needed && message != null) ...<Widget>[
+          TintedNote(
+            key: const ValueKey<String>('approval-owner-override'),
+            icon: Icons.gpp_maybe_outlined,
+            ink: N360Colors.stampRed,
+            edge: N360Colors.stampRed,
+            title: ownerOverride.allowed ? l.approvalsPayOverrideOwnerTitle : l.approvalsPayOverrideTitle,
+            body: message,
+          ),
+          const SizedBox(height: N360Space.md),
+        ],
+        _PaymentRatio(doc: doc),
+        const SizedBox(height: N360Space.md),
+        _sheet(details),
+      ],
+    );
+  }
+
+  Widget _againstRow(AppLocalizations l, Map<String, dynamic> against) {
+    switch (readText(against['type'])) {
+      case 'boq_item':
+        final String? code = readText(against['code']);
+        return BookRow(
+          label: l.contractorAgainst,
+          value: code ?? l.contractorAgainstLine,
+          hint: readText(against['description']),
+        );
+      case 'part':
+        final String title = readText(against['title']) ?? l.contractorAgainstPart;
+        return BookRow.words(
+          label: l.contractorAgainst,
+          value: against['done'] == true ? '$title · ${l.contractorPartDone}' : title,
+        );
+    }
+    return BookRow.words(label: l.contractorAgainst, value: l.contractorAgainstWhole);
+  }
+
+  void _viewBill(BuildContext context, int paymentId) {
+    final AppServices services = context.read<AppServices>();
+    showLedgerSheet<void>(
+      context,
+      isScrollControlled: true,
+      builder: (_) => _PaymentBillSheet(load: services.contractors.billBytes(paymentId)),
+    );
+  }
+}
+
+/// Work done against paid, now and if approved, with what the gap would be.
+class _PaymentRatio extends StatelessWidget {
+  const _PaymentRatio({required this.doc});
+
+  final Map<String, dynamic> doc;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final Map<String, dynamic> impact = readMap(doc['impact']);
+    final Map<String, dynamic> now = readMap(impact['now']);
+    final Map<String, dynamic> after = readMap(impact['after']);
+    final Map<String, dynamic> line = readMap(impact['item']);
+    final Map<String, dynamic> against = readMap(doc['against']);
+    final String? work = readText(doc['work_pct']) ?? readText(now['work_pct']);
+    final String? paidNow = readText(doc['paid_pct']) ?? readText(now['paid_pct']);
+    final String? paidAfter = readText(after['paid_pct']);
+    final bool aheadNow = readText(now['ratio_status']) == 'red';
+    final bool aheadAfter = readText(after['ratio_status']) == 'red';
+    final bool overAfter = after['over_limit'] == true;
+    final String? gapAfter = readText(after['gap_pct']);
+    final String? limit = readText(after['limit_pct']) ?? readText(now['limit_pct']);
+    final String? lineCode = readText(against['code']);
+
+    final List<(String, Money?, bool)> money = <(String, Money?, bool)>[
+      (l.contractorValue, readMoney(now['contract_value']), false),
+      (l.approvalsPayPaidNow, readMoney(now['paid']), false),
+      if (after.isNotEmpty) (l.approvalsPayPaidAfter, readMoney(after['paid']), false),
+      (l.contractorWorkLeftValue, readMoney(now['balance_work_value']), false),
+      (l.contractorBalance, readMoney((after.isNotEmpty ? after : now)['balance_money']), true),
+    ].where((row) => row.$2 != null).toList();
+
+    String? aheadText() {
+      if (!aheadAfter || gapAfter == null) return null;
+      final String ahead = l.approvalsPayAhead(_points(gapAfter));
+      return overAfter && limit != null ? '$ahead ${l.approvalsPayOverLimit(_points(limit))}' : ahead;
+    }
+
+    final String? warning = aheadText();
+
+    return LedgerCard(
+      key: const ValueKey<String>('approval-payment-ratio'),
+      padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.md, N360Space.lg, N360Space.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(l.approvalsPayWorkVsPaid, style: N360Type.heading),
+          const SizedBox(height: N360Space.sm),
+          _Meter(label: l.contractorWorkDone, percent: work),
+          if (paidNow != null) _Meter(label: l.approvalsPayPaidNow, percent: paidNow, ahead: aheadNow),
+          if (paidAfter != null)
+            _Meter(
+              key: const ValueKey<String>('approval-paid-after'),
+              label: l.approvalsPayPaidAfter,
+              percent: paidAfter,
+              ahead: aheadAfter,
+              strong: true,
+            ),
+          if (warning != null) ...<Widget>[
+            const SizedBox(height: N360Space.xs),
+            TintedNote(
+              key: const ValueKey<String>('approval-payment-ahead'),
+              icon: Icons.warning_amber,
+              ink: overAfter ? N360Colors.stampRed : N360Colors.laterite,
+              edge: overAfter ? N360Colors.stampRed : N360Colors.laterite,
+              title: overAfter ? l.contractorOverLimit : l.contractorPaidAhead,
+              body: warning,
+            ),
+          ] else if (paidAfter != null)
+            Padding(
+              padding: const EdgeInsets.only(top: N360Space.xxs),
+              child: Text(l.approvalsPayInStep, style: N360Type.bodyStrong.copyWith(color: N360Colors.moss)),
+            ),
+          if (money.isNotEmpty) const SizedBox(height: N360Space.sm),
+          for (final (int index, (String label, Money? value, bool total)) in money.indexed)
+            BookRow(label: label, value: value!.inr(), total: total, ruled: index < money.length - 1),
+          if (line.isNotEmpty || readText(against['work_pct']) != null) ...<Widget>[
+            const SizedBox(height: N360Space.sm),
+            BookRow.words(
+              label: lineCode == null ? l.contractorImpactLine : '${l.contractorImpactLine} · $lineCode',
+              value: readText(line['paid_pct']) == null
+                  ? '${l.contractorWorkDone} ${percentText(readText(against['work_pct']))}'
+                  : l.approvalsPayRatio(
+                      percentText(readText(line['paid_pct'])),
+                      percentText(readText(line['work_pct']) ?? readText(against['work_pct'])),
+                    ),
+              ruled: false,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// "10.00" as "10", "2.50" as "2.5".
+  String _points(String raw) => percentText(raw).replaceAll('%', '');
+}
+
+/// One percent with its bar. Paid ahead of work fills in the urgent colour.
+class _Meter extends StatelessWidget {
+  const _Meter({super.key, required this.label, required this.percent, this.ahead = false, this.strong = false});
+
+  final String label;
+  final String? percent;
+  final bool ahead;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    final String value = percentText(percent);
+    final Color ink = ahead ? N360Colors.laterite : N360Colors.ink;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: N360Space.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(child: Text(label, style: N360Type.fit(strong ? N360Type.bodyStrong : N360Type.label, label))),
+              Text(value, style: N360Type.figureSmall.copyWith(color: ink)),
+            ],
+          ),
+          const SizedBox(height: N360Space.xxs),
+          HatchedProgressBar(
+            fraction: percentFraction(percent),
+            height: 6,
+            delayed: ahead,
+            semanticLabel: '$label, $value',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A picture of the payment's bill. A PDF cannot be drawn here.
+class _PaymentBillSheet extends StatelessWidget {
+  const _PaymentBillSheet({required this.load});
+
+  final Future<Uint8List> load;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    Widget message(String text) => Padding(
+      padding: const EdgeInsets.all(N360Space.gutter),
+      child: Text(text, style: N360Type.fit(N360Type.body, text)),
+    );
+    return SafeArea(
+      top: false,
+      child: FutureBuilder<Uint8List>(
+        future: load,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) return message(l.contractorBillFailed);
+          final Uint8List? bytes = snapshot.data;
+          if (bytes == null) {
+            return Padding(
+              padding: const EdgeInsets.all(N360Space.gutter),
+              child: LedgerSkeletonList(semanticsLabel: l.contractorLoading),
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(N360Space.gutter, 0, N360Space.gutter, N360Space.lg),
+            child: Image.memory(
+              bytes,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => message(l.contractorBillNotPicture),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 

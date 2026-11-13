@@ -11,10 +11,21 @@ Future<String?> showSendBackSheet(BuildContext context, {required String docType
   return showLedgerSheet<String>(context, isScrollControlled: true, builder: (_) => _SendBackSheet(docType: docType));
 }
 
+/// Asks why the document is rejected, the same way. A rejected document is
+/// closed for good, and the sheet says so.
+Future<String?> showRejectSheet(BuildContext context, {required String docType}) {
+  return showLedgerSheet<String>(
+    context,
+    isScrollControlled: true,
+    builder: (_) => _SendBackSheet(docType: docType, reject: true),
+  );
+}
+
 class _SendBackSheet extends StatefulWidget {
-  const _SendBackSheet({required this.docType});
+  const _SendBackSheet({required this.docType, this.reject = false});
 
   final String docType;
+  final bool reject;
 
   @override
   State<_SendBackSheet> createState() => _SendBackSheetState();
@@ -44,6 +55,17 @@ class _SendBackSheetState extends State<_SendBackSheet> {
   }
 
   List<String> _reasons(AppLocalizations l) => switch (widget.docType) {
+    'contractor' when widget.reject => <String>[
+      l.approvalsReasonDuplicate,
+      l.approvalsReasonWorkNotDone,
+      l.approvalsReasonPaymentAhead,
+    ],
+    'contractor' => <String>[
+      l.approvalsReasonWorkNotDone,
+      l.approvalsReasonPaymentAhead,
+      l.approvalsReasonBillMissing,
+      l.approvalsReasonAmounts,
+    ],
     'measurement' => <String>[
       l.approvalsReasonDimensions,
       l.approvalsReasonWrongItem,
@@ -84,9 +106,9 @@ class _SendBackSheetState extends State<_SendBackSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text(l.approvalsSendBackTitle, style: N360Type.title),
+            Text(widget.reject ? l.approvalsRejectTitle : l.approvalsSendBackTitle, style: N360Type.title),
             const SizedBox(height: N360Space.xs),
-            Text(l.approvalsSendBackHelp, style: N360Type.body),
+            Text(widget.reject ? l.approvalsRejectHelp : l.approvalsSendBackHelp, style: N360Type.body),
             const SizedBox(height: N360Space.md),
             for (final String reason in reasons) ...<Widget>[
               ChoiceTile(centered: false, label: reason, selected: _chosen == reason, onTap: () => _choose(reason)),
@@ -95,7 +117,7 @@ class _SendBackSheetState extends State<_SendBackSheet> {
             const SizedBox(height: N360Space.xs),
             GloveTextField(
               label: l.approvalsRemarkLabel,
-              hint: l.approvalsRemarkHint,
+              hint: widget.reject ? l.approvalsRejectHint : l.approvalsRemarkHint,
               controller: _remark,
               minLines: 2,
               maxLines: 3,
@@ -103,9 +125,10 @@ class _SendBackSheetState extends State<_SendBackSheet> {
             ),
             const SizedBox(height: N360Space.md),
             GloveButton(
-              key: const ValueKey<String>('approval-send-back-confirm'),
-              label: l.approvalsSendBack,
-              icon: Icons.reply,
+              key: ValueKey<String>(widget.reject ? 'approval-reject-confirm' : 'approval-send-back-confirm'),
+              label: widget.reject ? l.approvalsReject : l.approvalsSendBack,
+              icon: widget.reject ? Icons.block : Icons.reply,
+              kind: widget.reject ? GloveButtonKind.danger : GloveButtonKind.primary,
               large: true,
               fullWidth: true,
               onPressed: ready ? _send : null,

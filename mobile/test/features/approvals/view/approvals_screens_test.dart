@@ -23,6 +23,7 @@ class ActingApi extends FakeApi {
     required String action,
     required String clientUuid,
     String? remark,
+    String? overrideReason,
   }) {
     acts.add((approvalId, action, clientUuid, remark));
     final ApiFailure? failure = failNext;
@@ -30,7 +31,13 @@ class ActingApi extends FakeApi {
       failNext = null;
       throw failure;
     }
-    return super.actOnApproval(approvalId, action: action, clientUuid: clientUuid, remark: remark);
+    return super.actOnApproval(
+      approvalId,
+      action: action,
+      clientUuid: clientUuid,
+      remark: remark,
+      overrideReason: overrideReason,
+    );
   }
 }
 

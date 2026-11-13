@@ -117,7 +117,11 @@ class _LeavingApprovalTileState extends State<LeavingApprovalTile> with SingleTi
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final LeavingCard leaving = widget.leaving;
-    final bool approved = leaving.action == ApprovalAction.approved;
+    final (StampKind kind, String word) = switch (leaving.action) {
+      ApprovalAction.approved => (StampKind.approved, l.statusApproved),
+      ApprovalAction.sentBack => (StampKind.returned, l.statusReturned),
+      ApprovalAction.rejected => (StampKind.rejected, l.statusRejected),
+    };
     final double holdPart = _hold.inMilliseconds / (_hold + _slide).inMilliseconds;
 
     return RepaintBoundary(
@@ -128,10 +132,7 @@ class _LeavingApprovalTileState extends State<LeavingApprovalTile> with SingleTi
             row: leaving.row,
             now: widget.now,
             onTap: null,
-            status: StatusPill(
-              kind: approved ? StampKind.approved : StampKind.returned,
-              label: approved ? l.statusApproved : l.statusReturned,
-            ),
+            status: StatusPill(kind: kind, label: word),
           ),
           builder: (context, child) {
             final double raw = ((_exit.value - holdPart) / (1 - holdPart)).clamp(0.0, 1.0);

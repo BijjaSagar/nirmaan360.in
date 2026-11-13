@@ -48,6 +48,9 @@ class ApprovalDetailState extends Equatable {
 
   bool get canAct => item != null && item!.canAct && item!.reviewableHere && !gone && !finished;
 
+  /// Approve is refused to anyone but the owner, so the button is not offered.
+  bool get approveBlocked => item?.ownerOverride.blocksApprove ?? false;
+
   /// Buttons work only with a network: approvals are never queued.
   bool get actionsEnabled => canAct && online && !acting && failure != ApprovalFailure.raceLost;
 
@@ -125,10 +128,18 @@ class ApprovalDetailCubit extends Cubit<ApprovalDetailState> {
     }
   }
 
-  Future<ActResult> approve() => _act(() => _repo.approve(_approvalId));
+  /// [overrideReason] is the owner's written reason, for a payment that
+  /// only the owner may approve.
+  Future<ActResult> approve({String? overrideReason}) {
+    return _act(() => _repo.approve(_approvalId, overrideReason: overrideReason));
+  }
 
   Future<ActResult> sendBack(String remark) {
     return _act(() => _repo.sendBack(_approvalId, remark: remark));
+  }
+
+  Future<ActResult> reject(String remark) {
+    return _act(() => _repo.reject(_approvalId, remark: remark));
   }
 
   /// One action at a time. A second tap while the first is on its way, or
