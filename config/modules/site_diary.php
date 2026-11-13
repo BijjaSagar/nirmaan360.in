@@ -23,6 +23,7 @@ return [
 
     'nav' => [
         ['place' => 'project', 'label' => 'Hindrance register', 'route' => 'site-diary.hindrances.index', 'active' => 'site-diary.hindrances.*', 'can' => 'site_diary.view', 'order' => 12],
+        ['place' => 'project', 'label' => 'Letters', 'route' => 'site-diary.letters.index', 'active' => 'site-diary.letters.*', 'can' => 'site_diary.letters', 'order' => 13],
     ],
 
     // Names for the choice on the form. A category says what held the work up, not whose fault it was.
@@ -41,6 +42,19 @@ return [
         'proposed' => 'Proposed',
         'confirmed' => 'Confirmed',
         'dismissed' => 'Dismissed',
+    ],
+
+    // The letters the app drafts. Every sentence that states a figure is written in App\Services\SiteDiary\LetterLayout,
+    // and the figure is read from the records. site_diary.letters is held by the project manager through the wildcard above.
+    'letter_types' => [
+        'eot_request' => 'Request for extension of time',
+        'delay_notice' => 'Notice of delay',
+        'payment_followup' => 'Payment follow-up',
+    ],
+
+    'letter_statuses' => [
+        'draft' => 'Draft',
+        'finalised' => 'Finalised',
     ],
 
     'alert_sources' => [

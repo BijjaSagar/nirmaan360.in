@@ -4,7 +4,9 @@ namespace Tests\Feature\SiteDiary;
 
 use App\Models\ContractTerm;
 use App\Models\Hindrance;
+use App\Models\SiteLetter;
 use App\Services\Access\PermissionCatalog;
+use App\Services\SiteDiary\LetterLayout;
 use App\Services\SiteDiary\NoticeDeadlineSource;
 use Illuminate\Support\Facades\Route;
 use Tests\Feature\Website\BannedWording;
@@ -24,9 +26,12 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
             ...glob(resource_path('views/modules/site_diary/*.blade.php')),
             app_path('Models/Hindrance.php'),
             app_path('Models/HindranceSource.php'),
+            app_path('Models/SiteLetter.php'),
+            app_path('Models/SiteLetterHindrance.php'),
             config_path('modules/site_diary.php'),
             base_path('routes/modules/site_diary.php'),
             database_path('migrations/2027_01_16_100001_create_hindrance_tables.php'),
+            database_path('migrations/2027_01_16_100002_create_site_letter_tables.php'),
         ];
     }
 
@@ -68,7 +73,7 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         }
 
         $config = config('modules.site_diary');
-        array_push($texts, ...array_values($config['categories']), ...array_values($config['statuses']));
+        array_push($texts, ...array_values($config['categories']), ...array_values($config['statuses']), ...array_values($config['letter_types']), ...array_values($config['letter_statuses']));
 
         foreach ($config['nav'] as $item) {
             $texts[] = $item['label'];
@@ -77,15 +82,18 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         // A reminder's title and message are kept in English and translated when shown.
         array_push($texts, ...NoticeDeadlineSource::wording());
 
-        // The custom role screen names the module and its two actions from the permission strings.
-        array_push($texts, 'Site Diary', 'View', 'Manage');
+        // Every sentence a letter is put together from, and the label of every figure in it.
+        array_push($texts, ...LetterLayout::wording());
+
+        // The custom role screen names the module and its three actions from the permission strings.
+        array_push($texts, 'Site Diary', 'View', 'Manage', 'Letters');
 
         return array_values(array_unique($texts));
     }
 
     public function test_every_text_has_a_hindi_and_a_marathi_line(): void
     {
-        $this->assertGreaterThan(120, count($this->usedTexts()));
+        $this->assertGreaterThan(250, count($this->usedTexts()));
 
         foreach (['hi', 'mr'] as $locale) {
             $lines = [...array_map(fn (array $found) => $found[0], $this->elsewhere($locale)), ...$this->own($locale)];
@@ -127,7 +135,7 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
     public function test_the_code_holds_no_notice_period_no_number_of_days_and_no_clause_of_its_own(): void
     {
         $files = [...$this->sourceFiles(), ...glob(lang_path('modules/site_diary/*.json'))];
-        $this->assertGreaterThanOrEqual(16, count($files));
+        $this->assertGreaterThanOrEqual(26, count($files));
 
         foreach ($files as $file) {
             $source = (string) file_get_contents($file);
@@ -162,8 +170,9 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
 
         // Nothing else in the module's code states a number of days: a date is always a term's own days added by
         // HindranceMath. Beyond 0 and 1, the numbers written in the code are the shape of a date (4 and 2 digits, 10
-        // characters), the length of a fingerprint, and the fallback for the length of the list.
-        $others = ['HindranceMath.php' => ['2', '4'], 'HindranceRegister.php' => ['10', '200'], 'Hindrances.php' => ['16']];
+        // characters), the length of a fingerprint, the fallback for the length of the list, and the width of the
+        // column that keeps a letter's subject line.
+        $others = ['HindranceMath.php' => ['2', '4'], 'HindranceRegister.php' => ['10', '200'], 'Hindrances.php' => ['16'], 'SiteLetters.php' => ['255']];
 
         foreach (glob(app_path('Services/SiteDiary/*.php')) as $file) {
             $code = preg_replace('#/\*.*?\*/|//[^\n]*#s', '', (string) file_get_contents($file));
@@ -184,8 +193,16 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
 
         $this->assertSame(Hindrance::STATUSES, array_keys($config['statuses']));
 
-        foreach ([...Hindrance::STATUSES] as $status) {
+        foreach ([...Hindrance::STATUSES, ...SiteLetter::STATUSES] as $status) {
             $this->assertLessThanOrEqual(12, strlen($status));
+        }
+
+        // The kinds of letter and their two states are named in the list the screens read, and fit their columns.
+        $this->assertSame(SiteLetter::TYPES, array_keys($config['letter_types']));
+        $this->assertSame(SiteLetter::STATUSES, array_keys($config['letter_statuses']));
+
+        foreach (SiteLetter::TYPES as $type) {
+            $this->assertLessThanOrEqual(24, strlen($type));
         }
 
         foreach (Hindrance::PROPOSERS as $proposer) {
@@ -239,7 +256,7 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
     {
         $this->assertTrue($this->pm->can('site_diary.view'));
         $this->assertTrue($this->pm->can('site_diary.manage'));
-        $this->assertTrue($this->pm->can('site_diary.letters'), 'The project manager holds the whole module, letters included once they are built.');
+        $this->assertTrue($this->pm->can('site_diary.letters'), 'The project manager holds the whole module, letters included.');
 
         $this->assertTrue($this->engineer->can('site_diary.view'));
         $this->assertTrue($this->engineer->can('site_diary.manage'));
@@ -248,18 +265,23 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         $this->assertTrue($this->qs->can('site_diary.view'));
         $this->assertFalse($this->qs->can('site_diary.manage'));
 
+        $this->assertFalse($this->qs->can('site_diary.letters'));
+
         foreach (['accounts', 'store', 'viewer'] as $role) {
             $user = $this->member($this->org, $role);
             $this->assertFalse($user->can('site_diary.view'), $role);
             $this->assertFalse($user->can('site_diary.manage'), $role);
+            $this->assertFalse($user->can('site_diary.letters'), $role);
         }
 
         $catalog = app(PermissionCatalog::class);
         $this->assertContains('site_diary.view', $catalog->all());
         $this->assertContains('site_diary.manage', $catalog->all());
+        $this->assertContains('site_diary.letters', $catalog->all(), 'A custom role can be given letters by themselves.');
 
         app()->setLocale('mr');
         $this->assertSame('साइट डायरी', $catalog->moduleLabel('site_diary'));
+        $this->assertSame('पत्रे', $catalog->actionLabel('site_diary.letters'));
 
         // The module rides on site control and adds no plan feature of its own.
         $this->assertSame('site_control', config('modules.site_diary.feature'));
@@ -271,21 +293,33 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         $routes = collect(Route::getRoutes())->filter(fn ($route) => str_starts_with((string) $route->getName(), 'site-diary.'));
 
         $this->assertSame(
-            ['site-diary.hindrances.confirm', 'site-diary.hindrances.dismiss', 'site-diary.hindrances.index', 'site-diary.hindrances.store', 'site-diary.hindrances.update'],
+            [
+                'site-diary.hindrances.confirm', 'site-diary.hindrances.dismiss', 'site-diary.hindrances.index', 'site-diary.hindrances.store', 'site-diary.hindrances.update',
+                'site-diary.letters.finalise', 'site-diary.letters.index', 'site-diary.letters.show', 'site-diary.letters.store', 'site-diary.letters.update',
+            ],
             $routes->map->getName()->sort()->values()->all(),
         );
 
         foreach ($routes as $route) {
             $middleware = $route->gatherMiddleware();
+            $name = $route->getName();
 
-            $this->assertContains('auth', $middleware, $route->getName());
-            $this->assertContains('feature:site_control', $middleware, $route->getName());
-            $this->assertContains($route->getName() === 'site-diary.hindrances.index' ? 'can:site_diary.view' : 'can:site_diary.manage', $middleware, $route->getName());
-            $this->assertSame(in_array($route->getName(), ['site-diary.hindrances.store', 'site-diary.hindrances.update'], true), in_array('can:dpr.view', $middleware, true), $route->getName());
+            $this->assertContains('auth', $middleware, $name);
+            $this->assertContains('feature:site_control', $middleware, $name);
+            $this->assertContains(match (true) {
+                str_starts_with($name, 'site-diary.letters.') => 'can:site_diary.letters',
+                $name === 'site-diary.hindrances.index' => 'can:site_diary.view',
+                default => 'can:site_diary.manage',
+            }, $middleware, $name);
+            $this->assertSame(in_array($name, ['site-diary.hindrances.store', 'site-diary.hindrances.update'], true), in_array('can:dpr.view', $middleware, true), $name);
+
+            // No route of the module calls an AI model, so none waits for the AI plan, the consent switch or a throttle of its own.
+            $this->assertSame([], array_values(array_filter($middleware, fn ($entry) => is_string($entry) && (str_contains($entry, 'ai_agents') || str_contains($entry, 'RequireAiReader') || str_contains($entry, 'agents.use')))), $name);
         }
 
         // The public AI page shows "Hindrance register and letters" once a route named hindrances.index exists.
-        // The letters are not built in this slice, so the register does not take that name.
+        // Three tests of that page (tests/Feature/Website/AiPagesTest.php) expect no such route until they add one
+        // themselves, so the module does not take the name. Switching the card on needs that file changed as well.
         $this->assertFalse(Route::has('hindrances.index'));
     }
 }

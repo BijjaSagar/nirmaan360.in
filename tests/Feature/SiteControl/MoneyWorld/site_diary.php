@@ -4,11 +4,15 @@ use App\Models\ContractTerm;
 use App\Models\Dpr;
 use App\Models\Hindrance;
 use App\Models\HindranceSource;
+use App\Models\SiteLetter;
+use App\Services\SiteDiary\SiteLetters;
+use Illuminate\Support\Str;
 
 /*
  * The hindrance register for the route walks: a daily report that says something under hindrances,
  * a confirmed entry made from it that is still going on, and a confirmed notice period of its own,
  * so the page works out a date and prints the period it came from. Nothing in the register is money.
+ * A draft letter about the entry lets the walks open the letter page as well.
  * The clause typed for the term is the one thing a site role must not be shown.
  * The number of days is invented for the test and comes from no agreement.
  */
@@ -54,4 +58,14 @@ return function (): void {
     ]);
 
     $this->rows[Hindrance::class] ??= $entry;
+
+    // A draft notice of delay about that entry, in Marathi, prepared the way the screen prepares one. A letter of this
+    // kind carries no money; a payment follow-up needs an approved client bill, which this company does not have.
+    $this->rows[SiteLetter::class] ??= app(SiteLetters::class)->create($this->project, [
+        'client_uuid' => (string) Str::uuid(),
+        'type' => SiteLetter::DELAY_NOTICE,
+        'language' => 'mr',
+        'hindrance_ids' => [$entry->id],
+        'addressed_to' => 'The Engineer in charge',
+    ], $owner);
 };

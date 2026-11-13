@@ -3,7 +3,9 @@
 namespace Tests\Feature\SiteDiary;
 
 use App\Models\Hindrance;
+use App\Models\SiteLetter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\Feature\SiteControl\BuildsMoneyWorld;
 use Tests\TestCase;
 
@@ -59,6 +61,43 @@ class SiteDiaryMoneyWorldTest extends TestCase
         // The store keeper and the viewer have no register.
         foreach (['store', 'viewer', 'accounts'] as $role) {
             $this->actingAs($this->users[$role])->get($url)->assertForbidden();
+        }
+    }
+
+    public function test_the_walks_open_a_draft_letter_that_only_people_who_write_letters_can_read(): void
+    {
+        $letter = $this->rows[SiteLetter::class];
+        $entry = $this->rows[Hindrance::class];
+        $list = route('site-diary.letters.index', $this->project);
+        $page = route('site-diary.letters.show', $letter);
+
+        $this->assertSame([SiteLetter::DELAY_NOTICE, SiteLetter::DRAFT, 'mr'], [$letter->type, $letter->status, $letter->language]);
+        $this->assertNull($entry->refresh()->locked_at, 'A draft locks nothing, so the register in the walks is as it was.');
+
+        foreach (['owner', 'pm'] as $role) {
+            $this->actingAs($this->users[$role])->get($list)->assertOk()->assertSee($page, false)->assertSee('Prepare a letter');
+            $shown = $this->get($page)->assertOk()
+                ->assertSee('Lift shaft drawings awaited')
+                // The clause typed for the other notice is no part of a notice of delay.
+                ->assertDontSee('Sample agreement, annexure Q')
+                ->assertSee('Figures in this letter')
+                ->assertSee('title="Name of your company">Sentinel Infra</mark> करिता', false)
+                ->assertDontSee('The records behind this draft have changed');
+
+            // Dates and days only: nothing in the page itself is money. (The bell above it may name a bill sent to this person for approval.)
+            $main = Str::between($shown->getContent(), '<main', '</main>');
+            $this->assertStringContainsString('Lift shaft drawings awaited', $main);
+            $this->assertStringNotContainsString('₹', $main);
+
+            foreach (array_keys(self::MONEY) as $figure) {
+                $this->assertStringNotContainsString($this->needle($figure), preg_replace('/\D+/', '', $main), $figure);
+            }
+        }
+
+        // The site roles and accounts have no letters at all.
+        foreach (['engineer', 'store', 'viewer', 'accounts', 'qs'] as $role) {
+            $this->actingAs($this->users[$role])->get($list)->assertForbidden();
+            $this->get($page)->assertForbidden();
         }
     }
 }

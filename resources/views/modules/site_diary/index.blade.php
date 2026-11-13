@@ -12,6 +12,9 @@
     @endphp
     <div x-data="{ form: {{ $formOpen ? 'true' : 'false' }} }">
     <x-page-header :title="__('Hindrance register')" :subtitle="$project->name">
+        @can('site_diary.letters')
+            <a href="{{ route('site-diary.letters.index', $project) }}" class="btn btn-ghost min-h-11">{{ __('Letters') }}</a>
+        @endcan
         @if ($canMake && ! $editing && ! $correcting)
             <button type="button" class="btn btn-primary min-h-11" @click="form = ! form"><x-icon name="plus" class="size-4" />{{ __('Make an entry') }}</button>
         @endif

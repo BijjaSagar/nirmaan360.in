@@ -16,12 +16,19 @@ class SiteDiaryMigrationTest extends SiteDiaryTestCase
         return require database_path('migrations/2027_01_16_100001_create_hindrance_tables.php');
     }
 
+    /** The letters tables were made later and point at the register, so a rollback takes them first. */
+    private function lettersMigration(): object
+    {
+        return require database_path('migrations/2027_01_16_100002_create_site_letter_tables.php');
+    }
+
     public function test_the_migration_can_be_rolled_back_and_run_again(): void
     {
         $this->cite($this->hindrance(), $this->dpr('2026-03-02'));
         $this->assertTrue(Schema::hasTable('hindrances'));
         $this->assertTrue(Schema::hasTable('hindrance_sources'));
 
+        $this->lettersMigration()->down();
         $this->migration()->down();
         $this->assertFalse(Schema::hasTable('hindrances'));
         $this->assertFalse(Schema::hasTable('hindrance_sources'));
@@ -32,6 +39,7 @@ class SiteDiaryMigrationTest extends SiteDiaryTestCase
         }
 
         $this->migration()->up();
+        $this->lettersMigration()->up();
         $this->assertSame(0, Hindrance::withoutGlobalScopes()->withTrashed()->count());
         $this->assertSame(0, HindranceSource::withoutGlobalScopes()->count());
 

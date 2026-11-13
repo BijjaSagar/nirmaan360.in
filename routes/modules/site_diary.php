@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\SiteDiary\HindranceController;
+use App\Http\Controllers\SiteDiary\SiteLetterController;
 use Illuminate\Support\Facades\Route;
 
 // The hindrance register (site_control feature). This file is included inside the signed-in, active-user
@@ -17,4 +18,16 @@ Route::middleware('feature:site_control')->name('site-diary.hindrances.')->group
         Route::post('/hindrances/{hindrance}/confirm', [HindranceController::class, 'confirm'])->name('confirm');
         Route::post('/hindrances/{hindrance}/dismiss', [HindranceController::class, 'dismiss'])->name('dismiss');
     });
+});
+
+// Letters drafted from the register and from unpaid client bills. A payment follow-up is nothing but money,
+// so the controller also asks for money.view on every route that prepares, opens, changes or finalises one.
+// No route here calls an AI model, and none sends a letter anywhere.
+
+Route::middleware(['feature:site_control', 'can:site_diary.letters'])->name('site-diary.letters.')->group(function () {
+    Route::get('/projects/{project}/site-letters', [SiteLetterController::class, 'index'])->name('index');
+    Route::post('/projects/{project}/site-letters', [SiteLetterController::class, 'store'])->name('store');
+    Route::get('/site-letters/{letter}', [SiteLetterController::class, 'show'])->name('show');
+    Route::patch('/site-letters/{letter}', [SiteLetterController::class, 'update'])->name('update');
+    Route::post('/site-letters/{letter}/finalise', [SiteLetterController::class, 'finalise'])->name('finalise');
 });
