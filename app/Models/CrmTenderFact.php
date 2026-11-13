@@ -67,4 +67,30 @@ class CrmTenderFact extends Model
     {
         return in_array($this->status, self::STANDING, true);
     }
+
+    /**
+     * Where the fact was put to use, as applied_to keeps it: "field" for a value set on the tender,
+     * "task:12" for a follow-up, "payment:7" for a planned payment.
+     *
+     * @return array<string, ?int> The use => the id of the record it made, if it made one.
+     */
+    public function uses(): array
+    {
+        $uses = [];
+
+        foreach (array_filter(explode(',', (string) $this->applied_to)) as $entry) {
+            [$target, $id] = array_pad(explode(':', $entry, 2), 2, null);
+            $uses[$target] = $id === null ? null : (int) $id;
+        }
+
+        return $uses;
+    }
+
+    /** applied_to with one more use added. */
+    public function withUse(string $target, ?int $id): string
+    {
+        return collect([...$this->uses(), $target => $id])
+            ->map(fn (?int $recordId, string $use) => $recordId === null ? $use : $use.':'.$recordId)
+            ->implode(',');
+    }
 }

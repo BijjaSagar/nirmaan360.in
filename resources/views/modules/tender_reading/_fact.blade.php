@@ -4,17 +4,21 @@
     facts side by side instead, each with its page below it).
 
     Everything the reader returned is shown as text. A link read from a document is never made a link.
-    Confirm is sent with viewed = 1 only once the page has been drawn here.
+    Confirm is sent with viewed = 1 only once the page has been drawn here: a PDF page drawn by pdf.js,
+    or a picture document shown as it is.
+
+    A confirmed fact lists the uses it can be put to (into the tender's field, a follow-up, a planned
+    payment), each with what it will do or why it cannot be done yet.
 --}}
 @php
     $statusTone = [
         'proposed' => ['border-ink-3 text-ink-3', __('Not checked yet')],
-        'confirmed' => ['border-moss text-moss', __('Confirmed')],
+        'confirmed' => ['border-moss text-moss', __('Confirmed against its page')],
         'rejected' => ['border-laterite text-laterite', __('Rejected')],
         'superseded' => ['border-ink-3 text-ink-3', __('Replaced')],
     ][$fact['status']] ?? ['border-ink-3 text-ink-3', $fact['status']];
 @endphp
-<article id="fact-{{ $fact['id'] }}" class="rounded-[3px] border border-rule bg-sheet p-3" data-pdf="{{ $fact['pdf_url'] }}" data-page="{{ (int) $fact['page'] }}"
+<article id="fact-{{ $fact['id'] }}" class="rounded-[3px] border border-rule bg-sheet p-3" data-pdf="{{ $fact['pdf_url'] }}" data-picture="{{ $fact['picture_url'] }}" data-page="{{ (int) $fact['page'] }}"
          x-data="{
              open: false, drawing: false, src: null, problem: null,
              async show() {
@@ -22,7 +26,17 @@
                  if (this.src || this.drawing) return;
                  this.drawing = true;
                  this.problem = null;
-                 try { this.src = await window.TenderPages.draw(this.$root.dataset.pdf, Number(this.$root.dataset.page)); }
+                 try {
+                     const picture = this.$root.dataset.picture;
+                     if (picture) {
+                         const shown = new Image();
+                         shown.src = picture;
+                         await shown.decode();
+                         this.src = picture;
+                     } else {
+                         this.src = await window.TenderPages.draw(this.$root.dataset.pdf, Number(this.$root.dataset.page));
+                     }
+                 }
                  catch (error) { this.problem = @js(__('This page could not be drawn in this browser. Open the document and turn to the page yourself.')); }
                  finally { this.drawing = false; }
              },
@@ -55,9 +69,17 @@
             @if ($fact['status'] === 'confirmed' && $fact['confirmed_by'])
                 <p class="text-xs text-moss">{{ __('Confirmed by :name on :date', ['name' => $fact['confirmed_by'], 'date' => $fact['confirmed_at']?->format('d M Y')]) }}</p>
             @endif
+            @foreach ($fact['replaces'] as $old)
+                <p class="text-xs font-medium text-[#8a6208]">{{ $old['document']
+                    ? __('Confirming this replaces the confirmed value from page :page of :document.', ['page' => $old['page'], 'document' => $old['document']])
+                    : __('Confirming this replaces the confirmed value from page :page.', ['page' => $old['page']]) }}</p>
+            @endforeach
+            @if ($fact['status'] === 'superseded' && $fact['applied'])
+                <p class="text-xs font-medium text-[#8a6208]">{{ __('This value was put on the tender. Put the new value on the tender to change it there.') }}</p>
+            @endif
 
             <div class="flex flex-wrap items-center gap-2 pt-1">
-                @if ($fact['pdf_url'])
+                @if ($fact['pdf_url'] || $fact['picture_url'])
                     <button type="button" class="btn btn-ghost min-h-11 py-1 text-xs" @click="show()">{{ __('Show page :page', ['page' => $fact['page']]) }}</button>
                 @else
                     <span class="text-xs text-ink-3">{{ __('The document has been removed from the tender, so its page cannot be drawn.') }}</span>
@@ -77,6 +99,36 @@
                     </form>
                 @endif
             </div>
+
+            @if ($fact['uses'] !== [])
+                <div class="space-y-2 border-t border-rule pt-2">
+                    @foreach ($fact['uses'] as $use)
+                        <div class="space-y-1">
+                            <p class="text-xs text-ink-2">{{ $use['preview'] }}</p>
+                            @if ($use['done'])
+                                <p class="text-xs font-medium text-moss">{{ match ($use['target']) { 'field' => __('Put on the tender.'), 'task' => __('Follow-up added.'), default => __('Planned payment added.') } }}</p>
+                            @elseif ($use['blocked'])
+                                <p class="text-xs font-medium text-[#8a6208]">{{ $use['blocked'] }}</p>
+                            @else
+                                <form method="POST" action="{{ route('tender-facts.apply', $fact['id']) }}" class="flex flex-wrap items-center gap-2">
+                                    @csrf
+                                    <input type="hidden" name="target" value="{{ $use['target'] }}">
+                                    <input type="hidden" name="client_uuid" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
+                                    @if ($use['target'] === 'payment')
+                                        <select name="mode" required class="input min-h-11 w-auto" aria-label="{{ __('Form of payment') }}">
+                                            <option value="">{{ __('Form of payment') }}</option>
+                                            @foreach (\App\Services\Crm\Vocab::paymentModes() as $mode => $modeLabel)
+                                                <option value="{{ $mode }}">{{ $modeLabel }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                    <button class="btn btn-ghost min-h-11 py-1 text-xs">{{ match ($use['target']) { 'field' => __('Put on the tender'), 'task' => __('Add a follow-up'), default => __('Add as a planned payment') } }}</button>
+                                </form>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
 
             @if ($fact['can_edit'])
                 <details class="pt-1">

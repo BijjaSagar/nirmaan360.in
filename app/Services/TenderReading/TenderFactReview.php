@@ -23,7 +23,7 @@ class TenderFactReview
 {
     public const NOT_PROPOSED = 'not_proposed';
 
-    public function __construct(private TenderFactBuilder $builder) {}
+    public function __construct(private TenderFactBuilder $builder, private TenderFactDiff $diff) {}
 
     /** @throws ReadRefused when the fact is no longer a proposal */
     public function edit(CrmTenderFact $fact, string $value, User $by): CrmTenderFact
@@ -46,6 +46,9 @@ class TenderFactReview
      * Confirms a fact. Only while its page is drawn beside it: the screen sends "viewed" once the page
      * has been drawn, and the server keeps that the page was viewed.
      *
+     * When another document, such as a corrigendum, gave a different value that was confirmed before,
+     * confirming this one marks that one replaced (TenderFactDiff). Nothing on the tender changes.
+     *
      * @throws ValidationException when the page was not viewed
      * @throws ReadRefused when the fact is no longer a proposal
      */
@@ -62,6 +65,8 @@ class TenderFactReview
                 'confirmed_by' => $by->id,
                 'confirmed_at' => now(),
             ])->save();
+
+            $this->diff->supersede($locked, $by);
 
             return ['tender_fact.confirmed', ['status' => CrmTenderFact::PROPOSED], ['status' => CrmTenderFact::CONFIRMED, 'page_viewed' => true]];
         });

@@ -13,11 +13,14 @@ use Illuminate\Support\Collection;
 
 /**
  * The tender sheet as a person reads it: the facts in groups, each with its page and the line it was
- * read from, contradictions side by side, the checks code can make on dates and the deposit, and the
- * pages that were not read. Code never chooses between two values and never fills one in.
+ * read from, contradictions side by side, what a later document changes, the checks code can make on
+ * dates and the deposit, the uses a confirmed fact can be put to, and the pages that were not read.
+ * Code never chooses between two values and never fills one in.
  */
 class TenderSheet
 {
+    public function __construct(private TenderFactApply $apply) {}
+
     /** Dates that come one after the other in a tender, in this order. */
     private const DATE_ORDER = ['published_on', 'pre_bid_at', 'due_at', 'opens_at'];
 
@@ -36,20 +39,32 @@ class TenderSheet
 
         $documents = CrmTenderDocument::withoutGlobalScopes()
             ->where('organization_id', $tender->organization_id)->where('tender_id', $tender->id)
-            ->get(['id', 'title', 'deleted_at'])->keyBy('id');
+            ->get(['id', 'title', 'original_name', 'mime', 'deleted_at'])->keyBy('id');
 
         $standing = $facts->filter->isStanding();
         $canReview = $viewer->can('crm.manage');
+        $context = [
+            'documents' => $documents,
+            'confirmed' => $facts->where('status', CrmTenderFact::CONFIRMED)->values(),
+            'tender' => $tender,
+            'viewer' => $viewer,
+            'can_review' => $canReview,
+            'can_pay' => $viewer->can('crm.emd'),
+        ];
 
         return [
-            'groups' => $this->groups($standing, $documents, $canReview),
+            'groups' => $this->groups($standing, $context),
             'counts' => [
                 'proposed' => $facts->where('status', CrmTenderFact::PROPOSED)->count(),
                 'confirmed' => $facts->where('status', CrmTenderFact::CONFIRMED)->count(),
                 'rejected' => $facts->where('status', CrmTenderFact::REJECTED)->count(),
+                'superseded' => $facts->where('status', CrmTenderFact::SUPERSEDED)->count(),
                 'conflicts' => $standing->whereNotNull('conflict_group')->pluck('conflict_group')->uniqueStrict()->count(),
             ],
-            'rejected' => $facts->where('status', CrmTenderFact::REJECTED)->values()->map(fn (CrmTenderFact $fact) => $this->view($fact, $documents, false))->all(),
+            'changes' => $this->changes($facts, $documents),
+            'pictures' => $standing->contains(fn (CrmTenderFact $fact) => $fact->source === CrmTenderFact::FROM_IMAGE),
+            'rejected' => $facts->where('status', CrmTenderFact::REJECTED)->values()->map(fn (CrmTenderFact $fact) => $this->view($fact, [...$context, 'can_review' => false]))->all(),
+            'superseded' => $facts->where('status', CrmTenderFact::SUPERSEDED)->values()->map(fn (CrmTenderFact $fact) => $this->view($fact, [...$context, 'can_review' => false]))->all(),
             'warnings' => $this->dateWarnings($standing),
             'emd' => $this->emd($facts),
             'reads' => $this->reads($tender, $documents),
@@ -58,10 +73,10 @@ class TenderSheet
 
     /**
      * @param  Collection<int, CrmTenderFact>  $standing
-     * @param  Collection<int, CrmTenderDocument>  $documents
+     * @param  array<string, mixed>  $context  What every fact's view needs: the documents, the confirmed facts, the tender and the viewer.
      * @return list<array<string, mixed>>
      */
-    private function groups(Collection $standing, Collection $documents, bool $canReview): array
+    private function groups(Collection $standing, array $context): array
     {
         $order = array_flip(TenderFields::keys());
         $groups = [];
@@ -80,7 +95,9 @@ class TenderSheet
                     'field' => $facts->first()->field,
                     'name' => __(TenderFields::label($facts->first()->field)),
                     'conflict' => $facts->whereNotNull('conflict_group')->isNotEmpty(),
-                    'facts' => $facts->values()->map(fn (CrmTenderFact $fact) => $this->view($fact, $documents, $canReview))->all(),
+                    // A different value from another document than the confirmed one: a change, not a contradiction in one document.
+                    'change' => $facts->contains(fn (CrmTenderFact $fact) => $fact->status === CrmTenderFact::PROPOSED && TenderFactDiff::replaces($fact, $context['confirmed'])->isNotEmpty()),
+                    'facts' => $facts->values()->map(fn (CrmTenderFact $fact) => $this->view($fact, $context))->all(),
                 ])
                 ->values()->all();
 
@@ -91,12 +108,16 @@ class TenderSheet
     }
 
     /**
-     * @param  Collection<int, CrmTenderDocument>  $documents
+     * @param  array<string, mixed>  $context
      * @return array<string, mixed>
      */
-    private function view(CrmTenderFact $fact, Collection $documents, bool $canReview): array
+    private function view(CrmTenderFact $fact, array $context): array
     {
+        $documents = $context['documents'];
+        $canReview = (bool) $context['can_review'];
         $document = $documents->get($fact->document_id);
+        $drawable = $document !== null && $document->deleted_at === null;
+        $picture = $document !== null && ! TenderCard::looksLikePdf($document) && TenderCard::looksLikePicture($document);
         $line = $fact->quote_line ?? $fact->quote;
         $value = mb_strtolower(TenderQuote::spelling($fact->value_raw));
 
@@ -118,12 +139,73 @@ class TenderSheet
             'confirmed_by' => $fact->confirmer?->name,
             'confirmed_at' => $fact->confirmed_at,
             'document' => $document?->title,
-            // A document removed from the tender can no longer be drawn; its facts stay readable.
-            'pdf_url' => $document !== null && $document->deleted_at === null ? route('crm.documents.download', $document->id) : null,
+            // A document removed from the tender can no longer be drawn; its facts stay readable. A picture document is shown as it is.
+            'pdf_url' => $drawable && ! $picture ? route('crm.documents.download', $document->id) : null,
+            'picture_url' => $drawable && $picture ? route('crm.documents.download', $document->id) : null,
             'can_edit' => $canReview && $fact->status === CrmTenderFact::PROPOSED,
             'can_confirm' => $canReview && $fact->status === CrmTenderFact::PROPOSED,
             'can_reject' => $canReview && $fact->isStanding() && $fact->applied_to === null,
+            'replaces' => $fact->status === CrmTenderFact::PROPOSED
+                ? TenderFactDiff::replaces($fact, $context['confirmed'])->map(fn (CrmTenderFact $old) => ['page' => (int) $old->page, 'document' => $documents->get($old->document_id)?->title])->all()
+                : [],
+            'applied' => $fact->applied_to !== null,
+            'uses' => $canReview && $fact->status === CrmTenderFact::CONFIRMED ? $this->uses($fact, $context) : [],
         ];
+    }
+
+    /**
+     * The uses a confirmed fact can be put to, each with what it will do, whether it was done, and
+     * why it cannot be done now. A planned payment is offered only to someone who records EMD and fees.
+     *
+     * @param  array<string, mixed>  $context
+     * @return list<array{target: string, preview: string, done: bool, blocked: ?string}>
+     */
+    private function uses(CrmTenderFact $fact, array $context): array
+    {
+        $done = $fact->uses();
+        $uses = [];
+
+        foreach (TenderFactApply::targets($fact) as $target) {
+            if ($target === TenderFactApply::PAYMENT && ! $context['can_pay']) {
+                continue;
+            }
+
+            $applied = array_key_exists($target, $done);
+
+            $uses[] = [
+                'target' => $target,
+                'preview' => TenderFactApply::preview($fact, $target),
+                'done' => $applied,
+                'blocked' => $applied ? null : $this->apply->blocker($fact, $target, $context['viewer'], $context['tender'])['message'] ?? null,
+            ];
+        }
+
+        return $uses;
+    }
+
+    /**
+     * What another document changes, field by field: the confirmed value and the new one, each with
+     * its document and page.
+     *
+     * @param  Collection<int, CrmTenderFact>  $facts
+     * @param  Collection<int, CrmTenderDocument>  $documents
+     * @return list<array<string, mixed>>
+     */
+    private function changes(Collection $facts, Collection $documents): array
+    {
+        $side = fn (CrmTenderFact $fact) => [
+            'id' => $fact->id,
+            'value' => $fact->value_raw,
+            'page' => (int) $fact->page,
+            'document' => $documents->get($fact->document_id)?->title,
+            'applied' => $fact->applied_to !== null,
+        ];
+
+        return array_map(fn (array $change) => [
+            'name' => __(TenderFields::label($change['field'])),
+            'old' => $change['old']->map($side)->all(),
+            'new' => $change['new']->map($side)->all(),
+        ], TenderFactDiff::changes($facts));
     }
 
     /**
@@ -265,9 +347,31 @@ class TenderSheet
     {
         $why = [];
         $flags = (array) ($read->options['page_flags'] ?? []);
+        $covered = [];
+        $failed = [];
 
+        foreach ($pages as $page) {
+            foreach (range((int) $page->page_no, max((int) $page->page_no, (int) $page->page_to)) as $number) {
+                if (in_array($page->status, [DocumentReadPage::READ, DocumentReadPage::SUPERSEDED], true)) {
+                    $covered[$number] = true;
+                } elseif ($page->status === DocumentReadPage::FAILED) {
+                    $failed[$number] = true;
+                }
+            }
+        }
+
+        // A page that can only be read as a picture is not read when no picture of it was: for want of a
+        // trustworthy text on a text read, for want of an uploaded picture on a read of pictures.
         foreach (TenderReads::picturePages($read) as $number) {
-            $why[$number] = (string) (($flags[$number] ?? $flags[(string) $number] ?? ['mismatch'])[0] ?? 'mismatch');
+            if (isset($covered[$number])) {
+                continue;
+            }
+
+            $why[$number] = match (true) {
+                isset($failed[$number]) => 'failed',
+                TenderReads::source($read) !== TenderReads::SOURCE_TEXT => 'not_sent',
+                default => (string) (($flags[$number] ?? $flags[(string) $number] ?? ['mismatch'])[0] ?? 'mismatch'),
+            };
         }
 
         foreach ($pages as $page) {
@@ -276,7 +380,9 @@ class TenderSheet
             }
 
             foreach (range((int) $page->page_no, max((int) $page->page_no, (int) $page->page_to)) as $number) {
-                $why[$number] ??= $page->status === DocumentReadPage::FAILED ? 'failed' : 'not_sent';
+                if (! isset($covered[$number])) {
+                    $why[$number] ??= $page->status === DocumentReadPage::FAILED ? 'failed' : 'not_sent';
+                }
             }
         }
 

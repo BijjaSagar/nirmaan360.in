@@ -33,5 +33,7 @@ Route::middleware('feature:crm')->prefix('crm')->group(function () {
         Route::patch('/tender-facts/{fact}', 'update')->name('tender-facts.update');
         Route::post('/tender-facts/{fact}/confirm', 'confirm')->name('tender-facts.confirm');
         Route::post('/tender-facts/{fact}/reject', 'reject')->name('tender-facts.reject');
+        // A confirmed fact into the tender's field, a follow-up or a planned payment. A payment also needs crm.emd, checked in the controller.
+        Route::post('/tender-facts/{fact}/apply', 'apply')->name('tender-facts.apply')->middleware('throttle:60,1,tender-apply');
     });
 });

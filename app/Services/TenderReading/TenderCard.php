@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 /**
  * The tender reader's card on the tender page: the sheet when there is one, and "Read this document"
- * beside each PDF for someone who may start a read while the reader is on for the company.
+ * beside each PDF, JPG or PNG for someone who may start a read while the reader is on for the company.
  */
 class TenderCard
 {
@@ -48,9 +48,9 @@ class TenderCard
         $rows = $documents->map(fn (CrmTenderDocument $document) => [
             'id' => $document->id,
             'title' => $document->title,
-            'is_pdf' => self::looksLikePdf($document),
+            'readable' => self::looksLikePdf($document) || self::looksLikePicture($document),
             'read' => $reads->get($document->id),
-        ])->filter(fn (array $row) => $row['read'] !== null || ($canRead && $row['is_pdf']))->values();
+        ])->filter(fn (array $row) => $row['read'] !== null || ($canRead && $row['readable']))->values();
 
         if ($facts->isEmpty() && $rows->isEmpty()) {
             return null;
@@ -70,5 +70,11 @@ class TenderCard
     {
         return strtolower(pathinfo((string) $document->original_name, PATHINFO_EXTENSION)) === 'pdf'
             || $document->mime === 'application/pdf';
+    }
+
+    /** A JPG or PNG, by the name the upload gave it. It is read as one page picture. The read checks the content first. */
+    public static function looksLikePicture(CrmTenderDocument $document): bool
+    {
+        return in_array(strtolower(pathinfo((string) $document->original_name, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png'], true);
     }
 }

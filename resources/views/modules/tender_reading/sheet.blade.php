@@ -11,9 +11,34 @@
         <section class="card space-y-1.5 p-4 text-sm">
             <p class="font-medium">{{ __('This sheet is a reading aid. Read the tender conditions yourself. A corrigendum is seen only if you upload it.') }}</p>
             <p class="text-ink-2">{{ __("The quoted line matches the PDF's text on that page. The page is shown beside it for you to check.") }}</p>
-            <p class="text-ink-2">{{ __('Nothing here changes the tender. Each fact stays a proposal until a person confirms it with its page open.') }}</p>
+            @if ($sheet['pictures'])
+                <p class="text-ink-2">{{ __('Read from the page picture. Check it against the page.') }}</p>
+            @endif
+            <p class="text-ink-2">{{ __('Nothing here changes the tender. Each fact stays a proposal until a person confirms it with its page open, and reaches the tender only when a person puts it there.') }}</p>
             <p class="text-xs text-ink-3">{{ __('Not checked yet: :proposed · Confirmed: :confirmed · Rejected: :rejected', $sheet['counts']) }}</p>
         </section>
+
+        @if ($sheet['changes'] !== [])
+            <section class="card">
+                <div class="card-head"><h2 class="card-title">{{ __('What another document changes') }}</h2></div>
+                <p class="border-b border-rule px-4 py-2 text-xs text-ink-3">{{ __('Another document gives a different value from one already confirmed. Check the new value against its page. Confirming it replaces the confirmed one; rejecting it keeps the confirmed one.') }}</p>
+                @foreach ($sheet['changes'] as $change)
+                    <div class="space-y-1 border-b border-rule px-4 py-3 text-sm last:border-b-0">
+                        <h3 class="eyebrow text-ink-3">{{ $change['name'] }}</h3>
+                        @foreach ($change['old'] as $old)
+                            <p class="break-words"><span class="text-xs text-ink-3">{{ __('Confirmed against its page') }}:</span> <span class="font-medium">{{ $old['value'] }}</span>
+                                <span class="text-xs text-ink-3">· {{ __('Page :page', ['page' => $old['page']]) }}@if ($old['document']) · {{ $old['document'] }}@endif</span>
+                                @if ($old['applied'])<span class="text-xs text-ink-3">· {{ __('on the tender') }}</span>@endif</p>
+                        @endforeach
+                        @foreach ($change['new'] as $new)
+                            <p class="break-words"><span class="text-xs font-medium text-[#8a6208]">{{ __('New') }}:</span> <span class="font-medium">{{ $new['value'] }}</span>
+                                <span class="text-xs text-ink-3">· {{ __('Page :page', ['page' => $new['page']]) }}@if ($new['document']) · {{ $new['document'] }}@endif</span>
+                                <a href="#fact-{{ $new['id'] }}" class="link text-xs">{{ __('Check it against the page') }}</a></p>
+                        @endforeach
+                    </div>
+                @endforeach
+            </section>
+        @endif
 
         @foreach ($sheet['warnings'] as $warning)
             <p class="rounded-[3px] border border-haldi bg-haldi/10 px-3 py-2 text-sm font-medium text-[#8a6208]" role="status">{{ $warning }}</p>
@@ -46,7 +71,9 @@
                         <div class="space-y-2">
                             <h3 class="eyebrow text-ink-3">{{ $topic['name'] }}</h3>
                             @if ($topic['conflict'])
-                                <p class="rounded-[3px] border border-laterite bg-laterite/10 px-3 py-2 text-xs font-medium text-laterite-dark" role="status">{{ __('The tender says this in more than one way. Check each against its page; the app does not choose between them.') }}</p>
+                                <p class="rounded-[3px] border border-laterite bg-laterite/10 px-3 py-2 text-xs font-medium text-laterite-dark" role="status">{{ $topic['change']
+                                    ? __('Another document gives a different value from the confirmed one. Check the new one against its page; the app does not choose between them.')
+                                    : __('The tender says this in more than one way. Check each against its page; the app does not choose between them.') }}</p>
                                 <div class="grid gap-3 lg:grid-cols-2">
                                     @foreach ($topic['facts'] as $fact)
                                         @include('modules.tender_reading._fact', ['fact' => $fact, 'beside' => false])
@@ -81,6 +108,17 @@
                     </div>
                 @endforeach
             </section>
+        @endif
+
+        @if ($sheet['superseded'] !== [])
+            <details class="card">
+                <summary class="card-head cursor-pointer"><span class="card-title">{{ __('Replaced by another document') }} ({{ count($sheet['superseded']) }})</span></summary>
+                <div class="space-y-3 p-4">
+                    @foreach ($sheet['superseded'] as $fact)
+                        @include('modules.tender_reading._fact', ['fact' => $fact, 'beside' => true])
+                    @endforeach
+                </div>
+            </details>
         @endif
 
         @if ($sheet['rejected'] !== [])

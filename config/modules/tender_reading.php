@@ -50,7 +50,7 @@ return [
         'emd_validity' => ['kind' => 'period', 'group' => 'periods', 'label' => 'EMD validity'],
         'tender_fee' => ['kind' => 'amount', 'group' => 'money', 'label' => 'Tender fee'],
         'processing_fee' => ['kind' => 'amount', 'group' => 'money', 'label' => 'Processing fee'],
-        'security_deposit' => ['kind' => 'text', 'group' => 'money', 'label' => 'Security deposit'],
+        'security_deposit' => ['kind' => 'text', 'group' => 'money', 'label' => 'Security deposit asked for'],
         'additional_security' => ['kind' => 'text', 'group' => 'money', 'label' => 'Additional security'],
         'retention' => ['kind' => 'text', 'group' => 'money', 'label' => 'Retention'],
         'completion_period' => ['kind' => 'period', 'group' => 'periods', 'label' => 'Completion period'],
@@ -85,6 +85,13 @@ return [
     'max_bytes' => 10 * 1024 * 1024,
     'max_pages' => 50,
     'prepare_seconds' => 60,
+
+    /*
+     * Pages read as page pictures in one read when a PDF is read only that way: a PDF over the size or
+     * page limit above, or one whose text took too long to take out. The person picks the range; a
+     * longer document is read in several ranges, each with its own price.
+     */
+    'picture_pages' => 50,
 
     // Text pages sent in one call: at most this many pages, and at most this many characters.
     'run_pages' => 8,

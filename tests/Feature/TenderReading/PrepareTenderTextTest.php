@@ -31,7 +31,7 @@ class PrepareTenderTextTest extends TenderReadingTestCase
         $read = DocumentRead::withoutGlobalScopes()->findOrFail($response->json('id'));
         Queue::assertPushed(PrepareTenderText::class, fn (PrepareTenderText $job) => $job->readId === $read->id);
         $this->assertNull($read->project_id, 'A tender read belongs to the company.');
-        $this->assertSame(['tender_id' => $this->tender->id, 'document_id' => $document->id], $read->options);
+        $this->assertSame(['tender_id' => $this->tender->id, 'document_id' => $document->id, 'source' => TenderReads::SOURCE_TEXT], $read->options);
 
         app(TenderTextPreparer::class)->prepare($read->id);
         $read->refresh();
@@ -96,15 +96,21 @@ class PrepareTenderTextTest extends TenderReadingTestCase
         $fake = $this->storeDocument($this->tender, "GIF89a\x01\x00\x01\x00not a pdf at all", 'notice.pdf');
 
         $this->startRead($this->owner, $fake)->assertStatus(422)->assertJson(['code' => TenderReads::NOT_READABLE, 'message' => 'Only PDF and image files can be read.']);
-
-        $picture = $this->storeDocument($this->tender, $this->jpegBytes(), 'site.jpg');
-        $this->startRead($this->owner, $picture)->assertStatus(422)->assertJson(['message' => 'This file is a picture. Only PDF files are read here.']);
-
-        config(['modules.tender_reading.max_bytes' => 200]);
-        $this->startRead($this->owner, $this->storeDocument($this->tender))->assertStatus(422)->assertJson(['message' => 'Only a PDF of up to 0 MB can be read as text.']);
+        $this->startRead($this->owner, $this->storeDocument($this->tender, 'plain text', 'notes.txt'))->assertStatus(422)->assertJson(['code' => TenderReads::NOT_READABLE]);
 
         Queue::assertNothingPushed();
         $this->assertSame(0, DocumentRead::withoutGlobalScopes()->count());
+
+        // A picture, whatever its name, and a PDF over the size limit are read as page pictures: nothing is taken out on the queue.
+        $picture = $this->storeDocument($this->tender, $this->jpegBytes(), 'site.pdf');
+        $read = DocumentRead::withoutGlobalScopes()->findOrFail($this->startRead($this->owner, $picture)->assertCreated()->assertJson(['status' => 'prepared'])->json('id'));
+        $this->assertSame([TenderReads::SOURCE_IMAGE, 1], [TenderReads::source($read), (int) $read->pages_total]);
+
+        config(['modules.tender_reading.max_bytes' => 200]);
+        $large = DocumentRead::withoutGlobalScopes()->findOrFail($this->startRead($this->owner, $this->storeDocument($this->tender))->assertCreated()->json('id'));
+        $this->assertSame([TenderReads::SOURCE_PICTURES, true, 0], [TenderReads::source($large), $large->options['too_large'], (int) $large->pages_total]);
+
+        Queue::assertNothingPushed();
     }
 
     public function test_a_second_delivery_of_the_prepare_job_does_nothing(): void

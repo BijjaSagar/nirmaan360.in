@@ -12,9 +12,11 @@ use App\Services\DocumentReading\ReadAccess;
 use App\Services\DocumentReading\ReadFiles;
 use App\Services\DocumentReading\ReadKinds;
 use App\Services\DocumentReading\ReadRefused;
+use App\Services\TenderReading\TenderFields;
 use App\Services\TenderReading\TenderReadKind;
 use App\Services\TenderReading\TenderReads;
 use App\Services\TenderReading\TenderReadWords;
+use App\Services\TenderReading\TenderTextRefused;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,10 +40,13 @@ class TenderReadController extends Controller
         $this->assertChildOf($document, $tender, 'tender_id');
         abort_if($this->kinds->find(TenderReadKind::KEY) === null, 404);
 
-        $data = $request->validate(['client_uuid' => ['nullable', 'uuid']]);
+        $data = $request->validate([
+            'client_uuid' => ['nullable', 'uuid'],
+            'as' => ['nullable', Rule::in([TenderReads::AS_PICTURES])],
+        ]);
 
         try {
-            $read = $this->reads->open($tender, $document, $request->user(), $data['client_uuid'] ?? null);
+            $read = $this->reads->open($tender, $document, $request->user(), $data['client_uuid'] ?? null, $data['as'] ?? null);
         } catch (ReadRefused $refused) {
             if ($request->expectsJson()) {
                 return response()->json([...$refused->toArray(), 'message' => $refused->getMessage()], $refused->status);
@@ -66,17 +71,28 @@ class TenderReadController extends Controller
 
         $document = CrmTenderDocument::query()->where('tender_id', $tender->id)->find((int) ($read->options['document_id'] ?? 0));
         $state = $this->state($read);
+        $source = TenderReads::source($read);
+        $toRead = TenderReads::picturesToRead($read);
 
         return view('modules.tender_reading.read', [
             'read' => $read,
             'tender' => $tender,
             'document' => $document,
             'state' => $state,
+            'source' => $source,
             'error' => $state === 'prepare_failed' ? TenderReadWords::error($read) : null,
-            'samples' => in_array($state, ['questions', 'quote'], true) ? $this->samples($read) : [],
+            // A PDF whose text could not be taken out for its size, length or time can still be read as page pictures.
+            'offerPictures' => $state === 'prepare_failed' && $document !== null
+                && in_array($read->error, [TenderTextRefused::TOO_MANY_PAGES, TenderTextRefused::TOO_LARGE, TenderTextRefused::TOO_SLOW], true),
+            'samples' => in_array($state, ['questions', 'quote'], true) && $source === TenderReads::SOURCE_TEXT ? $this->samples($read) : [],
             'pictures' => TenderReads::answered($read) ? TenderReads::picturePages($read) : [],
+            'toRead' => $toRead,
+            'stored' => in_array($state, ['quote', 'running', 'done'], true) ? TenderReads::storedPictures($read) : [],
             'textPages' => $this->textPages($read),
             'range' => (array) ($read->options['range'] ?? []),
+            // A PDF read as pictures may not know how many pages the whole document has; the pages it reads are its count.
+            'readTotal' => $source === TenderReads::SOURCE_PICTURES ? max(count(TenderReads::picturePages($read)), (int) $read->pages_read + (int) $read->pages_failed)
+                : max((int) $read->pages_total, (int) $read->pages_read + (int) $read->pages_failed),
         ]);
     }
 
@@ -84,25 +100,37 @@ class TenderReadController extends Controller
     {
         $this->assertTenderRead($read, $request);
 
+        // A read of pictures only has no text to compare; a PDF read that way is read a range at a time.
+        $source = TenderReads::source($read);
+        $range = $source === TenderReads::SOURCE_PICTURES ? 'required' : 'nullable';
+
         $data = $request->validate([
             'language' => ['required', Rule::in(TenderReads::LANGUAGES)],
-            'matches' => ['required', Rule::in(['yes', 'no'])],
-            'page_from' => ['nullable', 'integer', 'min:1'],
-            'page_to' => ['nullable', 'integer', 'min:1'],
+            'matches' => [Rule::requiredIf($source === TenderReads::SOURCE_TEXT), 'nullable', Rule::in(['yes', 'no'])],
+            'page_from' => [$range, 'integer', 'min:1'],
+            'page_to' => [$range, 'integer', 'min:1'],
         ], [
             'language.required' => __('Choose the language the document is written in.'),
             'matches.required' => __('Say whether the text on the left matches the page on the right.'),
+            'page_from.required' => __('Choose the pages to read as pictures.'),
+            'page_to.required' => __('Choose the pages to read as pictures.'),
         ]);
 
-        $from = isset($data['page_from']) ? (int) $data['page_from'] : null;
-        $to = isset($data['page_to']) ? (int) $data['page_to'] : null;
+        $from = isset($data['page_from']) && $source !== TenderReads::SOURCE_IMAGE ? (int) $data['page_from'] : null;
+        $to = isset($data['page_to']) && $source !== TenderReads::SOURCE_IMAGE ? (int) $data['page_to'] : null;
 
         if ($from !== null && $to !== null && $to < $from) {
             throw ValidationException::withMessages(['page_to' => [__('The last page cannot come before the first page.')]]);
         }
 
+        $most = max(1, TenderFields::setting('picture_pages', 50));
+
+        if ($source === TenderReads::SOURCE_PICTURES && $to - $from + 1 > $most) {
+            throw ValidationException::withMessages(['page_to' => [__('Up to :pages pages can be read as pictures at a time. Read the rest as another range.', ['pages' => $most])]]);
+        }
+
         try {
-            $pictures = $this->reads->answer($read, $request->user(), $data['language'], $data['matches'] === 'yes', ['page_from' => $from, 'page_to' => $to]);
+            $pictures = $this->reads->answer($read, $request->user(), $data['language'], $source === TenderReads::SOURCE_TEXT && $data['matches'] === 'yes', ['page_from' => $from, 'page_to' => $to]);
         } catch (ReadRefused $refused) {
             if ($request->expectsJson()) {
                 return response()->json([...$refused->toArray(), 'message' => $refused->getMessage()], $refused->status);

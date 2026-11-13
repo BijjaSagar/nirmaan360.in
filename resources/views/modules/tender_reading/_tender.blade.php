@@ -26,7 +26,7 @@
                 @if ($row['read'])
                     <a href="{{ route('tender-reads.view', $row['read']->id) }}" class="link text-xs">{{ __('Open the reading') }}</a>
                 @endif
-                @if ($tenderReader['can_read'] && $row['is_pdf'])
+                @if ($tenderReader['can_read'] && $row['readable'])
                     <form method="POST" action="{{ route('tender-reads.store', ['tender' => $tender, 'document' => $row['id']]) }}">
                         @csrf
                         <input type="hidden" name="client_uuid" value="{{ (string) \Illuminate\Support\Str::uuid() }}">

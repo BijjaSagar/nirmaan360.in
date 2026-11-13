@@ -2,9 +2,11 @@
 @section('title', __('Reading a tender document'))
 @section('content')
     @php
-        $pdfUrl = $document ? route('crm.documents.download', $document) : null;
+        $fileUrl = $document ? route('crm.documents.download', $document) : null;
+        $pdfUrl = $source === 'image' ? null : $fileUrl;
         $canAct = auth()->user()->can('crm.manage') && auth()->user()->can('agents.use');
         $languages = ['en' => __('English'), 'mr' => __('Marathi'), 'hi' => __('Hindi')];
+        $picturePages = max(1, (int) config('modules.tender_reading.picture_pages', 50));
     @endphp
 
     <x-page-header :title="__('Reading a tender document')" :subtitle="$tender->title.($document ? ' · '.$document->title : '')">
@@ -32,6 +34,15 @@
         @elseif ($state === 'prepare_failed')
             <section class="card p-4 text-sm">
                 <p class="font-medium text-laterite">{{ $error }}</p>
+                @if ($offerPictures && $canAct)
+                    <form method="POST" action="{{ route('tender-reads.store', ['tender' => $tender, 'document' => $document]) }}" class="mt-3 space-y-2 border-t border-rule pt-3">
+                        @csrf
+                        <input type="hidden" name="client_uuid" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
+                        <input type="hidden" name="as" value="pictures">
+                        <p>{{ __('Its pages can be read as page pictures instead, up to :pages pages at a time. You choose the pages and see the price before anything is read.', ['pages' => $picturePages]) }}</p>
+                        <button class="btn btn-primary">{{ __('Read pages as pictures') }}</button>
+                    </form>
+                @endif
             </section>
         @elseif ($state === 'cancelled')
             <section class="card p-4 text-sm">
@@ -40,11 +51,33 @@
                     <p class="mt-1 text-ink-3">{{ \App\Services\DocumentReading\ReadWords::error($read->error) }}</p>
                 @endif
             </section>
+        @elseif ($state === 'questions' && $source !== 'text')
+            <section class="card">
+                <div class="card-head"><h2 class="card-title">{{ __('Before anything is read') }}</h2></div>
+                <div class="space-y-3 p-4 text-sm">
+                    @if ($source === 'image')
+                        <p>{{ __('This document is a picture. It is read as one page picture.') }}</p>
+                        @if ($fileUrl)
+                            <img src="{{ $fileUrl }}" alt="{{ __('Page :page of the document', ['page' => 1]) }}" class="max-h-[480px] rounded-[3px] border border-rule bg-white">
+                        @endif
+                    @elseif ($read->options['too_large'] ?? false)
+                        <p>{{ __('Only a PDF of up to :mb MB can be read as text, so its pages are read as page pictures.', ['mb' => intdiv((int) config('modules.tender_reading.max_bytes', 10 * 1024 * 1024), 1024 * 1024)]) }}</p>
+                    @else
+                        <p>{{ __('The pages of this PDF are read as page pictures, up to :pages pages at a time.', ['pages' => $picturePages]) }}</p>
+                    @endif
+                </div>
+                @if ($canAct)
+                    @include('modules.tender_reading._questions', ['read' => $read, 'languages' => $languages, 'source' => $source, 'picturePages' => $picturePages])
+                @endif
+            </section>
         @elseif ($state === 'questions')
             <section class="card">
                 <div class="card-head"><h2 class="card-title">{{ __('Before anything is read') }}</h2></div>
                 @if ($samples === [])
                     <p class="px-4 py-3 text-sm">{{ __('No page of this PDF has text that can be read. Its pages can only be read as page pictures.') }}</p>
+                    @if ($canAct)
+                        @include('modules.tender_reading._questions', ['read' => $read, 'languages' => $languages, 'source' => $source, 'picturePages' => $picturePages])
+                    @endif
                 @else
                     <p class="border-b border-rule px-4 py-2 text-sm text-ink-2">{{ __('On the left is the text the app took out of the PDF; on the right, the same page as it prints. Compare them before the text is sent to be read.') }}</p>
                     <div class="space-y-4 p-4">
@@ -66,63 +99,12 @@
                         @endforeach
                     </div>
                     @if ($canAct)
-                        @include('modules.tender_reading._questions', ['read' => $read, 'languages' => $languages])
+                        @include('modules.tender_reading._questions', ['read' => $read, 'languages' => $languages, 'source' => $source, 'picturePages' => $picturePages])
                     @endif
                 @endif
             </section>
         @elseif ($state === 'quote')
-            <section class="card">
-                <div class="card-head"><h2 class="card-title">{{ __('What will be read') }}</h2></div>
-                <div class="space-y-2 p-4 text-sm">
-                    <p>{{ __('Language of the document: :language', ['language' => $languages[$read->options['language']] ?? $read->options['language']]) }}</p>
-                    @if ($textPages !== [])
-                        <p>{{ __('Pages to read as text: :count', ['count' => count($textPages)]) }}</p>
-                    @endif
-                    @if ($pictures !== [])
-                        <p class="text-[#8a6208]">{{ __('Pages that can only be read as page pictures: :pages', ['pages' => implode(', ', $pictures)]) }}</p>
-                        <p class="text-xs text-ink-3">{{ __('They are listed on the tender sheet as not read.') }}</p>
-                    @endif
-                </div>
-
-                @if ($textPages === [])
-                    <p class="border-t border-rule px-4 py-3 text-sm">{{ __('No page of this document can be read as text.') }}</p>
-                @elseif ($canAct)
-                    <div class="border-t border-rule p-4 text-sm"
-                         x-data="{
-                             quote: null, starting: false,
-                             range: @js((object) $range),
-                             async init() {
-                                 await new Promise((resolve) => window.ReaderCapture ? resolve() : document.addEventListener('reader-capture:ready', resolve, { once: true }));
-                                 try { this.quote = await window.ReaderCapture.quote({{ $read->id }}, this.range); }
-                                 catch (error) { this.problem = error.message; }
-                             },
-                             async start() {
-                                 this.starting = true;
-                                 try {
-                                     await window.ReaderCapture.start({{ $read->id }}, { ...this.range, cap: this.quote.cap, skip_pages: @js($pictures) });
-                                     window.location.reload();
-                                 } catch (error) { this.problem = error.message; this.starting = false; }
-                             },
-                         }">
-                        <p x-show="!quote" class="text-ink-3">{{ __('Working out the price…') }}</p>
-                        <template x-if="quote">
-                            <div class="space-y-2">
-                                <p class="num" x-text="@js(__('About :estimate credits, and never more than :cap. About :minutes minutes.')).replace(':estimate', quote.estimate).replace(':cap', quote.cap).replace(':minutes', quote.minutes)"></p>
-                                <p class="text-xs text-ink-3">{{ __('Each run of pages is charged for what the AI service really reads and writes. You can close this page; you are told when it is done.') }}</p>
-                                <p x-show="!quote.enough" class="font-medium text-laterite">{{ __('There are not enough credits for the whole document now.') }}</p>
-                                <button type="button" class="btn btn-primary" :disabled="starting || !quote.enough" @click="start()">{{ __('Start reading') }}</button>
-                            </div>
-                        </template>
-                    </div>
-                @endif
-
-                @if ($canAct)
-                    <details class="border-t border-rule px-4 py-3 text-sm">
-                        <summary class="link cursor-pointer">{{ __('Change the answers') }}</summary>
-                        @include('modules.tender_reading._questions', ['read' => $read, 'languages' => $languages])
-                    </details>
-                @endif
-            </section>
+            @include('modules.tender_reading._start')
         @elseif ($state === 'running')
             <section class="card p-4 text-sm"
                      x-data="{ now: null, stop: null,
@@ -134,14 +116,14 @@
                              window.ReaderCapture ? go() : document.addEventListener('reader-capture:ready', go, { once: true });
                          } }">
                 <p class="font-medium">{{ __('The pages are being read.') }}</p>
-                <p class="mt-1 num" x-show="now" x-text="now ? @js(__('Pages read: :read of :total')).replace(':read', now.pages_read).replace(':total', now.pages_total) : ''"></p>
+                <p class="mt-1 num" x-show="now" x-text="now ? @js(__('Pages read: :read of :total')).replace(':read', now.pages_read).replace(':total', Math.max(now.pages_total, {{ (int) $readTotal }})) : ''"></p>
                 <p class="mt-1 text-[#8a6208]" x-show="now && now.status === 'paused'" x-text="now ? now.message : ''"></p>
                 <p class="mt-1 text-ink-3">{{ __('You can close this page; you are told when it is done.') }}</p>
             </section>
         @else
             <section class="card p-4 text-sm">
                 <p class="font-medium">{{ __('Reading finished.') }}</p>
-                <p class="mt-1 num">{{ __('Pages read: :read of :total', ['read' => (int) $read->pages_read, 'total' => (int) $read->pages_total]) }}</p>
+                <p class="mt-1 num">{{ __('Pages read: :read of :total', ['read' => (int) $read->pages_read, 'total' => (int) $readTotal]) }}</p>
                 <a href="{{ route('tender-facts.index', $tender) }}" class="btn btn-primary mt-3">{{ __('Open the tender sheet') }}</a>
             </section>
         @endif

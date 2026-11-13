@@ -4,6 +4,8 @@
     screen. Include it once; it brings the capture partial, which loads pdf.js with its decoders.
 
         TenderPages.draw(pdfUrl, pageNo) resolves to an address for the drawn page picture.
+        TenderPages.upload(readId, fileUrl, source, pages, onPage) draws those pages (or makes a picture
+        document into one page) and uploads them to the read as page pictures.
 --}}
 @once
     @include('modules.document_reading._capture')
@@ -53,6 +55,53 @@
                     }
 
                     return URL.createObjectURL(drawn.blob);
+                },
+
+                /*
+                 * Draws the given pages of the document and uploads each as a page picture of the read,
+                 * one page at a time, skipping pages the read already holds. A picture document is
+                 * made into one page picture. onPage hears of every page: { pageNo, uploaded, message }.
+                 * A blank page, or one this browser cannot draw, is left out and reported.
+                 */
+                async upload(readId, url, source, pages, onPage = () => {}) {
+                    const capture = await ready();
+                    const stored = new Set((await capture.status(readId)).stored_pages ?? []);
+                    const wanted = pages.filter((pageNo) => !stored.has(pageNo));
+
+                    pages.filter((pageNo) => stored.has(pageNo)).forEach((pageNo) => onPage({ pageNo, uploaded: true, message: null }));
+
+                    if (wanted.length === 0) {
+                        return;
+                    }
+
+                    const bytes = await bytesOf(url);
+
+                    if (source === 'image') {
+                        const picture = await capture.imageToPage(new Blob([bytes]));
+                        await capture.uploadPage(readId, 1, picture.blob);
+                        onPage({ pageNo: 1, uploaded: true, message: null });
+
+                        return;
+                    }
+
+                    const want = new Set(wanted);
+                    const last = Math.max(...wanted);
+                    const skip = Array.from({ length: last }, (_, index) => index + 1).filter((pageNo) => !want.has(pageNo));
+
+                    await capture.pdfToPages(bytes.slice(0), async (page) => {
+                        if (page.pageNo > last) {
+                            return false;
+                        }
+
+                        if (page.status === 'ok') {
+                            await capture.uploadPage(readId, page.pageNo, page.blob);
+                            onPage({ pageNo: page.pageNo, uploaded: true, message: null });
+                        } else {
+                            onPage({ pageNo: page.pageNo, uploaded: false, message: page.message });
+                        }
+
+                        return page.pageNo < last;
+                    }, { skip });
                 },
             };
         })();
