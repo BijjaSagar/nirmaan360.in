@@ -7,7 +7,6 @@ use App\Services\Agents\Autonomy;
 use App\Services\Agents\ModelGateway;
 use App\Services\DocumentReading\AiSpend;
 use App\Services\Wording\ReviewedLanguages;
-use App\Support\PlatformSettings;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -17,17 +16,17 @@ use Illuminate\Support\Facades\Route;
  * The four agents are built, so they are always described. While no key is saved they cannot run for
  * anyone, so the pages say they are in early access and ask for requests; once the platform is connected
  * to the AI model they are spoken of as working and as part of the Business and Enterprise plans, and
- * nothing on the page says early access any more. The hero tag, the intro, the button and the pricing
- * line all follow that one state.
+ * nothing on the page says early access any more. The hero tag, the intro, the button, the pricing line
+ * and the contact page's AI topic all follow that one state. The tag names the agents, as it sits above
+ * the helpers too, which are neither early access nor limited to those plans.
  *
  * Readers send a page, a photo or spoken words to the AI model. A reader gets a card, and the word
- * "readers" appears at all, only while the readers are on for that reader (AiSpend::readersOn, the same
- * test the consent switch, the privacy policy and the menu use) and the route that opens it is deployed.
+ * "readers" appears at all, only while the readers are on for one of the kinds the card reads with
+ * (AiSpend::readersOn, the same test the pricing line, the consent switch, the privacy policy and the menu
+ * use). Every reader kind and voice has a card, so the Readers group shows exactly when they speak of readers.
  * Helpers work from the company's own records. Each gets a card once its module's route is deployed,
- * key or no key, under a heading that says so and does not call them AI.
- *
- * A card waits for the real name of the route its module registers; for a module not built yet it is the
- * name the design gives, so registering that route is what makes its card appear.
+ * key or no key, under a heading that says so and does not call them AI. A helper's card waits for the real
+ * name of the route its module registers.
  *
  * Every line is English and goes through __() in the view. Hindi and Marathi are in lang/modules/website.
  */
@@ -58,14 +57,14 @@ class AiOffer
     ];
 
     /**
-     * Readers: route that must exist => icon, name, what it does, and the reader kind it reads with (null
-     * for voice, which counts as a reader by its route). None of them is built yet.
+     * Readers: icon, name, what it does, and the reader kinds it reads with (AiSpend::VOICE for spoken reports).
+     * Every kind in config/modules/document_reading.php is on a card. None of them is built yet.
      */
     private const READERS = [
-        'boq-scans.create' => ['scan', 'Scanned BOQ reader', 'Reads a scanned or photographed BOQ or estimate page by page. Every line where quantity times rate does not equal the printed amount, or the total does not add up, is stopped for you to fix, and you confirm every line before anything is saved.', 'boq'],
-        'slip-reads.store' => ['camera', 'Challan and bill photo', 'Fills the challan or bill form from a photo. You check each field against the photo and type the counted quantity yourself.', 'slip'],
-        'tender-reads.show' => ['file', 'Tender reader', 'Lists the dates, deposits, periods and documents a tender asks for, each with its page, and shows both places when the tender says two different things.', 'tender'],
-        self::VOICE_ROUTE => ['phone', 'Voice DPR', 'Speak the day\'s report in Marathi, Hindi or English in the field app, on phones that can turn speech into text by themselves. It becomes a draft for you to check and send.', null],
+        ['scan', 'Scanned BOQ reader', 'Reads a scanned or photographed BOQ or estimate page by page. Every line where quantity times rate does not equal the printed amount, or the total does not add up, is stopped for you to fix, and you confirm every line before anything is saved.', ['boq']],
+        ['camera', 'Challan and bill photo', 'Fills the challan or bill form from a photo. You check each field against the photo and type the counted quantity yourself.', ['slip', 'bill']],
+        ['file', 'Tender reader', 'Lists the dates, deposits, periods and documents a tender asks for, each with its page, and shows both places when the tender says two different things.', ['tender']],
+        ['phone', 'Voice DPR', 'Speak the day\'s report in Marathi, Hindi or English in the field app, on phones that can turn speech into text by themselves. It becomes a draft for you to check and send.', [AiSpend::VOICE]],
     ];
 
     /** Helpers that work from the company's own records: route that must exist => icon, name, what it does. Each is built. */
@@ -92,10 +91,10 @@ class AiOffer
         'L2' => ['Act with approval', 'After one tap from an approver it sends the draft into your normal approval chain.'],
     ];
 
-    /** The tag above the heading of the AI page and of the home page's AI section. */
-    private const TAG_NOT_LIVE = 'Early access';
+    /** The tag above the heading of the AI page and of the home page's AI section. It speaks of the agents only. */
+    private const TAG_NOT_LIVE = 'AI agents in early access';
 
-    private const TAG_LIVE = 'Part of the Business and Enterprise plans';
+    private const TAG_LIVE = 'AI agents in the Business and Enterprise plans';
 
     /** Every sentence that says something is drafted names the agents, never the helpers. */
     private const INTRO_LIVE = 'The agents work on the records already in your account. What an agent prepares is saved as a draft and marked as one, and nothing it prepares is approved, posted to stock, billed or sent outside your company until a person confirms it.';
@@ -113,7 +112,16 @@ class AiOffer
 
     private const PRICING_AGENTS_AND_READERS = 'AI agents and readers are part of the Business and Enterprise plans and use AI credits. Prices are in Indian rupees.';
 
-    public function __construct(private ModelGateway $gateway, private PlatformSettings $settings, private AiSpend $spend) {}
+    /** The contact page: the line under its heading, and the AI topic in its list and its form. The form's value stays ai_early_access. */
+    private const CONTACT_INTRO_NOT_LIVE = 'Larger rollouts, AI early access or a question about the product. Leave your details and we will get back to you.';
+
+    private const CONTACT_INTRO_LIVE = 'Larger rollouts, the AI agents or a question about the product. Leave your details and we will get back to you.';
+
+    private const CONTACT_TOPIC_NOT_LIVE = 'AI agent early access';
+
+    private const CONTACT_TOPIC_LIVE = 'The AI agents';
+
+    public function __construct(private ModelGateway $gateway, private AiSpend $spend) {}
 
     /** With no key saved the agents cannot run for anyone, so nothing is presented as live. */
     public function agentsLive(): bool
@@ -157,24 +165,42 @@ class AiOffer
         return $this->agentsLive() ? self::ACTION_LIVE : self::ACTION_NOT_LIVE;
     }
 
+    /** The line under the heading of the contact page. */
+    public function contactIntro(): string
+    {
+        return $this->agentsLive() ? self::CONTACT_INTRO_LIVE : self::CONTACT_INTRO_NOT_LIVE;
+    }
+
+    /** The AI topic in the contact page's list and in its form. */
+    public function contactTopic(): string
+    {
+        return $this->agentsLive() ? self::CONTACT_TOPIC_LIVE : self::CONTACT_TOPIC_NOT_LIVE;
+    }
+
     /** The readers are on: the one test (AiSpend::readersOn), asked here without a company, as the website has none. */
     public function readersOn(): bool
     {
         return $this->spend->readersOn();
     }
 
-    /** @return list<array{0:string,1:string,2:string}> Icon, name and text of each reader that may be shown today. */
+    /** @return list<array{0:string,1:string,2:string}> Icon, name and text of each reader that is on for one of its kinds. */
     public function readers(): array
     {
         $shown = [];
 
-        foreach (self::READERS as $route => [$icon, $name, $text, $kind]) {
-            if (Route::has($route) && $this->spend->readersOn(null, $kind) && ($route !== self::VOICE_ROUTE || $this->settings->get(self::VOICE_ACCEPTED) === '1')) {
+        foreach (self::READERS as [$icon, $name, $text, $kinds]) {
+            if (array_filter($kinds, fn (string $kind) => $this->spend->readersOn(null, $kind)) !== []) {
                 $shown[] = [$icon, $name, $text];
             }
         }
 
         return $shown;
+    }
+
+    /** @return list<string> Every kind a reader card reads with. Tests hold it to the kinds the readers module knows. */
+    public function readerKinds(): array
+    {
+        return array_merge(...array_column(self::READERS, 3));
     }
 
     /** @return list<array{0:string,1:string,2:string}> Icon, name and text of each helper whose module is deployed. */
@@ -218,9 +244,10 @@ class AiOffer
             self::AGENTS_GROUP, self::READERS_GROUP, self::HELPERS_GROUP, self::TAG_NOT_LIVE, self::TAG_LIVE,
             self::INTRO_LIVE, self::INTRO_NOT_LIVE, self::ACTION_LIVE[0], self::ACTION_NOT_LIVE[0],
             self::PRICING_NOT_LIVE, self::PRICING_AGENTS, self::PRICING_AGENTS_AND_READERS, self::OWNER_PACK_UNNAMED_LANGUAGES,
+            self::CONTACT_INTRO_NOT_LIVE, self::CONTACT_INTRO_LIVE, self::CONTACT_TOPIC_NOT_LIVE, self::CONTACT_TOPIC_LIVE,
         ];
 
-        foreach ([...self::AGENTS, ...array_values(self::READERS), ...array_values(self::HELPERS)] as [, $name, $text]) {
+        foreach ([...self::AGENTS, ...self::READERS, ...array_values(self::HELPERS)] as [, $name, $text]) {
             $lines[] = $name;
             $lines[] = $text;
         }

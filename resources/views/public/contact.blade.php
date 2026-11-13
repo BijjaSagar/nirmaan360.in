@@ -1,13 +1,17 @@
 @extends('layouts.public')
 @section('content')
+@php
+    // The AI topic follows the key, as the AI page does: early access with no key saved, the agents with one (AiOffer).
+    $aiOffer = app(\App\Services\Website\AiOffer::class);
+@endphp
 <section>
     <div class="site-wrap grid gap-12 py-16 lg:grid-cols-[1fr_1.1fr] lg:py-24">
         <div>
             <h1 class="text-[clamp(2.6rem,5.4vw,4.25rem)]">{{ __('Tell us about your projects.') }}</h1>
-            <p class="mt-4 max-w-md text-lg leading-relaxed text-ink-2">{{ __('Larger rollouts, AI early access or a question about the product. Leave your details and we will get back to you.') }}</p>
+            <p class="mt-4 max-w-md text-lg leading-relaxed text-ink-2">{{ __($aiOffer->contactIntro()) }}</p>
             <ul class="mt-8 space-y-4 text-[16px]">
                 <li class="flex gap-3"><x-icon name="crane" class="size-6 shrink-0 text-laterite" />{{ __('Enterprise and infrastructure pricing') }}</li>
-                <li class="flex gap-3"><x-icon name="message" class="size-6 text-laterite" />{{ __('AI agent early access') }}</li>
+                <li class="flex gap-3"><x-icon name="message" class="size-6 text-laterite" />{{ __($aiOffer->contactTopic()) }}</li>
                 <li class="flex gap-3"><x-icon name="users" class="size-6 text-laterite" />{{ __('Help moving your team across') }}</li>
             </ul>
             @if (site_setting('contact_email') || site_setting('contact_phone'))
@@ -28,7 +32,7 @@
                 <x-field :label="__('I am interested in')" name="type" class="sm:col-span-2">
                     <select id="type" name="type" class="input py-2.5">
                         <option value="sales" @selected(old('type', $type) === 'sales')>{{ __('Enterprise or a larger rollout') }}</option>
-                        <option value="ai_early_access" @selected(old('type', $type) === 'ai_early_access')>{{ __('AI agent early access') }}</option>
+                        <option value="ai_early_access" @selected(old('type', $type) === 'ai_early_access')>{{ __($aiOffer->contactTopic()) }}</option>
                         <option value="support" @selected(old('type', $type) === 'support')>{{ __('A question about the product') }}</option>
                     </select>
                 </x-field>

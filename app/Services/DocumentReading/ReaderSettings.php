@@ -7,12 +7,9 @@ use App\Models\AuditLog;
 use App\Models\DocumentRead;
 use App\Models\Organization;
 use App\Models\User;
-use App\Services\Website\AiOffer;
 use App\Support\Dec;
-use App\Support\PlatformSettings;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 
@@ -30,7 +27,6 @@ class ReaderSettings
 
     public function __construct(
         private AiSpend $spend,
-        private PlatformSettings $platform,
         private ReadLifecycle $lifecycle,
         private ReadKinds $kinds,
     ) {}
@@ -61,10 +57,10 @@ class ReaderSettings
         return $this->spend->aiOn($organization) && $this->features() !== [];
     }
 
-    /** Voice notes are deployed, and the platform admin has recorded that speech stays on the phone. */
+    /** Voice notes are deployed, and the platform admin has recorded that speech stays on the phone: AiSpend::voiceDeployed. */
     public function voiceOffered(): bool
     {
-        return Route::has(AiOffer::VOICE_ROUTE) && $this->platform->get(AiOffer::VOICE_ACCEPTED) === '1';
+        return $this->spend->voiceDeployed();
     }
 
     /**

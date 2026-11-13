@@ -324,7 +324,7 @@ class AccessTest extends AgentTestCase
 
     public function test_public_website_still_says_early_access(): void
     {
-        $this->get('/ai')->assertOk()->assertSee('Early access');
+        $this->get('/ai')->assertOk()->assertSee('AI agents in early access');
     }
 
     public function test_screens_work_in_hindi_and_marathi(): void
