@@ -14,6 +14,13 @@ use Throwable;
  *
  * A photo that cannot be drawn again is not sent at all. The stored file is never sent as it is.
  *
+ * Drawing a photo again means decoding all of it, up to photo_max_pixels, so it is done once: the
+ * first time a shared link asks for a photo, the drawn copy is kept in the company's private folder
+ * (COPIES) and later requests are answered from it. The copy is named by the photo, the stored file
+ * and the size it was drawn at, so a new size or a new file is drawn again. It goes with the company
+ * (purge_directories in config/modules/owner_pack.php). Whether a link may see a photo is checked
+ * before this class is asked, on every request, copy or no copy.
+ *
  * Not final only so a test can stand in for a server without the image functions.
  */
 class SharedPhoto
@@ -22,6 +29,54 @@ class SharedPhoto
     private const TYPES = ['image/jpeg' => 'IMG_JPG', 'image/png' => 'IMG_PNG', 'image/webp' => 'IMG_WEBP'];
 
     private const QUALITY = 82;
+
+    /** The company's folder of drawn copies. "{org}" is the company's id; config/modules/owner_pack.php purges the folder above it. */
+    public const COPIES = 'org-{org}/owner-pack/shared-photos';
+
+    /** Where the drawn copy of a photo is kept: by the photo, and by the stored file and the size it is drawn at. */
+    public static function copyPath(int $organizationId, int $photoId, string $path): string
+    {
+        $drawn = substr(hash('sha256', $path."\n".max(320, (int) config('modules.owner_pack.photo_edge'))."\n".self::QUALITY), 0, 20);
+
+        return str_replace('{org}', (string) $organizationId, self::COPIES).'/'.$photoId.'-'.$drawn.'.jpg';
+    }
+
+    /**
+     * The JPEG for a shared link: the copy kept from an earlier request, or the photo drawn again now and
+     * kept for the next one. Null when the stored file is gone or cannot be drawn again, as jpeg() says.
+     */
+    public function shared(int $organizationId, int $photoId, string $path): ?string
+    {
+        $copy = self::copyPath($organizationId, $photoId, $path);
+
+        try {
+            // A photo whose stored file is gone is not shown, even from a copy made before.
+            if (! Storage::exists($path)) {
+                return null;
+            }
+
+            $kept = Storage::exists($copy) ? Storage::get($copy) : null;
+
+            if (is_string($kept) && $kept !== '') {
+                return $kept;
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
+
+        $jpeg = $this->jpeg($path);
+
+        if ($jpeg !== null) {
+            try {
+                Storage::put($copy, $jpeg, ['visibility' => 'private']);
+            } catch (Throwable $e) {
+                // Not kept this time: the photo is still sent, and drawn again next time.
+                report($e);
+            }
+        }
+
+        return $jpeg;
+    }
 
     /**
      * Whether a stored photo can be sent: the file is there, its header says it is a picture this

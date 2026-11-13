@@ -22,6 +22,13 @@ class SharedPackController extends Controller
         'Referrer-Policy' => 'no-referrer',
     ];
 
+    /**
+     * A photo may stay in the visitor's own browser for five minutes, so a reload or a second look does not
+     * fetch it again. Never in a shared cache: "private". A withdrawn or expired link is refused at once for
+     * every new request; what a browser already holds it may show for those minutes at most.
+     */
+    public const PHOTO_CACHE = 'private, max-age=300';
+
     public function quotation(string $id, string $token, SharedPack $pack): Response
     {
         // A number too long to be an id names nothing.
@@ -59,8 +66,9 @@ class SharedPackController extends Controller
 
     /**
      * One photo of a shared update. It is served only while the link of the update itself would open
-     * and the update names this photo, and it is sent as a picture drawn again by the server, never
-     * as the stored file.
+     * and the update names this photo, checked on every request before anything is read, and it is sent
+     * as a picture drawn again by the server, never as the stored file. The drawn picture is kept in the
+     * company's private folder the first time and sent from there afterwards (SharedPhoto::shared).
      */
     public function photo(string $id, string $token, string $photo, SharedPack $pack, SharedPhoto $photos): Response
     {
@@ -71,7 +79,7 @@ class SharedPackController extends Controller
         }
 
         $path = strlen($photo) <= 18 ? ($shared->paths[(int) $photo] ?? null) : null;
-        $jpeg = $path === null ? null : $photos->jpeg($path);
+        $jpeg = $path === null ? null : $photos->shared((int) $shared->update->organization_id, (int) $photo, $path);
 
         if ($jpeg === null) {
             return response('', 404)->withHeaders(self::HEADERS);
@@ -83,6 +91,7 @@ class SharedPackController extends Controller
             'Content-Disposition' => 'inline',
             'X-Content-Type-Options' => 'nosniff',
             ...self::HEADERS,
+            'Cache-Control' => self::PHOTO_CACHE,
         ]);
     }
 
