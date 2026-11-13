@@ -651,5 +651,130 @@
     "en": "Contractor",
     "mr": "ठेकेदार",
     "hi": "ठेकेदार"
+  },
+  "approvalsVbBillDate": {
+    "en": "Bill date",
+    "mr": "बिलाची तारीख",
+    "hi": "बिल की तारीख़"
+  },
+  "approvalsVbDueDate": {
+    "en": "Pay by",
+    "mr": "देय तारीख",
+    "hi": "भुगतान की आख़िरी तारीख़"
+  },
+  "approvalsVbCostHead": {
+    "en": "Cost head",
+    "mr": "खर्चाचे शीर्ष",
+    "hi": "खर्च का मद"
+  },
+  "approvalsVbDescription": {
+    "en": "Description",
+    "mr": "तपशील",
+    "hi": "विवरण"
+  },
+  "approvalsVbBillTotal": {
+    "en": "Bill total",
+    "mr": "बिलाची एकूण रक्कम",
+    "hi": "बिल का कुल"
+  },
+  "approvalsVbTds": {
+    "en": "TDS",
+    "mr": "TDS",
+    "hi": "TDS"
+  },
+  "approvalsRaisedBy": {
+    "en": "Raised by",
+    "mr": "कोणी पाठवले",
+    "hi": "किसने भेजा"
+  },
+  "approvalsIndentStore": {
+    "en": "Store",
+    "mr": "भांडार",
+    "hi": "स्टोर"
+  },
+  "approvalsIndentRequiredBy": {
+    "en": "Needed by",
+    "mr": "कधीपर्यंत हवे",
+    "hi": "कब तक चाहिए"
+  },
+  "approvalsIndentItems": {
+    "en": "Material asked for",
+    "mr": "मागितलेले साहित्य",
+    "hi": "माँगी गई सामग्री"
+  },
+  "approvalsIndentLines": {
+    "en": "materials",
+    "mr": "साहित्य",
+    "hi": "सामग्री"
+  },
+  "approvalsIndentForLine": {
+    "en": "For BOQ line {code}",
+    "mr": "BOQ ओळ {code} साठी",
+    "hi": "BOQ लाइन {code} के लिए",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsRfiQuestion": {
+    "en": "Question",
+    "mr": "प्रश्न",
+    "hi": "प्रश्न"
+  },
+  "approvalsRfiDrawing": {
+    "en": "Drawing",
+    "mr": "ड्रॉइंग",
+    "hi": "ड्रॉइंग"
+  },
+  "approvalsRfiAddressedTo": {
+    "en": "Addressed to",
+    "mr": "कोणाला उद्देशून",
+    "hi": "किसे भेजा जाएगा"
+  },
+  "approvalsRfiAnswerBy": {
+    "en": "Answer needed by",
+    "mr": "उत्तर कधीपर्यंत हवे",
+    "hi": "उत्तर कब तक चाहिए"
+  },
+  "approvalsReasonVbTax": {
+    "en": "GST or TDS is wrong",
+    "mr": "GST किंवा TDS चुकीचा आहे",
+    "hi": "GST या TDS गलत है"
+  },
+  "approvalsReasonVbNotReceived": {
+    "en": "Material or service was not received",
+    "mr": "साहित्य किंवा सेवा मिळालेली नाही",
+    "hi": "सामग्री या सेवा नहीं मिली"
+  },
+  "approvalsReasonIndentMaterial": {
+    "en": "Wrong material or unit",
+    "mr": "चुकीचे साहित्य किंवा एकक",
+    "hi": "गलत सामग्री या इकाई"
+  },
+  "approvalsReasonIndentStock": {
+    "en": "Stock is already in the store",
+    "mr": "भांडारात साठा आधीच आहे",
+    "hi": "स्टोर में स्टॉक पहले से है"
+  },
+  "approvalsReasonIndentNotNeeded": {
+    "en": "Not needed now",
+    "mr": "आत्ता गरज नाही",
+    "hi": "अभी ज़रूरत नहीं"
+  },
+  "approvalsReasonRfiUnclear": {
+    "en": "The question is not clear",
+    "mr": "प्रश्न स्पष्ट नाही",
+    "hi": "प्रश्न साफ़ नहीं है"
+  },
+  "approvalsReasonRfiDrawing": {
+    "en": "Drawing reference is missing",
+    "mr": "ड्रॉइंगचा संदर्भ नाही",
+    "hi": "ड्रॉइंग का संदर्भ नहीं है"
+  },
+  "approvalsReasonRfiAnswered": {
+    "en": "Already answered, or not needed",
+    "mr": "आधीच उत्तर मिळाले आहे, किंवा गरज नाही",
+    "hi": "पहले ही उत्तर मिल चुका है, या ज़रूरत नहीं"
   }
 }

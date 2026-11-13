@@ -32,6 +32,9 @@ class ApprovalDocument extends StatelessWidget {
       'ra_bill' => _BillDoc(doc: row.document, today: today),
       'bill_note' => _BillNoteDoc(doc: row.document),
       'contractor' => _ContractorPaymentDoc(doc: row.document, today: today, ownerOverride: row.ownerOverride),
+      'vendor_bill' => _VendorBillDoc(doc: row.document, today: today),
+      'indent' => _IndentDoc(doc: row.document, today: today),
+      'rfi' => _RfiDoc(doc: row.document, today: today),
       _ => const _WebOnlyDoc(),
     };
   }
@@ -519,6 +522,165 @@ class _PaymentBillSheet extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+/// A supplier's bill: who it is from, what it is for, and how the net payable
+/// is reached from the taxable value.
+class _VendorBillDoc extends StatelessWidget {
+  const _VendorBillDoc({required this.doc, required this.today});
+
+  final Map<String, dynamic> doc;
+  final String today;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String? number = readText(doc['number']);
+    final String? party = readText(doc['party_name']);
+    final String? billDate = readText(doc['bill_date']);
+    final String? dueDate = readText(doc['due_date']);
+    final String? costHead = readText(doc['cost_head']);
+    final String? description = readText(doc['description']);
+    final String? remarks = readText(doc['remarks']);
+    final String? gstPct = readText(doc['gst_pct']);
+    final String? tdsPct = readText(doc['tds_pct']);
+    final String? tdsSection = readText(doc['tds_section']);
+    Money? money(String key) => readMoney(doc[key]);
+    final Money? taxable = money('taxable_amount');
+    final Money? gst = money('gst_amount');
+    final Money? total = money('total_amount');
+    final Money? tds = money('tds_amount');
+    final Money? net = money('net_payable');
+    final String tdsLabel = <String>[
+      l.approvalsVbTds,
+      if (tdsPct != null) percentText(tdsPct),
+      ?tdsSection,
+    ].join(' · ');
+
+    return _sheet(<Widget>[
+      if (number != null) BookRow(label: l.approvalsBillNumber, value: number),
+      if (party != null) BookRow.words(label: l.approvalsParty, value: party),
+      if (billDate != null) BookRow.words(label: l.approvalsVbBillDate, value: dayLabel(context, billDate, today)),
+      if (dueDate != null) BookRow.words(label: l.approvalsVbDueDate, value: dayLabel(context, dueDate, today)),
+      if (costHead != null) BookRow.words(label: l.approvalsVbCostHead, value: costHead),
+      if (description != null) ...<Widget>[
+        _Heading(l.approvalsVbDescription),
+        Text(description, style: N360Type.body),
+        const SizedBox(height: N360Space.sm),
+      ],
+      if (remarks != null) ...<Widget>[
+        _Heading(l.approvalsRemarks),
+        Text(remarks, style: N360Type.body),
+        const SizedBox(height: N360Space.sm),
+      ],
+      if (taxable != null) BookRow(label: l.approvalsNoteTaxable, value: taxable.inr()),
+      if (gst != null)
+        BookRow(label: gstPct == null ? l.approvalsGst : '${l.approvalsGst} ${percentText(gstPct)}', value: gst.inr()),
+      if (total != null) BookRow(label: l.approvalsVbBillTotal, value: total.inr()),
+      if (tds != null && !tds.isZero) BookRow(label: tdsLabel, value: '−${tds.inr()}'),
+      if (net != null)
+        BookRow(label: l.approvalsNetPayable, total: true, value: net.inr(), valueStyle: N360Type.figure, ruled: false),
+    ]);
+  }
+}
+
+/// A request for material from site: which store, by when, and every line asked for.
+class _IndentDoc extends StatelessWidget {
+  const _IndentDoc({required this.doc, required this.today});
+
+  final Map<String, dynamic> doc;
+  final String today;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String? number = readText(doc['number']);
+    final String? store = readText(doc['store']);
+    final String? requiredBy = readText(doc['required_by']);
+    final String? raisedBy = readText(doc['created_by_name']);
+    final String? remarks = readText(doc['remarks']);
+    final List<Map<String, dynamic>> items = readList(doc['items']);
+
+    return _sheet(<Widget>[
+      if (number != null) BookRow(label: l.approvalsDocIndent, value: number),
+      if (store != null) BookRow.words(label: l.approvalsIndentStore, value: store),
+      if (requiredBy != null)
+        BookRow.words(label: l.approvalsIndentRequiredBy, value: dayLabel(context, requiredBy, today)),
+      if (raisedBy != null) BookRow.words(label: l.approvalsRaisedBy, value: raisedBy),
+      if (remarks != null) ...<Widget>[
+        _Heading(l.approvalsRemarks),
+        Text(remarks, style: N360Type.body),
+        const SizedBox(height: N360Space.sm),
+      ],
+      if (items.isNotEmpty) _Heading(l.approvalsIndentItems),
+      for (final (int index, Map<String, dynamic> item) in items.indexed)
+        BookRow(
+          label: readText(item['material']) ?? readText(item['material_code']) ?? '—',
+          value: '${_qty(item['qty'])} ${readText(item['unit']) ?? ''}'.trim(),
+          hint: _lineHint(l, item),
+          ruled: index < items.length - 1,
+        ),
+    ]);
+  }
+
+  String _qty(Object? raw) {
+    final Qty? qty = readQty(raw);
+    return qty == null ? '—' : formatQty(qty);
+  }
+
+  /// Which BOQ line the material is for, and the sender's note on the line.
+  String? _lineHint(AppLocalizations l, Map<String, dynamic> item) {
+    final String? code = readText(readMap(item['boq_item'])['code']);
+    final String hint = <String>[
+      if (code != null) l.approvalsIndentForLine(code),
+      ?readText(item['remarks']),
+    ].join(' · ');
+    return hint.isEmpty ? null : hint;
+  }
+}
+
+/// A request for information, read before it goes out to the consultant.
+class _RfiDoc extends StatelessWidget {
+  const _RfiDoc({required this.doc, required this.today});
+
+  final Map<String, dynamic> doc;
+  final String today;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String? number = readText(doc['number']);
+    final String? subject = readText(doc['subject']);
+    final String? question = readText(doc['question']);
+    final String? drawing = readText(doc['drawing_ref']);
+    final String? location = readText(doc['location']);
+    final String? addressedTo = readText(doc['addressed_to']);
+    final String? requiredBy = readText(doc['required_by']);
+    final String? raisedBy = readText(doc['raised_by_name']);
+    final String? priority = switch (readText(doc['priority'])) {
+      'low' => l.designPriorityLow,
+      'medium' => l.designPriorityMedium,
+      'high' => l.designPriorityHigh,
+      'critical' => l.designPriorityCritical,
+      final String? other => other,
+    };
+
+    return _sheet(<Widget>[
+      if (number != null) BookRow(label: l.approvalsDocRfi, value: number),
+      if (subject != null) ...<Widget>[const SizedBox(height: N360Space.xs), Text(subject, style: N360Type.bodyStrong)],
+      if (question != null) ...<Widget>[
+        _Heading(l.approvalsRfiQuestion),
+        Text(question, style: N360Type.body),
+        const SizedBox(height: N360Space.sm),
+      ],
+      if (drawing != null) BookRow.words(label: l.approvalsRfiDrawing, value: drawing),
+      if (location != null) BookRow.words(label: l.measurementLocationLabel, value: location),
+      if (addressedTo != null) BookRow.words(label: l.approvalsRfiAddressedTo, value: addressedTo),
+      if (priority != null) BookRow.words(label: l.issuesDetailPriority, value: priority),
+      if (requiredBy != null) BookRow.words(label: l.approvalsRfiAnswerBy, value: dayLabel(context, requiredBy, today)),
+      if (raisedBy != null) BookRow.words(label: l.approvalsRaisedBy, value: raisedBy, ruled: false),
+    ]);
   }
 }
 

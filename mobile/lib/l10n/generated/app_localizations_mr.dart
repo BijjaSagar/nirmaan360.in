@@ -439,6 +439,23 @@ class AppLocalizationsMr extends AppLocalizations {
   }
 
   @override
+  String approvalsIndentForLine(String code) {
+    return 'BOQ ओळ $code साठी';
+  }
+
+  @override
+  String get approvalsIndentItems => 'मागितलेले साहित्य';
+
+  @override
+  String get approvalsIndentLines => 'साहित्य';
+
+  @override
+  String get approvalsIndentRequiredBy => 'कधीपर्यंत हवे';
+
+  @override
+  String get approvalsIndentStore => 'भांडार';
+
+  @override
   String get approvalsJustNow => 'आत्ताच';
 
   @override
@@ -567,6 +584,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get approvalsPhotos => 'फोटो';
 
   @override
+  String get approvalsRaisedBy => 'कोणी पाठवले';
+
+  @override
   String get approvalsReasonAmounts => 'रकमा जुळत नाहीत';
 
   @override
@@ -580,6 +600,15 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsReasonDuplicate => 'आधीच दिले आहे, किंवा दोनदा मागितले';
+
+  @override
+  String get approvalsReasonIndentMaterial => 'चुकीचे साहित्य किंवा एकक';
+
+  @override
+  String get approvalsReasonIndentNotNeeded => 'आत्ता गरज नाही';
+
+  @override
+  String get approvalsReasonIndentStock => 'भांडारात साठा आधीच आहे';
 
   @override
   String get approvalsReasonLocation => 'ठिकाण स्पष्ट लिहा';
@@ -602,6 +631,22 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsReasonQuantityHigh => 'प्रमाण जास्त वाटते';
+
+  @override
+  String get approvalsReasonRfiAnswered =>
+      'आधीच उत्तर मिळाले आहे, किंवा गरज नाही';
+
+  @override
+  String get approvalsReasonRfiDrawing => 'ड्रॉइंगचा संदर्भ नाही';
+
+  @override
+  String get approvalsReasonRfiUnclear => 'प्रश्न स्पष्ट नाही';
+
+  @override
+  String get approvalsReasonVbNotReceived => 'साहित्य किंवा सेवा मिळालेली नाही';
+
+  @override
+  String get approvalsReasonVbTax => 'GST किंवा TDS चुकीचा आहे';
 
   @override
   String get approvalsReasonWorkDetail => 'कामाचा अधिक तपशील लिहा';
@@ -645,6 +690,18 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsReportDate => 'अहवालाची तारीख';
+
+  @override
+  String get approvalsRfiAddressedTo => 'कोणाला उद्देशून';
+
+  @override
+  String get approvalsRfiAnswerBy => 'उत्तर कधीपर्यंत हवे';
+
+  @override
+  String get approvalsRfiDrawing => 'ड्रॉइंग';
+
+  @override
+  String get approvalsRfiQuestion => 'प्रश्न';
 
   @override
   String get approvalsRoleAccounts => 'लेखा';
@@ -691,6 +748,24 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get approvalsTotal => 'एकूण';
+
+  @override
+  String get approvalsVbBillDate => 'बिलाची तारीख';
+
+  @override
+  String get approvalsVbBillTotal => 'बिलाची एकूण रक्कम';
+
+  @override
+  String get approvalsVbCostHead => 'खर्चाचे शीर्ष';
+
+  @override
+  String get approvalsVbDescription => 'तपशील';
+
+  @override
+  String get approvalsVbDueDate => 'देय तारीख';
+
+  @override
+  String get approvalsVbTds => 'TDS';
 
   @override
   String get approvalsWeather => 'हवामान';

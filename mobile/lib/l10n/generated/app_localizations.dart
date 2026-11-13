@@ -790,6 +790,36 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
   String approvalsHoursAgo(int count);
 
+  /// No description provided for @approvalsIndentForLine.
+  ///
+  /// In en, this message translates to:
+  /// **'For BOQ line {code}'**
+  String approvalsIndentForLine(String code);
+
+  /// No description provided for @approvalsIndentItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Material asked for'**
+  String get approvalsIndentItems;
+
+  /// No description provided for @approvalsIndentLines.
+  ///
+  /// In en, this message translates to:
+  /// **'materials'**
+  String get approvalsIndentLines;
+
+  /// No description provided for @approvalsIndentRequiredBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed by'**
+  String get approvalsIndentRequiredBy;
+
+  /// No description provided for @approvalsIndentStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get approvalsIndentStore;
+
   /// No description provided for @approvalsJustNow.
   ///
   /// In en, this message translates to:
@@ -1006,6 +1036,12 @@ abstract class AppLocalizations {
   /// **'Photos'**
   String get approvalsPhotos;
 
+  /// No description provided for @approvalsRaisedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Raised by'**
+  String get approvalsRaisedBy;
+
   /// No description provided for @approvalsReasonAmounts.
   ///
   /// In en, this message translates to:
@@ -1035,6 +1071,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Already paid, or asked for twice'**
   String get approvalsReasonDuplicate;
+
+  /// No description provided for @approvalsReasonIndentMaterial.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong material or unit'**
+  String get approvalsReasonIndentMaterial;
+
+  /// No description provided for @approvalsReasonIndentNotNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not needed now'**
+  String get approvalsReasonIndentNotNeeded;
+
+  /// No description provided for @approvalsReasonIndentStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock is already in the store'**
+  String get approvalsReasonIndentStock;
 
   /// No description provided for @approvalsReasonLocation.
   ///
@@ -1077,6 +1131,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quantity looks too high'**
   String get approvalsReasonQuantityHigh;
+
+  /// No description provided for @approvalsReasonRfiAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered, or not needed'**
+  String get approvalsReasonRfiAnswered;
+
+  /// No description provided for @approvalsReasonRfiDrawing.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawing reference is missing'**
+  String get approvalsReasonRfiDrawing;
+
+  /// No description provided for @approvalsReasonRfiUnclear.
+  ///
+  /// In en, this message translates to:
+  /// **'The question is not clear'**
+  String get approvalsReasonRfiUnclear;
+
+  /// No description provided for @approvalsReasonVbNotReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Material or service was not received'**
+  String get approvalsReasonVbNotReceived;
+
+  /// No description provided for @approvalsReasonVbTax.
+  ///
+  /// In en, this message translates to:
+  /// **'GST or TDS is wrong'**
+  String get approvalsReasonVbTax;
 
   /// No description provided for @approvalsReasonWorkDetail.
   ///
@@ -1161,6 +1245,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report date'**
   String get approvalsReportDate;
+
+  /// No description provided for @approvalsRfiAddressedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Addressed to'**
+  String get approvalsRfiAddressedTo;
+
+  /// No description provided for @approvalsRfiAnswerBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer needed by'**
+  String get approvalsRfiAnswerBy;
+
+  /// No description provided for @approvalsRfiDrawing.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawing'**
+  String get approvalsRfiDrawing;
+
+  /// No description provided for @approvalsRfiQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get approvalsRfiQuestion;
 
   /// No description provided for @approvalsRoleAccounts.
   ///
@@ -1251,6 +1359,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total'**
   String get approvalsTotal;
+
+  /// No description provided for @approvalsVbBillDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill date'**
+  String get approvalsVbBillDate;
+
+  /// No description provided for @approvalsVbBillTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill total'**
+  String get approvalsVbBillTotal;
+
+  /// No description provided for @approvalsVbCostHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost head'**
+  String get approvalsVbCostHead;
+
+  /// No description provided for @approvalsVbDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get approvalsVbDescription;
+
+  /// No description provided for @approvalsVbDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay by'**
+  String get approvalsVbDueDate;
+
+  /// No description provided for @approvalsVbTds.
+  ///
+  /// In en, this message translates to:
+  /// **'TDS'**
+  String get approvalsVbTds;
 
   /// No description provided for @approvalsWeather.
   ///

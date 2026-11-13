@@ -12,6 +12,7 @@ import 'package:nirmaan360/app/routes.dart';
 import '../../../core/design/test_helpers.dart' show capturePng, loadRealFonts;
 import '../../measurement/view/book_test_kit.dart';
 import 'contractor_payment_approval_test.dart' show payment;
+import 'other_documents_approval_test.dart' show indent, rfi, vendorBill;
 
 const String _dir = String.fromEnvironment('N360_FIELD_DIR');
 
@@ -68,5 +69,21 @@ void main() {
         }
       });
     }
+  }
+
+  for (final (String name, Map<String, dynamic> row) in <(String, Map<String, dynamic>)>[
+    ('vendor_bill', vendorBill(50)),
+    ('indent', indent(51)),
+    ('rfi', rfi(52)),
+  ]) {
+    testWidgets('other documents: $name', (tester) async {
+      final FakeApi api = FakeApi();
+      api.approvalInbox.add(row);
+      final TestApp app = await bookApp(api: api);
+      addTearDown(app.dispose);
+      await pumpBook(tester, app, start: Routes.approvalDetail(row['id'] as int), pixelRatio: 2.5);
+      await settle(tester);
+      await tester.runAsync(() => capturePng(tester, _dir, 'en_$name'));
+    });
   }
 }

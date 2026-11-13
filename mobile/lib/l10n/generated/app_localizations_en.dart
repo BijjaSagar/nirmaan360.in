@@ -438,6 +438,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String approvalsIndentForLine(String code) {
+    return 'For BOQ line $code';
+  }
+
+  @override
+  String get approvalsIndentItems => 'Material asked for';
+
+  @override
+  String get approvalsIndentLines => 'materials';
+
+  @override
+  String get approvalsIndentRequiredBy => 'Needed by';
+
+  @override
+  String get approvalsIndentStore => 'Store';
+
+  @override
   String get approvalsJustNow => 'just now';
 
   @override
@@ -567,6 +584,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get approvalsPhotos => 'Photos';
 
   @override
+  String get approvalsRaisedBy => 'Raised by';
+
+  @override
   String get approvalsReasonAmounts => 'Amounts do not match';
 
   @override
@@ -580,6 +600,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsReasonDuplicate => 'Already paid, or asked for twice';
+
+  @override
+  String get approvalsReasonIndentMaterial => 'Wrong material or unit';
+
+  @override
+  String get approvalsReasonIndentNotNeeded => 'Not needed now';
+
+  @override
+  String get approvalsReasonIndentStock => 'Stock is already in the store';
 
   @override
   String get approvalsReasonLocation => 'Write the location clearly';
@@ -601,6 +630,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsReasonQuantityHigh => 'Quantity looks too high';
+
+  @override
+  String get approvalsReasonRfiAnswered => 'Already answered, or not needed';
+
+  @override
+  String get approvalsReasonRfiDrawing => 'Drawing reference is missing';
+
+  @override
+  String get approvalsReasonRfiUnclear => 'The question is not clear';
+
+  @override
+  String get approvalsReasonVbNotReceived =>
+      'Material or service was not received';
+
+  @override
+  String get approvalsReasonVbTax => 'GST or TDS is wrong';
 
   @override
   String get approvalsReasonWorkDetail => 'Add more work detail';
@@ -644,6 +689,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsReportDate => 'Report date';
+
+  @override
+  String get approvalsRfiAddressedTo => 'Addressed to';
+
+  @override
+  String get approvalsRfiAnswerBy => 'Answer needed by';
+
+  @override
+  String get approvalsRfiDrawing => 'Drawing';
+
+  @override
+  String get approvalsRfiQuestion => 'Question';
 
   @override
   String get approvalsRoleAccounts => 'Accounts';
@@ -690,6 +747,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approvalsTotal => 'Total';
+
+  @override
+  String get approvalsVbBillDate => 'Bill date';
+
+  @override
+  String get approvalsVbBillTotal => 'Bill total';
+
+  @override
+  String get approvalsVbCostHead => 'Cost head';
+
+  @override
+  String get approvalsVbDescription => 'Description';
+
+  @override
+  String get approvalsVbDueDate => 'Pay by';
+
+  @override
+  String get approvalsVbTds => 'TDS';
 
   @override
   String get approvalsWeather => 'Weather';

@@ -117,6 +117,7 @@ After a deletion the app drops its push token locally only (the server already r
 - `dpr`: `{id, report_date, weather, summary, hindrances, manpower_total, manpower: [{trade, count}], work_items: [{code, description, unit, qty}], photos: [{id}], created_by_name}`
 - `ra_bill`: `{id, number, type, period_from, period_to, party_name, gross_amount, deduction_total, gst_amount, net_payable}`
 - `contractor`: a contractor payment request, see "Approving a contractor payment" below.
+- `vendor_bill`, `indent`, `rfi`: see "Vendor bills, indents and RFIs in the approvals inbox" below.
 
 ### `GET /sync/pull?since=<server_time of last pull>`
 
@@ -611,6 +612,23 @@ The app (`features/approvals`):
 - The detail screen shows work done, paid so far and paid if approved as bars, with a warning when approving puts payment ahead of work (red when beyond the limit), the money rows, the line the payment is against, the payment's details and "View bill" (`GET /contractor-payments/{id}/bill`).
 - Buttons: Send back and Approve, and Reject under them. Reject asks for a remark in a sheet that says a rejected payment is closed for good. Other document types keep Send back only.
 - `owner_override.needed` and not `allowed`: Approve is not offered and the message shows. `needed` and `allowed`: the button reads "Approve with override" and asks for the reason first.
+
+### Vendor bills, indents and RFIs in the approvals inbox (online only)
+
+No new route for these either: each is an item in `GET /approvals` and the pull's `approvals`, decided by `POST /approvals/{id}/act`. The server's `canAct` decides who sees one: `vendor_bill.approve` (PM, accountant; default chain `['pm', 'accounts']`), `indent.approve` (PM; `['pm']`), `rfi.approve` (PM; `['pm']`), plus owner and admin. A company's own approval chain replaces the default.
+
+`document` by `doc_type`:
+
+- `vendor_bill`: `{id, number, party_name, bill_date, due_date, cost_head, supply_type (intra|inter), gst_pct, tds_section, tds_pct, description, remarks, taxable_amount, gst_amount, total_amount, tds_amount, net_payable}`. `number` is the supplier's bill number. `gst_amount` is CGST + SGST + IGST. The five amounts, `description` and `remarks` (free text, which may quote a price) are null without `money.view`; the rates and the section always come.
+- `indent`: `{id, number, store, required_by, remarks, created_by_name, items: [{material, material_code, qty, unit, boq_item: {code, description} | null, remarks}]}`. Quantities only: an indent carries no price, so nothing is withheld.
+- `rfi`: `{id, number, subject, question, drawing_ref, location, addressed_to, priority (low|medium|high|critical), required_by, raised_by_name}`. The answer is recorded after approval and is not part of this document.
+
+The app:
+
+- `reviewableHere`: a vendor bill when `net_payable` came (so someone without `money.view` is sent to the website), an indent with at least one line, an RFI with its question.
+- The inbox card and the detail's headline read `number · party`, `number · store` and `number · subject`; the large figure is the net payable for a bill and the count of materials for an indent. An RFI has none.
+- All three offer Send back, Approve and Reject, each remark sheet with reasons that fit the document. A rejected one cannot be corrected and sent again on the server, which is what the reject sheet says.
+- Raising any of these from the phone is not part of this: an indent is gap G5, vendor bills and RFIs stay on the website.
 
 ## 3. App layout
 

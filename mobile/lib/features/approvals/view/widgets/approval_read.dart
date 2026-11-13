@@ -49,6 +49,12 @@ ApprovalFigure? figureOf(ApprovalRow row, AppLocalizations l) {
     case 'contractor':
       final Money? amount = readMoney(doc['amount']);
       return amount == null ? null : ApprovalFigure(amount.inr());
+    case 'vendor_bill':
+      final Money? net = readMoney(doc['net_payable']);
+      return net == null ? null : ApprovalFigure(net.inr());
+    case 'indent':
+      final int lines = readList(doc['items']).length;
+      return lines == 0 ? null : ApprovalFigure('$lines', unit: l.approvalsIndentLines);
     case 'dpr':
       final String? total = readText(doc['manpower_total']);
       return total == null ? null : ApprovalFigure(total, unit: l.approvalsWorkers);
@@ -56,7 +62,10 @@ ApprovalFigure? figureOf(ApprovalRow row, AppLocalizations l) {
   return null;
 }
 
-bool isMoneyDoc(String docType) => docType == 'ra_bill' || docType == 'bill_note' || docType == 'contractor';
+bool isMoneyDoc(String docType) => switch (docType) {
+  'ra_bill' || 'bill_note' || 'contractor' || 'vendor_bill' => true,
+  _ => false,
+};
 
 /// A measurement's size against its BOQ line, for a progress mark.
 class ApprovalShare {
@@ -90,10 +99,18 @@ String headlineOf(ApprovalRow row) {
       final String? code = readText(boq['code']);
       final String? name = readText(doc['location']) ?? readText(doc['description']) ?? readText(boq['description']);
       if (code != null && name != null) return '$code · $name';
-    case 'ra_bill' || 'bill_note':
+    case 'ra_bill' || 'bill_note' || 'vendor_bill':
       final String? number = readText(doc['number']);
       final String? party = readText(doc['party_name']);
       if (number != null && party != null) return '$number · $party';
+    case 'indent':
+      final String? number = readText(doc['number']);
+      final String? store = readText(doc['store']);
+      if (number != null) return store == null ? number : '$number · $store';
+    case 'rfi':
+      final String? number = readText(doc['number']);
+      final String? subject = readText(doc['subject']);
+      if (number != null && subject != null) return '$number · $subject';
     case 'contractor':
       final String? number = readText(doc['number']);
       final String? contractor = readText(doc['contractor']);

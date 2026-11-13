@@ -66,6 +66,12 @@ class _SendBackSheetState extends State<_SendBackSheet> {
       l.approvalsReasonBillMissing,
       l.approvalsReasonAmounts,
     ],
+    'vendor_bill' when widget.reject => <String>[l.approvalsReasonDuplicate, l.approvalsReasonVbNotReceived],
+    'vendor_bill' => <String>[l.approvalsReasonAmounts, l.approvalsReasonVbTax, l.approvalsReasonBillMissing],
+    'indent' when widget.reject => <String>[l.approvalsReasonIndentNotNeeded, l.approvalsReasonIndentStock],
+    'indent' => <String>[l.approvalsReasonQuantityHigh, l.approvalsReasonIndentMaterial, l.approvalsReasonIndentStock],
+    'rfi' when widget.reject => <String>[l.approvalsReasonRfiAnswered],
+    'rfi' => <String>[l.approvalsReasonRfiUnclear, l.approvalsReasonRfiDrawing],
     'measurement' => <String>[
       l.approvalsReasonDimensions,
       l.approvalsReasonWrongItem,

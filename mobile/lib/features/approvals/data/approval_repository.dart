@@ -18,12 +18,19 @@ extension ApprovalReview on ApprovalRow {
     'ra_bill' => document['net_payable'] != null,
     'bill_note' => document['total_amount'] != null,
     'contractor' => document['amount'] != null,
+    'vendor_bill' => document['net_payable'] != null,
+    // No money in these two: the request itself is the whole document.
+    'indent' => document['items'] is List && (document['items'] as List).isNotEmpty,
+    'rfi' => document['question'] != null,
     _ => false,
   };
 
   /// Documents the phone may reject outright as well as send back. A rejected
   /// one is closed for good, so the older types keep only "send back" here.
-  bool get rejectableHere => docType == 'contractor';
+  bool get rejectableHere => switch (docType) {
+    'contractor' || 'vendor_bill' || 'indent' || 'rfi' => true,
+    _ => false,
+  };
 
   /// The owner-override rule for a payment ahead of the work done. Its fields
   /// stay false until the server has that rule.
