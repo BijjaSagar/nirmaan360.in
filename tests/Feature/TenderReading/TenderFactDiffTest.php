@@ -246,10 +246,85 @@ class TenderFactDiffTest extends TenderReadingTestCase
         $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
             ->assertSee('A follow-up was made from this value. Adding the new value as a follow-up moves it.')
             ->assertSee('The follow-up made from the replaced value moves to 22 Dec 2026, 03:00 PM.');
+
+        // What a person wrote on the follow-up is theirs: moving it keeps it.
+        $task = CrmTask::withoutGlobalScopes()->where('subject_type', 'tender')->where('subject_id', $this->tender->id)->sole();
+        $task->update(['title' => 'Submit the bid for the depot shed', 'notes' => 'Ask the bank for the guarantee two days before.']);
+
         $this->actingAs($this->owner)->postJson(route('tender-facts.apply', $later), ['target' => 'task'])->assertCreated();
 
         $task = CrmTask::withoutGlobalScopes()->where('subject_type', 'tender')->where('subject_id', $this->tender->id)->sole();
         $this->assertSame(['2026-12-22', '15:00', 'open'], [$task->due_on->toDateString(), substr((string) $task->due_time, 0, 5), $task->status]);
+        $this->assertSame('Submit the bid for the depot shed', $task->title);
+        $this->assertStringStartsWith("Ask the bank for the guarantee two days before.\nFrom the tender sheet, page 1:\nThe line of page 1 that holds 22-12-2026", (string) $task->notes);
+
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
+            ->assertSee('The new value was put into the follow-up made from this value.')
+            ->assertSee('The new value was put into the payment made from this value.')
+            ->assertDontSee('Adding the new value as a follow-up moves it.');
+    }
+
+    public function test_a_second_corrigendum_changes_what_the_notice_value_made_when_the_first_one_was_never_used(): void
+    {
+        $notice = $this->makeFact('emd_amount', 'Rs. 61,500/-', 2, $this->notice, CrmTenderFact::CONFIRMED);
+        $this->actingAs($this->pm)->postJson(route('tender-facts.apply', $notice), ['target' => 'payment', 'mode' => 'online'])->assertCreated();
+        $payment = $this->tender->payments()->sole();
+
+        $noticeDue = $this->makeFact('due_at', '15-12-2026 up to 15:00 hrs', 2, $this->notice, CrmTenderFact::CONFIRMED);
+        $this->actingAs($this->owner)->postJson(route('tender-facts.apply', $noticeDue), ['target' => 'task'])->assertCreated();
+        $task = CrmTask::withoutGlobalScopes()->where('subject_type', 'tender')->where('subject_id', $this->tender->id)->sole();
+
+        // The first corrigendum's values are confirmed but never put to use.
+        $first = $this->makeFact('emd_amount', 'Rs. 65,100/-', 1, $this->corrigendum);
+        $firstDue = $this->makeFact('due_at', '22-12-2026 up to 15:00 hrs', 1, $this->corrigendum);
+        $this->confirm($first)->assertOk();
+        $this->confirm($firstDue)->assertOk();
+
+        $second = $this->storeDocument($this->tender, null, 'corrigendum-2.pdf');
+        $latest = $this->makeFact('emd_amount', 'Rs. 66,000/-', 1, $second);
+        $latestDue = $this->makeFact('due_at', '29-12-2026 up to 15:00 hrs', 1, $second);
+        $this->confirm($latest)->assertOk();
+        $this->confirm($latestDue)->assertOk();
+        $this->assertSame([CrmTenderFact::SUPERSEDED, CrmTenderFact::SUPERSEDED], [$notice->refresh()->status, $first->refresh()->status]);
+
+        // What the sheet says under the notice's values is what the standing values do.
+        $this->actingAs($this->pm)->get(route('tender-facts.index', $this->tender))->assertOk()
+            ->assertSee('A planned payment was made from this value. Adding the new value as a planned payment changes that payment.')
+            ->assertSee('The planned payment made from the replaced value becomes ₹66,000.00. It is not marked paid.')
+            ->assertSee('A follow-up was made from this value. Adding the new value as a follow-up moves it.')
+            ->assertSee('The follow-up made from the replaced value moves to 29 Dec 2026, 03:00 PM.');
+
+        $this->actingAs($this->pm)->postJson(route('tender-facts.apply', $latest), ['target' => 'payment', 'mode' => 'dd'])->assertCreated()
+            ->assertJson(['record' => ['id' => $payment->id]]);
+        $this->actingAs($this->owner)->postJson(route('tender-facts.apply', $latestDue), ['target' => 'task'])->assertCreated()
+            ->assertJson(['record' => ['id' => $task->id]]);
+
+        // One planned payment of the latest amount, and one follow-up on the latest date.
+        $this->assertSame([['66000.00', 'planned']], $this->tender->payments()->get()->map(fn ($row) => [(string) $row->amount, $row->status])->all());
+        $this->assertSame('66000.00', app(TenderPaymentService::class)->totals($this->tender->payments()->with('tender')->get())['planned']);
+        $this->assertSame(['2026-12-29'], CrmTask::withoutGlobalScopes()->where('subject_type', 'tender')->where('subject_id', $this->tender->id)->get()->map(fn ($row) => $row->due_on->toDateString())->all());
+    }
+
+    public function test_a_replaced_value_whose_follow_up_a_nearer_value_does_not_reach_says_it_stays(): void
+    {
+        $notice = $this->makeFact('due_at', '15-12-2026 up to 15:00 hrs', 2, $this->notice, CrmTenderFact::CONFIRMED);
+        $this->actingAs($this->owner)->postJson(route('tender-facts.apply', $notice), ['target' => 'task'])->assertCreated();
+        $first = CrmTask::withoutGlobalScopes()->where('subject_type', 'tender')->sole();
+        $first->update(['status' => 'done', 'completed_at' => now()]);
+
+        // The corrigendum's date makes a new follow-up, since the first one is done; then the first is opened again.
+        $corrected = $this->makeFact('due_at', '22-12-2026 up to 15:00 hrs', 1, $this->corrigendum);
+        $this->confirm($corrected)->assertOk();
+        $this->actingAs($this->owner)->postJson(route('tender-facts.apply', $corrected), ['target' => 'task'])->assertCreated();
+        $first->update(['status' => 'open', 'completed_at' => null]);
+
+        $later = $this->makeFact('due_at', '29-12-2026 up to 15:00 hrs', 1, $this->storeDocument($this->tender, null, 'corrigendum-2.pdf'));
+        $this->confirm($later)->assertOk();
+
+        // The latest date moves the corrigendum's follow-up, the nearer one, so the notice's is said to stay.
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()
+            ->assertSee('A follow-up made from this value stays open. The new value does not move it, so check it on the tender.')
+            ->assertSee('A follow-up was made from this value. Adding the new value as a follow-up moves it.');
     }
 
     public function test_a_payment_no_longer_only_planned_is_left_alone_and_the_new_value_is_added_beside_it(): void

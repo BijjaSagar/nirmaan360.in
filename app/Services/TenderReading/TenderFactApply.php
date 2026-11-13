@@ -29,7 +29,10 @@ use Illuminate\Validation\ValidationException;
  *
  * A fact that replaced a value from another document (a corrigendum) changes what the replaced value
  * made, instead of adding a second one: the planned payment it made, while still only planned, gets
- * the new amount, and the follow-up it made, while still open, moves to the new date.
+ * the new amount, and the follow-up it made, while still open, moves to the new date. This follows
+ * every replacement back, so a second corrigendum finds what the notice's value made even when the
+ * first corrigendum's value was never put to use. What a person wrote on that payment or follow-up
+ * is kept, and the new value's page is added below it.
  *
  * The CRM services do not validate by themselves (their controllers do), so the one value is checked
  * here with the rule the CRM's own form uses for it, and refused when it fails. Everything else a
@@ -170,12 +173,14 @@ class TenderFactApply
                 $target === self::FIELD => $this->tenders->update($tender, $this->fieldData($locked)),
                 $target === self::TASK && $earlier instanceof CrmTask => $this->tasks->update($earlier, [
                     ...$this->taskData($locked, $tender, null),
+                    'title' => $earlier->title,
+                    'notes' => self::addNote($earlier->notes, $this->taskData($locked, $tender, null)['notes'], 2000),
                     'assigned_to' => $earlier->assigned_to,
                 ]),
                 $target === self::TASK => $this->tasks->create($this->taskData($locked, $tender, $clientUuid), $by),
                 $earlier instanceof CrmTenderPayment => $this->payments->update($earlier, [
                     ...$this->paymentData($locked, $mode),
-                    'notes' => Str::limit(trim($earlier->notes."\n".$this->paymentData($locked, $mode)['notes']), 1000, ''),
+                    'notes' => self::addNote($earlier->notes, $this->paymentData($locked, $mode)['notes'], 1000),
                     'reference' => $earlier->reference,
                     'valid_until' => $earlier->valid_until?->toDateString(),
                     'refund_expected_on' => $earlier->refund_expected_on?->toDateString(),
@@ -232,7 +237,7 @@ class TenderFactApply
             return null;
         }
 
-        foreach (TenderFactDiff::replacedBy($fact) as $old) {
+        foreach (TenderFactDiff::replacedChain($fact) as $old) {
             $id = $old->uses()[$target] ?? null;
             $record = $id === null ? null : $this->openRecord($target, $id, $tender, $lock);
 
@@ -245,28 +250,44 @@ class TenderFactApply
     }
 
     /**
-     * What the sheet says under a value that was replaced after it was put to use: what the new value
-     * does to each record this one made.
+     * What the sheet says under a value that was replaced after it was put to use: what the value that
+     * stands now in its place does, or did, to each record this one made. A record is said to change
+     * only when earlier() for the standing value finds that very record.
      *
      * @return list<string>
      */
     public function replacedUses(CrmTenderFact $old, CrmTender $tender): array
     {
+        $standing = TenderFactDiff::standingAfter($old);
         $notes = [];
 
         foreach ($old->uses() as $target => $id) {
             $open = $id !== null && $this->openRecord($target, $id, $tender) !== null;
+            $standingUses = $standing?->uses() ?? [];
+            $into = $id !== null && $target !== self::FIELD && ($standingUses[$target] ?? null) === $id;
+            $changes = $open && ! $into && $standing !== null && ! array_key_exists($target, $standingUses)
+                && $this->earlier($standing, $target, $tender)?->getKey() === $id;
 
             $notes[] = match (true) {
                 $target === self::FIELD => __('This value was put on the tender. Put the new value on the tender to change it there.'),
-                $target === self::PAYMENT && $open => __('A planned payment was made from this value. Adding the new value as a planned payment changes that payment.'),
+                $target === self::PAYMENT && $into => __('The new value was put into the payment made from this value.'),
+                $target === self::PAYMENT && $changes => __('A planned payment was made from this value. Adding the new value as a planned payment changes that payment.'),
+                $target === self::PAYMENT && $open => __('A planned payment made from this value stays on the tender. The new value does not change it, so check it on the tender.'),
                 $target === self::PAYMENT => __('A payment made from this value is no longer only planned. The new value is added as another planned payment, so check both on the tender.'),
-                $open => __('A follow-up was made from this value. Adding the new value as a follow-up moves it.'),
+                $into => __('The new value was put into the follow-up made from this value.'),
+                $changes => __('A follow-up was made from this value. Adding the new value as a follow-up moves it.'),
+                $open => __('A follow-up made from this value stays open. The new value does not move it, so check it on the tender.'),
                 default => __('A follow-up made from this value is done or removed. The new value makes a new follow-up.'),
             };
         }
 
         return $notes;
+    }
+
+    /** A note a person wrote, kept whole, with the line of the new value's page added below it. */
+    private static function addNote(?string $kept, string $added, int $max): string
+    {
+        return Str::limit(trim(trim((string) $kept)."\n".$added), $max, '');
     }
 
     /** A planned payment of this tender, or an open follow-up on it: a record the new value may still change. */

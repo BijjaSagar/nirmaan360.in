@@ -113,21 +113,88 @@ class TenderFactDiff
      */
     public static function replacedBy(CrmTenderFact $fact, bool $lock = false): Collection
     {
+        [$superseded, $by] = self::superseded($fact, $lock);
+
+        return $superseded->filter(fn (CrmTenderFact $old) => ($by[$old->id] ?? 0) === (int) $fact->id)->values();
+    }
+
+    /**
+     * Every fact this fact replaced, and the facts those had replaced in turn, nearest first: a value
+     * that a first corrigendum replaced, and a second corrigendum replaced again, is still an earlier
+     * value of the second one.
+     *
+     * @return Collection<int, CrmTenderFact>
+     */
+    public static function replacedChain(CrmTenderFact $fact): Collection
+    {
+        [$superseded, $by] = self::superseded($fact);
+        $chain = collect();
+        $seen = [(int) $fact->id => true];
+        $level = [(int) $fact->id];
+
+        while ($level !== []) {
+            $next = [];
+
+            foreach ($superseded as $old) {
+                if (! isset($seen[$old->id]) && in_array($by[$old->id] ?? 0, $level, true)) {
+                    $seen[$old->id] = true;
+                    $chain->push($old);
+                    $next[] = (int) $old->id;
+                }
+            }
+
+            $level = $next;
+        }
+
+        return $chain;
+    }
+
+    /**
+     * The confirmed fact that stands now in place of a replaced one, following each replacement
+     * forward, or null when none does.
+     */
+    public static function standingAfter(CrmTenderFact $old): ?CrmTenderFact
+    {
+        [$superseded, $by] = self::superseded($old);
+        $ids = $superseded->modelKeys();
+        $id = $by[$old->id] ?? null;
+        $seen = [(int) $old->id => true];
+
+        while ($id !== null && in_array($id, $ids, true) && ! isset($seen[$id])) {
+            $seen[$id] = true;
+            $id = $by[$id] ?? null;
+        }
+
+        if ($id === null || isset($seen[$id])) {
+            return null;
+        }
+
+        return CrmTenderFact::withoutGlobalScopes()->where('organization_id', $old->organization_id)
+            ->where('tender_id', $old->tender_id)->where('status', CrmTenderFact::CONFIRMED)->find($id);
+    }
+
+    /**
+     * The replaced facts of this fact's tender and field, with the fact that last replaced each, from
+     * the audit row written when it was replaced.
+     *
+     * @return array{0: Collection<int, CrmTenderFact>, 1: array<int, int>}
+     */
+    private static function superseded(CrmTenderFact $fact, bool $lock = false): array
+    {
         $superseded = CrmTenderFact::withoutGlobalScopes()
             ->where('organization_id', $fact->organization_id)
             ->where('tender_id', $fact->tender_id)
             ->where('field', $fact->field)
             ->where('status', CrmTenderFact::SUPERSEDED)
-            ->whereKeyNot($fact->id)
             ->when($lock, fn ($query) => $query->lockForUpdate())
             ->orderBy('id')
             ->get();
 
         if ($superseded->isEmpty()) {
-            return $superseded;
+            return [$superseded, []];
         }
 
-        $latest = AuditLog::withoutGlobalScopes()
+        $by = AuditLog::withoutGlobalScopes()
             ->where('organization_id', $fact->organization_id)
             ->where('action', 'tender_fact.superseded')
             ->where('auditable_type', $fact->getMorphClass())
@@ -135,9 +202,10 @@ class TenderFactDiff
             ->orderByDesc('id')
             ->get(['id', 'auditable_id', 'new_values'])
             ->uniqueStrict('auditable_id')
-            ->keyBy('auditable_id');
+            ->mapWithKeys(fn (AuditLog $row) => [(int) $row->auditable_id => (int) ($row->new_values['replaced_by'] ?? 0)])
+            ->all();
 
-        return $superseded->filter(fn (CrmTenderFact $old) => (int) ($latest->get($old->id)?->new_values['replaced_by'] ?? 0) === (int) $fact->id)->values();
+        return [$superseded, $by];
     }
 
     /**

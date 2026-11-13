@@ -140,7 +140,9 @@
                          },
                          @endif
                      }">
-                <p class="font-medium">{{ $read->status === 'paused' ? __('The reading is paused.') : __('The pages are being read.') }}</p>
+                {{-- The heading follows the status as it is watched; the server's status is only where it starts. --}}
+                <p class="font-medium" data-heading
+                   x-text="(now ? now.status : @js($read->status)) === 'paused' ? @js(__('The reading is paused.')) : @js(__('The pages are being read.'))">{{ $read->status === 'paused' ? __('The reading is paused.') : __('The pages are being read.') }}</p>
                 <p class="mt-1 num" x-show="now" x-text="now ? @js(__('Pages read: :read of :total')).replace(':read', now.pages_read).replace(':total', Math.max(now.pages_total, {{ (int) $readTotal }})) : ''"></p>
                 @if ($read->status === 'paused' && ! $canAct)
                     <p class="mt-1 text-[#8a6208]">{{ \App\Services\DocumentReading\ReadWords::pause($read->pause_reason) }}</p>

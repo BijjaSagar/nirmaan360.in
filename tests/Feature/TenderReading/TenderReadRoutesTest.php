@@ -162,6 +162,8 @@ class TenderReadRoutesTest extends TenderReadingTestCase
 
         $page = $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk();
         $page->assertSee('The reading is paused.');
+        // The heading follows the watched status, so it stops saying paused once the read goes on, and says it when a running read pauses.
+        $page->assertSee('<p class="font-medium" data-heading'."\n".'                   x-text="(now ? now.status : \'paused\') === \'paused\' ? \'The reading is paused.\' : \'The pages are being read.\'">The reading is paused.</p>', false);
         $page->assertSee('Continue reading');
         $page->assertSee('window.ReaderCapture.resume('.$read->id, false);
         $page->assertSee('Continue with this limit');
@@ -174,6 +176,10 @@ class TenderReadRoutesTest extends TenderReadingTestCase
 
         // What the button calls: the read goes on from where it stopped.
         $this->actingAs($this->owner)->postJson(route('document-reads.resume', $read))->assertStatus(202)->assertJson(['status' => DocumentRead::RUNNING]);
+
+        // A page opened while the read runs starts from that, and follows the status from there.
+        $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk()
+            ->assertSee('x-text="(now ? now.status : \'running\') === \'paused\' ? \'The reading is paused.\' : \'The pages are being read.\'">The pages are being read.</p>', false);
     }
 
     public function test_a_finished_read_with_pages_that_failed_offers_to_read_them_again(): void
