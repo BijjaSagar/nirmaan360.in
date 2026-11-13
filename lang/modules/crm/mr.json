@@ -381,7 +381,6 @@
     "That record was not found.": "ती नोंद सापडली नाही.",
     "That spreadsheet could not be read. Save it as .xlsx or CSV and try again.": "ती स्प्रेडशीट वाचता आली नाही. ती .xlsx किंवा CSV म्हणून जतन करून पुन्हा प्रयत्न करा.",
     "The file has no rows.": "फाइलमध्ये एकही ओळ नाही.",
-    "The file must have these columns: :columns": "फाइलमध्ये हे कॉलम असणे आवश्यक: :columns",
     "The refund cannot be more than the amount paid (:amount).": "परतावा भरलेल्या रकमेपेक्षा (:amount) जास्त असू शकत नाही.",
     "There is no usable mobile number for this record, so the message cannot open in WhatsApp. Add a number first, or copy the text below.": "या नोंदीत वापरण्यायोग्य मोबाइल नंबर नाही, त्यामुळे संदेश WhatsApp मध्ये उघडू शकत नाही. आधी नंबर जोडा, किंवा खालील मजकूर कॉपी करा.",
     "There is no valid email address for this record, so the message cannot open in your mail app. Add one first, or copy the text below.": "या नोंदीत योग्य ईमेल पत्ता नाही, त्यामुळे संदेश तुमच्या मेल ॲपमध्ये उघडू शकत नाही. आधी पत्ता जोडा, किंवा खालील मजकूर कॉपी करा.",

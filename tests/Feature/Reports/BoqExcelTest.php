@@ -200,12 +200,18 @@ class BoqExcelTest extends ReportsTestCase
         $project = $this->makeProject($this->org);
         $fake = UploadedFile::fake()->createWithContent('boq.xlsx', 'this is plain text, not a zip');
 
+        // The content decides how a file is read: this one is text, with no table in it.
         $this->actingAs($this->pm)->post(route('boq.excel.import', $project), ['file' => $fake]);
         $this->assertSame(0, session('boq_import.errors.0.row'));
-        $this->assertStringContainsString('not a valid .xlsx', session('boq_import.errors.0.message'));
+        $this->assertStringContainsString('No table was found', session('boq_import.errors.0.message'));
 
-        $this->actingAs($this->pm)->post(route('boq.excel.import', $project), ['file' => UploadedFile::fake()->create('boq.csv', 1, 'text/csv')])
+        $binary = UploadedFile::fake()->createWithContent('boq.xls', "\x00\x01\x02\x03 not a spreadsheet");
+        $this->actingAs($this->pm)->post(route('boq.excel.import', $project), ['file' => $binary]);
+        $this->assertStringContainsString('not a spreadsheet that can be read', session('boq_import.errors.0.message'));
+
+        $this->actingAs($this->pm)->post(route('boq.excel.import', $project), ['file' => UploadedFile::fake()->create('boq.docx', 1)])
             ->assertSessionHasErrors('file');
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
     }
 
     public function test_import_of_an_empty_sheet_says_so(): void

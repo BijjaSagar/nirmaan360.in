@@ -1022,16 +1022,25 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
     }
 
-    public function test_the_excel_upload_still_imports_straight_away(): void
+    public function test_an_excel_estimate_goes_to_the_column_check_not_the_pdf_preview(): void
     {
         $project = $this->makeProject($this->org);
 
+        // An estimate is not in the template's layout, so it is read by its own headings and shown first.
         $this->uploadAs($this->pm, $project, $this->workbook($this->estimate(), 'estimate.xlsx', 'Sheet1'))
-            ->assertRedirect(route('boq.excel.index', $project))
-            ->assertSessionHas('success');
+            ->assertRedirect(route('boq.sheet.preview', $project));
 
-        $this->assertSame(10, BoqItem::where('project_id', $project->id)->count());
         $this->assertNull($this->token());
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
+
+        // The elevator row has no unit, so the person names one for such lines before importing.
+        $this->get(route('boq.sheet.preview', $project))->assertOk()->assertDontSee('Import these 8 lines');
+        $this->post(route('boq.sheet.choose', $project), ['unit' => 'nos'])->assertRedirect(route('boq.sheet.preview', $project));
+        $version = $this->get(route('boq.sheet.preview', $project))->assertOk()->assertSee('Import these 8 lines')->viewData('preview')['version'];
+        $this->post(route('boq.sheet.confirm', $project), ['version' => $version])->assertSessionHas('success');
+
+        // The two "Add 6%" rows are adjustments, shown and not imported.
+        $this->assertSame(['1', '2', '3a', '3b', '4', '4.1', '5', '6'], BoqItem::where('project_id', $project->id)->orderBy('sort')->pluck('code')->all());
     }
 
     public function test_the_preview_reads_in_hindi(): void

@@ -305,5 +305,7 @@
     "Why the total does not match": "योग मेल क्यों नहीं खाता",
     "The total written in the file does not match the lines. Correct the file and upload it again, or write here why it is right to import it as it is. The reason is kept in the BOQ history.": "फ़ाइल में लिखा योग लाइनों से मेल नहीं खाता। फ़ाइल ठीक करके फिर से अपलोड करें, या यहाँ लिखें कि इसे जैसा है वैसा इम्पोर्ट करना क्यों सही है। यह कारण BOQ इतिहास में रखा जाता है।",
     "Open the PDF beside this page and compare each row with it.": "PDF को इस पेज के बगल में खोलें और हर पंक्ति को उससे मिलाकर देखें।",
-    "I compared these rows with the pages of the PDF": "मैंने ये पंक्तियाँ PDF के पन्नों से मिलाकर देखी हैं"
+    "I compared these rows with the pages of the PDF": "मैंने ये पंक्तियाँ PDF के पन्नों से मिलाकर देखी हैं",
+    "Any BOQ, estimate or tender sheet in your own layout works too: its headings are read, and you check each column and the lines before anything is saved.": "आपके अपने ढाँचे की कोई भी BOQ, एस्टिमेट या टेंडर शीट भी चलती है: उसके शीर्षक पढ़े जाते हैं, और कुछ भी सहेजने से पहले आप हर कॉलम और लाइनें जाँचते हैं।",
+    "BOQ file (.xlsx, .xls, .ods, .csv or .pdf)": "BOQ फ़ाइल (.xlsx, .xls, .ods, .csv या .pdf)"
 }

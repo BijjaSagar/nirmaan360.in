@@ -156,17 +156,50 @@ class BoqExcelService
     }
 
     /**
+     * Import the file straight away when it is laid out like the template or our own export: the heading the
+     * template uses, found as before, and not an engineer's estimate. Null for any other file, which goes to
+     * the column check (App\Services\Imports\BoqSheetImport) instead.
+     */
+    public function importTemplate(Project $project, string $path): ?BoqImportResult
+    {
+        [$grid, $missingValue, $fileError] = $this->read($path);
+
+        if ($fileError !== null) {
+            return null;
+        }
+
+        [$headerRow, $columns] = $this->findHeader($grid);
+
+        if ($headerRow === null || EstimateSheet::applies($columns)) {
+            return null;
+        }
+
+        return $this->importGrid($project, $grid, $missingValue);
+    }
+
+    /**
      * @param  array<int, array<int, mixed>>  $grid  Row => column => saved value.
      * @param  array<int, array<int, true>>  $missingValue  Formula cells that have no saved value.
      * @param  string|null  $reason  What the BOQ history shows for this import. Excel by default; the PDF import names itself.
      */
     public function importGrid(Project $project, array $grid, array $missingValue = [], ?string $reason = null, string $source = 'excel_import'): BoqImportResult
     {
-        return DB::transaction(function () use ($project, $grid, $missingValue, $reason, $source) {
+        return $this->write($project, fn (Project $locked) => $this->checkGrid($locked, $grid, $missingValue), $reason, $source);
+    }
+
+    /**
+     * Check and write in one transaction, with the project locked. Nothing is written unless every row is clean.
+     *
+     * @param  callable(Project): array  $check  Returns the clean rows, the errors and the notes, as checkGrid() does.
+     * @param  string|null  $reason  What the BOQ history shows for this import.
+     */
+    public function write(Project $project, callable $check, ?string $reason = null, string $source = 'excel_import'): BoqImportResult
+    {
+        return DB::transaction(function () use ($project, $check, $reason, $source) {
             // The same lock BoqService::create takes, so an import and a hand-added line cannot race for sort order.
             $project = Project::lockForUpdate()->findOrFail($project->id);
 
-            [$rows, $errors, $notes] = $this->checkGrid($project, $grid, $missingValue);
+            [$rows, $errors, $notes] = $check($project);
 
             if ($errors !== []) {
                 return new BoqImportResult($errors);
@@ -248,7 +281,24 @@ class BoqExcelService
             $missingValue = [];
         }
 
+        [$rows, $errors] = $this->checkRows($project, $grid, $headerRow, $columns, $missingValue);
+
+        return [$rows, $errors, $notes, $facts];
+    }
+
+    /**
+     * The checks every BOQ import runs on its rows: required fields, lengths, numbers, repeated codes, and a
+     * quantity never below what is already approved. Returns the clean rows and the problems.
+     *
+     * @param  array<int, array<int, mixed>>  $grid  Row => column => value. Rows up to $headerRow are skipped.
+     * @param  array<string, int>  $columns  Field => column.
+     * @param  array<int, array<int, true>>  $missingValue  Formula cells that have no saved value.
+     * @return array{0: list<array<string, ?string>>, 1: list<array{row:int,field:?string,message:string}>}
+     */
+    public function checkRows(Project $project, array $grid, int $headerRow, array $columns, array $missingValue = []): array
+    {
         unset($columns['amount'], $columns['remark']);
+        $columns = array_intersect_key($columns, array_flip([...self::COLUMNS, ...self::OPTIONAL]));
 
         $existing = $this->existingByCode($project);
         $approved = MeasurementEntry::withoutGlobalScope(OrganizationScope::class)
@@ -323,7 +373,7 @@ class BoqExcelService
             $numbers = [];
 
             foreach (['qty' => '99999999999', 'rate' => '9999999999999'] as $field => $max) {
-                if (isset($missingValue[$number][$columns[$field]])) {
+                if (isset($columns[$field]) && isset($missingValue[$number][$columns[$field]])) {
                     $fail($field, __(':field is a formula with no saved value. Paste it as a value and try again.', ['field' => $this->label($field)]));
 
                     continue;
@@ -362,7 +412,7 @@ class BoqExcelService
             $errors[] = ['row' => 0, 'field' => null, 'message' => __('The file has no rows.')];
         }
 
-        return [$rows, $errors, $notes, $facts];
+        return [$rows, $errors];
     }
 
     /** @return Collection<string, BoqItem> The lowest id wins when a code repeats. */

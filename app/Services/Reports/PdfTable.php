@@ -2,6 +2,8 @@
 
 namespace App\Services\Reports;
 
+use App\Services\Imports\BoqHeadings;
+
 /**
  * Puts a table back together from the pieces of text on PDF pages.
  *
@@ -200,16 +202,16 @@ final class PdfTable
     private function heading(): ?array
     {
         foreach ($this->lines as $index => $line) {
-            $keys = array_map(fn (array $piece) => self::key($piece['text']), $line['pieces']);
-            $named = array_filter($keys, fn (string $key) => preg_match('/^(descri|particular|item descr)/', $key) === 1);
+            $texts = array_column($line['pieces'], 'text');
+            $named = array_filter($texts, fn (string $text) => preg_match('/^(descri|particular|item descr)/', self::key($text)) === 1 || self::namesDescription($text));
 
-            if ($named === [] || count($this->fields($keys)) < 2) {
+            if ($named === [] || count($this->fields($texts)) < 2) {
                 continue;
             }
 
             $group = [$index];
             $cells = $this->headingCells($group);
-            $found = count($this->fields($this->cellKeys($cells)));
+            $found = count($this->fields($this->cellTexts($cells)));
 
             // "Sr." over "No." and "Amount in" over "Rs." are one heading on two lines. A neighbouring
             // line is taken in only when it names more columns, so a first data row never joins the heading.
@@ -219,9 +221,10 @@ final class PdfTable
                 }
 
                 $with = $this->headingCells([...$group, $neighbour]);
-                $count = count($this->fields($this->cellKeys($with)));
+                $count = count($this->fields($this->cellTexts($with)));
+                $fragments = array_filter(array_column($this->lines[$neighbour]['pieces'], 'text'), fn (string $text) => ! BoqHeadings::isFragment($text)) === [];
 
-                if ($count > $found) {
+                if ($count > $found || ($count === $found && $fragments)) {
                     $group[] = $neighbour;
                     $cells = $with;
                     $found = $count;
@@ -229,7 +232,7 @@ final class PdfTable
             }
 
             sort($group);
-            $fields = $this->fields($this->cellKeys($cells));
+            $fields = $this->fields($this->cellTexts($cells));
 
             if (count($fields) >= 3 && isset($fields['description']) && (isset($fields['qty']) || isset($fields['rate']) || isset($fields['amount']))) {
                 return [$cells, $group];
@@ -309,25 +312,58 @@ final class PdfTable
     }
 
     /** @return list<string> */
-    private function cellKeys(array $cells): array
+    private function cellTexts(array $cells): array
     {
-        return array_map(fn (array $cell) => self::key($cell['text']), $cells);
+        return array_map(fn (array $cell) => $cell['text'], $cells);
     }
 
-    /** @param  list<string>  $keys  @return array<string, true> Fields named by these heading words. */
-    private function fields(array $keys): array
+    /**
+     * Fields named by these heading words: the template's own heading words, as always, and the field the
+     * shared heading detector (BoqHeadings) reads each one as, in English, Hindi or Marathi.
+     *
+     * @param  list<string>  $texts  @return array<string, true>
+     */
+    private function fields(array $texts): array
     {
         $fields = [];
 
-        foreach ($keys as $key) {
+        foreach ($texts as $text) {
+            $key = self::key($text);
+
             foreach (BoqExcelService::ALIASES as $field => $aliases) {
                 if (in_array($key, $aliases, true)) {
                     $fields[$field] = true;
                 }
             }
+
+            if (($field = self::detectedField($text)) !== null) {
+                $fields[$field] = true;
+            }
         }
 
         return $fields;
+    }
+
+    /** The one field the heading detector reads a heading as. A serial number counts as the code, as the template has it. */
+    private static function detectedField(string $text): ?string
+    {
+        $scores = BoqHeadings::scores($text);
+        arsort($scores);
+        $field = array_key_first($scores);
+
+        return $field === 'serial' ? 'code' : $field;
+    }
+
+    /** A heading that plainly names the description column, as "Name of Work" or "तपशील" do; "Item" alone is too loose. */
+    private static function namesDescription(string $text): bool
+    {
+        return self::detectedField($text) === 'description' && (BoqHeadings::scores($text)['description'] ?? 0) >= 2.5;
+    }
+
+    /** Whether a heading names this field, by the template's heading words or by the heading detector. */
+    private static function names(string $text, string $field): bool
+    {
+        return in_array(self::key($text), BoqExcelService::ALIASES[$field] ?? [], true) || self::detectedField($text) === $field;
     }
 
     /**
@@ -603,10 +639,8 @@ final class PdfTable
         $figures = [];
 
         foreach ($columns as $index => $column) {
-            $key = self::key($column['text']);
-
             foreach (['qty', 'rate', 'amount'] as $field) {
-                if (in_array($key, BoqExcelService::ALIASES[$field], true)) {
+                if (self::names($column['text'], $field)) {
                     $figures[] = $index;
                 }
             }
@@ -1009,7 +1043,7 @@ final class PdfTable
     private function descriptionColumn(array $columns): int
     {
         foreach ($columns as $index => $column) {
-            if (in_array(self::key($column['text']), BoqExcelService::ALIASES['description'], true)) {
+            if (self::names($column['text'], 'description')) {
                 return $index;
             }
         }

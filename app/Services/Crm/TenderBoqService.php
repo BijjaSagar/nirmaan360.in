@@ -4,6 +4,8 @@ namespace App\Services\Crm;
 
 use App\Models\CrmTender;
 use App\Models\CrmTenderBoqItem;
+use App\Services\Imports\BoqSheetImport;
+use App\Services\Imports\SheetFile;
 use App\Support\Dec;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -14,6 +16,10 @@ use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 /**
  * The BOQ a tender is priced on. When the tender is won and converted, these lines become
  * the project's BOQ through BoqService. Same columns as the project BOQ template.
+ *
+ * An import in the template's columns is read as it always was. Any other sheet (the department's or
+ * the client's own BOQ, .xlsx, .xls, .ods or .csv) is read by its own headings through BoqSheetImport,
+ * with the same checks on every row.
  */
 class TenderBoqService
 {
@@ -66,12 +72,12 @@ class TenderBoqService
     }
 
     /**
-     * Add or update lines from a CSV or XLSX file. A line whose code already exists is updated.
-     * Nothing is saved unless every row is valid.
+     * Add or update lines from a BOQ file. A line whose code already exists is updated.
+     * Nothing is saved unless every row is valid. The file's content decides how it is read, not its name.
      */
     public function import(CrmTender $tender, string $path, string $extension): int
     {
-        $rows = $this->readRows($path, strtolower($extension));
+        $rows = $this->readRows($tender, $path);
 
         return DB::transaction(function () use ($tender, $rows) {
             $tender = $this->lockEditable($tender);
@@ -133,34 +139,50 @@ class TenderBoqService
     }
 
     /** @return list<array<string,string>> */
-    private function readRows(string $path, string $extension): array
+    private function readRows(CrmTender $tender, string $path): array
     {
-        $matrix = $extension === 'xlsx' ? $this->readSpreadsheet($path) : $this->readCsv($path);
-        $header = array_map(fn ($cell) => strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))), array_shift($matrix) ?? []);
+        $matrix = match (SheetFile::sniff($path)) {
+            SheetFile::XLSX => $this->readSpreadsheet($path),
+            SheetFile::CSV => $this->readCsv($path),
+            null => throw ValidationException::withMessages(['file' => __('That spreadsheet could not be read. Save it as .xlsx or CSV and try again.')]),
+            default => null,
+        };
+        $header = $matrix === null ? [] : array_map(fn ($cell) => strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))), array_shift($matrix) ?? []);
+        $candidates = [];
 
-        if (array_diff(self::COLUMNS, $header) !== []) {
-            throw ValidationException::withMessages(['file' => __('The file must have these columns: :columns', ['columns' => implode(', ', self::COLUMNS)])]);
+        if ($matrix !== null && array_diff(self::COLUMNS, $header) === []) {
+            foreach ($matrix as $index => $cells) {
+                $cells = array_pad(array_slice($cells, 0, count($header)), count($header), '');
+
+                if (collect($cells)->every(fn ($cell) => trim((string) $cell) === '')) {
+                    continue;
+                }
+
+                $candidates[$index + 2] = array_map(fn ($cell) => trim((string) $cell), array_combine($header, $cells));
+            }
+        } else {
+            // Not the template: the sheet is read by its own headings.
+            $read = app(BoqSheetImport::class)->rowsFor($tender->organization_id, $path, $this->maxImportRows);
+
+            if ($read['error'] !== null) {
+                throw ValidationException::withMessages(['file' => $read['error']]);
+            }
+
+            $candidates = $read['rows'];
         }
 
         $rows = [];
         $errors = [];
 
-        foreach ($matrix as $index => $cells) {
-            $line = $index + 2;
-            $cells = array_pad(array_slice($cells, 0, count($header)), count($header), '');
-
-            if (collect($cells)->every(fn ($cell) => trim((string) $cell) === '')) {
-                continue;
-            }
-
-            $row = array_map(fn ($cell) => trim((string) $cell), array_combine($header, $cells));
-            $row['qty'] = str_replace([',', ' '], '', $row['qty']);
-            $row['rate'] = str_replace([',', ' '], '', $row['rate']);
+        foreach ($candidates as $line => $row) {
+            $row['section'] ??= '';
+            $row['qty'] = str_replace([',', ' '], '', (string) $row['qty']);
+            $row['rate'] = str_replace([',', ' '], '', (string) $row['rate']);
 
             if ($row['code'] === '' || $row['description'] === '' || $row['unit'] === ''
                 || ! is_numeric($row['qty']) || ! is_numeric($row['rate']) || $row['qty'] < 0 || $row['rate'] < 0
                 || $row['qty'] > 99999999999 || $row['rate'] > 9999999999999 || mb_strlen($row['description']) > 2000
-                || mb_strlen($row['code']) > 32 || mb_strlen($row['unit']) > 16 || mb_strlen($row['section']) > 120) {
+                || mb_strlen($row['code']) > 32 || mb_strlen($row['unit']) > 16 || mb_strlen((string) $row['section']) > 120) {
                 $errors[] = __('Line :line is incomplete or has an invalid number.', ['line' => $line]);
 
                 continue;
