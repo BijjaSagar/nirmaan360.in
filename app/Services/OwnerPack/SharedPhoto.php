@@ -5,6 +5,7 @@ namespace App\Services\OwnerPack;
 use App\Services\DocumentReading\ExifOrientation;
 use GdImage;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -20,6 +21,10 @@ use Throwable;
  * and the size it was drawn at, so a new size or a new file is drawn again. It goes with the company
  * (purge_directories in config/modules/owner_pack.php). Whether a link may see a photo is checked
  * before this class is asked, on every request, copy or no copy.
+ *
+ * The copy is written under a name of its own and then moved into place, so a request that comes while
+ * another is writing it finds either no copy or the whole of it. A copy that does not end as a JPEG ends,
+ * left by a write cut short, is never sent: the photo is drawn again and the copy replaced.
  *
  * Not final only so a test can stand in for a server without the image functions.
  */
@@ -57,7 +62,7 @@ class SharedPhoto
 
             $kept = Storage::exists($copy) ? Storage::get($copy) : null;
 
-            if (is_string($kept) && $kept !== '') {
+            if (is_string($kept) && self::whole($kept)) {
                 return $kept;
             }
         } catch (Throwable $e) {
@@ -67,15 +72,25 @@ class SharedPhoto
         $jpeg = $this->jpeg($path);
 
         if ($jpeg !== null) {
+            $writing = $copy.'.'.Str::random(12).'.part';
+
             try {
-                Storage::put($copy, $jpeg, ['visibility' => 'private']);
+                Storage::put($writing, $jpeg, ['visibility' => 'private']);
+                Storage::move($writing, $copy);
             } catch (Throwable $e) {
                 // Not kept this time: the photo is still sent, and drawn again next time.
                 report($e);
+                rescue(fn () => Storage::delete($writing), report: false);
             }
         }
 
         return $jpeg;
+    }
+
+    /** Whether a kept copy is a whole JPEG: it starts and ends with the markers every JPEG starts and ends with. */
+    private static function whole(string $jpeg): bool
+    {
+        return str_starts_with($jpeg, "\xFF\xD8") && str_ends_with($jpeg, "\xFF\xD9");
     }
 
     /**

@@ -148,6 +148,63 @@ class ReaderReleaseTest extends PageReadingTestCase
         $this->assertTrue(app(AiSpend::class)->readersOn(null, 'boq'), 'The website has no company and no plan.');
     }
 
+    /**
+     * Whichever reader is deployed, alone, the website's Readers group shows with that reader's card, and the
+     * pricing line, the privacy policy and the consent switch speak of readers with it. Every kind the readers
+     * module knows has a card. The voice endpoint is a reader only once its acceptance test is recorded.
+     */
+    public function test_each_reader_alone_turns_the_website_readers_on_with_every_other_place(): void
+    {
+        $settings = app(PlatformSettings::class);
+        $this->consent($this->organization);
+
+        $this->assertEqualsCanonicalizing([...array_keys(config('modules.document_reading.kinds')), AiSpend::VOICE], app(AiOffer::class)->readerKinds(), 'Every reader kind, and voice, has a card on the website.');
+
+        $voice = function (bool $accepted) use ($settings) {
+            Route::post('/_release-test/voice', fn () => '')->name(AiOffer::VOICE_ROUTE);
+            Route::getRoutes()->refreshNameLookups();
+            $settings->set([AiOffer::VOICE_ACCEPTED => $accepted ? '1' : '0']);
+        };
+
+        $readers = [
+            'Scanned BOQ reader' => fn () => config(['modules.reader_stand_ins.read_kinds' => [Support\FakeKind::class]]),
+            'Challan and bill photo' => fn () => config(['modules.reader_stand_ins.read_kinds' => [Support\FakeSlipKind::class]]),
+            'Tender reader' => fn () => config(['modules.reader_stand_ins.read_kinds' => [Support\FakeTextKind::class]]),
+            'Voice DPR' => fn () => $voice(true),
+        ];
+        // A supplier's bill is read on the same card as a challan.
+        $bill = fn () => config(['modules.reader_stand_ins.read_kinds' => [Support\FakeBillKind::class]]);
+
+        $says = function (string $state, bool $on, ?string $card) {
+            $ai = (string) $this->get('/ai')->assertOk()->getContent();
+
+            $this->assertSame($on, app(AiSpend::class)->readersOn(), $state);
+            $this->assertSame($on, str_contains($ai, '<h2 class="text-[30px]">Readers</h2>'), "{$state}: the AI page's Readers group");
+            $this->assertSame($on, app(AiOffer::class)->readers() !== [], "{$state}: a reader card");
+            $this->assertSame($on, str_contains((string) $this->get('/pricing')->assertOk()->getContent(), self::PRICING_READERS), "{$state}: the pricing line");
+            $this->assertSame($on, str_contains(html_entity_decode((string) $this->get('/privacy')->assertOk()->getContent(), ENT_QUOTES), self::READER_SENTENCE), "{$state}: the privacy policy");
+            $this->assertSame($on, app(ReaderSettings::class)->offered($this->organization), "{$state}: the consent switch");
+
+            if ($card !== null) {
+                $this->assertStringContainsString($card, $ai, $state);
+            }
+        };
+
+        foreach ([...$readers, 'Challan and bill photo, for a bill' => $bill] as $state => $deploy) {
+            config(['modules.reader_stand_ins.read_kinds' => []]);
+            $settings->set([AiOffer::VOICE_ACCEPTED => '0']);
+            $says("{$state}: nothing deployed", false, null);
+
+            $deploy();
+            $says($state, true, explode(',', $state)[0]);
+        }
+
+        // The voice endpoint before its acceptance test: no reader anywhere, and no card.
+        config(['modules.reader_stand_ins.read_kinds' => []]);
+        $voice(false);
+        $says('voice not accepted', false, null);
+    }
+
     public function test_the_menu_entry_asks_no_query_on_a_page(): void
     {
         $queries = 0;
