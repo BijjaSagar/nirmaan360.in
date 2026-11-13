@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 
 import 'account_models.dart';
+import 'reader_models.dart';
 
 export 'account_models.dart';
+export 'reader_models.dart';
 
 /// One item in `POST /sync/push`.
 class PushItem {
@@ -510,4 +512,59 @@ abstract interface class NirmaanApi {
 
   /// The file behind a photo, such as `/issue-photos/{id}`.
   Future<Uint8List> fieldPhotoBytes(String path);
+
+  // Document readers: the AI that reads a photographed page. Online only, and
+  // never through the outbox: each call is made while the person waits. A read
+  // is created by its feature's own route; these are the steps every kind of
+  // read shares. Refusals keep the server's `code`: a 409 or 402 is a
+  // [ServerFailure] and a refused picture is a 422 [ValidationFailure]. See
+  // docs/CONTRACT.md, "Document readers".
+
+  /// `GET /document-reading/status`: may any AI button be shown, and which.
+  Future<ReaderAvailability> readerAvailability();
+
+  /// `GET /document-reads/{read}`: where a read stands. Asking also moves the
+  /// read along on the server.
+  Future<DocumentReadStatus> documentRead(int readId);
+
+  /// `POST /document-reads/{read}/pages`, multipart `page_no`, `part`, `image`.
+  /// Until the read starts, sending a page number again replaces that page.
+  Future<StoredReadPage> uploadReadPage(
+    int readId, {
+    required int pageNo,
+    required String filePath,
+    ReadPagePart part = ReadPagePart.full,
+  });
+
+  /// `POST /document-reads/{read}/quote`: the price of the pages, or of the
+  /// range [pageFrom] to [pageTo].
+  Future<ReadQuote> quoteRead(int readId, {int? pageFrom, int? pageTo});
+
+  /// `POST /document-reads/{read}/start`. [cap] is the most the read may use,
+  /// in credits, as the quote wrote it. Answers 202 with the status.
+  Future<DocumentReadStatus> startRead(
+    int readId, {
+    String? cap,
+    int? pageFrom,
+    int? pageTo,
+    List<int> skipPages = const <int>[],
+  });
+
+  /// `POST /document-reads/{read}/resume`, for a paused read.
+  Future<DocumentReadStatus> resumeRead(int readId, {String? cap});
+
+  /// `POST /document-reads/{read}/pages/{page}/retry`. [stronger] asks for the
+  /// stronger model, when the failed page offers it.
+  Future<DocumentReadStatus> retryReadPage(int readId, int pageId, {bool stronger = false, String? cap});
+
+  /// `POST /document-reads/{read}/pages/{page}/split`: reads a cut-off page
+  /// again as two halves.
+  Future<DocumentReadStatus> splitReadPage(int readId, int pageId, {String? cap});
+
+  /// `POST /document-reads/{read}/cancel`. Nothing more is sent or charged.
+  Future<DocumentReadStatus> cancelRead(int readId);
+
+  /// `GET /document-reads/{read}/pages/{page}/image`: the stored picture,
+  /// exactly as it went to the reader. A 404 once the read's files are deleted.
+  Future<Uint8List> readPageImage(int readId, int pageId);
 }

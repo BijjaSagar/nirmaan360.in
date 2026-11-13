@@ -45,6 +45,7 @@ import 'push/device_registry.dart';
 import 'push/firebase_push_messaging.dart';
 import 'push/push_messaging.dart';
 import 'push/push_service.dart';
+import 'readers/readers.dart';
 import 'session/current_user.dart';
 
 /// Deletes the temporary folder that holds company data: quotation files
@@ -86,6 +87,7 @@ class AppServices {
     required this.priceWatch,
     required this.projectImages,
     required this.push,
+    required this.readers,
     required this.db,
     required this.api,
     required this.session,
@@ -109,6 +111,8 @@ class AppServices {
     auth.beforeSignOut = push.forgetThisPhone;
     auth.afterLocaleChange = push.languageChanged;
     auth.afterAccountDeleted = push.forgetLocally;
+    // A reader answer belongs to one person: a sign-out or a new sign-in drops it.
+    _readerSession = session.changes.listen((_) => readers.forget());
   }
 
   /// Production wiring: real database, secure token storage, Dio.
@@ -212,6 +216,7 @@ class AppServices {
     final portal = PortalRepository(context);
     final priceWatch = PriceWatchRepository(context);
     final projectImages = ProjectImageRepository(context);
+    final readers = Readers(api: api, session: session, connectivity: connectivity, clock: clock);
     final push = PushService(
       messaging: pushMessaging,
       devices: ApiDeviceRegistry(api, portal: () => session.user?.isContractor ?? false),
@@ -253,6 +258,7 @@ class AppServices {
       priceWatch: priceWatch,
       projectImages: projectImages,
       push: push,
+      readers: readers,
       db: db,
       api: api,
       session: session,
@@ -317,7 +323,11 @@ class AppServices {
   /// Push notifications: asking, the token, and what arrives or is tapped.
   final PushService push;
 
+  /// The document readers: whether to offer one, and watching a read.
+  final Readers readers;
+
   StreamSubscription<SessionState>? _pushSession;
+  StreamSubscription<SessionState>? _readerSession;
 
   /// Restores the session and starts the triggers. Offline-safe.
   ///
@@ -367,6 +377,7 @@ class AppServices {
   /// Stops timers and closes the database.
   Future<void> dispose() async {
     await _pushSession?.cancel();
+    await _readerSession?.cancel();
     await push.dispose();
     await scheduler.stop();
     await sync.dispose();

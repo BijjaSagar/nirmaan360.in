@@ -751,6 +751,76 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Map<String, dynamic>> postMaterialIssue(int projectId, Map<String, dynamic> body) =>
       _postData('/projects/$projectId/material-issues', body);
 
+  @override
+  Future<ReaderAvailability> readerAvailability() async =>
+      ReaderAvailability.fromJson(await _call(() => _dio.get('/document-reading/status')));
+
+  @override
+  Future<DocumentReadStatus> documentRead(int readId) async =>
+      DocumentReadStatus.fromJson(await _call(() => _dio.get('/document-reads/$readId')));
+
+  @override
+  Future<StoredReadPage> uploadReadPage(
+    int readId, {
+    required int pageNo,
+    required String filePath,
+    ReadPagePart part = ReadPagePart.full,
+  }) async {
+    final body = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        'page_no': pageNo,
+        'part': part.wire,
+        'image': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        '/document-reads/$readId/pages',
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return StoredReadPage.fromJson(body);
+  }
+
+  @override
+  Future<ReadQuote> quoteRead(int readId, {int? pageFrom, int? pageTo}) async => ReadQuote.fromJson(
+    await _call(() => _dio.post('/document-reads/$readId/quote', data: {'page_from': ?pageFrom, 'page_to': ?pageTo})),
+  );
+
+  @override
+  Future<DocumentReadStatus> startRead(
+    int readId, {
+    String? cap,
+    int? pageFrom,
+    int? pageTo,
+    List<int> skipPages = const <int>[],
+  }) => _readStep(
+    '/document-reads/$readId/start',
+    {'cap': ?cap, 'page_from': ?pageFrom, 'page_to': ?pageTo, if (skipPages.isNotEmpty) 'skip_pages': skipPages},
+  );
+
+  @override
+  Future<DocumentReadStatus> resumeRead(int readId, {String? cap}) =>
+      _readStep('/document-reads/$readId/resume', {'cap': ?cap});
+
+  @override
+  Future<DocumentReadStatus> retryReadPage(int readId, int pageId, {bool stronger = false, String? cap}) =>
+      _readStep('/document-reads/$readId/pages/$pageId/retry', {'stronger': stronger, 'cap': ?cap});
+
+  @override
+  Future<DocumentReadStatus> splitReadPage(int readId, int pageId, {String? cap}) =>
+      _readStep('/document-reads/$readId/pages/$pageId/split', {'cap': ?cap});
+
+  @override
+  Future<DocumentReadStatus> cancelRead(int readId) => _readStep('/document-reads/$readId/cancel', const {});
+
+  @override
+  Future<Uint8List> readPageImage(int readId, int pageId) => _bytes('/document-reads/$readId/pages/$pageId/image');
+
+  /// A step that answers with where the read stands now.
+  Future<DocumentReadStatus> _readStep(String path, Map<String, dynamic> data) async =>
+      DocumentReadStatus.fromJson(await _call(() => _dio.post(path, data: data)));
+
   Future<Uint8List> _bytes(String path) async {
     try {
       final response = await _dio.get<List<int>>(
@@ -822,6 +892,8 @@ class DioNirmaanApi implements NirmaanApi {
         errors: data is Map
             ? parseValidationErrors(data['errors'])
             : const {},
+        code: code is String ? code : null,
+        data: data is Map ? data.cast<String, dynamic>() : null,
       );
     }
     return ServerFailure(

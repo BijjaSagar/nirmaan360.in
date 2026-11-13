@@ -33,9 +33,17 @@ class RateLimited extends ApiFailure {
 
 /// HTTP 422. [errors] maps field names to messages.
 class ValidationFailure extends ApiFailure {
-  const ValidationFailure(super.message, {this.errors = const {}});
+  const ValidationFailure(super.message, {this.errors = const {}, this.code, this.data});
 
   final Map<String, List<String>> errors;
+
+  /// The reply's machine-readable `code`, when it has one. A document reader
+  /// refuses a page picture this way: a 422 with a `code` such as
+  /// `image_too_big` and no `errors`.
+  final String? code;
+
+  /// The whole reply, for a caller that needs the numbers sent with the [code].
+  final Map<String, dynamic>? data;
 }
 
 /// Any other non-success response, including 403, 404, 409 and 5xx.

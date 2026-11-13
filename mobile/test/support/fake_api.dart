@@ -4060,6 +4060,144 @@ class FakeApi implements NirmaanApi {
     return tinyPng;
   }
 
+  // Document readers ---------------------------------------------------------
+
+  /// What `GET /document-reading/status` answers. Nothing is offered by default.
+  ReaderAvailability readerAvailabilityBody = ReaderAvailability.off;
+  int readerAvailabilityReads = 0;
+
+  /// The status bodies a read answers with, in turn; the last one repeats. A
+  /// read with no script answers as running with nothing read.
+  final Map<int, List<Map<String, dynamic>>> readStatusScript = <int, List<Map<String, dynamic>>>{};
+
+  /// Every reader call, in order, such as `status 7`, `start 7` or `retry 7/31`.
+  final List<String> readerCalls = <String>[];
+
+  /// Every page picture sent, in order.
+  final List<({int readId, int pageNo, String part, String filePath})> readPageUploads =
+      <({int readId, int pageNo, String part, String filePath})>[];
+
+  /// The body of the last start, resume, retry or split.
+  Map<String, Object?>? lastReadStep;
+
+  /// What `quote` answers.
+  Map<String, dynamic> readQuoteBody = <String, dynamic>{
+    'pages': 1,
+    'estimate': '6.0000',
+    'cap': '10.0000',
+    'cap_floor': '8.0000',
+    'company_max': '650.0000',
+    'rupees': null,
+    'minutes': 1,
+    'free': null,
+    'enough': true,
+    'pages_that_fit': 1,
+    'basis': 'default',
+  };
+
+  final List<ApiFailure> _readerFailures = <ApiFailure>[];
+
+  /// The next reader call throws [failure], such as a 409 `consent_required`.
+  void failNextReaderCall(ApiFailure failure) => _readerFailures.add(failure);
+
+  void _readerGuard(String call) {
+    _guard();
+    readerCalls.add(call);
+    if (_readerFailures.isNotEmpty) throw _readerFailures.removeAt(0);
+  }
+
+  DocumentReadStatus _readStatus(int readId) {
+    final List<Map<String, dynamic>>? script = readStatusScript[readId];
+    final Map<String, dynamic> body = script == null || script.isEmpty
+        ? <String, dynamic>{'id': readId, 'kind': 'slip', 'status': ReadState.running}
+        : (script.length > 1 ? script.removeAt(0) : script.first);
+    return DocumentReadStatus.fromJson(<String, dynamic>{'id': readId, ...body});
+  }
+
+  @override
+  Future<ReaderAvailability> readerAvailability() async {
+    _readerGuard('availability');
+    readerAvailabilityReads++;
+    return readerAvailabilityBody;
+  }
+
+  @override
+  Future<DocumentReadStatus> documentRead(int readId) async {
+    _readerGuard('status $readId');
+    return _readStatus(readId);
+  }
+
+  @override
+  Future<StoredReadPage> uploadReadPage(
+    int readId, {
+    required int pageNo,
+    required String filePath,
+    ReadPagePart part = ReadPagePart.full,
+  }) async {
+    _readerGuard('page $readId/$pageNo');
+    readPageUploads.add((readId: readId, pageNo: pageNo, part: part.wire, filePath: filePath));
+    return StoredReadPage.fromJson(<String, dynamic>{
+      'id': readPageUploads.length,
+      'page_no': pageNo,
+      'part': part.wire,
+      'width': 1400,
+      'height': 1900,
+      'tokens': 3547,
+    });
+  }
+
+  @override
+  Future<ReadQuote> quoteRead(int readId, {int? pageFrom, int? pageTo}) async {
+    _readerGuard('quote $readId');
+    return ReadQuote.fromJson(readQuoteBody);
+  }
+
+  @override
+  Future<DocumentReadStatus> startRead(
+    int readId, {
+    String? cap,
+    int? pageFrom,
+    int? pageTo,
+    List<int> skipPages = const <int>[],
+  }) async {
+    _readerGuard('start $readId');
+    lastReadStep = <String, Object?>{'cap': cap, 'page_from': pageFrom, 'page_to': pageTo, 'skip_pages': skipPages};
+    return _readStatus(readId);
+  }
+
+  @override
+  Future<DocumentReadStatus> resumeRead(int readId, {String? cap}) async {
+    _readerGuard('resume $readId');
+    lastReadStep = <String, Object?>{'cap': cap};
+    return _readStatus(readId);
+  }
+
+  @override
+  Future<DocumentReadStatus> retryReadPage(int readId, int pageId, {bool stronger = false, String? cap}) async {
+    _readerGuard('retry $readId/$pageId');
+    lastReadStep = <String, Object?>{'stronger': stronger, 'cap': cap};
+    return _readStatus(readId);
+  }
+
+  @override
+  Future<DocumentReadStatus> splitReadPage(int readId, int pageId, {String? cap}) async {
+    _readerGuard('split $readId/$pageId');
+    lastReadStep = <String, Object?>{'cap': cap};
+    return _readStatus(readId);
+  }
+
+  @override
+  Future<DocumentReadStatus> cancelRead(int readId) async {
+    _readerGuard('cancel $readId');
+    return _readStatus(readId);
+  }
+
+  @override
+  Future<Uint8List> readPageImage(int readId, int pageId) async {
+    _readerGuard('image $readId/$pageId');
+    return tinyPng;
+  }
+
   /// Server time as a wire timestamp, advancing one second per call. Use it
   /// for rows a test adds by hand, so a delta pull picks them up.
   String stampNow() => _stampNow();
