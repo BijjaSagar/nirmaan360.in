@@ -154,3 +154,41 @@ The phone and any request that asks for JSON get the code with a sentence in `me
 Each reader call has a model, a largest answer (`max_tokens`) and a time limit, in `config/modules/document_reading.php` under `kinds`. They must be changed together: a call has to be able to write its largest answer inside 80 percent of its time limit at `assumed_tokens_per_second`. A test holds this. No time limit may be above 240 seconds; longer answers would need streaming, which is not used.
 
 The speeds, the typical answer sizes and the prompt size in that file are assumptions until the platform admin's dry run has measured them on real documents. Replace them with measured figures before a reader is offered to any company.
+
+## The shared read routes
+
+Each feature creates its reads through its own route (`ReadDesk::open`). Everything after that is the same for every kind and lives in `routes/modules/document_reading.php` and, under `/api/v1`, in `routes/api_modules/document_reading.php`. They answer JSON on the web as well, because the capture script calls them.
+
+| Route | What it does | Guarded |
+| --- | --- | --- |
+| `POST /document-reads/{read}/pages` | Stores one page picture, or one half of a cut-off page. The server redraws it before storing. | yes |
+| `PUT /document-reads/{read}/source` | Keeps the original PDF for the record. Only kinds marked `keeps_source`. | yes |
+| `POST /document-reads/{read}/quote` | The estimate and the limit for the waiting pages. | yes |
+| `POST /document-reads/{read}/start` | Holds the limit and queues the first page. | yes |
+| `POST /document-reads/{read}/resume` | Continues a paused read. | yes |
+| `POST /document-reads/{read}/pages/{page}/retry` | Reads one page again. | yes |
+| `POST /document-reads/{read}/pages/{page}/split` | Reads a cut-off page as its two uploaded halves. | yes |
+| `GET /document-reads/{read}/status` (API: `GET /document-reads/{read}`) | Where the read stands. Asking also tends the read. | no |
+| `POST /document-reads/{read}/cancel` | Cancels a read that is not finished. | no |
+| `GET /document-reads/{read}/pages/{page}/image` | The stored page picture. | no |
+| `GET /api/v1/document-reading/status` | For the app: released, connected, plan, consent, and what this person may use. | no |
+
+"Guarded" means `RequireAiReader:consent` and the permission `agents.use`. Who may open a read at all is decided for each read by `ReadAccess::assert`: the read's company and project, the permissions its kind asks for, the plan feature named under `kinds.{kind}.feature`, and, for kinds marked `own_only`, being the person who started it or an owner or admin.
+
+A read's limit is set at the start. Continuing, reading a page again and reading halves use what is left of it; when that is not enough the answer is `409 limit_reached` with the amounts, and only a request that names a new `cap` changes the limit.
+
+Upload limits to check on the host: a page request may be 6 MB and the original PDF 10 MB (`upload` in the config), so PHP's `upload_max_filesize` and `post_max_size` and the web server's body limit must allow at least 11 MB. The server needs PHP's GD with JPEG, PNG and WebP; without it every upload answers `409 server_cannot_process` and the platform admins are told once a day.
+
+## Drawing pages in the browser
+
+A PDF is never sent to the reader. `resources/js/reader/capture.js` draws each page in the person's browser with pdf.js, at the largest size the reader takes as sent (an A4 page is 1622 by 2296), and uploads the pictures one page per request. A screen gets it by including `modules.document_reading._capture`.
+
+pdf.js fetches part of what it needs while it runs: the decoders for fax, JBIG2 and JPEG 2000 pictures (the ways office scanners store a page), the character maps, the standard fonts and the colour profile. Without them such scans draw as blank pages. So:
+
+- `npm run build` copies those folders from `node_modules/pdfjs-dist` to `public/pdfjs-assets/<version>/` (the small plugin at the top of `vite.config.js`). The folder is not committed. **A deploy that does not run the build, or does not serve `public/pdfjs-assets` as static files, breaks scanned PDFs.**
+- `pdfjs_assets` in `config/modules/document_reading.php` names the folder. A test fails when it is not the installed pdfjs-dist version, so an upgrade of the package cannot leave it pointing at a folder that is gone.
+- The script never uploads a scan it could not draw: a drawn page that is flat although it holds a picture is reported as "could not be drawn in this browser", and a page with nothing on it is left out unless the person includes it.
+
+### The browser self-check
+
+`ReaderCapture.selfCheck({name: address})` runs in the browser and returns `{ok, sizes, fixtures}`: the published page sizes worked out by the script, and one scanned test page of each kind drawn and checked for content. The four test PDFs are in `resources/reader-fixtures` (`ReaderFixtures::names()` and `::path()`); their content is invented, and `make_fixtures.py` beside them is how they were made. They are outside `public/`, so only a route for the platform admin serves them. Run the self-check after every upgrade of pdfjs-dist and on each browser the customers use; it must be green before a reader is released.
