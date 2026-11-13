@@ -4,12 +4,12 @@ namespace App\Services\Imports;
 
 use App\Models\AuditLog;
 use App\Models\BoqImportLayout;
+use App\Models\BoqItem;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\BoqImportResult;
 use App\Support\Dec;
-use Brick\Math\BigDecimal;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -29,6 +29,11 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
  *
  * The staged file is kept server-side under a random token for a short while, tied to the person and
  * the project, as the PDF import does.
+ *
+ * Nothing is guessed on the person's behalf: a unit typed for an earlier file in the same layout is only
+ * suggested, a column of figures that is not read is named, two columns that could each be the rate (or
+ * the quantity, or the amount) wait for the person to choose, and an item code this import makes up never
+ * replaces a different item already in the project.
  */
 final class BoqSheetImport
 {
@@ -78,7 +83,9 @@ final class BoqSheetImport
             'sheets' => self::pack($sheets),
             'sheet' => $choice['sheet'],
             'layout' => $choice['layout']->toArray(),
-            'unit' => $choice['unit'],
+            'unit' => null,
+            'suggested_unit' => $choice['unit'],
+            'skip' => [],
             'saved_id' => $choice['saved_id'],
             'picked' => $choice['picked'],
             'version' => 1,
@@ -114,10 +121,11 @@ final class BoqSheetImport
     }
 
     /**
-     * Change how the file is read: the sheet, the heading row, what a column holds, the unit for lines with none.
-     * A new sheet or heading row is detected afresh; column choices apply to the heading as it stands.
+     * Change how the file is read: the sheet, the heading row (picked or typed), what a column holds, the unit
+     * for lines with none, a row to leave out or put back. A new sheet or heading row is detected afresh, and
+     * the rows left out start again; column choices apply to the heading as it stands.
      *
-     * @param  array{sheet?: mixed, row?: mixed, span?: mixed, fields?: mixed, unit?: mixed}  $input
+     * @param  array{sheet?: mixed, row?: mixed, row_typed?: mixed, span?: mixed, fields?: mixed, unit?: mixed, skip?: mixed, keep?: mixed}  $input
      * @return array<string, mixed>|null The entry as changed, or null when the token is not this person's.
      */
     public function choose(Project $project, User $user, ?string $token, array $input): ?array
@@ -133,17 +141,22 @@ final class BoqSheetImport
         $sheetIndex = is_int($sheetIndex) && isset($entry['sheets'][$sheetIndex]) ? $sheetIndex : $entry['sheet'];
         $sheet = $entry['sheets'][$sheetIndex];
         $layout = SheetLayout::fromArray($entry['layout']);
-        $row = filter_var($input['row'] ?? null, FILTER_VALIDATE_INT);
+        $row = filter_var($input['row_typed'] ?? null, FILTER_VALIDATE_INT);
+        $row = is_int($row) ? $row : filter_var($input['row'] ?? null, FILTER_VALIDATE_INT);
         $span = filter_var($input['span'] ?? null, FILTER_VALIDATE_INT);
         $span = is_int($span) ? max(1, min(BoqHeadings::MAX_SPAN, $span)) : $layout->span;
+
+        $skip = $entry['skip'] ?? [];
 
         if ($sheetIndex !== $entry['sheet']) {
             $layout = $detector->detect($sheet['grid'], $sheet['merges']);
             $entry['picked'] = 'chosen';
             $entry['saved_id'] = null;
+            $skip = [];
         } elseif (is_int($row) && isset($sheet['grid'][$row]) && ($row !== $layout->row || $span !== $layout->span)) {
             $layout = $detector->at($sheet['grid'], $row, $span, $sheet['merges']);
             $entry['saved_id'] = null;
+            $skip = [];
         } elseif (is_array($input['fields'] ?? null)) {
             $fields = [];
 
@@ -157,6 +170,16 @@ final class BoqSheetImport
 
             $layout = $layout->withFields($fields);
         }
+
+        foreach (['skip' => true, 'keep' => false] as $key => $leaveOut) {
+            $number = filter_var($input[$key] ?? null, FILTER_VALIDATE_INT);
+
+            if (is_int($number) && isset($sheet['grid'][$number]) && $number > $layout->lastRow()) {
+                $skip = $leaveOut ? [...array_diff($skip, [$number]), $number] : array_values(array_diff($skip, [$number]));
+            }
+        }
+
+        $entry['skip'] = array_values(array_slice($skip, 0, 2000));
 
         if (array_key_exists('unit', $input)) {
             $unit = is_string($input['unit']) ? trim($input['unit']) : '';
@@ -186,6 +209,7 @@ final class BoqSheetImport
         $saved = $entry['saved_id'] === null ? null : BoqImportLayout::withoutGlobalScopes()->where('organization_id', $project->organization_id)->find($entry['saved_id']);
         $lines = array_filter($reading['kinds'], fn (array $kind) => in_array($kind['kind'], BoqSheetRows::LINE_KINDS, true));
         $others = array_filter($reading['kinds'], fn (array $kind) => ! in_array($kind['kind'], BoqSheetRows::LINE_KINDS, true));
+        $lineRows = array_values(array_filter(array_keys($lines), fn (int $row) => isset($reading['lines'][$row])));
 
         return [
             'file' => $entry['file'],
@@ -207,14 +231,19 @@ final class BoqSheetImport
             'candidates' => $detector->candidateRows($sheet['grid']),
             'columns' => $this->columns($sheet['grid'], $layout),
             'unit' => $entry['unit'],
+            'suggested_unit' => $entry['suggested_unit'] ?? null,
             'heading_unit' => $layout->headingUnit(),
-            'needs_unit' => $layout->found() && ! isset($layout->columns()['unit']) && $layout->headingUnit() === null,
+            'needs_unit' => $reading['needs_unit'],
             'saved' => $saved === null ? null : ['id' => $saved->id, 'at' => $saved->last_used_at ?? $saved->created_at, 'uses' => $saved->uses, 'file' => $saved->file_name],
-            'lines' => array_slice(array_map(fn (int $row) => ['row' => $row, ...$reading['lines'][$row]], array_keys($lines)), 0, self::SHOWN_LINES),
+            'lines' => array_slice(array_map(fn (int $row) => ['row' => $row, ...$reading['lines'][$row]], $lineRows), 0, self::SHOWN_LINES),
             'line_count' => count($lines),
             'rate_only' => array_values(array_map(fn (int $row) => ['row' => $row, ...$reading['lines'][$row]], array_keys(array_filter($lines, fn (array $kind) => $kind['kind'] === 'rate_only')))),
             'others' => array_slice(array_map(fn (int $row, array $kind) => ['row' => $row, ...$kind], array_keys($others), $others), 0, self::SHOWN_OTHERS),
             'other_count' => count($others),
+            'left_out' => count(array_filter($others, fn (array $kind) => in_array($kind['kind'], BoqSheetRows::LEFT_OUT_KINDS, true))),
+            'skip' => $entry['skip'] ?? [],
+            'renumbered' => $reading['renumbered'],
+            'updates' => $reading['updates'],
             'counts' => array_count_values(array_column($reading['kinds'], 'kind')),
             'adjustments' => $reading['adjustments'],
             'totals' => $reading['totals'],
@@ -276,6 +305,8 @@ final class BoqSheetImport
                 'rate_only' => count($summary['rate_only'] ?? []),
                 'adjustments' => count($summary['adjustments'] ?? []),
                 'mismatches' => count($summary['mismatches'] ?? []),
+                'renumbered' => count($summary['renumbered'] ?? []),
+                'left_out' => count($entry['skip'] ?? []),
                 'layout_id' => $saved?->id,
             ]);
 
@@ -300,9 +331,11 @@ final class BoqSheetImport
     /**
      * Any BOQ sheet read straight into rows in the template's columns, for an import with no column check:
      * the tender BOQ. The sheet and its columns are chosen as the preview would choose them, a layout the
-     * company saved first. Rows are keyed by their row number on the sheet.
+     * company saved first. Rows are keyed by their row number on the sheet. With no page to ask on, anything
+     * the column check would ask the person about refuses the file: a row that cannot be read, a unit that
+     * only an earlier file gave, figures in a column that is not read.
      *
-     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string}>, error: ?string}
+     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string}>, error: string|list<string>|null}
      */
     public function rowsFor(int $organizationId, string $path, int $maxRows): array
     {
@@ -324,14 +357,38 @@ final class BoqSheetImport
             return ['rows' => [], 'error' => __('The sheet has more than :max rows. Split it into smaller files.', ['max' => $maxRows])];
         }
 
-        if (! isset($layout->columns()['unit']) && $layout->headingUnit() === null && CellValues::unit($choice['unit']) === null) {
-            return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
+        if ($sheet['wide']) {
+            return ['rows' => [], 'error' => __('This sheet has values past column :column, which are not read. Move them into the first columns and upload the file again.', ['column' => Coordinate::stringFromColumnIndex(SheetFile::MAX_COLUMNS)])];
+        }
+
+        foreach ($this->unreadFigures($sheet['grid'], $layout) as $unread) {
+            if ($unread['field'] !== null) {
+                return ['rows' => [], 'error' => __('Column :column is also headed ":heading" and holds figures, like column :taken. Only one column can be read for it: remove or rename the others and upload the file again.', $unread)];
+            }
+
+            if (! isset($layout->columns()['rate'])) {
+                return ['rows' => [], 'error' => __('No rate column was recognised, but column :column (:heading) holds figures. Head it Rate, or remove it, and upload the file again.', $unread)];
+            }
         }
 
         if ($layout->isTemplate()) {
+            if (! isset($layout->columns()['unit'])) {
+                return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
+            }
+
             [$grid, $columns, $header] = [$sheet['grid'], $layout->columns(), $layout->lastRow()];
         } else {
-            $reading = (new BoqSheetRows)->classify($sheet['grid'], $layout, $choice['unit']);
+            // A unit typed for an earlier file in this layout is not used here: nobody would see it applied.
+            $reading = (new BoqSheetRows)->classify($sheet['grid'], $layout, null, ['missing' => $sheet['missing'], 'merges' => $sheet['merges']]);
+
+            if ($reading['errors'] !== []) {
+                return ['rows' => [], 'error' => array_map(fn (array $error) => __('Row :row', ['row' => $error['row']]).': '.$error['message'], array_slice($reading['errors'], 0, 10))];
+            }
+
+            if (! isset($layout->columns()['unit']) && $layout->headingUnit() === null && in_array('', array_column($reading['lines'], 'unit'), true)) {
+                return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
+            }
+
             [$grid, $columns, $header] = [$reading['grid'], $reading['columns'], $reading['header_row']];
         }
 
@@ -369,6 +426,7 @@ final class BoqSheetImport
         $empty = [
             'kinds' => [], 'lines' => [], 'adjustments' => [], 'totals' => [], 'mismatches' => [], 'notes' => [], 'rows' => [], 'rate_only' => [],
             'lines_total' => '0.00', 'adjustments_total' => '0.00', 'with_adjustments' => '0.00', 'file_subtotal' => null, 'file_total' => null,
+            'needs_unit' => false, 'renumbered' => [], 'updates' => [],
         ];
 
         if (! $layout->found()) {
@@ -379,44 +437,165 @@ final class BoqSheetImport
             return [...$empty, 'errors' => [['row' => 0, 'field' => null, 'message' => __('The sheet has more than :max rows. Split it into smaller files.', ['max' => BoqExcelService::MAX_ROWS])]]];
         }
 
-        if ($layout->isTemplate()) {
-            return $this->plain($project, $sheet, $layout, $empty);
-        }
-
-        $read = (new BoqSheetRows)->classify($sheet['grid'], $layout, $entry['unit']);
+        // Every sheet on the column check is read by its own headings, one laid out like the template too:
+        // its section, part and total rows are what the person came here for.
+        $read = (new BoqSheetRows)->classify($sheet['grid'], $layout, $entry['unit'], ['missing' => $sheet['missing'], 'merges' => $sheet['merges'], 'skip' => $entry['skip'] ?? []]);
+        [$renumbered, $updates] = $this->matchExisting($project, $read);
         [$rows, $errors] = $this->excel->checkRows($project, $read['grid'], $read['header_row'], $read['columns']);
+        // A row that cannot be read is the problem to show; with every row refused, "the file has no rows" is not.
+        $errors = $read['errors'] === [] ? $errors : [...$read['errors'], ...array_values(array_filter($errors, fn (array $error) => $error['row'] > 0 && ! in_array($error['row'], array_column($read['errors'], 'row'), true)))];
 
-        $needsUnit = ! isset($layout->columns()['unit']) && $layout->headingUnit() === null && CellValues::unit($entry['unit']) === null;
+        $needsUnit = ! isset($layout->columns()['unit']) && $layout->headingUnit() === null && in_array('', array_column($read['lines'], 'unit'), true);
 
         if ($needsUnit) {
             $errors = array_values(array_filter($errors, fn (array $error) => $error['field'] !== 'unit'));
             array_unshift($errors, ['row' => 0, 'field' => 'unit', 'message' => __('This sheet has no unit column. Type the unit for its lines above.')]);
         }
 
+        foreach ($this->unreadFigures($sheet['grid'], $layout) as $unread) {
+            if ($unread['field'] !== null) {
+                $errors[] = ['row' => 0, 'field' => $unread['field'], 'message' => __('Column :column is also headed ":heading" and holds figures, like column :taken. Only one of them can be read: choose it, and set the others to Leave out. For a rate split into parts, such as supply and installation, read the total amount column as the amount and leave the rate columns out.', $unread)];
+            }
+        }
+
+        $notes = $read['notes'];
+        $unread = array_filter($this->unreadFigures($sheet['grid'], $layout), fn (array $column) => $column['field'] === null);
+
+        if ($unread !== []) {
+            $named = array_map(fn (array $column) => $column['heading'] === '' ? $column['column'] : $column['column'].' ('.Str::limit($column['heading'], 30).')', array_slice($unread, 0, 6));
+            $notes[] = ['row' => 0, 'message' => __('Columns :columns hold figures but are not read. If one of them is the quantity, rate or amount, choose it under Read as.', ['columns' => implode(', ', $named).(count($unread) > 6 ? ', …' : '')])];
+        }
+
+        if ($sheet['wide'] ?? false) {
+            $notes[] = ['row' => 0, 'message' => __('This sheet has values past column :column. Only columns A to :column are read.', ['column' => Coordinate::stringFromColumnIndex(SheetFile::MAX_COLUMNS)])];
+        }
+
         return [
             ...$read,
             'rows' => $rows,
             'errors' => $errors,
+            'notes' => $notes,
+            'needs_unit' => $needsUnit,
+            'renumbered' => $renumbered,
+            'updates' => $updates,
             'rate_only' => array_keys(array_filter($read['lines'], fn (array $line) => $line['kind'] === 'rate_only')),
         ];
     }
 
-    /** A sheet in the template's own columns is checked as the template always was: one line per row. */
-    private function plain(Project $project, array $sheet, SheetLayout $layout, array $empty): array
+    /**
+     * Lines whose item code is already in the project for a different item. A code the file gives updates that
+     * item, as the template always has, and is listed. A code made up here, from a serial number or the order
+     * of the rows, never does: the line gets the next free code instead (1 becomes 1-2), or the code it got the
+     * last time the same item came in, and is listed.
+     *
+     * @return array{0: list<array{row: int, from: string, to: string, existing: string}>, 1: list<array{row: int, code: string, now: string, after: string}>}
+     */
+    private function matchExisting(Project $project, array &$read): array
     {
-        $columns = $layout->columns();
-        [$rows, $errors] = $this->excel->checkRows($project, $sheet['grid'], $layout->lastRow(), $columns, $sheet['missing']);
-        $kinds = [];
-        $lines = [];
-        $total = BigDecimal::zero();
+        $existing = BoqItem::withoutGlobalScopes()->where('organization_id', $project->organization_id)->where('project_id', $project->id)
+            ->orderBy('id')->get(['id', 'code', 'description'])->unique('code')->keyBy('code');
 
-        foreach ($rows as $row) {
-            $kinds[$row['row']] = ['kind' => 'line', 'text' => (string) $row['description'], 'reason' => null];
-            $lines[$row['row']] = [...$row, 'kind' => 'line', 'amount' => null, 'details' => []];
-            $total = $total->plus(Dec::of($row['qty'])->multipliedBy(Dec::of($row['rate'])));
+        if ($existing->isEmpty()) {
+            return [[], []];
         }
 
-        return [...$empty, 'kinds' => $kinds, 'lines' => $lines, 'rows' => $rows, 'errors' => $errors, 'lines_total' => Dec::money($total), 'with_adjustments' => Dec::money($total)];
+        $same = fn (BoqItem $item, array $line) => self::plain((string) $item->description) === self::plain((string) $line['description']);
+        $used = array_flip(array_map('strval', array_column($read['lines'], 'code')));
+        $codeColumn = $read['columns']['code'];
+        $renumbered = [];
+        $updates = [];
+
+        foreach ($read['lines'] as $row => $line) {
+            $item = $existing->get($line['code']);
+
+            if ($item === null || $same($item, $line)) {
+                continue;
+            }
+
+            if (! $line['generated']) {
+                $updates[] = ['row' => $row, 'code' => (string) $line['code'], 'now' => (string) $item->description, 'after' => (string) $line['description']];
+
+                continue;
+            }
+
+            for ($suffix = 2; ; $suffix++) {
+                $code = mb_substr((string) $line['code'], 0, 28).'-'.$suffix;
+                $other = $existing->get($code);
+
+                if (! isset($used[$code]) && ($other === null || $same($other, $line))) {
+                    break;
+                }
+            }
+
+            $used[$code] = true;
+            $renumbered[] = ['row' => $row, 'from' => (string) $line['code'], 'to' => $code, 'existing' => (string) $item->description];
+            $read['lines'][$row]['code'] = $code;
+            $read['grid'][$row][$codeColumn] = $code;
+        }
+
+        return [$renumbered, $updates];
+    }
+
+    private static function plain(string $text): string
+    {
+        return trim((string) preg_replace('/\s+/u', ' ', mb_strtolower($text)));
+    }
+
+    /**
+     * Columns not read that hold figures under the heading, each with its letter and heading. "field" is the
+     * quantity, rate or amount when the heading names one that another column is already read as: two
+     * columns that could each be it, as a rate split into supply and installation under one merged heading,
+     * or a second table beside the first. A column the person or a saved layout left out has no "field".
+     *
+     * @return list<array{column: string, heading: string, field: ?string, taken: string}>
+     */
+    private function unreadFigures(array $grid, SheetLayout $layout): array
+    {
+        if (! $layout->found()) {
+            return [];
+        }
+
+        $columns = $layout->columns();
+        $counts = [];
+
+        foreach ($grid as $number => $cells) {
+            if ($number <= $layout->lastRow()) {
+                continue;
+            }
+
+            foreach ($cells as $column => $value) {
+                if (($layout->fields[$column] ?? null) !== null || CellValues::text($value) === '') {
+                    continue;
+                }
+
+                $counts[$column]['filled'] = ($counts[$column]['filled'] ?? 0) + 1;
+                $counts[$column]['numbers'] = ($counts[$column]['numbers'] ?? 0) + (CellValues::isNumber($value) ? 1 : 0);
+            }
+        }
+
+        ksort($counts);
+        $unread = [];
+
+        foreach ($counts as $column => $count) {
+            if ($count['numbers'] < 0.6 * $count['filled']) {
+                continue;
+            }
+
+            $heading = $layout->headings[$column] ?? '';
+            $scores = BoqHeadings::scores($heading);
+            arsort($scores);
+            $field = array_key_first($scores);
+            // A column the person left out, on this page or in a layout the company saved, is decided: named, not asked about again.
+            $field = in_array($field, ['qty', 'rate', 'amount'], true) && isset($columns[$field]) && ! in_array($layout->how[$column] ?? null, ['chosen', 'saved'], true) ? $field : null;
+            $unread[] = [
+                'column' => Coordinate::stringFromColumnIndex($column),
+                'heading' => $heading,
+                'field' => $field,
+                'taken' => $field === null ? '' : Coordinate::stringFromColumnIndex($columns[$field]),
+            ];
+        }
+
+        return $unread;
     }
 
     /** @return list<array{column: int, letter: string, heading: string, field: ?string, how: ?string, samples: list<string>}> */
@@ -463,7 +642,7 @@ final class BoqSheetImport
     /**
      * The sheet to start with: the one a saved layout matches, else the one with the most priced rows.
      *
-     * @return array{sheet: int, layout: SheetLayout, unit: ?string, saved_id: ?int, picked: string}
+     * @return array{sheet: int, layout: SheetLayout, unit: ?string, saved_id: ?int, picked: string} "unit" is the unit the saved layout was last used with, a suggestion only.
      */
     private function firstChoice(int $organizationId, array $sheets): array
     {
@@ -479,6 +658,7 @@ final class BoqSheetImport
                 $fields[(int) $column] = $saved['layout']->fields[$column] ?? null;
             }
 
+            // The unit typed for the earlier file is only suggested: this file's lines may be in another unit.
             return ['sheet' => $saved['sheet'], 'layout' => $layout->withFields($fields, 'saved'), 'unit' => $saved['layout']->unit, 'saved_id' => $saved['layout']->id, 'picked' => 'saved'];
         }
 

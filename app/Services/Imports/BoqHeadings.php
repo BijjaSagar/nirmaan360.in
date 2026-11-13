@@ -24,8 +24,14 @@ use App\Support\Dec;
  */
 final class BoqHeadings
 {
-    /** Rows looked at for the heading, from the top of the sheet. */
+    /**
+     * Rows of two cells or more looked at for the heading, from the top of the sheet. Rows of one cell, such
+     * as the notes above a tender's schedule, are looked at too but are not counted, up to SCAN_LIMIT rows.
+     */
     public const SCAN_ROWS = 40;
+
+    /** The most rows looked at for the heading, of any kind. */
+    public const SCAN_LIMIT = 400;
 
     /** The most rows one heading can take. */
     public const MAX_SPAN = 3;
@@ -72,6 +78,8 @@ final class BoqHeadings
         'section' => ['section', 'section name', 'chapter', 'group', 'sub head', 'subhead', 'विभाग'],
         'category' => ['category', 'work category', 'type of work', 'head of work', 'trade'],
         'details' => ['details', 'detail', 'item details', 'specification', 'specifications', 'spec', 'make'],
+        // What the rate is for, when it is not one unit: "100 Sqm", "10 Cum", "Qtl".
+        'per' => ['per', 'per unit', 'प्रति', 'प्रति एकक'],
     ];
 
     /** Phrases that name a field only loosely. A column headed this way loses to one headed plainly. */
@@ -83,8 +91,23 @@ final class BoqHeadings
     /** How much finding each field counts towards a heading row. */
     private const WEIGHTS = [
         'description' => 3.0, 'qty' => 2.0, 'rate' => 2.0, 'amount' => 1.6, 'unit' => 1.6, 'code' => 1.2, 'serial' => 1.2,
-        'remark' => 0.8, 'section' => 0.8, 'category' => 0.6, 'details' => 0.6,
+        'remark' => 0.8, 'section' => 0.8, 'category' => 0.6, 'details' => 0.6, 'per' => 0.6,
     ];
+
+    /**
+     * Words that only qualify a quantity, rate or amount heading: "Estimated Rate", "Rate including GST",
+     * "TOTAL AMOUNT Without Taxes", "BASIC RATE In Figures To be entered by the Bidder Rs. P".
+     */
+    private const QUALIFIERS = [
+        'estimated', 'estimate', 'est', 'quoted', 'offered', 'including', 'incl', 'inclusive', 'inc', 'excluding', 'excl', 'exclusive',
+        'exc', 'with', 'without', 'gst', 'tax', 'taxes', 'figures', 'figure', 'basic', 'net', 'sor', 'dsr', 'ssr', 'csr', 'approx',
+        'approximate', 'approximately', 'revised', 'approved', 'contractor', 'contractors', 'tender', 'tendered', 'entered', 'bidder',
+        'bidders', 'by', 'p', 'all', 'applicable', 'final', 'actual', 'current', 'total', 'gross', 'agreed', 'proposed',
+        'अंदाजित', 'अंदाजे', 'अनुमानित', 'लगभग', 'जीएसटी', 'सहित', 'सह', 'कर', 'शिवाय', 'रहित', 'निविदा',
+    ];
+
+    /** Words that say a column holds an amount written in words: a remark, never the amount. */
+    private const IN_WORDS = ['words', 'word', 'अक्षरी', 'अक्षरात', 'शब्दात', 'शब्दों', 'शब्द'];
 
     /** Small words a heading may carry beside its phrase: "Amount in Rs.", "Rate per Cum". */
     private const FILLERS = [
@@ -198,7 +221,7 @@ final class BoqHeadings
             return new SheetLayout($row, max(1, $span));
         }
 
-        return $this->evaluate($grid, $this->mergedValues($grid, $merges), $group, force: true) ?? new SheetLayout($row, count($group));
+        return $this->evaluate($grid, $this->mergedValues($grid, $merges, end($group)), $group, force: true) ?? new SheetLayout($row, count($group));
     }
 
     /**
@@ -244,20 +267,23 @@ final class BoqHeadings
         return $count;
     }
 
-    /** @return list<int> The first SCAN_ROWS rows that have anything in them. */
+    /** @return list<int> The rows that have anything in them, from the top, until SCAN_ROWS rows of two cells or more. */
     private function scanRows(array $grid): array
     {
         $rows = [];
+        $counted = 0;
 
         foreach ($grid as $number => $cells) {
-            foreach ($cells as $value) {
-                if (CellValues::text($value) !== '') {
-                    $rows[] = (int) $number;
-                    break;
-                }
+            $filled = count(array_filter($cells, fn ($value) => CellValues::text($value) !== ''));
+
+            if ($filled === 0) {
+                continue;
             }
 
-            if (count($rows) >= self::SCAN_ROWS) {
+            $rows[] = (int) $number;
+            $counted += $filled >= 2 ? 1 : 0;
+
+            if ($counted >= self::SCAN_ROWS || count($rows) >= self::SCAN_LIMIT) {
                 break;
             }
         }
@@ -334,6 +360,20 @@ final class BoqHeadings
 
         $score += $this->byValues($grid, $last, $fields, $how, $taken);
 
+        // "Description" merged over two columns, the item in one and its parts in the next: both are read.
+        if (isset($taken['description'])) {
+            $first = $taken['description'];
+
+            for ($column = $first + 1; array_key_exists($column, $fields) && $fields[$column] === null && ($headings[$column] ?? null) === $headings[$first]; $column++) {
+                if (array_filter($group, fn (int $row) => isset($merged[$row][$column])) === []) {
+                    break;
+                }
+
+                $fields[$column] = 'description';
+                $how[$column] = 'heading';
+            }
+        }
+
         return new SheetLayout($group[0], count($group), $fields, $headings, $how, $units, round($score, 3));
     }
 
@@ -407,7 +447,8 @@ final class BoqHeadings
 
     /**
      * Columns whose heading named nothing but whose values plainly say what they are: a column of units,
-     * a column of long text when no description column was found, an amount that is quantity times rate.
+     * a column of long text when no description column was found, a rate that the amount is quantity
+     * times, an amount that is quantity times rate.
      *
      * @param  array<int, ?string>  $fields
      * @param  array<int, string>  $how
@@ -417,7 +458,7 @@ final class BoqHeadings
     {
         $score = 0.0;
 
-        foreach (['unit', 'description', 'amount'] as $wanted) {
+        foreach (['unit', 'description', 'rate', 'amount'] as $wanted) {
             if (isset($taken[$wanted])) {
                 continue;
             }
@@ -431,6 +472,8 @@ final class BoqHeadings
                 $fits = match ($wanted) {
                     'unit' => $profile['filled'] >= 3 && $profile['units'] >= 0.6,
                     'description' => $profile['filled'] >= 3 && $profile['text'] >= 0.7 && $profile['length'] >= 15,
+                    // The amount is the quantity times this column.
+                    'rate' => isset($taken['qty'], $taken['amount']) && $profile['numbers'] >= 0.6 && $this->product($grid, $taken['amount'], $taken['qty'], $column, $last) >= 0.6,
                     'amount' => isset($taken['qty'], $taken['rate']) && $profile['numbers'] >= 0.6 && $this->product($grid, $column, $taken['qty'], $taken['rate'], $last) >= 0.6,
                 };
 
@@ -536,7 +579,8 @@ final class BoqHeadings
 
         return match ($field) {
             'description' => $profile['length'] < 4 || $profile['numbers'] > 0.7 ? 0.3 : 1.0,
-            'qty', 'rate', 'amount' => $profile['numbers'] < 0.2 && $profile['units'] < 0.5 ? 0.4 : 1.0,
+            // A column of words is never the quantity, rate or amount, whatever its heading says.
+            'qty', 'rate', 'amount' => $profile['numbers'] < 0.2 && $profile['units'] < 0.5 ? 0.0 : 1.0,
             'unit' => $profile['numbers'] > 0.7 ? 0.4 : 1.0,
             default => 1.0,
         };
@@ -568,7 +612,7 @@ final class BoqHeadings
 
             $filled++;
 
-            if (CellValues::isNumber($value) || CellValues::isRateOnly($value)) {
+            if (CellValues::isNumber($value) || CellValues::isRateOnly($value) || CellValues::quantityWithUnit($value) !== null) {
                 $numbers++;
             } else {
                 $texts++;
@@ -701,10 +745,11 @@ final class BoqHeadings
      * @param  list<array{0: int, 1: int, 2: int, 3: int}>  $merges
      * @return array<int, array<int, mixed>>
      */
-    private function mergedValues(array $grid, array $merges): array
+    private function mergedValues(array $grid, array $merges, ?int $upTo = null): array
     {
         $values = [];
-        $limit = (int) (array_key_first($grid) ?? 1) + self::SCAN_ROWS + self::MAX_SPAN * 2 + 20;
+        $scanned = $this->scanRows($grid);
+        $limit = max($upTo ?? 0, $scanned === [] ? 1 : (int) end($scanned)) + self::MAX_SPAN * 2;
 
         foreach ($merges as [$top, $left, $bottom, $right]) {
             $value = $grid[$top][$left] ?? null;
@@ -744,7 +789,7 @@ final class BoqHeadings
         $tokens = $key === '' ? [] : explode(' ', $key);
         $result = ['scores' => [], 'units' => null];
 
-        if ($tokens === [] || count($tokens) > 10) {
+        if ($tokens === [] || count($tokens) > 14) {
             return self::$cache[$key] = $result;
         }
 
@@ -764,13 +809,17 @@ final class BoqHeadings
                 $covered = 0;
                 $rest = [];
 
+                $figure = in_array($field, ['qty', 'rate', 'amount'], true);
+
                 foreach ($tokens as $token) {
-                    if (isset($vocabulary[$token]) || in_array($token, self::FILLERS, true) || ctype_digit($token)
+                    $qualifier = $figure && in_array($token, self::QUALIFIERS, true);
+
+                    if (isset($vocabulary[$token]) || in_array($token, self::FILLERS, true) || ctype_digit($token) || $qualifier
                         || (in_array($field, ['qty', 'rate', 'amount', 'unit'], true) && CellValues::knownUnit($token) !== null)) {
                         $covered++;
                     }
 
-                    if (! isset($vocabulary[$token]) && ! in_array($token, self::FILLERS, true) && ! ctype_digit($token)) {
+                    if (! isset($vocabulary[$token]) && ! in_array($token, self::FILLERS, true) && ! ctype_digit($token) && ! $qualifier) {
                         $rest[] = $token;
                     }
                 }
@@ -802,6 +851,13 @@ final class BoqHeadings
                 $result['units'] = $unit;
                 break;
             }
+        }
+
+        // "Amount in words" holds words, not the amount.
+        if (array_intersect($tokens, self::IN_WORDS) !== []) {
+            unset($result['scores']['qty'], $result['scores']['rate'], $result['scores']['amount']);
+            $result['scores']['remark'] = max($result['scores']['remark'] ?? 0, self::WEIGHTS['remark']);
+            $result['units'] = null;
         }
 
         return self::$cache[$key] = $result;

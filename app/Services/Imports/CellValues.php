@@ -2,6 +2,7 @@
 
 namespace App\Services\Imports;
 
+use App\Support\Dec;
 use Brick\Math\BigDecimal;
 
 /**
@@ -117,6 +118,64 @@ final class CellValues
         return self::number($value) !== null;
     }
 
+    /**
+     * A quantity written with its unit, as "12.5 Cum", "6 Nos" or "१० घ.मी.", or a lump sum written as
+     * "L.S.", "Lump sum" or "Job": the number and the unit. Null for anything else, a plain number included.
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    public static function quantityWithUnit(mixed $value): ?array
+    {
+        if (! is_string($value) || self::number($value) !== null) {
+            return null;
+        }
+
+        $text = trim(self::asciiDigits($value));
+
+        if (self::knownUnit($text) === 'LS') {
+            return ['1', 'LS'];
+        }
+
+        if (preg_match('/^([\d,]*\.?\d+)\s*([^\d\s].*)$/u', $text, $match) !== 1 || ($number = self::number($match[1])) === null) {
+            return null;
+        }
+
+        $unit = self::knownUnit($match[2]);
+
+        return $unit === null || $unit === '%' ? null : [$number, $unit];
+    }
+
+    /**
+     * What a "Per" cell says the rate is for: "100 Sqm", "10 cum", "Qtl", "per 1 MT". The count and the
+     * unit, the unit null when the cell names none. Null when the cell is not of that form.
+     *
+     * @return array{0: string, 1: ?string}|null
+     */
+    public static function per(mixed $value): ?array
+    {
+        if (($number = self::number($value)) !== null) {
+            return Dec::of($number)->isPositive() ? [$number, null] : null;
+        }
+
+        if (! is_string($value) || ($text = trim((string) preg_replace('/^(?:per|प्रति)\s+/iu', '', trim(self::asciiDigits($value))))) === '') {
+            return null;
+        }
+
+        if (($unit = self::knownUnit($text)) !== null) {
+            return $unit === '%' ? null : ['1', $unit];
+        }
+
+        $both = self::quantityWithUnit($text);
+
+        return $both !== null && $both[1] !== 'LS' && Dec::of($both[0])->isPositive() ? $both : null;
+    }
+
+    /** A spreadsheet error shown in a cell, such as #REF! or #VALUE!: a formula that went wrong, never a value. */
+    public static function isError(mixed $value): bool
+    {
+        return is_string($value) && preg_match('/^#(REF!|VALUE!|N\/A|DIV\/0!|NAME\?|NUM!|NULL!|SPILL!|CALC!|GETTING_DATA)$/i', trim($value)) === 1;
+    }
+
     /** Whether a quantity or rate cell marks the line as priced by rate only, such as QRO or "Rate only". */
     public static function isRateOnly(mixed $value): bool
     {
@@ -126,7 +185,8 @@ final class CellValues
 
         $key = (string) preg_replace('/[^\p{L}\p{M}]/u', '', mb_strtolower($value));
 
-        return $key !== '' && in_array($key, self::RATE_ONLY, true);
+        // "Rate only basis", "Quote rate only", "Rates only*": the mark with a word around it.
+        return $key !== '' && (in_array($key, self::RATE_ONLY, true) || str_contains($key, 'rateonly') || str_contains($key, 'ratesonly') || str_starts_with($key, 'quoterate'));
     }
 
     /**

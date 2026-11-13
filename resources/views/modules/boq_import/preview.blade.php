@@ -9,10 +9,10 @@
             'carried' => __('Carried forward'), 'say' => __('Say'), 'words' => __('In words'), 'adjustment' => __('Adjustment'),
             'note' => __('Note'), 'skipped' => __('Left out'), 'after_total' => __('After the total'),
             'column_numbers' => __('Column numbers'), 'heading_repeat' => __('Heading again'),
+            'error' => __('Problem'), 'excluded' => __('Left out by you'),
         ];
         $hows = ['heading' => __('From the heading'), 'values' => __('From the values'), 'saved' => __('Saved layout'), 'chosen' => __('Your choice')];
-        $errorFields = ['section' => __('Section'), 'code' => __('Item code'), 'description' => __('Description'), 'unit' => __('Unit'), 'qty' => __('Quantity'), 'rate' => __('Rate'), 'category' => __('Category'), 'details' => __('Details')];
-        $leftOut = $preview['other_count'] - ($preview['counts']['adjustment'] ?? 0);
+        $errorFields = $fields;
     @endphp
     <x-page-header :title="__('Check the columns before importing')" :subtitle="$project->name">
         <a href="{{ route('boq.excel.index', $project) }}" class="btn btn-ghost">{{ __('Back to import') }}</a>
@@ -50,6 +50,8 @@
                             <option value="{{ $number }}" @selected($preview['found'] && $number === $preview['heading_row'])>{{ __('Row :row', ['row' => $number]) }}: {{ $text }}</option>
                         @endforeach
                     </select>
+                    <label for="row_typed" class="mt-2 block text-xs text-ink-3">{{ __('Or type the row number') }}</label>
+                    <input id="row_typed" name="row_typed" type="number" min="1" max="100000" inputmode="numeric" class="input mt-1 w-28">
                 </x-field>
                 <x-field :label="__('The heading takes')" name="span">
                     <select id="span" name="span" class="input">
@@ -100,8 +102,9 @@
                 </div>
             @endif
 
-            <x-field :label="__('Unit for lines with none')" name="unit" class="max-w-sm" :hint="$preview['heading_unit'] ? __('The heading gives :unit for these lines.', ['unit' => $preview['heading_unit']]) : __('Used for every line whose row has no unit, such as cum, sqm, nos or LS.')">
-                <input id="unit" name="unit" value="{{ $preview['unit'] }}" maxlength="16" list="boq-units" class="input" @if ($preview['needs_unit']) required @endif>
+            {{-- Not "required": an empty box must not stop a column, the sheet or the heading row being changed. Confirming checks it. --}}
+            <x-field :label="__('Unit for lines with none')" name="unit" class="max-w-sm" :hint="$preview['heading_unit'] ? __('The heading gives :unit for these lines.', ['unit' => $preview['heading_unit']]) : ($preview['suggested_unit'] && ! $preview['unit'] ? __('The last file in this layout used :unit. Type it again to use it.', ['unit' => $preview['suggested_unit']]) : __('Used for every line whose row has no unit, such as cum, sqm, nos or LS.'))">
+                <input id="unit" name="unit" value="{{ $preview['unit'] }}" maxlength="16" list="boq-units" class="input" @if ($preview['needs_unit']) aria-invalid="true" @endif>
                 <datalist id="boq-units">@foreach (config('buildos.units', []) as $unit)<option value="{{ $unit }}">@endforeach</datalist>
             </x-field>
 
@@ -120,13 +123,23 @@
             <p class="px-4 pt-3 text-sm text-ink-2">{{ __('Rows are numbered as in the sheet. Change how the file is read above, or fix the file and upload it again.') }}</p>
             <div class="overflow-x-auto p-4">
                 <table class="ledger">
-                    <thead><tr><th class="w-20">{{ __('Row') }}</th><th class="w-40">{{ __('Column') }}</th><th>{{ __('Problem') }}</th></tr></thead>
+                    <thead><tr><th class="w-20">{{ __('Row') }}</th><th class="w-40">{{ __('Column') }}</th><th>{{ __('Problem') }}</th><th class="w-40"></th></tr></thead>
                     <tbody>
                     @foreach (array_slice($preview['errors'], 0, $shownErrors) as $error)
                         <tr>
                             <td class="num">{{ $error['row'] > 0 ? $error['row'] : '—' }}</td>
                             <td>{{ $error['field'] ? ($errorFields[$error['field']] ?? $error['field']) : __('File') }}</td>
                             <td>{{ $error['message'] }}</td>
+                            <td>
+                                @if ($error['row'] > 0)
+                                    <form method="POST" action="{{ route('boq.sheet.choose', $project) }}">
+                                        @csrf
+                                        <input type="hidden" name="token" value="{{ $token }}">
+                                        <input type="hidden" name="skip" value="{{ $error['row'] }}">
+                                        <button class="btn btn-ghost px-2 py-1 text-xs">{{ __('Leave this row out') }}</button>
+                                    </form>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -145,7 +158,7 @@
                 <x-stat :label="__('Lines to import')" :value="$preview['line_count']" />
                 <x-stat :label="__('Rate-only lines')" :value="count($preview['rate_only'])" />
                 <x-stat :label="__('Adjustments, not imported')" :value="count($preview['adjustments'])" />
-                <x-stat :label="__('Rows left out')" :value="max(0, $leftOut)" />
+                <x-stat :label="__('Rows left out')" :value="$preview['left_out']" />
                 @if ($money)
                     <x-stat :label="__('The lines add up to')" :value="inr($preview['lines_total'])" />
                     @if ($preview['file_subtotal'] !== null)
@@ -224,10 +237,60 @@
         </section>
     @endif
 
+    @if ($preview['renumbered'] !== [])
+        <section class="card mb-5 border-laterite">
+            <div class="card-head">
+                <h2 class="card-title">{{ __('Lines given a new item code') }}</h2>
+                <span class="num text-sm text-ink-3">{{ count($preview['renumbered']) }}</span>
+            </div>
+            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('These lines have no item code in the file. The number they would get is already used in the project by another item, so they get a new code and that item is not changed.') }}</p>
+            <div class="overflow-x-auto p-4">
+                <table class="ledger">
+                    <thead><tr><th class="w-14">{{ __('Row') }}</th><th>{{ __('Item code') }}</th><th>{{ __('New item code') }}</th><th>{{ __('Item already in the project') }}</th></tr></thead>
+                    <tbody>
+                    @foreach (array_slice($preview['renumbered'], 0, 200) as $line)
+                        <tr>
+                            <td class="num">{{ $line['row'] }}</td>
+                            <td class="num">{{ $line['from'] }}</td>
+                            <td class="num">{{ $line['to'] }}</td>
+                            <td>{{ \Illuminate\Support\Str::limit($line['existing'], 120) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+
+    @if ($preview['updates'] !== [])
+        <section class="card mb-5 border-laterite">
+            <div class="card-head">
+                <h2 class="card-title">{{ __('Lines that change an item already in the project') }}</h2>
+                <span class="num text-sm text-ink-3">{{ count($preview['updates']) }}</span>
+            </div>
+            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('The file gives these lines an item code the project already has, so importing changes that item. Check that it is the same item.') }}</p>
+            <div class="overflow-x-auto p-4">
+                <table class="ledger">
+                    <thead><tr><th class="w-14">{{ __('Row') }}</th><th>{{ __('Item code') }}</th><th>{{ __('In the project now') }}</th><th>{{ __('After the import') }}</th></tr></thead>
+                    <tbody>
+                    @foreach (array_slice($preview['updates'], 0, 200) as $line)
+                        <tr>
+                            <td class="num">{{ $line['row'] }}</td>
+                            <td class="num">{{ $line['code'] }}</td>
+                            <td>{{ \Illuminate\Support\Str::limit($line['now'], 120) }}</td>
+                            <td>{{ \Illuminate\Support\Str::limit($line['after'], 120) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    @endif
+
     @if ($preview['adjustments'] !== [])
         <section class="card mb-5">
             <div class="card-head"><h2 class="card-title">{{ __('Adjustments in the sheet') }}</h2></div>
-            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('Percentages added to or taken off the work, such as contingencies or a rebate on the schedule rates. They are not BOQ lines, so they are not imported. Add a lump-sum line by hand if the contract needs one.') }}</p>
+            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('Percentages or amounts added to or taken off the work, such as contingencies, a rebate on the schedule rates, tax or a round-off. They are not BOQ lines, so they are not imported. Add a lump-sum line by hand if the contract needs one.') }}</p>
             <div class="overflow-x-auto p-4">
                 <table class="ledger">
                     <thead>
@@ -246,7 +309,7 @@
                         <tr>
                             <td class="num">{{ $adjustment['row'] }}</td>
                             <td>{{ $adjustment['label'] }}</td>
-                            <td class="num r">{{ $adjustment['percent'] }}</td>
+                            <td class="num r">{{ $adjustment['percent'] ?? '—' }}</td>
                             @if ($money)
                                 <td class="num r">{{ inr($adjustment['effect']) }}</td>
                                 <td class="num r">
@@ -352,7 +415,17 @@
                             <td class="num">{{ $other['row'] }}</td>
                             <td>{{ $kinds[$other['kind']] ?? $other['kind'] }}</td>
                             <td>{{ \Illuminate\Support\Str::limit($other['text'], 140) }}</td>
-                            <td class="text-ink-3">{{ $other['reason'] }}</td>
+                            <td class="text-ink-3">
+                                {{ $other['reason'] }}
+                                @if ($other['kind'] === 'excluded')
+                                    <form method="POST" action="{{ route('boq.sheet.choose', $project) }}">
+                                        @csrf
+                                        <input type="hidden" name="token" value="{{ $token }}">
+                                        <input type="hidden" name="keep" value="{{ $other['row'] }}">
+                                        <button class="btn btn-ghost px-2 py-1 text-xs">{{ __('Put it back') }}</button>
+                                    </form>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>

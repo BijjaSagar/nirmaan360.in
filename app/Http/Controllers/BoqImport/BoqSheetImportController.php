@@ -7,6 +7,7 @@ use App\Models\BoqImportLayout;
 use App\Models\Project;
 use App\Services\Imports\BoqImportLayouts;
 use App\Services\Imports\BoqSheetImport;
+use App\Services\Imports\SheetFile;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,16 +45,19 @@ class BoqSheetImportController extends Controller
         ]);
     }
 
-    /** Change the sheet, the heading row, a column's meaning or the unit, then show the preview again. */
+    /** Change the sheet, the heading row, a column's meaning or the unit, or leave a row out, then show the preview again. */
     public function choose(Request $request, Project $project): RedirectResponse
     {
         $data = $request->validate([
             'sheet' => ['nullable', 'integer', 'min:0', 'max:50'],
             'row' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'row_typed' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'span' => ['nullable', 'integer', 'min:1', 'max:3'],
-            'fields' => ['nullable', 'array', 'max:26'],
+            'fields' => ['nullable', 'array', 'max:'.SheetFile::MAX_COLUMNS],
             'fields.*' => ['nullable', 'string', 'max:20'],
             'unit' => ['nullable', 'string', 'max:16'],
+            'skip' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'keep' => ['nullable', 'integer', 'min:1', 'max:100000'],
         ]);
 
         $entry = $this->import->choose($project, $request->user(), $this->token($request), $data);

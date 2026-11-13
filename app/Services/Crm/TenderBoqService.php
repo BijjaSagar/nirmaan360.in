@@ -179,11 +179,19 @@ class TenderBoqService
             $row['qty'] = str_replace([',', ' '], '', (string) $row['qty']);
             $row['rate'] = str_replace([',', ' '], '', (string) $row['rate']);
 
-            if ($row['code'] === '' || $row['description'] === '' || $row['unit'] === ''
-                || ! is_numeric($row['qty']) || ! is_numeric($row['rate']) || $row['qty'] < 0 || $row['rate'] < 0
-                || $row['qty'] > 99999999999 || $row['rate'] > 9999999999999 || mb_strlen($row['description']) > 2000
-                || mb_strlen($row['code']) > 32 || mb_strlen($row['unit']) > 16 || mb_strlen((string) $row['section']) > 120) {
-                $errors[] = __('Line :line is incomplete or has an invalid number.', ['line' => $line]);
+            // Name what is wrong with the line, so the person knows what to change in the file.
+            $problem = match (true) {
+                $row['code'] === '' => __('Line :line has no item code.', ['line' => $line]),
+                $row['description'] === '' => __('Line :line has no description.', ['line' => $line]),
+                $row['unit'] === '' => __('Line :line has no unit. Add the unit to that row and upload the file again.', ['line' => $line]),
+                ! is_numeric($row['qty']) || ! is_numeric($row['rate']) || $row['qty'] < 0 || $row['rate'] < 0
+                    || $row['qty'] > 99999999999 || $row['rate'] > 9999999999999 || mb_strlen($row['description']) > 2000
+                    || mb_strlen($row['code']) > 32 || mb_strlen($row['unit']) > 16 || mb_strlen((string) $row['section']) > 120 => __('Line :line is incomplete or has an invalid number.', ['line' => $line]),
+                default => null,
+            };
+
+            if ($problem !== null) {
+                $errors[] = $problem;
 
                 continue;
             }

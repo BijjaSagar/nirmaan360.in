@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use App\Services\Imports\BoqHeadings;
+use App\Services\Imports\CellValues;
 
 /**
  * Puts a table back together from the pieces of text on PDF pages.
@@ -346,9 +347,17 @@ final class PdfTable
         return $fields;
     }
 
-    /** The one field the heading detector reads a heading as. A serial number counts as the code, as the template has it. */
+    /**
+     * The one field the heading detector reads a heading as. A serial number counts as the code, as the template
+     * has it. A piece that carries a figure, or a label with its value after a colon ("Name of Work: Sample
+     * Hall", "Estimated Cost: Rs. 25,00,000"), is a title block above the table, never a heading.
+     */
     private static function detectedField(string $text): ?string
     {
+        if (preg_match('/\d/u', CellValues::asciiDigits($text)) === 1 || preg_match('/\S\s*:\s*\S/u', $text) === 1) {
+            return null;
+        }
+
         $scores = BoqHeadings::scores($text);
         arsort($scores);
         $field = array_key_first($scores);

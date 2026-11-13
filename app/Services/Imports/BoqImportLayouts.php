@@ -115,7 +115,7 @@ final class BoqImportLayouts
         $layout->delete();
     }
 
-    /** @return array<string, string> What a column can hold, named for the screen. */
+    /** @return array<string, string> What a column can hold, named for the screen. Every name differs, in every language. */
     public static function fieldLabels(): array
     {
         return [
@@ -129,8 +129,9 @@ final class BoqImportLayouts
             'remark' => __('Remarks'),
             'section' => __('Section'),
             'category' => __('Category'),
-            'details' => __('Details'),
+            'details' => __('Details (kept with the line)'),
             'reference' => __('Reference (kept in details)'),
+            'per' => __('Per (what the rate is for)'),
         ];
     }
 }

@@ -8,8 +8,11 @@ namespace App\Services\Imports;
  */
 final class SheetLayout
 {
-    /** What a column can hold. "reference" is a schedule or DSR reference kept in the line's details. */
-    public const FIELDS = ['serial', 'code', 'description', 'unit', 'qty', 'rate', 'amount', 'remark', 'section', 'category', 'details', 'reference'];
+    /**
+     * What a column can hold. "reference" is a schedule or DSR reference kept in the line's details; "per" says
+     * what the rate is for when it is not one unit, as "100 Sqm" or "Qtl".
+     */
+    public const FIELDS = ['serial', 'code', 'description', 'unit', 'qty', 'rate', 'amount', 'remark', 'section', 'category', 'details', 'reference', 'per'];
 
     /**
      * @param  ?int  $row  The first heading row, as numbered on the sheet. Null when no heading was found.
@@ -44,6 +47,20 @@ final class SheetLayout
                 $columns[$field] ??= $column;
             }
         }
+
+        return $columns;
+    }
+
+    /**
+     * Every column read as this field, left to right. Only the description can have two: "Description" merged
+     * over two columns, the item in one and its parts in the next.
+     *
+     * @return list<int>
+     */
+    public function columnsOf(string $field): array
+    {
+        $columns = array_keys(array_filter($this->fields, fn (?string $value) => $value === $field));
+        sort($columns);
 
         return $columns;
     }
@@ -115,6 +132,11 @@ final class SheetLayout
             $field = in_array($field, self::FIELDS, true) ? $field : null;
 
             if (($current[$column] ?? null) === $field) {
+                // Leaving a column out that was already left out is still the person's choice.
+                if ($field === null && array_key_exists($column, $current)) {
+                    $marks[$column] = $how;
+                }
+
                 continue;
             }
 

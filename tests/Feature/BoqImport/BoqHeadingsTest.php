@@ -99,6 +99,10 @@ class BoqHeadingsTest extends TestCase
         $this->assertNull(CellValues::number('QRO'));
         $this->assertTrue(CellValues::isRateOnly('Q.R.O.'));
         $this->assertTrue(CellValues::isRateOnly('Rate Only'));
+        $this->assertTrue(CellValues::isRateOnly('Rate only basis'));
+        $this->assertFalse(CellValues::isRateOnly('Rate as per DSR'));
+        $this->assertSame([['12.5', 'cum'], ['1', 'LS'], ['1', 'LS'], ['1250', 'sqm'], null, null], array_map(fn (string $text) => CellValues::quantityWithUnit($text), ['12.5 Cum', 'L.S.', '1 Job', '1,250 Sq.m', 'approx 10', '12']));
+        $this->assertTrue(CellValues::isError('#REF!'));
 
         $units = [
             'cum' => ['cum', 'Cu.M', 'm3', 'm³', 'घ.मी.', 'Rs/cu.m'], 'sqm' => ['sqm', 'Sq.m', 'm2', 'चौ.मी.'], 'sqft' => ['sqft', 'Sft', 'चौ.फुट'],
@@ -165,5 +169,38 @@ class BoqHeadingsTest extends TestCase
 
         $this->assertSame('कामाचा तपशील', $marathi[1][2]);
         $this->assertSame('नमुना खोदकाम', $marathi[2][2]);
+    }
+
+    public function test_a_title_block_above_the_pdf_table_is_not_taken_for_its_heading(): void
+    {
+        $page = function (array $lines): array {
+            $pieces = [];
+            $y = 760;
+
+            foreach ($lines as $line) {
+                foreach ($line as $x => $text) {
+                    $pieces[] = ['x' => (float) $x, 'x1' => (float) $x + PdfTable::width($text, 9), 'y' => (float) $y, 'size' => 9.0, 'text' => $text];
+                }
+
+                $y -= 16;
+            }
+
+            return ['pieces' => $pieces, 'h' => [], 'v' => []];
+        };
+        $heading = [40 => 'Item Code', 100 => 'Description of Work', 320 => 'Unit', 370 => 'Qty', 420 => 'Rate'];
+
+        $grid = (new PdfTable([
+            $page([
+                [40 => 'Name of Work: Sample Hall', 230 => 'Sub Head: Civil', 400 => 'Estimated Cost: Rs. 25,00,000'],
+                [],
+                $heading,
+                [40 => 'S-1', 100 => 'Sample excavation in soil', 320 => 'cum', 370 => '10', 420 => '250'],
+                [40 => 'S-2', 100 => 'Sample brick work', 320 => 'cum', 370 => '4', 420 => '5200'],
+            ]),
+            $page([$heading, [40 => 'S-3', 100 => 'Sample plaster work', 320 => 'sqm', 370 => '40', 420 => '250']]),
+        ]))->grid();
+
+        $this->assertSame(['Item Code', 'Description of Work', 'Unit', 'Qty', 'Rate'], array_values($grid[1]));
+        $this->assertSame(['S-1', 'S-2', 'S-3'], array_map(fn (array $row) => $row[1] ?? null, array_values(array_slice($grid, 1))));
     }
 }

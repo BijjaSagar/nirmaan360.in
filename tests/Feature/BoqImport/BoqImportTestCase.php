@@ -5,6 +5,8 @@ namespace Tests\Feature\BoqImport;
 use App\Models\BoqItem;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\Imports\BoqHeadings;
+use App\Services\Imports\BoqSheetRows;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Testing\TestResponse;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -58,6 +60,45 @@ abstract class BoqImportTestCase extends ReportsTestCase
     protected function sheet(array $rows, string $name = 'boq.xlsx', string $writer = 'Xlsx', array $merges = []): UploadedFile
     {
         return $this->book(['Sheet1' => $rows], $name, $writer, $merges);
+    }
+
+    /**
+     * Rows as a grid, the way a sheet is read: row => column => value, numbered from 1, empty cells left out.
+     *
+     * @param  list<array<int, mixed>>  $rows
+     * @return array<int, array<int, mixed>>
+     */
+    protected function grid(array $rows): array
+    {
+        $grid = [];
+
+        foreach ($rows as $r => $cells) {
+            foreach (array_values($cells) as $c => $value) {
+                if ($value !== null && $value !== '') {
+                    $grid[$r + 1][$c + 1] = $value;
+                }
+            }
+        }
+
+        return $grid;
+    }
+
+    /**
+     * Rows read as the column check reads them, with no file: the heading found, then every row given its kind.
+     *
+     * @param  list<array<int, mixed>>  $rows
+     */
+    protected function classified(array $rows, ?string $unit = null): array
+    {
+        $grid = $this->grid($rows);
+
+        return (new BoqSheetRows)->classify($grid, (new BoqHeadings)->detect($grid), $unit);
+    }
+
+    /** @return array<int, string> Sheet row => what the row was read as. */
+    protected function kinds(array $classified): array
+    {
+        return array_map(fn (array $kind) => $kind['kind'], $classified['kinds']);
     }
 
     protected function csvFile(string $content, string $name = 'boq.csv'): UploadedFile

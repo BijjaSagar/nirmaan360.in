@@ -11,18 +11,21 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Throwable;
+use XMLReader;
 use ZipArchive;
 
 /**
  * Reads the sheets of an uploaded BOQ file into grids of values, whatever its name says.
  *
  * The kind of file is decided by its content: a zip with a workbook in it is .xlsx, a zip with an
- * OpenDocument spreadsheet is .ods, an OLE file is a BIFF .xls, and plain text is CSV. So a ".xls"
- * that Excel really saved as .xlsx imports like any other.
+ * OpenDocument spreadsheet is .ods, an OLE file is a BIFF .xls, and plain text is CSV (UTF-8, UTF-16
+ * with or without its mark, or Windows-1252). So a ".xls" that Excel really saved as .xlsx imports
+ * like any other.
  *
  * Values only are read. A formula cell gives the result saved with it and is never calculated, so a
- * file cannot make the server run a formula. Rows and columns past the limits are not read at all,
- * and a zip that unpacks to more than MAX_UNPACKED_BYTES is refused.
+ * file cannot make the server run a formula; one saved with no result at all is listed in "missing".
+ * Rows and columns past the limits are not read, but a sheet with values past them is marked, so
+ * nothing is dropped unseen. A zip that unpacks to more than MAX_UNPACKED_BYTES is refused.
  */
 final class SheetFile
 {
@@ -34,14 +37,17 @@ final class SheetFile
 
     public const CSV = 'csv';
 
-    /** Columns read from each sheet: A to Z. */
-    public const MAX_COLUMNS = 26;
+    /** Columns read from each sheet: A to AZ, so a measurement sheet with a column per floor still has its rate. */
+    public const MAX_COLUMNS = 52;
 
     /** At most this many sheets of a workbook are read. */
     public const MAX_SHEETS = 12;
 
     /** The same guard as the plain Excel import: a small zip can unpack to a huge file. */
     public const MAX_UNPACKED_BYTES = 60 * 1024 * 1024;
+
+    /** Merged ranges kept per sheet: the heading's, and those holding an item's text over its rows. */
+    private const MAX_MERGES = 5000;
 
     /** CSV files bigger than this are refused; the upload limit is lower anyway. */
     private const MAX_CSV_BYTES = 8 * 1024 * 1024;
@@ -85,7 +91,10 @@ final class SheetFile
     /**
      * Every sheet of the file as a grid, or an error to show the person.
      *
-     * @return array{format: ?string, sheets: list<array{name: string, grid: array<int, array<int, mixed>>, missing: array<int, array<int, true>>, merges: list<array{0:int,1:int,2:int,3:int}>, truncated: bool, hidden: bool}>, error: ?string}
+     * "truncated" is true when the sheet has a value in a row past $maxRows (and the heading rows allowed
+     * above them), "wide" when it has one in a column past MAX_COLUMNS.
+     *
+     * @return array{format: ?string, sheets: list<array{name: string, grid: array<int, array<int, mixed>>, missing: array<int, array<int, true>>, merges: list<array{0:int,1:int,2:int,3:int}>, truncated: bool, wide: bool, hidden: bool}>, error: ?string}
      */
     public static function read(string $path, int $maxRows): array
     {
@@ -114,23 +123,34 @@ final class SheetFile
 
     private static function readWorkbook(string $path, string $format, int $maxRows): array
     {
-        /** @var BaseReader $reader */
-        $reader = match ($format) {
-            self::XLSX => new XlsxReader,
-            self::XLS => new XlsReader,
-            self::ODS => new OdsReader,
-        };
-
+        $reader = self::reader($format);
         $limit = $maxRows + 20;
-        $reader->setReadFilter(new class($limit) implements IReadFilter
+        // Cells past the limits are never loaded. The filter only notes which sheets were offered one.
+        $filter = new class($limit) implements IReadFilter
         {
+            /** @var array<string, array{rows: bool, columns: bool}> */
+            public array $beyond = [];
+
             public function __construct(private int $limit) {}
 
             public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool
             {
-                return $row <= $this->limit + 1 && Coordinate::columnIndexFromString($columnAddress) <= SheetFile::MAX_COLUMNS;
+                $rows = $row > $this->limit;
+                $columns = Coordinate::columnIndexFromString($columnAddress) > SheetFile::MAX_COLUMNS;
+
+                if ($rows || $columns) {
+                    $this->beyond[$worksheetName]['rows'] = ($this->beyond[$worksheetName]['rows'] ?? false) || $rows;
+                    $this->beyond[$worksheetName]['columns'] = ($this->beyond[$worksheetName]['columns'] ?? false) || $columns;
+
+                    return false;
+                }
+
+                return true;
             }
-        });
+        };
+        $reader->setReadFilter($filter);
+        // An empty cell holds nothing to read; with this a BIFF file offers the filter only cells with values.
+        $reader->setReadEmptyCells(false);
 
         $book = $reader->load($path);
         $sheets = [];
@@ -142,6 +162,14 @@ final class SheetFile
                 }
 
                 $read = self::readSheet($sheet, $limit);
+                $offered = $filter->beyond[$sheet->getTitle()] ?? null;
+
+                if ($offered !== null) {
+                    // The filter is offered empty cells too, formatted ones, so whether they hold a value is looked up.
+                    $values = self::valuesBeyond($path, $format, $sheet->getTitle(), $limit);
+                    $read['truncated'] = $offered['rows'] && $values['rows'];
+                    $read['wide'] = $offered['columns'] && $values['columns'];
+                }
 
                 if ($read['grid'] !== []) {
                     $sheets[] = $read;
@@ -152,6 +180,151 @@ final class SheetFile
         }
 
         return $sheets;
+    }
+
+    private static function reader(string $format): BaseReader
+    {
+        return match ($format) {
+            self::XLSX => new XlsxReader,
+            self::XLS => new XlsReader,
+            self::ODS => new OdsReader,
+        };
+    }
+
+    /**
+     * Whether a sheet holds a value in a row past $limit, and in a column past MAX_COLUMNS. An .xlsx sheet
+     * is streamed, so nothing is loaded; a BIFF .xls offers only cells with values; an OpenDocument sheet
+     * is loaded once more with values only, and only past the limits.
+     *
+     * @return array{rows: bool, columns: bool}
+     */
+    private static function valuesBeyond(string $path, string $format, string $sheetName, int $limit): array
+    {
+        if ($format === self::XLS) {
+            return ['rows' => true, 'columns' => true];
+        }
+
+        if ($format === self::XLSX) {
+            return self::xlsxValuesBeyond($path, $sheetName, $limit);
+        }
+
+        $reader = self::reader($format);
+        $reader->setReadDataOnly(true);
+        $reader->setReadEmptyCells(false);
+        $reader->setLoadSheetsOnly([$sheetName]);
+        $reader->setReadFilter(new class($limit) implements IReadFilter
+        {
+            public function __construct(private int $limit) {}
+
+            public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool
+            {
+                return $row > $this->limit || Coordinate::columnIndexFromString($columnAddress) > SheetFile::MAX_COLUMNS;
+            }
+        });
+
+        $found = ['rows' => false, 'columns' => false];
+        $book = $reader->load($path);
+
+        try {
+            foreach ($book->getActiveSheet()->getCoordinates() as $coordinate) {
+                $value = $book->getActiveSheet()->getCell($coordinate)->getValue();
+
+                if ($value === null || trim((string) (is_scalar($value) ? $value : 'x')) === '') {
+                    continue;
+                }
+
+                [$column, $row] = Coordinate::coordinateFromString($coordinate);
+                $found['rows'] = $found['rows'] || (int) $row > $limit;
+                $found['columns'] = $found['columns'] || Coordinate::columnIndexFromString($column) > self::MAX_COLUMNS;
+            }
+        } finally {
+            $book->disconnectWorksheets();
+        }
+
+        return $found;
+    }
+
+    /** @return array{rows: bool, columns: bool} The xlsx sheet's XML read as a stream for a value past the limits. */
+    private static function xlsxValuesBeyond(string $path, string $sheetName, int $limit): array
+    {
+        $found = ['rows' => false, 'columns' => false];
+        $entry = self::xlsxSheetEntry($path, $sheetName);
+        $xml = new XMLReader;
+
+        if ($entry === null || ! @$xml->open('zip://'.$path.'#'.$entry, null, LIBXML_NONET | LIBXML_COMPACT)) {
+            // When the sheet cannot be looked into, what the filter was offered stands.
+            return ['rows' => true, 'columns' => true];
+        }
+
+        $row = 0;
+        $column = 0;
+
+        try {
+            while (@$xml->read()) {
+                if ($xml->nodeType !== XMLReader::ELEMENT) {
+                    continue;
+                }
+
+                if ($xml->localName === 'row') {
+                    $row = (int) ($xml->getAttribute('r') ?? 0) ?: $row + 1;
+                    $column = 0;
+                } elseif ($xml->localName === 'c') {
+                    $reference = (string) $xml->getAttribute('r');
+                    $column = preg_match('/^([A-Z]{1,3})(\d+)$/', $reference, $match) === 1 ? Coordinate::columnIndexFromString($match[1]) : $column + 1;
+                    $row = isset($match[2]) && $reference !== '' ? (int) $match[2] : $row;
+                } elseif (($xml->localName === 'v' || $xml->localName === 't') && ($row > $limit || $column > self::MAX_COLUMNS) && trim($xml->readString()) !== '') {
+                    $found['rows'] = $found['rows'] || $row > $limit;
+                    $found['columns'] = $found['columns'] || $column > self::MAX_COLUMNS;
+
+                    if ($found['rows'] && $found['columns']) {
+                        break;
+                    }
+                }
+            }
+        } finally {
+            $xml->close();
+        }
+
+        return $found;
+    }
+
+    /** The path inside the xlsx zip of the sheet with this name. */
+    private static function xlsxSheetEntry(string $path, string $sheetName): ?string
+    {
+        $zip = new ZipArchive;
+
+        if ($zip->open($path) !== true) {
+            return null;
+        }
+
+        try {
+            $workbook = @simplexml_load_string((string) $zip->getFromName('xl/workbook.xml'), options: LIBXML_NONET);
+            $rels = @simplexml_load_string((string) $zip->getFromName('xl/_rels/workbook.xml.rels'), options: LIBXML_NONET);
+
+            if ($workbook === false || $rels === false) {
+                return null;
+            }
+
+            $id = null;
+
+            foreach ($workbook->sheets->sheet ?? [] as $sheet) {
+                if ((string) $sheet['name'] === $sheetName) {
+                    $id = (string) ($sheet->attributes('http://schemas.openxmlformats.org/officeDocument/2006/relationships')['id'] ?? '');
+                }
+            }
+
+            foreach ($rels->Relationship ?? [] as $relationship) {
+                if ($id !== null && (string) $relationship['Id'] === $id) {
+                    $target = (string) $relationship['Target'];
+
+                    return str_starts_with($target, '/') ? ltrim($target, '/') : 'xl/'.$target;
+                }
+            }
+
+            return null;
+        } finally {
+            $zip->close();
+        }
     }
 
     private static function readSheet(Worksheet $sheet, int $limit): array
@@ -172,7 +345,8 @@ final class SheetFile
                     $value = $value->getPlainText();
                 }
 
-                if ($cell->isFormula() && ($value === null || $value === '')) {
+                // No result saved with the formula at all. A result saved as empty text is an empty cell.
+                if ($cell->isFormula() && $value === null) {
                     $missing[$row->getRowIndex()][$column] = true;
                 }
 
@@ -189,19 +363,21 @@ final class SheetFile
         foreach ($sheet->getMergeCells() as $range) {
             [$start, $end] = array_pad(Coordinate::rangeBoundaries($range), 2, null);
 
-            if ($start !== null && $end !== null && $start[1] <= $limit) {
-                $merges[] = [(int) $start[1], (int) $start[0], (int) $end[1], (int) $end[0]];
+            if ($start !== null && $end !== null && $start[1] <= $limit && $start[0] <= self::MAX_COLUMNS) {
+                $merges[] = [(int) $start[1], (int) $start[0], (int) min($end[1], $limit), (int) min($end[0], self::MAX_COLUMNS)];
             }
         }
 
         ksort($grid);
+        usort($merges, fn (array $a, array $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
 
         return [
             'name' => mb_substr($sheet->getTitle(), 0, 60),
             'grid' => $grid,
             'missing' => $missing,
-            'merges' => array_slice($merges, 0, 500),
-            'truncated' => $highest > $limit,
+            'merges' => array_slice($merges, 0, self::MAX_MERGES),
+            'truncated' => false,
+            'wide' => false,
             'hidden' => $sheet->getSheetState() !== Worksheet::SHEETSTATE_VISIBLE,
         ];
     }
@@ -209,15 +385,7 @@ final class SheetFile
     /** One sheet from a CSV file. The separator is a comma, a semicolon or a tab, whichever the first lines use. */
     private static function readCsv(string $path, int $maxRows): array
     {
-        $content = (string) file_get_contents($path, length: self::MAX_CSV_BYTES);
-        $content = (string) preg_replace('/^\xEF\xBB\xBF/', '', $content);
-
-        if (str_starts_with($content, "\xFF\xFE") || str_starts_with($content, "\xFE\xFF")) {
-            $content = (string) mb_convert_encoding(substr($content, 2), 'UTF-8', str_starts_with($content, "\xFF\xFE") ? 'UTF-16LE' : 'UTF-16BE');
-        } elseif (! mb_check_encoding($content, 'UTF-8')) {
-            $content = (string) mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
-        }
-
+        $content = self::decode((string) file_get_contents($path, length: self::MAX_CSV_BYTES)) ?? '';
         $sample = implode("\n", array_slice(preg_split('/\r\n|\r|\n/', $content, 12) ?: [], 0, 10));
         $separator = ',';
         $most = substr_count($sample, ',');
@@ -236,14 +404,23 @@ final class SheetFile
         $grid = [];
         $number = 0;
         $truncated = false;
+        $wide = false;
 
         while (($cells = fgetcsv($handle, 0, $separator, '"', '')) !== false) {
             $number++;
+            $filled = array_filter($cells, fn ($value) => $value !== null && trim($value) !== '');
 
+            // Past the limit only whether anything is there matters.
             if ($number > $maxRows + 20) {
-                $truncated = true;
-                break;
+                if ($filled !== []) {
+                    $truncated = true;
+                    break;
+                }
+
+                continue;
             }
+
+            $wide = $wide || ($filled !== [] && max(array_keys($filled)) >= self::MAX_COLUMNS);
 
             foreach (array_slice($cells, 0, self::MAX_COLUMNS) as $index => $value) {
                 if ($value !== null && trim($value) !== '') {
@@ -254,21 +431,55 @@ final class SheetFile
 
         fclose($handle);
 
-        return $grid === [] ? [] : [['name' => 'CSV', 'grid' => $grid, 'missing' => [], 'merges' => [], 'truncated' => $truncated, 'hidden' => false]];
+        return $grid === [] ? [] : [['name' => 'CSV', 'grid' => $grid, 'missing' => [], 'merges' => [], 'truncated' => $truncated, 'wide' => $wide, 'hidden' => false]];
     }
 
-    /** Text with no control bytes in its first part: what a CSV file is. */
+    /** Text with no control bytes in its first part, in any of the encodings a CSV comes in: what a CSV file is. */
     private static function looksLikeText(string $path): bool
     {
-        $sample = (string) file_get_contents($path, length: 65536);
+        $text = self::decode((string) file_get_contents($path, length: 65536));
 
-        if ($sample === '' || str_contains($sample, "\0") && ! str_starts_with($sample, "\xFF\xFE") && ! str_starts_with($sample, "\xFE\xFF")) {
+        if ($text === null || $text === '' || str_contains($text, "\0")) {
             return false;
         }
 
-        $controls = preg_match_all('/[\x01-\x08\x0B\x0C\x0E-\x1A\x1C-\x1F]/', $sample);
+        $controls = preg_match_all('/[\x01-\x08\x0B\x0C\x0E-\x1A\x1C-\x1F]/', $text);
 
-        return $controls === 0 || $controls * 100 < strlen($sample);
+        return $controls === 0 || $controls * 100 < strlen($text);
+    }
+
+    /**
+     * Text as UTF-8: UTF-8 with or without its mark, UTF-16 with or without its mark (Excel's "Unicode
+     * Text"), or Windows-1252. Null for bytes that are none of these, such as a binary file.
+     */
+    private static function decode(string $content): ?string
+    {
+        if (str_starts_with($content, "\xEF\xBB\xBF")) {
+            return substr($content, 3);
+        }
+
+        if (str_starts_with($content, "\xFF\xFE") || str_starts_with($content, "\xFE\xFF")) {
+            return (string) mb_convert_encoding(substr($content, 2, (strlen($content) - 2) & ~1), 'UTF-8', str_starts_with($content, "\xFF\xFE") ? 'UTF-16LE' : 'UTF-16BE');
+        }
+
+        if (str_contains($content, "\0")) {
+            // UTF-16 with no mark: the zero bytes of its ASCII characters fall on one side only. A binary file's do not.
+            $odd = $even = 0;
+
+            for ($index = 0, $length = strlen($content); $index < $length; $index++) {
+                if ($content[$index] === "\0") {
+                    $index % 2 === 1 ? $odd++ : $even++;
+                }
+            }
+
+            if (max($odd, $even) < 0.9 * ($odd + $even)) {
+                return null;
+            }
+
+            return (string) mb_convert_encoding(substr($content, 0, strlen($content) & ~1), 'UTF-8', $odd >= $even ? 'UTF-16LE' : 'UTF-16BE');
+        }
+
+        return mb_check_encoding($content, 'UTF-8') ? $content : (string) mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
     }
 
     private static function unpackedSize(string $path): int
