@@ -45,6 +45,12 @@ class Project extends Model
         return $this->belongsTo(Party::class, 'client_id');
     }
 
+    /** The contract value split into phases, in their order. Empty when the value is one figure. */
+    public function valuePhases(): HasMany
+    {
+        return $this->hasMany(ProjectValuePhase::class)->orderBy('sort')->orderBy('id');
+    }
+
     public function sites(): HasMany
     {
         return $this->hasMany(Site::class);

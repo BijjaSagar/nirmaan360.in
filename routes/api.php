@@ -37,6 +37,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/projects', [ProjectApiController::class, 'index'])->middleware('can:project.view');
         Route::get('/projects/{project}/image', [ProjectController::class, 'image'])->middleware('can:project.view');
         Route::post('/projects', [ProjectApiController::class, 'store'])->middleware('can:project.manage');
+        Route::get('/projects/{project}', [ProjectApiController::class, 'show'])->middleware('can:project.view');
+        Route::patch('/projects/{project}', [ProjectApiController::class, 'update'])->middleware('can:project.manage');
         Route::get('/projects/{project}/boq', [ProjectApiController::class, 'boq'])->middleware('can:boq.view');
         Route::post('/projects/{project}/boq-items', [ProjectApiController::class, 'storeBoqItem'])->middleware('can:boq.manage');
         // Delete is for the company owner only, checked in the controller. A line already removed still answers, for retries.

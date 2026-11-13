@@ -48,6 +48,27 @@ class ProjectApiController extends Controller
         return response()->json(['data' => ProjectPresenter::present($project)], $project->wasRecentlyCreated ? 201 : 200);
     }
 
+    /** A project as the edit screen needs it, with the phases of its value. */
+    public function show(Request $request, Project $project): JsonResponse
+    {
+        return response()->json(['data' => ProjectPresenter::detail($project, $request->user(), $this->projects->phasesOf($project))]);
+    }
+
+    /** Changes the fields sent and nothing else. Answers as show() does. */
+    public function update(Request $request, Project $project): JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->validate($this->projects->updateRules($user, $project));
+
+        if (isset($data['deduction_order'])) {
+            $data['deduction_order'] = explode(',', $data['deduction_order']);
+        }
+
+        $project = $this->projects->update($project, $data, $user);
+
+        return response()->json(['data' => ProjectPresenter::detail($project, $user, $this->projects->phasesOf($project))]);
+    }
+
     /**
      * Each line also carries the marker the web BOQ table shows: how many tenders it is in and how many
      * quotes came in, with the lowest rate for money.view. Null for a line with no tender, and on every

@@ -68,19 +68,21 @@ class ProjectController extends Controller
             'dprCount' => $project->dprs()->count(),
             'recentDprs' => $project->dprs()->with('creator')->latest('report_date')->take(5)->get(),
             'bills' => $project->raBills()->latest('id')->take(5)->get(),
+            'phases' => $seesMoney ? $this->service->phasesOf($project) : [],
         ]);
     }
 
     public function edit(Project $project): View
     {
-        return view('projects.form', ['project' => $project, 'clients' => $this->clients()]);
+        return view('projects.form', ['project' => $project, 'clients' => $this->clients(), 'phases' => $this->service->phasesOf($project)]);
     }
 
     public function update(Request $request, Project $project): RedirectResponse
     {
-        $project->update([...$this->validated($request, $project), 'status' => $request->validate([
+        // Through the service, which keeps a phased project's value equal to its phases.
+        $this->service->update($project, [...$this->validated($request, $project), 'status' => $request->validate([
             'status' => ['required', Rule::in(config('buildos.project_statuses'))],
-        ])['status']]);
+        ])['status']], $request->user());
         $this->images->save($project, $request->file('image'), $request->boolean('remove_image'));
 
         return redirect()->route('projects.show', $project)->with('success', __('Project updated.'));

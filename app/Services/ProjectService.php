@@ -3,19 +3,32 @@
 namespace App\Services;
 
 use App\Exceptions\PlanLimitReachedException;
+use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Project;
+use App\Models\ProjectValuePhase;
 use App\Models\User;
 use App\Services\ProjectSetup\StarterBoq;
 use App\Support\ClientUuidRepeat;
 use App\Support\Dec;
+use App\Support\Money;
+use App\Support\Shares;
+use Brick\Math\BigDecimal;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProjectService
 {
+    /** More phases than this is a list of BOQ lines, not a split of the value. */
+    public const MAX_PHASES = 50;
+
+    /** The largest figure decimal(15,2) holds. */
+    private const LARGEST_VALUE = '9999999999999.99';
+
     /** The web form's rules, where the commercial terms are all required. */
     public function rules(User $user, ?Project $project = null): array
     {
@@ -73,7 +86,48 @@ class ProjectService
             'contract_value' => $this->optional($rules['contract_value']),
             'code' => $this->optional($rules['code']),
             'client_uuid' => ['nullable', 'uuid'],
+            ...$this->phaseRules(),
         ];
+    }
+
+    /**
+     * The contract value split into phases, each with a name and an amount. When phases are given
+     * the contract value is their sum. An empty list takes the phases away and leaves the value as it is.
+     */
+    public function phaseRules(): array
+    {
+        return [
+            'phases' => ['sometimes', 'array', 'max:'.self::MAX_PHASES],
+            'phases.*' => ['array'],
+            'phases.*.name' => ['required', 'string', 'max:120'],
+            'phases.*.amount' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
+        ];
+    }
+
+    /**
+     * The app's edit: any field the website's form has, each only when sent. Money is accepted only
+     * from someone who may see it, so nobody changes a figure they cannot read; for anyone else the
+     * money fields are left out of the rules and keep their saved values. The end date is checked
+     * against the saved start in update(), as a request may carry only one of the two.
+     */
+    public function updateRules(User $user, Project $project): array
+    {
+        $money = Money::visible($user);
+        $rules = [
+            ...Arr::except($this->rules($user, $project), $money ? [] : ['contract_value', 'advance_amount']),
+            'end_date' => ['nullable', 'date'],
+            'status' => ['required', Rule::in(config('buildos.project_statuses'))],
+            ...($money ? $this->phaseRules() : []),
+        ];
+
+        // Only the fields themselves are optional: a phase that is sent still needs its name and amount.
+        foreach ($rules as $field => $rule) {
+            if (! str_contains($field, '.') && ! in_array('sometimes', $rule, true)) {
+                $rules[$field] = ['sometimes', ...$rule];
+            }
+        }
+
+        return $rules;
     }
 
     public function assertWithinPlan(Organization $organization): void
@@ -90,7 +144,14 @@ class ProjectService
      */
     public function create(array $data, User $user): Project
     {
-        return DB::transaction(function () use ($data, $user) {
+        $phases = $this->cleanPhases($data['phases'] ?? null);
+        unset($data['phases']);
+
+        if ($phases) {
+            $data['contract_value'] = $this->valueOf($phases, $data['contract_value'] ?? null);
+        }
+
+        return DB::transaction(function () use ($data, $user, $phases) {
             $organization = Organization::lockForUpdate()->findOrFail($user->organization_id);
             $uuid = $data['client_uuid'] ?? null;
 
@@ -115,9 +176,117 @@ class ProjectService
                 $user->assignedProjects()->attach($project->id, ['organization_id' => $organization->id]);
             }
 
+            if ($phases) {
+                $this->replacePhases($project, $phases, $user);
+            }
+
             // Those defaults are not on the model until it is read back.
             return $project->refresh();
         });
+    }
+
+    /**
+     * Change a project, from the website's form or the app. Phases, when sent, replace the saved
+     * ones and set the contract value to their sum. While a project has phases its value changes
+     * only through them: a different contract_value on its own is refused, so the two never part.
+     */
+    public function update(Project $project, array $data, User $user): Project
+    {
+        $phases = array_key_exists('phases', $data) ? $this->cleanPhases($data['phases'] ?? []) : null;
+        unset($data['phases']);
+
+        return DB::transaction(function () use ($project, $data, $phases, $user) {
+            $project = Project::lockForUpdate()->findOrFail($project->id);
+
+            if ($phases) {
+                $data['contract_value'] = $this->valueOf($phases, $data['contract_value'] ?? null);
+            } elseif (array_key_exists('contract_value', $data)) {
+                if ($phases === null && $project->valuePhases()->exists() && ! Dec::of($data['contract_value'])->isEqualTo(Dec::of($project->contract_value))) {
+                    throw ValidationException::withMessages([
+                        'contract_value' => __('This value is the total of the project\'s phases. Change the phases to change it.'),
+                    ]);
+                }
+
+                $data['contract_value'] = Dec::money($data['contract_value']);
+            }
+
+            $start = array_key_exists('start_date', $data) ? $data['start_date'] : $project->start_date?->toDateString();
+            $end = array_key_exists('end_date', $data) ? $data['end_date'] : $project->end_date?->toDateString();
+
+            if (filled($start) && filled($end) && Carbon::parse($end)->lt(Carbon::parse($start))) {
+                throw ValidationException::withMessages(['end_date' => __('The end date cannot be before the start date.')]);
+            }
+
+            $project->update($data);
+
+            if ($phases !== null) {
+                $this->replacePhases($project, $phases, $user);
+            }
+
+            return $project->refresh();
+        });
+    }
+
+    /**
+     * Each phase's name and amount, and its share of the total in percent with two decimals.
+     *
+     * @return list<array{id:int,name:string,amount:string,share_pct:?string}>
+     */
+    public function phasesOf(Project $project): array
+    {
+        $phases = $project->valuePhases()->get()->values();
+        $shares = Shares::of($phases->pluck('amount')->all());
+
+        return $phases->map(fn (ProjectValuePhase $phase, int $index) => [
+            'id' => $phase->id,
+            'name' => $phase->name,
+            'amount' => Dec::money($phase->amount),
+            'share_pct' => $shares[$index],
+        ])->all();
+    }
+
+    /** @return list<array{name:string,amount:string}>|null Trimmed names, amounts at money precision. */
+    private function cleanPhases(?array $phases): ?array
+    {
+        if ($phases === null) {
+            return null;
+        }
+
+        return array_values(array_map(fn (array $phase) => ['name' => trim((string) $phase['name']), 'amount' => Dec::money($phase['amount'])], $phases));
+    }
+
+    /** The sum of the phases, which a contract value sent beside them must equal. */
+    private function valueOf(array $phases, mixed $contractValue): string
+    {
+        $total = array_reduce($phases, fn (BigDecimal $sum, array $phase) => $sum->plus(Dec::of($phase['amount'])), BigDecimal::zero());
+
+        if ($total->isGreaterThan(self::LARGEST_VALUE)) {
+            throw ValidationException::withMessages(['phases' => __('The phases add up to more than a project can hold.')]);
+        }
+
+        if (filled($contractValue) && ! Dec::of($contractValue)->isEqualTo($total)) {
+            throw ValidationException::withMessages(['contract_value' => __('The contract value must equal the total of the phases.')]);
+        }
+
+        return Dec::money($total);
+    }
+
+    /** Puts the phases in place of the saved ones and audits the change, when there is one. */
+    private function replacePhases(Project $project, array $phases, User $user): void
+    {
+        $before = $project->valuePhases()->get()->map(fn (ProjectValuePhase $phase) => ['name' => $phase->name, 'amount' => Dec::money($phase->amount)])->all();
+
+        if ($before === $phases) {
+            return;
+        }
+
+        $project->valuePhases()->delete();
+
+        foreach ($phases as $sort => $phase) {
+            ProjectValuePhase::create([...$phase, 'organization_id' => $project->organization_id, 'project_id' => $project->id, 'sort' => $sort]);
+        }
+
+        AuditLog::record('project.phases_changed', $project, $before === [] ? null : ['phases' => $before], $phases === [] ? null : ['phases' => $phases], $user);
     }
 
     /** Trashed rows count: the unique key still holds their client_uuid. */
