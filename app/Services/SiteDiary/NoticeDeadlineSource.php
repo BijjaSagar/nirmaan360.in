@@ -13,8 +13,9 @@ use Carbon\CarbonInterface;
  * Reminds people of a notice date that is close. A reminder is raised for each notice of a confirmed
  * hindrance that counts, when the date worked out from the notice periods entered under Contract
  * terms is near or has just passed, until a finalised letter that gives that notice cites the entry
- * or the entry it corrects. A notice of delay leaves the reminder for the extension of time open, and
- * the other way round. With no confirmed notice period there is no date and so no reminder.
+ * or the entry it corrects (NoticeDeadlines::given). A notice of delay leaves the reminder for the extension
+ * of time open. A request for extension of time closes both, since a notice of delay cannot cite an entry
+ * that has ended. With no confirmed notice period there is no date and so no reminder.
  *
  * How early the reminder opens and how long it stays after the date are the app's own settings in
  * config/modules/site_diary.php. They are not periods from any agreement.

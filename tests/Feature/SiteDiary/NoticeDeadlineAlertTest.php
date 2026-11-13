@@ -11,6 +11,7 @@ use App\Models\SiteLetterHindrance;
 use App\Services\SiteAlerts\AlertEngine;
 use App\Services\SiteDiary\HindranceRegister;
 use App\Services\SiteDiary\Hindrances;
+use App\Services\SiteDiary\LetterFacts;
 use App\Services\SiteDiary\NoticeDeadlineSource;
 use App\Services\SiteDiary\SiteLetters;
 use Illuminate\Support\Carbon;
@@ -226,7 +227,36 @@ class NoticeDeadlineAlertTest extends SiteLetterTestCase
         $this->assertSame(['eot_notice', 'delay_notice'], $row['given']);
     }
 
-    public function test_each_letter_gives_its_own_notice_and_leaves_the_other_reminder_open(): void
+    public function test_a_request_for_extension_of_time_on_an_entry_that_has_ended_closes_the_notice_of_delay_reminder(): void
+    {
+        // Eleven days from the start gives 23 March. The hindrance ran from 12 to 15 March and was entered after it ended.
+        $this->agreement();
+        $this->notice();
+        $entry = $this->entry('2026-03-12', '2026-03-15');
+
+        $this->scan(self::TODAY);
+        $this->assertSame(['hindrance:'.$entry->id.':delay_notice'], $this->openReferences());
+
+        // It has ended, so no notice of delay can cite it. A request for extension of time can.
+        $this->assertFalse(app(LetterFacts::class)->citable($this->project, self::DELAY, today())->contains('id', $entry->id));
+        $this->assertTrue(app(LetterFacts::class)->citable($this->project, self::EOT, today())->contains('id', $entry->id));
+
+        $this->letter(self::EOT, $entry);
+        $this->scan(self::TODAY);
+        $this->assertSame([], $this->openReferences());
+        $this->assertSame(Alert::RESOLVED, $this->reminders()->sole()->status);
+
+        // Nor is it raised again on the day or once the date has passed, and the register shows the notice as given.
+        $this->scan('2026-03-23');
+        $this->scan('2026-03-25');
+        $this->assertSame([], $this->openReferences());
+        $this->assertCount(1, $this->reminders());
+
+        $row = app(HindranceRegister::class)->entries($this->project, today())->firstWhere('hindrance.id', $entry->id);
+        $this->assertSame(['delay_notice'], $row['given']);
+    }
+
+    public function test_a_notice_of_delay_leaves_the_extension_of_time_open_and_a_request_for_it_closes_both(): void
     {
         // Both counted from the start: 21 March for the extension of time, 23 March for the notice of delay.
         $this->agreement();
@@ -243,6 +273,14 @@ class NoticeDeadlineAlertTest extends SiteLetterTestCase
         $this->assertSame(['hindrance:'.$entry->id.':eot_notice'], $this->openReferences(), 'The entry is locked, and its extension of time is still to be asked for.');
 
         $this->letter(self::EOT, $entry);
+        $this->scan(self::TODAY);
+        $this->assertSame([], $this->openReferences());
+
+        // A request for extension of time sent first gives both notices at once.
+        $first = $this->entry('2026-03-12', null);
+        $this->scan(self::TODAY);
+        $this->assertSame(['hindrance:'.$first->id.':eot_notice', 'hindrance:'.$first->id.':delay_notice'], $this->openReferences());
+        $this->letter(self::EOT, $first);
         $this->scan(self::TODAY);
         $this->assertSame([], $this->openReferences());
 

@@ -26,10 +26,16 @@ use InvalidArgumentException;
  */
 class NoticeDeadlines
 {
-    /** Notice => the kind of letter the app drafts that gives it. */
+    /**
+     * Notice => the kinds of letter the app drafts that give it. A notice of delay asks for no more time,
+     * so only a request for extension of time gives that notice. A request for extension of time sets out
+     * the hindrance and the days it held work up, so the app takes it as giving the notice of delay too:
+     * a notice of delay can cite only an entry still going on, so once the hindrance has ended no other
+     * letter the app drafts can cite it.
+     */
     public const LETTERS = [
-        'eot_notice' => SiteLetter::EOT_REQUEST,
-        'delay_notice' => SiteLetter::DELAY_NOTICE,
+        'eot_notice' => [SiteLetter::EOT_REQUEST],
+        'delay_notice' => [SiteLetter::DELAY_NOTICE, SiteLetter::EOT_REQUEST],
     ];
 
     public function __construct(private ContractTerms $terms) {}
@@ -139,9 +145,9 @@ class NoticeDeadlines
 
     /**
      * Whether a finalised letter already gave this notice, going by the kinds of letter that cite the
-     * entry (see letters()). Each notice has its letter: a notice of delay does not request more time,
-     * so it leaves the reminder for the extension of time open. A notice with no letter of its own is
-     * taken as given by any finalised letter that cites the entry.
+     * entry (see letters()) and the letters that give each notice (see LETTERS): a notice of delay leaves
+     * the reminder for the extension of time open, and a request for extension of time closes both.
+     * A notice with no letter of its own is taken as given by any finalised letter that cites the entry.
      *
      * @param  list<string>  $letters
      */
@@ -149,7 +155,7 @@ class NoticeDeadlines
     {
         $own = self::LETTERS[$notice] ?? null;
 
-        return $own === null ? $letters !== [] : in_array($own, $letters, true);
+        return $own === null ? $letters !== [] : array_intersect($own, $letters) !== [];
     }
 
     /**

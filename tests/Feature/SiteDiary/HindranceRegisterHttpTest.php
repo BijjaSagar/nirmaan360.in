@@ -678,9 +678,14 @@ class HindranceRegisterHttpTest extends SiteDiaryTestCase
         $window = ['from' => '2026-01-01', 'to' => '2026-01-31'];
 
         // "Show" sends the entry form along, switched to showing reports; without that switch a save is a save.
-        $this->actingAs($this->engineer)->get($this->index())->assertOk()
+        $html = $this->actingAs($this->engineer)->get($this->index())->assertOk()
             ->assertSee('x-on:submit="keep($event)"', false)
-            ->assertSee('<input type="hidden" name="show_reports" value="1" disabled>', false);
+            ->assertSee('<input type="hidden" name="show_reports" value="1" disabled>', false)
+            ->getContent();
+        // The switch is on only while the form is sent, and off on a page that Back brings back, so the next save there saves.
+        $this->assertSame(1, preg_match('/this\.showing\(true\);\s*this\.entry\(\)\.submit\(\);\s*this\.showing\(false\);/', $html));
+        $this->assertSame(1, preg_match("/elements\.namedItem\(name\)\.disabled = ! on;/", $html));
+        $this->assertStringContainsString('x-on:pageshow.window="if ($event.persisted && entry()) showing(false)"', $html);
 
         $typed = $this->form([$march], ['category' => 'weather', 'description' => 'Typed before showing older reports', 'responsible' => 'Client', 'started_on' => '2026-03-12', 'still_going_on' => '1']);
         $this->post($this->store(), [...$typed, 'show_reports' => '1', ...$window])

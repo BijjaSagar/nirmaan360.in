@@ -20,17 +20,28 @@
     $back = route('site-diary.hindrances.index', $project);
 @endphp
 
-{{-- "Show" sends the entry form along, so what was ticked and typed comes back with the reports of those dates. Without scripts it only changes the list. --}}
+{{--
+    "Show" sends the entry form along, so what was ticked and typed comes back with the reports of those dates.
+    Without scripts it only changes the list. The switch is on only while the form is sent: submit() has taken
+    what the form holds by the time it returns, so it is switched off again at once. A page that the browser
+    brings back with Back, as it was left, is switched off too, so the next save there is a save.
+--}}
 <form method="GET" action="{{ $back }}" class="mb-2 flex flex-wrap items-end gap-2 text-sm" x-data="{
-    keep(event) {
-        const entry = document.getElementById('entry-form');
-        if (! entry) return;
-        event.preventDefault();
-        for (const name of ['from', 'to']) entry.elements.namedItem(name).value = event.target.elements.namedItem(name).value;
-        for (const name of ['from', 'to', 'show_reports']) entry.elements.namedItem(name).disabled = false;
-        entry.submit();
+    entry() {
+        return document.getElementById('entry-form');
     },
-}" x-on:submit="keep($event)">
+    showing(on) {
+        for (const name of ['from', 'to', 'show_reports']) this.entry().elements.namedItem(name).disabled = ! on;
+    },
+    keep(event) {
+        if (! this.entry()) return;
+        event.preventDefault();
+        for (const name of ['from', 'to']) this.entry().elements.namedItem(name).value = event.target.elements.namedItem(name).value;
+        this.showing(true);
+        this.entry().submit();
+        this.showing(false);
+    },
+}" x-on:submit="keep($event)" x-on:pageshow.window="if ($event.persisted && entry()) showing(false)">
     @if ($editing)<input type="hidden" name="edit" value="{{ $editing->id }}">@endif
     @if ($correcting)<input type="hidden" name="correct" value="{{ $correcting->id }}">@endif
     <x-field :label="__('Show reports from')">
