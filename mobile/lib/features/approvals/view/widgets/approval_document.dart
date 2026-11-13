@@ -301,18 +301,24 @@ class _ContractorPaymentDoc extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        if (ownerOverride.needed && message != null) ...<Widget>[
+        // The server's own words for the payment-ahead rule: why approving is stopped, or, before the last
+        // approval level, that the last one will need the owner.
+        if (message != null) ...<Widget>[
           TintedNote(
             key: const ValueKey<String>('approval-owner-override'),
             icon: Icons.gpp_maybe_outlined,
             ink: N360Colors.stampRed,
             edge: N360Colors.stampRed,
-            title: ownerOverride.allowed ? l.approvalsPayOverrideOwnerTitle : l.approvalsPayOverrideTitle,
+            title: switch (ownerOverride) {
+              OwnerOverride(needed: true, allowed: true) => l.approvalsPayOverrideOwnerTitle,
+              OwnerOverride(needed: true) => l.approvalsPayOverrideTitle,
+              _ => l.approvalsPayOverrideLaterTitle,
+            },
             body: message,
           ),
           const SizedBox(height: N360Space.md),
         ],
-        _PaymentRatio(doc: doc),
+        _PaymentRatio(doc: doc, ruleExplained: message != null),
         const SizedBox(height: N360Space.md),
         _sheet(details),
       ],
@@ -350,9 +356,13 @@ class _ContractorPaymentDoc extends StatelessWidget {
 
 /// Work done against paid, now and if approved, with what the gap would be.
 class _PaymentRatio extends StatelessWidget {
-  const _PaymentRatio({required this.doc});
+  const _PaymentRatio({required this.doc, this.ruleExplained = false});
 
   final Map<String, dynamic> doc;
+
+  /// The server's message about the payment-ahead rule is on the page, so
+  /// this card does not say the same thing again in its own words.
+  final bool ruleExplained;
 
   @override
   Widget build(BuildContext context) {
@@ -362,6 +372,7 @@ class _PaymentRatio extends StatelessWidget {
     final Map<String, dynamic> after = readMap(impact['after']);
     final Map<String, dynamic> line = readMap(impact['item']);
     final Map<String, dynamic> against = readMap(doc['against']);
+    final Money? workValue = readMoney(readMap(doc['check'])['work_done']);
     final String? work = readText(doc['work_pct']) ?? readText(now['work_pct']);
     final String? paidNow = readText(doc['paid_pct']) ?? readText(now['paid_pct']);
     final String? paidAfter = readText(after['paid_pct']);
@@ -374,13 +385,21 @@ class _PaymentRatio extends StatelessWidget {
 
     final List<(String, Money?, bool)> money = <(String, Money?, bool)>[
       (l.contractorValue, readMoney(now['contract_value']), false),
+      // The rule sets what is paid against the value of the work done, so that figure sits beside the payments.
+      // An older server sends only the value of the work still to do.
+      if (workValue != null) (l.approvalsPayWorkValue, workValue, false),
       (l.approvalsPayPaidNow, readMoney(now['paid']), false),
       if (after.isNotEmpty) (l.approvalsPayPaidAfter, readMoney(after['paid']), false),
-      (l.contractorWorkLeftValue, readMoney(now['balance_work_value']), false),
+      if (workValue == null) (l.contractorWorkLeftValue, readMoney(now['balance_work_value']), false),
       (l.contractorBalance, readMoney((after.isNotEmpty ? after : now)['balance_money']), true),
     ].where((row) => row.$2 != null).toList();
 
+    // Past the limit with neither percent ahead: a contract with no value, where both read 0.
+    final bool noValue = overAfter && !aheadAfter;
+
     String? aheadText() {
+      if (ruleExplained) return null;
+      if (noValue) return l.approvalsPayNoValue;
       if (!aheadAfter || gapAfter == null) return null;
       final String ahead = l.approvalsPayAhead(_points(gapAfter));
       return overAfter && limit != null ? '$ahead ${l.approvalsPayOverLimit(_points(limit))}' : ahead;
@@ -404,7 +423,7 @@ class _PaymentRatio extends StatelessWidget {
               key: const ValueKey<String>('approval-paid-after'),
               label: l.approvalsPayPaidAfter,
               percent: paidAfter,
-              ahead: aheadAfter,
+              ahead: aheadAfter || overAfter,
               strong: true,
             ),
           if (warning != null) ...<Widget>[
@@ -417,7 +436,7 @@ class _PaymentRatio extends StatelessWidget {
               title: overAfter ? l.contractorOverLimit : l.contractorPaidAhead,
               body: warning,
             ),
-          ] else if (paidAfter != null)
+          ] else if (paidAfter != null && !aheadAfter && !overAfter)
             Padding(
               padding: const EdgeInsets.only(top: N360Space.xxs),
               child: Text(l.approvalsPayInStep, style: N360Type.bodyStrong.copyWith(color: N360Colors.moss)),

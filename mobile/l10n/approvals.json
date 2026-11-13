@@ -776,5 +776,20 @@
     "en": "Already answered, or not needed",
     "mr": "आधीच उत्तर मिळाले आहे, किंवा गरज नाही",
     "hi": "पहले ही उत्तर मिल चुका है, या ज़रूरत नहीं"
+  },
+  "approvalsPayNoValue": {
+    "en": "This contract has no value, so no payment on it is covered by work done.",
+    "mr": "या ठेक्याची किंमत शून्य आहे, त्यामुळे त्यावरील कोणतेही पेमेंट झालेल्या कामात बसत नाही.",
+    "hi": "इस ठेके की कोई राशि नहीं है, इसलिए इस पर कोई भी भुगतान हुए काम के अंदर नहीं आता।"
+  },
+  "approvalsPayOverrideLaterTitle": {
+    "en": "The last approval will need the owner",
+    "mr": "शेवटच्या मंजुरीसाठी मालक लागेल",
+    "hi": "आख़िरी मंज़ूरी के लिए मालिक चाहिए"
+  },
+  "approvalsPayWorkValue": {
+    "en": "Value of work done",
+    "mr": "झालेल्या कामाची किंमत",
+    "hi": "हुए काम की कीमत"
   }
 }
