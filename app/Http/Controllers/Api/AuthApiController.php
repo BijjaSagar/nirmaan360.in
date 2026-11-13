@@ -36,7 +36,8 @@ class AuthApiController extends Controller
 
     /**
      * A new company with its first owner, signed in on this device: the reply has the same shape as login.
-     * The plan is not the app's to choose, so any plan sent is ignored and the company starts on the default.
+     * The plan is not the app's to choose: any plan sent is ignored, and the company starts on the free plan
+     * with no trial (SignupService::appPlan), so nothing started in the app needs paying for outside it.
      */
     public function register(Request $request, SignupService $signup): JsonResponse
     {

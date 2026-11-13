@@ -56,6 +56,17 @@ class BillingTest extends TestCase
         $this->get('/pricing')->assertOk()->assertSee('₹2,999')->assertSee('₹79,990');
     }
 
+    /** Billing is a website page, so the answer cannot be read as the phone app sending people to pay. */
+    public function test_pricing_says_plans_change_from_billing_on_the_website(): void
+    {
+        $this->get('/pricing')->assertOk()
+            ->assertSee('Yes, from Billing on the website. A new plan starts on the day you pay for it.')
+            ->assertDontSee('Billing inside the app');
+
+        $this->get('/hi/pricing')->assertOk()->assertSee('हाँ, वेबसाइट पर बिलिंग से।')->assertDontSee('ऐप के अंदर बिलिंग');
+        $this->get('/mr/pricing')->assertOk()->assertSee('हो, वेबसाइटवरील बिलिंगमधून.')->assertDontSee('ॲपमधील बिलिंग');
+    }
+
     public function test_ai_is_never_presented_as_live(): void
     {
         $this->get('/ai')->assertOk()->assertSee('None of them are live yet');

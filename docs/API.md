@@ -25,8 +25,9 @@ Starts a new company with the person as its owner, and signs them in on this dev
 
 **201** answers `{"token": "...", "user": {...}}`, the same keys and the same `user` as `/auth/login` gives for this person.
 
-- The company starts on the default plan, `contractor`, on a trial of the platform's trial length (30 days today). If that plan has been taken off sale, it starts on `free` instead.
+- The company starts on the `free` plan, active, with no trial, so nothing started in the app needs paying for outside it (App Store guideline 3.1.1). The website's sign-up still starts a trial of the default plan.
 - The app does not choose a plan: a `plan` in the body is ignored.
+- If the free plan has been renamed, taken off sale or given a price, the sign-up answers 422 on `errors.company` and no company is made. It never falls back to a paid plan or a trial.
 - The reply carries no plan, trial or price.
 
 Errors:
@@ -36,6 +37,10 @@ Errors:
 The same email is never accepted twice. If a reply is lost and the app sends the same sign-up again, it gets 422 on `email`. Signing in with the same email and password then completes it. Sign-ups do not use `client_uuid`.
 
 `/auth/login` finds the email in any letter case. If two old accounts differ only by case, only the exact spelling signs in.
+
+## Plan refusals
+
+A reply under `/api/v1` that a plan stops never tells the person to upgrade, buy, renew or go to billing or pricing, because the app shows its `message` as it is. It says what the plan stops and that the company's owner can check the plan, for example a module outside the plan (403), the project limit (422 on `errors.plan`), the offline plan (403, `code` `offline_plan`) and no AI credits left (402, `reason` `no_credits`). The website keeps its own wording. The offline plan's reply still carries `upgrade_url`, unchanged.
 
 ## Deleting an account
 

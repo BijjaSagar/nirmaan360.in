@@ -19,16 +19,16 @@
     </ul>
 
     <h2>How we use it</h2>
-    <p>We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. Your project records are not used to train shared AI models unless you opt in.</p>
+    <p>We use this information to run the service, keep your account secure, process payments and reply to you. We do not sell your data. We do not use your records to train AI models.</p>
 
     @if (app(\App\Services\Seo\Analytics::class)->measurementId())
     {{-- Only shown while Google Analytics is switched on in /admin/seo. --}}
     <h2>Analytics cookies</h2>
-    <p>If you choose Accept on the cookie question, we use Google Analytics to count visits to our website{{ app(\App\Services\Seo\Analytics::class)->includesApp() ? ' and to screens inside the app' : '' }}, and to see which pages are used. It sets cookies only after you accept. We do not send Google your name, email, mobile number, company or project details, or any amounts. You can change your choice at any time from Cookie settings at the bottom of the page.</p>
+    <p>If you choose Accept on the cookie question, we use Google Analytics to count visits to our website{{ app(\App\Services\Seo\Analytics::class)->includesApp() ? ' and to the signed-in pages of the website' : '' }}, and to see which pages are used. It sets cookies only after you accept. We do not send Google your name, email, mobile number, company or project details, or any amounts. You can change your choice at any time from Cookie settings at the bottom of the page.</p>
     @endif
 
     <h2>Who can see your records</h2>
-    <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service.</p>
+    <p>Your project records are visible only to people in your company account, and to anyone you send a client sign-off link. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website use an AI model provider, Anthropic: when a company uses the agents, what is asked of them and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that does not use the agents.</p>
 
     <h2>Where your data is stored</h2>
     <p>Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region.</p>

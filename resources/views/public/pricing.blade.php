@@ -152,7 +152,7 @@
                     ['What happens after the trial?', 'Your company moves to the free plan and your data stays. Work orders and RA bills unlock again when you buy a plan.'],
                     ['Does it charge me automatically?', 'No. You pay for a month or a year at a time. Nothing renews until you pay again.'],
                     ['What if a paid period runs out?', 'You get :days extra days to renew. After that the company moves to the free plan until you pay.'],
-                    ['Can I change plans?', 'Yes, from Billing inside the app. A new plan starts on the day you pay for it.'],
+                    ['Can I change plans?', 'Yes, from Billing on the website. A new plan starts on the day you pay for it.'],
                     ['Is the Offline plan backed up?', 'No. On the Offline plan nothing leaves the phone, so there is no copy on our servers and no web dashboard. Export a backup from the app from time to time. If the phone is lost, the data is lost with it.'],
                     ['Can I move from Offline to an online plan later?', 'Yes. Buy an online plan from Billing, and the next time the phone has internet it uploads what it holds. Moving the other way keeps whatever is already on the server; nothing is deleted.'],
                 ] as [$question, $answer])

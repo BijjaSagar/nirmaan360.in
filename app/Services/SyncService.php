@@ -29,6 +29,7 @@ use App\Models\User;
 use App\Models\Worker;
 use App\Support\ClientTime;
 use App\Support\Money;
+use App\Support\PlanWording;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -85,7 +86,7 @@ class SyncService
         $isPhoto = $data['type'] === 'dpr_photo';
 
         abort_unless($user->hasPermission($isPhoto ? 'dpr.create' : 'petty_cash.manage'), 403);
-        abort_unless($user->organization->allowsFeature($isPhoto ? 'site' : 'petty_cash'), 403, __('Your plan does not include this module. Upgrade to continue.'));
+        abort_unless($user->organization->allowsFeature($isPhoto ? 'site' : 'petty_cash'), 403, PlanWording::moduleNotIncluded());
 
         $parent = $this->findByReference($isPhoto ? Dpr::query() : PettyCashEntry::query(), $data['parent_client_uuid'] ?? null, $data['parent_id'] ?? null);
 

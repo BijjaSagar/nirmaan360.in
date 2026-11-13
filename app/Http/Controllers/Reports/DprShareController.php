@@ -8,6 +8,7 @@ use App\Models\Dpr;
 use App\Models\Organization;
 use App\Services\Reports\Download;
 use App\Services\Reports\DprReportService;
+use App\Support\PlanWording;
 use Illuminate\Http\Response;
 
 /** The DPR as a PDF, for signed-in staff and, through a signed link, for whoever it is shared with. */
@@ -17,7 +18,7 @@ class DprShareController extends Controller
 
     public function pdf(Dpr $dpr): Response
     {
-        abort_unless(auth()->user()->organization->allowsFeature('site'), 403, __('Your plan does not include this module. Upgrade to continue.'));
+        abort_unless(auth()->user()->organization->allowsFeature('site'), 403, PlanWording::moduleNotIncluded());
 
         return Download::file($this->service->pdf($dpr), $this->service->filename($dpr), Download::PDF);
     }

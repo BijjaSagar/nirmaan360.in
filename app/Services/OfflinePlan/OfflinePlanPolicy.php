@@ -3,6 +3,7 @@
 namespace App\Services\OfflinePlan;
 
 use App\Models\Organization;
+use App\Support\PlanWording;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Str;
@@ -81,12 +82,19 @@ final class OfflinePlanPolicy
         return $name !== null && $name !== '' && Str::is(self::WEB_ALLOWED, $name);
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The API's message never tells anyone to move plans: see PlanWording. upgrade_url stays in the reply,
+     * unchanged, so nothing that reads the field breaks.
+     *
+     * @return array<string, mixed>
+     */
     public function refusal(Organization $organization): array
     {
         return [
             'code' => self::CODE,
-            'message' => __('Your company is on the offline plan: data stays on the phone and nothing syncs. Move to an online plan to sync.'),
+            'message' => PlanWording::forApi()
+                ? __('Your company is on the offline plan: data stays on the phone and nothing syncs. Your company\'s owner can check the plan.')
+                : __('Your company is on the offline plan: data stays on the phone and nothing syncs. Move to an online plan to sync.'),
             'plan' => $organization->effectivePlan(),
             'upgrade_url' => route('billing.index'),
         ];

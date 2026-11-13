@@ -43,7 +43,9 @@ class OfflinePlanGateTest extends ApiTestCase
         $owner = $this->signIn($this->member($organization, 'owner'));
         $project = $this->makeProject($organization);
         $item = $this->makeBoqItem($project);
-        $refused = fn ($response) => $response->assertForbidden()->assertJsonPath('code', 'offline_plan')->assertJsonPath('plan', 'offline')->assertJsonPath('upgrade_url', route('billing.index'));
+        // The app shows the message as it is, so it never says to move plans. upgrade_url stays in the reply, unchanged.
+        $refused = fn ($response) => $response->assertForbidden()->assertJsonPath('code', 'offline_plan')->assertJsonPath('plan', 'offline')->assertJsonPath('upgrade_url', route('billing.index'))
+            ->assertJsonPath('message', "Your company is on the offline plan: data stays on the phone and nothing syncs. Your company's owner can check the plan.");
 
         $refused($this->postJson(self::API.'/sync/push', ['items' => [$this->item('measurement', $project, $this->measurementData($item))]]));
         $refused($this->getJson(self::API.'/sync/pull'));
@@ -137,7 +139,9 @@ class OfflinePlanGateTest extends ApiTestCase
             $this->get($page)->assertRedirect(route('offline.devices.index'));
         }
 
-        $this->post('/projects', ['code' => 'X1', 'name' => 'Blocked'])->assertForbidden();
+        // The website keeps its own wording.
+        $this->post('/projects', ['code' => 'X1', 'name' => 'Blocked'])->assertForbidden()
+            ->assertSee('Your company is on the offline plan: data stays on the phone and nothing syncs. Move to an online plan to sync.');
         $this->assertSame(1, Project::count());
 
         $this->get('/offline/devices')->assertOk()->assertSee('Offline plan')->assertSee('There is no server backup')->assertSee('Upgrade in Billing')->assertSee(route('billing.index'));

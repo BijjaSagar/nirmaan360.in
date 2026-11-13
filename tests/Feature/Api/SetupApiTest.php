@@ -13,7 +13,10 @@ use Illuminate\Testing\TestResponse;
 
 class SetupApiTest extends ApiTestCase
 {
+    /** The website's wording. The API's never says upgrade: the field app shows it as it is. */
     private const LIMIT_MESSAGE = 'Your plan project limit has been reached. Upgrade to add more.';
+
+    private const API_LIMIT_MESSAGE = "Your company's plan has reached its project limit. Your company's owner can check the plan.";
 
     private function owner(): User
     {
@@ -238,14 +241,17 @@ class SetupApiTest extends ApiTestCase
 
     // Plan limit
 
-    public function test_the_plan_limit_is_a_422_on_errors_plan_with_the_web_message(): void
+    public function test_the_plan_limit_is_a_422_on_errors_plan_with_no_upgrade_prompt(): void
     {
         $this->owner();
         config(['buildos.plans.business.max_projects' => 1]);
 
         $this->createProject(['name' => 'One'])->assertCreated();
 
-        $this->createProject(['name' => 'Two'])->assertUnprocessable()->assertJsonPath('errors.plan.0', self::LIMIT_MESSAGE);
+        $response = $this->createProject(['name' => 'Two'])->assertUnprocessable()
+            ->assertJsonPath('message', self::API_LIMIT_MESSAGE)
+            ->assertJsonPath('errors.plan.0', self::API_LIMIT_MESSAGE);
+        $this->assertStringNotContainsStringIgnoringCase('upgrade', json_encode([$response->json('message'), $response->json('errors')]));
         $this->assertSame(1, Project::count());
     }
 
@@ -255,7 +261,7 @@ class SetupApiTest extends ApiTestCase
         config(['buildos.plans.business.max_projects' => 0]);
 
         $this->createProject(['name' => 'One'])->assertUnprocessable()
-            ->assertJsonPath('errors.plan.0', 'आपके प्लान की प्रोजेक्ट सीमा पूरी हो गई है। और जोड़ने के लिए अपग्रेड करें।');
+            ->assertJsonPath('errors.plan.0', 'आपकी कंपनी के प्लान की प्रोजेक्ट सीमा पूरी हो गई है। आपकी कंपनी के मालिक प्लान जाँच सकते हैं।');
     }
 
     public function test_the_limit_counts_only_this_organisation(): void
@@ -577,7 +583,7 @@ class SetupApiTest extends ApiTestCase
         $this->actingAs($this->owner());
         config(['buildos.plans.business.max_projects' => 0]);
 
-        $this->post('/projects', [])->assertForbidden()->assertSee(self::LIMIT_MESSAGE);
+        $this->post('/projects', [])->assertForbidden()->assertSee(self::LIMIT_MESSAGE)->assertDontSee(self::API_LIMIT_MESSAGE);
     }
 
     public function test_the_web_boq_form_still_requires_a_code(): void

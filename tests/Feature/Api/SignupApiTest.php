@@ -48,7 +48,7 @@ class SignupApiTest extends ApiTestCase
         $response->assertJsonPath('user.role', 'owner')
             ->assertJsonPath('user.kind', 'staff')
             ->assertJsonPath('user.organization.name', 'Deccan Builders')
-            ->assertJsonPath('user.organization.features', config('buildos.plans.contractor.features'));
+            ->assertJsonPath('user.organization.features', config('buildos.plans.free.features'));
 
         $this->forgetSignIn();
         $this->withHeader('Authorization', 'Bearer '.$token)->getJson(self::API.'/me')->assertOk()
@@ -69,10 +69,9 @@ class SignupApiTest extends ApiTestCase
         $this->getJson(self::API."/projects/{$project->id}/boq", $auth)->assertNotFound();
     }
 
-    public function test_the_company_starts_on_a_contractor_trial_with_its_owner_and_approval_rules(): void
+    /** Apple guideline 3.1.1: a company made in the app must never need paying for outside the app, so there is no trial. */
+    public function test_the_company_starts_on_the_free_plan_with_no_trial_with_its_owner_and_approval_rules(): void
     {
-        $this->freezeSecond();
-
         $id = $this->signUp()->assertCreated()->json('user.id');
 
         $user = User::findOrFail($id);
@@ -80,24 +79,34 @@ class SignupApiTest extends ApiTestCase
         $this->assertSame('owner', $user->role);
         $this->assertTrue($user->is_active);
         $this->assertSame('Deccan Builders', $organization->name);
-        $this->assertSame('contractor', $organization->plan);
-        $this->assertSame('trial', $organization->plan_status);
-        $this->assertTrue($organization->trial_ends_at->equalTo(now()->addDays(config('buildos.trial_days'))));
+        $this->assertSame('free', $organization->plan);
+        $this->assertSame('active', $organization->plan_status);
+        $this->assertNull($organization->trial_ends_at);
+        $this->assertFalse($organization->isOnTrial());
+        $this->assertSame('free', $organization->effectivePlan());
         $this->assertSame(3, ApprovalRule::withoutGlobalScopes()->where('organization_id', $organization->id)->count());
+
+        // Still free a year on: nothing ends and nothing falls away.
+        $this->travel(400)->days();
+        $this->assertSame('free', $organization->refresh()->effectivePlan());
+        $this->assertSame(config('buildos.plans.free.features'), $organization->planConfig()['features']);
     }
 
     public function test_a_plan_in_the_body_is_ignored(): void
     {
-        foreach (['free' => 'a@example.com', 'enterprise' => 'b@example.com', 'offline' => 'c@example.com'] as $plan => $email) {
+        // Five, the sign-up limit for a minute.
+        foreach (['contractor' => 'a@example.com', 'business' => 'b@example.com', 'enterprise' => 'c@example.com', 'offline' => 'd@example.com', 'no-such-plan' => 'e@example.com'] as $plan => $email) {
             $id = $this->signUp(['plan' => $plan, 'email' => $email])->assertCreated()->json('user.id');
 
             $organization = User::findOrFail($id)->organization;
-            $this->assertSame('contractor', $organization->plan, "A sign-up asking for {$plan}");
-            $this->assertSame('trial', $organization->plan_status);
+            $this->assertSame('free', $organization->plan, "A sign-up asking for {$plan}");
+            $this->assertSame('active', $organization->plan_status, "A sign-up asking for {$plan}");
+            $this->assertNull($organization->trial_ends_at, "A sign-up asking for {$plan}");
+            $this->forgetSignIn();
         }
     }
 
-    public function test_the_company_starts_free_when_the_contractor_plan_is_off_sale(): void
+    public function test_the_app_starts_free_whether_or_not_the_contractor_plan_is_on_sale(): void
     {
         config(['buildos.plans' => Arr::except(config('buildos.plans'), SignupService::DEFAULT_PLAN)]);
 
@@ -107,6 +116,72 @@ class SignupApiTest extends ApiTestCase
         $this->assertSame('free', $organization->plan);
         $this->assertSame('active', $organization->plan_status);
         $this->assertNull($organization->trial_ends_at);
+    }
+
+    /** If the free plan has gone, the app's sign-up is refused rather than started on a paid plan or a trial. */
+    public function test_with_no_free_plan_the_app_sign_up_is_refused_and_no_trial_starts(): void
+    {
+        $plans = config('buildos.plans');
+        $broken = [
+            'taken off sale' => [...$plans, 'free' => [...$plans['free'], 'monthly' => null, 'yearly' => null]],
+            'given a price' => [...$plans, 'free' => [...$plans['free'], 'monthly' => 99, 'yearly' => 990]],
+            'renamed' => [...Arr::except($plans, 'free'), 'site' => $plans['free']],
+        ];
+
+        foreach ($broken as $case => $config) {
+            config(['buildos.plans' => $config]);
+
+            $this->signUp()->assertUnprocessable()
+                ->assertJsonValidationErrors(['company' => 'A new company cannot be started from the app right now. Try again later.']);
+
+            $this->assertSame(0, Organization::count(), "Free plan {$case}");
+            $this->assertSame(0, User::count(), "Free plan {$case}");
+        }
+
+        $this->assertSame(0, AuditLog::withoutGlobalScopes()->where('action', 'account.signed_up')->count());
+    }
+
+    /** The website and the console are not changed by this: they still start the default plan's trial. */
+    public function test_the_console_still_starts_the_default_plans_trial(): void
+    {
+        $this->freezeSecond();
+
+        $user = app(SignupService::class)->create(['company' => 'Deccan Builders', 'name' => 'Priya Rane', 'email' => 'priya@example.com', 'password' => 'a-long-password'], 'console');
+
+        $organization = $user->organization;
+        $this->assertSame('contractor', $organization->plan);
+        $this->assertSame('trial', $organization->plan_status);
+        $this->assertTrue($organization->trial_ends_at->equalTo(now()->addDays(config('buildos.trial_days'))));
+    }
+
+    /** A company made in the app hears no upgrade, buy or billing prompt when the free plan stops it. */
+    public function test_the_free_plans_limits_answer_the_app_without_an_upgrade_prompt(): void
+    {
+        $token = $this->signUp()->assertCreated()->json('token');
+        $this->forgetSignIn();
+        $auth = ['Authorization' => 'Bearer '.$token];
+
+        // A module the free plan does not include.
+        $refused = $this->getJson(self::API.'/assets', $auth)->assertForbidden()
+            ->assertJsonPath('message', "Your company's plan does not include this module. Your company's owner can check the plan.");
+        $this->assertNoPaymentPrompt($refused);
+
+        // The free plan's single project, then its limit.
+        $this->postJson(self::API.'/projects', ['name' => 'Kalyani Tower'], $auth)->assertCreated();
+        $limit = $this->postJson(self::API.'/projects', ['name' => 'Second Site'], $auth)->assertUnprocessable()
+            ->assertJsonPath('message', "Your company's plan has reached its project limit. Your company's owner can check the plan.")
+            ->assertJsonPath('errors.plan.0', "Your company's plan has reached its project limit. Your company's owner can check the plan.");
+        $this->assertNoPaymentPrompt($limit);
+    }
+
+    /** What the app can show: the message and the field errors. A debug trace, if any, is left out. */
+    private function assertNoPaymentPrompt(TestResponse $response): void
+    {
+        $shown = json_encode(Arr::only($response->json(), ['message', 'errors']));
+
+        foreach (['upgrade', 'buy', 'renew', 'billing', 'pricing', 'purchase'] as $word) {
+            $this->assertStringNotContainsStringIgnoringCase($word, $shown);
+        }
     }
 
     public function test_the_email_is_stored_trimmed_and_in_lower_case(): void
@@ -205,7 +280,7 @@ class SignupApiTest extends ApiTestCase
         $this->assertSame($user->getMorphClass(), $log->auditable_type);
         $this->assertSame($user->id, (int) $log->auditable_id);
         $this->assertNull($log->old_values);
-        $this->assertSame(['method' => 'app', 'plan' => 'contractor'], $log->new_values);
+        $this->assertSame(['method' => 'app', 'plan' => 'free'], $log->new_values);
 
         foreach (['priya', 'Priya', 'Rane', 'Deccan', 'example.com'] as $personal) {
             $this->assertStringNotContainsString($personal, json_encode($log->new_values));

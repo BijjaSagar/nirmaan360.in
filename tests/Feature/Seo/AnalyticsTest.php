@@ -148,10 +148,11 @@ class AnalyticsTest extends TestCase
         $this->get('/privacy')->assertDontSee('Google Analytics');
 
         $this->switchOn();
-        $this->get('/privacy')->assertSee('Analytics cookies')->assertSee('It sets cookies only after you accept.')->assertDontSee('screens inside the app');
+        $this->get('/privacy')->assertSee('Analytics cookies')->assertSee('It sets cookies only after you accept.')->assertDontSee('signed-in pages of the website');
 
+        // The switch counts the website's signed-in pages, not the phone app, and the policy says so.
         $this->switchOn(includeApp: true);
-        $this->get('/privacy')->assertSee('screens inside the app');
+        $this->get('/privacy')->assertSee('to count visits to our website and to the signed-in pages of the website,')->assertDontSee('screens inside the app');
     }
 
     public function test_app_screens_are_left_alone_unless_the_admin_includes_them(): void
