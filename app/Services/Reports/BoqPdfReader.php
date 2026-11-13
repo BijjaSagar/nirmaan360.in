@@ -46,6 +46,9 @@ final class BoqPdfReader
 
     private const PAINT = ['S', 's', 'f', 'F', 'f*', 'B', 'B*', 'b', 'b*'];
 
+    /** The operators that show text. pdfparser gives one piece of text for each, in the order of the stream. */
+    private const SHOW_TEXT = ['Tj', 'TJ', "'", '"'];
+
     /** The route of the reader for scans and photos. It belongs to another module and may not be installed. */
     private const SCAN_READER_ROUTE = 'boq-scans.create';
 
@@ -105,7 +108,7 @@ final class BoqPdfReader
             try {
                 $tokens = self::tokens($page);
                 $layer = $this->layer->inspect($page, $tokens);
-                $text = $this->pieces($page, $layer['legacy_fonts']);
+                $text = $this->pieces($page, $layer['legacy_fonts'], $layer['shown_in']);
                 $rules = $this->rules($tokens, $text['rotation']);
             } catch (Throwable) {
                 return BoqPdfRead::failed($this->unreadable());
@@ -161,25 +164,35 @@ final class BoqPdfReader
      * Every piece of text on the page with where it sits, its size, an estimate of its width, and
      * whether one of the page's old fonts drew it.
      *
+     * pdfparser gives one piece for each operator that shows text, in the order of the stream, so the
+     * n-th piece is drawn in the font PdfTextLayer found in force for the n-th such operator. That walk
+     * gives the font back on Q and follows it into ' and ", which the font pdfparser names beside a
+     * piece does not. When the two do not count the same operators on a page, which piece is which
+     * cannot be told, and on a page where an old font draws text every piece is taken as drawn in one.
+     *
      * @param  list<string>  $oldFonts  From PdfTextLayer::inspect(), as PdfTextLayer::fontKey() spells them.
+     * @param  list<string|null>  $shownIn  From PdfTextLayer::inspect(): the font of each operator that shows text.
      * @return array{pieces: list<array{x: float, x1: float, y: float, size: float, text: string, old_font: bool}>, rotation: int, old_font: int}
      */
-    private function pieces(Page $page, array $oldFonts = []): array
+    private function pieces(Page $page, array $oldFonts = [], array $shownIn = []): array
     {
-        $raw = $page->getDataTm();
+        $commands = $page->getDataCommands();
+        $raw = $page->getDataTm($commands);
         $pieces = [];
         $rotated = 0;
         $lastSize = 10.0;
+        $shows = 0;
+
+        foreach ($commands as $command) {
+            $shows += in_array($command['o'] ?? null, self::SHOW_TEXT, true) ? 1 : 0;
+        }
+
+        $paired = count($shownIn) === $shows && count($raw) === $shows;
+        $wholePage = ! $paired && $oldFonts !== [];
         $oldFonts = array_fill_keys($oldFonts, true);
-        // pdfparser names the font of a piece shown with Tj or TJ. A piece shown with ' or " is in the font selected last.
-        $font = null;
         $inOldFont = 0;
 
-        foreach ($raw as $item) {
-            if (isset($item[2]) && is_scalar($item[2])) {
-                $font = PdfTextLayer::fontKey((string) $item[2]);
-            }
-
+        foreach (array_values($raw) as $n => $item) {
             $tm = $item[0] ?? null;
             $text = trim((string) ($item[1] ?? ''));
 
@@ -206,7 +219,8 @@ final class BoqPdfReader
                 $rotated += $b > 0 ? 1 : -1;
             }
 
-            $old = $font !== null && isset($oldFonts[$font]);
+            $font = $paired ? $shownIn[$n] : null;
+            $old = $wholePage || ($font !== null && isset($oldFonts[$font]));
             $inOldFont += $old ? 1 : 0;
             $pieces[] = ['x' => $x, 'y' => $y, 'size' => $size, 'text' => preg_replace('/\s+/u', ' ', $text) ?? $text, 'old_font' => $old];
         }

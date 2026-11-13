@@ -653,6 +653,50 @@ class BoqPdfImportTest extends ReportsTestCase
         }
     }
 
+    public function test_each_piece_of_text_is_in_the_font_that_draws_it_after_q_and_q_and_with_quote_operators(): void
+    {
+        $rows = [
+            self::ESTIMATE_HEADING,
+            ['1', 'Excavation for foundation', '10', '350', 'cu.m', '3500'],
+            ['2', 'Providing and fixing flush door', '3', '4000', 'door', '12000'],
+        ];
+        $grid = [
+            1 => [1 => 'Sr. No.', 2 => 'Description of Items', 3 => 'Qty.', 4 => 'Rate', 5 => 'Unit', 6 => 'Amount in Rs.'],
+            2 => [1 => '1', 2 => 'Excavation for foundation', 3 => '10', 4 => '350', 5 => 'cu.m', 6 => '3500'],
+            3 => [1 => '2', 2 => 'Providing and fixing flush door', 3 => '3', 4 => '4000', 5 => 'door', 6 => '12000'],
+        ];
+        $read = fn (string $content) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($content, ['fonts' => ['F2' => 'SHREE-DEV-0714'], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $oldTitle = 'BT /F2 9 Tf 1 0 0 1 40 810 Tm (Old font title) Tj ET ';
+
+        // A title in the old font, then the heading in /F1 inside q ... Q. Q gives the old font back, and the rows,
+        // which select no font of their own, are drawn in it.
+        $restored = $read($oldTitle.'q '.$this->tableCells([$rows[0]]).'Q '.$this->tableCells([$rows[1], $rows[2]], 742, ['', '']));
+        $this->assertFalse($restored->ok());
+        $this->assertTrue($restored->scanned);
+        $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $restored->error);
+
+        // The rows shown with ' and ", which move to the next line and draw in the font selected last.
+        foreach (["(1 Excavation for foundation 10 350 cu.m 3500) ' (2 Providing and fixing flush door 3 4000 door 12000) '", '0 0 (1 Excavation for foundation 10 350 cu.m 3500) " 0 0 (2 Providing and fixing flush door 3 4000 door 12000) "'] as $shown) {
+            $quoted = $read($this->tableCells([$rows[0]]).'BT /F2 9 Tf 18 TL 1 0 0 1 40 760 Tm '.$shown.' ET');
+            $this->assertFalse($quoted->ok());
+            $this->assertSame([], $quoted->grid);
+        }
+
+        // The other way round: the old font is selected inside q ... Q for a title, and Q gives /F1 back to a
+        // table that selects no font of its own. That table is typed text.
+        $typed = $read('BT /F1 9 Tf ET q '.$oldTitle.'Q '.$this->tableCells($rows, 760, ['', '', '']));
+        $this->assertTrue($typed->ok(), (string) $typed->error);
+        $this->assertSame($grid, $typed->grid);
+
+        // Where pdfparser and the walk of the stream do not count the same text, no piece can be paired with its
+        // font. On a page where an old font draws text, every piece is then taken as drawn in it. Text shown outside
+        // BT ... ET is one that pdfparser leaves out.
+        $unpaired = $read('BT /F2 9 Tf ET (Old font text) Tj BT /F1 9 Tf ET '.$this->tableCells($rows));
+        $this->assertFalse($unpaired->ok());
+        $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $unpaired->error);
+        $this->assertTrue($read('BT /F1 9 Tf ET (Typed text) Tj '.$this->tableCells($rows))->ok());
+    }
+
     public function test_the_reader_for_scans_is_named_only_where_it_is_installed(): void
     {
         $project = $this->makeProject($this->org);

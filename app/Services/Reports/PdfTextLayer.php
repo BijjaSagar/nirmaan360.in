@@ -25,7 +25,8 @@ use Smalot\PdfParser\PDFObject;
  * An old font counts only where the page's own text is drawn in it, as Tf selects it. A font that
  * is only listed in the page's resources, or in those of the page tree above it, draws nothing.
  * Which of the drawn text matters is for the caller to say: BoqPdfReader refuses a file only when
- * such text would go into the table it reads.
+ * such text would go into the table it reads. So that it can tell, the font in force for every
+ * operator that shows text is given in the order of the stream, as this one walk finds it.
  */
 final class PdfTextLayer
 {
@@ -50,9 +51,12 @@ final class PdfTextLayer
      * invisible: the page paints a picture and nearly all of its text is drawn in the invisible mode.
      * legacy_fonts: the fonts of the old families that draw text on the page, by the name its content
      * stream gives them (as fontKey() spells it), so the caller can tell which pieces of text they drew.
+     * shown_in: for each operator that shows text (Tj, TJ, ' and "), in the order of the stream, the
+     * font in force for it as fontKey() spells it, or null when none was selected. The font is part of
+     * the graphics state, so Q gives back the one in force at the matching q.
      *
      * @param  list<string>|null  $tokens  The page's content stream as BoqPdfReader::tokens() gives it, when the caller has it already.
-     * @return array{invisible: bool, legacy_fonts: list<string>}
+     * @return array{invisible: bool, legacy_fonts: list<string>, shown_in: list<string|null>}
      */
     public function inspect(Page $page, ?array $tokens = null): array
     {
@@ -64,7 +68,10 @@ final class PdfTextLayer
             'invisible' => $text['shown'] > 0
                 && $text['hidden'] * 100 >= $text['shown'] * self::INVISIBLE_SHARE
                 && $this->paintsImage($tokens, $resources, self::FORM_DEPTH),
-            'legacy_fonts' => $this->legacyFonts($resources, $text['fonts']),
+            // A stream too long to walk, or one that does not split into tokens, cannot say which font draws
+            // what. Every old font listed for such a page counts, and the caller cannot pair any text with a font.
+            'legacy_fonts' => $this->legacyFonts($resources, $tokens === [] ? null : $text['fonts']),
+            'shown_in' => $text['shown_in'],
         ];
     }
 
@@ -110,17 +117,19 @@ final class PdfTextLayer
 
     /**
      * How many pieces of text the page shows, how many of them in the invisible mode, and the fonts
-     * Tf had selected for them. The mode and the font are part of the graphics state, so both are
-     * saved and restored with q and Q.
+     * Tf had selected for them, each and in all. The mode and the font are part of the graphics state,
+     * so both are saved and restored with q and Q.
      *
      * @param  list<string>  $tokens
-     * @return array{shown: int, hidden: int, fonts: array<string, true>} fonts: by the name the stream gives, without the slash.
+     * @return array{shown: int, hidden: int, fonts: array<string, true>, shown_in: list<string|null>} fonts: by the name the stream gives, without the slash. shown_in: as fontKey() spells it, one for each operator that shows text.
      */
     private function text(array $tokens): array
     {
         $mode = 0;
         $font = null;
         $fonts = [];
+        $shownIn = [];
+        $keys = [];
         $saved = [];
         $shown = 0;
         $hidden = 0;
@@ -167,6 +176,7 @@ final class PdfTextLayer
             } elseif (in_array($token, self::SHOW_TEXT, true)) {
                 $shown++;
                 $hidden += $mode === self::INVISIBLE_MODE ? 1 : 0;
+                $shownIn[] = $font === null ? null : ($keys[$font] ??= self::fontKey($font));
 
                 if ($font !== null) {
                     $fonts[$font] = true;
@@ -177,7 +187,7 @@ final class PdfTextLayer
             $name = null;
         }
 
-        return ['shown' => $shown, 'hidden' => $hidden, 'fonts' => $fonts];
+        return ['shown' => $shown, 'hidden' => $hidden, 'fonts' => $fonts, 'shown_in' => $shownIn];
     }
 
     /**
@@ -229,15 +239,15 @@ final class PdfTextLayer
      * Of the fonts that draw text on the page, those of the non-Unicode families. A font that is only
      * listed beside the page, or on the page tree above it, draws nothing and is not among them.
      *
-     * @param  array<string, true>  $drawing  The fonts Tf selected for text, by the name the stream gives.
+     * @param  array<string, true>|null  $drawing  The fonts Tf selected for text, by the name the stream gives. Null when that is not known: then every listed font.
      * @return list<string> As fontKey() spells them.
      */
-    private function legacyFonts(?Header $resources, array $drawing): array
+    private function legacyFonts(?Header $resources, ?array $drawing): array
     {
         $fonts = $resources === null ? null : $this->dictionary($resources->get('Font'));
         $legacy = [];
 
-        foreach (array_keys($drawing) as $name) {
+        foreach (array_keys($drawing ?? ($fonts?->getElements() ?? [])) as $name) {
             $font = $fonts === null ? null : $this->named($fonts, (string) $name);
 
             if ($font instanceof PDFObject && $font->has('BaseFont') && self::isLegacyFont($this->name($font->get('BaseFont')))) {

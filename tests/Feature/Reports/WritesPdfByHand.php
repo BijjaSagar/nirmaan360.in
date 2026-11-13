@@ -107,7 +107,7 @@ trait WritesPdfByHand
      * A table drawn cell by cell, each cell a piece of its own at the left of its column, as a program prints one.
      *
      * @param  list<list<string>>  $rows  The heading first.
-     * @param  array<int, string>  $fonts  Row number => the font that row is drawn in. The others are in /F1.
+     * @param  array<int, string>  $fonts  Row number => the font that row is drawn in, or '' for no Tf: the font in force goes on. The others are in /F1.
      */
     protected function tableCells(array $rows, int $top = 760, array $fonts = []): string
     {
@@ -115,7 +115,8 @@ trait WritesPdfByHand
         $text = 'BT 0 Tr ';
 
         foreach ($rows as $index => $row) {
-            $text .= '/'.($fonts[$index] ?? 'F1').' 9 Tf ';
+            $font = $fonts[$index] ?? 'F1';
+            $text .= $font === '' ? '' : '/'.$font.' 9 Tf ';
 
             foreach ($row as $column => $cell) {
                 if ($cell !== '') {

@@ -4,6 +4,7 @@ namespace Tests\Feature\Reports;
 
 use App\Services\Reports\PdfTextLayer;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Arr;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -16,10 +17,16 @@ class PdfTextLayerTest extends ReportsTestCase
 
     private const LINES = ['Sr. No.', 'Description of Items', 'Excavation for foundation', 'Cement concrete'];
 
-    /** @return array{invisible: bool, legacy_fonts: list<string>} */
+    /** The two findings about a page, without the font of each piece of text (shownIn()). @return array{invisible: bool, legacy_fonts: list<string>} */
     private function inspect(string $content, array $options = []): array
     {
-        return app(PdfTextLayer::class)->inspect($this->parsedPage($this->handPdf($content, $options)));
+        return Arr::only(app(PdfTextLayer::class)->inspect($this->parsedPage($this->handPdf($content, $options))), ['invisible', 'legacy_fonts']);
+    }
+
+    /** @return list<string|null> */
+    private function shownIn(string $content): array
+    {
+        return app(PdfTextLayer::class)->inspect($this->parsedPage($this->handPdf($content, ['fonts' => ['F2' => 'SHREE-DEV-0714'], 'picture' => 'none'])))['shown_in'];
     }
 
     public function test_invisible_text_over_the_picture_of_the_page_is_a_machine_layer(): void
@@ -152,6 +159,30 @@ class PdfTextLayerTest extends ReportsTestCase
         $this->assertSame('Old Font', PdfTextLayer::fontKey('Old#20Font'));
     }
 
+    public function test_each_operator_that_shows_text_is_given_the_font_in_force_for_it(): void
+    {
+        // Q gives back the font in force at its q, and BT ... ET does not change it.
+        $this->assertSame(['F2', 'F1', 'F2'], $this->shownIn('BT /F2 9 Tf (title) Tj ET q BT /F1 9 Tf (heading) Tj ET Q BT (row) Tj ET'));
+        $this->assertSame(['F2', 'F1'], $this->shownIn('BT /F1 9 Tf ET q BT /F2 9 Tf (title) Tj ET Q BT (row) Tj ET'));
+
+        // ' and " show text in the font selected last, as TJ does.
+        $this->assertSame(['F1', 'F2', 'F2', 'F2'], $this->shownIn("BT /F1 9 Tf (heading) Tj /F2 9 Tf 18 TL (row) ' 0 0 (row) \" [(row)] TJ ET"));
+
+        // Text shown before any font is selected has none.
+        $this->assertSame([null, 'F1'], $this->shownIn('BT (no font) Tj /F1 9 Tf (row) Tj ET'));
+    }
+
+    public function test_a_page_whose_stream_cannot_be_walked_counts_every_old_font_listed_for_it(): void
+    {
+        // A stream over the size that is walked comes as no tokens. Which font draws what is then not known.
+        $page = $this->parsedPage($this->handPdf($this->textLines(self::LINES), ['fonts' => ['F2' => 'SHREE-DEV-0714'], 'picture' => 'none']));
+        $layer = app(PdfTextLayer::class)->inspect($page, []);
+
+        $this->assertSame(['F2'], $layer['legacy_fonts']);
+        $this->assertSame([], $layer['shown_in']);
+        $this->assertSame([], app(PdfTextLayer::class)->inspect($page)['legacy_fonts']);
+    }
+
     public function test_the_font_list_is_read_from_the_module_settings(): void
     {
         $this->assertContains('kruti dev', config('modules.reports.legacy_font_patterns'));
@@ -176,7 +207,7 @@ class PdfTextLayerTest extends ReportsTestCase
             $html = '<html><body style="font-family:DejaVu Sans">'.$logo.'<p>Estimate for a sample bungalow</p><table><tr><th>Sr. No.</th><th>Description</th></tr><tr><td>1</td><td>Excavation for foundation</td></tr></table></body></html>';
             $page = $this->parsedPage(Pdf::loadHTML($html)->setPaper('a4')->output());
 
-            $this->assertSame(['invisible' => false, 'legacy_fonts' => []], app(PdfTextLayer::class)->inspect($page));
+            $this->assertSame(['invisible' => false, 'legacy_fonts' => []], Arr::only(app(PdfTextLayer::class)->inspect($page), ['invisible', 'legacy_fonts']));
         }
     }
 }
