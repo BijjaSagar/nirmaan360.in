@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\SiteDiary;
 
+use App\Http\Middleware\RequireAiReader;
 use App\Models\ContractTerm;
 use App\Models\Hindrance;
 use App\Models\SiteLetter;
@@ -27,12 +28,14 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
             ...glob(resource_path('views/modules/site_diary/*.blade.php')),
             app_path('Models/Hindrance.php'),
             app_path('Models/HindranceSource.php'),
+            app_path('Models/HindranceSuggestion.php'),
             app_path('Models/SiteLetter.php'),
             app_path('Models/SiteLetterHindrance.php'),
             config_path('modules/site_diary.php'),
             base_path('routes/modules/site_diary.php'),
             database_path('migrations/2027_01_16_100001_create_hindrance_tables.php'),
             database_path('migrations/2027_01_16_100002_create_site_letter_tables.php'),
+            database_path('migrations/2027_01_16_100003_create_hindrance_suggestions_table.php'),
         ];
     }
 
@@ -60,13 +63,13 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         return $lines;
     }
 
-    /** @return list<string> Every text the module shows: the literals passed to __(), the names in its lists and the reminders. */
+    /** @return list<string> Every text the module shows: the literals passed to __() or trans_choice(), the names in its lists and the reminders. */
     private function usedTexts(): array
     {
         $texts = [];
 
         foreach ($this->sourceFiles() as $file) {
-            preg_match_all("/__\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", (string) file_get_contents($file), $matches);
+            preg_match_all("/(?:__|trans_choice)\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", (string) file_get_contents($file), $matches);
 
             foreach ($matches[1] as $text) {
                 $texts[] = str_replace("\\'", "'", $text);
@@ -136,7 +139,7 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
     public function test_the_code_holds_no_notice_period_no_number_of_days_and_no_clause_of_its_own(): void
     {
         $files = [...$this->sourceFiles(), ...glob(lang_path('modules/site_diary/*.json'))];
-        $this->assertGreaterThanOrEqual(26, count($files));
+        $this->assertGreaterThanOrEqual(36, count($files));
 
         foreach ($files as $file) {
             $source = (string) file_get_contents($file);
@@ -168,6 +171,10 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
         // When the app reminds, and how many reports it lists. Neither is a period from an agreement, and no date shown depends on them.
         $numbers = array_filter($config, 'is_int');
         $this->assertSame(['remind_days_before', 'remind_days_after', 'candidates_shown'], array_keys($numbers));
+
+        // How much one request to the AI to group notes may carry. Limits on a request, not a period of any kind.
+        $this->assertSame(['most_reports', 'note_chars', 'title_chars'], array_keys($config['grouping']));
+        $this->assertContainsOnly('int', $config['grouping']);
 
         // Nothing else in the module's code states a number of days: a date is always a term's own days added by
         // HindranceMath. Beyond 0 and 1, the numbers written in the code are the shape of a date (4 and 2 digits, 10
@@ -295,8 +302,8 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
 
         $this->assertSame(
             [
-                'site-diary.hindrances.confirm', 'site-diary.hindrances.dismiss', 'site-diary.hindrances.index', 'site-diary.hindrances.store', 'site-diary.hindrances.update',
-                'site-diary.letters.finalise', 'site-diary.letters.index', 'site-diary.letters.show', 'site-diary.letters.store', 'site-diary.letters.update',
+                'site-diary.hindrances.confirm', 'site-diary.hindrances.dismiss', 'site-diary.hindrances.index', 'site-diary.hindrances.store', 'site-diary.hindrances.suggest', 'site-diary.hindrances.update',
+                'site-diary.letters.draft', 'site-diary.letters.finalise', 'site-diary.letters.index', 'site-diary.letters.show', 'site-diary.letters.store', 'site-diary.letters.update',
             ],
             $routes->map->getName()->sort()->values()->all(),
         );
@@ -312,10 +319,17 @@ class SiteDiaryWordingTest extends SiteDiaryTestCase
                 $name === 'site-diary.hindrances.index' => 'can:site_diary.view',
                 default => 'can:site_diary.manage',
             }, $middleware, $name);
-            $this->assertSame(in_array($name, ['site-diary.hindrances.store', 'site-diary.hindrances.update'], true), in_array('can:dpr.view', $middleware, true), $name);
+            $this->assertSame(in_array($name, ['site-diary.hindrances.store', 'site-diary.hindrances.update', 'site-diary.hindrances.suggest'], true), in_array('can:dpr.view', $middleware, true), $name);
+            $aiGuards = array_values(array_filter($middleware, fn ($entry) => is_string($entry) && (str_contains($entry, 'ai_agents') || str_contains($entry, 'RequireAiReader') || str_contains($entry, 'agents.use') || str_starts_with($entry, 'throttle:'))));
 
-            // No route of the module calls an AI model, so none waits for the AI plan, the consent switch or a throttle of its own.
-            $this->assertSame([], array_values(array_filter($middleware, fn ($entry) => is_string($entry) && (str_contains($entry, 'ai_agents') || str_contains($entry, 'RequireAiReader') || str_contains($entry, 'agents.use')))), $name);
+            // Two routes call an AI model. Grouping sends what staff wrote in daily reports, so it waits for the consent switch;
+            // a letter's sentences are drafted from what each is for and the names of its figures. Each has the counter of text calls.
+            $this->assertSame(match ($name) {
+                'site-diary.hindrances.suggest' => ['feature:ai_agents', 'can:agents.use', RequireAiReader::class.':consent', 'throttle:20,1,ai-text'],
+                'site-diary.letters.draft' => ['feature:ai_agents', 'can:agents.use', RequireAiReader::class.':text', 'throttle:20,1,ai-text'],
+                default => [],
+            }, $aiGuards, $name);
+            $this->assertSame(in_array($name, ['site-diary.hindrances.suggest', 'site-diary.letters.draft'], true), $route->methods() === ['POST'] && $aiGuards !== [], $name);
         }
 
         // The public AI page shows "Hindrance register and letters" while the register's route exists, by its real name.

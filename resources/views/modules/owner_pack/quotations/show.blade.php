@@ -39,15 +39,17 @@
                 <div class="card-head"><h2 class="card-title">{{ __('Details') }}</h2></div>
                 <div class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
                     @include('modules.owner_pack.quotations._header-fields', ['language' => $quotation->language])
-                    <x-field :label="__('Opening sentence')" name="opening" class="sm:col-span-2 lg:col-span-3" :hint="__('State no amount, percentage or date here: the app writes those sentences itself. A number you type is marked and needs its own tick.')">
+                    <x-field :label="__('Opening sentence')" name="opening" class="sm:col-span-2 lg:col-span-3" :hint="$note?->slot('opening')?->source === \App\Services\Wording\SlotText::AI ? __('Written by the AI. Read it before you issue the quotation.') : __('State no amount, percentage or date here: the app writes those sentences itself. A number you type is marked and needs its own tick.')">
                         <textarea id="opening" name="opening" rows="2" maxlength="{{ config('wording.free_slot_max_chars') }}" class="input" lang="{{ $quotation->language }}">{{ old('opening', $note?->slot('opening')?->text) }}</textarea>
                     </x-field>
-                    <x-field :label="__('Closing sentence')" name="closing" class="sm:col-span-2 lg:col-span-3" :hint="__('Empty brings back the app\'s own sentence.')">
+                    <x-field :label="__('Closing sentence')" name="closing" class="sm:col-span-2 lg:col-span-3" :hint="$note?->slot('closing')?->source === \App\Services\Wording\SlotText::AI ? __('Written by the AI. Read it before you issue the quotation.') : __('Empty brings back the app\'s own sentence.')">
                         <textarea id="closing" name="closing" rows="2" maxlength="{{ config('wording.free_slot_max_chars') }}" class="input" lang="{{ $quotation->language }}">{{ old('closing', $note?->slot('closing')?->text) }}</textarea>
                     </x-field>
                 </div>
                 <div class="border-t border-rule p-4"><button class="btn btn-primary">{{ __('Save draft') }}</button></div>
             </form>
+
+            @include('modules.owner_pack._ai-sentences', ['ai' => $ai, 'action' => route('quotations.draft', $quotation)])
         @else
             <section class="card px-4 py-3 text-sm">
                 <dl class="grid gap-x-4 gap-y-2 sm:grid-cols-3">
@@ -79,6 +81,10 @@
                 </details>
             @endif
         </section>
+
+        @if ($draft && $canManage)
+            @include('modules.owner_pack.quotations._translations')
+        @endif
 
         <section class="card">
             <div class="card-head"><h2 class="card-title">{{ __('Payment stages') }}</h2></div>

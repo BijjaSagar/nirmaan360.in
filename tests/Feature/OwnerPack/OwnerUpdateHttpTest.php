@@ -20,8 +20,8 @@ class OwnerUpdateHttpTest extends TestCase
 {
     use BuildsOwnerUpdates, RefreshDatabase;
 
-    /** The routes a person who only prepares updates may use. */
-    private const PREPARE = ['index', 'create', 'store', 'show', 'update'];
+    /** The routes a person who only prepares updates may use. "draft" also needs the AI plan and agents.use (OwnerUpdateAiDraftTest). */
+    private const PREPARE = ['index', 'create', 'store', 'show', 'update', 'draft'];
 
     protected function setUp(): void
     {
@@ -49,6 +49,7 @@ class OwnerUpdateHttpTest extends TestCase
             'store' => ['post', route('owner-updates.store', $this->project), $this->form()],
             'show' => ['get', route('owner-updates.show', $draft), []],
             'update' => ['patch', route('owner-updates.update', $draft), ['next_week_text' => 'Plinth beam next']],
+            'draft' => ['post', route('owner-updates.draft', $draft), []],
             'approve' => ['post', route('owner-updates.approve', $draft), $this->updateTicks($draft)],
             'share' => ['post', route('owner-updates.share', $approved), []],
             'revoke' => ['post', route('owner-updates.share.revoke', $approved), []],
@@ -99,7 +100,7 @@ class OwnerUpdateHttpTest extends TestCase
         }
 
         $this->assertEqualsCanonicalizing(
-            ['owner-updates.index', 'owner-updates.create', 'owner-updates.store', 'owner-updates.show', 'owner-updates.update', 'owner-updates.approve', 'owner-updates.share', 'owner-updates.share.revoke'],
+            ['owner-updates.index', 'owner-updates.create', 'owner-updates.store', 'owner-updates.show', 'owner-updates.update', 'owner-updates.draft', 'owner-updates.approve', 'owner-updates.share', 'owner-updates.share.revoke'],
             $named,
         );
         $this->assertCount(count($named), $this->routes($draft, $approved));

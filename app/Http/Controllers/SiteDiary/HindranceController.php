@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Hindrance;
 use App\Models\Project;
 use App\Services\ContractTerms\TermText;
+use App\Services\DocumentReading\ReadRefused;
+use App\Services\DocumentReading\SpendRefused;
 use App\Services\SiteDiary\HindranceRegister;
 use App\Services\SiteDiary\Hindrances;
+use App\Services\SiteDiary\HindranceSuggestions;
 use App\Services\SiteDiary\NoticeDeadlines;
 use App\Support\Money;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,9 +21,11 @@ use Illuminate\View\View;
 
 class HindranceController extends Controller
 {
+    use AnswersAiRefusals;
+
     public function __construct(private Hindrances $hindrances) {}
 
-    public function index(Request $request, Project $project, HindranceRegister $register, NoticeDeadlines $deadlines, TermText $text): View
+    public function index(Request $request, Project $project, HindranceRegister $register, NoticeDeadlines $deadlines, TermText $text, HindranceSuggestions $suggestions): View
     {
         $user = $request->user();
         $today = today();
@@ -59,7 +65,28 @@ class HindranceController extends Controller
             'termOptions' => config('modules.contract_terms'),
             // The clause a person typed for a term, and the page it is entered on, go to people who may open that page.
             'termsLink' => $seesTerms ? route('contract-terms.index', $project) : null,
+            // "Suggest groups": whether it is offered to this person, and how the latest request ended.
+            'grouping' => $suggestions->panel($project, $user),
         ]);
+    }
+
+    /** Ask the AI to group the hindrance notes of daily reports into entries waiting to be confirmed. */
+    public function suggest(Request $request, Project $project, HindranceSuggestions $suggestions): JsonResponse|RedirectResponse
+    {
+        $data = $request->validate($suggestions->rules());
+
+        try {
+            $suggestion = $suggestions->start($project, $data, $request->user());
+        } catch (SpendRefused|ReadRefused $refused) {
+            return $this->refusal($request, $refused);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['id' => $suggestion->id, 'status' => $suggestion->status], 202);
+        }
+
+        return redirect()->to(route('site-diary.hindrances.index', $project).'#grouping')
+            ->with('success', __('The AI is grouping the notes. What it proposes appears under Waiting to be confirmed, and nothing counts until you confirm it.'));
     }
 
     public function store(Request $request, Project $project): RedirectResponse

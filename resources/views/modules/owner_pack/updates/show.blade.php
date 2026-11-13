@@ -53,13 +53,13 @@
                     @can('money.view')
                         @include('modules.owner_pack.updates._money-fields', ['update' => $update])
                     @endcan
-                    <x-field :label="__('Opening sentence')" name="opening" class="sm:col-span-2 lg:col-span-3" :hint="__('State no amount, percentage or date here: the app writes those sentences itself. A number you type is marked and needs its own tick.')">
+                    <x-field :label="__('Opening sentence')" name="opening" class="sm:col-span-2 lg:col-span-3" :hint="$note?->slot('opening')?->source === \App\Services\Wording\SlotText::AI ? __('Written by the AI. Read it before the update is approved.') : __('State no amount, percentage or date here: the app writes those sentences itself. A number you type is marked and needs its own tick.')">
                         <textarea id="opening" name="opening" rows="2" maxlength="{{ config('wording.free_slot_max_chars') }}" class="input" lang="{{ $update->language }}">{{ old('opening', $note?->slot('opening')?->text) }}</textarea>
                     </x-field>
                     <x-field :label="__('Planned for next week')" name="next_week_text" class="sm:col-span-2 lg:col-span-3" :hint="__('Optional, in your own words. The update prints it as written by the contractor. A number you type is marked and needs its own tick.')">
                         <textarea id="next_week_text" name="next_week_text" rows="3" maxlength="{{ config('wording.free_slot_max_chars') }}" class="input" lang="{{ $update->language }}">{{ old('next_week_text', $update->next_week_text) }}</textarea>
                     </x-field>
-                    <x-field :label="__('Closing sentence')" name="closing" class="sm:col-span-2 lg:col-span-3" :hint="__('Empty brings back the app\'s own sentence.')">
+                    <x-field :label="__('Closing sentence')" name="closing" class="sm:col-span-2 lg:col-span-3" :hint="$note?->slot('closing')?->source === \App\Services\Wording\SlotText::AI ? __('Written by the AI. Read it before the update is approved.') : __('Empty brings back the app\'s own sentence.')">
                         <textarea id="closing" name="closing" rows="2" maxlength="{{ config('wording.free_slot_max_chars') }}" class="input" lang="{{ $update->language }}">{{ old('closing', $note?->slot('closing')?->text) }}</textarea>
                     </x-field>
                 </div>
@@ -94,6 +94,8 @@
                     <p class="hint">{{ __('Saving reads the daily reports, the measurements and the stages again, as they stand today.') }}</p>
                 </div>
             </form>
+
+            @include('modules.owner_pack._ai-sentences', ['ai' => $ai, 'action' => route('owner-updates.draft', $update)])
         @else
             <section class="card px-4 py-3 text-sm">
                 <dl class="grid gap-x-4 gap-y-2 sm:grid-cols-3">

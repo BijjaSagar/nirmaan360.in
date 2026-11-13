@@ -38,4 +38,10 @@ class ClientQuotationItem extends Model
     {
         return $this->belongsTo(BoqItem::class);
     }
+
+    /** Who accepted the translation of this line, so that it is printed beside the description. */
+    public function acceptedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'translation_accepted_by');
+    }
 }

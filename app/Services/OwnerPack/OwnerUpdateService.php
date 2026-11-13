@@ -148,6 +148,7 @@ class OwnerUpdateService
             }
 
             $weekChanged = $update->week_start->toDateString() !== $weekBefore;
+            $language = $update->language;
 
             if ($sent('language')) {
                 $update->language = $data['language'];
@@ -187,7 +188,7 @@ class OwnerUpdateService
             $sheet = $this->readRecords($update);
 
             try {
-                $update->slots = $this->document->withTyped($update->language, $sheet, $update->slots, array_intersect_key($data, array_flip(OwnerUpdateDocument::FREE_SLOTS))) ?: null;
+                $update->slots = $this->document->withTyped($update->language, $sheet, $update->slots, array_intersect_key($data, array_flip(OwnerUpdateDocument::FREE_SLOTS)), $language) ?: null;
                 // Rendered once here, so text that cannot be printed is refused when it is typed, not when it is approved.
                 $this->document->render($update->language, $sheet, $update->slots, $update->next_week_text);
             } catch (GuardViolation) {
