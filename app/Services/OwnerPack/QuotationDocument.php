@@ -96,6 +96,11 @@ final class QuotationDocument
             $line = fn (string $field) => FactSource::record('client_quotation_item', $item->id, $field);
             $lines[] = new Fact("line_{$n}_work", Fact::TEXT, trim($item->code.' '.$item->description), "Line {$n}: work", $line('description'));
 
+            // A translation a person accepted is printed beside the description, so it is part of what is issued.
+            if (QuotationTranslations::printed($item)) {
+                $lines[] = new Fact("line_{$n}_work_translated", Fact::TEXT, $item->description_translated, "Line {$n}: work, translated", $line('description_translated'));
+            }
+
             if (trim((string) $item->unit) !== '') {
                 $lines[] = new Fact("line_{$n}_unit", Fact::TEXT, $item->unit, "Line {$n}: unit", $line('unit'));
             }
@@ -225,10 +230,12 @@ final class QuotationDocument
      *
      * @param  array<string, ?string>  $typed  Slot id => what the form sent.
      * @param  array<string, mixed>|null  $stored
+     * @param  ?string  $storedLanguage  The language the stored sentences were written for, when it may differ from $language.
      * @return array<string, array{text: string, source: string}>
      */
-    public function withTyped(string $language, FactSheet $sheet, ?array $stored, array $typed): array
+    public function withTyped(string $language, FactSheet $sheet, ?array $stored, array $typed, ?string $storedLanguage = null): array
     {
+        [$stored, $typed] = AiSentences::forLanguage(self::FREE_SLOTS, $stored, $typed, $storedLanguage !== null && $storedLanguage !== $language);
         $kept = $this->freeTexts($stored);
         $standing = $this->render($language, $sheet, $stored)->freeTexts();
         $code = $this->codeTexts();
@@ -327,9 +334,10 @@ final class QuotationDocument
     /** What a figure is, in the reader's language, for the review screen and for messages. */
     public static function label(string $key): string
     {
-        if (preg_match('/^line_(\d+)(?:_(work|unit|qty|rate|amount))?$/', $key, $m) === 1) {
+        if (preg_match('/^line_(\d+)(?:_(work|work_translated|unit|qty|rate|amount))?$/', $key, $m) === 1) {
             return match ($m[2] ?? '') {
                 'work' => __('Line :n: work', ['n' => $m[1]]),
+                'work_translated' => __('Line :n: work, translated', ['n' => $m[1]]),
                 'unit' => __('Line :n: unit', ['n' => $m[1]]),
                 'qty' => __('Line :n: quantity', ['n' => $m[1]]),
                 'rate' => __('Line :n: rate', ['n' => $m[1]]),

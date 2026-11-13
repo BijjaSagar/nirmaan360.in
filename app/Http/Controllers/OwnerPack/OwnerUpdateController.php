@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Services\OwnerPack\OwnerUpdateDocument;
 use App\Services\OwnerPack\OwnerUpdateService;
 use App\Services\OwnerPack\OwnerUpdateShareService;
+use App\Services\OwnerPack\PackDrafts;
 use App\Services\OwnerPack\ShownText;
 use App\Services\Wording\ReviewedLanguages;
 use App\Support\Money;
@@ -57,7 +58,7 @@ class OwnerUpdateController extends Controller
         return redirect()->route('owner-updates.show', $update)->with('success', __('Draft update prepared. Pick the photos, check every figure, then have it approved.'));
     }
 
-    public function show(Request $request, OwnerUpdate $update, OwnerUpdateDocument $document, OwnerUpdateShareService $shares): View
+    public function show(Request $request, OwnerUpdate $update, OwnerUpdateDocument $document, OwnerUpdateShareService $shares, PackDrafts $drafts): View
     {
         $this->service->assertMayRead($update, $request->user());
 
@@ -84,6 +85,8 @@ class OwnerUpdateController extends Controller
             'quotations' => $draft && Money::visible($request->user()) ? $this->service->standingQuotations($update->organization_id, $update->project_id) : collect(),
             'shareUrl' => $shares->url($update),
             'whatsappUrl' => $shares->whatsappUrl($update, (string) $update->organization?->name),
+            // The AI: the opening and the closing, the two sentences of the update that state no figure.
+            'ai' => $drafts->state($update, $request->user()),
         ]);
     }
 

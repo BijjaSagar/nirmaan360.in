@@ -1,4 +1,8 @@
-{{-- The lines of a quotation. $tick: on the review screen each line has a tick that stands for its quantity, rate and amount. $ticked: the ticks to show as set. --}}
+{{--
+    The lines of a quotation. $tick: on the review screen each line has a tick that stands for its quantity, rate and amount.
+    $ticked: the ticks to show as set. A translation a person accepted is printed under the description, in the
+    quotation's language; one nobody accepted is never printed here.
+--}}
 <div class="overflow-x-auto">
     <table class="ledger min-w-[680px]">
         <thead>
@@ -12,7 +16,7 @@
         @foreach ($items as $line)
             <tr>
                 <td class="num text-xs">{{ $line->code }}</td>
-                <td class="whitespace-pre-line">{{ $line->description }}</td>
+                <td><span class="whitespace-pre-line">{{ $line->description }}</span>@if (\App\Services\OwnerPack\QuotationTranslations::printed($line))<span class="mt-1 block whitespace-pre-line text-ink-2" lang="{{ $quotation->language }}" data-translation>{{ $line->description_translated }}</span>@endif</td>
                 <td>{{ $line->unit }}</td>
                 <td class="r">{{ fmt_qty($line->qty) }}</td>
                 <td class="r">{{ inr($line->rate) }}</td>

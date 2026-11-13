@@ -142,19 +142,30 @@ class QuotationService
         return DB::transaction(function () use ($quotation, $data, $by) {
             $quotation = $this->lockedDraft($quotation);
             $before = $this->summary($quotation);
+            $language = $quotation->language;
 
             $quotation->fill($this->header($quotation->organization_id, $data, partial: true));
 
             if (isset($data['boq_item_ids'])) {
                 $lines = $this->boqLines($quotation->organization_id, $quotation->project_id, $data['boq_item_ids']);
+                $translated = $this->translations($quotation);
                 ClientQuotationItem::withoutGlobalScopes()->where('organization_id', $quotation->organization_id)->where('quotation_id', $quotation->id)->delete();
-                $this->copyLines($quotation, $lines);
+                $this->copyLines($quotation, $lines, $translated);
+            }
+
+            // A translation is in the language it was made for. In another language the lines print their descriptions alone.
+            if ($quotation->language !== $language) {
+                ClientQuotationItem::withoutGlobalScopes()
+                    ->where('organization_id', $quotation->organization_id)
+                    ->where('quotation_id', $quotation->id)
+                    ->whereNotNull('description_translated')
+                    ->update(['description_translated' => null, 'translation_accepted_by' => null, 'translation_accepted_at' => null]);
             }
 
             $sheet = $this->recalculate($quotation);
 
             try {
-                $quotation->slots = $this->document->withTyped($quotation->language, $sheet, $quotation->slots, array_intersect_key($data, array_flip(QuotationDocument::FREE_SLOTS))) ?: null;
+                $quotation->slots = $this->document->withTyped($quotation->language, $sheet, $quotation->slots, array_intersect_key($data, array_flip(QuotationDocument::FREE_SLOTS)), $language) ?: null;
             } catch (GuardViolation) {
                 throw ValidationException::withMessages(['opening' => __('This text cannot be read. Type it again.')]);
             }
@@ -264,9 +275,10 @@ class QuotationService
                 'client_uuid' => $uuid,
             ]);
 
+            // A line keeps its translation, and whether a person accepted it: its description is the same.
             foreach ($this->items($source) as $item) {
                 ClientQuotationItem::create([
-                    ...$item->only(['organization_id', 'project_id', 'boq_item_id', 'code', 'description', 'unit', 'qty', 'rate', 'amount', 'sort']),
+                    ...$item->only(['organization_id', 'project_id', 'boq_item_id', 'code', 'description', 'description_translated', 'translation_accepted_by', 'translation_accepted_at', 'unit', 'qty', 'rate', 'amount', 'sort']),
                     'quotation_id' => $copy->id,
                 ]);
             }
@@ -578,11 +590,12 @@ class QuotationService
 
     /**
      * Works every figure out again from the lines, the percentage and the stages, saves what changed,
-     * and keeps the facts and their fingerprint with the quotation.
+     * and keeps the facts and their fingerprint with the quotation. Call it on a draft held for the
+     * transaction (lockedDraft), as every change to its lines, stages or translations is.
      *
      * @throws ValidationException When the stages no longer fit the total.
      */
-    private function recalculate(ClientQuotation $quotation): FactSheet
+    public function recalculate(ClientQuotation $quotation): FactSheet
     {
         $quotation->setRelation('items', $this->items($quotation));
         $quotation->setRelation('stages', $this->stages($quotation));
@@ -780,10 +793,16 @@ class QuotationService
             ->get();
     }
 
-    /** @param  Collection<int, BoqItem>  $lines */
-    private function copyLines(ClientQuotation $quotation, Collection $lines): void
+    /**
+     * @param  Collection<int, BoqItem>  $lines
+     * @param  array<string, ClientQuotationItem>  $translated  Lines copied before, with a translation, by BOQ line and description (translations()).
+     */
+    private function copyLines(ClientQuotation $quotation, Collection $lines, array $translated = []): void
     {
         foreach ($lines->values() as $index => $line) {
+            // A line copied again with the same description keeps its translation and whether a person accepted it.
+            $before = $translated[$line->id.'|'.$line->description] ?? null;
+
             ClientQuotationItem::create([
                 'organization_id' => $quotation->organization_id,
                 'project_id' => $quotation->project_id,
@@ -791,6 +810,9 @@ class QuotationService
                 'boq_item_id' => $line->id,
                 'code' => $line->code,
                 'description' => $line->description,
+                'description_translated' => $before?->description_translated,
+                'translation_accepted_by' => $before?->translation_accepted_by,
+                'translation_accepted_at' => $before?->translation_accepted_at,
                 'unit' => $line->unit,
                 'qty' => $line->qty,
                 'rate' => $line->rate,
@@ -798,6 +820,15 @@ class QuotationService
                 'sort' => $index + 1,
             ]);
         }
+    }
+
+    /** @return array<string, ClientQuotationItem> The lines of a draft that have a translation, by BOQ line and description. */
+    private function translations(ClientQuotation $quotation): array
+    {
+        return $this->items($quotation)
+            ->filter(fn (ClientQuotationItem $item) => $item->boq_item_id !== null && $item->description_translated !== null)
+            ->keyBy(fn (ClientQuotationItem $item) => $item->boq_item_id.'|'.$item->description)
+            ->all();
     }
 
     /** The row as it is now, held until the transaction ends. The caller reached it through the tenant scopes. */
