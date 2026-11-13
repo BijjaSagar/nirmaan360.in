@@ -3,7 +3,9 @@
 namespace Tests\Feature\DocumentReading;
 
 use App\Http\Middleware\RequireAiReader;
+use App\Models\AiDocumentSettings;
 use App\Models\Organization;
+use App\Models\User;
 use App\Services\DocumentReading\AiSpend;
 use App\Services\DocumentReading\ReaderSettings;
 use App\Services\Reports\BoqPdfReader;
@@ -69,11 +71,10 @@ class ReaderReleaseTest extends PageReadingTestCase
             'settings page' => (function () use ($owner) {
                 $page = $this->actingAs($owner)->get('/settings/ai-documents');
 
-                // With consent already given the page offers the switch to turn the readers off; without the readers it says there are none.
-                return $page->getStatusCode() === 200 && str_contains((string) $page->getContent(), 'Switch the readers off') && ! str_contains((string) $page->getContent(), 'No reader is switched on yet.');
+                // The page offers the readers with the notice to read; without them it says there is no reader.
+                return $page->getStatusCode() === 200 && str_contains((string) $page->getContent(), 'Read this before you switch the readers on.') && ! str_contains((string) $page->getContent(), 'No reader is');
             })(),
-            'menu' => in_array('ai-documents.edit', array_column(Modules::nav('company', $organization), 'route'), true),
-            'menu on a page' => str_contains((string) $this->actingAs($owner)->get('/dashboard')->assertOk()->getContent(), route('ai-documents.edit')),
+            ...$this->menu($organization, $owner),
             'scan offer' => (function () use ($owner) {
                 $this->actingAs($owner);
 
@@ -87,6 +88,30 @@ class ReaderReleaseTest extends PageReadingTestCase
         Auth::forgetGuards();
 
         return [...$public, ...$company];
+    }
+
+    /**
+     * Whether the menu offers the readers: as it shows to a company that has not agreed. A company that has agreed
+     * keeps its entry while the readers are off, to switch them off (test_a_company_that_agreed_can_still_switch_the_readers_off).
+     *
+     * @return array{menu: bool, 'menu on a page': bool}
+     */
+    private function menu(Organization $organization, User $owner): array
+    {
+        $agreed = (bool) AiDocumentSettings::for($organization)->enabled;
+        $this->consent($organization, false);
+        $organization->refresh();
+
+        $menu = [
+            'menu' => in_array('ai-documents.edit', array_column(Modules::nav('company', $organization), 'route'), true),
+            // A page loads the person and the company afresh.
+            'menu on a page' => str_contains((string) $this->actingAs($owner->fresh())->get('/dashboard')->assertOk()->getContent(), route('ai-documents.edit')),
+        ];
+
+        $this->consent($organization, $agreed);
+        $organization->refresh();
+
+        return $menu;
     }
 
     private function assertAll(bool $on, Organization $organization, string $state): void
@@ -211,17 +236,60 @@ class ReaderReleaseTest extends PageReadingTestCase
         DB::listen(function () use (&$queries) {
             $queries++;
         });
+        $fresh = $this->tenant('Godavari Constructions');
 
         foreach (['1', '0'] as $released) {
-            app(PlatformSettings::class)->set([AiOffer::RELEASED => $released]);
-            // The settings are read once for the request, as every page reads them; the menu adds nothing to that.
-            app(PlatformSettings::class)->get(AiOffer::RELEASED);
-            $queries = 0;
+            foreach (['a company that agreed' => $this->organization, 'one that did not' => $fresh] as $who => $organization) {
+                app(PlatformSettings::class)->set([AiOffer::RELEASED => $released]);
+                // The settings are read once for the request, as every page reads them, and the company was loaded with
+                // the signed-in person. The menu adds nothing to that, the company's agreement included.
+                app(PlatformSettings::class)->get(AiOffer::RELEASED);
+                $organization->refresh();
+                $queries = 0;
 
-            $shown = in_array('ai-documents.edit', array_column(Modules::nav('company', $this->organization), 'route'), true);
+                $shown = in_array('ai-documents.edit', array_column(Modules::nav('company', $organization), 'route'), true);
 
-            $this->assertSame($released === '1', $shown);
-            $this->assertSame(0, $queries, "released {$released}");
+                $this->assertSame($released === '1' || $organization->is($this->organization), $shown, "released {$released}, {$who}");
+                $this->assertSame(0, $queries, "released {$released}, {$who}");
+            }
+        }
+    }
+
+    public function test_a_company_that_agreed_can_still_switch_the_readers_off(): void
+    {
+        $settings = app(PlatformSettings::class);
+        $owner = $this->member($this->organization, 'owner');
+        $menu = fn () => in_array('ai-documents.edit', array_column(Modules::nav('company', $this->organization->refresh()), 'route'), true);
+        $states = [
+            'not released' => fn () => $settings->set([AiOffer::RELEASED => '0']),
+            'no monthly cap on record' => fn () => $settings->set(['ai_tier_monthly_cap_usd' => null]),
+            'no key saved' => fn () => $settings->set(['anthropic_api_key' => null]),
+            'no reader deployed' => fn () => config(['modules.reader_stand_ins.read_kinds' => []]),
+        ];
+
+        foreach ($states as $state => $takeAway) {
+            $this->release();
+            $this->connect();
+            config(['modules.reader_stand_ins.read_kinds' => [Support\FakeKind::class, Support\FakeTextKind::class, Support\FakeSlipKind::class]]);
+            $this->consent($this->organization);
+            $takeAway();
+            $this->assertFalse(app(AiSpend::class)->readersOn($this->organization), $state);
+
+            // Nothing is offered or sent, but the agreement on record can be withdrawn from the menu's page.
+            $this->assertTrue($menu(), "{$state}: the menu keeps its entry");
+            $this->assertFalse(app(ReaderSettings::class)->offered($this->organization), $state);
+            $this->actingAs($owner)->get('/settings/ai-documents')->assertOk()
+                ->assertSee('No reader is available for your company right now, so nothing is sent to the AI service.')
+                ->assertSee('Switch the readers off')
+                ->assertDontSee('No reader is switched on yet.')
+                ->assertDontSee('name="accept"', false);
+
+            $this->actingAs($owner)->post('/settings/ai-documents', ['action' => 'off'])->assertRedirect('/settings/ai-documents');
+            $this->assertFalse(app(ReaderSettings::class)->consent($this->organization)['enabled'], $state);
+
+            // Withdrawn, the company sees no entry and the page says there is no reader, as one that never agreed.
+            $this->assertFalse($menu(), "{$state}: withdrawn");
+            $this->actingAs($owner)->get('/settings/ai-documents')->assertOk()->assertSee('No reader is switched on yet.')->assertDontSee('Switch the readers off');
         }
     }
 }
