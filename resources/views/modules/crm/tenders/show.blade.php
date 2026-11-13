@@ -202,6 +202,8 @@
                     <p class="px-4 py-5 text-sm text-ink-3">{{ __('No documents yet. Keep the tender notice, corrigenda and drawings here; they travel to the project.') }}</p>
                 @endforelse
             </section>
+
+            @includeWhen(view()->exists('modules.tender_reading._tender'), 'modules.tender_reading._tender', ['tender' => $tender, 'documents' => $documents])
         </div>
 
         <div class="space-y-5">
