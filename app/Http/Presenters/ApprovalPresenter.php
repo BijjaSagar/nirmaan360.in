@@ -6,11 +6,13 @@ use App\Models\Approval;
 use App\Models\ApprovalStep;
 use App\Models\BillNote;
 use App\Models\BoqItem;
+use App\Models\ContractorPayment;
 use App\Models\Dpr;
 use App\Models\MeasurementEntry;
 use App\Models\RaBill;
 use App\Models\User;
 use App\Services\ApprovalService;
+use App\Services\ContractorControl\WorkPaymentRatio;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +32,7 @@ final class ApprovalPresenter
             Dpr::class => ['project', 'creator', 'manpower', 'workItems.boqItem', 'photos'],
             RaBill::class => ['project', 'party'],
             BillNote::class => ['project', 'party', 'bill'],
+            ContractorPayment::class => ['project', 'workOrder', 'party', 'boqItem', 'milestone', 'enteredBy'],
         ]);
 
         $boqIds = $approvals->pluck('approvable')->filter(fn ($document) => $document instanceof MeasurementEntry)->pluck('boq_item_id')->unique();
@@ -56,7 +59,7 @@ final class ApprovalPresenter
                 'current_role' => $approval->currentRole(),
                 'current_role_label' => $approval->currentRoleLabel(),
                 'can_act' => $service->canAct($approval, $user),
-                'document' => self::document($approval->approvable, $ledger),
+                'document' => self::document($approval, $ledger, $user),
                 'steps' => $approval->steps->map(self::step(...))->all(),
             ])
             ->values()
@@ -81,13 +84,16 @@ final class ApprovalPresenter
         return $document->currentApproval?->steps->where('action', 'return')->last()?->remark;
     }
 
-    private static function document(Model $document, Collection $ledger): array
+    private static function document(Approval $approval, Collection $ledger, User $user): array
     {
+        $document = $approval->approvable;
+
         return match (true) {
             $document instanceof MeasurementEntry => self::measurement($document, $ledger),
             $document instanceof Dpr => self::dpr($document),
             $document instanceof RaBill => self::raBill($document),
             $document instanceof BillNote => self::billNote($document),
+            $document instanceof ContractorPayment => self::contractorPayment($document, $user),
             default => [],
         };
     }
@@ -167,5 +173,63 @@ final class ApprovalPresenter
             'gst_amount' => Money::orNull($bill->gst_amount),
             'net_payable' => Money::orNull($bill->net_payable),
         ];
+    }
+
+    /**
+     * A contractor payment request, with what approving it would do to the contract: the same work % against
+     * paid % the contractor board shows (WorkPaymentRatio). Work % goes to every approver; the amount, the
+     * payment's details and every paid figure only to someone with money.view, as null otherwise.
+     */
+    private static function contractorPayment(ContractorPayment $payment, User $user): array
+    {
+        $money = Money::visible($user);
+        $impact = app(WorkPaymentRatio::class)->impact($payment);
+        $order = $payment->workOrder;
+
+        return [
+            'id' => $payment->id,
+            'number' => $payment->number,
+            'status' => $payment->status,
+            'work_order' => ['id' => $order?->id, 'number' => $order?->number, 'title' => $order?->title],
+            'contractor' => $payment->party?->name,
+            'against' => self::paymentAgainst($payment, $impact['item']),
+            'paid_on' => $payment->paid_on?->toDateString(),
+            'entered_by' => $payment->enteredBy?->name,
+            'work_pct' => $impact['now']['work_pct'],
+            'balance_work_pct' => $impact['now']['balance_work_pct'],
+            'amount' => $money ? $payment->amount : null,
+            'is_advance' => $money ? $payment->is_advance : null,
+            'mode' => $money ? $payment->mode : null,
+            'paid_to' => $money ? $payment->paid_to : null,
+            // Free text, which may quote a price.
+            'notes' => $money ? $payment->notes : null,
+            'has_bill' => $money ? $payment->bill_path !== null : null,
+            'paid_pct' => $money ? $impact['now']['paid_pct'] : null,
+            'impact' => $money ? ContractorControlPresenter::impact($impact) : null,
+            // Filled by the owner-override rule for payments ahead of the work done (branch fix/web-money-rules):
+            // "needed" when this approval would be refused unless the owner approves with a written reason,
+            // "allowed" when this person is that owner, "message" says why in percentages only.
+            'owner_override' => ['needed' => false, 'allowed' => false, 'message' => null],
+        ];
+    }
+
+    /** What the payment is for: one BOQ line of the contract, one part of it, or the contract in general. */
+    private static function paymentAgainst(ContractorPayment $payment, ?array $line): array
+    {
+        if ($payment->boqItem) {
+            return [
+                'type' => 'boq_item',
+                'code' => $payment->boqItem->code,
+                'description' => $payment->boqItem->description,
+                'unit' => $payment->boqItem->unit,
+                'work_pct' => $line['work_pct'] ?? null,
+            ];
+        }
+
+        if ($payment->milestone) {
+            return ['type' => 'part', 'title' => $payment->milestone->title, 'done' => $payment->milestone->isDone()];
+        }
+
+        return ['type' => 'contract'];
     }
 }
