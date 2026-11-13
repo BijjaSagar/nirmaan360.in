@@ -8,7 +8,8 @@
         $days = fn (int $count) => $count === 1 ? __('1 day') : __(':days days', ['days' => $count]);
         // The form is open when it is the thing in hand: an entry is being changed or corrected, a save was
         // refused, the reports are being filtered, or the register is still empty.
-        $formOpen = $editing || $correcting || $errors->any() || $entries->isEmpty() || $shown['from'] || $shown['to'];
+        // A refusal from the AI is about the grouping card, not the form.
+        $formOpen = $editing || $correcting || ($errors->any() && ! $errors->has('ai_reader')) || $entries->isEmpty() || $shown['from'] || $shown['to'];
     @endphp
     <div x-data="{ form: {{ $formOpen ? 'true' : 'false' }} }">
     <x-page-header :title="__('Hindrance register')" :subtitle="$project->name">
@@ -44,6 +45,8 @@
         <x-stat :label="__('Days in all')" :value="$total['days']" :note="$total['ongoing'] > 0 ? __('A day two entries share is counted once. Entries still going on are counted up to today.') : __('A day two entries share is counted once.')" />
         <x-stat :label="__('Still going on')" :value="$total['ongoing']" />
     </div>
+
+    @include('modules.site_diary._grouping')
 
     @if ($canMake)
         <div x-show="form" x-cloak>
