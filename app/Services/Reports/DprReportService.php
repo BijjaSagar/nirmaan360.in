@@ -16,6 +16,7 @@ use App\Models\Project;
 use App\Models\Site;
 use App\Models\User;
 use App\Support\Dec;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -103,8 +104,23 @@ class DprReportService
         return URL::temporarySignedRoute('dprs.shared', now()->addDays(self::LINK_DAYS), ['id' => $dpr->id]);
     }
 
-    /** The message that goes into WhatsApp, in the signed-in user's language. */
-    public function whatsappText(Dpr $dpr): string
+    /**
+     * The link, its message and the wa.me address, made once so all three carry the same signature.
+     * The field app's "Share on WhatsApp" uses this; it opens no more than the web's button does.
+     *
+     * @return array{url: string, text: string, whatsapp_url: string, expires_at: Carbon}
+     */
+    public function share(Dpr $dpr): array
+    {
+        $expires = now()->addDays(self::LINK_DAYS);
+        $url = URL::temporarySignedRoute('dprs.shared', $expires, ['id' => $dpr->id]);
+        $text = $this->whatsappText($dpr, $url);
+
+        return ['url' => $url, 'text' => $text, 'whatsapp_url' => 'https://wa.me/?text='.rawurlencode($text), 'expires_at' => $expires];
+    }
+
+    /** The message that goes into WhatsApp, in the signed-in user's language. $link is a signed link already made for it. */
+    public function whatsappText(Dpr $dpr, ?string $link = null): string
     {
         $dpr->loadMissing('project', 'site', 'manpower', 'workItems.boqItem');
 
@@ -129,7 +145,7 @@ class DprReportService
 
         $lines[] = '';
         $lines[] = __('Full report (PDF, link works for :days days):', ['days' => self::LINK_DAYS]);
-        $lines[] = $this->signedUrl($dpr);
+        $lines[] = $link ?? $this->signedUrl($dpr);
 
         return implode("\n", $lines);
     }

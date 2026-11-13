@@ -54,6 +54,8 @@ class MoneyVisibilityTest extends TestCase
         'ratelib.search' => ['q' => 'rcc'],
         'reports.xlsx' => ['report' => 'boq_ledger'],
         'reports.pdf' => ['report' => 'boq_ledger'],
+        'api/v1/projects/{project}/material-control/bills' => ['show' => 'attached'],
+        'api.reports.measurement-sheet' => ['from' => '2026-01-01', 'to' => '2026-12-31'],
     ];
 
     /**
@@ -104,9 +106,13 @@ class MoneyVisibilityTest extends TestCase
         'api/v1/price-watch' => ['watch_price'],
         'api/v1/projects/{project}/price-watch' => ['watch_price', 'watch_boq'],
         'api/v1/projects/{project}/boq' => ['boq_rate', 'bid'],
-        'api/v1/sync/pull' => ['boq_rate', 'other_wallet'],
+        'api/v1/sync/pull' => ['boq_rate', 'other_wallet', 'payment'],
         'api/v1/projects/{project}/petty-cash' => ['other_wallet'],
-        'api/v1/approvals' => ['bill_net'],
+        // The contractor payment waiting for the owner: its amount is in the approvals document.
+        'api/v1/approvals' => ['bill_net', 'payment'],
+        'api/v1/delivery-challans/{deliveryChallan}' => ['challan_bill'],
+        'api/v1/projects/{project}/material-control/bills' => ['challan_bill'],
+        'api.reports.measurement-sheet' => ['boq_rate'],
     ];
 
     protected function setUp(): void

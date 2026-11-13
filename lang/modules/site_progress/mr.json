@@ -194,5 +194,6 @@
     "Whose work is this?": "हे काम कोणाचे आहे?",
     "Choose the contractor": "ठेकेदार निवडा",
     "That contractor is not working on this item.": "हा ठेकेदार या कामावर नाही.",
-    "Two or more contractors work on this item. Choose whose work this is.": "या कामावर एकापेक्षा जास्त ठेकेदार आहेत. हे काम कोणाचे ते निवडा."
+    "Two or more contractors work on this item. Choose whose work this is.": "या कामावर एकापेक्षा जास्त ठेकेदार आहेत. हे काम कोणाचे ते निवडा.",
+    "Only the company owner can remove a floor.": "मजला फक्त कंपनीचा मालक काढू शकतो."
 }

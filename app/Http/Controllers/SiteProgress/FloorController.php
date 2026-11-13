@@ -11,7 +11,6 @@ use App\Services\SiteProgress\ProgressReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /** Floors and segments: setting them up, and tapping one to see its progress and what is pending. */
@@ -68,10 +67,7 @@ class FloorController extends Controller
     /** Set or clear what is planned for one BOQ line on this floor. */
     public function target(Request $request, ProjectFloor $floor): RedirectResponse
     {
-        $data = $request->validate([
-            'boq_item_id' => ['bail', 'required', 'integer', Rule::exists('boq_items', 'id')->where('project_id', $floor->project_id)->whereNull('deleted_at')],
-            'planned_qty' => ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:99999999'],
-        ]);
+        $data = $request->validate($this->service->targetRules($floor));
 
         $this->service->setTarget($floor, BoqItem::findOrFail($data['boq_item_id']), $data['planned_qty']);
 
@@ -81,13 +77,7 @@ class FloorController extends Controller
     /** Share BOQ lines equally across the chosen floors. */
     public function split(Request $request, Project $project): RedirectResponse
     {
-        $data = $request->validate([
-            'all_items' => ['nullable', 'boolean'],
-            'boq_item_ids' => ['nullable', 'array'],
-            'boq_item_ids.*' => ['integer', Rule::exists('boq_items', 'id')->where('project_id', $project->id)->whereNull('deleted_at')],
-            'floor_ids' => ['required', 'array', 'min:1'],
-            'floor_ids.*' => ['integer', Rule::exists('project_floors', 'id')->where('project_id', $project->id)],
-        ]);
+        $data = $request->validate($this->service->splitRules($project));
 
         $itemIds = $request->boolean('all_items')
             ? BoqItem::where('project_id', $project->id)->pluck('id')->all()
