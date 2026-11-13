@@ -49,6 +49,9 @@ class AiSpend
 
     public const TRIAL_ALLOWANCE = 'ai_trial_daily_usd';
 
+    /** The name the field app's spoken reports go by beside the reader kinds, when one of them is asked about. */
+    public const VOICE = 'voice';
+
     public function __construct(private PlatformSettings $settings, private ModelGateway $gateway) {}
 
     /**
@@ -63,8 +66,11 @@ class AiSpend
      * - the platform admin has released the readers and the provider's monthly cap is on record (released()),
      * - the AI model is connected: a key is saved,
      * - for a company, its plan has the AI features,
-     * - a reader is deployed: the kind asked about, or with none any reader kind or the voice notes
-     *   route; for a company, a kind counts only when its plan has the module the kind belongs to.
+     * - a reader is deployed: the kind asked about (or self::VOICE), or with none any reader kind or voice
+     *   (voiceDeployed()); for a company, a kind counts only when its plan has the module the kind belongs to.
+     *
+     * The website has a reader card for every kind and for voice (AiOffer::readers), so its Readers group shows
+     * exactly when this is true without a company.
      */
     public function readersOn(?Organization $organization = null, ?string $kind = null): bool
     {
@@ -83,11 +89,15 @@ class AiSpend
     }
 
     /**
-     * Whether a reader is deployed: the kind asked about, or with none any reader kind or the voice notes
-     * route. For a company, a kind counts only when its plan has the module the kind belongs to.
+     * Whether a reader is deployed: the kind asked about (or self::VOICE), or with none any reader kind or
+     * voice. For a company, a kind counts only when its plan has the module the kind belongs to.
      */
     public function readerDeployed(?Organization $organization = null, ?string $kind = null): bool
     {
+        if ($kind === self::VOICE) {
+            return $this->voiceDeployed();
+        }
+
         $allowed = function (string $key) use ($organization): bool {
             $feature = config("modules.document_reading.kinds.{$key}.feature");
 
@@ -100,7 +110,17 @@ class AiSpend
             return in_array($kind, $kinds, true) && $allowed($kind);
         }
 
-        return array_filter($kinds, $allowed) !== [] || Route::has(AiOffer::VOICE_ROUTE);
+        return array_filter($kinds, $allowed) !== [] || $this->voiceDeployed();
+    }
+
+    /**
+     * Spoken reports are deployed: the field app's endpoint is there, and the platform admin has recorded that
+     * speech was shown to stay on the phone in each language offered. Until both, voice counts as no reader for
+     * any place, and neither the website nor the consent notice speaks of it.
+     */
+    public function voiceDeployed(): bool
+    {
+        return Route::has(AiOffer::VOICE_ROUTE) && $this->settings->get(AiOffer::VOICE_ACCEPTED) === '1';
     }
 
     /**

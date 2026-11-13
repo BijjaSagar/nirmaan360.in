@@ -2,6 +2,7 @@
 
 namespace App\Services\Seo;
 
+use App\Services\Website\AiOffer;
 use App\Support\PlatformSettings;
 
 /**
@@ -65,6 +66,13 @@ final class SeoText
         ],
     ];
 
+    /** Built-in wording once the AI agents can run (AiOffer::agentsLive): the contact page no longer offers early access. */
+    private const AGENTS_LIVE = [
+        'contact' => [
+            'description' => 'Talk to the :brand team about a larger rollout, the AI agents or a question about the product. Leave your details and we will get back to you.',
+        ],
+    ];
+
     public function __construct(private PlatformSettings $settings) {}
 
     /** The name a value is saved under in the platform settings. */
@@ -103,7 +111,9 @@ final class SeoText
     /** The wording used when the admin has saved nothing for this language. */
     public function builtIn(string $page, string $locale, string $field): string
     {
-        return __(self::DEFAULTS[$page][$field], $this->replacements(), $locale);
+        $live = isset(self::AGENTS_LIVE[$page][$field]) && app(AiOffer::class)->agentsLive() ? self::AGENTS_LIVE[$page][$field] : null;
+
+        return __($live ?? self::DEFAULTS[$page][$field], $this->replacements(), $locale);
     }
 
     private function text(string $page, string $locale, string $field): string
