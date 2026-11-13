@@ -50,26 +50,3 @@ class ServerFailure extends ApiFailure {
   /// The whole reply, for a caller that needs more than the [code].
   final Map<String, dynamic>? data;
 }
-
-/// HTTP 403 with code `offline_plan`: this company keeps its data on the phone.
-///
-/// Not a [ServerFailure], on purpose. The sync engine moves a row to attention
-/// on an ordinary 403, and this one says nothing about the row.
-class OfflinePlanRefused extends ApiFailure {
-  const OfflinePlanRefused(super.message, {this.upgradeUrl});
-
-  final String? upgradeUrl;
-}
-
-/// Raised on the phone, never by the server: the offline licence has ended, so
-/// nothing new may be added or changed until it is renewed. Reading, the export
-/// and everything already on the phone are untouched.
-///
-/// An [ApiFailure] on purpose, so every form that already knows how to say
-/// "could not save" also stops cleanly. The app then opens the renewal page.
-class LicenceEnded extends ApiFailure {
-  const LicenceEnded({this.endedAt}) : super('The licence has ended. Connect to the internet to renew it.');
-
-  /// When the signed token ran out, if the phone knows.
-  final DateTime? endedAt;
-}

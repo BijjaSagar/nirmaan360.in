@@ -8,7 +8,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/wallet_form_cubit.dart';
 import 'widgets/petty_widgets.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// Creates a petty cash wallet: name and holder, then an optional opening
 /// amount on the keypad. The wallet itself needs network.
@@ -58,7 +57,7 @@ class _WalletFormViewState extends State<_WalletFormView> {
       context,
       moneyLost
           ? l.pettyCashWalletMoneyFailed
-          : opening == null || context.read<AppServices>().offlinePlan.isLocalOnly
+          : opening == null
           ? l.pettyCashWalletCreated
           : state.savedWhileOffline
           ? l.pettyCashWalletCreatedOffline(opening.inr())
@@ -107,7 +106,6 @@ class _WalletFormViewState extends State<_WalletFormView> {
                         subtitle: l.pettyCashWalletFormEyebrow,
                         onBack: state.step == 0 ? null : cubit.backToDetails,
                       ),
-                      const LicenceNotice(),
                       if (!state.online)
                         Padding(
                           padding: const EdgeInsets.only(bottom: N360Space.xs),

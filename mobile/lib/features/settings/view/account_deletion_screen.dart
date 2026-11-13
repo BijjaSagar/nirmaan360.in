@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_format.dart';
 import '../../../app/routes.dart';
 import '../../../app/widgets/back_header.dart';
 import '../../../app/widgets/show_password.dart';
@@ -9,7 +10,6 @@ import '../../../core/api/nirmaan_api.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../offline_plan/view/widgets/licence_card.dart' show licenceDate;
 import '../bloc/account_deletion_cubit.dart';
 
 /// Deleting this person's account, as the server says it would go: a member
@@ -161,7 +161,7 @@ class _DeletionViewState extends State<_DeletionView> {
     final bool company = preview.mode == AccountDeletionMode.company;
     final String name = preview.companyName;
     final DateTime? eraseAfter = preview.eraseAfter;
-    final String date = eraseAfter == null ? '' : licenceDate(eraseAfter, locale);
+    final String date = eraseAfter == null ? '' : AppFormat.indiaDate(eraseAfter, locale);
     final List<String> lines = company
         ? <String>[
             t.accountDeleteCompanyErases(name),
@@ -199,7 +199,7 @@ class _DeletionViewState extends State<_DeletionView> {
       ],
       if (state.unsent > 0) ...<Widget>[
         const SizedBox(height: N360Space.lg),
-        _UnsentWarning(count: state.unsent, localOnly: state.localOnly),
+        _UnsentWarning(count: state.unsent),
       ],
       const SizedBox(height: N360Space.lg),
       if (company) ...<Widget>[
@@ -256,7 +256,7 @@ class _PendingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final PendingDeletion pending = preview.pending!;
-    final String body = t.accountDeletePendingBody(preview.companyName, licenceDate(pending.eraseAfter, locale));
+    final String body = t.accountDeletePendingBody(preview.companyName, AppFormat.indiaDate(pending.eraseAfter, locale));
     return LedgerCard(
       key: const ValueKey<String>('account-delete-pending'),
       child: Column(
@@ -295,15 +295,14 @@ class _PendingCard extends StatelessWidget {
 
 /// What would be lost with this phone's data, in red, with the way to send it first.
 class _UnsentWarning extends StatelessWidget {
-  const _UnsentWarning({required this.count, required this.localOnly});
+  const _UnsentWarning({required this.count});
 
   final int count;
-  final bool localOnly;
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final String text = localOnly ? t.accountDeleteLocalOnly(count) : t.accountDeleteUnsent(count);
+    final String text = t.accountDeleteUnsent(count);
     return Column(
       key: const ValueKey<String>('account-delete-unsent'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -323,16 +322,14 @@ class _UnsentWarning extends StatelessWidget {
             ),
           ],
         ),
-        if (!localOnly) ...<Widget>[
-          const SizedBox(height: N360Space.sm),
-          GloveButton(
-            label: t.shellSignOutSendFirst,
-            kind: GloveButtonKind.secondary,
-            icon: Icons.outbox,
-            fullWidth: true,
-            onPressed: () => context.go(Routes.outbox),
-          ),
-        ],
+        const SizedBox(height: N360Space.sm),
+        GloveButton(
+          label: t.shellSignOutSendFirst,
+          kind: GloveButtonKind.secondary,
+          icon: Icons.outbox,
+          fullWidth: true,
+          onPressed: () => context.go(Routes.outbox),
+        ),
       ],
     );
   }

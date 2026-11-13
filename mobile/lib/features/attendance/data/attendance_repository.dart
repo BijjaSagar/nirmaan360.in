@@ -6,7 +6,6 @@ import 'package:drift/drift.dart';
 import '../../../core/api/api_failure.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
-import '../../../core/offline/offline_plan.dart' show LocalRecordKind;
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/ids.dart';
 import 'worker_card.dart';
@@ -84,12 +83,11 @@ class AttendanceRepository {
   AppDatabase get _db => _ctx.db;
 
   /// Marking by card or by selfie needs `attendance.manage` on a plan with `labour`.
-  /// A phone that keeps its data local, and a contractor login, never have it.
+  /// A contractor login never has it.
   bool get canCapture {
     final user = _ctx.session.user;
     return user != null &&
         !user.isContractor &&
-        !_ctx.offlinePlan.isLocalOnly &&
         user.can('attendance.manage') &&
         user.features.contains('labour');
   }
@@ -164,7 +162,6 @@ class AttendanceRepository {
     required String status,
     Hours? otHours,
   }) {
-    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'attendance_date');
     if (otHours != null && otHours > Hours.fromInt(16)) {
       throw const ValidationFailure(
@@ -190,7 +187,6 @@ class AttendanceRepository {
   /// Marks already on the day are kept, so a tap here never turns someone
   /// recorded absent into present. Returns how many workers were marked.
   Future<int> markAllPresent(int projectId, String date) {
-    _ctx.assertCanWrite();
     _ctx.assertNotFuture(date, 'attendance_date');
     return _db.transaction(() async {
       final workers = await (_db.select(_db.workers)
@@ -297,10 +293,6 @@ class AttendanceRepository {
     String type = 'own',
     Money? dailyWage,
   }) async {
-    _ctx.assertCanWrite();
-    if (_ctx.offlinePlan.isLocalOnly) {
-      return _addLocalWorker(name: name, trade: trade, phone: phone, type: type, dailyWage: dailyWage);
-    }
     if (!_ctx.connectivity.isOnline) throw const OfflineFailure();
 
     final actionKey = 'idempotency.worker.${base64Url.encode(utf8.encode('$name|$trade|$phone|$type'))}';
@@ -333,34 +325,6 @@ class AttendanceRepository {
     return (_db.select(_db.workers)
           ..where((t) => t.id.equals(companion.id.value)))
         .getSingle();
-  }
-
-  Future<WorkerRow> _addLocalWorker({
-    required String name,
-    required String trade,
-    String? phone,
-    required String type,
-    Money? dailyWage,
-  }) {
-    _ctx.assertWithin(<(String, String?, int)>[('name', name, 120), ('trade', trade, 60), ('phone', phone, 20)]);
-    return _ctx.createLocal(
-      kind: LocalRecordKind.worker,
-      table: 'workers',
-      extras: <String, Object?>{'daily_wage': dailyWage?.toWire()},
-      insert: (id) async {
-        await _db.into(_db.workers).insert(
-          WorkersCompanion.insert(
-            id: Value(id),
-            name: name,
-            phone: Value(phone),
-            trade: trade,
-            type: Value(type),
-            updatedAt: Value(_ctx.clock.now()),
-          ),
-        );
-        return (_db.select(_db.workers)..where((t) => t.id.equals(id))).getSingle();
-      },
-    );
   }
 
   // Cards ------------------------------------------------------------------------
@@ -405,7 +369,6 @@ class AttendanceRepository {
   /// The server dates a scan by the day it receives it. So a kept scan is only
   /// sent on the day it was made: see `SyncEngine._checkScanIsToday`.
   Future<ScanOutcome> scan(int projectId, String code) async {
-    _ctx.assertCanWrite();
     final String trimmed = code.trim();
     final int? workerId = WorkerCard.workerIdOf(trimmed);
     if (workerId == null || trimmed.length > WorkerCard.longest) return const ScanOutcome(ScanResult.notACard);

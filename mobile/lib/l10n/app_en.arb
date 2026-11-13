@@ -33,14 +33,6 @@
   "accountDeleteHandOver": "To keep the company going without you, make another member an owner on the website (Team) first, then delete your account here.",
   "accountDeleteHold": "Hold to delete my account",
   "accountDeleteLoading": "Checking what will happen",
-  "accountDeleteLocalOnly": "{count, plural, =1{1 record exists only on this phone. It will be erased.} other{{count} records exist only on this phone. They will be erased.}}",
-  "@accountDeleteLocalOnly": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "accountDeleteMemberNow": "Your sign-in, name, email and mobile number are removed now. You cannot undo this.",
   "accountDeleteMemberWork": "Work you recorded for {company} — reports, measurements, bills, attendance and photos — stays with the company, shown as “Deleted user”.",
   "@accountDeleteMemberWork": {
@@ -970,30 +962,6 @@
   "issuesSyncSending": "Sending",
   "issuesTitle": "Issues",
   "issuesUnassigned": "Not assigned",
-  "licenceContinue": "Continue",
-  "licenceEndedOn": "Ended on {date}",
-  "@licenceEndedOn": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "licenceEndedUploadBody": "Your company's plan now keeps data on the server, so this licence cannot be renewed. Nothing is lost. Make a copy if you like, then upload your data to the server to carry on.",
-  "licenceNoneBody": "Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until this phone has a licence. Connect to the internet and try now.",
-  "licenceNoneTitle": "This phone has no licence yet",
-  "licenceRenewedBody": "You can add and change things again.",
-  "licenceRenewedTitle": "Licence renewed",
-  "licenceResultNoAnswer": "The server did not answer. Try again in a minute.",
-  "licenceResultNoLicence": "Connected, but this phone could not be given a licence. Your company's owner can check the plan.",
-  "licenceResultOffline": "No internet found. Connect to Wi-Fi or mobile data, then try again.",
-  "licenceResultPlanSyncs": "Your plan keeps data on the server now, so there is no licence to renew. Upload your data to carry on.",
-  "licenceResultStillEnded": "Connected, but the licence is still ended. Your company's owner can check the plan.",
-  "licenceScreenTitle": "Renew licence",
-  "licenceTryNow": "Try renewing now",
-  "licenceTrying": "Asking the server…",
-  "licenceUploadNow": "Upload to the server",
-  "licenceViewData": "Look at my data",
   "machineCategoryBackhoe": "JCB / Backhoe loader",
   "machineCategoryCompressor": "Compressor",
   "machineCategoryCrane": "Crane",
@@ -1298,145 +1266,6 @@
     }
   },
   "measurementYesterday": "Yesterday",
-  "offlineActivateAgain": "Activate this phone",
-  "offlineCopyLink": "Copy link",
-  "offlineDeviceLimitBody": "Your plan allows a set number of phones and they are all in use. Free one on the website, then try again.",
-  "offlineDeviceLimitTitle": "Another phone holds your licence",
-  "offlineExportButton": "Export my data",
-  "offlineExportDone": "Copy made with {count} photos. Keep the file somewhere safe.",
-  "@offlineExportDone": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "offlineExportFailed": "The copy could not be made. Your data here is safe. Try again.",
-  "offlineExportHeading": "Keep a copy",
-  "offlineExportHint": "Makes one file with all your data and photos. Save it to Drive, email it, or send it to another phone.",
-  "offlineExportMissing": "{count} photos could not be found on this phone.",
-  "@offlineExportMissing": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "offlineFreeBody": "Your data does not move by itself. Export a copy first. This phone keeps its data and works until its licence ends.",
-  "offlineFreeConfirm": "Free it",
-  "offlineFreeFailed": "That did not work. Check your internet and try again.",
-  "offlineFreeThisPhone": "Move to a new phone",
-  "offlineFreeTitle": "Free this phone's licence?",
-  "offlineHereBoq": "BOQ lines",
-  "offlineHereEntries": "Entries and photos",
-  "offlineHereProjects": "Projects made here",
-  "offlineHereWallets": "Wallets",
-  "offlineHereWorkers": "Workers",
-  "offlineHomeEnded": "Your licence has ended. See how to renew.",
-  "offlineHomeHint": "Your data is only here. Keep a copy.",
-  "offlineInvalidTitle": "The licence could not be checked",
-  "offlineLicenceActive": "Good until {date}",
-  "@offlineLicenceActive": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "offlineLicenceEndedBody": "Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until the licence renews. Connect to the internet to renew it.",
-  "offlineLicenceEndedTitle": "Your licence has ended",
-  "offlineLicenceEndingBody": "Ends on {date}. Connect to the internet once and it renews by itself.",
-  "@offlineLicenceEndingBody": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "offlineLicenceHeading": "Licence",
-  "offlineLicenceNone": "Not ready yet. Connect to the internet once.",
-  "offlineLinkCopied": "Link copied",
-  "offlineManageLink": "Free a phone here",
-  "offlineNeedsInternet": "This needs the internet. Your data here is not affected.",
-  "offlineNeedsSignInBody": "Nothing is lost. Your work continues here. The licence can only renew after you sign in.",
-  "offlineNeedsSignInTitle": "Sign in again to renew",
-  "offlineNoticeEnded": "Your licence ended on {date}. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.",
-  "@offlineNoticeEnded": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "offlineNoticeEndedNoDate": "Your licence has ended. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.",
-  "offlineNoticeEnding": "Your licence ends on {date}. Connect to the internet once before then and it renews by itself.",
-  "@offlineNoticeEnding": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "offlineNoticeNoLicence": "This phone has no licence yet. You can look at everything, but nothing can be added or changed. Connect to the internet to get one.",
-  "offlineNoticeUpload": "Your licence has ended, and your plan now keeps data on the server. You can look at everything, but nothing can be added or changed. Upload your data to carry on.",
-  "offlineOnPhoneTag": "On this phone",
-  "offlineOnPhoneTitle": "Only on this phone",
-  "offlineOnlyHereBody": "Nothing is kept on our server. If this phone is lost or reset, the data is gone. Export a copy and keep it safe.",
-  "offlineOnlyHereTitle": "Your data is only on this phone",
-  "offlinePlanTitle": "Offline plan",
-  "offlineReviewTitle": "Check and save",
-  "offlineRevokedBody": "Your data is safe here and the app keeps working until the licence ends. To use this phone again, free a slot on the website, then activate it.",
-  "offlineRevokedTitle": "This phone was freed",
-  "offlineSaveReport": "Save report",
-  "offlineSavedOnPhone": "Saved on this phone",
-  "offlineShareSubject": "Nirmaan360 data backup",
-  "offlineSignInButton": "Sign in",
-  "offlineSignOutBody": "Your data stays on this phone. You will need internet to sign in again.",
-  "offlineSignOutTitle": "Sign out?",
-  "offlineUploadAskBody": "Your company's plan has changed, so the server can keep your data now. Nothing goes up unless you say yes.",
-  "offlineUploadAskTitle": "Upload your data to the server?",
-  "offlineUploadBusy": "The server is busy. Try again in a minute.",
-  "offlineUploadContinue": "Continue upload",
-  "offlineUploadDone": "Your data is moving to the server. Anything that needs a look will show in Outbox.",
-  "offlineUploadInterruptedBody": "Nothing is lost and nothing will go twice. Continue when you are ready, or keep working on this phone for now.",
-  "offlineUploadInterruptedTitle": "The upload stopped part way",
-  "offlineUploadLaterHint": "Your plan can keep data on the server now, if you want it there.",
-  "offlineUploadLaterTile": "Upload to the server",
-  "offlineUploadNo": "No, keep it on this phone",
-  "offlineUploadNoNetwork": "No internet right now. Continue when you have a connection.",
-  "offlineUploadPlanLimit": "Your plan does not allow this yet: {reason}",
-  "@offlineUploadPlanLimit": {
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "offlineUploadProgress": "{done} of {total} moved",
-  "@offlineUploadProgress": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "offlineUploadRefused": "The server did not accept this: {reason}",
-  "@offlineUploadRefused": {
-    "placeholders": {
-      "reason": {
-        "type": "String"
-      }
-    }
-  },
-  "offlineUploadRunningBody": "Keep the app open. If it stops, nothing is lost and nothing goes twice.",
-  "offlineUploadRunningTitle": "Uploading your data",
-  "offlineUploadSignIn": "Please sign in again, then continue. Nothing is lost.",
-  "offlineUploadStillOffline": "Your company is on the offline plan again, so nothing went up.",
-  "offlineUploadTitle": "Your data",
-  "offlineUploadYes": "Yes, upload my data",
   "pettyCashAddExpense": "Add expense",
   "pettyCashAddMoney": "Add money",
   "pettyCashAmount": "Amount",
@@ -2288,10 +2117,12 @@
   "shellCaptionToAnswer": "to answer",
   "shellCaptionToday": "today",
   "shellCaptionWorkDone": "work done",
+  "shellCopyLink": "Copy link",
   "shellDiscardBody": "It has not reached the server. It will be removed from this phone.",
   "shellDiscardConfirm": "Yes, throw away",
   "shellDiscardKeep": "Keep it",
   "shellDiscardTitle": "Throw away this entry?",
+  "shellLinkCopied": "Link copied",
   "shellLinkFailedBody": "Copy the link and open it in your browser.",
   "shellLinkFailedTitle": "The page did not open",
   "shellOfflineApprovals": "Approvals need network.",
@@ -2460,6 +2291,8 @@
   },
   "shellSignUpBusy": "Creating your account…",
   "shellSignUpButton": "Create account",
+  "shellSignUpClosedBody": "Try again later.",
+  "shellSignUpClosedTitle": "New companies can't be started from the app right now",
   "shellSignUpCompany": "Company name",
   "shellSignUpCompanyMissing": "Enter the company name",
   "shellSignUpConfirm": "Confirm password",

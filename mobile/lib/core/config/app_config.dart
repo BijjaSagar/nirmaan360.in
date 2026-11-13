@@ -13,9 +13,8 @@ abstract final class AppConfig {
     return cut < 0 ? base : base.substring(0, cut);
   }
 
-  /// Folders in the temporary directory that hold company data. Signing out
-  /// and deleting the account clear them.
-  static const String offlineExportFolder = 'offline_exports';
+  /// The folder in the temporary directory that holds company data: quotation
+  /// files handed to another app. Signing out and deleting the account clear it.
   static const String quotationFolder = 'quotations';
 
   /// Name of the sqlite file in the app documents directory.

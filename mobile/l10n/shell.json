@@ -764,6 +764,16 @@
     "mr": "त्याऐवजी त्याने साइन इन करा, किंवा दुसरा ईमेल वापरा.",
     "hi": "इसके बजाय उससे साइन इन करें, या कोई दूसरा ईमेल इस्तेमाल करें।"
   },
+  "shellSignUpClosedTitle": {
+    "en": "New companies can't be started from the app right now",
+    "mr": "सध्या ॲपमधून नवीन कंपनी सुरू करता येत नाही",
+    "hi": "अभी ऐप से नई कंपनी शुरू नहीं की जा सकती"
+  },
+  "shellSignUpClosedBody": {
+    "en": "Try again later.",
+    "mr": "नंतर पुन्हा प्रयत्न करा.",
+    "hi": "बाद में फिर कोशिश करें।"
+  },
   "shellLinkFailedTitle": {
     "en": "The page did not open",
     "mr": "पान उघडले नाही",
@@ -773,6 +783,16 @@
     "en": "Copy the link and open it in your browser.",
     "mr": "लिंक कॉपी करा आणि ब्राउझरमध्ये उघडा.",
     "hi": "लिंक कॉपी करें और ब्राउज़र में खोलें।"
+  },
+  "shellCopyLink": {
+    "en": "Copy link",
+    "mr": "लिंक कॉपी करा",
+    "hi": "लिंक कॉपी करें"
+  },
+  "shellLinkCopied": {
+    "en": "Link copied",
+    "mr": "लिंक कॉपी झाली",
+    "hi": "लिंक कॉपी हो गई"
   },
   "shellProjectPlanBody": {
     "en": "This company has reached the number of projects its plan allows.",

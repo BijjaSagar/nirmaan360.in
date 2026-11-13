@@ -55,17 +55,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDeleteLoading => 'Checking what will happen';
 
   @override
-  String accountDeleteLocalOnly(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count records exist only on this phone. They will be erased.',
-      one: '1 record exists only on this phone. It will be erased.',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get accountDeleteMemberNow =>
       'Your sign-in, name, email and mobile number are removed now. You cannot undo this.';
 
@@ -2046,66 +2035,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get issuesUnassigned => 'Not assigned';
 
   @override
-  String get licenceContinue => 'Continue';
-
-  @override
-  String licenceEndedOn(String date) {
-    return 'Ended on $date';
-  }
-
-  @override
-  String get licenceEndedUploadBody =>
-      'Your company\'s plan now keeps data on the server, so this licence cannot be renewed. Nothing is lost. Make a copy if you like, then upload your data to the server to carry on.';
-
-  @override
-  String get licenceNoneBody =>
-      'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until this phone has a licence. Connect to the internet and try now.';
-
-  @override
-  String get licenceNoneTitle => 'This phone has no licence yet';
-
-  @override
-  String get licenceRenewedBody => 'You can add and change things again.';
-
-  @override
-  String get licenceRenewedTitle => 'Licence renewed';
-
-  @override
-  String get licenceResultNoAnswer =>
-      'The server did not answer. Try again in a minute.';
-
-  @override
-  String get licenceResultNoLicence =>
-      'Connected, but this phone could not be given a licence. Your company\'s owner can check the plan.';
-
-  @override
-  String get licenceResultOffline =>
-      'No internet found. Connect to Wi-Fi or mobile data, then try again.';
-
-  @override
-  String get licenceResultPlanSyncs =>
-      'Your plan keeps data on the server now, so there is no licence to renew. Upload your data to carry on.';
-
-  @override
-  String get licenceResultStillEnded =>
-      'Connected, but the licence is still ended. Your company\'s owner can check the plan.';
-
-  @override
-  String get licenceScreenTitle => 'Renew licence';
-
-  @override
-  String get licenceTryNow => 'Try renewing now';
-
-  @override
-  String get licenceTrying => 'Asking the server…';
-
-  @override
-  String get licenceUploadNow => 'Upload to the server';
-
-  @override
-  String get licenceViewData => 'Look at my data';
-
-  @override
   String get machineCategoryBackhoe => 'JCB / Backhoe loader';
 
   @override
@@ -2811,266 +2740,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get measurementYesterday => 'Yesterday';
-
-  @override
-  String get offlineActivateAgain => 'Activate this phone';
-
-  @override
-  String get offlineCopyLink => 'Copy link';
-
-  @override
-  String get offlineDeviceLimitBody =>
-      'Your plan allows a set number of phones and they are all in use. Free one on the website, then try again.';
-
-  @override
-  String get offlineDeviceLimitTitle => 'Another phone holds your licence';
-
-  @override
-  String get offlineExportButton => 'Export my data';
-
-  @override
-  String offlineExportDone(int count) {
-    return 'Copy made with $count photos. Keep the file somewhere safe.';
-  }
-
-  @override
-  String get offlineExportFailed =>
-      'The copy could not be made. Your data here is safe. Try again.';
-
-  @override
-  String get offlineExportHeading => 'Keep a copy';
-
-  @override
-  String get offlineExportHint =>
-      'Makes one file with all your data and photos. Save it to Drive, email it, or send it to another phone.';
-
-  @override
-  String offlineExportMissing(int count) {
-    return '$count photos could not be found on this phone.';
-  }
-
-  @override
-  String get offlineFreeBody =>
-      'Your data does not move by itself. Export a copy first. This phone keeps its data and works until its licence ends.';
-
-  @override
-  String get offlineFreeConfirm => 'Free it';
-
-  @override
-  String get offlineFreeFailed =>
-      'That did not work. Check your internet and try again.';
-
-  @override
-  String get offlineFreeThisPhone => 'Move to a new phone';
-
-  @override
-  String get offlineFreeTitle => 'Free this phone\'s licence?';
-
-  @override
-  String get offlineHereBoq => 'BOQ lines';
-
-  @override
-  String get offlineHereEntries => 'Entries and photos';
-
-  @override
-  String get offlineHereProjects => 'Projects made here';
-
-  @override
-  String get offlineHereWallets => 'Wallets';
-
-  @override
-  String get offlineHereWorkers => 'Workers';
-
-  @override
-  String get offlineHomeEnded => 'Your licence has ended. See how to renew.';
-
-  @override
-  String get offlineHomeHint => 'Your data is only here. Keep a copy.';
-
-  @override
-  String get offlineInvalidTitle => 'The licence could not be checked';
-
-  @override
-  String offlineLicenceActive(String date) {
-    return 'Good until $date';
-  }
-
-  @override
-  String get offlineLicenceEndedBody =>
-      'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until the licence renews. Connect to the internet to renew it.';
-
-  @override
-  String get offlineLicenceEndedTitle => 'Your licence has ended';
-
-  @override
-  String offlineLicenceEndingBody(String date) {
-    return 'Ends on $date. Connect to the internet once and it renews by itself.';
-  }
-
-  @override
-  String get offlineLicenceHeading => 'Licence';
-
-  @override
-  String get offlineLicenceNone =>
-      'Not ready yet. Connect to the internet once.';
-
-  @override
-  String get offlineLinkCopied => 'Link copied';
-
-  @override
-  String get offlineManageLink => 'Free a phone here';
-
-  @override
-  String get offlineNeedsInternet =>
-      'This needs the internet. Your data here is not affected.';
-
-  @override
-  String get offlineNeedsSignInBody =>
-      'Nothing is lost. Your work continues here. The licence can only renew after you sign in.';
-
-  @override
-  String get offlineNeedsSignInTitle => 'Sign in again to renew';
-
-  @override
-  String offlineNoticeEnded(String date) {
-    return 'Your licence ended on $date. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.';
-  }
-
-  @override
-  String get offlineNoticeEndedNoDate =>
-      'Your licence has ended. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.';
-
-  @override
-  String offlineNoticeEnding(String date) {
-    return 'Your licence ends on $date. Connect to the internet once before then and it renews by itself.';
-  }
-
-  @override
-  String get offlineNoticeNoLicence =>
-      'This phone has no licence yet. You can look at everything, but nothing can be added or changed. Connect to the internet to get one.';
-
-  @override
-  String get offlineNoticeUpload =>
-      'Your licence has ended, and your plan now keeps data on the server. You can look at everything, but nothing can be added or changed. Upload your data to carry on.';
-
-  @override
-  String get offlineOnPhoneTag => 'On this phone';
-
-  @override
-  String get offlineOnPhoneTitle => 'Only on this phone';
-
-  @override
-  String get offlineOnlyHereBody =>
-      'Nothing is kept on our server. If this phone is lost or reset, the data is gone. Export a copy and keep it safe.';
-
-  @override
-  String get offlineOnlyHereTitle => 'Your data is only on this phone';
-
-  @override
-  String get offlinePlanTitle => 'Offline plan';
-
-  @override
-  String get offlineReviewTitle => 'Check and save';
-
-  @override
-  String get offlineRevokedBody =>
-      'Your data is safe here and the app keeps working until the licence ends. To use this phone again, free a slot on the website, then activate it.';
-
-  @override
-  String get offlineRevokedTitle => 'This phone was freed';
-
-  @override
-  String get offlineSaveReport => 'Save report';
-
-  @override
-  String get offlineSavedOnPhone => 'Saved on this phone';
-
-  @override
-  String get offlineShareSubject => 'Nirmaan360 data backup';
-
-  @override
-  String get offlineSignInButton => 'Sign in';
-
-  @override
-  String get offlineSignOutBody =>
-      'Your data stays on this phone. You will need internet to sign in again.';
-
-  @override
-  String get offlineSignOutTitle => 'Sign out?';
-
-  @override
-  String get offlineUploadAskBody =>
-      'Your company\'s plan has changed, so the server can keep your data now. Nothing goes up unless you say yes.';
-
-  @override
-  String get offlineUploadAskTitle => 'Upload your data to the server?';
-
-  @override
-  String get offlineUploadBusy => 'The server is busy. Try again in a minute.';
-
-  @override
-  String get offlineUploadContinue => 'Continue upload';
-
-  @override
-  String get offlineUploadDone =>
-      'Your data is moving to the server. Anything that needs a look will show in Outbox.';
-
-  @override
-  String get offlineUploadInterruptedBody =>
-      'Nothing is lost and nothing will go twice. Continue when you are ready, or keep working on this phone for now.';
-
-  @override
-  String get offlineUploadInterruptedTitle => 'The upload stopped part way';
-
-  @override
-  String get offlineUploadLaterHint =>
-      'Your plan can keep data on the server now, if you want it there.';
-
-  @override
-  String get offlineUploadLaterTile => 'Upload to the server';
-
-  @override
-  String get offlineUploadNo => 'No, keep it on this phone';
-
-  @override
-  String get offlineUploadNoNetwork =>
-      'No internet right now. Continue when you have a connection.';
-
-  @override
-  String offlineUploadPlanLimit(String reason) {
-    return 'Your plan does not allow this yet: $reason';
-  }
-
-  @override
-  String offlineUploadProgress(int done, int total) {
-    return '$done of $total moved';
-  }
-
-  @override
-  String offlineUploadRefused(String reason) {
-    return 'The server did not accept this: $reason';
-  }
-
-  @override
-  String get offlineUploadRunningBody =>
-      'Keep the app open. If it stops, nothing is lost and nothing goes twice.';
-
-  @override
-  String get offlineUploadRunningTitle => 'Uploading your data';
-
-  @override
-  String get offlineUploadSignIn =>
-      'Please sign in again, then continue. Nothing is lost.';
-
-  @override
-  String get offlineUploadStillOffline =>
-      'Your company is on the offline plan again, so nothing went up.';
-
-  @override
-  String get offlineUploadTitle => 'Your data';
-
-  @override
-  String get offlineUploadYes => 'Yes, upload my data';
 
   @override
   String get pettyCashAddExpense => 'Add expense';
@@ -4493,6 +4162,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shellCaptionWorkDone => 'work done';
 
   @override
+  String get shellCopyLink => 'Copy link';
+
+  @override
   String get shellDiscardBody =>
       'It has not reached the server. It will be removed from this phone.';
 
@@ -4504,6 +4176,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellDiscardTitle => 'Throw away this entry?';
+
+  @override
+  String get shellLinkCopied => 'Link copied';
 
   @override
   String get shellLinkFailedBody =>
@@ -4853,6 +4528,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shellSignUpButton => 'Create account';
+
+  @override
+  String get shellSignUpClosedBody => 'Try again later.';
+
+  @override
+  String get shellSignUpClosedTitle =>
+      'New companies can\'t be started from the app right now';
 
   @override
   String get shellSignUpCompany => 'Company name';

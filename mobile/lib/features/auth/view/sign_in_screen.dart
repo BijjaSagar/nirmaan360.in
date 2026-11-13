@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_format.dart';
 import '../../../app/app_gate.dart';
 import '../../../app/routes.dart';
 import '../../../app/widgets/brand_mark.dart';
@@ -13,7 +14,6 @@ import '../../../core/api/account_models.dart';
 import '../../../core/app_services.dart';
 import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../offline_plan/view/widgets/licence_card.dart' show licenceDate;
 import '../bloc/sign_in_cubit.dart';
 
 /// The first screen anyone sees. Language first, in each language's own
@@ -129,7 +129,7 @@ class _SignInViewState extends State<_SignInView> {
     final String? deletedText = switch (_deleted) {
       null => null,
       AccountDeletionResult(scheduled: true, :final DateTime eraseAfter?) =>
-        t.accountDeletedCompanyToast(licenceDate(eraseAfter, locale)),
+        t.accountDeletedCompanyToast(AppFormat.indiaDate(eraseAfter, locale)),
       _ => t.accountDeletedToast,
     };
     final double room = usable - _fixedHeight - (expired ? 110 : 0) - (deletedText != null ? 110 : 0);

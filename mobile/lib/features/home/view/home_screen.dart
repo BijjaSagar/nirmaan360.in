@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../contractor_control/data/contractor_models.dart';
 import '../../projects/view/widgets/project_photo.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 import '../../site_alerts/data/site_alerts_models.dart';
 import '../../site_alerts/view/site_dashboard_screen.dart' show AlertSeverityWords, alertStampKind;
 import '../../site_progress/data/progress_models.dart' show percentText;
@@ -16,7 +15,6 @@ import '../../../app/widgets/press_row.dart';
 import '../../../core/app_services.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/design/design.dart';
-import '../../../core/offline/offline_plan.dart';
 import '../../../core/session/current_user.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../projects/data/project_repository.dart';
@@ -75,9 +73,7 @@ class _HomeView extends StatelessWidget {
           final bool seesSite = context.select((AppGate gate) => gate.state.hasSite);
           // Two lines above the figures rather than a ninth and tenth tile:
           // a sentence fits here, and the grid is already full.
-          final OfflinePlanState? offline = context.select((AppGate gate) => gate.state.offline);
           final List<Widget> siteRows = <Widget>[
-            if (offline != null) const _OnThisPhoneRow(),
             if (seesSite && !(state.site?.refused ?? false)) _SiteAlertsRow(site: state.site, alerts: seesAlerts),
             if (siteControl && (user?.can('contractor.view') ?? false) && !(state.contractors?.refused ?? false))
               _ContractorsRow(overview: state.contractors),
@@ -97,8 +93,6 @@ class _HomeView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        // The last week of an offline licence, or its end. Nothing for any other plan.
-                        const LicenceNotice(padding: EdgeInsets.only(bottom: N360Space.cardGap)),
                         if (state.returned.isNotEmpty) ...<Widget>[
                           LedgerList(
                             children: <Widget>[for (final item in state.returned) _ReturnedRow(item: item)],
@@ -146,18 +140,9 @@ class _HomeView extends StatelessWidget {
 
   void _openReport(BuildContext context, HomeSummary? data, bool canWrite) {
     final String? uuid = data?.dprClientUuid;
-    final bool localOnly = context.read<AppGate>().state.isLocalOnly;
-    // Once the licence has ended the form is closed, so a report opens to be read.
-    if (context.read<AppGate>().state.licenceEnded) {
-      context.push(uuid != null ? Routes.dprDetail(uuid) : Routes.dprList);
-      return;
-    }
     switch (data?.dprState) {
       case DprDayState.notStarted when canWrite:
         context.push(Routes.dprForm);
-      // With no approver a saved report stays open to its one author.
-      case DprDayState.saved when uuid != null && canWrite && localOnly:
-        context.push(Uri(path: Routes.dprForm, queryParameters: <String, String>{'uuid': uuid}).toString());
       case DprDayState.draft || DprDayState.returned when uuid != null && canWrite:
         context.push(Uri(path: Routes.dprForm, queryParameters: <String, String>{'uuid': uuid}).toString());
       case _ when uuid != null:
@@ -350,13 +335,6 @@ class _SyncTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    if (context.select((AppGate gate) => gate.state.isLocalOnly)) {
-      return SyncPill(
-        state: SyncVisualState.offline,
-        label: t.offlineOnPhoneTag,
-        onTap: () => context.push(Routes.offlinePlan),
-      );
-    }
     return BlocBuilder<SyncStatusCubit, SyncStatus>(
       builder: (context, status) {
         final (SyncVisualState state, int? count, String label) = switch (status) {
@@ -373,30 +351,6 @@ class _SyncTag extends StatelessWidget {
           onTap: () => context.go(Routes.outbox),
         );
       },
-    );
-  }
-}
-
-/// Says, every day, that this phone holds the only copy, and leads to the export.
-class _OnThisPhoneRow extends StatelessWidget {
-  const _OnThisPhoneRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    // Once the owner has chosen to stay local on an online plan, there is no
-    // licence left to renew and no reason to go on about one.
-    final bool ended = context.select((AppGate gate) => gate.state.licenceEnded);
-    return LedgerListTile(
-      key: const ValueKey<String>('home-on-this-phone'),
-      leading: Icon(
-        ended ? Icons.error_outline : Icons.phone_android,
-        size: N360IconSize.lg,
-        color: ended ? N360Colors.stampRed : N360Colors.ink2,
-      ),
-      title: t.offlineOnPhoneTitle,
-      subtitle: ended ? t.offlineHomeEnded : t.offlineHomeHint,
-      onTap: () => context.push(Routes.offlinePlan),
     );
   }
 }

@@ -17,7 +17,6 @@ import 'widgets/manpower_rows.dart';
 import 'widgets/photo_strip.dart';
 import 'widgets/review_sheet.dart';
 import 'widgets/work_rows.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// The daily report: grouped cards, saved on every change.
 ///
@@ -222,13 +221,10 @@ class _DprFormBodyState extends State<_DprFormBody> {
     }
     if (result != DprSendResult.sent) return;
 
-    final bool localOnly = services.offlinePlan.isLocalOnly;
     // The stamp fires its own heavy haptic the moment it lands.
-    await showStampThud(context, StampKind.queued, localOnly ? l.shellReportSaved : l.statusQueued);
+    await showStampThud(context, StampKind.queued, l.statusQueued);
     if (!mounted) return;
-    final String honest = localOnly
-        ? l.offlineSavedOnPhone
-        : services.connectivity.isOnline
+    final String honest = services.connectivity.isOnline
         ? l.dprSavedSendingNow
         : l.dprSavedWillSend;
     showPaperToast(
@@ -279,7 +275,6 @@ class _DprFormBodyState extends State<_DprFormBody> {
                 title: l.dprFormTitle,
                 trailing: _SaveIndicator(status: state.save, tick: state.saveTick),
               ),
-              const LicenceNotice(),
               Expanded(
                 child: DprActionLayout(
                   body: ListView(
@@ -294,9 +289,7 @@ class _DprFormBodyState extends State<_DprFormBody> {
                   action: typing
                       ? null
                       : GloveButton(
-                          label: context.read<AppServices>().offlinePlan.isLocalOnly
-                              ? l.offlineSaveReport
-                              : (state.isReturned ? l.dprSendAgain : l.dprSendReport),
+                          label: state.isReturned ? l.dprSendAgain : l.dprSendReport,
                           icon: Icons.send,
                           large: true,
                           fullWidth: true,

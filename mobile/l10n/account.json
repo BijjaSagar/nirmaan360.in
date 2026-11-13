@@ -142,16 +142,6 @@
       }
     }
   },
-  "accountDeleteLocalOnly": {
-    "en": "{count, plural, =1{1 record exists only on this phone. It will be erased.} other{{count} records exist only on this phone. They will be erased.}}",
-    "mr": "{count, plural, =1{1 नोंद फक्त या फोनवर आहे. ती पुसली जाईल.} other{{count} नोंदी फक्त या फोनवर आहेत. त्या पुसल्या जातील.}}",
-    "hi": "{count, plural, =1{1 रिकॉर्ड सिर्फ़ इस फ़ोन पर है। वह मिटा दिया जाएगा।} other{{count} रिकॉर्ड सिर्फ़ इस फ़ोन पर हैं। वे मिटा दिए जाएँगे।}}",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "accountDeletePassword": {
     "en": "Your password",
     "mr": "तुमचा पासवर्ड",

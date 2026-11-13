@@ -10,7 +10,6 @@ import '../bloc/issue_detail_cubit.dart';
 import '../bloc/issue_helpers.dart';
 import '../data/issue_repository.dart';
 import 'widgets/issue_widgets.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 
 class IssueDetailScreen extends StatelessWidget {
   const IssueDetailScreen({super.key, required this.clientUuid});
@@ -44,9 +43,7 @@ class _IssueDetailView extends StatelessWidget {
     N360Haptics.success();
     showPaperToast(
       context,
-      context.read<AppServices>().offlinePlan.isLocalOnly
-          ? l.offlineSavedOnPhone
-          : (state.photoSavedWhileOffline ? l.issuesPhotoSavedOffline : l.issuesPhotoSavedOnline),
+      state.photoSavedWhileOffline ? l.issuesPhotoSavedOffline : l.issuesPhotoSavedOnline,
       kind: state.photoSavedWhileOffline ? PaperToastKind.info : PaperToastKind.success,
       icon: state.photoSavedWhileOffline ? Icons.phone_android : null,
       duration: const Duration(seconds: 3),
@@ -161,7 +158,6 @@ class _Body extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         FieldTopBar(title: l.issuesTitle),
-        const LicenceNotice(),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(

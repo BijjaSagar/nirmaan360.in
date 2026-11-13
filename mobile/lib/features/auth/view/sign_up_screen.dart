@@ -118,6 +118,7 @@ class _SignUpViewState extends State<_SignUpView> {
           message: t.shellSignInOtherUserBody(state.otherUserCount),
         ),
       SignUpProblem.serverDown => ErrorSlip(title: t.shellSignInServerTitle, message: t.shellSignInServerBody),
+      SignUpProblem.closed => ErrorSlip(title: t.shellSignUpClosedTitle, message: t.shellSignUpClosedBody),
     };
   }
 

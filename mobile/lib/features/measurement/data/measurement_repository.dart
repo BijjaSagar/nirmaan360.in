@@ -61,7 +61,6 @@ class MeasurementRepository {
   /// Throws [ValidationFailure] for values the server would refuse, so the
   /// engineer can fix them now instead of seeing them rejected a week later.
   Future<String> create(MeasurementInput input) async {
-    _ctx.assertCanWrite();
     _validate(input);
     final List<StagedPhoto> staged = await _stagePhotos(input);
     return _db.transaction(() async {
@@ -96,7 +95,6 @@ class MeasurementRepository {
 
   /// Edits a DRAFT or RETURNED entry and queues the change.
   Future<void> edit(String clientUuid, MeasurementInput input) async {
-    _ctx.assertCanWrite();
     _validate(input);
     final List<StagedPhoto> staged = await _stagePhotos(input);
     return _db.transaction(() async {
@@ -132,10 +130,8 @@ class MeasurementRepository {
 
   /// Queues photos for an entry already on the phone. Throws [RecordLocked]
   /// once the entry is with the approver, approved, or waiting to be sent.
-  Future<void> addPhotos(String clientUuid, List<String> paths) {
-    _ctx.assertCanWrite();
-    return _ctx.photos.add(PhotoOwner.measurement, clientUuid, paths, kind: MeasurementPhotoKind.photo);
-  }
+  Future<void> addPhotos(String clientUuid, List<String> paths) =>
+      _ctx.photos.add(PhotoOwner.measurement, clientUuid, paths, kind: MeasurementPhotoKind.photo);
 
   Future<Uint8List> photoBytes(ServerPhoto photo) => _ctx.photos.bytes(PhotoOwner.measurement, photo);
 
@@ -161,7 +157,6 @@ class MeasurementRepository {
 
   /// Queues the submission. A second call while one is waiting does nothing.
   Future<void> sendForApproval(String clientUuid) {
-    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final entry = await _require(clientUuid);
       if (await _hasUnsentSubmit(clientUuid)) return;

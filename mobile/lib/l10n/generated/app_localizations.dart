@@ -172,12 +172,6 @@ abstract class AppLocalizations {
   /// **'Checking what will happen'**
   String get accountDeleteLoading;
 
-  /// No description provided for @accountDeleteLocalOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 record exists only on this phone. It will be erased.} other{{count} records exist only on this phone. They will be erased.}}'**
-  String accountDeleteLocalOnly(int count);
-
   /// No description provided for @accountDeleteMemberNow.
   ///
   /// In en, this message translates to:
@@ -3634,108 +3628,6 @@ abstract class AppLocalizations {
   /// **'Not assigned'**
   String get issuesUnassigned;
 
-  /// No description provided for @licenceContinue.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue'**
-  String get licenceContinue;
-
-  /// No description provided for @licenceEndedOn.
-  ///
-  /// In en, this message translates to:
-  /// **'Ended on {date}'**
-  String licenceEndedOn(String date);
-
-  /// No description provided for @licenceEndedUploadBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your company\'s plan now keeps data on the server, so this licence cannot be renewed. Nothing is lost. Make a copy if you like, then upload your data to the server to carry on.'**
-  String get licenceEndedUploadBody;
-
-  /// No description provided for @licenceNoneBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until this phone has a licence. Connect to the internet and try now.'**
-  String get licenceNoneBody;
-
-  /// No description provided for @licenceNoneTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This phone has no licence yet'**
-  String get licenceNoneTitle;
-
-  /// No description provided for @licenceRenewedBody.
-  ///
-  /// In en, this message translates to:
-  /// **'You can add and change things again.'**
-  String get licenceRenewedBody;
-
-  /// No description provided for @licenceRenewedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Licence renewed'**
-  String get licenceRenewedTitle;
-
-  /// No description provided for @licenceResultNoAnswer.
-  ///
-  /// In en, this message translates to:
-  /// **'The server did not answer. Try again in a minute.'**
-  String get licenceResultNoAnswer;
-
-  /// No description provided for @licenceResultNoLicence.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected, but this phone could not be given a licence. Your company\'s owner can check the plan.'**
-  String get licenceResultNoLicence;
-
-  /// No description provided for @licenceResultOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'No internet found. Connect to Wi-Fi or mobile data, then try again.'**
-  String get licenceResultOffline;
-
-  /// No description provided for @licenceResultPlanSyncs.
-  ///
-  /// In en, this message translates to:
-  /// **'Your plan keeps data on the server now, so there is no licence to renew. Upload your data to carry on.'**
-  String get licenceResultPlanSyncs;
-
-  /// No description provided for @licenceResultStillEnded.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected, but the licence is still ended. Your company\'s owner can check the plan.'**
-  String get licenceResultStillEnded;
-
-  /// No description provided for @licenceScreenTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Renew licence'**
-  String get licenceScreenTitle;
-
-  /// No description provided for @licenceTryNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Try renewing now'**
-  String get licenceTryNow;
-
-  /// No description provided for @licenceTrying.
-  ///
-  /// In en, this message translates to:
-  /// **'Asking the server…'**
-  String get licenceTrying;
-
-  /// No description provided for @licenceUploadNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload to the server'**
-  String get licenceUploadNow;
-
-  /// No description provided for @licenceViewData.
-  ///
-  /// In en, this message translates to:
-  /// **'Look at my data'**
-  String get licenceViewData;
-
   /// No description provided for @machineCategoryBackhoe.
   ///
   /// In en, this message translates to:
@@ -5013,444 +4905,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Yesterday'**
   String get measurementYesterday;
-
-  /// No description provided for @offlineActivateAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Activate this phone'**
-  String get offlineActivateAgain;
-
-  /// No description provided for @offlineCopyLink.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy link'**
-  String get offlineCopyLink;
-
-  /// No description provided for @offlineDeviceLimitBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your plan allows a set number of phones and they are all in use. Free one on the website, then try again.'**
-  String get offlineDeviceLimitBody;
-
-  /// No description provided for @offlineDeviceLimitTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Another phone holds your licence'**
-  String get offlineDeviceLimitTitle;
-
-  /// No description provided for @offlineExportButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Export my data'**
-  String get offlineExportButton;
-
-  /// No description provided for @offlineExportDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy made with {count} photos. Keep the file somewhere safe.'**
-  String offlineExportDone(int count);
-
-  /// No description provided for @offlineExportFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'The copy could not be made. Your data here is safe. Try again.'**
-  String get offlineExportFailed;
-
-  /// No description provided for @offlineExportHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep a copy'**
-  String get offlineExportHeading;
-
-  /// No description provided for @offlineExportHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Makes one file with all your data and photos. Save it to Drive, email it, or send it to another phone.'**
-  String get offlineExportHint;
-
-  /// No description provided for @offlineExportMissing.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} photos could not be found on this phone.'**
-  String offlineExportMissing(int count);
-
-  /// No description provided for @offlineFreeBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data does not move by itself. Export a copy first. This phone keeps its data and works until its licence ends.'**
-  String get offlineFreeBody;
-
-  /// No description provided for @offlineFreeConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Free it'**
-  String get offlineFreeConfirm;
-
-  /// No description provided for @offlineFreeFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'That did not work. Check your internet and try again.'**
-  String get offlineFreeFailed;
-
-  /// No description provided for @offlineFreeThisPhone.
-  ///
-  /// In en, this message translates to:
-  /// **'Move to a new phone'**
-  String get offlineFreeThisPhone;
-
-  /// No description provided for @offlineFreeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Free this phone\'s licence?'**
-  String get offlineFreeTitle;
-
-  /// No description provided for @offlineHereBoq.
-  ///
-  /// In en, this message translates to:
-  /// **'BOQ lines'**
-  String get offlineHereBoq;
-
-  /// No description provided for @offlineHereEntries.
-  ///
-  /// In en, this message translates to:
-  /// **'Entries and photos'**
-  String get offlineHereEntries;
-
-  /// No description provided for @offlineHereProjects.
-  ///
-  /// In en, this message translates to:
-  /// **'Projects made here'**
-  String get offlineHereProjects;
-
-  /// No description provided for @offlineHereWallets.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallets'**
-  String get offlineHereWallets;
-
-  /// No description provided for @offlineHereWorkers.
-  ///
-  /// In en, this message translates to:
-  /// **'Workers'**
-  String get offlineHereWorkers;
-
-  /// No description provided for @offlineHomeEnded.
-  ///
-  /// In en, this message translates to:
-  /// **'Your licence has ended. See how to renew.'**
-  String get offlineHomeEnded;
-
-  /// No description provided for @offlineHomeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data is only here. Keep a copy.'**
-  String get offlineHomeHint;
-
-  /// No description provided for @offlineInvalidTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The licence could not be checked'**
-  String get offlineInvalidTitle;
-
-  /// No description provided for @offlineLicenceActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Good until {date}'**
-  String offlineLicenceActive(String date);
-
-  /// No description provided for @offlineLicenceEndedBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing is lost. You can still look at everything here and make a copy of your data, but nothing can be added or changed until the licence renews. Connect to the internet to renew it.'**
-  String get offlineLicenceEndedBody;
-
-  /// No description provided for @offlineLicenceEndedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your licence has ended'**
-  String get offlineLicenceEndedTitle;
-
-  /// No description provided for @offlineLicenceEndingBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Ends on {date}. Connect to the internet once and it renews by itself.'**
-  String offlineLicenceEndingBody(String date);
-
-  /// No description provided for @offlineLicenceHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Licence'**
-  String get offlineLicenceHeading;
-
-  /// No description provided for @offlineLicenceNone.
-  ///
-  /// In en, this message translates to:
-  /// **'Not ready yet. Connect to the internet once.'**
-  String get offlineLicenceNone;
-
-  /// No description provided for @offlineLinkCopied.
-  ///
-  /// In en, this message translates to:
-  /// **'Link copied'**
-  String get offlineLinkCopied;
-
-  /// No description provided for @offlineManageLink.
-  ///
-  /// In en, this message translates to:
-  /// **'Free a phone here'**
-  String get offlineManageLink;
-
-  /// No description provided for @offlineNeedsInternet.
-  ///
-  /// In en, this message translates to:
-  /// **'This needs the internet. Your data here is not affected.'**
-  String get offlineNeedsInternet;
-
-  /// No description provided for @offlineNeedsSignInBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing is lost. Your work continues here. The licence can only renew after you sign in.'**
-  String get offlineNeedsSignInBody;
-
-  /// No description provided for @offlineNeedsSignInTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in again to renew'**
-  String get offlineNeedsSignInTitle;
-
-  /// No description provided for @offlineNoticeEnded.
-  ///
-  /// In en, this message translates to:
-  /// **'Your licence ended on {date}. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.'**
-  String offlineNoticeEnded(String date);
-
-  /// No description provided for @offlineNoticeEndedNoDate.
-  ///
-  /// In en, this message translates to:
-  /// **'Your licence has ended. You can look at everything, but nothing can be added or changed. Connect to the internet to renew.'**
-  String get offlineNoticeEndedNoDate;
-
-  /// No description provided for @offlineNoticeEnding.
-  ///
-  /// In en, this message translates to:
-  /// **'Your licence ends on {date}. Connect to the internet once before then and it renews by itself.'**
-  String offlineNoticeEnding(String date);
-
-  /// No description provided for @offlineNoticeNoLicence.
-  ///
-  /// In en, this message translates to:
-  /// **'This phone has no licence yet. You can look at everything, but nothing can be added or changed. Connect to the internet to get one.'**
-  String get offlineNoticeNoLicence;
-
-  /// No description provided for @offlineNoticeUpload.
-  ///
-  /// In en, this message translates to:
-  /// **'Your licence has ended, and your plan now keeps data on the server. You can look at everything, but nothing can be added or changed. Upload your data to carry on.'**
-  String get offlineNoticeUpload;
-
-  /// No description provided for @offlineOnPhoneTag.
-  ///
-  /// In en, this message translates to:
-  /// **'On this phone'**
-  String get offlineOnPhoneTag;
-
-  /// No description provided for @offlineOnPhoneTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Only on this phone'**
-  String get offlineOnPhoneTitle;
-
-  /// No description provided for @offlineOnlyHereBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing is kept on our server. If this phone is lost or reset, the data is gone. Export a copy and keep it safe.'**
-  String get offlineOnlyHereBody;
-
-  /// No description provided for @offlineOnlyHereTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data is only on this phone'**
-  String get offlineOnlyHereTitle;
-
-  /// No description provided for @offlinePlanTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Offline plan'**
-  String get offlinePlanTitle;
-
-  /// No description provided for @offlineReviewTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Check and save'**
-  String get offlineReviewTitle;
-
-  /// No description provided for @offlineRevokedBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data is safe here and the app keeps working until the licence ends. To use this phone again, free a slot on the website, then activate it.'**
-  String get offlineRevokedBody;
-
-  /// No description provided for @offlineRevokedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This phone was freed'**
-  String get offlineRevokedTitle;
-
-  /// No description provided for @offlineSaveReport.
-  ///
-  /// In en, this message translates to:
-  /// **'Save report'**
-  String get offlineSaveReport;
-
-  /// No description provided for @offlineSavedOnPhone.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved on this phone'**
-  String get offlineSavedOnPhone;
-
-  /// No description provided for @offlineShareSubject.
-  ///
-  /// In en, this message translates to:
-  /// **'Nirmaan360 data backup'**
-  String get offlineShareSubject;
-
-  /// No description provided for @offlineSignInButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in'**
-  String get offlineSignInButton;
-
-  /// No description provided for @offlineSignOutBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data stays on this phone. You will need internet to sign in again.'**
-  String get offlineSignOutBody;
-
-  /// No description provided for @offlineSignOutTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign out?'**
-  String get offlineSignOutTitle;
-
-  /// No description provided for @offlineUploadAskBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your company\'s plan has changed, so the server can keep your data now. Nothing goes up unless you say yes.'**
-  String get offlineUploadAskBody;
-
-  /// No description provided for @offlineUploadAskTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload your data to the server?'**
-  String get offlineUploadAskTitle;
-
-  /// No description provided for @offlineUploadBusy.
-  ///
-  /// In en, this message translates to:
-  /// **'The server is busy. Try again in a minute.'**
-  String get offlineUploadBusy;
-
-  /// No description provided for @offlineUploadContinue.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue upload'**
-  String get offlineUploadContinue;
-
-  /// No description provided for @offlineUploadDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data is moving to the server. Anything that needs a look will show in Outbox.'**
-  String get offlineUploadDone;
-
-  /// No description provided for @offlineUploadInterruptedBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing is lost and nothing will go twice. Continue when you are ready, or keep working on this phone for now.'**
-  String get offlineUploadInterruptedBody;
-
-  /// No description provided for @offlineUploadInterruptedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The upload stopped part way'**
-  String get offlineUploadInterruptedTitle;
-
-  /// No description provided for @offlineUploadLaterHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Your plan can keep data on the server now, if you want it there.'**
-  String get offlineUploadLaterHint;
-
-  /// No description provided for @offlineUploadLaterTile.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload to the server'**
-  String get offlineUploadLaterTile;
-
-  /// No description provided for @offlineUploadNo.
-  ///
-  /// In en, this message translates to:
-  /// **'No, keep it on this phone'**
-  String get offlineUploadNo;
-
-  /// No description provided for @offlineUploadNoNetwork.
-  ///
-  /// In en, this message translates to:
-  /// **'No internet right now. Continue when you have a connection.'**
-  String get offlineUploadNoNetwork;
-
-  /// No description provided for @offlineUploadPlanLimit.
-  ///
-  /// In en, this message translates to:
-  /// **'Your plan does not allow this yet: {reason}'**
-  String offlineUploadPlanLimit(String reason);
-
-  /// No description provided for @offlineUploadProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'{done} of {total} moved'**
-  String offlineUploadProgress(int done, int total);
-
-  /// No description provided for @offlineUploadRefused.
-  ///
-  /// In en, this message translates to:
-  /// **'The server did not accept this: {reason}'**
-  String offlineUploadRefused(String reason);
-
-  /// No description provided for @offlineUploadRunningBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep the app open. If it stops, nothing is lost and nothing goes twice.'**
-  String get offlineUploadRunningBody;
-
-  /// No description provided for @offlineUploadRunningTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Uploading your data'**
-  String get offlineUploadRunningTitle;
-
-  /// No description provided for @offlineUploadSignIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Please sign in again, then continue. Nothing is lost.'**
-  String get offlineUploadSignIn;
-
-  /// No description provided for @offlineUploadStillOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Your company is on the offline plan again, so nothing went up.'**
-  String get offlineUploadStillOffline;
-
-  /// No description provided for @offlineUploadTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your data'**
-  String get offlineUploadTitle;
-
-  /// No description provided for @offlineUploadYes.
-  ///
-  /// In en, this message translates to:
-  /// **'Yes, upload my data'**
-  String get offlineUploadYes;
 
   /// No description provided for @pettyCashAddExpense.
   ///
@@ -7870,6 +7324,12 @@ abstract class AppLocalizations {
   /// **'work done'**
   String get shellCaptionWorkDone;
 
+  /// No description provided for @shellCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get shellCopyLink;
+
   /// No description provided for @shellDiscardBody.
   ///
   /// In en, this message translates to:
@@ -7893,6 +7353,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Throw away this entry?'**
   String get shellDiscardTitle;
+
+  /// No description provided for @shellLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get shellLinkCopied;
 
   /// No description provided for @shellLinkFailedBody.
   ///
@@ -8511,6 +7977,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create account'**
   String get shellSignUpButton;
+
+  /// No description provided for @shellSignUpClosedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again later.'**
+  String get shellSignUpClosedBody;
+
+  /// No description provided for @shellSignUpClosedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New companies can\'t be started from the app right now'**
+  String get shellSignUpClosedTitle;
 
   /// No description provided for @shellSignUpCompany.
   ///

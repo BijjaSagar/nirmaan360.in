@@ -73,21 +73,6 @@ void main() {
     expect(app.api.deviceRegistrations, hasLength(2));
   });
 
-  test('a company on the offline plan is never offered push', () async {
-    final FakePushMessaging phone = FakePushMessaging(permissionNow: PushPermission.granted);
-    final FakeApi api = FakeApi()..offlineCompany = true;
-    final TestApp app = await TestApp.create(seed: false, signedIn: false, api: api, pushMessaging: phone);
-    addTearDown(app.dispose);
-    await app.services.auth.signIn(email: 'owner@example.test', password: 'x');
-    await app.services.startPush();
-    await pumpEventQueue();
-
-    expect(app.services.offlinePlan.isLocalOnly, isTrue);
-    expect(app.services.push.state, PushState.unavailable);
-    expect(phone.permissionReads, 0);
-    expect(api.deviceRegistrations, isEmpty);
-  });
-
   test('signing out removes this phone from the server while the sign-in still works', () async {
     final FakePushMessaging phone = FakePushMessaging(permissionNow: PushPermission.granted);
     final TestApp app = await TestApp.create(pushMessaging: phone);

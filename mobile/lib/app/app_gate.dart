@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/api/account_models.dart';
 import '../core/app_services.dart';
 import '../core/db/app_database.dart';
-import '../core/offline/offline_plan.dart';
 import '../core/session/current_user.dart';
 import '../core/session/session_controller.dart';
 import 'routes.dart';
@@ -27,8 +26,6 @@ class GateState extends Equatable {
     this.localeKnown = false,
     this.signingIn = false,
     this.bootFailed = false,
-    this.offline,
-    this.licence = LicenceStatus.none,
   });
 
   final SessionStatus status;
@@ -47,25 +44,6 @@ class GateState extends Equatable {
 
   /// `AppServices.start` threw: the sign-in screen is the safe place to land.
   final bool bootFailed;
-
-  /// Null for a company on any normal plan, which is nearly every company.
-  final OfflinePlanState? offline;
-
-  /// How the offline licence stands. Always [LicenceStatus.none] for a company
-  /// on any normal plan.
-  final LicenceStatus licence;
-
-  /// This company keeps its data on the phone. One person: no approvals.
-  bool get isLocalOnly => offline != null;
-
-  /// The licence has ended: nothing can be added or changed, though everything
-  /// can still be read and exported.
-  bool get licenceEnded => licence.entriesBlocked;
-
-  /// Another phone holds the licence and this one has nothing of its own yet.
-  /// With data here the app stays open, because data is never hidden.
-  bool get licenceBlocked =>
-      offline != null && !offline!.hasToken && offline!.issue == LicenceIssue.deviceLimit && (projects?.isEmpty ?? true);
 
   /// Everything the first frame of the real app needs is known.
   bool get ready =>
@@ -95,8 +73,7 @@ class GateState extends Equatable {
 
   bool can(String permission) => user?.can(permission) ?? false;
 
-  bool get canApprove =>
-      !isLocalOnly && (can('measurement.approve') || can('dpr.approve') || can('ra_bill.approve'));
+  bool get canApprove => can('measurement.approve') || can('dpr.approve') || can('ra_bill.approve');
 
   bool get canManageProjects => can('project.manage');
 
@@ -106,29 +83,27 @@ class GateState extends Equatable {
 
   /// Checklists and inspections: `checklist.fill` on a plan with `qhs`. The
   /// server's `checklist.view` does not reach the app, but every role that fills
-  /// a checklist also sees them. A plan that lacks it, such as the offline plan,
-  /// is never shown them or a way to them.
-  bool get canInspect =>
-      can('checklist.fill') && (user?.features.contains('qhs') ?? false) && !isContractor && !isLocalOnly;
+  /// a checklist also sees them. A plan that lacks it is never shown them or a
+  /// way to them.
+  bool get canInspect => can('checklist.fill') && (user?.features.contains('qhs') ?? false) && !isContractor;
 
   /// The daily machine log: `asset.log` on a plan with `assets`. `asset.view`,
   /// which the server asks for on the reads, does not reach the app, and every
   /// role that logs a machine also sees them.
-  bool get canLogMachines =>
-      can('asset.log') && (user?.features.contains('assets') ?? false) && !isContractor && !isLocalOnly;
+  bool get canLogMachines => can('asset.log') && (user?.features.contains('assets') ?? false) && !isContractor;
 
   /// Receiving goods against a purchase order and issuing from a store, inside the
   /// Material page: `procurement.stock` on a plan with `procurement`. The server's
   /// `procurement.view` does not reach the app, and every role that has the first
-  /// has the second. Never offered to a contractor login or the offline plan.
+  /// has the second. Never offered to a contractor login.
   bool get canStockProcure =>
-      can('procurement.stock') && (user?.features.contains('procurement') ?? false) && !isContractor && !isLocalOnly;
+      can('procurement.stock') && (user?.features.contains('procurement') ?? false) && !isContractor;
 
   /// Marking attendance with the camera, by a worker's QR card or by a photo:
   /// `attendance.manage` on a plan with `labour`. Never offered to a contractor
-  /// login or a phone that keeps its data local.
+  /// login.
   bool get canCaptureAttendance =>
-      can('attendance.manage') && (user?.features.contains('labour') ?? false) && !isContractor && !isLocalOnly;
+      can('attendance.manage') && (user?.features.contains('labour') ?? false) && !isContractor;
 
   /// Site tools has a row on Home when at least one of its tools is open.
   bool get hasSiteTools => canInspect || canLogMachines;
@@ -178,9 +153,6 @@ class GateState extends Equatable {
     bool? localeKnown,
     bool? signingIn,
     bool? bootFailed,
-    OfflinePlanState? offline,
-    bool clearOffline = false,
-    LicenceStatus? licence,
   }) {
     return GateState(
       status: status ?? this.status,
@@ -192,8 +164,6 @@ class GateState extends Equatable {
       localeKnown: localeKnown ?? this.localeKnown,
       signingIn: signingIn ?? this.signingIn,
       bootFailed: bootFailed ?? this.bootFailed,
-      offline: clearOffline ? null : (offline ?? this.offline),
-      licence: clearOffline ? LicenceStatus.none : (licence ?? this.licence),
     );
   }
 
@@ -208,8 +178,6 @@ class GateState extends Equatable {
         localeKnown,
         signingIn,
         bootFailed,
-        offline,
-        licence,
       ];
 }
 
@@ -226,8 +194,6 @@ class AppGate extends Cubit<GateState> {
       _services.projects.watchProjects().listen(_onProjects),
       db.watchMeta(MetaKey.selectedProject).listen(_onSelected),
       _services.auth.watchLocale().listen(_onLocale),
-      _services.offlinePlan.changes.listen(_onOffline),
-      _services.offlinePlan.licenceChanges.listen(_onLicence),
     ]);
   }
 
@@ -237,16 +203,6 @@ class AppGate extends Cubit<GateState> {
 
   /// Tells the router to run its redirect again.
   Listenable get refreshListenable => _refresh;
-
-  void _onOffline(OfflinePlanState? offline) {
-    emit(state.copyWith(offline: offline, clearOffline: offline == null, licence: _services.offlinePlan.licence));
-  }
-
-  void _onLicence(LicenceStatus licence) {
-    // A status that arrives after the plan was left must not bring it back.
-    if (state.offline == null) return;
-    emit(state.copyWith(licence: licence));
-  }
 
   void _onSession(SessionState session) {
     emit(
@@ -351,10 +307,7 @@ class AppGate extends Cubit<GateState> {
       a.hasSiteTools != b.hasSiteTools ||
       a.hasSite != b.hasSite ||
       a.canSeeAlerts != b.canSeeAlerts ||
-      a.ready != b.ready ||
-      a.offline?.mode != b.offline?.mode ||
-      a.licenceEnded != b.licenceEnded ||
-      a.licenceBlocked != b.licenceBlocked;
+      a.ready != b.ready;
 
   /// Exact paths that need a permission. Anything else is open once signed in.
   static const Map<String, String> _pathPermissions = <String, String>{
@@ -389,13 +342,6 @@ class AppGate extends Cubit<GateState> {
       // so the language can change and the person can sign out.
       return Routes.isPortal(path) || Routes.isSettings(path) ? null : Routes.portal;
     }
-    final OfflinePlanState? offline = s.offline;
-    if (offline != null) {
-      final String? local = _localRedirect(s, offline, path);
-      if (local != null) return local == path ? null : local;
-    } else if (Routes.isOfflinePlan(path)) {
-      return s.hasProject ? Routes.home : Routes.projects;
-    }
     if (!s.hasProject) {
       // Settings stays open so someone on the wrong account can sign out
       // instead of being stuck on "ask your office".
@@ -419,26 +365,6 @@ class AppGate extends Cubit<GateState> {
     if (Routes.isPortal(path)) return Routes.home;
     final String? needed = _pathPermissions[path];
     if (needed != null && !s.can(needed)) return Routes.home;
-    return null;
-  }
-
-  /// Where a phone on the offline plan belongs. Returns [path] to stay there
-  /// whatever else is true, or null to carry on with the usual checks.
-  String? _localRedirect(GateState s, OfflinePlanState offline, String path) {
-    // Settings, and deleting the account from it, stay open whatever the plan says.
-    final bool atSettings = path == Routes.settings || path == Routes.deleteAccount;
-    if (offline.mode == OfflineMode.asking || offline.mode == OfflineMode.uploading) {
-      return atSettings ? path : Routes.offlineUpload;
-    }
-    // The renewal page stays open here: it is where a full plan is explained.
-    if (s.licenceBlocked) return atSettings || path == Routes.licenceEnded ? path : Routes.offlinePlan;
-    // Upload is offered only once the server stops saying offline.
-    if (path == Routes.offlineUpload && offline.mode == OfflineMode.local) return Routes.offlinePlan;
-    if (Routes.isOfflinePlan(path)) return path;
-    // An ended licence turns every page that adds or changes something into the
-    // page that explains why. Reading and the export are not among them.
-    if (s.licenceEnded && Routes.isEntryForm(path)) return Routes.licenceEnded;
-    if (!Routes.isLocalFeature(path)) return s.hasProject ? Routes.home : Routes.projects;
     return null;
   }
 

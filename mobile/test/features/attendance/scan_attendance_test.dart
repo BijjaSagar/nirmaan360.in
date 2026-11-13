@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show OrderingTerm, Value;
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
@@ -12,7 +12,6 @@ import 'package:nirmaan360/features/attendance/data/attendance_repository.dart';
 import 'package:nirmaan360/features/attendance/data/worker_card.dart';
 import 'package:nirmaan360/features/attendance/view/attendance_screen.dart';
 import 'package:nirmaan360/features/attendance/view/qr_camera.dart';
-import 'package:nirmaan360/features/home/view/home_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
 import '../../app/shell_test_helpers.dart' show pumpShellApp;
@@ -326,22 +325,6 @@ void main() {
       await pumpShellApp(tester, none, location: Routes.attendanceScan);
       expect(find.byType(AttendanceScreen), findsOneWidget);
       expect(find.text(en.scanTitle), findsNothing);
-    });
-
-    testWidgets('on the offline plan there is no way in, whatever the plan list says', (WidgetTester tester) async {
-      final FakeApi api = FakeApi()..offlineCompany = true;
-      final TestApp app = await TestApp.create(seed: false, signedIn: false, api: api);
-      addTearDown(app.dispose);
-      await app.services.auth.signIn(email: 'owner@example.test', password: 'x');
-      await app.db.into(app.db.projects).insert(ProjectsCompanion.insert(id: const Value(-1), code: 'L1', name: 'Local site'));
-      await app.services.projects.selectProject(-1);
-      expect(app.services.session.user!.features, contains('labour'));
-      expect(app.services.attendance.canCapture, isFalse);
-      fakeCamera(<String>[]);
-
-      await pumpShellApp(tester, app, location: Routes.attendanceScan);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(api.refusedCalls, 0);
     });
 
     for (final String locale in <String>['mr', 'hi']) {

@@ -38,7 +38,7 @@ abstract final class Routes {
   static String announcementsAt(int id) => '$announcements?id=$id';
 
   /// Deleting this person's account. Open to everyone who can open Settings,
-  /// contractor logins and the offline plan included.
+  /// contractor logins included.
   static const deleteAccount = '/settings/delete-account';
 
   /// Settings and its sub-pages, open whenever Settings is.
@@ -152,59 +152,6 @@ abstract final class Routes {
   static const portalPayments = '/portal/payments';
   static const portalBills = '/portal/bills';
   static String portalBill(int billId) => '/portal/bills/$billId';
-
-  /// The offline plan: what is on this phone, the licence, the export.
-  static const offlinePlan = '/offline-plan';
-
-  /// Asks the owner before anything goes to the server.
-  static const offlineUpload = '/offline-plan/upload';
-
-  /// Where a phone goes once its licence has ended: why nothing can be added,
-  /// and a button that tries to renew now. Reading and the export stay open.
-  static const licenceEnded = '/offline-plan/renew';
-
-  static bool isOfflinePlan(String path) => path == offlinePlan || path == offlineUpload || path == licenceEnded;
-
-  /// Every page that adds or changes a record. Once a licence has ended these
-  /// all lead to [licenceEnded], and the data layer refuses the write as well.
-  static bool isEntryForm(String path) => entryForms.contains(path);
-
-  /// The paths [isEntryForm] answers for.
-  static const Set<String> entryForms = <String>{
-    projectForm,
-    boqForm,
-    dprForm,
-    measurementForm,
-    issueForm,
-    expenseForm,
-    walletForm,
-    topUp,
-    progressForm,
-    contractorRequest,
-    machineLogForm,
-    inspectionFill,
-    materialReceive,
-    materialUse,
-    materialCount,
-    materialReceiveOrder,
-    materialIssue,
-    attendanceScan,
-    attendanceSelfie,
-  };
-
-  /// What a company on the offline plan has: site, measurement, labour and
-  /// petty cash, and the screens that set a project up. Approvals, the outbox
-  /// and every other module are not part of it.
-  static bool isLocalFeature(String path) =>
-      const <String>{home, projects, projectForm, boq, boqForm, settings, deleteAccount, attendance}.contains(path) ||
-      path == dprList ||
-      path.startsWith('$dprList/') ||
-      path == measurements ||
-      path.startsWith('$measurements/') ||
-      path == issues ||
-      path.startsWith('$issues/') ||
-      path == pettyCash ||
-      path.startsWith('$pettyCash/');
 
   /// True for the portal's own pages, and no other path.
   static bool isPortal(String path) => path == portal || path.startsWith('$portal/');

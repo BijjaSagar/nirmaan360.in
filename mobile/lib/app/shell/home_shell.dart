@@ -77,8 +77,6 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
     final t = AppLocalizations.of(context);
     final shell = widget.navigationShell;
     final bool canApprove = context.select((AppGate gate) => gate.state.canApprove);
-    // Nothing waits to be sent on the offline plan, so there is no outbox.
-    final bool localOnly = context.select((AppGate gate) => gate.state.isLocalOnly);
     final int unsent = context.select((SyncStatusCubit s) => s.state.pendingCount + s.state.attentionCount);
     final List<_ShellTab> tabs = <_ShellTab>[
       _ShellTab(0, Icons.home_outlined, t.shellTabHome),
@@ -90,7 +88,7 @@ class _HomeShellState extends State<HomeShell> with SingleTickerProviderStateMix
           t.shellTabApprovals,
           badge: _waitingApprovals > 0 ? '$_waitingApprovals' : null,
         ),
-      if (!localOnly) _ShellTab(3, Icons.inbox_outlined, t.shellTabOutbox, badge: unsent > 0 ? '$unsent' : null),
+      _ShellTab(3, Icons.inbox_outlined, t.shellTabOutbox, badge: unsent > 0 ? '$unsent' : null),
     ];
     final int current = tabs.indexWhere((tab) => tab.branch == shell.currentIndex);
     // Each tab paints its own top bar, status-bar area included, so the shell

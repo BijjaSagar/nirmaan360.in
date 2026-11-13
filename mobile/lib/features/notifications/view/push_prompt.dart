@@ -64,8 +64,7 @@ class PushPromptSheet extends StatelessWidget {
 /// offered, a moment after the person arrives. It draws nothing itself.
 ///
 /// It waits until push says the person has not been asked, and it never shows
-/// on the sign-in screen or the offline plan, because push is not offered
-/// there. It sits in Home's shell and on the contractor portal's home. Asking is recorded as soon as the sheet answers,
+/// on the sign-in screen, because push is not offered there. It sits in Home's shell and on the contractor portal's home. Asking is recorded as soon as the sheet answers,
 /// so the sheet appears once.
 class PushPromptHost extends StatefulWidget {
   const PushPromptHost({super.key, this.delay = const Duration(milliseconds: 1500)});

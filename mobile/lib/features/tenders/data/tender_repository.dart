@@ -82,12 +82,10 @@ class TenderRepository {
   bool get seesMoney => _ctx.session.user?.can('money.view') ?? false;
 
   /// Whether this person may open a line's tenders at all. A store keeper may
-  /// not, a company without site control has none, and the offline plan has no
-  /// office to ask.
+  /// not, and a company without site control has none.
   bool get canView {
     final user = _ctx.session.user;
     return user != null &&
-        !_ctx.offlinePlan.isLocalOnly &&
         user.features.contains('site_control') &&
         user.can('boq.view') &&
         user.can('contractor.view');
@@ -124,7 +122,6 @@ class TenderRepository {
 
   /// Starts a tender for one line. Returns the new tender's id when the server sends it.
   Future<int?> startTender(int boqItemId, {required String title, String? scope, String? dueOn}) async {
-    _ctx.assertCanWrite();
     _online();
     final String key = 'idempotency.tender.line.$boqItemId';
     final String uuid = await _uuid(key);
@@ -150,7 +147,6 @@ class TenderRepository {
     String? contactPerson,
     String? gstin,
   }) async {
-    _ctx.assertCanWrite();
     _online();
     final Map<String, dynamic> reply = await _ctx.api.createSubcontractor(<String, dynamic>{
       'name': name,
@@ -165,7 +161,6 @@ class TenderRepository {
 
   /// Sends a quote. Throws a [ValidationFailure] in the server's words.
   Future<void> addQuote(int tenderId, QuoteInput input) async {
-    _ctx.assertCanWrite();
     _online();
     final String key = 'idempotency.quote.$tenderId';
     final String uuid = await _uuid(key);
@@ -203,7 +198,6 @@ class TenderRepository {
   /// Chooses a quote. Returns the work order made from it, when the server says.
   /// Sending the same choice again returns the same work order.
   Future<int?> award(int tenderId, AwardInput input) async {
-    _ctx.assertCanWrite();
     _online();
     final String key = 'idempotency.award.$tenderId.${input.bidId}';
     final String uuid = await _uuid(key);

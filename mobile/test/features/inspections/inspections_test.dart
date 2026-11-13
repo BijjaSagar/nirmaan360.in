@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show OrderingTerm, Value;
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -565,31 +565,6 @@ void main() {
       await freshApp(tester);
       await pumpShellApp(tester, noPermission, location: Routes.inspectionDetail('12'));
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('on the offline plan there is no row and no page, whatever the plan list says', (WidgetTester tester) async {
-      final FakeApi api = FakeApi()..offlineCompany = true;
-      api.grantInspections();
-      final TestApp app = await TestApp.create(seed: false, signedIn: false, api: api);
-      addTearDown(app.dispose);
-      await app.services.auth.signIn(email: 'owner@example.test', password: 'x');
-      await app.db.into(app.db.projects).insert(ProjectsCompanion.insert(id: const Value(-1), code: 'L1', name: 'Local site'));
-      await app.services.projects.selectProject(-1);
-      expect(app.services.session.user!.features, contains('qhs'));
-
-      await pumpShellApp(tester, app);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.byKey(k('home-site-tools')), findsNothing);
-
-      await freshApp(tester);
-      await pumpShellApp(tester, app, location: Routes.inspections);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.byKey(k('inspections-start')), findsNothing);
-      await freshApp(tester);
-      await pumpShellApp(tester, app, location: Routes.siteTools);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(app.api.refusedCalls, 0);
       expect(tester.takeException(), isNull);
     });
   });

@@ -32,10 +32,6 @@ class DioNirmaanApi implements NirmaanApi {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          if (blocksPath?.call(options.path) ?? false) {
-            handler.reject(DioException(requestOptions: options, type: DioExceptionType.connectionError));
-            return;
-          }
           final token = await readToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -48,10 +44,6 @@ class DioNirmaanApi implements NirmaanApi {
 
   final Dio _dio;
   final void Function()? _onUnauthorized;
-
-  /// True for a request that must not leave the phone: the offline plan's
-  /// backstop. A blocked request looks like having no network.
-  bool Function(String path)? blocksPath;
 
   static const _pullTimeout = Duration(minutes: 3);
   static const _uploadSendTimeout = Duration(minutes: 5);
@@ -221,44 +213,6 @@ class DioNirmaanApi implements NirmaanApi {
   Future<Map<String, dynamic>> me() async {
     final body = await _call(() => _dio.get('/me'));
     return (body['user'] as Map).cast<String, dynamic>();
-  }
-
-  @override
-  Future<Map<String, dynamic>> offlineStatus() => _call(() => _dio.get('/offline/status'));
-
-  @override
-  Future<Map<String, dynamic>> activateDevice({
-    required String deviceId,
-    required String deviceName,
-    String? platform,
-    String? appVersion,
-  }) {
-    return _call(
-      () => _dio.post(
-        '/offline/devices/activate',
-        data: {
-          'device_id': deviceId,
-          'device_name': deviceName,
-          'platform': ?platform,
-          'app_version': ?appVersion,
-        },
-      ),
-    );
-  }
-
-  @override
-  Future<Map<String, dynamic>> refreshDevice({required String deviceId, String? appVersion}) {
-    return _call(
-      () => _dio.post(
-        '/offline/devices/refresh',
-        data: {'device_id': deviceId, 'app_version': ?appVersion},
-      ),
-    );
-  }
-
-  @override
-  Future<void> releaseDevice(String deviceId) async {
-    await _call(() => _dio.post('/offline/devices/release', data: {'device_id': deviceId}));
   }
 
   @override
@@ -854,9 +808,6 @@ class DioNirmaanApi implements NirmaanApi {
       return const AuthExpired();
     }
     final Object? code = data is Map ? data['code'] : null;
-    if (status == 403 && code == 'offline_plan') {
-      return OfflinePlanRefused(message, upgradeUrl: (data as Map)['upgrade_url'] as String?);
-    }
     if (status == 429) {
       return RateLimited(
         retryAfter: _retryAfter(e.response),

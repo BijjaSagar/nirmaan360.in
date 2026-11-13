@@ -35,7 +35,7 @@ class _CopyLinkSheet extends StatelessWidget {
     final AppLocalizations t = AppLocalizations.of(context);
     await Clipboard.setData(ClipboardData(text: url));
     if (!context.mounted) return;
-    showPaperToast(context, t.offlineLinkCopied, kind: PaperToastKind.success);
+    showPaperToast(context, t.shellLinkCopied, kind: PaperToastKind.success);
     Navigator.of(context).pop();
   }
 
@@ -60,7 +60,7 @@ class _CopyLinkSheet extends StatelessWidget {
             SelectableText(url, style: N360Type.body),
             const SizedBox(height: N360Space.lg),
             GloveButton(
-              label: t.offlineCopyLink,
+              label: t.shellCopyLink,
               icon: Icons.copy,
               large: true,
               fullWidth: true,

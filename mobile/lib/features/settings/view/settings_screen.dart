@@ -22,16 +22,6 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _signOut(BuildContext context) async {
     final auth = context.read<AppServices>().auth;
-    if (context.read<AppServices>().offlinePlan.isLocalOnly) {
-      final t = AppLocalizations.of(context);
-      final bool? yes = await showLedgerSheet<bool>(
-        context,
-        isScrollControlled: true,
-        builder: (context) => _SignOutSheet(online: true, title: t.offlineSignOutTitle, body: t.offlineSignOutBody),
-      );
-      if (yes == true) await auth.signOut();
-      return;
-    }
     final bool online = context.read<SyncStatusCubit>().state.online;
     final int unsent = await auth.unsentWorkCount();
     if (!context.mounted) return;
@@ -111,27 +101,16 @@ class SettingsScreen extends StatelessWidget {
                           initialData: context.read<AppServices>().push.state,
                           builder: (context, push) => LedgerList(
                             children: <Widget>[
-                              // Only where push is offered: never on a build without Firebase
-                              // or on the offline plan.
+                              // Only where push is offered: never on a build without Firebase.
                               if (push.data != null && push.data != PushState.unavailable)
                                 PushSettingsTile(state: push.data!),
-                              // The server keeps the list, so a phone on the offline plan has none.
-                              if (!context.select((AppGate gate) => gate.state.isLocalOnly))
-                                LedgerListTile(
-                                  key: const ValueKey<String>('settings-announcements'),
-                                  leading: const Icon(Icons.campaign_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
-                                  title: t.announcementsTitle,
-                                  subtitle: t.announcementsSettingsSubtitle,
-                                  onTap: () => context.push(Routes.announcements),
-                                ),
-                              if (context.select((AppGate gate) => gate.state.isLocalOnly))
-                                LedgerListTile(
-                                  key: const ValueKey<String>('settings-offline-plan'),
-                                  leading: const Icon(Icons.phone_android, size: N360IconSize.lg, color: N360Colors.ink2),
-                                  title: t.offlinePlanTitle,
-                                  subtitle: t.offlineOnPhoneTitle,
-                                  onTap: () => context.push(Routes.offlinePlan),
-                                ),
+                              LedgerListTile(
+                                key: const ValueKey<String>('settings-announcements'),
+                                leading: const Icon(Icons.campaign_outlined, size: N360IconSize.lg, color: N360Colors.ink2),
+                                title: t.announcementsTitle,
+                                subtitle: t.announcementsSettingsSubtitle,
+                                onTap: () => context.push(Routes.announcements),
+                              ),
                               LedgerListTile(
                                 leading: const Icon(Icons.info_outline, size: N360IconSize.lg, color: N360Colors.ink2),
                                 title: t.shellSettingsVersion,
@@ -141,7 +120,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: N360Space.lg),
-                        // For everyone, contractor logins and the offline plan included.
+                        // For everyone, contractor logins included.
                         LedgerList(
                           children: <Widget>[
                             LedgerListTile(
@@ -219,17 +198,15 @@ class _WhoList extends StatelessWidget {
 }
 
 class _SignOutSheet extends StatelessWidget {
-  const _SignOutSheet({required this.online, this.title, this.body});
+  const _SignOutSheet({required this.online});
 
   final bool online;
-  final String? title;
-  final String? body;
 
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final String heading = title ?? t.shellSignOutConfirmTitle;
-    final String text = body ?? t.shellSignOutConfirmBody;
+    final String heading = t.shellSignOutConfirmTitle;
+    final String text = t.shellSignOutConfirmBody;
     return SafeArea(
       top: false,
       child: Padding(

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show OrderingTerm, Value;
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart' hide MaterialState;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -739,26 +739,6 @@ void main() {
       await pumpShellApp(tester, allowed, location: Routes.materialIssue);
       expect(find.byType(HomeScreen), findsNothing);
       expect(find.byKey(k('issue-stock-save')), findsOneWidget);
-    });
-
-    testWidgets('on the offline plan there is no way in, whatever the plan list says', (WidgetTester tester) async {
-      final FakeApi api = FakeApi()
-        ..offlineCompany = true
-        ..grantStock()
-        ..grant('material_control.view');
-      final TestApp app = await TestApp.create(seed: false, signedIn: false, api: api);
-      addTearDown(app.dispose);
-      await app.services.auth.signIn(email: 'owner@example.test', password: 'x');
-      await app.db.into(app.db.projects).insert(ProjectsCompanion.insert(id: const Value(-1), code: 'L1', name: 'Local site'));
-      await app.services.projects.selectProject(-1);
-      expect(app.services.session.user!.features, contains('procurement'));
-
-      await pumpShellApp(tester, app, location: Routes.materialReceiveOrder);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      await freshApp(tester);
-      await pumpShellApp(tester, app, location: Routes.materialIssue);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(app.api.refusedCalls, 0);
     });
   });
 

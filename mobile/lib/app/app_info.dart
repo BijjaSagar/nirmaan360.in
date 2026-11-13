@@ -3,8 +3,8 @@
 /// There is no package for reading it at runtime, so a test compares this with
 /// the pubspec and fails when one changes without the other.
 abstract final class AppInfo {
-  static const String version = '1.0.0';
-  static const String buildNumber = '18';
+  static const String version = '1.0.1';
+  static const String buildNumber = '19';
 
   static String get label => '$version ($buildNumber)';
 }

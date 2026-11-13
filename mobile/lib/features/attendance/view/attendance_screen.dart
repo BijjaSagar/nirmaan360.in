@@ -13,7 +13,6 @@ import 'widgets/day_strip.dart';
 import 'widgets/field_kit.dart';
 import 'widgets/muster_row.dart';
 import 'widgets/muster_summary_card.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// The muster roll: one tap per worker, written at once, no save button.
 class AttendanceScreen extends StatelessWidget {
@@ -76,7 +75,6 @@ class _AttendanceView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 const _Header(),
-                const LicenceNotice(),
                 const Expanded(child: _MusterScroll()),
                 const _BottomActions(),
               ],

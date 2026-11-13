@@ -39,11 +39,6 @@ class SessionController {
   final _changes = StreamController<SessionState>.broadcast();
   SessionState _state = const SessionState(SessionStatus.restoring, null);
 
-  /// Set by the offline plan. While it answers true, a 401 from the server
-  /// does not end the session: the person's data is only on this phone, and
-  /// a sign-in screen they cannot pass with no internet would lock them out.
-  bool Function()? keepSessionOn401;
-
   SessionState get current => _state;
   CurrentUser? get user => _state.user;
 
@@ -87,18 +82,10 @@ class SessionController {
 
   /// A 401 was received. Drops the token only; nothing local is touched.
   Future<void> markExpired() async {
-    if (keepSessionOn401?.call() ?? false) return;
     if (_state.status == SessionStatus.signedOut ||
         _state.status == SessionStatus.expired) {
       return;
     }
-    await _tokens.clear();
-    _set(SessionState(SessionStatus.expired, _state.user));
-  }
-
-  /// The offline plan's sign-out: the token goes, and the user stays known so
-  /// the same person can come back to their data and nobody else can.
-  Future<void> endKeepingUser() async {
     await _tokens.clear();
     _set(SessionState(SessionStatus.expired, _state.user));
   }
@@ -111,14 +98,6 @@ class SessionController {
     if (saved == null || saved.id != _state.user?.id) return;
     if (jsonEncode(saved.toJson()) == jsonEncode(_state.user?.toJson())) return;
     _set(SessionState(SessionStatus.signedIn, saved));
-  }
-
-  /// The offline plan's restart: no usable token, but the data is here and
-  /// nobody signed out, so the app stays open.
-  void resumeLocally() {
-    if (_state.status == SessionStatus.expired && _state.user != null) {
-      _set(SessionState(SessionStatus.signedIn, _state.user));
-    }
   }
 
   /// Ends the session completely. The caller has dealt with unsent work.

@@ -38,25 +38,11 @@ class _Nirmaan360AppState extends State<Nirmaan360App> with WidgetsBindingObserv
   late final SyncStatusCubit _syncStatus = SyncStatusCubit(widget.services.syncCenter);
   GoRouter? _router;
   PushNavigator? _pushNavigator;
-  StreamSubscription<Object>? _refusals;
-  bool _renewalOpen = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // A write turned away because the licence has ended opens the page that says
-    // why, whichever screen it came from. The forms already redirect there; this
-    // covers a button that writes in place, and a licence that ends under an open form.
-    _refusals = widget.services.offlinePlan.refusals.listen((_) => _openRenewal());
-  }
-
-  void _openRenewal() {
-    final GoRouter? router = _router;
-    if (router == null || _renewalOpen) return;
-    if (router.routeInformationProvider.value.uri.path == Routes.licenceEnded) return;
-    _renewalOpen = true;
-    unawaited(router.push<void>(Routes.licenceEnded).whenComplete(() => _renewalOpen = false));
   }
 
   @override
@@ -68,7 +54,6 @@ class _Nirmaan360AppState extends State<Nirmaan360App> with WidgetsBindingObserv
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(_refusals?.cancel());
     _pushNavigator?.dispose();
     _router?.dispose();
     _gate.close();

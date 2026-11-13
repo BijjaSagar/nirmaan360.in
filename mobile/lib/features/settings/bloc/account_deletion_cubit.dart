@@ -20,7 +20,6 @@ class AccountDeletionState extends Equatable {
     this.load = DeletionLoad.loading,
     this.preview,
     this.unsent = 0,
-    this.localOnly = false,
     this.submitting = false,
     this.cancelling = false,
     this.problem,
@@ -31,10 +30,8 @@ class AccountDeletionState extends Equatable {
   final DeletionLoad load;
   final AccountDeletionPreview? preview;
 
-  /// Work on this phone that deleting would lose: unsent entries, or on the
-  /// offline plan every record, because it exists nowhere else.
+  /// Work on this phone that deleting would lose: unsent entries.
   final int unsent;
-  final bool localOnly;
   final bool submitting;
   final bool cancelling;
   final DeletionProblem? problem;
@@ -47,7 +44,6 @@ class AccountDeletionState extends Equatable {
     DeletionLoad? load,
     AccountDeletionPreview? preview,
     int? unsent,
-    bool? localOnly,
     bool? submitting,
     bool? cancelling,
     DeletionProblem? problem,
@@ -58,7 +54,6 @@ class AccountDeletionState extends Equatable {
       load: load ?? this.load,
       preview: preview ?? this.preview,
       unsent: unsent ?? this.unsent,
-      localOnly: localOnly ?? this.localOnly,
       submitting: submitting ?? this.submitting,
       cancelling: cancelling ?? this.cancelling,
       problem: clearProblem ? null : (problem ?? this.problem),
@@ -69,7 +64,7 @@ class AccountDeletionState extends Equatable {
 
   @override
   List<Object?> get props =>
-      <Object?>[load, preview, unsent, localOnly, submitting, cancelling, problem, notice, noticeTick];
+      <Object?>[load, preview, unsent, submitting, cancelling, problem, notice, noticeTick];
 }
 
 class AccountDeletionCubit extends Cubit<AccountDeletionState> {
@@ -91,9 +86,8 @@ class AccountDeletionCubit extends Cubit<AccountDeletionState> {
       if (!isClosed) emit(state.copyWith(load: DeletionLoad.server));
       return;
     }
-    final bool localOnly = _services.offlinePlan.isLocalOnly;
-    final int unsent = localOnly ? await _services.auth.localRecordCount() : await _services.auth.unsentWorkCount();
-    if (!isClosed) emit(state.copyWith(load: outcome, preview: preview, unsent: unsent, localOnly: localOnly));
+    final int unsent = await _services.auth.unsentWorkCount();
+    if (!isClosed) emit(state.copyWith(load: outcome, preview: preview, unsent: unsent));
   }
 
   /// Deletes the account. On success the session ends and the app leaves this

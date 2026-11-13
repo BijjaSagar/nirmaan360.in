@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/core/api/api_failure.dart';
 import 'package:nirmaan360/core/api/nirmaan_api.dart';
@@ -458,38 +457,15 @@ void main() {
       expect(await app.db.select(app.db.projects).get(), isNotEmpty);
     });
 
-    test('the temporary backup and quotation files go too', () async {
-      final exports = Directory('${app.tempDirectory.path}/offline_exports')..createSync();
-      File('${exports.path}/nirmaan360-backup-1.zip').writeAsStringSync('zip');
+    test('the temporary quotation files go too', () async {
       final quotes = Directory('${app.tempDirectory.path}/quotations')..createSync();
       File('${quotes.path}/quote.pdf').writeAsStringSync('pdf');
       final other = File('${app.tempDirectory.path}/unrelated.txt')..writeAsStringSync('keep');
 
       await app.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret');
 
-      expect(exports.existsSync(), isFalse);
       expect(quotes.existsSync(), isFalse);
       expect(other.existsSync(), isTrue);
-    });
-
-    test('on the offline plan the local records go too, and the plan is left', () async {
-      final local = await TestApp.create(seed: false, signedIn: false, api: FakeApi()..offlineCompany = true);
-      addTearDown(local.dispose);
-      await local.services.auth.signIn(email: 'owner@example.test', password: 'secret');
-      await local.db.into(local.db.projects).insert(ProjectsCompanion.insert(id: const Value(-1), code: 'L1', name: 'Local site'));
-      expect(local.services.offlinePlan.isLocalOnly, isTrue);
-
-      await expectLater(
-        local.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret'),
-        throwsA(isA<UnsentWorkFailure>().having((e) => e.count, 'count', 1)),
-      );
-      await local.services.auth.deleteAccount(mode: AccountDeletionMode.account, password: 'secret', discardUnsent: true);
-
-      expect(await local.db.select(local.db.projects).get(), isEmpty);
-      expect(local.services.offlinePlan.isLocalOnly, isFalse);
-      expect(await local.db.readMeta(MetaKey.offlinePlan), isNull);
-      expect(local.services.session.current.status, SessionStatus.signedOut);
-      expect(local.services.session.current.user, isNull);
     });
   });
 

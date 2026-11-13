@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show OrderingTerm, Value;
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
@@ -11,7 +11,6 @@ import 'package:nirmaan360/core/sync/photo_capture.dart';
 import 'package:nirmaan360/features/attendance/bloc/selfie_sensors.dart';
 import 'package:nirmaan360/features/attendance/data/selfie_repository.dart';
 import 'package:nirmaan360/features/attendance/view/attendance_screen.dart';
-import 'package:nirmaan360/features/home/view/home_screen.dart';
 import 'package:nirmaan360/l10n/generated/app_localizations.dart';
 
 import '../../app/shell_test_helpers.dart' show pumpShellApp;
@@ -494,22 +493,6 @@ void main() {
       await pumpShellApp(tester, none, location: Routes.attendanceSelfie);
       expect(find.byType(AttendanceScreen), findsOneWidget);
       expect(find.text(en.selfieTitle), findsNothing);
-    });
-
-    testWidgets('on the offline plan there is no way in, and the location is never asked', (WidgetTester tester) async {
-      final FakeApi api = FakeApi()..offlineCompany = true;
-      final TestApp app = await TestApp.create(seed: false, signedIn: false, api: api);
-      addTearDown(app.dispose);
-      await app.services.auth.signIn(email: 'owner@example.test', password: 'x');
-      await app.db.into(app.db.projects).insert(ProjectsCompanion.insert(id: const Value(-1), code: 'L1', name: 'Local site'));
-      await app.services.projects.selectProject(-1);
-      final Sensors sensors = Sensors()..install();
-      expect(app.services.selfies.isOpenToUser, isFalse);
-
-      await pumpShellApp(tester, app, location: Routes.attendanceSelfie);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(sensors.locations, 0);
-      expect(api.refusedCalls, 0);
     });
 
     for (final String locale in <String>['mr', 'hi']) {

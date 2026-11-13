@@ -36,13 +36,11 @@ class SelfieRepository {
   /// The server's limit on how old a photo may be when it arrives.
   static const Duration oldestAllowed = Duration(days: 7);
 
-  /// `attendance.manage` on a plan with `labour`, never for a contractor login or a
-  /// phone that keeps its data local.
+  /// `attendance.manage` on a plan with `labour`, never for a contractor login.
   bool get isOpenToUser {
     final user = _ctx.session.user;
     return user != null &&
         !user.isContractor &&
-        !_ctx.offlinePlan.isLocalOnly &&
         user.can('attendance.manage') &&
         user.features.contains('labour');
   }
@@ -88,7 +86,6 @@ class SelfieRepository {
 
   /// Written when the note has been shown and the worker has agreed. A new version asks again.
   Future<void> accept(SelfieConsent consent) async {
-    _ctx.assertCanWrite();
     final String? prefix = _acceptedKey;
     if (prefix != null) await _db.writeMeta(MetaKey.selfieConsentAccepted, '$prefix${consent.version}');
   }
@@ -119,7 +116,6 @@ class SelfieRepository {
     required DateTime capturedAt,
     required SelfieConsent consent,
   }) async {
-    _ctx.assertCanWrite();
     final String uuid = newUuid();
     final Map<String, String> fields = <String, String>{
       'site_id': '$siteId',

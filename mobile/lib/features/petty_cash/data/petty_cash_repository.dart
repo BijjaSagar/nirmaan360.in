@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 import '../../../core/api/api_failure.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/money/money.dart';
-import '../../../core/offline/offline_plan.dart' show LocalRecordKind;
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/failures.dart';
 import '../../../core/sync/ids.dart';
@@ -97,7 +96,6 @@ class PettyCashRepository {
     String? description,
     String? billSourcePath,
   }) async {
-    _ctx.assertCanWrite();
     _assertEntry(amount, entryDate);
     if (category == null || category.trim().isEmpty) {
       throw const ValidationFailure(
@@ -162,7 +160,6 @@ class PettyCashRepository {
     required String entryDate,
     String? description,
   }) async {
-    _ctx.assertCanWrite();
     _assertEntry(amount, entryDate);
     final wallet = await _requireWallet(walletId);
 
@@ -189,27 +186,6 @@ class PettyCashRepository {
     required String name,
     int? userId,
   }) {
-    _ctx.assertCanWrite();
-    if (_ctx.offlinePlan.isLocalOnly) {
-      _ctx.assertWithin(<(String, String?, int)>[('name', name, 120)]);
-      return _ctx.createLocal(
-        kind: LocalRecordKind.wallet,
-        table: 'wallets',
-        insert: (id) async {
-          await _db.into(_db.wallets).insert(
-            WalletsCompanion.insert(
-              id: Value(id),
-              projectId: projectId,
-              name: name,
-              userId: Value(userId),
-              balance: Money.zero,
-              updatedAt: Value(_ctx.clock.now()),
-            ),
-          );
-          return (_db.select(_db.wallets)..where((t) => t.id.equals(id))).getSingle();
-        },
-      );
-    }
     return _ctx.createOnline(
       identity: ['wallet', projectId, name],
       send: (clientUuid) => _ctx.api.createWallet(

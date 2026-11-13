@@ -32,7 +32,6 @@ class IssueRepository {
     int? siteId,
     List<String> photoPaths = const <String>[],
   }) async {
-    _ctx.assertCanWrite();
     if (title.trim().isEmpty) {
       throw const ValidationFailure(
         'A title is required.',
@@ -100,16 +99,13 @@ class IssueRepository {
   Future<void> refreshPhotos(String clientUuid) => _ctx.photos.refresh(PhotoOwner.issue, clientUuid);
 
   /// Queues photos taken for an issue that is already on the phone.
-  Future<void> addPhotos(String clientUuid, List<String> paths, {required String kind}) {
-    _ctx.assertCanWrite();
-    return _ctx.photos.add(PhotoOwner.issue, clientUuid, paths, kind: kind);
-  }
+  Future<void> addPhotos(String clientUuid, List<String> paths, {required String kind}) =>
+      _ctx.photos.add(PhotoOwner.issue, clientUuid, paths, kind: kind);
 
   Future<Uint8List> photoBytes(ServerPhoto photo) => _ctx.photos.bytes(PhotoOwner.issue, photo);
 
   /// Sets the issue's status and queues the change.
   Future<void> changeStatus(String clientUuid, String status) {
-    _ctx.assertCanWrite();
     return _db.transaction(() async {
       final issue =
           await (_db.select(_db.issues)

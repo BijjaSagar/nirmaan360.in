@@ -12,7 +12,6 @@ import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/expense_form_cubit.dart';
 import '../data/petty_cash_repository.dart';
 import 'widgets/petty_widgets.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// Amount on the keypad, then what it was for. An expense over the balance
 /// stops at the first step, in plain words.
@@ -42,9 +41,7 @@ class _ExpenseFormView extends StatelessWidget {
     N360Haptics.success();
     showPaperToast(
       context,
-      context.read<AppServices>().offlinePlan.isLocalOnly
-          ? l.offlineSavedOnPhone
-          : state.savedWhileOffline
+      state.savedWhileOffline
           ? l.pettyCashSavedOffline
           : l.pettyCashSavedOnline,
       kind: PaperToastKind.success,
@@ -87,7 +84,6 @@ class _ExpenseFormView extends StatelessWidget {
                           ? () => Navigator.of(context).maybePop()
                           : cubit.backToAmount,
                     ),
-                    const LicenceNotice(),
                     Expanded(
                       child: state.step == 0
                           ? _AmountStep(state: state)

@@ -41,8 +41,8 @@ class AuthRepository {
   /// has already dropped it and would refuse the revoked token. Never throws.
   Future<void> Function()? afterAccountDeleted;
 
-  /// Removes files this app left in the temporary folder: offline-plan backup
-  /// zips and quotation PDFs opened in another app. Never throws.
+  /// Removes files this app left in the temporary folder: quotation PDFs
+  /// opened in another app. Never throws.
   Future<void> Function()? clearTemporaryFiles;
 
   AccountDeletionResult? _deletedNotice;
@@ -92,8 +92,8 @@ class AuthRepository {
   /// and runs the first pull, exactly as [signIn] does.
   ///
   /// A new account is always someone else to whatever this phone still holds,
-  /// so another person's unsent work, or anything on the offline plan, refuses
-  /// it with [DifferentUserFailure] before the server is asked.
+  /// so another person's unsent work refuses it with [DifferentUserFailure]
+  /// before the server is asked.
   Future<SignInResult> signUp({
     required String company,
     required String name,
@@ -150,21 +150,12 @@ class AuthRepository {
   /// Throws [DifferentUserFailure] when this phone holds work that must never
   /// be sent under, or wiped by, a different account.
   Future<void> _refuseOtherUsersWork() async {
-    // On the offline plan everything here exists nowhere else, sent or not.
-    if (_ctx.offlinePlan.isLocalOnly) throw DifferentUserFailure(await _localRecordCount());
     final unsent = await unsentWorkCount();
     if (unsent > 0) throw DifferentUserFailure(unsent);
   }
 
   Future<SignInResult> _finishSignIn(LoginResult login, CurrentUser user) async {
     await _ctx.session.startSession(login.token, user);
-    // Before the first pull: a company on the offline plan must not make one.
-    // A failure here changes nothing, and the first pull goes ahead as ever.
-    if (!user.isContractor) await _ctx.offlinePlan.check(force: true);
-    await _ctx.offlinePlan.noteSignedIn();
-    if (_ctx.offlinePlan.isLocalOnly) {
-      return SignInResult(user: user, firstSync: const SyncRunResult(SyncOutcome.success));
-    }
     // A contractor login has no sites to pull and nothing to send: the portal
     // is its first read. The site team's first pull is exactly as it was.
     final firstSync = user.isContractor ? await _readPortal() : await _ctx.sync.syncNow();
@@ -191,20 +182,7 @@ class AuthRepository {
   /// Refuses with [UnsentWorkFailure] when work has not reached the server,
   /// unless [discardUnsent] is true, which a screen must only pass after the
   /// user has confirmed losing that work.
-  ///
-  /// On the offline plan nothing is ever cleared: this phone holds the only
-  /// copy. The sign-in goes, and the same person can sign back in to it.
   Future<void> signOut({bool discardUnsent = false}) async {
-    if (_ctx.offlinePlan.isLocalOnly) {
-      try {
-        await _ctx.api.logout();
-      } on Exception {
-        // Signing out must work offline.
-      }
-      await _ctx.offlinePlan.noteSignedOut();
-      await _ctx.session.endKeepingUser();
-      return;
-    }
     final unsent = await unsentWorkCount();
     if (unsent > 0 && !discardUnsent) throw UnsentWorkFailure(unsent);
 
@@ -229,13 +207,12 @@ class AuthRepository {
   /// this phone, and signs out.
   ///
   /// Refuses with [UnsentWorkFailure] while work has not reached the server,
-  /// or while the offline plan holds records that exist only here, unless
-  /// [discardUnsent] is true: a screen passes it only after showing that count.
+  /// unless [discardUnsent] is true: a screen passes it only after showing
+  /// that count.
   ///
   /// If the server refuses, nothing here changes and push stays on. Once it
   /// agrees the token is already revoked, so the server is never asked to
-  /// sign out. Unlike [signOut], the offline plan's data goes too: the account
-  /// it belonged to is gone.
+  /// sign out.
   Future<AccountDeletionResult> deleteAccount({
     required AccountDeletionMode mode,
     required String password,
@@ -243,7 +220,7 @@ class AuthRepository {
     bool discardUnsent = false,
   }) async {
     if (!discardUnsent) {
-      final int count = _ctx.offlinePlan.isLocalOnly ? await _localRecordCount() : await unsentWorkCount();
+      final int count = await unsentWorkCount();
       if (count > 0) throw UnsentWorkFailure(count);
     }
     AccountDeletionResult result;
@@ -265,7 +242,6 @@ class AuthRepository {
     _deletedNotice = result;
     await afterAccountDeleted?.call();
     await _settleSync();
-    if (_ctx.offlinePlan.isLocalOnly) await _ctx.offlinePlan.leave();
     await _wipeLocalData();
     await _ctx.session.clear();
     return result;
@@ -292,9 +268,6 @@ class AuthRepository {
     return notice;
   }
 
-  /// Records on the offline plan, which exist on this phone and nowhere else.
-  Future<int> localRecordCount() => _localRecordCount();
-
   /// Outbox items not finished, plus DPR drafts not yet queued and inspections
   /// still being filled in.
   Future<int> unsentWorkCount() async {
@@ -305,11 +278,6 @@ class AuthRepository {
       ..where(_ctx.db.dprs.localDraft.equals(true));
     final drafts = (await query.getSingle()).read(count) ?? 0;
     return queued + drafts;
-  }
-
-  Future<int> _localRecordCount() async {
-    final work = await _ctx.offlinePlan.work();
-    return work.projects + work.boqLines + work.workers + work.wallets + work.entries;
   }
 
   Stream<String?> watchLocale() => _ctx.db.watchMeta(MetaKey.locale);
@@ -330,7 +298,7 @@ class AuthRepository {
         await db.delete(table).go();
       }
       await (db.delete(db.keyValues)
-            ..where((t) => t.key.isIn(<String>[MetaKey.locale, MetaKey.offlineDeviceId, MetaKey.pushExplained]).not()))
+            ..where((t) => t.key.isIn(<String>[MetaKey.locale, MetaKey.pushExplained]).not()))
           .go();
     });
     await _ctx.attachments.deleteAll();

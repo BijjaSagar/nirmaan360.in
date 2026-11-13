@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/app/routes.dart';
@@ -296,26 +295,5 @@ void main() {
 
     expect(app.api.deleteAccountCalls, hasLength(1));
     expect(find.byType(SignInScreen), findsOneWidget);
-  });
-
-  testWidgets('on the offline plan every local record is counted, and erased', (tester) async {
-    final api = FakeApi()..offlineCompany = true;
-    final app = await TestApp.create(seed: false, signedIn: false, api: api);
-    addTearDown(app.dispose);
-    await app.services.auth.signIn(email: 'owner@example.test', password: 'secret');
-    await app.db.into(app.db.projects).insert(ProjectsCompanion.insert(id: const Value(-1), code: 'L1', name: 'Local site'));
-    await app.services.projects.selectProject(-1);
-    await open(tester, app);
-
-    expect(find.text(en.accountDeleteLocalOnly(1)), findsOneWidget);
-    expect(find.text(en.shellSignOutSendFirst), findsNothing);
-
-    await tester.enterText(find.byKey(_password), 'secret');
-    await confirm(tester);
-
-    expect(find.byType(SignInScreen), findsOneWidget);
-    expect(await app.db.select(app.db.projects).get(), isEmpty);
-    expect(app.services.offlinePlan.isLocalOnly, isFalse);
-    expect(app.services.auth.currentUser, isNull);
   });
 }

@@ -34,9 +34,6 @@ class SyncScheduler {
   final Duration maxBackoff;
   final bool observeLifecycle;
 
-  /// Runs before each sync without holding it up. Failures are its own.
-  Future<void> Function()? beforeRun;
-
   StreamSubscription<_OutboxSnapshot>? _outboxSub;
   StreamSubscription<bool>? _connectivitySub;
   AppLifecycleListener? _lifecycle;
@@ -116,7 +113,6 @@ class SyncScheduler {
       _scheduleNext(_backoffDelay(SyncOutcome.offline));
       return;
     }
-    unawaited(beforeRun?.call());
     SyncRunResult result;
     try {
       result = await _engine.syncNow();

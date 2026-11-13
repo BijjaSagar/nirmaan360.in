@@ -7,7 +7,10 @@ import '../../../core/app_services.dart';
 import '../../../core/sync/failures.dart';
 
 /// Why a sign-up failed as a whole, in terms a person can be told.
-enum SignUpProblem { emailTaken, noNetwork, tooManyTries, otherUsersWork, serverDown }
+///
+/// [closed] is the server's own refusal, `errors.signup`: new companies cannot
+/// be started from the app for now.
+enum SignUpProblem { emailTaken, noNetwork, tooManyTries, otherUsersWork, serverDown, closed }
 
 /// The fields of the form, for what is wrong with each.
 enum SignUpField { company, name, email, phone, password, confirm }
@@ -143,6 +146,8 @@ class SignUpCubit extends Cubit<SignUpState> {
 
   static SignUpState _fromValidation(ValidationFailure failure) {
     final Map<String, List<String>> server = failure.errors;
+    // Not about any field: the server is not taking new companies from the app.
+    if (server.containsKey('signup')) return const SignUpState(problem: SignUpProblem.closed);
     if (server.containsKey('email')) return const SignUpState(problem: SignUpProblem.emailTaken);
     final Map<SignUpField, SignUpFieldError> errors = <SignUpField, SignUpFieldError>{
       if (server.containsKey('company')) SignUpField.company: SignUpFieldError.invalid,

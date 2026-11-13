@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert' show base64, base64Decode, base64Url, jsonDecode, jsonEncode, utf8;
+import 'dart:convert' show base64Decode, jsonDecode, jsonEncode;
 import 'dart:math' show atan2, cos, max, min, pi, sin, sqrt;
 import 'dart:typed_data';
 
-import 'package:cryptography/cryptography.dart' show KeyPairType, SimpleKeyPair, SimplePublicKey;
-import 'package:cryptography/dart.dart' show DartEd25519;
 import 'package:decimal/decimal.dart';
 import 'package:nirmaan360/core/api/api_failure.dart';
 import 'package:nirmaan360/core/api/nirmaan_api.dart';
@@ -90,126 +88,6 @@ class FakeApi implements NirmaanApi {
   /// Runs once at the start of the next `pull`, to simulate something
   /// happening on the phone while the request is in flight.
   Future<void> Function()? beforeNextPull;
-
-  // The offline plan ----------------------------------------------------------
-
-  /// The company is on the offline plan: only `auth`, `me` and `offline/*` work.
-  bool offlineCompany = false;
-
-  /// What `GET /offline/status` answers for a normal company.
-  int offlineStatusCalls = 0;
-  int activateCalls = 0;
-  int refreshCalls = 0;
-  int releaseCalls = 0;
-
-  /// Requests the real server would have turned away with `offline_plan`.
-  int refusedCalls = 0;
-
-  /// The next status call throws this. Every later one answers normally.
-  ApiFailure? failNextOfflineStatus;
-
-  /// When set, activating answers this failure.
-  ApiFailure? activateFailure;
-
-  /// When set, refreshing answers this failure.
-  ApiFailure? refreshFailure;
-
-  /// Seconds a new token stays good.
-  int licenceSeconds = 90 * 24 * 3600;
-  String? lastDeviceId;
-
-  /// Corrupts the signature on tokens from now on.
-  bool forgeLicence = false;
-
-  final DartEd25519 _ed25519 = DartEd25519();
-  SimpleKeyPair? _licenceKeys;
-
-  void _refuseIfOffline() {
-    if (!offlineCompany) return;
-    refusedCalls++;
-    throw const OfflinePlanRefused('Your company is on the offline plan.', upgradeUrl: 'http://localhost/billing');
-  }
-
-  @override
-  Future<Map<String, dynamic>> offlineStatus() async {
-    offlineStatusCalls++;
-    if (offline) throw const OfflineFailure();
-    if (unauthorized) throw const AuthExpired();
-    final ApiFailure? failure = failNextOfflineStatus;
-    if (failure != null) {
-      failNextOfflineStatus = null;
-      throw failure;
-    }
-    return <String, dynamic>{
-      'plan': offlineCompany ? 'offline' : 'pro',
-      'offline': offlineCompany,
-      'syncs': !offlineCompany,
-      'max_devices': 1,
-      'active_devices': 0,
-      'licence_days': 90,
-    };
-  }
-
-  Future<Map<String, dynamic>> _issueLicence(String deviceId) async {
-    final SimpleKeyPair keys = _licenceKeys ??= await _ed25519.newKeyPair();
-    final SimplePublicKey publicKey = await keys.extractPublicKey();
-    assert(publicKey.type == KeyPairType.ed25519);
-    final int exp = _now.millisecondsSinceEpoch ~/ 1000 + licenceSeconds;
-    final List<int> payload = utf8.encode(
-      jsonEncode(<String, Object>{
-        'v': 1,
-        'kid': 'test-key',
-        'lic': 7,
-        'org': 1,
-        'usr': 4,
-        'dev': deviceId,
-        'plan': 'offline',
-        'features': <String>['site', 'measurement', 'labour', 'petty_cash'],
-        'max_devices': 1,
-        'iat': _now.millisecondsSinceEpoch ~/ 1000,
-        'exp': exp,
-      }),
-    );
-    final signature = await _ed25519.sign(payload, keyPair: keys);
-    final List<int> sig = forgeLicence ? List<int>.filled(64, 7) : signature.bytes;
-    String encode(List<int> bytes) => base64Url.encode(bytes).replaceAll('=', '');
-    return <String, dynamic>{
-      'licence': <String, Object>{'id': 7, 'device_id': deviceId, 'status': 'active'},
-      'token': 'v1.${encode(payload)}.${encode(sig)}',
-      'signing_key': <String, String>{
-        'algorithm': 'Ed25519',
-        'key_id': 'test-key',
-        'public_key': base64.encode(publicKey.bytes),
-      },
-      'max_devices': 1,
-      'active_devices': 1,
-    };
-  }
-
-  @override
-  Future<Map<String, dynamic>> activateDevice({
-    required String deviceId,
-    required String deviceName,
-    String? platform,
-    String? appVersion,
-  }) async {
-    activateCalls++;
-    lastDeviceId = deviceId;
-    if (offline) throw const OfflineFailure();
-    final ApiFailure? failure = activateFailure;
-    if (failure != null) throw failure;
-    return _issueLicence(deviceId);
-  }
-
-  @override
-  Future<Map<String, dynamic>> refreshDevice({required String deviceId, String? appVersion}) async {
-    refreshCalls++;
-    lastDeviceId = deviceId;
-    if (offline) throw const OfflineFailure();
-    final ApiFailure? failure = refreshFailure;
-    if (failure != null) throw failure;
-    return _issueLicence(deviceId);
-  }
 
   // Push devices -------------------------------------------------------------
 
@@ -344,12 +222,6 @@ class FakeApi implements NirmaanApi {
     if (logoutCalls > 0) throw const AuthExpired();
     deviceRemovals.add(token);
     pushTokens.remove(token);
-  }
-
-  @override
-  Future<void> releaseDevice(String deviceId) async {
-    releaseCalls++;
-    if (offline) throw const OfflineFailure();
   }
 
   // Server state --------------------------------------------------------------
@@ -810,7 +682,6 @@ class FakeApi implements NirmaanApi {
 
   @override
   Future<List<PushResult>> push(List<PushItem> items) async {
-    _refuseIfOffline();
     _guard();
     if (_pushFailures.isNotEmpty) throw _pushFailures.removeAt(0);
     pushCalls.add(items);
@@ -1312,7 +1183,6 @@ class FakeApi implements NirmaanApi {
 
   @override
   Future<Map<String, dynamic>> pull({String? since}) async {
-    _refuseIfOffline();
     _guard();
     pullCalls.add(since);
     final hook = beforeNextPull;
@@ -1408,7 +1278,6 @@ class FakeApi implements NirmaanApi {
 
   @override
   Future<UploadResult> upload(UploadRequest request) async {
-    _refuseIfOffline();
     _guard();
     if (_uploadFailures.isNotEmpty) throw _uploadFailures.removeAt(0);
     uploadCalls.add(request);
@@ -1575,7 +1444,6 @@ class FakeApi implements NirmaanApi {
     String? contractValue,
     String? code,
   }) async {
-    _refuseIfOffline();
     _guard();
     _requireSetupPermission('project.manage');
     return _createOnce(
@@ -1628,7 +1496,6 @@ class FakeApi implements NirmaanApi {
     String? code,
     String? section,
   }) async {
-    _refuseIfOffline();
     if (id != null) {
       _seedBoqItem(
         id: id,
@@ -1684,7 +1551,6 @@ class FakeApi implements NirmaanApi {
     required String name,
     int? userId,
   }) async {
-    _refuseIfOffline();
     _guard();
     _requireSetupPermission('petty_cash.manage');
     _requireProject(projectId);
@@ -1720,7 +1586,6 @@ class FakeApi implements NirmaanApi {
     String type = 'own',
     String? dailyWage,
   }) async {
-    _refuseIfOffline();
     _guard();
     final existing = _workersByUuid[clientUuid];
     if (existing != null) return existing;

@@ -6,7 +6,6 @@ import '../../../core/design/design.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../attendance/view/widgets/field_kit.dart';
 import '../bloc/boq_form_cubit.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// Adds BOQ lines. What the line is comes first, then quantity and rate on the
 /// keypad with the amount working itself out. Built for many lines in a row.
@@ -95,7 +94,6 @@ class _BoqFormViewState extends State<_BoqFormView> {
                       subtitle: state.project?.name,
                       onBack: state.step == 0 ? null : cubit.backToDetails,
                     ),
-                    const LicenceNotice(),
                     if (!state.online)
                       Padding(
                         padding: const EdgeInsets.only(bottom: N360Space.sm),

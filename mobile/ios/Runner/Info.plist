@@ -56,7 +56,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>When you take a worker's attendance photo, the phone notes where it was taken, so the office can see it was taken at the site. It is asked only then.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Attach an existing photo to a daily report or an expense.</string>
+	<string>Nirmaan360 takes site and bill photos with the camera only. It does not open or read your photo library.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

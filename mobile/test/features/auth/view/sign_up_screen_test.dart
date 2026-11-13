@@ -168,6 +168,31 @@ void main() {
     expect(find.byType(SignUpScreen), findsOneWidget);
   });
 
+  testWidgets('a sign-up the server is not taking says so in the slip, in the app\'s words', (tester) async {
+    final app = await create();
+    addTearDown(app.dispose);
+    await pumpShellApp(tester, app, location: Routes.signUp);
+    await fill(tester);
+
+    const String serverText = 'A new company cannot be started from the app right now. Try again later.';
+    app.api.failNextRegister = const ValidationFailure(
+      serverText,
+      errors: <String, List<String>>{
+        'signup': <String>[serverText],
+      },
+    );
+    await submit(tester);
+
+    expect(find.byType(ErrorSlip), findsOneWidget);
+    expect(find.text(en.shellSignUpClosedTitle), findsOneWidget);
+    expect(find.text(en.shellSignUpClosedBody), findsOneWidget);
+    expect(find.text(serverText), findsNothing);
+    // Not a mistake in any field, so nothing is said under the company name.
+    expect(find.text(en.shellSignUpFieldInvalid), findsNothing);
+    expect(find.byType(SignUpScreen), findsOneWidget);
+    expect(app.services.auth.currentUser, isNull);
+  });
+
   testWidgets('success opens the first-project welcome, sending the email lowercased and the language', (tester) async {
     final app = await create();
     addTearDown(app.dispose);
@@ -291,6 +316,6 @@ void main() {
 
     expect(find.text(en.shellLinkFailedTitle), findsOneWidget);
     expect(find.text('${AppConfig.siteUrl}/privacy'), findsOneWidget);
-    expect(find.text(en.offlineCopyLink), findsOneWidget);
+    expect(find.text(en.shellCopyLink), findsOneWidget);
   });
 }

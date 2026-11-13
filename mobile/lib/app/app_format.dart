@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import '../core/money/money.dart';
+import '../core/sync/clock.dart';
 import '../l10n/generated/app_localizations.dart';
 
 /// Dates and short figures for headers and strips.
@@ -28,6 +29,10 @@ abstract final class AppFormat {
     if (parsed == null) return isoDate;
     return _pattern('d MMM yyyy', locale).format(parsed);
   }
+
+  /// The calendar date in India on which [instant] falls, as "9 Dec 2026" in
+  /// [locale], whatever the phone's own time zone.
+  static String indiaDate(DateTime instant, String locale) => dayMonthYear(istDate(instant), locale);
 
   /// A moment as "10 Nov 2026, 18:30" in [locale], on the phone's clock.
   static String dayMonthYearTime(DateTime moment, String locale) =>

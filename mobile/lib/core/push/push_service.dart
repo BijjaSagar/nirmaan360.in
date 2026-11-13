@@ -13,8 +13,7 @@ import 'push_messaging.dart';
 /// Where push stands for the person using this phone.
 enum PushState {
   /// Nothing to offer: this build has no Firebase settings, nobody who may get
-  /// push is signed in (signed out, a contractor login, the offline plan), or
-  /// Firebase could not start.
+  /// push is signed in, or Firebase could not start.
   unavailable,
 
   /// The person has not been asked yet. Home explains, then asks once.
@@ -125,8 +124,7 @@ class PushService {
     await _evaluate();
   }
 
-  /// Says whether the person signed in may get push: a signed-in member of staff
-  /// on a company that is not on the offline plan. Never a contractor login.
+  /// Says whether the person signed in may get push.
   Future<void> setEligible(bool eligible) async {
     if (eligible == _eligible) return;
     _eligible = eligible;
@@ -281,7 +279,7 @@ class PushService {
       switch (failure) {
         case OfflineFailure() || ServerFailure() || RateLimited():
           _pending = token;
-        case AuthExpired() || ValidationFailure() || OfflinePlanRefused() || LicenceEnded():
+        case AuthExpired() || ValidationFailure():
           // Sending the same token again would be refused the same way.
           _pending = null;
       }

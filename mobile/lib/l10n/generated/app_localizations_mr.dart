@@ -55,17 +55,6 @@ class AppLocalizationsMr extends AppLocalizations {
   String get accountDeleteLoading => 'काय होईल ते तपासत आहोत';
 
   @override
-  String accountDeleteLocalOnly(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count नोंदी फक्त या फोनवर आहेत. त्या पुसल्या जातील.',
-      one: '1 नोंद फक्त या फोनवर आहे. ती पुसली जाईल.',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get accountDeleteMemberNow =>
       'तुमचे साइन-इन, नाव, ईमेल आणि मोबाइल नंबर आत्ताच काढून टाकले जातात. हे परत करता येत नाही.';
 
@@ -2014,66 +2003,6 @@ class AppLocalizationsMr extends AppLocalizations {
   String get issuesUnassigned => 'कोणाकडेही नाही';
 
   @override
-  String get licenceContinue => 'पुढे चला';
-
-  @override
-  String licenceEndedOn(String date) {
-    return '$date रोजी संपला';
-  }
-
-  @override
-  String get licenceEndedUploadBody =>
-      'तुमच्या कंपनीचा प्लॅन आता सर्व्हरवर डेटा ठेवतो, त्यामुळे हा परवाना नूतनीकरण करता येणार नाही. काहीही हरवलेले नाही. हवे तर प्रत काढा, मग पुढे जाण्यासाठी तुमचा डेटा सर्व्हरवर अपलोड करा.';
-
-  @override
-  String get licenceNoneBody =>
-      'काहीही हरवलेले नाही. तुम्ही इथले सर्व काही पाहू शकता आणि डेटाची प्रत काढू शकता, पण या फोनला परवाना मिळेपर्यंत काहीही जोडता किंवा बदलता येणार नाही. इंटरनेटशी जोडा आणि आता प्रयत्न करा.';
-
-  @override
-  String get licenceNoneTitle => 'या फोनला अजून परवाना नाही';
-
-  @override
-  String get licenceRenewedBody => 'आता तुम्ही पुन्हा जोडू आणि बदलू शकता.';
-
-  @override
-  String get licenceRenewedTitle => 'परवाना नूतनीकरण झाले';
-
-  @override
-  String get licenceResultNoAnswer =>
-      'सर्व्हरने उत्तर दिले नाही. एका मिनिटाने पुन्हा प्रयत्न करा.';
-
-  @override
-  String get licenceResultNoLicence =>
-      'जोडले गेले, पण या फोनला परवाना देता आला नाही. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.';
-
-  @override
-  String get licenceResultOffline =>
-      'इंटरनेट सापडले नाही. वाय-फाय किंवा मोबाइल डेटा जोडा आणि पुन्हा प्रयत्न करा.';
-
-  @override
-  String get licenceResultPlanSyncs =>
-      'तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवतो, त्यामुळे नूतनीकरण करायला परवाना नाही. पुढे जाण्यासाठी तुमचा डेटा अपलोड करा.';
-
-  @override
-  String get licenceResultStillEnded =>
-      'जोडले गेले, पण परवाना अजूनही संपलेला आहे. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.';
-
-  @override
-  String get licenceScreenTitle => 'परवाना नूतनीकरण';
-
-  @override
-  String get licenceTryNow => 'आता नूतनीकरण करून पाहा';
-
-  @override
-  String get licenceTrying => 'सर्व्हरला विचारत आहे…';
-
-  @override
-  String get licenceUploadNow => 'सर्व्हरवर अपलोड करा';
-
-  @override
-  String get licenceViewData => 'माझा डेटा पाहा';
-
-  @override
   String get machineCategoryBackhoe => 'JCB / बॅकहो लोडर';
 
   @override
@@ -2776,267 +2705,6 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get measurementYesterday => 'काल';
-
-  @override
-  String get offlineActivateAgain => 'हा फोन सक्रिय करा';
-
-  @override
-  String get offlineCopyLink => 'लिंक कॉपी करा';
-
-  @override
-  String get offlineDeviceLimitBody =>
-      'तुमच्या प्लॅनमध्ये ठरावीक फोन चालतात आणि ते सर्व वापरात आहेत. वेबसाइटवर एक मोकळा करा आणि पुन्हा प्रयत्न करा.';
-
-  @override
-  String get offlineDeviceLimitTitle => 'तुमचा परवाना दुसऱ्या फोनकडे आहे';
-
-  @override
-  String get offlineExportButton => 'माझा डेटा निर्यात करा';
-
-  @override
-  String offlineExportDone(int count) {
-    return '$count फोटोंसह प्रत तयार झाली. फाइल सुरक्षित ठिकाणी ठेवा.';
-  }
-
-  @override
-  String get offlineExportFailed =>
-      'प्रत तयार झाली नाही. इथला डेटा सुरक्षित आहे. पुन्हा प्रयत्न करा.';
-
-  @override
-  String get offlineExportHeading => 'एक प्रत ठेवा';
-
-  @override
-  String get offlineExportHint =>
-      'तुमचा सर्व डेटा आणि फोटो असलेली एक फाइल तयार होते. ती ड्राइव्हवर ठेवा, ईमेल करा किंवा दुसऱ्या फोनवर पाठवा.';
-
-  @override
-  String offlineExportMissing(int count) {
-    return '$count फोटो या फोनवर सापडले नाहीत.';
-  }
-
-  @override
-  String get offlineFreeBody =>
-      'तुमचा डेटा आपोआप जाणार नाही. आधी एक प्रत काढा. या फोनवरचा डेटा राहील आणि परवाना संपेपर्यंत चालेल.';
-
-  @override
-  String get offlineFreeConfirm => 'मोकळा करा';
-
-  @override
-  String get offlineFreeFailed =>
-      'ते झाले नाही. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.';
-
-  @override
-  String get offlineFreeThisPhone => 'नवीन फोनवर जा';
-
-  @override
-  String get offlineFreeTitle => 'या फोनचा परवाना मोकळा करायचा?';
-
-  @override
-  String get offlineHereBoq => 'BOQ ओळी';
-
-  @override
-  String get offlineHereEntries => 'नोंदी आणि फोटो';
-
-  @override
-  String get offlineHereProjects => 'इथे तयार केलेले प्रकल्प';
-
-  @override
-  String get offlineHereWallets => 'वॉलेट';
-
-  @override
-  String get offlineHereWorkers => 'कामगार';
-
-  @override
-  String get offlineHomeEnded =>
-      'तुमचा परवाना संपला आहे. नूतनीकरण कसे करावे ते पहा.';
-
-  @override
-  String get offlineHomeHint => 'तुमचा डेटा फक्त इथे आहे. एक प्रत ठेवा.';
-
-  @override
-  String get offlineInvalidTitle => 'परवाना तपासता आला नाही';
-
-  @override
-  String offlineLicenceActive(String date) {
-    return '$date पर्यंत वैध';
-  }
-
-  @override
-  String get offlineLicenceEndedBody =>
-      'काहीही हरवलेले नाही. तुम्ही इथले सर्व काही पाहू शकता आणि डेटाची प्रत काढू शकता, पण परवाना नूतनीकरण होईपर्यंत काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.';
-
-  @override
-  String get offlineLicenceEndedTitle => 'तुमचा परवाना संपला आहे';
-
-  @override
-  String offlineLicenceEndingBody(String date) {
-    return '$date रोजी संपेल. एकदा इंटरनेटशी जोडा, तो आपोआप नूतनीकरण होईल.';
-  }
-
-  @override
-  String get offlineLicenceHeading => 'परवाना';
-
-  @override
-  String get offlineLicenceNone => 'अजून तयार नाही. एकदा इंटरनेटशी जोडा.';
-
-  @override
-  String get offlineLinkCopied => 'लिंक कॉपी झाली';
-
-  @override
-  String get offlineManageLink => 'इथे फोन मोकळा करा';
-
-  @override
-  String get offlineNeedsInternet =>
-      'यासाठी इंटरनेट लागते. इथला डेटा सुरक्षित आहे.';
-
-  @override
-  String get offlineNeedsSignInBody =>
-      'काहीही हरवलेले नाही. तुमचे काम इथे चालू राहील. साइन इन केल्यावरच परवाना नूतनीकरण होईल.';
-
-  @override
-  String get offlineNeedsSignInTitle => 'नूतनीकरणासाठी पुन्हा साइन इन करा';
-
-  @override
-  String offlineNoticeEnded(String date) {
-    return 'तुमचा परवाना $date रोजी संपला. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.';
-  }
-
-  @override
-  String get offlineNoticeEndedNoDate =>
-      'तुमचा परवाना संपला आहे. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. नूतनीकरणासाठी इंटरनेटशी जोडा.';
-
-  @override
-  String offlineNoticeEnding(String date) {
-    return 'तुमचा परवाना $date रोजी संपेल. त्याआधी एकदा इंटरनेटशी जोडा, तो आपोआप नूतनीकरण होईल.';
-  }
-
-  @override
-  String get offlineNoticeNoLicence =>
-      'या फोनला अजून परवाना नाही. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. परवाना मिळवण्यासाठी इंटरनेटशी जोडा.';
-
-  @override
-  String get offlineNoticeUpload =>
-      'तुमचा परवाना संपला आहे आणि तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवतो. तुम्ही सर्व काही पाहू शकता, पण काहीही जोडता किंवा बदलता येणार नाही. पुढे जाण्यासाठी तुमचा डेटा अपलोड करा.';
-
-  @override
-  String get offlineOnPhoneTag => 'या फोनवर';
-
-  @override
-  String get offlineOnPhoneTitle => 'फक्त या फोनवर';
-
-  @override
-  String get offlineOnlyHereBody =>
-      'आमच्या सर्व्हरवर काहीही ठेवले जात नाही. हा फोन हरवला किंवा रीसेट झाला तर डेटा जाईल. एक प्रत काढून सुरक्षित ठेवा.';
-
-  @override
-  String get offlineOnlyHereTitle => 'तुमचा डेटा फक्त या फोनवर आहे';
-
-  @override
-  String get offlinePlanTitle => 'ऑफलाइन प्लॅन';
-
-  @override
-  String get offlineReviewTitle => 'तपासा आणि जतन करा';
-
-  @override
-  String get offlineRevokedBody =>
-      'तुमचा डेटा इथे सुरक्षित आहे आणि परवाना संपेपर्यंत ॲप चालू राहील. हा फोन पुन्हा वापरण्यासाठी वेबसाइटवर जागा मोकळी करा आणि मग सक्रिय करा.';
-
-  @override
-  String get offlineRevokedTitle => 'हा फोन मोकळा केला गेला';
-
-  @override
-  String get offlineSaveReport => 'अहवाल जतन करा';
-
-  @override
-  String get offlineSavedOnPhone => 'या फोनवर जतन केले';
-
-  @override
-  String get offlineShareSubject => 'Nirmaan360 डेटा बॅकअप';
-
-  @override
-  String get offlineSignInButton => 'साइन इन करा';
-
-  @override
-  String get offlineSignOutBody =>
-      'तुमचा डेटा या फोनवरच राहील. पुन्हा साइन इन करण्यासाठी इंटरनेट लागेल.';
-
-  @override
-  String get offlineSignOutTitle => 'साइन आउट करायचे?';
-
-  @override
-  String get offlineUploadAskBody =>
-      'तुमच्या कंपनीचा प्लॅन बदलला आहे, त्यामुळे सर्व्हर आता तुमचा डेटा ठेवू शकतो. तुम्ही हो म्हटल्याशिवाय काहीही अपलोड होणार नाही.';
-
-  @override
-  String get offlineUploadAskTitle => 'तुमचा डेटा सर्व्हरवर अपलोड करायचा?';
-
-  @override
-  String get offlineUploadBusy =>
-      'सर्व्हर व्यस्त आहे. एका मिनिटाने पुन्हा प्रयत्न करा.';
-
-  @override
-  String get offlineUploadContinue => 'अपलोड पुढे सुरू करा';
-
-  @override
-  String get offlineUploadDone =>
-      'तुमचा डेटा सर्व्हरवर जात आहे. ज्याकडे पाहण्याची गरज आहे ते Outbox मध्ये दिसेल.';
-
-  @override
-  String get offlineUploadInterruptedBody =>
-      'काहीही हरवलेले नाही आणि काहीही दोनदा जाणार नाही. तयार असाल तेव्हा पुढे सुरू करा, किंवा सध्या या फोनवरच काम करा.';
-
-  @override
-  String get offlineUploadInterruptedTitle => 'अपलोड मध्येच थांबले';
-
-  @override
-  String get offlineUploadLaterHint =>
-      'तुमचा प्लॅन आता सर्व्हरवर डेटा ठेवू शकतो, तुम्हाला हवे असल्यास.';
-
-  @override
-  String get offlineUploadLaterTile => 'सर्व्हरवर अपलोड करा';
-
-  @override
-  String get offlineUploadNo => 'नाही, या फोनवरच ठेवा';
-
-  @override
-  String get offlineUploadNoNetwork =>
-      'आत्ता इंटरनेट नाही. कनेक्शन मिळाल्यावर पुढे सुरू करा.';
-
-  @override
-  String offlineUploadPlanLimit(String reason) {
-    return 'तुमच्या प्लॅनमध्ये हे अजून नाही: $reason';
-  }
-
-  @override
-  String offlineUploadProgress(int done, int total) {
-    return '$total पैकी $done गेले';
-  }
-
-  @override
-  String offlineUploadRefused(String reason) {
-    return 'सर्व्हरने हे स्वीकारले नाही: $reason';
-  }
-
-  @override
-  String get offlineUploadRunningBody =>
-      'ॲप उघडे ठेवा. थांबले तरी काही हरवणार नाही आणि काहीही दोनदा जाणार नाही.';
-
-  @override
-  String get offlineUploadRunningTitle => 'तुमचा डेटा अपलोड होत आहे';
-
-  @override
-  String get offlineUploadSignIn =>
-      'कृपया पुन्हा साइन इन करा आणि पुढे सुरू करा. काहीही हरवलेले नाही.';
-
-  @override
-  String get offlineUploadStillOffline =>
-      'तुमची कंपनी पुन्हा ऑफलाइन प्लॅनवर आहे, त्यामुळे काहीही अपलोड झाले नाही.';
-
-  @override
-  String get offlineUploadTitle => 'तुमचा डेटा';
-
-  @override
-  String get offlineUploadYes => 'हो, माझा डेटा अपलोड करा';
 
   @override
   String get pettyCashAddExpense => 'खर्च जोडा';
@@ -4458,6 +4126,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get shellCaptionWorkDone => 'झालेले काम';
 
   @override
+  String get shellCopyLink => 'लिंक कॉपी करा';
+
+  @override
   String get shellDiscardBody =>
       'ती सर्व्हरवर पोहोचलेली नाही. ती या फोनवरून काढली जाईल.';
 
@@ -4469,6 +4140,9 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get shellDiscardTitle => 'ही नोंद काढून टाकायची?';
+
+  @override
+  String get shellLinkCopied => 'लिंक कॉपी झाली';
 
   @override
   String get shellLinkFailedBody => 'लिंक कॉपी करा आणि ब्राउझरमध्ये उघडा.';
@@ -4803,6 +4477,13 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get shellSignUpButton => 'खाते बनवा';
+
+  @override
+  String get shellSignUpClosedBody => 'नंतर पुन्हा प्रयत्न करा.';
+
+  @override
+  String get shellSignUpClosedTitle =>
+      'सध्या ॲपमधून नवीन कंपनी सुरू करता येत नाही';
 
   @override
   String get shellSignUpCompany => 'कंपनीचे नाव';

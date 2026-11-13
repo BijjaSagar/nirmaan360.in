@@ -15,7 +15,6 @@ import 'widgets/boq_picker_sheet.dart';
 import 'widgets/book_kit.dart';
 import 'widgets/details_sheet.dart';
 import 'widgets/form_parts.dart';
-import '../../offline_plan/view/widgets/licence_notice.dart';
 
 /// Height the full layout takes between the status bar and the gesture bar,
 /// with the BOQ title on two lines and text at normal size. Measured with the
@@ -330,7 +329,6 @@ class _FormView extends StatelessWidget {
             padding: EdgeInsets.zero,
             children: <Widget>[
               if (!state.online) _offline(l),
-              const LicenceNotice(),
               header,
               const SizedBox(height: N360Space.xs),
               ...notes,
@@ -355,7 +353,6 @@ class _FormView extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     children: <Widget>[
                       if (!state.online) _offline(l),
-              const LicenceNotice(),
                       header,
                       const SizedBox(height: N360Space.sm),
                       dims,
@@ -601,15 +598,6 @@ class _ActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final int rows = state.saved.length + (state.hasAnyDims ? 1 : 0);
-    // One person on the offline plan, so nothing goes for approval.
-    if (context.read<AppServices>().offlinePlan.isLocalOnly) {
-      return GloveButton(
-        key: const ValueKey<String>('measurement-save'),
-        label: l.commonSave,
-        fullWidth: true,
-        onPressed: onSave,
-      );
-    }
     final String sendLabel = state.originalStatus == DocStatus.returned
         ? l.measurementSendAgain
         : (rows > 1 && !state.isEditing ? l.measurementSendCount(rows) : l.measurementSendForApproval);

@@ -125,19 +125,5 @@ void main() {
       await settle(tester);
       expect(find.byType(AccountDeletionScreen), findsOneWidget);
     });
-
-    testWidgets('a phone on the offline plan sees both', (tester) async {
-      final app = await TestApp.create(seed: false, signedIn: false, api: FakeApi()..offlineCompany = true);
-      addTearDown(app.dispose);
-      await app.services.auth.signIn(email: 'owner@example.test', password: 'secret');
-      await pumpShellApp(tester, app, location: Routes.settings);
-
-      expect(find.byKey(privacy), findsOneWidget);
-      expect(find.byKey(delete), findsOneWidget);
-      await tester.ensureVisible(find.byKey(delete));
-      await tester.tap(find.byKey(delete));
-      await settle(tester);
-      expect(find.byType(AccountDeletionScreen), findsOneWidget);
-    });
   });
 }
