@@ -19,6 +19,8 @@ use LogicException;
  *
  * Nothing here is offered while the readers are off: AiSpend::readersOn() is the one test, the same
  * one the public website, the privacy policy and terms, the menu and the phone's status answer use.
+ * A company that has agreed keeps the page and its menu entry while the readers are off, to switch
+ * them off (shown()); nothing is sent meanwhile, as every gate asks readersOn's parts itself.
  */
 class ReaderSettings
 {
@@ -45,6 +47,17 @@ class ReaderSettings
     public function offered(?Organization $organization = null): bool
     {
         return $this->spend->readersOn($organization);
+    }
+
+    /**
+     * Whether the company's menu has the entry for these settings: while the readers are on for it (offered()),
+     * and while its agreement is on record although they are not, so an owner or admin can still switch them off.
+     * It is asked on every page, so the agreement is read from the company's own row, with no query
+     * (AiDocumentSettings::agreed).
+     */
+    public function shown(Organization $organization): bool
+    {
+        return $this->offered($organization) || AiDocumentSettings::agreed($organization);
     }
 
     /**

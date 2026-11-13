@@ -31,6 +31,7 @@
     "Most credits one document may use": "एक दस्तावेज़ अधिकतम कितने क्रेडिट इस्तेमाल कर सकता है",
     "No API key for the AI service is saved.": "AI सेवा के लिए कोई API कुंजी सेव नहीं है।",
     "No page could be read. Pages that cannot be read are not charged.": "कोई पन्ना पढ़ा नहीं जा सका। जो पन्ने पढ़े नहीं जा सकते, उनका शुल्क नहीं लगता।",
+    "No reader is available for your company right now, so nothing is sent to the AI service. Your company's agreement stays on record and counts again when a reader is back, unless the notice has changed. Switch the readers off here to withdraw it.": "अभी आपकी कंपनी के लिए कोई रीडर उपलब्ध नहीं है, इसलिए AI सेवा को कुछ नहीं भेजा जाता। आपकी कंपनी की सहमति रिकॉर्ड में बनी रहती है और रीडर वापस आने पर फिर से गिनी जाती है, जब तक सूचना बदली न हो। इसे वापस लेने के लिए यहां रीडर बंद करें।",
     "No reader is switched on yet.": "अभी कोई रीडर चालू नहीं किया गया है।",
     "Notice version: :version.": "सूचना का संस्करण: :version।",
     "Off": "बंद",
