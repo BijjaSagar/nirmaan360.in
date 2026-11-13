@@ -46,17 +46,27 @@ return [
      * shares a word of at least min_letters letters with what was said, then lines used in the
      * project's DPRs of the last recent_days days. Never a rate. A word in Devanagari needs
      * min_letters_devanagari: its vowel signs are not counted as letters, so भिंत, वीट and छत have two.
+     * Units, size words and number words never pick a line, on either side.
      */
     'context' => ['items' => 40, 'recent_days' => 14, 'description_chars' => 120, 'min_letters' => 3, 'min_letters_devanagari' => 2],
 
-    // Words that say nothing about which BOQ line is meant, so they never pick one.
+    // Words that say nothing about which BOQ line is meant, so they never pick one, said or written in the line.
     'context_stop_words' => [
         'and', 'are', 'all', 'also', 'but', 'done', 'for', 'from', 'had', 'has', 'have', 'not', 'our', 'site',
         'that', 'the', 'this', 'today', 'was', 'were', 'will', 'with', 'work', 'yesterday',
-        'आज', 'आणि', 'आता', 'आम्ही', 'आहे', 'आहेत', 'उद्या', 'काम', 'काल', 'केलं', 'केला', 'केली', 'केले', 'जण', 'झालं',
-        'झाला', 'झाली', 'झाले', 'तर', 'नाही', 'पण', 'मग', 'मध्ये', 'वर', 'साठी', 'होतं', 'होता', 'होती', 'होते',
-        'और', 'कल', 'किया', 'गई', 'गए', 'गया', 'तक', 'नहीं', 'पर', 'लिए', 'हम', 'हमने', 'हुआ', 'हुई', 'हुए',
+        'आज', 'आणि', 'आता', 'आम्ही', 'आहे', 'आहेत', 'उद्या', 'कर', 'करणे', 'करत', 'काम', 'काल', 'केलं', 'केला', 'केली', 'केले',
+        'जण', 'झालं', 'झाला', 'झाली', 'झाले', 'तर', 'नाही', 'पण', 'मग', 'मजुरी', 'मध्ये', 'वर', 'सह', 'सहित', 'साठी',
+        'साहित्य', 'होतं', 'होता', 'होती', 'होते',
+        'और', 'करके', 'करना', 'करने', 'कल', 'किया', 'गई', 'गए', 'गया', 'तक', 'नहीं', 'पर', 'मजदूरी', 'रहा', 'रही', 'रहे',
+        'लिए', 'सामग्री', 'हम', 'हमने', 'हुआ', 'हुई', 'हुए',
     ],
+
+    /*
+     * The case endings a two-letter Devanagari word may carry and still be the same word: भिंत said
+     * as "भिंतीचं" or "भिंतीला". Vowel signs before the ending are allowed as well ("ईंटों", "भिंती").
+     * Any other longer word is a different word: "पर" is not in "परवा".
+     */
+    'context_endings' => ['चं', 'चा', 'ची', 'चे', 'च्या', 'त', 'ना', 'नी', 'ने', 'मध्ये', 'ला', 'वर', 'साठी'],
 
     // How many words may stand between a number and the trade or unit it is tied to.
     'anchor_words' => 6,

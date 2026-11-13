@@ -5,6 +5,7 @@ namespace App\Services\VoiceDpr;
 use App\Models\BoqItem;
 use App\Models\DprVoiceDraft;
 use App\Models\Project;
+use App\Services\DocumentReading\UnitText;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -19,14 +20,17 @@ class VoiceContext
 {
     /**
      * Ids of the lines to offer, B1 first: lines whose code or description shares a word with what was
-     * said (see words()), the closest first, then lines used in the project's DPRs of the last days.
+     * said (see words() and same()), the closest first, then lines used in the project's DPRs of the
+     * last days.
      *
      * @return list<int>
      */
     public function refsFor(Project $project, string $transcript): array
     {
         $figures = (array) config('modules.voice_dpr.context');
-        $said = $this->words($transcript, true);
+        $quiet = $this->quietWords();
+        $numbers = [new SpokenNumbers('mr-IN'), new SpokenNumbers('hi-IN')];
+        $said = $this->words($transcript, $quiet, $numbers);
         $recent = $this->recentlyUsed($project, (int) $figures['recent_days']);
 
         $items = BoqItem::withoutGlobalScopes()
@@ -37,8 +41,8 @@ class VoiceContext
             ->get(['id', 'code', 'description', 'sort']);
 
         return $items
-            ->map(function (BoqItem $item) use ($said, $recent) {
-                $own = $this->words($item->code.' '.$item->description, false);
+            ->map(function (BoqItem $item) use ($said, $recent, $quiet, $numbers) {
+                $own = $this->words($item->code.' '.$item->description, $quiet, $numbers);
                 $score = count(array_filter($said, fn (string $word) => $this->shares($word, $own)));
 
                 return ['id' => (int) $item->id, 'score' => $score, 'recent' => isset($recent[$item->id]), 'sort' => (int) $item->sort];
@@ -101,8 +105,10 @@ class VoiceContext
     }
 
     /**
-     * Words in lower case with at least the configured number of letters. For what was said, the
-     * words that name no work are left out.
+     * The words that may name a line, in lower case, from what was said or from a line's code and
+     * description alike: words with at least the configured number of letters that are not a stop
+     * word, a unit, a size word or a number word. A unit, a size or a number says how much or how big,
+     * never which line, and "मिमी" is left out as "mm" is.
      *
      * Letters are counted as \p{L}. In Devanagari that counts the consonants and vowels that begin a
      * syllable, not the vowel signs and the anusvara (\p{M}), so a word of two syllables such as भिंत,
@@ -110,36 +116,92 @@ class VoiceContext
      * in Devanagari needs min_letters_devanagari letters; the one-syllable particles (है, का, ला) stay
      * out, and the stop words take out the rest.
      *
+     * @param  array<string, true>  $quiet
+     * @param  list<SpokenNumbers>  $numbers
      * @return list<string>
      */
-    private function words(string $text, bool $spoken): array
+    private function words(string $text, array $quiet, array $numbers): array
     {
         $minimum = (int) config('modules.voice_dpr.context.min_letters');
         $devanagari = (int) config('modules.voice_dpr.context.min_letters_devanagari');
-        $stop = $spoken ? array_map(fn ($word) => SpokenNumbers::lower((string) $word), (array) config('modules.voice_dpr.context_stop_words')) : [];
-        $long = fn (string $word) => preg_match_all('/\p{L}/u', $word) >= (preg_match('/\p{Devanagari}/u', $word) === 1 ? $devanagari : $minimum);
+        $long = fn (string $word) => self::letters($word) >= (preg_match('/\p{Devanagari}/u', $word) === 1 ? $devanagari : $minimum);
+        $number = function (string $word) use ($numbers): bool {
+            foreach ($numbers as $reader) {
+                if ($reader->couldBePart($word)) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
 
         return (new Collection(preg_split('/[^\p{L}\p{M}\p{N}]+/u', SpokenNumbers::lower($text)) ?: []))
-            ->filter(fn (string $word) => $long($word) && ! in_array($word, $stop, true))
+            ->filter(fn (string $word) => $long($word) && ! isset($quiet[$word]) && ! isset($quiet[UnitText::key($word)]) && ! $number($word))
             ->unique()
             ->values()
             ->all();
+    }
+
+    /** @return array<string, true> The stop words, the size words and every spelling of a unit, in lower case. */
+    private function quietWords(): array
+    {
+        $quiet = [];
+
+        foreach ([...(array) config('modules.voice_dpr.context_stop_words'), ...(array) config('modules.voice_dpr.size_words')] as $word) {
+            $quiet[SpokenNumbers::lower((string) $word)] = true;
+        }
+
+        foreach (array_keys(UnitText::words()) as $unit) {
+            $quiet[(string) $unit] = true;
+        }
+
+        return $quiet;
+    }
+
+    /** @param  list<string>  $own */
+    private function shares(string $word, array $own): bool
+    {
+        foreach ($own as $candidate) {
+            if ($this->same($word, $candidate)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
      * Whether a spoken word and a word of the line are the same word, allowing for an ending on either:
      * "काँक्रीटचे" said for "काँक्रीट", "plaster" for "plastering".
      *
-     * @param  list<string>  $own
+     * A word of fewer than min_letters letters (a Devanagari word of two syllables) is too short to be
+     * read inside any longer word: "पर" would be found in "परवा" and "तार" in "तारीख". It matches itself,
+     * or itself with vowel signs and at most one case ending from context_endings: "भिंतीचं" for भिंत,
+     * "ईंटों" for ईंट. The short words that name no work (वर, पर, सह, कर) are stop words on both sides.
      */
-    private function shares(string $word, array $own): bool
+    private function same(string $a, string $b): bool
     {
-        foreach ($own as $candidate) {
-            if (str_starts_with($candidate, $word) || str_starts_with($word, $candidate)) {
-                return true;
-            }
+        if ($a === $b) {
+            return true;
         }
 
-        return false;
+        [$short, $long] = strlen($a) < strlen($b) ? [$a, $b] : [$b, $a];
+
+        if (! str_starts_with($long, $short)) {
+            return false;
+        }
+
+        if (self::letters($short) >= (int) config('modules.voice_dpr.context.min_letters')) {
+            return true;
+        }
+
+        $ending = (string) preg_replace('/^\p{M}+/u', '', substr($long, strlen($short)));
+
+        return $ending === '' || in_array($ending, array_map(fn ($end) => SpokenNumbers::lower((string) $end), (array) config('modules.voice_dpr.context_endings')), true);
+    }
+
+    private static function letters(string $word): int
+    {
+        return (int) preg_match_all('/\p{L}/u', $word);
     }
 }

@@ -182,6 +182,31 @@ class VoiceDraftFlowTest extends VoiceDprTestCase
         $this->assertNotContains($digging->id, $this->draft($hindi)->checks['refs']);
     }
 
+    public function test_a_little_word_of_a_line_is_never_read_inside_a_longer_word_while_a_case_ending_still_names_it(): void
+    {
+        $withLabour = $this->line($this->project, 'BW-06', 'वीट बांधकाम साहित्य व मजुरी सह', 'cum', '6200.00');
+        $groundFloor = $this->line($this->project, 'PT-07', 'तळमजला वर रंगकाम', 'sqm', '180.00');
+        $roof = $this->line($this->project, 'WP-08', 'छत पर वॉटरप्रूफिंग', 'sqm', '650.00');
+        $wallPlaster = $this->line($this->project, 'PL-09', 'दीवार पर प्लास्टर करना', 'sqm', '330.00');
+        $bars = $this->line($this->project, 'RF-10', 'बार बेंडिंग', 'kg', '75.00');
+        $tiles = $this->line($this->project, 'FL-11', 'टाइल 600 मिमी', 'sqm', '1150.00');
+        $wall = $this->line($this->project, 'BW-12', 'भिंत 230 मिमी', 'cum', '6100.00');
+        $brick = $this->line($this->project, 'BW-13', 'ईंट की दीवार', 'sqm', '980.00');
+
+        // सह is not सहा, वर not वरच्या, पर not परवा, बार not बारा, and मिमी names no line as mm does not;
+        // भिंत with its ending, as in भिंतीचं, is still the wall.
+        $marathi = $this->send($this->engineer, $this->payload(['transcript' => 'सहा गवंडी, बारा हेल्पर. वरच्या मजल्यावर परवा स्लॅब झाला. भिंतीचं काम 230 मिमी झालं.']))->assertStatus(202)->json('id');
+        $this->assertSame([$wall->id], $this->draft($marathi)->checks['refs']);
+
+        // कर is not करना, and ईंटों is ईंट.
+        $hindi = $this->send($this->engineer, $this->payload(['locale' => 'hi-IN', 'transcript' => 'मिस्त्री काम कर रहे थे. ईंटों की चिनाई हुई.']))->assertStatus(202)->json('id');
+        $this->assertSame([$brick->id], $this->draft($hindi)->checks['refs']);
+
+        foreach ([$withLabour, $groundFloor, $roof, $wallPlaster, $bars, $tiles] as $unnamed) {
+            $this->assertNotContains($unnamed->id, [...$this->draft($marathi)->checks['refs'], ...$this->draft($hindi)->checks['refs']], $unnamed->description);
+        }
+    }
+
     public function test_a_failed_call_leaves_the_words_and_says_so(): void
     {
         $id = $this->send($this->engineer)->assertStatus(202)->json('id');
