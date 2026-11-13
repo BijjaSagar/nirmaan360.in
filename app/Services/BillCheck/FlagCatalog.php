@@ -261,7 +261,7 @@ final class FlagCatalog
         'E2' => [
             'level' => self::T,
             'params' => ['item' => 'text', 'unit' => 'text', 'date' => 'date', 'qty' => 'qty', 'count' => 'count'],
-            'text' => 'Item :item: identical approved measurements dated :date, each :qty :unit: :count. Check that the same work was not entered twice.',
+            'text' => 'Item :item: identical approved measurements dated :date, each :qty :unit: :count. Check that the same work was not entered more than once.',
         ],
         'E3' => [
             'level' => self::T,

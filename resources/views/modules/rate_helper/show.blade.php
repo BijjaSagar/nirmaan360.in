@@ -7,6 +7,7 @@
 @section('content')
     @php
         $modes = [RateSuggestionLine::SET_BOQ_RATE => __('Set as the BOQ rate'), RateSuggestionLine::NOTE_CURRENT_RATE => __('Note as today\'s current rate')];
+        $sameWork = ['yes' => __('AI: same work'), 'similar' => __('AI: similar work, check the difference'), 'no' => __('AI: other work')];
         $values = fn (string $kind, array $list) => $list === [] ? __('not stated') : implode(', ', array_map(fn (string $value) => TextGuards::shown($kind, $value), $list));
         $waiting = collect($lines)->filter(fn (array $entry) => $entry['line']->isOpen())->count();
     @endphp
@@ -43,6 +44,57 @@
         </ul>
     </section>
 
+    @if ($ranking['offered'])
+        {{-- The AI may put each line's candidates in order. It is sent descriptions and units, never a rate, and every rate below is still read by the app. --}}
+        <section class="card mb-5" id="ranking">
+            <div class="card-head">
+                <h2 class="card-title">{{ __('Ranking with AI') }}</h2>
+                @if ($ranking['ranked_lines'] > 0)
+                    <span class="text-sm text-ink-3">{{ __('Lines ranked by the AI: :count', ['count' => $ranking['ranked_lines']]) }}</span>
+                @endif
+            </div>
+            <div class="space-y-2 px-4 py-3 text-sm">
+                <p class="text-ink-2">{{ __('No rate is typed by the AI. It only ranks items the app found in your own data, and the app fetches the rate. No government schedule is loaded.') }}</p>
+
+                @foreach (['ai_reader', 'run', 'client_uuid'] as $field)
+                    @error($field)
+                        <p class="font-medium text-laterite-dark" role="alert">{{ $message }}</p>
+                    @enderror
+                @endforeach
+
+                @if ($ranking['status'] === 'ranking')
+                    <p class="font-medium" role="status">{{ __('The AI is putting the suggestions in order. This page updates when it is done.') }}</p>
+                    <div x-data x-init="
+                        const started = Date.now();
+                        const check = setInterval(async () => {
+                            if (Date.now() - started > 600000) { clearInterval(check); return; }
+                            const response = await fetch(@js(route('rate-suggestions.ranking', $run)), { headers: { Accept: 'application/json' } });
+                            if (response.ok && (await response.json()).status !== 'ranking') { clearInterval(check); location.reload(); }
+                        }, 3000);
+                    "></div>
+                @else
+                    @if ($ranking['failed_lines'] > 0)
+                        <p class="text-ink-2">{{ __('Lines the AI could not rank: :count. They stay in the app\'s own order, and you can ask again.', ['count' => $ranking['failed_lines']]) }}</p>
+                    @endif
+
+                    @if ($ranking['can_rank'])
+                        <form method="POST" action="{{ route('rate-suggestions.rank', $run) }}" class="flex flex-wrap items-center gap-2">
+                            @csrf
+                            <input type="hidden" name="client_uuid" value="{{ \Illuminate\Support\Str::uuid() }}">
+                            <button class="btn btn-ghost min-h-11">{{ __('Rank with AI') }}</button>
+                            <span class="text-xs text-ink-3">{{ __('Lines waiting to be ranked: :count', ['count' => $ranking['waiting']]) }}</span>
+                            @if ($ranking['credits'] !== null)
+                                <span class="text-xs text-ink-3">· {{ __('Ranking uses up to :count AI credits', ['count' => Dec::indian($ranking['credits'], 0)]) }}</span>
+                            @endif
+                        </form>
+                    @elseif ($ranking['plan_stops'] && $ranking['ranked_lines'] === 0)
+                        <p class="text-xs text-ink-3">{{ __('Ranking with AI is part of the Business and Enterprise plans.') }}</p>
+                    @endif
+                @endif
+            </div>
+        </section>
+    @endif
+
     @foreach ($lines as $entry)
         @php
             $line = $entry['line'];
@@ -78,6 +130,10 @@
                     <summary class="cursor-pointer py-3 text-ink-3">{{ __('Full description of this line') }}</summary>
                     <p class="pb-2 text-ink-2">{{ $item->description }}</p>
                 </details>
+            @endif
+
+            @if ($entry['notes_hidden'] && ! $line->isAccepted())
+                <p class="border-b border-rule px-4 py-2 text-xs text-ink-3">{{ __('The AI\'s notes on this line are not shown to you, because they were written beside an item you cannot open.') }}</p>
             @endif
 
             @if (! $item)
@@ -118,6 +174,14 @@
                                     <span>· {{ __($figure->dateLabel) }} {{ $figure->date?->format('d M Y') ?? __('no date') }}</span>
                                     @if ($candidate['old'])<span class="stamp border-haldi text-[#8a6208]">{{ __('old') }}</span>@endif
                                 </p>
+                                @if ($candidate['same_work'] !== null)
+                                    <p class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                                        <span @class(['stamp', 'border-moss text-moss' => $candidate['same_work'] === 'yes', 'border-haldi text-[#8a6208]' => $candidate['same_work'] === 'similar', 'border-laterite text-laterite' => $candidate['same_work'] === 'no'])>{{ $sameWork[$candidate['same_work']] ?? '' }}</span>
+                                        @if ($candidate['note'] !== null)
+                                            <span class="text-ink-2" @if ($candidate['note_locale']) lang="{{ $candidate['note_locale'] }}" @endif>{{ $candidate['note'] }}</span>
+                                        @endif
+                                    </p>
+                                @endif
                                 @foreach ($candidate['warnings'] as $warning)
                                     <p class="mt-1.5 text-xs">
                                         <span class="stamp border-laterite text-laterite">{{ __($warning['label']) }}</span>

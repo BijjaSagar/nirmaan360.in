@@ -4,6 +4,7 @@ namespace Tests\Feature\BillCheck;
 
 use App\Models\BillCheck;
 use App\Models\BillCheckAck;
+use App\Models\BillCheckExplanation;
 use App\Models\BillCheckPolicy;
 use App\Services\BillCheck\BillChecks;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -19,6 +20,12 @@ class BillCheckMigrationTest extends BillCheckTestCase
         return require database_path('migrations/2027_01_14_100002_create_bill_check_tables.php');
     }
 
+    /** The explanations of a check, which hang on the checks table and so come off before it and go back after it. */
+    private function explanations(): object
+    {
+        return require database_path('migrations/2027_01_14_100003_create_bill_check_explanations_table.php');
+    }
+
     private function checkedBill(): BillCheck
     {
         $this->measure('20');
@@ -32,9 +39,10 @@ class BillCheckMigrationTest extends BillCheckTestCase
         app(BillChecks::class)->acknowledge($check, 'T1:tds', 'Seen and noted', $this->qs);
         $this->requireCheck();
 
+        $this->explanations()->down();
         $this->migration()->down();
 
-        foreach (self::TABLES as $table) {
+        foreach ([...self::TABLES, 'bill_check_explanations'] as $table) {
             $this->assertFalse(Schema::hasTable($table), $table);
         }
 
@@ -44,8 +52,9 @@ class BillCheckMigrationTest extends BillCheckTestCase
         $this->assertSame(1, DB::table('ra_bills')->count());
 
         $this->migration()->up();
+        $this->explanations()->up();
 
-        foreach (self::TABLES as $table) {
+        foreach ([...self::TABLES, 'bill_check_explanations'] as $table) {
             $this->assertTrue(Schema::hasTable($table), $table);
             $this->assertSame(0, DB::table($table)->count(), $table);
         }
@@ -60,6 +69,10 @@ class BillCheckMigrationTest extends BillCheckTestCase
 
         foreach (['organization_id', 'required', 'updated_by', 'created_at', 'updated_at'] as $column) {
             $this->assertTrue(Schema::hasColumn('bill_check_policies', $column), $column);
+        }
+
+        foreach (['organization_id', 'project_id', 'bill_check_id', 'locale', 'source', 'slots', 'fingerprint', 'reason', 'ai_text_call_id', 'requested_by', 'drafted_at'] as $column) {
+            $this->assertTrue(Schema::hasColumn('bill_check_explanations', $column), $column);
         }
 
         $this->assertFalse(app(BillChecks::class)->isRequired($this->org->id), 'No row, so the check is not required.');
@@ -96,6 +109,37 @@ class BillCheckMigrationTest extends BillCheckTestCase
 
         $this->assertSame(2, BillCheckAck::withoutGlobalScopes()->count());
         $this->assertSame(1, BillCheckPolicy::withoutGlobalScopes()->count());
+    }
+
+    public function test_the_explanations_can_be_rolled_back_alone_and_one_language_is_kept_once_per_check(): void
+    {
+        $check = $this->checkedBill();
+        $row = ['organization_id' => $this->org->id, 'project_id' => $this->project->id, 'bill_check_id' => $check->id, 'locale' => 'mr', 'requested_by' => $this->pm->id];
+        BillCheckExplanation::create($row);
+
+        try {
+            DB::transaction(fn () => BillCheckExplanation::create($row));
+            $this->fail('One check was explained twice in the same language.');
+        } catch (UniqueConstraintViolationException) {
+            // Refused by the table itself.
+        }
+
+        BillCheckExplanation::create([...$row, 'locale' => 'hi']);
+        $this->assertSame(['template', 'template'], BillCheckExplanation::withoutGlobalScopes()->pluck('source')->all());
+
+        $this->explanations()->down();
+        $this->assertFalse(Schema::hasTable('bill_check_explanations'));
+        $this->assertSame(1, DB::table('bill_checks')->count(), 'The checks are not touched.');
+
+        $this->explanations()->up();
+        $this->assertSame(0, DB::table('bill_check_explanations')->count());
+
+        // An explanation goes with its check and survives the person who asked for it.
+        BillCheckExplanation::create($row);
+        DB::table('users')->where('id', $this->pm->id)->delete();
+        $this->assertNull(BillCheckExplanation::withoutGlobalScopes()->sole()->requested_by);
+        DB::table('ra_bills')->where('id', $check->ra_bill_id)->delete();
+        $this->assertSame(0, BillCheckExplanation::withoutGlobalScopes()->count());
     }
 
     public function test_a_check_goes_with_its_bill_and_survives_the_people_who_made_it(): void

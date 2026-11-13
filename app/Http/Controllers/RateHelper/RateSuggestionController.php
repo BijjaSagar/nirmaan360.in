@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\RateSuggestionLine;
 use App\Models\RateSuggestionRun;
+use App\Services\RateHelper\Ranking\RateRanking;
 use App\Services\RateHelper\RateAcceptance;
 use App\Services\RateHelper\RateReview;
 use App\Services\RateHelper\RateSuggestionService;
@@ -22,6 +23,7 @@ class RateSuggestionController extends Controller
         private RateSuggestionService $runs,
         private RateReview $review,
         private RateAcceptance $acceptance,
+        private RateRanking $ranking,
     ) {}
 
     /** A form goes on to the review screen. A JSON caller gets the id of the run. */
@@ -40,10 +42,14 @@ class RateSuggestionController extends Controller
 
     public function show(Request $request, RateSuggestionRun $run): View
     {
+        $project = $this->projectOf($run);
+        $review = $this->review->for($run, $request->user());
+
         return view('modules.rate_helper.show', [
             'run' => $run,
-            'project' => $this->projectOf($run),
-            ...$this->review->for($run, $request->user()),
+            'project' => $project,
+            ...$review,
+            'ranking' => $this->ranking->forPage($run, $request->user(), $review['lines']),
         ]);
     }
 
