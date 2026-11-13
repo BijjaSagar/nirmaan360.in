@@ -54,6 +54,7 @@ class MoneyVisibilityTest extends TestCase
         'reports.xlsx' => ['report' => 'boq_ledger'],
         'reports.pdf' => ['report' => 'boq_ledger'],
         'api/v1/projects/{project}/material-control/bills' => ['show' => 'attached'],
+        'api.reports.measurement-sheet' => ['from' => '2026-01-01', 'to' => '2026-12-31'],
     ];
 
     /**
@@ -109,6 +110,7 @@ class MoneyVisibilityTest extends TestCase
         'api/v1/approvals' => ['bill_net'],
         'api/v1/delivery-challans/{deliveryChallan}' => ['challan_bill'],
         'api/v1/projects/{project}/material-control/bills' => ['challan_bill'],
+        'api.reports.measurement-sheet' => ['boq_rate'],
     ];
 
     protected function setUp(): void
