@@ -207,7 +207,7 @@ class CompanyDeletionService
      */
     private function deleteFiles(int $organizationId, array $files): void
     {
-        $failed = 0;
+        $failed = [];
 
         foreach ($files as $path) {
             try {
@@ -217,12 +217,46 @@ class CompanyDeletionService
             }
 
             if (! $deleted) {
-                $failed++;
+                $failed[$path] = true;
             }
         }
 
-        if ($failed > 0) {
-            Log::warning('Files from a deleted company could not be removed', ['organization_id' => $organizationId, 'files' => $failed]);
+        // A module can keep a folder per company that holds files no table row names, such as a page
+        // that was uploaded while its row could not be saved. It lists the folder under
+        // "purge_directories" in its config, with "{org}" where the company's id goes, and the whole
+        // folder is deleted here. An entry without "{org}" could name every company's files, so it is skipped.
+        foreach (config('modules', []) as $module) {
+            foreach ((array) ($module['purge_directories'] ?? []) as $template) {
+                if (! is_string($template) || ! str_contains($template, '{org}')) {
+                    continue;
+                }
+
+                $directory = trim(str_replace('{org}', (string) $organizationId, $template), '/');
+
+                if (! $this->data->isSafePath($directory)) {
+                    continue;
+                }
+
+                try {
+                    Storage::deleteDirectory($directory);
+                    $left = Storage::allFiles($directory);
+                } catch (Throwable) {
+                    $failed[$directory.'/'] = true;
+
+                    continue;
+                }
+
+                // What the folder still holds is what could not be removed. A file in it that failed above and is gone now no longer counts.
+                $failed = array_filter($failed, fn (string $path) => ! str_starts_with($path, $directory.'/'), ARRAY_FILTER_USE_KEY);
+
+                foreach ($left as $path) {
+                    $failed[$path] = true;
+                }
+            }
+        }
+
+        if ($failed !== []) {
+            Log::warning('Files from a deleted company could not be removed', ['organization_id' => $organizationId, 'files' => count($failed)]);
         }
     }
 

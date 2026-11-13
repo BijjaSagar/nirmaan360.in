@@ -122,6 +122,33 @@ org-{company id}/document-reads/{read id}/text.json
 
 A page picture is always the server's own re-drawn JPEG. It is turned into base64 in memory inside the job, and is never written to a job payload, a database column or a log line.
 
+When a company is erased, every file a table row names is deleted first, and then the whole of `org-{company id}/document-reads` is deleted, so a page that was stored while its row could not be saved goes too. That folder is listed under `purge_directories` in `config/modules/document_reading.php`. Any module can list its own folders there in its own config file; `{org}` stands for the company's id and must be part of every entry, and an entry without it is ignored.
+
+## The company's own switch
+
+An owner or admin of a company on a plan with the AI features decides under **AI > AI document readers** (`/settings/ai-documents`) whether pages, photos and text of the company may be sent to the AI provider at all. The page shows the notice, and the switch is on only after the box under it was ticked. The words that were shown, their language and the notice's version (`AiDocumentConsent::VERSION`) are kept on the company's row in `ai_document_settings`; the audit trail keeps the version, the language and a fingerprint of the words.
+
+- The switch and the notice appear only when a reader is deployed and the readers are released. Until then the page says "No reader is switched on yet." and nothing can be agreed to.
+- Switching off cancels every read of the company that is not finished and gives back its credits on hold. Reads that were already finished can still be checked and saved.
+- A new wording of the notice is a new version. From the moment it is deployed nothing is sent for a company until an owner or admin has agreed to it again, and reads started under the old one stop at their next page.
+- The sentence about voice notes is shown only after the platform setting `ai_voice_accepted` is `1`, which records that speech was shown to stay on the phone.
+- The same page holds the company's own limits: the most one document may use (it can be lowered, never raised above `max_credits_per_read`) and the daily budgets for each person and for the company, for each feature that is deployed.
+
+## Which routes are guarded
+
+`App\Http\Middleware\RequireAiReader` goes on every route that makes the AI model read or write something, and on no other. A route that sends a page, a photo, document text or spoken words uses `RequireAiReader::class.':consent'`; one that sends only labels and descriptions the code prepared uses `':text'`. Looking at a read, correcting it, confirming it, its status and its page pictures carry no guard, so a company can always finish what was already read. A test fails if a `GET` route carries it.
+
+| Answer | Code | When |
+| --- | --- | --- |
+| 409 | `not_released` | The readers are not released. |
+| 409 | `not_connected` | No key is saved, or the provider stop above is standing. |
+| 403 | | The company's plan has no AI features. |
+| 409 | `company_limit` with `limit: blocked` | The platform admin has switched the readers off for this company. |
+| 409 | `consent_required` | `:consent` only: the company has not agreed to the current notice. |
+| 409 | `reader_paused` with `period: daily` or `monthly` | A platform spending limit is reached. |
+
+The phone and any request that asks for JSON get the code with a sentence in `message`. A browser is sent back to the page it came from with the sentence, and for a missing consent an owner or admin is taken to the notice. Budgets, the wallet and a company's own brakes are checked later, where credits are put on hold, and answer as `SpendRefused` says.
+
 ## Figures that belong together
 
 Each reader call has a model, a largest answer (`max_tokens`) and a time limit, in `config/modules/document_reading.php` under `kinds`. They must be changed together: a call has to be able to write its largest answer inside 80 percent of its time limit at `assumed_tokens_per_second`. A test holds this. No time limit may be above 240 seconds; longer answers would need streaming, which is not used.

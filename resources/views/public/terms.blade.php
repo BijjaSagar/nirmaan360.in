@@ -18,6 +18,8 @@
 
     <h2>Check your figures</h2>
     <p>Nirmaan360 helps you prepare measurements, bills and calculations. You remain responsible for checking them against your contracts, drawings, codes and tax rules before you rely on them.</p>
+    {{-- Readers are named only once a company can use one: the same test its own switch is shown by. --}}
+    <p>AI agents{{ app(\App\Services\DocumentReading\ReaderSettings::class)->offered() ? ' and readers' : '' }} can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.</p>
 
     <h2>Acceptable use</h2>
     <p>Do not misuse the service, try to reach another company's data, or interfere with its operation. We may suspend accounts that do.</p>
