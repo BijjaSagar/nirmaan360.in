@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\DocumentReading\AiDocumentSettingsController;
 use App\Http\Controllers\DocumentReading\DocumentReadController;
+use App\Http\Controllers\DocumentReading\ReaderAdminController;
+use App\Http\Controllers\DocumentReading\ReaderTrialController;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\RequireAiReader;
 use Illuminate\Support\Facades\Route;
 
@@ -31,5 +34,30 @@ Route::middleware('feature:ai_agents')->prefix('document-reads/{read}')->name('d
         Route::post('/resume', 'resume')->name('resume')->middleware('throttle:10,1,read-resume');
         Route::post('/pages/{page}/retry', 'retry')->name('pages.retry')->middleware('throttle:10,1,read-retry');
         Route::post('/pages/{page}/split', 'split')->name('pages.split')->middleware('throttle:10,1,read-retry');
+    });
+});
+
+// Platform staff only. Everyone else gets a 404. Nothing here needs a company's plan or consent:
+// a dry run belongs to no company, and it is what the admin does before the readers are released.
+Route::prefix('admin/ai-reader')->name('ai-reader.admin.')->middleware(EnsurePlatformAdmin::class)->group(function () {
+    Route::controller(ReaderAdminController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::patch('/settings', 'update')->name('settings');
+        Route::patch('/companies/{organization}', 'company')->name('companies.update');
+        Route::delete('/provider-stop', 'clearStop')->name('provider-stop.clear');
+        Route::get('/fixtures/{name}', 'fixture')->name('fixtures');
+    });
+
+    Route::controller(ReaderTrialController::class)->prefix('trials')->name('trials.')->group(function () {
+        Route::post('/', 'store')->name('store')->middleware('throttle:30,1,ai-trial-create');
+        Route::get('/{trial}', 'show')->name('show');
+        Route::get('/{trial}/status', 'status')->name('status');
+        Route::post('/{trial}/pages', 'storePage')->name('pages.store')->middleware('throttle:240,1,ai-trial-page');
+        Route::get('/{trial}/pages/{page}/image', 'image')->name('pages.image');
+        Route::post('/{trial}/text', 'storeText')->name('text')->middleware('throttle:60,1,ai-trial-text');
+        Route::post('/{trial}/start', 'start')->name('start')->middleware('throttle:20,1,ai-trial-start');
+        Route::post('/{trial}/marks', 'mark')->name('marks');
+        Route::get('/{trial}/scores.csv', 'scores')->name('scores');
+        Route::delete('/{trial}', 'destroy')->name('destroy');
     });
 });

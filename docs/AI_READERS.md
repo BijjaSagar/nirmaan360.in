@@ -36,7 +36,7 @@ A slip or a bill is read while a person waits at a form. On one shared queue it 
 php artisan queue:work --queue=ai-interactive,default,ai-pages,ai-prepare --tries=3
 ```
 
-and then set the queue names in the platform settings (the platform admin's AI reader page has the fields once it is deployed):
+and then set the queue names on the platform admin's AI reader page (`/admin/ai-reader`, **Queue names**), which saves these platform settings:
 
 | Platform setting | Lane | Used by | Suggested name |
 | --- | --- | --- | --- |
@@ -92,7 +92,7 @@ Tending also runs each class a module lists under `retention` in its `config/mod
 1. **Is a worker running?** The oldest queued page should be seconds or a few minutes old. If its age keeps growing, no worker is reading that queue. Check the queue names above first.
 2. **Is the scheduler running?** The last tend run should be under two minutes old. `php artisan schedule:list` shows `document-reads:tend`.
 
-   Both figures are shown on the platform admin's AI reader page once that page is deployed. They come from `ReadTending::oldestQueuedSince()` and `ReadTending::lastRun()`.
+   Both figures are shown on the platform admin's AI reader page (`/admin/ai-reader`), with a warning when either is late. They come from `ReadTending::oldestQueuedSince()`, `TextCallRunner::oldestQueuedSince()`, `TrialRunner::oldestQueuedSince()` and `ReadTending::lastRun()`.
 3. **Why did a read pause?** The read's `pause_reason` says:
 
 | `pause_reason` | Meaning | Who can fix it |
@@ -164,6 +164,40 @@ Every call for a page that cost something, was charged something or came back un
 A text call is counted on the day it was made. Its `absorbed_usd` holds what nobody paid for: every attempt whose answer was not kept, and the part of the kept one that its maximum or the wallet did not cover.
 
 A daily budget belongs to the person the read is booked to. When an owner or admin starts or continues one person's own read (a slip or a bill), the read stays booked to that person, so that person's budget is the one checked. When it is used up, the refusal names that person, so the owner or admin is not told they used their own budget.
+
+## The platform admin's AI reader page
+
+`/admin/ai-reader` is for platform staff only (`EnsurePlatformAdmin`; everyone else gets a 404). It shows whether a worker and the scheduler are alive, the provider stop with a button to clear it, the month's spending against the provider's cap, today's spending against the daily limit and against the dry runs' own allowance, the queue names, what each reader runs with and what was measured, use by company this month with the trial allowance lift and the per-company block, and the browser self-check. Every change it makes is written to the audit trail with no company (`PlatformAudit`), so no company's own audit screen shows it.
+
+### Spending limits
+
+| Field | Platform setting | Default |
+| --- | --- | --- |
+| Provider's monthly cap (US$) | `ai_tier_monthly_cap_usd` | none: copy it from the provider's console |
+| Share of the cap the month may reach | `ai_reader_month_share` | `ceilings.month_share` |
+| Daily limit for all companies (US$) | `ai_reader_daily_usd` | `ceilings.daily_usd` |
+| Daily allowance for dry runs (US$) | `ai_trial_daily_usd` | `ceilings.trial_daily_usd`; zero switches dry runs off |
+
+The month counts agents, readers, text calls and dry runs. The cap cannot be removed while the release switch is on.
+
+### The release switch
+
+`ai_readers_released` is off until a platform admin turns it on here, and the page turns it on only with the monthly cap entered, the tick that spend alerts are set in the provider's console, and a tick for every deployed reader and every text call that can be tried on pasted text that its dry run was done. Switching it off stops new reads at once and pauses running ones before their next page.
+
+Whether a company is offered a reader is `AiSpend::readersOn()`, the one test the website, the consent switch, the menu, the privacy and terms pages and the phone's status answer ask: the switch on, the cap on record, a key saved, and a reader deployed for the company's plan. The page shows that test's answer in its header and says which part is missing. The switch is one for all readers, so a reader deployed while it is on is offered at once by that test. The page then names it as "deployed after the release, with no dry run confirmed" until the switch is turned off and on again with its tick. To dry-run a new reader on production before any company sees it, switch the readers off before deploying it, do its dry run, and switch them on again with its tick.
+
+### Dry runs
+
+A dry run tries one reader pass, or one text call, on a document uploaded on this page, with the model, effort, output limit and time limit chosen there. It belongs to no company: `reader_trials` and `reader_trial_pages` have no `organization_id`, the files are under `platform/reader-trials/{uuid}/` on the default disk, nothing is created in any company and nobody is charged. It needs the tick "I am allowed to use this document for testing". PDFs are drawn in the browser as for a company's read and each page picture is redrawn by the server (`PageImage::normalise`).
+
+The call goes through the same steps as a company's (`PageCall::run` or `TextCall::run` with the chosen figures), one page at a time on the queue the same kind of company call would use (`ReadTrialPage`), with the same claim by `attempt_uuid`. A timeout, an outage or a lost worker is sent again on the next Start; an answer that could not be used is a measurement and is not. Its cost counts toward `ai_trial_daily_usd` and the month, never toward the companies' daily limit (`AiSpend::trialStop`); the platform admins are told at the notice steps of the allowance. Each call writes `ai.trial_page_sent` with the picture's fingerprint, size, model and request id, never its content.
+
+The result page shows the picture beside every cell as printed, how the code reads it, the script of its digits, the kind's own checks, tokens, output tokens a second, cost, seconds, stop reason and request id. Clicking a cell marks it wrong; the trial keeps counts per pass and field and per digit script, downloadable as CSV. After 24 hours tending deletes the files, the answers and the marks (`TrialRetention`); counts, tokens and cost stay.
+
+What a feature adds for its dry run:
+
+- A reader kind may implement `Contracts\DescribesTrialResult`: `cellKinds($pass)` names how each field is read (qty, rate, amount, percent, count, date or unit), and `pageChecks($answers)` returns the kind's checks by code over the passes read on a page (for the BOQ reader, quantity times rate against the second pass's amount). Without it the cells are shown as printed and no check is shown.
+- A text call handler is offered for a dry run only when it implements `Contracts\TriesPastedText`: `onPasted($text)` returns a twin that builds the same request from the pasted text alone and applies the same checks. Its `done()` and `failed()` are never called.
 
 ## Figures that belong together
 
