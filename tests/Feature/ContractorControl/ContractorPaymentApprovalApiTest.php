@@ -125,7 +125,12 @@ class ContractorPaymentApprovalApiTest extends TestCase
             $this->assertSame($board[$key], $doc['impact']['now'][$key], "The approval's {$key} differs from the board's.");
         }
 
-        $this->assertSame(['needed' => false, 'allowed' => false, 'message' => null], $doc['owner_override']);
+        // 80% paid against 70% work is past the project's limit of 5 points, so the payment-ahead rule stops
+        // the manager here. ContractorPaymentOverrideApiTest covers what follows.
+        $this->assertTrue($doc['owner_override']['needed']);
+        $this->assertFalse($doc['owner_override']['allowed']);
+        $this->assertSame('70000.00', $doc['check']['work_done']);
+        $this->assertSame('80000.00', $doc['check']['paid_after']);
     }
 
     public function test_an_advance_with_a_bill_against_the_contract_in_general(): void
@@ -203,7 +208,10 @@ class ContractorPaymentApprovalApiTest extends TestCase
     public function test_the_manager_approves_it_from_the_phone_and_it_counts_as_paid(): void
     {
         $order = $this->contract();
+        // Work is ahead of the payment, so the payment-ahead rule has nothing to stop.
+        $this->workDone($this->item, '70');
         $payment = $this->raise($order, '20000');
+        $this->assertSame(['needed' => false, 'allowed' => false, 'message' => null], $this->document($this->manager)['document']['owner_override']);
         Sanctum::actingAs($this->manager);
 
         $this->postJson(self::API."/approvals/{$payment->currentApproval->id}/act", ['action' => 'approve', 'client_uuid' => (string) Str::uuid()])

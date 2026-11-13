@@ -16,6 +16,7 @@ use App\Models\Rfi;
 use App\Models\User;
 use App\Models\VendorBill;
 use App\Services\ApprovalService;
+use App\Services\ContractorControl\PaymentAheadGuard;
 use App\Services\ContractorControl\WorkPaymentRatio;
 use App\Support\Dec;
 use App\Support\Money;
@@ -101,7 +102,7 @@ final class ApprovalPresenter
             $document instanceof Dpr => self::dpr($document),
             $document instanceof RaBill => self::raBill($document),
             $document instanceof BillNote => self::billNote($document),
-            $document instanceof ContractorPayment => self::contractorPayment($document, $user),
+            $document instanceof ContractorPayment => self::contractorPayment($document, $approval, $user),
             $document instanceof VendorBill => self::vendorBill($document, $user),
             $document instanceof Indent => self::indent($document),
             $document instanceof Rfi => self::rfi($document),
@@ -190,12 +191,15 @@ final class ApprovalPresenter
      * A contractor payment request, with what approving it would do to the contract: the same work % against
      * paid % the contractor board shows (WorkPaymentRatio). Work % goes to every approver; the amount, the
      * payment's details and every paid figure only to someone with money.view, as null otherwise.
+     * owner_override says how the payment-ahead rule (PaymentAheadGuard) meets this approver.
      */
-    private static function contractorPayment(ContractorPayment $payment, User $user): array
+    private static function contractorPayment(ContractorPayment $payment, Approval $approval, User $user): array
     {
         $money = Money::visible($user);
         $impact = app(WorkPaymentRatio::class)->impact($payment);
         $order = $payment->workOrder;
+        // The rule is only ever asked about a payment still waiting: a decided one is past it.
+        $check = $approval->status === 'IN_REVIEW' ? app(PaymentAheadGuard::class)->assess($payment) : null;
 
         return [
             'id' => $payment->id,
@@ -217,10 +221,57 @@ final class ApprovalPresenter
             'has_bill' => $money ? $payment->bill_path !== null : null,
             'paid_pct' => $money ? $impact['now']['paid_pct'] : null,
             'impact' => $money ? ContractorControlPresenter::impact($impact) : null,
-            // Filled by the owner-override rule for payments ahead of the work done (branch fix/web-money-rules):
-            // "needed" when this approval would be refused unless the owner approves with a written reason,
-            // "allowed" when this person is that owner, "message" says why in percentages only.
-            'owner_override' => ['needed' => false, 'allowed' => false, 'message' => null],
+            // The guard's own figures, in rupees: value of work done against paid so far and paid if approved.
+            'check' => $money && $check ? self::paymentCheck($check) : null,
+            'owner_override' => self::ownerOverride($check, $approval, $user),
+        ];
+    }
+
+    /**
+     * How PaymentAheadGuard meets this approver, so the app can offer what the server will accept.
+     * "needed": approving now is refused (422 on override_reason) unless the owner approves with a written reason.
+     * "allowed": this person is that owner. "message": why, or, before the last approval level, a warning that
+     * the last one will need the owner. Without money.view the message carries no figure.
+     *
+     * @param  array<string, mixed>|null  $check  PaymentAheadGuard::assess(), or null once the payment is decided.
+     * @return array{needed: bool, allowed: bool, message: ?string}
+     */
+    private static function ownerOverride(?array $check, Approval $approval, User $user): array
+    {
+        if (! ($check['blocked'] ?? false)) {
+            return ['needed' => false, 'allowed' => false, 'message' => null];
+        }
+
+        // The rule runs at the final approval only, as in ApprovalService::applyAction.
+        if (! $approval->isFinalLevel()) {
+            return [
+                'needed' => false,
+                'allowed' => false,
+                'message' => __('As it stands, the last approval of this payment will need the owner, with a written reason: it would put payment ahead of the work done beyond this project\'s limit.'),
+            ];
+        }
+
+        return [
+            'needed' => true,
+            'allowed' => $user->isOwner(),
+            'message' => PaymentAheadGuard::blockedMessage($check, Money::visible($user)),
+        ];
+    }
+
+    /** PaymentAheadGuard::assess() for someone who may see money. Every figure here is money or a paid percent. */
+    private static function paymentCheck(array $check): array
+    {
+        return [
+            'contract_value' => $check['contract_value'],
+            'work_done' => $check['work_done'],
+            'work_pct' => $check['work_pct'],
+            'paid' => $check['paid'],
+            'paid_pct' => $check['paid_pct'],
+            'paid_after' => $check['paid_after'],
+            'paid_pct_after' => $check['paid_pct_after'],
+            'gap_after' => $check['gap_after'],
+            'limit_pct' => $check['limit_pct'],
+            'blocked' => $check['blocked'],
         ];
     }
 
