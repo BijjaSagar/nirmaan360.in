@@ -147,8 +147,10 @@ final class BoqPdfReader
         }
 
         // An old font draws other letters than the file holds. The file is refused when any text drawn in
-        // one would go into the table, or when no table is found and most of its text is drawn in one.
-        // A title or a cover page above the table, or a font only listed beside a page, changes nothing.
+        // one makes BOQ lines (the heading, a row with a quantity, rate or amount, or a row that belongs
+        // to one), or when no table is found and most of its text is drawn in one. A title, a cover page,
+        // a letterhead or a footer on each page, a signature below the rows, or a font only listed beside
+        // a page changes nothing (PdfTable::keeps).
         if ($table->keeps('old_font') || ($grid === [] && $oldFontPieces * 100 >= $pieces * PdfTextLayer::LEGACY_SHARE)) {
             return BoqPdfRead::failed($this->machineText(), scanned: true);
         }

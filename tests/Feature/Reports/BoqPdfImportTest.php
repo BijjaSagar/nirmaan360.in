@@ -643,14 +643,121 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->assertSame($grid, $cover->grid);
         $this->assertSame(2, $cover->pages);
 
-        // Text the table would take in, drawn in the old font: one description, the heading, or a line below the rows.
-        foreach ([$this->tableCells($rows, 760, [2 => 'F2']), $this->tableCells($rows, 760, [0 => 'F2']), $this->tableCells($rows).$this->textLines(['Old font signature'], 0, 600, 'F2')] as $content) {
+        // A signature in the old font below the rows is no part of the table: the file imports, and the signature is not a row.
+        $signed = $read($this->tableCells($rows).$this->textLines(['Old font signature'], 0, 600, 'F2'));
+        $this->assertTrue($signed->ok(), (string) $signed->error);
+        $this->assertSame($grid, $signed->grid);
+
+        // Text of the table drawn in the old font: one description, or the heading.
+        foreach ([$this->tableCells($rows, 760, [2 => 'F2']), $this->tableCells($rows, 760, [0 => 'F2'])] as $content) {
             $refused = $read($content);
             $this->assertFalse($refused->ok());
             $this->assertTrue($refused->scanned);
             $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $refused->error);
             $this->assertSame([], $refused->grid);
         }
+    }
+
+    /** The items of a typed estimate, two to a page. */
+    private const LETTERHEAD_ITEMS = [
+        ['1', 'Excavation for foundation', '10', '350', 'cu.m', '3500'],
+        ['2', 'Providing and fixing flush door', '3', '4000', 'door', '12000'],
+        ['3', 'Brick masonry in cement mortar', '20', '5200', 'cu.m', '104000'],
+        ['4', 'Internal plaster', '150', '260', 'sq.m', '39000'],
+        ['5', 'Vitrified tile flooring', '80', '1100', 'sq.m', '88000'],
+        ['6', 'Painting with acrylic emulsion', '300', '95', 'sq.m', '28500'],
+    ];
+
+    /**
+     * A page as many contractors print one: a letterhead in an old Marathi font with a phone number on it, the typed
+     * table under its heading, and a footer in the old font with a PIN code on it. Every number is invented.
+     *
+     * @param  list<list<string>>  $rows  The heading first.
+     * @param  array<int, string>  $fonts  As tableCells() takes them.
+     */
+    private function letterheadPage(array $rows, string $more = '', array $fonts = []): string
+    {
+        return 'BT /F2 12 Tf 1 0 0 1 170 815 Tm (Old font company name) Tj /F2 9 Tf 1 0 0 1 150 800 Tm (Old font office address) Tj 1 0 0 1 480 800 Tm (9800000000) Tj ET'."\n"
+            .$this->tableCells($rows, 760, $fonts)
+            .$more
+            .'BT /F2 8 Tf 1 0 0 1 40 40 Tm (Old font footer line) Tj 1 0 0 1 480 40 Tm (400000) Tj ET'."\n";
+    }
+
+    /** A signature block in the old font below the last row, with a phone number under the amount column. */
+    private const OLD_FONT_SIGNATURE = 'BT /F2 9 Tf 1 0 0 1 400 640 Tm (For Old font firm) Tj 1 0 0 1 400 626 Tm (Old font proprietor) Tj 1 0 0 1 480 612 Tm (9800000001) Tj ET'."\n";
+
+    /** @param  list<list<string>>  $items  @return array<int, array<int, string>> The grid of the heading and these rows. */
+    private function estimateGrid(array $items): array
+    {
+        $grid = [1 => array_combine(range(1, 6), self::ESTIMATE_HEADING)];
+
+        foreach ($items as $index => $item) {
+            $grid[$index + 2] = array_combine(range(1, 6), $item);
+        }
+
+        return $grid;
+    }
+
+    public function test_an_old_font_letterhead_and_footer_on_every_page_do_not_stop_a_typed_table_or_join_it(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['fonts' => ['F2' => 'ABCDEF+Kruti#20Dev#20010'], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+
+        foreach ([2, 3] as $count) {
+            $chunks = array_chunk(array_slice(self::LETTERHEAD_ITEMS, 0, 2 * $count), 2);
+            $pages = [];
+
+            // The heading is printed again on every page, with the letterhead above it and the footer below the rows.
+            foreach ($chunks as $number => $chunk) {
+                $pages[] = $this->letterheadPage([self::ESTIMATE_HEADING, ...$chunk], $number === $count - 1 ? self::OLD_FONT_SIGNATURE : '');
+            }
+
+            $read2 = $read($pages);
+            $this->assertTrue($read2->ok(), "{$count} pages: ".$read2->error);
+            $this->assertSame($count, $read2->pages);
+            $this->assertSame($this->estimateGrid(array_merge(...$chunks)), $read2->grid, "{$count} pages: only the rows of the table, in order.");
+
+            // The same pages with one description of the table in the old font are refused, whichever page it is on.
+            foreach (array_keys($chunks) as $oldOn) {
+                $mixed = $pages;
+                $mixed[$oldOn] = $this->letterheadPage([self::ESTIMATE_HEADING, ...$chunks[$oldOn]], $oldOn === $count - 1 ? self::OLD_FONT_SIGNATURE : '', [2 => 'F2']);
+                $refused = $read($mixed);
+                $this->assertFalse($refused->ok(), "{$count} pages, old font on page ".($oldOn + 1));
+                $this->assertTrue($refused->scanned);
+                $this->assertStringContainsString('uses an old Marathi or Hindi font', (string) $refused->error);
+                $this->assertSame([], $refused->grid);
+            }
+
+            // And so are they when the heading, or a figure of a row, is drawn in it.
+            $heading = $pages;
+            $heading[0] = $this->letterheadPage([self::ESTIMATE_HEADING, ...$chunks[0]], '', [0 => 'F2']);
+            $this->assertFalse($read($heading)->ok());
+
+            $figure = $pages;
+            $lastChunk = $chunks[$count - 1];
+            $withoutQuantity = $lastChunk;
+            $withoutQuantity[1][2] = '';
+            $figure[$count - 1] = $this->letterheadPage([self::ESTIMATE_HEADING, ...$withoutQuantity], 'BT /F2 9 Tf 1 0 0 1 300 724 Tm ('.$lastChunk[1][2].') Tj ET'."\n".self::OLD_FONT_SIGNATURE);
+            $this->assertFalse($read($figure)->ok());
+        }
+    }
+
+    public function test_an_old_font_signature_block_below_the_rows_imports_without_becoming_a_row(): void
+    {
+        $read = fn (string $content) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($content, ['fonts' => ['F2' => 'SHREE-DEV-0714'], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $items = array_slice(self::LETTERHEAD_ITEMS, 0, 3);
+
+        // Close under the rows or far below them, with or without a phone number under the amount column.
+        foreach ([self::OLD_FONT_SIGNATURE, $this->textLines(['Old font firm', 'Old font proprietor'], 0, 690, 'F2'), $this->textLines(['Old font signature'], 0, 300, 'F2')] as $signature) {
+            $signed = $read($this->tableCells([self::ESTIMATE_HEADING, ...$items]).$signature);
+            $this->assertTrue($signed->ok(), (string) $signed->error);
+            $this->assertSame($this->estimateGrid($items), $signed->grid);
+        }
+
+        // A row with no figure inside the table stays a row, as it always did, and the import reports it.
+        $junk = $read($this->tableCells([self::ESTIMATE_HEADING, $items[0], ['', 'Note written between the rows', '', '', 'see drawing', ''], $items[1]]));
+        $this->assertTrue($junk->ok());
+        $this->assertSame([2 => 'Note written between the rows', 5 => 'see drawing'], array_filter($junk->grid[3]));
+        $this->assertSame($items[1], array_values($junk->grid[4]));
     }
 
     public function test_each_piece_of_text_is_in_the_font_that_draws_it_after_q_and_q_and_with_quote_operators(): void

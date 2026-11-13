@@ -14,6 +14,13 @@ namespace App\Services\Reports;
  *
  * The grid handed back has the heading in row 1 and one row per table row after it, with the
  * columns in the order they appear, so BoqExcelService reads it exactly like a sheet.
+ *
+ * Text that is not part of the table is left out where it can be told apart: anything above the
+ * heading, anything above the heading where it is printed again at the top of a later page (a
+ * letterhead or a page heading), text far to the side of the columns, and rows with no figure at
+ * the foot of a page whose table goes on under the heading on the next page or below the last row
+ * of the table (a footer, a signature or a note). A row with no figure in the middle of the table is
+ * kept as it always was, for the import to report.
  */
 final class PdfTable
 {
@@ -26,6 +33,12 @@ final class PdfTable
     /** Horizontal rules shorter than this share of the table width are underlines, not row lines. */
     private const ROW_RULE_SHARE = 0.4;
 
+    /** A gap of more than this many lines, and three times the usual gap between rows, is not a gap between two rows of the table. */
+    private const FOOT_GAP = 2.5;
+
+    /** The most rows a footer or a signature block below such a gap is taken to have. */
+    private const FOOT_ROWS = 6;
+
     /** @var list<array{page: int, y: float, size: float, x: float, x1: float, pieces: list<array<string, mixed>>}> */
     private array $lines = [];
 
@@ -34,6 +47,15 @@ final class PdfTable
 
     /** @var list<int> The lines the heading spans, by their place among the lines of the pages. */
     private array $headingLines = [];
+
+    /** @var array<int, float> Page => the height of the heading where it is printed again on that later page. The table starts again below it. */
+    private array $restarts = [];
+
+    /** @var list<array<string, mixed>> The pieces of the heading and of the rows that make BOQ lines. keeps() looks at these. */
+    private array $table = [];
+
+    /** @var array{0: float, 1: float} How far the table reaches left and right, as layout() last found it. */
+    private array $reach = [0.0, 0.0];
 
     /**
      * @param  list<array{pieces: list<array{x: float, x1: float, y: float, size: float, text: string}>, h: list<array{0: float, 1: float, 2: float}>, v: list<array{0: float, 1: float, 2: float}>}>  $pages
@@ -44,6 +66,7 @@ final class PdfTable
     public function grid(): array
     {
         $this->lines = $this->lines();
+        $this->restarts = $this->table = [];
         $heading = $this->heading();
 
         if ($heading === null) {
@@ -55,10 +78,16 @@ final class PdfTable
         [$cells, $headingLines] = $heading;
         $this->headingLines = $headingLines;
         $this->body = $this->body($headingLines, $cells);
-        [$x0, $x1] = $this->span($cells);
-        $bands = $this->ruleBands($cells, $headingLines, $x0, $x1) ?? $this->gapBands($cells, $x0, $x1);
-        $columns = $this->columns($cells, $bands);
+        [$columns, $rows] = $this->layout($cells, $headingLines);
+        [, $outside] = $this->sortRows($columns, $rows);
 
+        // Laid out again without the text outside the table, so a letterhead or a footer cannot move a column.
+        if ($outside !== []) {
+            $this->body = array_values(array_diff_key($this->body, $outside));
+            [$columns, $rows] = $this->layout($cells, $headingLines);
+        }
+
+        $this->table = $this->tablePieces($rows, $this->sortRows($columns, $rows)[0]);
         $grid = [1 => []];
 
         foreach ($columns as $index => $column) {
@@ -67,11 +96,11 @@ final class PdfTable
 
         $number = 1;
 
-        foreach ($this->rows($columns, $headingLines) as $row) {
+        foreach ($rows as $row) {
             $number++;
 
             foreach ($columns as $index => $column) {
-                $grid[$number][$index + 1] = $this->cellText($row[$index] ?? []);
+                $grid[$number][$index + 1] = $this->cellText($row['cells'][$index] ?? []);
             }
         }
 
@@ -79,17 +108,17 @@ final class PdfTable
     }
 
     /**
-     * Whether a piece of text the grid is made from carries this mark, as the caller set it on the
-     * pieces: a piece of the heading or of a line after it. A title or anything else above the heading
-     * is not in the grid. Asked after grid(); false when no heading was found.
+     * Whether a piece of text that makes BOQ lines carries this mark, as the caller set it on the pieces:
+     * a piece of the heading, of a row with a quantity, rate or amount, or of a row that belongs to one
+     * (the head of its lettered parts, or a lettered part under it). A title, a letterhead, a footer, a
+     * signature, a row with no figure, and text far to the side of the columns are not looked at.
+     * Asked after grid(); false when no heading was found.
      */
     public function keeps(string $mark): bool
     {
-        foreach ([...array_map(fn (int $index) => $this->lines[$index], $this->headingLines), ...$this->body] as $line) {
-            foreach ($line['pieces'] as $piece) {
-                if (! empty($piece[$mark])) {
-                    return true;
-                }
+        foreach ($this->table as $piece) {
+            if (! empty($piece[$mark])) {
+                return true;
             }
         }
 
@@ -302,7 +331,9 @@ final class PdfTable
     }
 
     /**
-     * The lines after the heading, minus the heading repeated at the top of later pages.
+     * The lines after the heading, minus the heading repeated at the top of later pages. Where the
+     * heading is printed again on a later page, naming two of its columns or more, the height of its
+     * first line there is kept in $restarts: the table starts again below it.
      *
      * @param  list<int>  $headingLines
      */
@@ -310,14 +341,15 @@ final class PdfTable
     {
         $known = [];
 
-        foreach ($cells as $cell) {
-            $known[self::key($cell['text'])] = true;
+        foreach ($cells as $number => $cell) {
+            $known[self::key($cell['text'])] = $number;
 
             foreach ($cell['keys'] as $key) {
-                $known[$key] = true;
+                $known[$key] = $number;
             }
         }
 
+        $headingPage = $this->lines[min($headingLines)]['page'];
         $body = [];
 
         foreach ($this->lines as $index => $line) {
@@ -325,21 +357,338 @@ final class PdfTable
                 continue;
             }
 
-            $repeated = true;
+            $named = [];
 
             foreach ($line['pieces'] as $piece) {
-                if (! isset($known[self::key($piece['text'])])) {
-                    $repeated = false;
+                $key = self::key($piece['text']);
+
+                if (! isset($known[$key])) {
+                    $named = null;
                     break;
                 }
+
+                $named[$known[$key]] = true;
             }
 
-            if (! $repeated) {
+            if ($named === null) {
+                $body[] = $line;
+
+                continue;
+            }
+
+            if (count($named) >= 2 && $line['page'] !== $headingPage && ! isset($this->restarts[$line['page']])) {
+                $this->restarts[$line['page']] = $line['y'];
+            }
+        }
+
+        return $body;
+    }
+
+    /**
+     * Columns and rows from the body lines as they are now. Text far to the side of the columns is
+     * dropped from the body first.
+     *
+     * @param  list<int>  $headingLines
+     * @return array{0: list<array{x0: float, x1: float, text: string}>, 1: list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>}
+     */
+    private function layout(array $cells, array $headingLines): array
+    {
+        [$x0, $x1] = $this->span($cells);
+        $this->reach = [$x0, $x1];
+        $this->body = $this->within($x0, $x1);
+        $bands = $this->ruleBands($cells, $headingLines, $x0, $x1) ?? $this->gapBands($cells, $x0, $x1);
+        $columns = $this->columns($cells, $bands);
+
+        return [$columns, $this->rows($columns, $headingLines)];
+    }
+
+    /** The body without the pieces that start outside the reach of the table. A line left with none goes. */
+    private function within(float $x0, float $x1): array
+    {
+        $body = [];
+
+        foreach ($this->body as $line) {
+            $line['pieces'] = array_values(array_filter($line['pieces'], fn (array $piece) => $piece['x'] >= $x0 - 0.5 && $piece['x'] <= $x1));
+
+            if ($line['pieces'] !== []) {
                 $body[] = $line;
             }
         }
 
         return $body;
+    }
+
+    /**
+     * Sorts the rows into those that make BOQ lines and those that are not part of the table.
+     *
+     * Not part of the table, and left out of the grid: the rows above the heading where it is printed
+     * again on a later page, every row below the last row that makes BOQ lines, and the rows with no
+     * figure at the foot of a page whose table goes on under its heading on a later page. A row with no
+     * figure anywhere else stays in the grid, as it always did.
+     *
+     * Not looked at for the old font either: a block of a few rows at the foot of a page, set off by a gap
+     * no row of the table leaves (footOf), such as a footer or a signature with a phone number in it.
+     * Below the last row of the table or before the heading on the next page it is left out of the grid
+     * too; anywhere else it stays in the grid as it always did.
+     *
+     * @param  list<array{x0: float, x1: float, text: string}>  $columns
+     * @param  list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>  $rows
+     * @return array{0: list<bool>, 1: array<int, true>} Which rows make BOQ lines, and the body lines to leave out.
+     */
+    private function sortRows(array $columns, array $rows): array
+    {
+        $part = $this->makesLines($columns, $rows);
+        $description = $this->descriptionColumn($columns);
+        $pages = [];
+        $drop = [];
+
+        foreach ($rows as $index => $row) {
+            $pages[$row['page']][] = $index;
+        }
+
+        foreach ($pages as $page => $indexes) {
+            $restart = $this->restarts[$page] ?? null;
+
+            // Above the heading printed again lower down the page, with rows of the table under it: a letterhead or a page heading.
+            if ($restart !== null) {
+                $above = array_values(array_filter($indexes, fn (int $index) => $rows[$index]['top'] > $restart));
+
+                if (count($above) < count($indexes)) {
+                    foreach ($above as $index) {
+                        $drop[$index] = true;
+                        $part[$index] = false;
+                    }
+                }
+            }
+
+            foreach ($this->footOf($rows, array_values(array_filter($indexes, fn (int $index) => ! isset($drop[$index]))), $part, $page, $description) as $index) {
+                $part[$index] = false;
+            }
+        }
+
+        if (in_array(true, $part, true)) {
+            $last = max(array_keys(array_filter($part)));
+
+            foreach ($pages as $indexes) {
+                $lastHere = null;
+
+                foreach ($indexes as $index) {
+                    $lastHere = $part[$index] ? $index : $lastHere;
+                }
+
+                $tail = array_values(array_filter($indexes, fn (int $index) => $index > ($lastHere ?? $last)));
+
+                if ($tail === []) {
+                    continue;
+                }
+
+                // Below the last row of the table: a footer, a signature, a note, or a later page that is no part of it.
+                // At the foot of a page: when the table goes on under its heading on a later page, and not with a lettered part of a row up here.
+                $next = $this->firstRowOfTable($rows, max($indexes) + 1);
+                $endsHere = ($lastHere ?? $last) === $last;
+
+                if ($endsHere || ($next !== null && isset($this->restarts[$rows[$next]['page']]) && ! $this->lettered($rows[$next], $description))) {
+                    foreach ($tail as $index) {
+                        $drop[$index] = true;
+                    }
+                }
+            }
+        }
+
+        $lines = [];
+
+        foreach (array_keys($drop) as $index) {
+            foreach ($rows[$index]['lines'] as $line) {
+                $lines[$line] = true;
+            }
+        }
+
+        return [$part, $lines];
+    }
+
+    /**
+     * A block of rows at the foot of a page that a table row would not leave: at most FOOT_ROWS rows set
+     * off from the rows above by more than FOOT_GAP lines and three times the gap between two rows of it,
+     * below the lowest end of the column rules where the table has them, so a tall ruled row is never
+     * taken for one, and holding no total, add-on or lettered line, which belong to the table. Only when a
+     * row above it makes BOQ lines.
+     *
+     * @param  list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>  $rows
+     * @param  list<int>  $indexes  The rows of the page, top to bottom.
+     * @param  list<bool>  $part
+     * @return list<int>
+     */
+    private function footOf(array $rows, array $indexes, array $part, int $page, int $description): array
+    {
+        $far = max(self::FOOT_GAP * $this->pitch(), 3 * $this->rowGap($rows, $part));
+        $box = $this->boxBottom($page);
+
+        for ($k = max(1, count($indexes) - self::FOOT_ROWS); $k < count($indexes); $k++) {
+            if ($rows[$indexes[$k - 1]]['bottom'] - $rows[$indexes[$k]]['top'] <= $far || ($box !== null && $rows[$indexes[$k]]['top'] > $box)) {
+                continue;
+            }
+
+            $foot = array_slice($indexes, $k);
+            $ofTheTable = array_filter($foot, fn (int $index) => $this->lettered($rows[$index], $description) || $this->startsNewRow((string) $this->cellText($rows[$index]['cells'][$description] ?? [])));
+            $above = array_slice($indexes, 0, $k);
+
+            return $ofTheTable === [] && array_filter($above, fn (int $index) => $part[$index]) !== [] ? $foot : [];
+        }
+
+        return [];
+    }
+
+    /**
+     * How far apart two rows of the table are: the smallest gap between two rows next to each other on a
+     * page that both make BOQ lines. A footer far below takes no part in it, however few the rows are.
+     *
+     * @param  list<bool>  $part
+     */
+    private function rowGap(array $rows, array $part): float
+    {
+        $smallest = null;
+
+        for ($index = 1; $index < count($rows); $index++) {
+            $gap = $rows[$index - 1]['bottom'] - $rows[$index]['top'];
+
+            if ($part[$index] && $part[$index - 1] && $rows[$index]['page'] === $rows[$index - 1]['page'] && $gap > 0) {
+                $smallest = min($smallest ?? $gap, $gap);
+            }
+        }
+
+        return $smallest ?? 0.0;
+    }
+
+    /** The lowest point the vertical rules within the reach of the table come down to on a page, or null without such rules. */
+    private function boxBottom(int $page): ?float
+    {
+        [$x0, $x1] = $this->reach;
+        $bottom = null;
+
+        foreach ($this->pages[$page]['v'] as [$x, $ya, $yb]) {
+            if ($x >= $x0 - 6 && $x <= $x1 + 6 && $yb - $ya >= 3) {
+                $bottom = $bottom === null ? $ya : min($bottom, $ya);
+            }
+        }
+
+        return $bottom;
+    }
+
+    /** The first row from $from on that is below the heading of its page, where the heading is printed again there. */
+    private function firstRowOfTable(array $rows, int $from): ?int
+    {
+        for ($index = $from; $index < count($rows); $index++) {
+            $restart = $this->restarts[$rows[$index]['page']] ?? null;
+
+            if ($restart === null || $rows[$index]['top'] < $restart) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Which rows make BOQ lines: a row with a quantity, rate or amount, a lettered part that follows such
+     * a row, and the row a lettered part with figures follows, which is the head it belongs to. Parts and
+     * heads count only next to their row on the same page. With no figure in the whole table, every row
+     * counts, as nothing can be told apart.
+     *
+     * @param  list<array{x0: float, x1: float, text: string}>  $columns
+     * @param  list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>  $rows
+     * @return list<bool>
+     */
+    private function makesLines(array $columns, array $rows): array
+    {
+        $figures = [];
+
+        foreach ($columns as $index => $column) {
+            $key = self::key($column['text']);
+
+            foreach (['qty', 'rate', 'amount'] as $field) {
+                if (in_array($key, BoqExcelService::ALIASES[$field], true)) {
+                    $figures[] = $index;
+                }
+            }
+        }
+
+        $description = $this->descriptionColumn($columns);
+        $part = [];
+        $lettered = [];
+
+        foreach ($rows as $index => $row) {
+            $part[$index] = false;
+            $lettered[$index] = $this->lettered($row, $description);
+
+            foreach ($figures as $column) {
+                if ($this->isFigure($this->cellText($row['cells'][$column] ?? []))) {
+                    $part[$index] = true;
+                    break;
+                }
+            }
+        }
+
+        if (! in_array(true, $part, true)) {
+            return array_fill(0, count($rows), true);
+        }
+
+        $near = 4 * $this->pitch() + 1;
+        $next = fn (int $index) => isset($rows[$index + 1]) && $rows[$index + 1]['page'] === $rows[$index]['page'] && $rows[$index]['bottom'] - $rows[$index + 1]['top'] <= $near;
+
+        do {
+            $changed = false;
+
+            foreach (array_keys($rows) as $index) {
+                if ($part[$index]) {
+                    continue;
+                }
+
+                $underARow = $index > 0 && $lettered[$index] && $part[$index - 1] && $next($index - 1);
+                $headOfParts = $next($index) && $lettered[$index + 1] && $part[$index + 1];
+
+                if ($underARow || $headOfParts) {
+                    $part[$index] = $changed = true;
+                }
+            }
+        } while ($changed);
+
+        return $part;
+    }
+
+    /**
+     * @param  list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>  $rows
+     * @param  list<bool>  $parts  Which rows make BOQ lines.
+     * @return list<array<string, mixed>>
+     */
+    private function tablePieces(array $rows, array $parts): array
+    {
+        $pieces = [];
+
+        foreach ($this->headingLines as $index) {
+            array_push($pieces, ...$this->lines[$index]['pieces']);
+        }
+
+        foreach ($parts as $index => $part) {
+            if ($part) {
+                foreach ($rows[$index]['cells'] as $cell) {
+                    array_push($pieces, ...$cell);
+                }
+            }
+        }
+
+        return $pieces;
+    }
+
+    /** A figure as the import reads one: digits with an optional point, once commas, spaces and the rupee sign are taken out. */
+    private function isFigure(?string $text): bool
+    {
+        return $text !== null && preg_match('/^-?\d+(\.\d+)?$/', str_replace([',', ' ', '₹'], '', $text)) === 1;
+    }
+
+    /** A row whose description starts with a letter or a small roman number on its own, such as "a." or "(ii)": a part of the row above. */
+    private function lettered(array $row, int $description): bool
+    {
+        return preg_match('/^\(?([a-z]|[ivx]{1,4})[.)]?\s+\S/iu', (string) $this->cellText($row['cells'][$description] ?? [])) === 1;
     }
 
     /** @return array{0: float, 1: float} How far the table reaches left and right. */
@@ -586,10 +935,11 @@ final class PdfTable
     }
 
     /**
-     * The rows: lists of pieces per column, built from the body lines.
+     * The rows: lists of pieces per column, built from the body lines, with the page, the height of the
+     * first and the last line, and the body lines each row is made of.
      *
      * @param  list<array{x0: float, x1: float, text: string}>  $columns
-     * @return list<array<int, list<array<string, mixed>>>>
+     * @return list<array{cells: array<int, list<array<string, mixed>>>, page: int, top: float, bottom: float, lines: list<int>}>
      */
     private function rows(array $columns, array $headingLines): array
     {
@@ -608,7 +958,7 @@ final class PdfTable
         $row = null;
         $previous = null;
 
-        foreach ($this->body as $line) {
+        foreach ($this->body as $number => $line) {
             $cells = [];
 
             foreach ($line['pieces'] as $piece) {
@@ -617,16 +967,18 @@ final class PdfTable
 
             $text = isset($cells[$description]) ? trim(implode(' ', array_column($cells[$description], 'text'))) : '';
             $onlyDescription = $text !== '' && count($cells) === 1;
+            $restart = $this->restarts[$line['page']] ?? null;
 
             $starts = $previous === null
                 || $previous['page'] !== $line['page']
+                || ($restart !== null && $previous['y'] > $restart && $line['y'] < $restart)
                 || $this->ruleBetween($rulesByPage[$line['page']], $previous['y'], $line['y'])
                 || (! $ruled[$line['page']] && 1.15 * $pitch + 0.5 < $previous['y'] - $line['y']);
 
             if (! $starts && $row !== null) {
                 $starts = $onlyDescription
                     ? $this->startsNewRow($text)
-                    : $this->repeatsColumn($row, $cells, $description);
+                    : $this->repeatsColumn($row['cells'], $cells, $description);
             }
 
             if ($starts) {
@@ -634,13 +986,15 @@ final class PdfTable
                     $rows[] = $row;
                 }
 
-                $row = [];
+                $row = ['cells' => [], 'page' => $line['page'], 'top' => $line['y'], 'bottom' => $line['y'], 'lines' => []];
             }
 
             foreach ($cells as $column => $pieces) {
-                $row[$column] = [...($row[$column] ?? []), ...$pieces];
+                $row['cells'][$column] = [...($row['cells'][$column] ?? []), ...$pieces];
             }
 
+            $row['bottom'] = $line['y'];
+            $row['lines'][] = $number;
             $previous = $line;
         }
 
