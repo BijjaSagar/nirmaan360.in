@@ -84,6 +84,13 @@ class ReadTending
             }
         }
 
+        // Text calls have no read to hang on, so they are looked after here: one whose worker died, one nobody picked up.
+        try {
+            app(TextCallRunner::class)->tendAll();
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
         $purged = $this->purgeOld();
         $retained = $this->runRetention();
 

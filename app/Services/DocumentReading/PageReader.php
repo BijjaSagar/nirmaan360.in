@@ -12,14 +12,11 @@ use App\Services\Agents\CreditService;
 use App\Services\Agents\ModelGateway;
 use App\Services\Agents\ModelGatewayException;
 use App\Services\DocumentReading\Contracts\ReadKind;
-use App\Services\Notify\NotificationMessage;
-use App\Services\Notify\Notifier;
 use App\Support\Dec;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use LogicException;
 use Throwable;
@@ -64,7 +61,7 @@ class PageReader
         private AiSpend $spend,
         private ReadQuote $quote,
         private ModelGateway $gateway,
-        private Notifier $notifier,
+        private ProviderBlockNotice $blockNotice,
     ) {}
 
     public function run(int $pageId): void
@@ -334,8 +331,8 @@ class PageReader
             return null;
         }
 
-        if ($outcome->result === PageOutcome::BLOCKED && ProviderBlock::set((string) $outcome->reason)) {
-            $this->tellAdmins((string) $outcome->reason);
+        if ($outcome->result === PageOutcome::BLOCKED) {
+            $this->blockNotice->raise((string) $outcome->reason);
         }
 
         if ($outcome->providerMessage !== null) {
@@ -553,36 +550,5 @@ class PageReader
     {
         DocumentReadPage::withoutGlobalScopes()->whereKey($page->id)->where('status', DocumentReadPage::QUEUED)
             ->update(['status' => $status, 'not_before' => null]);
-    }
-
-    /** Platform admins are told once when the provider starts refusing every call. Companies are never told why. */
-    private function tellAdmins(string $reason): void
-    {
-        $admins = User::where('is_active', true)
-            ->where(fn ($query) => $query->where('is_platform_admin', true)->orWhereIn('email', config('buildos.platform_admins')))
-            ->orderBy('id')->get()->filter->isPlatformAdmin();
-
-        foreach ($admins as $admin) {
-            $this->notifier->send($admin, function (string $locale) use ($reason) {
-                $what = match ($reason) {
-                    ModelGatewayException::SPEND_LIMIT => __('The provider account has reached its spending limit.', [], $locale),
-                    ModelGatewayException::BILLING => __('The provider reports a billing problem on the account.', [], $locale),
-                    ModelGatewayException::REJECTED_KEY => __('The provider rejected the saved API key.', [], $locale),
-                    default => __('No API key for the AI service is saved.', [], $locale),
-                };
-
-                $next = $reason === ModelGatewayException::SPEND_LIMIT
-                    ? __('Reads in progress are paused. No page is sent until this stop is cleared on the AI reader page.', [], $locale)
-                    : __('Reads in progress are paused. New pages are held back for :minutes minutes, then tried again when someone continues a read.', ['minutes' => ProviderBlock::MINUTES], $locale);
-
-                return new NotificationMessage(
-                    event: 'ai.provider_block',
-                    title: __('The AI readers have stopped: the AI service refused a request', [], $locale),
-                    body: $what.' '.$next,
-                    url: Route::has('ai-reader.admin.index') ? route('ai-reader.admin.index') : null,
-                    critical: true,
-                );
-            });
-        }
     }
 }

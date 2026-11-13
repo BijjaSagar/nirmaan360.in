@@ -109,14 +109,33 @@ return [
         ]],
     ],
 
-    /* Text calls, by purpose. The same three figures belong together as for the kinds above. */
+    /*
+     * Text calls, by purpose. The same three figures belong together as for the kinds above, and no
+     * timeout may be longer than 90 seconds: the job that makes the call is stopped at 110.
+     *
+     * A feature module registers the class that handles a purpose under "text_calls" in its own
+     * config file, as purpose => class, or as purpose => [record's morph name => class] when
+     * several features share the purpose (see Contracts\TextCallHandler).
+     *
+     * "redact" says whether phone numbers, e-mail addresses, GSTINs, PANs and account numbers are
+     * taken out of what is sent. It is on unless a purpose says otherwise. A spoken report is sent
+     * as it was heard, because those patterns would eat runs of spoken quantities; it is sent only
+     * under the company's consent switch, whose notice says so.
+     */
     'purposes' => [
         'wording' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 2000, 'effort' => 'low', 'timeout' => 90],
         'hindrance_groups' => ['model' => 'claude-sonnet-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
         'rate_match' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
         'translate' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
-        'voice' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90],
+        'voice' => ['model' => 'claude-haiku-5-5', 'max_tokens' => 3000, 'effort' => 'low', 'timeout' => 90, 'redact' => false],
     ],
+
+    /*
+     * The most characters one text call may send, with its instructions and its form. A request
+     * that is longer is not sent. It keeps every call well below the prompt length at which the
+     * cheapest model changes to its dearer price, whatever script the text is in.
+     */
+    'text_call_max_chars' => 40000,
 
     // An assumption: no speed is published or measured yet. The admin's dry run shows the real figure.
     'assumed_tokens_per_second' => 50,

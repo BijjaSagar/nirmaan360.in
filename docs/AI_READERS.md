@@ -8,8 +8,8 @@ Nothing here needs a new package or a new service. The readers use the queue and
 
 | What | Why | How often |
 | --- | --- | --- |
-| A queue worker | Every page is one queued job (`ReadDocumentPage`). Without a worker no page is ever sent. | Always |
-| The scheduler | It runs `document-reads:tend`, which recovers pages a worker lost, sends the next page of a read that stalled, closes reads nobody came back to and deletes old files. | Every minute |
+| A queue worker | Every page is one queued job (`ReadDocumentPage`), and so is every text call (`RunTextCall`). Without a worker nothing is ever sent. | Always |
+| The scheduler | It runs `document-reads:tend`, which recovers pages a worker lost, sends the next page of a read that stalled, closes reads nobody came back to, ends text calls nobody picked up and deletes old files. | Every minute |
 
 If the scheduler is down, a read that someone is watching still moves, because every status request tends that one read. A read nobody is watching does not. So both must run.
 
@@ -83,6 +83,8 @@ It prints how many reads it looked at, how many reads had their files deleted, a
 
 Every pause, cancel, finish and expiry gives back the credits the read had on hold, in the same database transaction.
 
+Text calls are looked after in the same round (see "Text calls" below).
+
 Tending also runs each class a module lists under `retention` in its `config/modules/<name>.php` (for example the clean-up of old voice note text), and once an hour asks the provider to count the fixed part of each reader's prompt so that quotes use the real figure. Counting spends no tokens and is skipped while no key is saved.
 
 ## When a read does not move
@@ -154,6 +156,53 @@ The phone and any request that asks for JSON get the code with a sentence in `me
 Each reader call has a model, a largest answer (`max_tokens`) and a time limit, in `config/modules/document_reading.php` under `kinds`. They must be changed together: a call has to be able to write its largest answer inside 80 percent of its time limit at `assumed_tokens_per_second`. A test holds this. No time limit may be above 240 seconds; longer answers would need streaming, which is not used.
 
 The speeds, the typical answer sizes and the prompt size in that file are assumptions until the platform admin's dry run has measured them on real documents. Replace them with measured figures before a reader is offered to any company.
+
+Text calls have the same three figures under `purposes`. Their time limit may not be above 90 seconds: the job that makes a text call is stopped at 110 (`RunTextCall::$timeout`).
+
+## Text calls
+
+A text call sends text and gets a small answer back: the free sentences of a letter, a ranking of rate candidates, a grouping of hindrance notes, a spoken report turned into fields. It is one row in `ai_text_calls` and one queued job. The row says who asked, for which record, what it cost and how it ended. It holds neither what was sent nor what came back: the request is built again from the records each time it is sent, and the answer goes straight to the feature.
+
+How one runs:
+
+1. A feature calls `TextCalls::start($purpose, $record, $person)`, or `WordingService::draft(...)` for the free sentences of a document. Everything that could stop the call is checked first: the permission and the plan, the company's switch for purposes that send a person's own words, the provider stop, the platform and company limits, the daily budgets and the wallet. The request is built once to see that it may be sent and how long it is.
+2. The call is made with its maximum (`max_credits`: every character priced as a token, plus the most the model may write). While it is `queued` or `running` that much of the wallet is held back.
+3. The job claims the call, passes the same gates again, sends one request and judges the answer: it must be JSON in the form that was asked for.
+4. If the feature's own checks refuse the answer (a sentence that states a figure, for instance), nothing is charged and the request is sent once more, saying which rule was broken. If that answer is refused too, the call ends as `rejected`.
+5. An accepted answer is handed to the feature and charged, in one transaction, at what it cost and never above the maximum or what the wallet has. Anything else ends the call as `failed` with a `fail_reason`, charges nothing, and tells the feature, which puts its own fallback in place (the code wording, the order by score).
+
+Things to know:
+
+- **No tools, no pictures.** A text call body may hold a model, an output limit, the fixed instructions, one user message of plain text and the form of the answer. Anything else stops the call before it is sent (`TextRequest::problems`), and so does a request longer than `text_call_max_chars` (40,000 characters).
+- **Personal details are taken out** of what every purpose sends (phone numbers, e-mail addresses, GSTINs, PANs, account numbers), except a purpose whose figures say `'redact' => false`. Only the spoken report does: it is sent as it was heard, and only under the company's switch.
+- **Busy provider.** "Too many requests" and an outage are tried again after a short wait, three attempts in all. A rejected key, a billing problem or a spending limit sets the provider stop, as for pages; the company is only told that the service could not be reached.
+- **The corrective request counts as an attempt** on the same row. `cost_usd` and the token columns add up over the attempts; `credits` is what the company paid, which is for one answer at most. `correction` keeps which rules the refused answer broke, as codes.
+
+What tending does for text calls:
+
+| Situation | After | What happens |
+| --- | --- | --- |
+| A call is marked as running but its worker is gone | 150 seconds | It ends as `worker_lost`. Nothing is charged and the feature's fallback stands. |
+| A call has sat in the queue | 2 minutes, and every 2 minutes after | Its job is handed to the queue again. A second job does no harm: the call is claimed by one worker. |
+| Nobody has picked a call up | 15 minutes after it was made | It ends as `not_started`, so it stops holding credits. This is what a missing worker looks like for text calls. |
+
+A feature's status request calls `TextCalls::watch($call)`, which does the same for that one call, so a call someone is waiting for comes to an end even if the scheduler is down. `TextCallRunner::oldestQueuedSince()` gives the age of the oldest waiting call for the admin page.
+
+Why a call ended without an answer, in `fail_reason`:
+
+| `fail_reason` | Meaning |
+| --- | --- |
+| `rejected` | The feature's checks refused the answer twice. The status is `rejected` too, and it counts toward the company's daily limit of unusable answers. |
+| `invalid_output`, `cut_off`, `declined` | The model answered, but not in the form, or ran into its output limit, or declined. |
+| `timeout`, `unavailable` | The provider did not answer in time, or was busy or down on every attempt. A timeout is priced as the most the call could have cost and counted as cost the company caused without paying. |
+| `bad_request` | The provider would not take the request. Its own words are kept for the platform admin (`TextCallRunner::rejectionNote`), never on the company's row. |
+| `not_connected` | No key is saved, or the provider stop is standing. Which of the provider's reasons it was is not written on the company's row or in its audit trail. |
+| `starter_gone`, `consent_off`, `plan`, `not_released`, `platform_ceiling`, `company_limit` | A gate at the claim, as for a page. Nothing was sent. |
+| `subject_gone`, `subject_changed` | The record the call was about is gone, or changed so much while the model was writing that the answer no longer fits. |
+| `worker_lost`, `not_started` | Found by tending, as in the table above. |
+| `internal_error` | Our own code failed: the handler built a request that may not be sent, or could not keep the answer. The error is in the log. |
+
+`TextCallWords::failure($reason)` gives the sentence a person is shown, in their language.
 
 ## The shared read routes
 

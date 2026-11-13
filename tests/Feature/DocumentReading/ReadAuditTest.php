@@ -141,7 +141,6 @@ class ReadAuditTest extends PageReadingTestCase
 
     public function test_a_text_call_is_recorded_without_its_words(): void
     {
-        $this->bringTextCalls();
         $engineer = $this->member($this->organization, 'engineer');
         $call = $this->textCall($this->organization, $engineer, ['purpose' => 'voice', 'model' => 'claude-haiku-5-5', 'input_chars' => 1840, 'provider_request_id' => 'req_test_7', 'status' => 'done']);
 

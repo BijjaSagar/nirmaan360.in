@@ -25,7 +25,6 @@ class AiSpendTextCallsTest extends ReadingTestCase
     {
         parent::setUp();
 
-        $this->bringTextCalls();
         $this->release();
         $this->organization = $this->tenant('Sahyadri Builders');
         $this->owner = $this->member($this->organization, 'owner');
