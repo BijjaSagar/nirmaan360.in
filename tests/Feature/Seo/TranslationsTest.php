@@ -144,29 +144,36 @@ class TranslationsTest extends TestCase
         $pages = app(PublicPages::class);
         $labels = [];
 
-        foreach ($pages->keys() as $page) {
-            $labels[] = $pages->label($page);
+        // With no key saved and with one: the contact page's description follows the AI agents (AiOffer::agentsLive).
+        foreach ([null, 'test-key-value'] as $key) {
+            app(PlatformSettings::class)->set(['anthropic_api_key' => $key]);
 
-            foreach (SeoText::FIELDS as $field) {
-                $english = $text->builtIn($page, 'en', $field);
-                $hindi = $text->builtIn($page, 'hi', $field);
-                $marathi = $text->builtIn($page, 'mr', $field);
+            foreach ($pages->keys() as $page) {
+                $labels[] = $pages->label($page);
 
-                $this->assertNotSame($english, $hindi, "{$page} {$field} has Hindi wording");
-                $this->assertNotSame($english, $marathi, "{$page} {$field} has Marathi wording");
-                $this->assertNotSame($hindi, $marathi, "{$page} {$field}: Hindi and Marathi are not the same line");
+                foreach (SeoText::FIELDS as $field) {
+                    $english = $text->builtIn($page, 'en', $field);
+                    $hindi = $text->builtIn($page, 'hi', $field);
+                    $marathi = $text->builtIn($page, 'mr', $field);
 
-                foreach ([$english, $hindi, $marathi] as $line) {
-                    $this->assertDoesNotMatchRegularExpression('/:[a-z]+/', $line, "{$page} {$field} has no unfilled placeholder: {$line}");
+                    $this->assertNotSame($english, $hindi, "{$page} {$field} has Hindi wording");
+                    $this->assertNotSame($english, $marathi, "{$page} {$field} has Marathi wording");
+                    $this->assertNotSame($hindi, $marathi, "{$page} {$field}: Hindi and Marathi are not the same line");
+
+                    foreach ([$english, $hindi, $marathi] as $line) {
+                        $this->assertDoesNotMatchRegularExpression('/:[a-z]+/', $line, "{$page} {$field} has no unfilled placeholder: {$line}");
+                    }
+
+                    // A search result shows about as many characters in any script.
+                    $limit = $field === 'title' ? SeoText::TITLE_LENGTH : SeoText::DESCRIPTION_LENGTH + 20;
+                    $this->assertLessThanOrEqual($limit, mb_strlen($field === 'title' ? $text->fullTitle($hindi) : $hindi), "{$page} Hindi {$field} fits");
+                    $this->assertLessThanOrEqual($limit, mb_strlen($field === 'title' ? $text->fullTitle($marathi) : $marathi), "{$page} Marathi {$field} fits");
+                    $this->assertLessThanOrEqual(SeoText::DESCRIPTION_LENGTH, $field === 'description' ? mb_strlen($english) : 0, "{$page} English description fits");
                 }
-
-                // A search result shows about as many characters in any script.
-                $limit = $field === 'title' ? SeoText::TITLE_LENGTH : SeoText::DESCRIPTION_LENGTH + 20;
-                $this->assertLessThanOrEqual($limit, mb_strlen($field === 'title' ? $text->fullTitle($hindi) : $hindi), "{$page} Hindi {$field} fits");
-                $this->assertLessThanOrEqual($limit, mb_strlen($field === 'title' ? $text->fullTitle($marathi) : $marathi), "{$page} Marathi {$field} fits");
             }
         }
 
-        $this->assertTranslated($labels, 'A page name on the admin screen');
+        $this->assertStringNotContainsString('early access', $text->builtIn('contact', 'en', 'description'), 'With a key the contact description offers the agents, not early access.');
+        $this->assertTranslated(array_values(array_unique($labels)), 'A page name on the admin screen');
     }
 }
