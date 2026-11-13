@@ -24,6 +24,20 @@ class PrivacyPolicyTest extends TestCase
             ->assertSee('Details of workers and contractors your team adds, such as their name and phone number.');
     }
 
+    /** The AI agents send records to their model provider, so the policy names it. There is no opt-in to training. */
+    public function test_the_policy_names_the_ai_model_provider_and_promises_no_training(): void
+    {
+        $this->withoutVite();
+
+        $this->get(route('privacy'))
+            ->assertOk()
+            ->assertSee('The AI agents on the website use an AI model provider, Anthropic: when a company uses the agents, what is asked of them and the records they read to answer are sent to Anthropic.')
+            ->assertSee('Nothing is sent to it for a company that does not use the agents.')
+            ->assertSee('We do not use your records to train AI models.')
+            ->assertDontSee('opt in')
+            ->assertDontSee('shared AI models');
+    }
+
     /** Google Play and Apple compare the policy with the deletion the app offers, so it describes that deletion. */
     public function test_the_policy_explains_deleting_an_account_and_what_is_kept(): void
     {

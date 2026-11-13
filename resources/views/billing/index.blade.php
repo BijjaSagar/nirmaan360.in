@@ -15,7 +15,7 @@
                 <p class="mt-0.5 text-sm text-ink-3">
                     @if ($organization->isOnTrial())
                         {{ __('Trial ends on :date', ['date' => $organization->trial_ends_at->format('d M Y')]) }}
-                    @elseif ($organization->paid_until && ! $organization->hasLapsed())
+                    @elseif ($organization->paid_until && ! $organization->hasLapsed() && $organization->hasOfferedPlan())
                         {{ __('Paid until :date', ['date' => $organization->paid_until->format('d M Y')]) }}
                     @elseif ($current === 'free')
                         {{ __('Free plan') }}
@@ -61,7 +61,7 @@
                     <tr>
                         <td class="num text-xs">{{ $payment->paid_at->format('d M Y') }}</td>
                         <td>{{ __($plans[$payment->plan]['label'] ?? $payment->plan) }} · {{ __(ucfirst($payment->cycle)) }}</td>
-                        <td class="num text-xs">{{ $payment->period_end->format('d M Y') }}</td>
+                        <td class="num text-xs">{{ $payment->period_end?->format('d M Y') ?? '—' }}</td>
                         <td class="r">{{ inr($payment->total_amount) }}</td>
                         <td class="num text-xs">{{ $payment->gateway_payment_id }}</td>
                     </tr>

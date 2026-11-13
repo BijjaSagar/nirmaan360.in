@@ -28,7 +28,7 @@
         <li>your notification settings, the notifications sent to you and your phones' notification tokens;</li>
         <li>your questions to the AI agents and their answers;</li>
         <li>your email address in the company's emailed report lists and in its invitations;</li>
-        <li>your access to the company's projects. Any offline-plan phone licence you held is freed for someone else.</li>
+        <li>your access to the company's projects.</li>
     </ul>
     <p>Kept by the company:</p>
     <ul>
@@ -45,7 +45,7 @@
         <li>If someone else is made an owner and cancels the deletion, the company stays and your own account is deleted then, as for a member.</li>
         <li>After the {{ $graceDays }} days, the company is erased: every project, record, photo and file, and the account of every person in it. We then email you to confirm it is done.</li>
     </ul>
-    <p>To keep the company going without you, make another member an owner under Team first, then delete your account; it is then deleted on its own, as for a member. To keep a copy of the company's data, an owner can export it first under Account, Company data. Team and Company data are not part of the offline plan.</p>
+    <p>To keep the company going without you, make another member an owner under Team first, then delete your account; it is then deleted on its own, as for a member. To keep a copy of the company's data, an owner can export it first under Account, Company data.</p>
 
     <h2>Kept as the law requires</h2>
     <p>Records of payments made to Nirmaan360 for plans and AI credits are kept after the company is erased, because Indian tax law requires it. They hold the company's name and GSTIN, what was bought, the amounts, the dates and the payment references. We also keep a note that the company was deleted and when, with no names in it.</p>

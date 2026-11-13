@@ -18,7 +18,7 @@
                     <td>
                         <form method="POST" action="{{ route('admin.organizations.update', $organization) }}" class="flex flex-wrap items-center gap-1.5">
                             @csrf @method('PATCH')
-                            <select name="plan" class="input w-32 py-1 text-xs" aria-label="{{ __('Plan') }}">@foreach ($plans as $key => $plan)<option value="{{ $key }}" @selected($organization->plan === $key)>{{ $plan['label'] }}</option>@endforeach</select>
+                            <select name="plan" class="input w-32 py-1 text-xs" aria-label="{{ __('Plan') }}">@foreach ($plans as $key => $plan)<option value="{{ $key }}" @selected(($organization->hasOfferedPlan() ? $organization->plan : 'free') === $key)>{{ $plan['label'] }}</option>@endforeach</select>
                             <select name="plan_status" class="input w-20 py-1 text-xs" aria-label="{{ __('Status') }}"><option value="active" @selected($organization->plan_status === 'active')>{{ __('Active') }}</option><option value="trial" @selected($organization->plan_status === 'trial')>{{ __('Trial') }}</option></select>
                             <input type="date" name="trial_ends_at" value="{{ $organization->trial_ends_at?->format('Y-m-d') }}" class="input w-32 py-1 text-xs" aria-label="{{ __('Trial ends') }}" title="{{ __('Trial ends') }}">
                             <input type="date" name="paid_until" value="{{ $organization->paid_until?->format('Y-m-d') }}" class="input w-32 py-1 text-xs" aria-label="{{ __('Paid until') }}" title="{{ __('Paid until') }}">
@@ -50,7 +50,7 @@
             <div class="card-head"><h2 class="card-title">{{ __('Recent payments') }}</h2></div>
             @forelse ($payments as $payment)
                 <div class="flex items-center justify-between gap-3 border-b border-rule px-4 py-2.5 text-sm last:border-b-0">
-                    <span class="min-w-0 truncate">{{ $payment->organization?->name }} <span class="text-ink-3">· {{ $payment->plan }} · {{ $payment->cycle }}</span></span>
+                    <span class="min-w-0 truncate">{{ $payment->organization?->name }} <span class="text-ink-3">· {{ $payment->plan }} · {{ $payment->cycle }}</span>@if ($payment->isRefundDue()) <span class="font-semibold text-laterite">· {{ __('Refund due') }}</span>@endif</span>
                     <span class="num shrink-0">{{ inr($payment->total_amount) }}</span>
                 </div>
             @empty

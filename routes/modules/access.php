@@ -12,7 +12,7 @@ Route::get('/devices', [DeviceController::class, 'mine'])->name('devices.index')
 Route::delete('/devices', [DeviceController::class, 'revokeAllMine'])->name('devices.destroy-all');
 Route::delete('/devices/{token}', [DeviceController::class, 'revokeMine'])->whereNumber('token')->name('devices.destroy');
 
-// Anyone signed in can delete their own account, contractor logins and the offline plan included.
+// Anyone signed in can delete their own account, contractor logins included.
 Route::get('/account/delete', [AccountDeletionController::class, 'show'])->name('account.delete');
 Route::post('/account/delete', [AccountDeletionController::class, 'destroy'])->middleware('throttle:5,1,account-deletion')->name('account.destroy');
 // The website's cancel of a pending company deletion, on every plan. Owners only, checked in the service.

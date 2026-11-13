@@ -80,7 +80,6 @@ class AdminSettingsController extends Controller
             'plans.*.yearly' => ['nullable', 'integer', 'min:1', 'max:99999999'],
             'plans.*.max_users' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'plans.*.max_projects' => ['nullable', 'integer', 'min:1', 'max:1000000'],
-            'plans.*.max_devices' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'plans.*.features' => ['array'],
             'plans.*.features.*' => [Rule::in([...array_keys(self::FEATURES), ...array_filter(array_column(config('modules', []), 'feature'))])],
         ]);
@@ -101,11 +100,6 @@ class AdminSettingsController extends Controller
                 'max_projects' => isset($input['max_projects']) ? (int) $input['max_projects'] : null,
                 'features' => array_values($input['features'] ?? []),
             ];
-
-            // Offline-plan phones. Only saved when the form offered the field, so other plans keep their default.
-            if (array_key_exists('max_devices', $input)) {
-                $saved[$key]['max_devices'] = isset($input['max_devices']) ? (int) $input['max_devices'] : null;
-            }
 
             // Free stays free and Enterprise stays priced by conversation.
             if ($plan['buyable']) {

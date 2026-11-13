@@ -203,6 +203,7 @@
     "Only draft or returned documents can be submitted.": "केवल ड्राफ़्ट या वापस आए दस्तावेज़ भेजे जा सकते हैं।",
     "This entry is under review and cannot be changed.": "यह प्रविष्टि समीक्षा में है और बदली नहीं जा सकती।",
     "Your plan does not include this module. Upgrade to continue.": "आपके प्लान में यह मॉड्यूल शामिल नहीं है। जारी रखने के लिए अपग्रेड करें।",
+    "Your company's plan does not include this module. Your company's owner can check the plan.": "आपकी कंपनी के प्लान में यह मॉड्यूल शामिल नहीं है। आपकी कंपनी के मालिक प्लान जाँच सकते हैं।",
     "These details do not match our records.": "ये विवरण हमारे रिकॉर्ड से मेल नहीं खाते।",
     "Start a :days-day trial": ":days दिन का ट्रायल शुरू करें",
     "Welcome! Your :days-day trial has started.": "स्वागत है! आपका :days दिन का ट्रायल शुरू हो गया है।",
@@ -227,6 +228,7 @@
     "Close": "बंद करें",
     "Could not save. Check your connection and try again.": "सेव नहीं हो पाया। इंटरनेट जांचकर फिर कोशिश करें।",
     "Your plan project limit has been reached. Upgrade to add more.": "आपके प्लान की प्रोजेक्ट सीमा पूरी हो गई है। और जोड़ने के लिए अपग्रेड करें।",
+    "Your company's plan has reached its project limit. Your company's owner can check the plan.": "आपकी कंपनी के प्लान की प्रोजेक्ट सीमा पूरी हो गई है। आपकी कंपनी के मालिक प्लान जाँच सकते हैं।",
     "Change language": "भाषा बदलें",
     "Balance value": "शेष मूल्य",
     "Checking…": "जाँच हो रही है…",
@@ -240,5 +242,11 @@
     "By creating an account you agree to our": "खाता बनाने पर आप इनसे सहमत होते हैं:",
     "and": "और",
     "Already registered?": "पहले से खाता है?",
-    "Deleted user": "हटाया गया उपयोगकर्ता"
+    "Deleted user": "हटाया गया उपयोगकर्ता",
+    "Billing": "बिलिंग",
+    "Current plan": "मौजूदा प्लान",
+    "Trial ends on :date": "ट्रायल :date को ख़त्म होगा",
+    "Paid until :date": ":date तक भुगतान किया हुआ",
+    "Payment received, but that plan is no longer offered, so your plan has not changed. We will contact you about a refund.": "भुगतान मिला, लेकिन वह प्लान अब उपलब्ध नहीं है, इसलिए आपका प्लान नहीं बदला। रिफंड के बारे में हम आपसे संपर्क करेंगे।",
+    "Refund due": "रिफंड बाकी"
 }

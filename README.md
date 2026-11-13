@@ -66,3 +66,17 @@ Set these in Laravel Cloud's environment variables:
 - A real mail driver (`MAIL_MAILER` and its settings). Password reset stays hidden in production until this is set.
 
 Plan prices live in `config/buildos.php`. Plans are prepaid per month or year and do not renew by themselves.
+
+## App review demo company
+
+Apple and Google review the field app with a demo login. Make its company once, from the production console:
+
+```bash
+php artisan review:demo-company <owner email> --contractor=<contractor email>
+```
+
+It refuses, changing nothing, if either email already has an account in any letter case, is a platform admin address or ends in `.invalid`, or the two are the same. It also refuses while any mailer that `MAIL_MAILER` can hand mail to would keep it instead of sending it: the `log` or `array` transport, a `failover` or `roundrobin` mailer that reaches one, or a mailer that is not defined. The log transport would write the password link into the log.
+
+Otherwise it makes a separate company on the Business plan with no end date, fills it with the sample data, and switches every AI agent and the daily brief off. Then it adds what the app's Business screens and the contractor portal read on the first sample project: an approved subcontractor bill and a payment, the standard checklists with one inspection, a machine with a day's log, five floors with progress, and a cement delivery. It posts one announcement, invites the contractor to the portal for the sample subcontractor, and sends the owner the "Forgot password?" email. Both people set their own passwords from those emails; the command never prints a password, a token or a link. A step that fails once the company exists is printed as a warning with the way to do it on the website, and the company id and the emails sent are still printed.
+
+Before a review, `php artisan review:demo-company <owner email> --top-up` makes sure a daily report waits at the project manager and a measurement waits at the QS. It works only on a company this command made.

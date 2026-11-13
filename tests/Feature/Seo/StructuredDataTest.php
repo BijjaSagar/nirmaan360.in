@@ -113,12 +113,12 @@ class StructuredDataTest extends TestCase
         $plans = config('buildos.plans');
 
         $this->assertSame([
-            'Free / Site', 'Contractor · Monthly', 'Contractor · Yearly', 'Business · Monthly', 'Business · Yearly', 'Offline · Monthly', 'Offline · Yearly',
+            'Free / Site', 'Contractor · Monthly', 'Contractor · Yearly', 'Business · Monthly', 'Business · Yearly',
         ], array_keys($offers));
 
         $this->assertSame('0', $offers['Free / Site']['price']);
 
-        foreach (['contractor' => 'Contractor', 'business' => 'Business', 'offline' => 'Offline'] as $key => $label) {
+        foreach (['contractor' => 'Contractor', 'business' => 'Business'] as $key => $label) {
             $this->assertSame((string) $plans[$key]['monthly'], $offers["{$label} · Monthly"]['price']);
             $this->assertSame((string) $plans[$key]['yearly'], $offers["{$label} · Yearly"]['price']);
             $this->assertSame('MON', $offers["{$label} · Monthly"]['priceSpecification']['unitCode']);
@@ -189,7 +189,7 @@ class StructuredDataTest extends TestCase
 
     public function test_the_faq_block_carries_exactly_the_questions_on_the_page(): void
     {
-        foreach (['/' => 8, '/pricing' => 6] as $path => $count) {
+        foreach (['/' => 8, '/pricing' => 4] as $path => $count) {
             $response = $this->get($path)->assertOk();
             $faq = $this->structuredDataOf($response, 'FAQPage');
 

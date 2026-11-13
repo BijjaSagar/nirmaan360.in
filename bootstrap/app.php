@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\EnsureUserIsActive;
-use App\Http\Middleware\OfflinePlanGate;
 use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\SetLocale;
 use App\Support\PlatformSettings;
@@ -20,9 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
-        // OfflinePlanGate: a company on the offline plan never syncs. See config/modules/offline_plan.php.
-        $middleware->web(append: [SetLocale::class, OfflinePlanGate::class]);
-        $middleware->api(append: [OfflinePlanGate::class]);
+        $middleware->web(append: [SetLocale::class]);
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
             'feature' => RequireFeature::class,

@@ -203,6 +203,7 @@
     "Only draft or returned documents can be submitted.": "फक्त मसुदा किंवा परत आलेले दस्तऐवज पाठवता येतात.",
     "This entry is under review and cannot be changed.": "ही नोंद तपासणीत आहे, त्यामुळे बदलता येत नाही.",
     "Your plan does not include this module. Upgrade to continue.": "तुमच्या योजनेत हा विभाग नाही. पुढे जाण्यासाठी योजना वाढवा.",
+    "Your company's plan does not include this module. Your company's owner can check the plan.": "तुमच्या कंपनीच्या प्लॅनमध्ये हे मॉड्यूल समाविष्ट नाही. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.",
     "These details do not match our records.": "हे तपशील आमच्या नोंदींशी जुळत नाहीत.",
     "Start a :days-day trial": ":days दिवसांची चाचणी सुरू करा",
     "Welcome! Your :days-day trial has started.": "स्वागत आहे! तुमची :days दिवसांची चाचणी सुरू झाली आहे.",
@@ -227,6 +228,7 @@
     "Close": "बंद करा",
     "Could not save. Check your connection and try again.": "सेव्ह झाले नाही. इंटरनेट तपासून पुन्हा प्रयत्न करा.",
     "Your plan project limit has been reached. Upgrade to add more.": "तुमच्या योजनेतील प्रकल्पांची मर्यादा पूर्ण झाली आहे. आणखी जोडण्यासाठी योजना वाढवा.",
+    "Your company's plan has reached its project limit. Your company's owner can check the plan.": "तुमच्या कंपनीच्या प्लॅनची प्रकल्प मर्यादा पूर्ण झाली आहे. तुमच्या कंपनीचे मालक प्लॅन तपासू शकतात.",
     "Change language": "भाषा बदला",
     "Balance value": "शिल्लक मूल्य",
     "Checking…": "तपासत आहे…",
@@ -240,5 +242,11 @@
     "By creating an account you agree to our": "खाते तयार केल्यावर तुम्ही यांना सहमती देता:",
     "and": "आणि",
     "Already registered?": "आधीच खाते आहे?",
-    "Deleted user": "हटवलेला वापरकर्ता"
+    "Deleted user": "हटवलेला वापरकर्ता",
+    "Billing": "बिलिंग",
+    "Current plan": "सध्याचा प्लॅन",
+    "Trial ends on :date": "ट्रायल :date रोजी संपेल",
+    "Paid until :date": ":date पर्यंत पैसे भरलेले",
+    "Payment received, but that plan is no longer offered, so your plan has not changed. We will contact you about a refund.": "पेमेंट मिळाले, पण तो प्लॅन आता उपलब्ध नाही, त्यामुळे तुमचा प्लॅन बदललेला नाही. परताव्याबद्दल आम्ही तुमच्याशी संपर्क करू.",
+    "Refund due": "परतावा बाकी"
 }

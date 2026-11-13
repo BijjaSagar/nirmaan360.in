@@ -1,8 +1,6 @@
 @php
     $inProject = isset($project) && $project instanceof \App\Models\Project && $project->exists;
     $organization = auth()->user()->organization;
-    // On the offline plan the website is only account, billing and devices (OfflinePlanGate), so the menu shows just those.
-    $offline = app(\App\Services\OfflinePlan\OfflinePlanPolicy::class)->isOffline($organization);
     $nav = fn (string $pattern) => request()->routeIs($pattern) ? 'nav-link active' : 'nav-link';
 @endphp
 <!DOCTYPE html>
@@ -18,7 +16,7 @@
     <aside :class="open ? 'translate-x-0' : '-translate-x-full'"
            class="fixed inset-y-0 left-0 z-40 flex w-60 -translate-x-full flex-col bg-neel-deep transition-transform lg:static lg:shrink-0 lg:translate-x-0">
         <div class="border-b border-white/10 px-4 py-3.5">
-            <a href="{{ route($offline ? 'offline.devices.index' : 'dashboard') }}"><x-brand /></a>
+            <a href="{{ route('dashboard') }}"><x-brand /></a>
             <p class="mt-2 truncate text-[13px] text-paper/70">{{ $organization->name }}</p>
             <p class="eyebrow mt-0.5 text-[10px] text-haldi">
                 {{ __(config('buildos.plans.'.$organization->effectivePlan().'.label')) }}
@@ -27,22 +25,20 @@
         </div>
 
         <nav class="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
-            @unless ($offline)
-                <div class="space-y-0.5">
-                    <a href="{{ route('dashboard') }}" class="{{ $nav('dashboard') }}">{{ __('Dashboard') }}</a>
-                    @can('project.view')
-                        <a href="{{ route('projects.index') }}" class="{{ $nav('projects.index') }}">{{ __('Projects') }}</a>
-                    @endcan
-                    <a href="{{ route('approvals.index') }}" class="{{ $nav('approvals.*') }} justify-between">
-                        <span>{{ __('Approvals') }}</span>
-                        @if ($pendingApprovals > 0)
-                            <span class="num rounded-[2px] bg-haldi px-1.5 text-[11px] font-medium text-ink">{{ $pendingApprovals }}</span>
-                        @endif
-                    </a>
-                </div>
-            @endunless
+            <div class="space-y-0.5">
+                <a href="{{ route('dashboard') }}" class="{{ $nav('dashboard') }}">{{ __('Dashboard') }}</a>
+                @can('project.view')
+                    <a href="{{ route('projects.index') }}" class="{{ $nav('projects.index') }}">{{ __('Projects') }}</a>
+                @endcan
+                <a href="{{ route('approvals.index') }}" class="{{ $nav('approvals.*') }} justify-between">
+                    <span>{{ __('Approvals') }}</span>
+                    @if ($pendingApprovals > 0)
+                        <span class="num rounded-[2px] bg-haldi px-1.5 text-[11px] font-medium text-ink">{{ $pendingApprovals }}</span>
+                    @endif
+                </a>
+            </div>
 
-            @if ($inProject && ! $offline)
+            @if ($inProject)
                 <div>
                     <a href="{{ route('projects.show', $project) }}" class="mb-1 block truncate px-2.5">
                         <span class="eyebrow block text-[10px] text-paper/45">{{ $project->code }}</span>
@@ -89,27 +85,23 @@
 
             <div class="space-y-0.5">
                 <p class="eyebrow px-2.5 pb-1 text-[10px] text-paper/45">{{ __('Company') }}</p>
-                @unless ($offline)
-                    @can('worker.view')
-                        <a href="{{ route('workers.index') }}" class="{{ $nav('workers.*') }}">{{ __('Workers') }}</a>
+                @can('worker.view')
+                    <a href="{{ route('workers.index') }}" class="{{ $nav('workers.*') }}">{{ __('Workers') }}</a>
+                @endcan
+                @if ($organization->allowsFeature('parties'))
+                    @can('party.view')
+                        <a href="{{ route('parties.index') }}" class="{{ $nav('parties.*') }}">{{ __('Contacts') }}</a>
                     @endcan
-                    @if ($organization->allowsFeature('parties'))
-                        @can('party.view')
-                            <a href="{{ route('parties.index') }}" class="{{ $nav('parties.*') }}">{{ __('Contacts') }}</a>
-                        @endcan
-                    @endif
-                    @can('user.manage')
-                        <a href="{{ route('team.index') }}" class="{{ $nav('team.*') }}">{{ __('Team') }}</a>
-                    @endcan
-                @endunless
+                @endif
+                @can('user.manage')
+                    <a href="{{ route('team.index') }}" class="{{ $nav('team.*') }}">{{ __('Team') }}</a>
+                @endcan
                 @can('settings.manage')
                     <a href="{{ route('settings.edit') }}" class="{{ $nav('settings.*') }}">{{ __('Settings') }}</a>
                 @endcan
-                @unless ($offline)
-                    @can('audit.view')
-                        <a href="{{ route('audit.index') }}" class="{{ $nav('audit.*') }}">{{ __('Audit log') }}</a>
-                    @endcan
-                @endunless
+                @can('audit.view')
+                    <a href="{{ route('audit.index') }}" class="{{ $nav('audit.*') }}">{{ __('Audit log') }}</a>
+                @endcan
                 @can('billing.manage')
                     <a href="{{ route('billing.index') }}" class="{{ $nav('billing.*') }}">{{ __('Billing') }}</a>
                 @endcan

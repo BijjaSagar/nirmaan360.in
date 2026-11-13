@@ -28,9 +28,19 @@ class Organization extends Model
         return $this->hasMany(BillingPayment::class);
     }
 
+    /**
+     * False for a plan that is no longer offered, such as the removed offline plan. A company can still hold one
+     * if a checkout for it was paid after the plan went, so every screen treats it as the free plan instead.
+     */
+    public function hasOfferedPlan(): bool
+    {
+        return array_key_exists((string) $this->plan, config('buildos.plans', []));
+    }
+
+    /** A trial of a plan that is no longer offered is no trial. */
     public function isOnTrial(): bool
     {
-        return $this->plan_status === 'trial' && $this->trial_ends_at?->isFuture();
+        return $this->plan_status === 'trial' && $this->trial_ends_at?->isFuture() && $this->hasOfferedPlan();
     }
 
     /** A paid period that ended more than the grace period ago. */
@@ -40,10 +50,10 @@ class Organization extends Model
             && $this->paid_until->copy()->addDays(config('buildos.payment_grace_days'))->isPast();
     }
 
-    /** An expired trial or a lapsed paid plan falls back to the free plan. */
+    /** An expired trial, a lapsed paid plan or a plan that is no longer offered falls back to the free plan. */
     public function effectivePlan(): string
     {
-        if (($this->plan_status === 'trial' && ! $this->isOnTrial()) || $this->hasLapsed()) {
+        if (! $this->hasOfferedPlan() || ($this->plan_status === 'trial' && ! $this->isOnTrial()) || $this->hasLapsed()) {
             return 'free';
         }
 

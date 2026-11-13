@@ -24,8 +24,11 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'active', 'locale', 'throttle:120,1'])->group(function () {
         Route::post('/auth/logout', [AuthApiController::class, 'logout']);
         Route::get('/me', [AuthApiController::class, 'me']);
+        // Field app builds made while the offline plan existed (build 18 among them) ask this after every sign-in and every
+        // few hours, for every company. Every company syncs now, so the answer never changes. See docs/API.md before removing it.
+        Route::get('/offline/status', [AuthApiController::class, 'syncMode']);
 
-        // Deleting one's own account. Under /auth so the offline plan and contractor logins reach it; each step has its own counter.
+        // Deleting one's own account. Under /auth so contractor logins reach it; each step has its own counter.
         Route::get('/auth/account/deletion', [AccountDeletionApiController::class, 'show']);
         Route::post('/auth/account/deletion', [AccountDeletionApiController::class, 'store'])->middleware('throttle:5,1,account-deletion');
         Route::delete('/auth/account/deletion', [AccountDeletionApiController::class, 'destroy'])->middleware('throttle:10,1,account-deletion-cancel');

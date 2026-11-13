@@ -10,6 +10,7 @@ use App\Services\Agents\CreditService;
 use App\Support\Dec;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
+use Laravel\Sanctum\Sanctum;
 
 /** E5-07, with exact-decimal checks on every balance. */
 class CreditsTest extends AgentTestCase
@@ -145,6 +146,29 @@ class CreditsTest extends AgentTestCase
         $this->actingAs($this->member($organization, 'owner'))
             ->post('/agents/project_brain/chat', ['message' => 'hello'])
             ->assertSessionHasErrors('message');
+
+        $this->assertSame(0, AgentRun::count());
+        Http::assertNothingSent();
+    }
+
+    /** The app shows the message as it is, so it never says buy. The website keeps its own wording. */
+    public function test_no_credits_on_the_api_says_nothing_about_buying(): void
+    {
+        $organization = $this->tenant();
+        $this->connect();
+        $this->setCredits($organization, '0');
+        Http::fake();
+        $owner = $this->member($organization, 'owner');
+
+        Sanctum::actingAs($owner);
+        $response = $this->postJson('/api/v1/agents/project_brain/runs', ['input' => 'hello'])->assertStatus(402)
+            ->assertJsonPath('reason', 'no_credits')
+            ->assertJsonPath('message', "Your company has no AI credits left. Your company's owner can check the credits.");
+        $this->assertStringNotContainsStringIgnoringCase('buy', $response->json('message'));
+
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($owner)->post('/agents/project_brain/chat', ['message' => 'hello'])
+            ->assertSessionHasErrors(['message' => 'Your company has no AI credits left. Buy more to continue.']);
 
         $this->assertSame(0, AgentRun::count());
         Http::assertNothingSent();

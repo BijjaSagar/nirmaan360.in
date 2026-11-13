@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Services\Reports\Download;
 use App\Services\Reports\MeasurementSheetService;
 use App\Support\Money;
+use App\Support\PlanWording;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,7 +16,7 @@ class MeasurementSheetController extends Controller
 {
     public function __invoke(Request $request, Project $project, MeasurementSheetService $service): Response
     {
-        abort_unless($request->user()->organization->allowsFeature('measurement'), 403, __('Your plan does not include this module. Upgrade to continue.'));
+        abort_unless($request->user()->organization->allowsFeature('measurement'), 403, PlanWording::moduleNotIncluded());
 
         $data = $request->validate([
             'from' => ['required', 'date'],

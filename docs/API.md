@@ -25,8 +25,9 @@ Starts a new company with the person as its owner, and signs them in on this dev
 
 **201** answers `{"token": "...", "user": {...}}`, the same keys and the same `user` as `/auth/login` gives for this person.
 
-- The company starts on the default plan, `contractor`, on a trial of the platform's trial length (30 days today). If that plan has been taken off sale, it starts on `free` instead.
+- The company starts on the `free` plan, active, with no trial, so nothing started in the app needs paying for outside it (App Store guideline 3.1.1). The website's sign-up still starts a trial of the default plan.
 - The app does not choose a plan: a `plan` in the body is ignored.
+- If the free plan has been renamed, taken off sale or given a price, the sign-up answers 422 on `errors.signup` and no company is made. It never falls back to a paid plan or a trial. `signup` is not a form field: treat it as a problem on the server to try again later, not as a mistake in what the person typed.
 - The reply carries no plan, trial or price.
 
 Errors:
@@ -37,9 +38,23 @@ The same email is never accepted twice. If a reply is lost and the app sends the
 
 `/auth/login` finds the email in any letter case. If two old accounts differ only by case, only the exact spelling signs in.
 
+## Plan refusals
+
+A reply under `/api/v1` that a plan stops never tells the person to upgrade, buy, renew or go to billing or pricing, because the app shows its `message` as it is. It says what the plan stops and that the company's owner can check the plan, for example a module outside the plan (403), the project limit (422 on `errors.plan`) and no AI credits left (402, `reason` `no_credits`). The website keeps its own wording.
+
+## `GET /offline/status`
+
+There is no offline plan: every company syncs. Field app builds made while it existed (build 18 among them) still ask this after every sign-in and every few hours, for every company, and read only `offline`. The answer is always the one an online company had:
+
+```json
+{"plan": "contractor", "offline": false, "syncs": true}
+```
+
+A phone that still holds a company from the old offline plan reads `false` as "the company syncs now" and asks the owner before it uploads what it holds, so keep this endpoint until no phone runs one of those builds. The old licence endpoints (`/offline/public-key`, `/offline/devices/activate`, `/offline/devices/refresh`, `/offline/devices/release`) are gone and answer 404, and no reply carries the `offline_plan` code any more.
+
 ## Deleting an account
 
-Anyone signed in can delete their own account: staff of every role, contractor logins, and companies on the offline plan. There is no permission to check. The website has the same flow at `/account/delete`.
+Anyone signed in can delete their own account: staff of every role and contractor logins. There is no permission to check. The website has the same flow at `/account/delete`.
 
 The server decides what happens, under a lock on the company, and the app never chooses:
 - `account`: a member, or an owner while another **active** owner exists. The account is anonymised at once. Their name, email, mobile number, sign-ins, phones, notification settings and assistant chats are removed. Everything they recorded stays with the company and shows as "Deleted user".

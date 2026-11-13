@@ -279,7 +279,7 @@ class AnalyticsScriptTest extends TestCase
             'location' => url('/dashboard'),
             'title' => 'dashboard',
             'events' => [['name' => 'sign_up', 'params' => ['method' => 'email', 'plan' => 'contractor']]],
-            'allowed' => ['sign_up' => ['method' => ['email'], 'plan' => ['free', 'contractor', 'business', 'offline']]],
+            'allowed' => ['sign_up' => ['method' => ['email'], 'plan' => ['free', 'contractor', 'business']]],
         ];
 
         $results = $this->browse($script, [

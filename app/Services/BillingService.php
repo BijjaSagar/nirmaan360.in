@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Support\Dec;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -101,6 +102,10 @@ class BillingService
                 return $payment;
             }
 
+            if (! array_key_exists($payment->plan, config('buildos.plans', []))) {
+                return $this->markPaidForRemovedPlan($payment, $paymentId);
+            }
+
             $organization = Organization::lockForUpdate()->findOrFail($payment->organization_id);
 
             // Renewing the same plan adds to the time left. A plan change starts today.
@@ -129,5 +134,32 @@ class BillingService
 
             return $payment;
         });
+    }
+
+    /**
+     * A checkout opened before its plan was removed (the offline plan) and paid after. The money was taken, so the
+     * payment is recorded as paid, but with no period: the company's plan, dates and cycle stay exactly as they were,
+     * so a company already paying for another plan is not moved. The owner refunds it; BillingPayment::isRefundDue() marks it.
+     */
+    private function markPaidForRemovedPlan(BillingPayment $payment, string $paymentId): BillingPayment
+    {
+        $payment->update([
+            'status' => 'paid',
+            'gateway_payment_id' => $paymentId,
+            'paid_at' => now(),
+            'period_end' => null,
+        ]);
+
+        AuditLog::record('billing.paid_for_removed_plan', $payment, null, [
+            'plan' => $payment->plan,
+            'cycle' => $payment->cycle,
+            'total' => $payment->total_amount,
+            'reason' => 'plan_not_offered',
+            'refund_due' => true,
+        ]);
+
+        Log::warning('Payment received for a plan that is no longer offered; refund it', ['payment' => $payment->id, 'plan' => $payment->plan]);
+
+        return $payment;
     }
 }

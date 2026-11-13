@@ -63,7 +63,11 @@ class BillingController extends Controller
         ]);
 
         $payment = BillingPayment::where('gateway_order_id', $data['razorpay_order_id'])->firstOrFail();
-        $this->billing->confirmCheckout($payment, $data['razorpay_payment_id'], $data['razorpay_signature']);
+        $payment = $this->billing->confirmCheckout($payment, $data['razorpay_payment_id'], $data['razorpay_signature']);
+
+        if ($payment->isRefundDue()) {
+            return redirect()->route('billing.index')->with('success', __('Payment received, but that plan is no longer offered, so your plan has not changed. We will contact you about a refund.'));
+        }
 
         return redirect()->route('billing.index')->with('success', __('Payment received. Your plan is active.'));
     }

@@ -6,13 +6,11 @@ use App\Exceptions\AccountDeletionChanged;
 use App\Jobs\ScrubDeletedAccount;
 use App\Models\AuditLog;
 use App\Models\CompanyDeletionRequest;
-use App\Models\DeviceLicence;
 use App\Models\Organization;
 use App\Models\ReportSchedule;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Services\Notify\CompanyDeletionService;
-use App\Services\OfflinePlan\DeviceLicenceService;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +40,6 @@ class AccountDeletionService
     public function __construct(
         private CompanyDeletionService $companies,
         private TeamAccessService $access,
-        private DeviceLicenceService $licences,
     ) {}
 
     /** 'company' only for the company's last active owner; everyone else is deleted on their own. */
@@ -243,7 +240,6 @@ class AccountDeletionService
         }
 
         $this->signOutEverywhere($user);
-        $this->freeLicences($user);
 
         AuditLog::record('account.deleted', $user, null, ['mode' => self::MODE_COMPANY, 'via' => $via], actor: $via === 'support' ? null : $user);
 
@@ -372,7 +368,6 @@ class AccountDeletionService
             ->update(['revoked_at' => now(), 'updated_at' => now()]);
 
         $this->dropReportRecipient($organizationId, $email);
-        $this->freeLicences($user);
 
         // The approval trail keeps who acted by id, which now reads "Deleted user"; the copied name goes.
         AuditLog::withoutGlobalScopes()
@@ -473,20 +468,6 @@ class AccountDeletionService
                     }
                 }
             });
-    }
-
-    /** Their phones stop holding the company's offline-plan slots. */
-    private function freeLicences(User $user): void
-    {
-        $licences = DeviceLicence::withoutGlobalScopes()
-            ->where('organization_id', $user->organization_id)
-            ->where('user_id', $user->id)
-            ->where('status', DeviceLicence::ACTIVE)
-            ->get();
-
-        foreach ($licences as $licence) {
-            $this->licences->free($licence, $user);
-        }
     }
 
     /** Signed out of the website and the app on every device, without changing who they are. */

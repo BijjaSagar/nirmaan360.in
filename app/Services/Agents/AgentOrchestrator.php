@@ -18,6 +18,7 @@ use App\Notifications\ApprovalUpdate;
 use App\Support\Dec;
 use App\Support\Idempotent;
 use App\Support\Money;
+use App\Support\PlanWording;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -48,7 +49,7 @@ class AgentOrchestrator
         }
 
         if (! $organization->allowsFeature('ai_agents')) {
-            throw new AgentRunBlocked('plan', __('Your plan does not include this module. Upgrade to continue.'));
+            throw new AgentRunBlocked('plan', PlanWording::moduleNotIncluded());
         }
 
         if (! $user->hasPermission($agent->currentVersion->permission)) {
@@ -60,7 +61,10 @@ class AgentOrchestrator
         }
 
         if (! $this->credits->hasCredits($organization)) {
-            throw new AgentRunBlocked('no_credits', __('Your company has no AI credits left. Buy more to continue.'));
+            // The API's reply never says buy: see PlanWording.
+            throw new AgentRunBlocked('no_credits', PlanWording::forApi()
+                ? __('Your company has no AI credits left. Your company\'s owner can check the credits.')
+                : __('Your company has no AI credits left. Buy more to continue.'));
         }
     }
 
