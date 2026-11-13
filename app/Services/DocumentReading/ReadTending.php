@@ -91,6 +91,13 @@ class ReadTending
             report($exception);
         }
 
+        // The platform admin's dry runs are looked after in the same round: a page whose worker died, a page nobody picked up.
+        try {
+            app(TrialRunner::class)->tendAll();
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
         $purged = $this->purgeOld();
         $retained = $this->runRetention();
 

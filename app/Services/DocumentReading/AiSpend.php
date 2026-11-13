@@ -31,14 +31,23 @@ use InvalidArgumentException;
  * A "feature" is a reader kind (boq, slip, bill, tender) or a text purpose (wording, voice and so on).
  * It runs on the queue as well as in requests, so every query names its company.
  *
- * ai_text_calls and reader_trial_pages arrive with later parts of the module. Until their tables
- * exist they simply add nothing.
+ * ai_text_calls and reader_trial_pages come with their own migrations. Where one of those tables
+ * does not exist they simply add nothing.
  */
 class AiSpend
 {
     private const TEXT_CALLS = 'ai_text_calls';
 
     private const TRIAL_PAGES = 'reader_trial_pages';
+
+    /** The platform settings the platform admin's AI reader page writes (ReaderControl). */
+    public const MONTHLY_CAP = 'ai_tier_monthly_cap_usd';
+
+    public const DAILY_LIMIT = 'ai_reader_daily_usd';
+
+    public const MONTH_SHARE = 'ai_reader_month_share';
+
+    public const TRIAL_ALLOWANCE = 'ai_trial_daily_usd';
 
     /** The name the field app's spoken reports go by beside the reader kinds, when one of them is asked about. */
     public const VOICE = 'voice';
@@ -122,7 +131,17 @@ class AiSpend
      */
     public function released(): bool
     {
-        return (string) $this->settings->get(AiOffer::RELEASED, '0') === '1' && $this->monthlyCap() !== null;
+        return $this->switchedOn() && $this->monthlyCap() !== null;
+    }
+
+    /**
+     * The release switch alone, as the platform admin left it: saved as exactly "1" while it is on, off
+     * by default. Only the platform admin's AI reader page writes it (ReaderControl::release). Nothing
+     * outside that page and released() asks it: whether the readers are on is readersOn().
+     */
+    public function switchedOn(): bool
+    {
+        return (string) $this->settings->get(AiOffer::RELEASED, '0') === '1';
     }
 
     /**
@@ -521,9 +540,10 @@ class AiSpend
             $total = Dec::of(DB::table('agent_steps')->where('created_at', '>=', $from)->sum('cost_usd'))
                 ->plus(Dec::of(DB::table('document_read_attempts')->where('finished_at', '>=', $from)->sum('cost_usd')));
 
-            foreach ([self::TEXT_CALLS, self::TRIAL_PAGES] as $table) {
+            // A text call is dated by when it was made. A dry-run page is uploaded first and sent later, so it is dated by when it was sent.
+            foreach ([self::TEXT_CALLS => 'created_at', self::TRIAL_PAGES => 'finished_at'] as $table => $dated) {
                 if ($this->has($table)) {
-                    $total = $total->plus(Dec::of(DB::table($table)->where('created_at', '>=', $from)->sum('cost_usd')));
+                    $total = $total->plus(Dec::of(DB::table($table)->where($dated, '>=', $from)->sum('cost_usd')));
                 }
             }
 
@@ -531,21 +551,73 @@ class AiSpend
         });
     }
 
+    /**
+     * What the platform admin's own dry runs may cost in a day, in US dollars. It stands apart from
+     * the companies' daily limit: a dry run uses none of theirs, and they use none of this. Zero
+     * switches dry runs off.
+     */
+    public function trialDailyAllowance(): BigDecimal
+    {
+        $saved = $this->settings->get(self::TRIAL_ALLOWANCE);
+
+        return is_numeric($saved) && ! Dec::of((string) $saved)->isNegative()
+            ? Dec::of((string) $saved)
+            : Dec::of(config('modules.document_reading.ceilings.trial_daily_usd'));
+    }
+
+    /** What the dry runs have cost since midnight in India, in US dollars, estimated cost of unanswered calls included. */
+    public function trialCostToday(): BigDecimal
+    {
+        if (! $this->has(self::TRIAL_PAGES)) {
+            return BigDecimal::zero();
+        }
+
+        return Dec::of(DB::table(self::TRIAL_PAGES)->where('finished_at', '>=', $this->dayStart())->sum('cost_usd'));
+    }
+
+    /**
+     * Why the platform admin's dry runs may not send anything now, or null: 'trial_allowance' (their own
+     * daily allowance is used) or 'monthly' (the month's limit for the readers is reached; a dry run holds
+     * to it as every reader does, so the agents keep their part). The companies' daily limit does not
+     * apply: a dry run uses none of it. The platform admin hears at each step of either limit.
+     */
+    public function trialStop(): ?string
+    {
+        $today = $this->trialCostToday();
+        $allowance = $this->trialDailyAllowance();
+        $this->tellAdmins('trial', now('Asia/Kolkata')->toDateString(), $today, $allowance);
+
+        if ($today->isGreaterThanOrEqualTo($allowance)) {
+            return 'trial_allowance';
+        }
+
+        $limit = $this->monthlyLimit();
+
+        if ($limit === null) {
+            return null;
+        }
+
+        $month = $this->platformCostThisMonth();
+        $this->tellAdmins('monthly', now('UTC')->format('Y-m'), $month, $limit);
+
+        return $month->isGreaterThanOrEqualTo($limit) ? 'monthly' : null;
+    }
+
     public function dailyCeiling(): BigDecimal
     {
-        return $this->positive($this->settings->get('ai_reader_daily_usd')) ?? Dec::of(config('modules.document_reading.ceilings.daily_usd'));
+        return $this->positive($this->settings->get(self::DAILY_LIMIT)) ?? Dec::of(config('modules.document_reading.ceilings.daily_usd'));
     }
 
     /** The provider's monthly cap as the platform admin typed it, or null when it has not been entered. */
     public function monthlyCap(): ?BigDecimal
     {
-        return $this->positive($this->settings->get('ai_tier_monthly_cap_usd'));
+        return $this->positive($this->settings->get(self::MONTHLY_CAP));
     }
 
     /** The part of the monthly cap the readers may bring the month's total up to, or null without a cap. */
     public function monthlyLimit(): ?BigDecimal
     {
-        $share = $this->positive($this->settings->get('ai_reader_month_share')) ?? Dec::of(config('modules.document_reading.ceilings.month_share'));
+        $share = $this->positive($this->settings->get(self::MONTH_SHARE)) ?? Dec::of(config('modules.document_reading.ceilings.month_share'));
 
         return $this->monthlyCap()?->multipliedBy($share);
     }
@@ -721,6 +793,8 @@ class AiSpend
         foreach ($admins as $admin) {
             $this->notifier()->send($admin, function (string $locale) use ($which, $percent, $words) {
                 $title = match (true) {
+                    $percent >= 100 && $which === 'trial' => __('Dry runs have stopped: today\'s allowance for them is used', [], $locale),
+                    $which === 'trial' => __('Dry runs have used :percent% of today\'s allowance', $words, $locale),
                     $percent >= 100 && $which === 'monthly' => __('The AI readers have stopped: this month\'s spending limit is reached', [], $locale),
                     $percent >= 100 => __('The AI readers have stopped: today\'s spending limit is reached', [], $locale),
                     $which === 'monthly' => __('AI spending has reached :percent% of this month\'s limit', $words, $locale),
@@ -730,7 +804,9 @@ class AiSpend
                 return new NotificationMessage(
                     event: 'ai.platform_limit',
                     title: $title,
-                    body: __('Spent so far: :spent US dollars of :limit. At the limit no new page or text call is sent; the agents keep running.', $words, $locale),
+                    body: $which === 'trial'
+                        ? __('Spent on dry runs today: :spent US dollars of :limit. At the allowance no dry-run page is sent until tomorrow; companies\' reads are not affected.', $words, $locale)
+                        : __('Spent so far: :spent US dollars of :limit. At the limit no new page or text call is sent; the agents keep running.', $words, $locale),
                     url: Route::has('ai-reader.admin.index') ? route('ai-reader.admin.index') : null,
                     critical: $percent >= 100,
                 );

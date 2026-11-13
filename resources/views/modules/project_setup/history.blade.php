@@ -12,6 +12,7 @@
             'csv_import' => __('Imported from a CSV file'),
             'excel_import' => __('Imported from an Excel file'),
             'pdf_import' => __('Imported from a PDF file'),
+            'ai_scan_import' => __('Read from a scan and confirmed'),
             'starter' => __('Starter template'),
             'concrete' => __('Concrete'),
             'edit' => __('Edited on screen'),

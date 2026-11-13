@@ -3,12 +3,15 @@
 use App\Models\AiDocumentSettings;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
+use App\Models\ReaderTrial;
+use App\Models\ReaderTrialPage;
 use App\Services\DocumentReading\AiDocumentConsent;
 use App\Services\DocumentReading\ReadFiles;
 use App\Services\DocumentReading\ReadKinds;
 use App\Support\PlatformSettings;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /*
  * The AI readers as a company that uses them has them: a key saved, the readers released, the
@@ -71,4 +74,24 @@ return function (): void {
 
     $this->skippedRoutes['document-reads.pages.image'] = 'serves a stored page picture';
     $this->skippedRoutes['api.document-reads.pages.image'] = 'serves a stored page picture';
+
+    // The platform admin's dry run belongs to no company. Every role of the company gets a 404 on its screens.
+    $trial = ReaderTrial::create([
+        'uuid' => (string) Str::uuid(),
+        'kind' => $kinds[0],
+        'pass' => 'main',
+        'model' => 'claude-sonnet-5-5',
+        'effort' => 'low',
+        'max_tokens' => 2000,
+        'timeout' => 60,
+        'pages_total' => 1,
+        'allowed_at' => now(),
+        'purge_after' => now()->addDay(),
+    ]);
+
+    $this->rows[ReaderTrial::class] ??= $trial;
+    $this->rows[ReaderTrialPage::class] ??= ReaderTrialPage::create(['reader_trial_id' => $trial->id, 'page_no' => 1, 'pass' => 'main', 'model' => 'claude-sonnet-5-5']);
+    $this->skippedRoutes['ai-reader.admin.trials.pages.image'] = 'serves a stored page picture';
+    $this->skippedRoutes['ai-reader.admin.trials.scores'] = 'serves a spreadsheet file';
+    $this->skippedRoutes['ai-reader.admin.fixtures'] = 'serves a test PDF';
 };
