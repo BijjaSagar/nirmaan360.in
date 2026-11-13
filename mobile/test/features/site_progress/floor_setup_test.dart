@@ -140,6 +140,23 @@ void main() {
       expect(week.notStarted, 4);
     });
 
+    test('a floor already gone counts as removed; any other refusal is passed on', () async {
+      await repository.delete(21);
+      expect(app.api.floorDeletes, <int>[21]);
+
+      // Asked again, as after a lost answer: the server says 404 and nothing is wrong.
+      await repository.delete(21);
+      expect(app.api.progressFloorRows.single['children'], isEmpty);
+
+      app.api.floorsWithWork.add(11);
+      await expectLater(repository.delete(11), throwsA(isA<ValidationFailure>()));
+      app.api.user['is_owner'] = false;
+      await expectLater(
+        repository.delete(11),
+        throwsA(isA<ServerFailure>().having((f) => f.statusCode, 'status', 403)),
+      );
+    });
+
     test('the time frame is sent whole and comes back from the summary', () async {
       final TimeFrame saved = await repository.setTimeFrame(1, const TimeFrame(startDate: '2026-12-01', plannedDays: 90));
 

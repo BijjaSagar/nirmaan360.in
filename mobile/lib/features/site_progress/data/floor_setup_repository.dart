@@ -195,8 +195,16 @@ class FloorSetupRepository {
     return _intOrNull(body['count']) ?? 0;
   }
 
-  /// For the company owner. The server refuses anyone else, and any floor with work on it.
-  Future<void> delete(int floorId) => _api.deleteFloor(floorId);
+  /// For the company owner. The server refuses anyone else, and any floor with
+  /// work on it. A floor already gone (a retry after a lost answer, or removed
+  /// by someone else meanwhile) is what was asked for, so it is not a failure.
+  Future<void> delete(int floorId) async {
+    try {
+      await _api.deleteFloor(floorId);
+    } on ServerFailure catch (failure) {
+      if (failure.statusCode != 404) rethrow;
+    }
+  }
 
   Future<TimeFrame> setTimeFrame(int projectId, TimeFrame frame) async => TimeFrame.fromSummary(
     await _api.setProgressTimeFrame(
