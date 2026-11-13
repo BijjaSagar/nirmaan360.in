@@ -9,6 +9,24 @@
  */
 return [
     /*
+     * The module's own screens need the plan that has the AI agents. The plans themselves are named
+     * once, in config/modules/agents.php, so no "plans" list is repeated here.
+     */
+    'feature' => 'ai_agents',
+
+    // Owners and admins only: settings.manage is theirs alone.
+    'nav' => [
+        ['place' => 'company', 'group' => 'AI', 'label' => 'AI document readers', 'route' => 'ai-documents.edit', 'active' => 'ai-documents.*', 'can' => 'settings.manage', 'order' => 40],
+    ],
+
+    /*
+     * Folders that hold a company's files and nothing else. When a company is erased, each one is
+     * deleted whole, so a file that no table row points at goes too. "{org}" stands for the company's
+     * id and must be part of every entry; an entry without it is ignored.
+     */
+    'purge_directories' => ['org-{org}/document-reads'],
+
+    /*
      * How a unit is printed, onto how the app writes it. The app's own spellings (config
      * buildos.units) are always known and need no line. Compared in lower case without dots or
      * spaces, so "Cu. M." is "cum". The English spellings are the ones the estimate import already

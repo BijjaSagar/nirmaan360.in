@@ -19,6 +19,9 @@ final class ReadWords
 
     public const PAUSED_TOO_LONG = 'paused_too_long';
 
+    /** An owner or admin switched the readers off for the company while the read was still open. */
+    public const CONSENT_WITHDRAWN = 'consent_withdrawn';
+
     /** Why a read is paused, for document_reads.pause_reason. */
     public static function pause(?string $reason, ?string $locale = null): string
     {
@@ -44,6 +47,7 @@ final class ReadWords
             self::FINISH_FAILED => __('Something went wrong while finishing this document.', [], $locale),
             self::NOT_STARTED => __('It was not started in time, so it was cancelled.', [], $locale),
             self::PAUSED_TOO_LONG => __('It stayed paused for too long, so it was cancelled.', [], $locale),
+            self::CONSENT_WITHDRAWN => __('Your company switched off the AI readers, so it was cancelled.', [], $locale),
             default => '',
         };
     }
