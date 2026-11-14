@@ -6,7 +6,9 @@
 
     @if ($signedInAs)
         <p class="mt-6 rounded-lg border border-haldi bg-haldi/15 px-3 py-2 text-sm">{{ __('You are signed in as :name. Sign out, then open this link again.', ['name' => $signedInAs->name]) }}</p>
-        <form method="POST" action="{{ route('logout') }}" class="mt-4">@csrf<button class="btn btn-primary w-full">{{ __('Sign out') }}</button></form>
+        <form method="POST" action="{{ route('logout') }}" class="mt-4" data-sign-out>@csrf<button class="btn btn-primary w-full">{{ __('Sign out') }}</button></form>
+        {{-- Before the sign-out leaves, the browser deletes the copies of uploaded PDFs it kept for the BOQ import. --}}
+        @includeIf('modules.boq_scan._sign_out')
     @else
         <form method="POST" action="{{ request()->fullUrl() }}" class="mt-6 space-y-4">
             @csrf

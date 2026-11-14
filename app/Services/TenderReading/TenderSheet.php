@@ -8,6 +8,8 @@ use App\Models\CrmTenderFact;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
 use App\Models\User;
+use App\Services\DocumentReading\AiSpend;
+use App\Services\DocumentReading\ReadKinds;
 use App\Support\Dec;
 use Illuminate\Support\Collection;
 
@@ -19,13 +21,36 @@ use Illuminate\Support\Collection;
  */
 class TenderSheet
 {
-    public function __construct(private TenderFactApply $apply) {}
+    public function __construct(private TenderFactApply $apply, private AiSpend $spend, private ReadKinds $kinds) {}
 
     /** Dates that come one after the other in a tender, in this order. */
     private const DATE_ORDER = ['published_on', 'pre_bid_at', 'due_at', 'opens_at'];
 
     /** Dates that are a warning once they are past. */
     private const MUST_BE_AHEAD = ['pre_bid_at', 'due_at', 'opens_at', 'financial_opens_at'];
+
+    /**
+     * Whether this tender's sheet is there for the person's company. While no fact was read for the
+     * tender, only when this module's reader is deployed and the readers are on for the company
+     * (AiSpend::readersOn, the one test): otherwise the sheet answers as if it did not exist, as the
+     * scanned BOQ screen does. Once a fact was read for it, always, whatever the readers are doing
+     * since: working through what was read never depends on the AI service.
+     */
+    public function open(CrmTender $tender, User $viewer): bool
+    {
+        $organization = $viewer->organization;
+
+        if ($organization !== null
+            && $this->kinds->find(TenderReadKind::KEY) instanceof TenderReadKind
+            && $this->spend->readersOn($organization, TenderReadKind::KEY)) {
+            return true;
+        }
+
+        return CrmTenderFact::withoutGlobalScopes()
+            ->where('organization_id', $tender->organization_id)
+            ->where('tender_id', $tender->id)
+            ->exists();
+    }
 
     /** @return array<string, mixed> */
     public function build(CrmTender $tender, User $viewer): array

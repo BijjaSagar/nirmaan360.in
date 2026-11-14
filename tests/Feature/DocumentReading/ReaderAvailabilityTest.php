@@ -77,8 +77,9 @@ class ReaderAvailabilityTest extends PageReadingTestCase
         $this->deployScan();
         $settings = app(PlatformSettings::class);
 
+        // Switched off: nothing is offered either, so an app that reads "can" alone offers nothing.
         $settings->set(['ai_readers_released' => '0']);
-        $this->ask($this->owner)->assertOk()->assertJson(['released' => false, 'connected' => true, 'can' => ['boq_scan' => true]]);
+        $this->ask($this->owner)->assertOk()->assertJson(['released' => false, 'connected' => true, 'can' => ['boq_scan' => false]]);
         $settings->set(['ai_readers_released' => '1']);
 
         // "released" is the one test of whether the readers are on (AiSpend::readersOn), so with no key it is false too.
@@ -105,6 +106,44 @@ class ReaderAvailabilityTest extends PageReadingTestCase
         $this->ask($this->owner)->assertOk()->assertJson(['consent' => ['enabled' => false, 'version' => AiDocumentConsent::VERSION, 'current' => false]]);
         $this->consent($this->organization, true, 'ai-docs-v0');
         $this->ask($this->owner)->assertOk()->assertJson(['consent' => ['enabled' => true, 'version' => 'ai-docs-v0', 'current' => false]]);
+    }
+
+    public function test_every_feature_is_refused_while_the_readers_are_off_whatever_its_offer_says(): void
+    {
+        // Each offer would say yes to the owner.
+        config(['modules.reader_stand_ins.reader_offers' => ['boq_scan' => FakeOffer::class, 'slip_challan' => FakeOffer::class, 'voice_dpr' => FakeOffer::class]]);
+        $settings = app(PlatformSettings::class);
+        $kinds = config('modules.reader_stand_ins.read_kinds');
+        $all = ['boq_scan' => true, 'slip_challan' => true, 'voice_dpr' => true];
+        $none = ['boq_scan' => false, 'slip_challan' => false, 'voice_dpr' => false];
+        $answer = function () {
+            $json = $this->ask($this->owner)->assertOk()->json();
+
+            return [$json['released'], $json['can'], app(ReaderAvailability::class)->can($this->owner)];
+        };
+
+        $this->assertSame([true, $all, $all], $answer());
+
+        // Every reason "released" is false turns every feature off, on the route and wherever else can() is asked.
+        $reasons = [
+            'switched off' => [fn () => $settings->set(['ai_readers_released' => '0']), fn () => $settings->set(['ai_readers_released' => '1'])],
+            'no monthly cap on record' => [fn () => $settings->set(['ai_tier_monthly_cap_usd' => null]), fn () => $this->release()],
+            'no key saved' => [fn () => $settings->set(['anthropic_api_key' => null]), fn () => $this->connect()],
+            'no reader deployed' => [fn () => config(['modules.reader_stand_ins.read_kinds' => []]), fn () => config(['modules.reader_stand_ins.read_kinds' => $kinds])],
+            'no reader the plan has the module for' => [
+                fn () => config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class], 'modules.document_reading.kinds.boq.feature' => 'feature_no_plan_has']),
+                fn () => config(['modules.reader_stand_ins.read_kinds' => $kinds, 'modules.document_reading.kinds.boq.feature' => 'reports']),
+            ],
+        ];
+
+        foreach ($reasons as $reason => [$off, $on]) {
+            $off();
+            $this->assertSame([false, $none, $none], $answer(), $reason);
+            $on();
+            $this->assertSame([true, $all, $all], $answer(), "{$reason}, put back");
+        }
+
+        Http::assertNothingSent();
     }
 
     public function test_a_company_on_a_plan_without_ai_is_told_so_and_offered_nothing(): void

@@ -57,6 +57,7 @@ class BoqPdfImportController extends Controller
         }
 
         $request->session()->forget(BoqPdfImport::SESSION);
+        $request->session()->flash(BoqPdfImport::ENDED, true);
 
         if ($result->ok()) {
             return redirect()->route('boq.excel.index', $project)
@@ -76,6 +77,7 @@ class BoqPdfImportController extends Controller
         $token = $request->input('token');
         $this->import->discard($project, $request->user(), is_string($token) ? $token : null);
         $request->session()->forget(BoqPdfImport::SESSION);
+        $request->session()->flash(BoqPdfImport::ENDED, true);
 
         return redirect()->route('boq.excel.index', $project)->with('success', __('The PDF was set aside. Nothing was imported.'));
     }

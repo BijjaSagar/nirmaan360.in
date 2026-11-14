@@ -202,7 +202,9 @@
                         </template>
                     </div>
                 @endif
-                <a href="{{ route('tender-facts.index', $tender) }}" class="btn btn-primary mt-3">{{ __('Open the tender sheet') }}</a>
+                @if ($sheetOpen)
+                    <a href="{{ route('tender-facts.index', $tender) }}" class="btn btn-primary mt-3">{{ __('Open the tender sheet') }}</a>
+                @endif
             </section>
         @endif
 

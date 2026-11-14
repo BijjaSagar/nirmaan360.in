@@ -8,6 +8,8 @@ use App\Models\DocumentRead;
 use App\Services\TenderReading\TenderFactBuilder;
 use App\Services\TenderReading\TenderFields;
 use App\Services\TenderReading\TenderValue;
+use App\Support\PlatformSettings;
+use Illuminate\Support\Facades\Http;
 
 /** The tender sheet: who sees it, confirming each fact with its page, and the checks code makes. */
 class TenderSheetTest extends TenderReadingTestCase
@@ -34,6 +36,66 @@ class TenderSheetTest extends TenderReadingTestCase
         app(TenderFactBuilder::class)->regroup($this->organization->id, $this->tender->id);
 
         return $fact->refresh();
+    }
+
+    public function test_while_the_readers_are_off_a_tender_with_no_facts_has_no_sheet_as_the_scan_screen_has_none(): void
+    {
+        // Signed in afresh each time, as each request is, so a change of plan is seen.
+        $sheet = fn () => $this->actingAs($this->owner->fresh())->get(route('tender-facts.index', $this->tender));
+        $settings = app(PlatformSettings::class);
+
+        // On: the empty sheet is there.
+        $sheet()->assertOk();
+
+        // Off for any reason of the one test (AiSpend::readersOn): not found, as the scanned BOQ screen answers.
+        $settings->set(['ai_readers_released' => '0']);
+        $sheet()->assertNotFound();
+        $settings->set(['ai_readers_released' => '1', 'anthropic_api_key' => null]);
+        $sheet()->assertNotFound();
+        $this->connect();
+        $sheet()->assertOk();
+        $this->organization->forceFill(['plan' => 'contractor'])->save();
+        $this->assertFalse($this->organization->refresh()->allowsFeature('ai_agents'));
+        $this->assertTrue($this->organization->allowsFeature('crm'));
+        $sheet()->assertNotFound();
+        $this->organization->forceFill(['plan' => 'business'])->save();
+        $sheet()->assertOk();
+
+        // A fact of another tender of the company opens nothing here.
+        $settings->set(['ai_readers_released' => '0']);
+        CrmTenderFact::withoutGlobalScopes()->create([
+            'organization_id' => $this->organization->id, 'tender_id' => $this->makeTender($this->organization, 'Another road')->id,
+            'field' => 'tender_fee', 'value_raw' => 'Rs. 1,180/-', 'value_kind' => 'amount', 'page' => 1, 'quote' => 'Tender fee Rs. 1,180/-', 'source' => 'text',
+        ]);
+        $sheet()->assertNotFound();
+
+        // Once a fact was read for the tender, the sheet stays, whatever the readers are doing: even one that was rejected.
+        $fact = $this->makeFact('emd_amount', 'Rs. 61,500/-', 2, ['status' => CrmTenderFact::REJECTED]);
+        $sheet()->assertOk()->assertSee('Rs. 61,500/-');
+        $this->actingAs($this->qs)->get(route('tender-facts.index', $this->tender))->assertOk();
+        // The rest of the rules stand: an engineer is refused, another company finds nothing.
+        $this->actingAs($this->member($this->organization, 'engineer'))->get(route('tender-facts.index', $this->tender))->assertForbidden();
+        $this->actingAs($this->member($this->tenant('Godavari Infra'), 'owner'))->get(route('tender-facts.index', $this->tender))->assertNotFound();
+        $this->assertSame(CrmTenderFact::REJECTED, $fact->refresh()->status);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_a_finished_reading_that_found_nothing_points_to_the_sheet_only_while_there_is_one(): void
+    {
+        $read = $this->preparedRead();
+        $this->answer($read);
+        $this->startReading($read);
+        $this->readAll($read);
+        $this->assertSame(0, CrmTenderFact::withoutGlobalScopes()->where('tender_id', $this->tender->id)->count());
+
+        $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk()
+            ->assertSee(route('tender-facts.index', $this->tender), false)->assertSee('Open the tender sheet');
+
+        app(PlatformSettings::class)->set(['ai_readers_released' => '0']);
+        $this->actingAs($this->owner)->get(route('tender-reads.view', $read))->assertOk()
+            ->assertDontSee(route('tender-facts.index', $this->tender), false)->assertDontSee('Open the tender sheet');
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertNotFound();
     }
 
     public function test_a_fact_is_confirmed_only_with_its_page_viewed(): void

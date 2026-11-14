@@ -15,7 +15,7 @@ use LogicException;
  */
 class ReaderAvailability
 {
-    /** The features the app asks about today. Each is false until its module is deployed and registers an offer. */
+    /** The features the app asks about today. Each is false until its module is deployed and registers an offer, and while the readers are off. */
     public const FEATURES = ['boq_scan', 'slip_challan', 'voice_dpr'];
 
     public function __construct(
@@ -32,14 +32,15 @@ class ReaderAvailability
     {
         $organization = $user->organization;
         $plan = (bool) $organization?->allowsFeature('ai_agents');
+        $released = $this->released($user);
 
         return [
             // The one test of whether the readers are on, as the consent switch, the menu and the website ask it.
-            'released' => $organization !== null && $this->spend->readersOn($organization),
+            'released' => $released,
             'connected' => $this->gateway->isConnected() && ProviderBlock::current() === null,
             'plan' => $plan,
             'consent' => $organization === null ? ['enabled' => false, 'version' => null, 'current' => false] : $this->settings->consent($organization),
-            'can' => $this->can($user, $plan),
+            'can' => $this->can($user, $plan, $released),
             // The balance is a figure only for people who may open the credits page. Everyone else is told whether a read fits when they ask its price.
             'credits_free' => $plan && $user->hasPermission('agents.credits') ? $this->credits->free($organization) : null,
             // Speech is turned into text on the phone itself; the server takes text only and has no route for audio.
@@ -48,14 +49,17 @@ class ReaderAvailability
     }
 
     /**
-     * Which AI features this person may use, by the name the app asks about.
+     * Which AI features this person may use, by the name the app asks about. Every one is false
+     * unless the readers are on for the company (released), whatever the offers say, so a client
+     * that reads "can" alone, without "released" beside it, still offers nothing while they are off.
      *
      * @return array<string, bool>
      */
-    public function can(User $user, ?bool $plan = null): array
+    public function can(User $user, ?bool $plan = null, ?bool $released = null): array
     {
         $plan ??= (bool) $user->organization?->allowsFeature('ai_agents');
-        $may = $plan && $user->is_active && $user->hasPermission('agents.use');
+        $released ??= $this->released($user);
+        $may = $released && $plan && $user->is_active && $user->hasPermission('agents.use');
         $can = array_fill_keys(self::FEATURES, false);
 
         foreach ($this->offers() as $name => $offer) {
@@ -63,6 +67,14 @@ class ReaderAvailability
         }
 
         return $can;
+    }
+
+    /** The one test of whether the readers are on (AiSpend::readersOn), for this person's company. */
+    private function released(User $user): bool
+    {
+        $organization = $user->organization;
+
+        return $organization !== null && $this->spend->readersOn($organization);
     }
 
     /** @return array<string, ReaderOffer> By the name the app asks about. */

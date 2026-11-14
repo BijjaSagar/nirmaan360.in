@@ -32,6 +32,12 @@ final class BoqPdfImport
     /** Session key holding the token of the preview the person was sent to. */
     public const SESSION = 'boq_pdf_import';
 
+    /**
+     * Flashed when a preview ends because it was confirmed or discarded. The BOQ in Excel page the person
+     * comes back to then tells the browser to forget its own copy of the PDF, which has no more use.
+     */
+    public const ENDED = 'boq_pdf_import_ended';
+
     private const CACHE = 'boq-pdf-import:';
 
     /** What the PDF is printed in. The person says so; the reader does not guess. */
