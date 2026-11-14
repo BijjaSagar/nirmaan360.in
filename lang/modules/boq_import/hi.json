@@ -4,6 +4,8 @@
     ":count lines are provisional sums or items outside the schedule of rates (rows :rows). They are imported; check them.": ":count लाइनें अस्थायी राशि या दर-सूची से बाहर के आइटम हैं (पंक्तियाँ :rows)। ये इम्पोर्ट होती हैं; इन्हें जाँचें।",
     ":count lines have a quantity but no rate (rows :rows). They are read at rate 0; fill in the rates later.": ":count लाइनों में मात्रा है पर दर नहीं (पंक्तियाँ :rows)। इन्हें दर 0 पर पढ़ा जाता है; दरें बाद में भरें।",
     ":count lines have an amount that is not quantity times rate. The quantity and rate were kept as the file gives them.": ":count लाइनों में राशि मात्रा गुणा दर के बराबर नहीं है। मात्रा और दर वैसे ही रखे गए जैसे फ़ाइल में हैं।",
+    ":count lines update an item already in the project, and the file gives no quantity for them (rows :rows). They keep the quantity the item has.": ":count लाइनें प्रोजेक्ट में पहले से मौजूद आइटम को बदलती हैं, और फ़ाइल में इनकी मात्रा नहीं है (पंक्तियाँ :rows)। इनमें आइटम की अपनी मात्रा बनी रहती है।",
+    ":count lines update an item already in the project, and the file gives no rate for them (rows :rows). They keep the rate the item has.": ":count लाइनें प्रोजेक्ट में पहले से मौजूद आइटम को बदलती हैं, और फ़ाइल में इनकी दर नहीं है (पंक्तियाँ :rows)। इनमें आइटम की अपनी दर बनी रहती है।",
     ":count priced rows": ":count दर वाली पंक्तियाँ",
     ":field holds the spreadsheet error :error. Fix the formula in the file and upload it again.": ":field में स्प्रेडशीट की त्रुटि :error है। फ़ाइल में सूत्र ठीक करें और उसे फिर से अपलोड करें।",
     ":rate per :per in the sheet, so this is the rate per :unit.": "शीट में :rate प्रति :per, इसलिए यह प्रति :unit दर है।",

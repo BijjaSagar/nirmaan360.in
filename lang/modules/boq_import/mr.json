@@ -4,6 +4,8 @@
     ":count lines are provisional sums or items outside the schedule of rates (rows :rows). They are imported; check them.": ":count ओळी तात्पुरत्या रकमा किंवा दरसूचीबाहेरचे आयटम आहेत (ओळी :rows). त्या इम्पोर्ट होतात; त्या तपासा.",
     ":count lines have a quantity but no rate (rows :rows). They are read at rate 0; fill in the rates later.": ":count ओळींमध्ये प्रमाण आहे पण दर नाही (ओळी :rows). त्या दर 0 धरून वाचल्या जातात; दर नंतर भरा.",
     ":count lines have an amount that is not quantity times rate. The quantity and rate were kept as the file gives them.": ":count ओळींमधील रक्कम प्रमाण गुणिले दराइतकी नाही. प्रमाण आणि दर फाइलमध्ये आहेत तसेच ठेवले.",
+    ":count lines update an item already in the project, and the file gives no quantity for them (rows :rows). They keep the quantity the item has.": ":count ओळी प्रोजेक्टमध्ये आधीपासून असलेला आयटम बदलतात, आणि फाइलमध्ये त्यांचे प्रमाण नाही (ओळी :rows). त्यांच्यात आयटमचे स्वतःचे प्रमाण तसेच राहते.",
+    ":count lines update an item already in the project, and the file gives no rate for them (rows :rows). They keep the rate the item has.": ":count ओळी प्रोजेक्टमध्ये आधीपासून असलेला आयटम बदलतात, आणि फाइलमध्ये त्यांचा दर नाही (ओळी :rows). त्यांच्यात आयटमचा स्वतःचा दर तसाच राहतो.",
     ":count priced rows": ":count दर असलेल्या ओळी",
     ":field holds the spreadsheet error :error. Fix the formula in the file and upload it again.": ":field मध्ये स्प्रेडशीटची त्रुटी :error आहे. फाइलमधील सूत्र दुरुस्त करा आणि ती पुन्हा अपलोड करा.",
     ":rate per :per in the sheet, so this is the rate per :unit.": "शीटमध्ये :rate प्रति :per, म्हणून हा प्रति :unit दर आहे.",

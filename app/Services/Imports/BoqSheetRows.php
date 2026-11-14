@@ -938,6 +938,8 @@ final class BoqSheetRows extends EstimateSheet
         $kind = 'line';
         $notes = [];
         $details = [];
+        // The figures the file does not give, read as 0 here: a line that updates an item keeps the item's own (BoqSheetImport).
+        $filled = [];
         $unitText = $row['unit'];
         $qtyText = CellValues::text($row['qty_raw']);
 
@@ -968,19 +970,22 @@ final class BoqSheetRows extends EstimateSheet
             $kind = 'rate_only';
             $qty = '0';
             $rate = '0';
+            $filled = ['qty', 'rate'];
             $this->toPrice[] = $number;
             $details[] = __('To be priced: the file gives no quantity and no rate.');
         } elseif ($row['rate_only']) {
             $kind = 'rate_only';
+            $filled = $rate === null ? ['qty', 'rate'] : ['qty'];
             $qty = '0';
             $rate ??= '0';
 
             if ($row['qty_words'] !== null) {
-                $notes[] = __('The quantity cell says ":text". The line comes in as rate only, with quantity 0; fill in the quantity later.', ['text' => Str::limit($row['qty_words'], 40)]);
+                $notes[] = [__('The quantity cell says ":text". The line comes in as rate only, with quantity 0; fill in the quantity later.', ['text' => Str::limit($row['qty_words'], 40)]), 'qty'];
             }
         } elseif ($qty === null && $rate !== null && ($amount === null || Dec::of($amount)->isZero())) {
             $kind = 'rate_only';
             $qty = '0';
+            $filled = ['qty'];
         } elseif ($qty === null && $rate !== null && $amount !== null && ! Dec::of($rate)->isZero()) {
             $qty = (string) Dec::of($amount)->dividedBy(Dec::of($rate), 3, RoundingMode::HalfUp);
             $notes[] = __('No quantity in the file. It was worked out as amount divided by rate.');
@@ -994,10 +999,11 @@ final class BoqSheetRows extends EstimateSheet
             $notes[] = __('No rate in the file. It was worked out as amount divided by quantity.');
         } elseif ($qty !== null && $rate === null) {
             $rate = '0';
+            $filled = ['rate'];
             $this->unpriced[] = $number;
 
             if ($row['rate_text'] !== null) {
-                $notes[] = __('The rate cell says ":text", which is not a number. The line comes in at rate 0; fill in the rate later.', ['text' => Str::limit($row['rate_text'], 40)]);
+                $notes[] = [__('The rate cell says ":text", which is not a number. The line comes in at rate 0; fill in the rate later.', ['text' => Str::limit($row['rate_text'], 40)]), 'rate'];
             }
         }
 
@@ -1124,6 +1130,7 @@ final class BoqSheetRows extends EstimateSheet
             'unit' => $unit,
             'qty' => $qty,
             'rate' => $rate,
+            'filled' => $filled,
             'amount' => $amount,
             'per' => $fileRate === null ? null : CellValues::text($per),
             'file_rate' => $fileRate,
@@ -1135,7 +1142,8 @@ final class BoqSheetRows extends EstimateSheet
         ];
 
         foreach ($notes as $note) {
-            $this->note($number, $note);
+            // A note that says a figure came in as 0 names it, so it can be taken back when the line keeps an item's figure.
+            is_array($note) ? $this->notes[] = ['row' => $number, 'message' => $note[0], 'filled' => [$note[1]], 'rows' => [$number]] : $this->note($number, $note);
         }
 
         $value = Dec::of($qty)->multipliedBy(Dec::of($rate));
@@ -2113,18 +2121,12 @@ final class BoqSheetRows extends EstimateSheet
             $this->notes[] = ['row' => 0, 'message' => __('The lines add up to :lines but the total written in the file is :file. The lines are taken as they are, so please check that total.', ['lines' => inr($this->linesSum), 'file' => inr($subtotal)]), 'weight' => 2];
         }
 
-        $rateOnly = count(array_filter($this->made, fn (array $line) => $line['kind'] === 'rate_only')) - count($this->toPrice);
+        $rateOnly = array_values(array_diff(array_keys(array_filter($this->made, fn (array $line) => $line['kind'] === 'rate_only')), $this->toPrice));
 
-        if ($rateOnly > 0) {
-            $this->note(0, __(':count lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.', ['count' => $rateOnly]));
-        }
-
-        if ($this->toPrice !== []) {
-            $this->note(0, __(':count items have neither a quantity nor a rate in the file (rows :rows). They come in at quantity 0 and rate 0, to be priced later.', ['count' => count($this->toPrice), 'rows' => self::rows($this->toPrice)]));
-        }
-
-        if ($this->unpriced !== []) {
-            $this->note(0, __(':count lines have a quantity but no rate (rows :rows). They are read at rate 0; fill in the rates later.', ['count' => count($this->unpriced), 'rows' => self::rows($this->unpriced)]));
+        foreach (['rate_only' => $rateOnly, 'to_price' => $this->toPrice, 'unpriced' => $this->unpriced] as $about => $rows) {
+            if ($rows !== []) {
+                $this->notes[] = self::zeroNote($about, $rows);
+            }
         }
 
         if ($this->mismatches !== []) {
@@ -2149,8 +2151,31 @@ final class BoqSheetRows extends EstimateSheet
         }
     }
 
-    /** @param  list<int>  $rows */
-    private static function rows(array $rows): string
+    /**
+     * The note on the lines that came in with a 0 the file does not give: rate-only lines ("rate_only", quantity 0),
+     * items to be priced ("to_price", quantity and rate 0), lines with no rate ("unpriced", rate 0). It names the
+     * figures and the rows, so BoqSheetImport can say it again for the rows left when some keep an item's figures.
+     *
+     * @param  list<int>  $rows
+     * @return array{row: int, message: string, filled: list<string>, rows: list<int>, about: string}
+     */
+    public static function zeroNote(string $about, array $rows): array
+    {
+        [$message, $filled] = match ($about) {
+            'rate_only' => [__(':count lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.', ['count' => count($rows)]), ['qty']],
+            'to_price' => [__(':count items have neither a quantity nor a rate in the file (rows :rows). They come in at quantity 0 and rate 0, to be priced later.', ['count' => count($rows), 'rows' => self::rows($rows)]), ['qty', 'rate']],
+            'unpriced' => [__(':count lines have a quantity but no rate (rows :rows). They are read at rate 0; fill in the rates later.', ['count' => count($rows), 'rows' => self::rows($rows)]), ['rate']],
+        };
+
+        return ['row' => 0, 'message' => $message, 'filled' => $filled, 'rows' => array_values($rows), 'about' => $about];
+    }
+
+    /**
+     * Row numbers as a note names them: the first 30, then an ellipsis.
+     *
+     * @param  list<int>  $rows
+     */
+    public static function rows(array $rows): string
     {
         return implode(', ', array_slice($rows, 0, 30)).(count($rows) > 30 ? ', …' : '');
     }

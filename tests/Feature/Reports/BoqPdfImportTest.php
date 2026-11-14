@@ -299,6 +299,22 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->get(route('boq.excel.index', $other))->assertOk()->assertSee('Nothing was imported')->assertSee('Item code is missing');
     }
 
+    public function test_a_role_that_may_not_see_money_sets_no_rate_from_a_pdf(): void
+    {
+        $project = $this->makeProject($this->org);
+        BoqItem::create(['organization_id' => $this->org->id, 'project_id' => $project->id, 'code' => 'C1', 'description' => 'Line 1 of the works', 'unit' => 'cum', 'qty' => '1.000', 'rate' => '12.00']);
+        $role = CustomRole::withoutGlobalScopes()->create(['organization_id' => $this->org->id, 'name' => 'Site BOQ clerk', 'permissions' => ['project.view', 'boq.view', 'boq.manage']]);
+        $clerk = $this->member($this->org, $role->baseRole());
+        $clerk->forceFill(['custom_role_id' => $role->id])->save();
+
+        $this->uploadAs($clerk, $project, $this->pdf($this->template(), ['words' => false]))->assertRedirect(route('boq.pdf.preview', $project));
+        $this->confirm($project)->assertRedirect(route('boq.excel.index', $project))->assertSessionHas('success');
+
+        // The PDF's rates are not written: the item keeps its rate and the new lines wait at 0 for someone who sees rates.
+        $this->assertSame([['C1', '2.000', '12.00'], ['C2', '4.000', '0.00'], ['C3', '6.000', '0.00']], array_map(fn (array $line) => [$line['code'], $line['qty'], $line['rate']], $this->lines($project)));
+        $this->assertContains(BoqExcelService::ratesNotImported(), array_column(session('boq_import.notes'), 'message'));
+    }
+
     public function test_wrapped_descriptions_are_joined_even_when_the_table_has_no_rules(): void
     {
         $project = $this->makeProject($this->org);

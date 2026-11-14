@@ -36,11 +36,13 @@ class BoqSheetImportController extends Controller
             return $this->expired($project);
         }
 
+        $money = Money::visible($request->user());
+
         return view('modules.boq_import.preview', [
             'project' => $project,
             'token' => $token,
-            'preview' => $this->import->preview($project, $entry),
-            'money' => Money::visible($request->user()),
+            'preview' => $this->import->preview($project, $entry, $money),
+            'money' => $money,
             'fields' => BoqImportLayouts::fieldLabels(),
             'shownErrors' => self::SHOWN_ERRORS,
         ]);

@@ -74,6 +74,11 @@ class TenderBoqService
     /**
      * Add or update lines from a BOQ file. A line whose code already exists is updated.
      * Nothing is saved unless every row is valid. The file's content decides how it is read, not its name.
+     *
+     * A sheet in its own layout may not give a line's rate or quantity (no such column, a blank cell, a rate-only
+     * line); it is read as 0. An existing line keeps its own figure then, so a department's revised schedule or
+     * corrigendum, which has no rates, updates the quantities and never wipes the rates quoted on the tender. There
+     * is no preview on this page to say otherwise.
      */
     public function import(CrmTender $tender, string $path, string $extension): int
     {
@@ -88,7 +93,7 @@ class TenderBoqService
                 $values = $this->values($row);
 
                 if ($existing = $byCode->get($row['code'])) {
-                    $existing->update($values);
+                    $existing->update(array_diff_key($values, array_flip($row['filled'])));
 
                     continue;
                 }
@@ -138,7 +143,7 @@ class TenderBoqService
         ];
     }
 
-    /** @return list<array<string,string>> */
+    /** @return list<array<string, mixed>> Each row's fields, and in "filled" the figures (qty, rate) the file does not give. */
     private function readRows(CrmTender $tender, string $path): array
     {
         $matrix = match (SheetFile::sniff($path)) {
@@ -176,6 +181,8 @@ class TenderBoqService
 
         foreach ($candidates as $line => $row) {
             $row['section'] ??= '';
+            // Only the sheet reader says which figures the file left out; a template row gives every figure it has.
+            $row['filled'] = array_values(array_intersect(is_array($row['filled'] ?? null) ? $row['filled'] : [], ['qty', 'rate']));
             $row['qty'] = str_replace([',', ' '], '', (string) $row['qty']);
             $row['rate'] = str_replace([',', ' '], '', (string) $row['rate']);
 

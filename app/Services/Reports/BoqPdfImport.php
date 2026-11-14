@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\Dec;
+use App\Support\Money;
 use Brick\Math\BigDecimal;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -199,8 +200,9 @@ final class BoqPdfImport
             ? __('Imported from a PDF file')
             : __('Imported from a PDF file. The total written in the file does not match the lines. Reason given: :reason', ['reason' => $answers['total_reason']]);
 
-        $result = DB::transaction(function () use ($project, $entry, $preview, $answers, $reason) {
-            $result = $this->excel->importGrid($project, $entry['grid'], [], $reason, 'pdf_import');
+        $result = DB::transaction(function () use ($project, $user, $entry, $preview, $answers, $reason) {
+            // Someone who may not see rates cannot set them either: the PDF's rates are not written for them.
+            $result = $this->excel->importGrid($project, $entry['grid'], [], $reason, 'pdf_import', Money::visible($user));
 
             if ($result->ok()) {
                 AuditLog::record('boq.pdf_import_confirmed', $project, null, [
