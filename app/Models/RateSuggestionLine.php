@@ -62,7 +62,27 @@ class RateSuggestionLine extends Model
         return $this->accepted_at === null && $this->skipped_at === null;
     }
 
-    /** @return array{ref:string,source:string,row_id:int,score:?int,same_work:?string,note:?string}|null */
+    /**
+     * Whether the AI has ranked this line's candidates. Only candidates that were sent are marked, and
+     * a line is marked only when the answer said something usable about at least one of them.
+     */
+    public function isRanked(): bool
+    {
+        foreach ($this->candidates ?? [] as $candidate) {
+            if (($candidate['ranked'] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * One entry of the shortlist. same_work, note, ranked and rank are filled in by the AI ranking
+     * (App\Services\RateHelper\Ranking): what the model said about the row, never a rate.
+     *
+     * @return array{ref:string,source:string,row_id:int,score:?int,same_work:?string,note:?string,note_locale?:?string,ranked?:bool,rank?:?int}|null
+     */
     public function candidate(string $ref): ?array
     {
         foreach ($this->candidates ?? [] as $candidate) {

@@ -57,6 +57,7 @@ abstract class PageReadingTestCase extends ReadingTestCase
         Queue::fake();
         FakeKind::reset();
 
+        $this->withoutShippedReaders();
         config(['modules.reader_stand_ins.read_kinds' => [FakeKind::class, FakeTextKind::class, FakeSlipKind::class]]);
 
         $this->release();

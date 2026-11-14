@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\RateSuggestionRanking;
+use App\Services\RateHelper\Ranking\RankCall;
 use App\Services\RateHelper\Sources\OwnBoqSource;
 use App\Services\RateHelper\Sources\OwnTenderSource;
 use App\Services\RateHelper\Sources\PurchasesSource;
@@ -17,6 +19,11 @@ use App\Services\RateHelper\Sources\ScheduleSource;
  *
  * The module has no plan feature, permission or menu entry of its own. It opens from the project BOQ
  * and its routes ask for the reports feature, boq.manage and money.view.
+ *
+ * "Rank with AI" is the one part that calls a model, and so also needs the AI plan feature and
+ * agents.use. The model is sent the descriptions and units of the lines and their candidates, never
+ * a rate, and only puts the candidates in order with a short note. Every rate is still read by the
+ * app from the record, at display and again at accept.
  */
 return [
     // Where candidates come from, in the order they are asked. Each class implements App\Services\RateHelper\Contracts\RateSource.
@@ -45,4 +52,19 @@ return [
 
     // Units that mean a lump sum, in lower case without dots or spaces. Such a line gets no candidates, and such a row is never one.
     'lump_sum_units' => ['ls', 'lumpsum', 'job'],
+
+    // The text call that ranks candidates. Its model and limits are under purposes.rate_match in config/modules/document_reading.php.
+    'text_calls' => [
+        'rate_match' => [RateSuggestionRanking::class => RankCall::class],
+    ],
+
+    'rank' => [
+        // Lines sent in one call. A press over more lines is sent in parts, each a call of its own.
+        'lines_per_call' => 20,
+        // Characters of a description that are sent, for the BOQ line and for each candidate.
+        'line_chars' => 600,
+        'candidate_chars' => 400,
+        // Characters of a model's note that are kept.
+        'note_chars' => 240,
+    ],
 ];

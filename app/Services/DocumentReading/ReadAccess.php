@@ -5,6 +5,7 @@ namespace App\Services\DocumentReading;
 use App\Models\DocumentRead;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\DocumentReading\Contracts\ChecksSubjectAccess;
 use App\Services\DocumentReading\Contracts\ReadKind;
 use App\Services\Notify\Audience;
 use App\Support\PlanWording;
@@ -13,12 +14,12 @@ use App\Support\PlanWording;
 final class ReadAccess
 {
     /**
-     * Whether this person belongs to the read's company, sees its project and holds what the
-     * read's kind asks for: every permission under "all" and one of each list under "any".
+     * Whether this person sees the read and holds what the read's kind asks for: every permission
+     * under "all" and one of each list under "any".
      */
     public static function holds(User $user, DocumentRead $read, ReadKind $kind): bool
     {
-        if ((int) $user->organization_id !== (int) $read->organization_id || ! Audience::seesProject($user, $read->project_id)) {
+        if (! self::sees($user, $read, $kind)) {
             return false;
         }
 
@@ -38,20 +39,33 @@ final class ReadAccess
     }
 
     /**
+     * Whether this person belongs to the read's company and sees its project, and, for a kind whose
+     * read is of something that can move into a project later (a tender), still sees that.
+     */
+    public static function sees(User $user, DocumentRead $read, ReadKind $kind): bool
+    {
+        return (int) $user->organization_id === (int) $read->organization_id
+            && Audience::seesProject($user, $read->project_id)
+            && (! $kind instanceof ChecksSubjectAccess || $kind->sees($user, $read));
+    }
+
+    /**
      * For a request: stops unless this person may open the read, and returns the read's kind.
      *
      * 404 when no reader for this kind is deployed, so a read of a module that is not there cannot
-     * be told from one that does not exist. 403 when the person lacks what the kind asks for, when
-     * the company's plan does not include the module the kind belongs to, or when the read is one
-     * person's own (a slip, a bill) and this is neither that person nor an owner or admin.
+     * be told from one that does not exist. 404 too when the person does not see what the read is of,
+     * as a read in a project they are not on is not found. 403 when the person lacks what the kind
+     * asks for, when the company's plan does not include the module the kind belongs to, or when the
+     * read is one person's own (a slip, a bill) and this is neither that person nor an owner or admin.
      *
-     * The company and the project limit were already applied when the read was found for the route.
+     * The company and the read's own project were already applied when the read was found for the route.
      */
     public static function assert(DocumentRead $read, User $user): ReadKind
     {
         $kind = app(ReadKinds::class)->find($read->kind);
 
         abort_if($kind === null, 404);
+        abort_unless(self::sees($user, $read, $kind), 404);
         abort_unless(self::holds($user, $read, $kind) && self::mayOpen($user, $read), 403);
 
         $feature = config("modules.document_reading.kinds.{$read->kind}.feature");

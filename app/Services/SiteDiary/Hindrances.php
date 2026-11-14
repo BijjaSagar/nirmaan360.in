@@ -153,6 +153,47 @@ class Hindrances
         });
     }
 
+    /**
+     * Put forward an entry the AI grouped from daily reports. It waits for a person to confirm it and
+     * counts for nothing until then. Its dates are the first and the last report date, its site the
+     * reports' site when they all name the same one, and nobody is named as responsible.
+     *
+     * The caller has checked that every report is of this project and says something under hindrances.
+     *
+     * @param  Collection<int, Dpr>  $reports  Oldest first.
+     */
+    public function propose(Project $project, string $category, string $description, Collection $reports): Hindrance
+    {
+        return DB::transaction(function () use ($project, $category, $description, $reports) {
+            $this->lockProject($project->id);
+
+            $sites = array_values(array_unique(array_map(fn ($site) => (string) $site, $reports->pluck('site_id')->all())));
+
+            $hindrance = Hindrance::create([
+                'organization_id' => $project->organization_id,
+                'project_id' => $project->id,
+                'site_id' => count($sites) === 1 && $sites[0] !== '' ? (int) $sites[0] : null,
+                'category' => $category,
+                'description' => $description,
+                'started_on' => $reports->first()->report_date->toDateString(),
+                'ended_on' => $reports->last()->report_date->toDateString(),
+                'responsible' => null,
+                'status' => Hindrance::PROPOSED,
+                'proposed_by' => Hindrance::BY_AI,
+            ]);
+
+            $this->cite($hindrance, $reports);
+
+            return $hindrance;
+        });
+    }
+
+    /** Waits for any other change to the project's register to finish, until the surrounding transaction ends. */
+    public function lock(Project $project): void
+    {
+        $this->lockProject($project->id);
+    }
+
     /** Take an entry out of the count. The row stays in the register, marked dismissed. */
     public function dismiss(Hindrance $hindrance): Hindrance
     {

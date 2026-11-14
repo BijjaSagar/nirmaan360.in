@@ -103,6 +103,8 @@
             </div>
         </article>
 
+        @include('modules.site_diary._letter_ai')
+
         @if ($draft)
             <form method="POST" action="{{ route('site-diary.letters.finalise', $letter) }}" class="card no-print mb-6">
                 @csrf
@@ -165,7 +167,7 @@
 
                         <p class="text-sm text-ink-2 sm:col-span-2">{{ __('These sentences state no figure, and you may rewrite them. A number you type in them is listed above as typed by you and needs its own tick. Empty a box to get the sentence of the app back.') }}</p>
                         @foreach ($review['free'] as $id => $sentence)
-                            <x-field :label="__($sentence['name'])" name="slots.{{ $id }}" class="sm:col-span-2">
+                            <x-field :label="__($sentence['name'])" name="slots.{{ $id }}" :hint="$sentence['source'] === \App\Services\Wording\SlotText::AI ? __('Written by the AI. Read it before you finalise the letter.') : null" class="sm:col-span-2">
                                 <textarea id="slots.{{ $id }}" name="slots[{{ $id }}]" rows="3" maxlength="2000" class="input" lang="{{ $letter->language }}">{{ old('slots.'.$id, $sentence['text']) }}</textarea>
                             </x-field>
                         @endforeach

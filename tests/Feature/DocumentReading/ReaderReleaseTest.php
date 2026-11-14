@@ -31,7 +31,7 @@ class ReaderReleaseTest extends PageReadingTestCase
 
     private const READER_SENTENCE = 'Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.';
 
-    private const TERMS_READERS = 'AI agents and readers can be wrong.';
+    private const TERMS_READERS = 'AI agents, AI readers and the other AI features can be wrong.';
 
     private const PRICING_READERS = 'AI agents and readers are part of the Business and Enterprise plans and use AI credits. Prices are in Indian rupees.';
 
@@ -279,7 +279,7 @@ class ReaderReleaseTest extends PageReadingTestCase
             $this->assertTrue($menu(), "{$state}: the menu keeps its entry");
             $this->assertFalse(app(ReaderSettings::class)->offered($this->organization), $state);
             $this->actingAs($owner)->get('/settings/ai-documents')->assertOk()
-                ->assertSee('No reader is available for your company right now, so nothing is sent to the AI service.')
+                ->assertSee('No reader is available for your company right now, so no reader sends anything to the AI service.')
                 ->assertSee('Switch the readers off')
                 ->assertDontSee('No reader is switched on yet.')
                 ->assertDontSee('name="accept"', false);

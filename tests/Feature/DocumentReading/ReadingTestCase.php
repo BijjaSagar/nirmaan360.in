@@ -17,12 +17,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\BuildsTenant;
+use Tests\Feature\DocumentReading\Support\SetsAsideShippedReaders;
 use Tests\TestCase;
 
 /** Companies, wallets, reads and pages for the tests of the reader's tables, credits, limits and quotes. */
 abstract class ReadingTestCase extends TestCase
 {
-    use BuildsTenant, RefreshDatabase;
+    use BuildsTenant, RefreshDatabase, SetsAsideShippedReaders;
 
     protected function setUp(): void
     {

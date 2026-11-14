@@ -58,10 +58,12 @@ class RateReview
     /**
      * One candidate of a line as it stands now for this person, or null when it may not be shown:
      * its source is gone, the row is gone or out of reach, or its unit no longer matches the line.
+     * same_work and note are what the AI ranking said about the row (see App\Services\RateHelper\Ranking),
+     * ranked whether the row was sent to it. Never a rate.
      *
      * @param  array<string, RateSource>  $sources
      * @param  array<string, mixed>  $candidate  One entry of the stored shortlist.
-     * @return array{ref:string,source:string,source_label:string,figure:RateFigure,score:?int,warnings:list<array<string, mixed>>,old:bool,same_work:?string,note:?string}|null
+     * @return array{ref:string,source:string,source_label:string,figure:RateFigure,score:?int,warnings:list<array<string, mixed>>,old:bool,same_work:?string,note:?string,note_locale:?string,ranked:bool}|null
      */
     public function candidate(array $sources, User $viewer, BoqItem $item, array $candidate, int $staleAfter): ?array
     {
@@ -88,6 +90,8 @@ class RateReview
             'old' => $figure->isOld($staleAfter),
             'same_work' => $candidate['same_work'] ?? null,
             'note' => $candidate['note'] ?? null,
+            'note_locale' => $candidate['note_locale'] ?? null,
+            'ranked' => ($candidate['ranked'] ?? false) === true,
         ];
     }
 
@@ -107,11 +111,25 @@ class RateReview
             }
         }
 
+        /*
+         * A model's note is about one row, but it was written with every row that was sent for the line in
+         * view. When this person cannot see one of those rows now, no note of the line is shown, so no word
+         * of a row out of their reach can reach them through another row's note. The verdicts stay.
+         */
+        $sent = array_column(array_filter($line->candidates ?? [], fn (array $candidate) => ($candidate['ranked'] ?? false) === true), 'ref');
+        $notesHidden = array_diff($sent, array_column($shown, 'ref')) !== [];
+
+        if ($notesHidden) {
+            $shown = array_map(fn (array $entry) => [...$entry, 'note' => null], $shown);
+        }
+
         $accepted = $sources[$line->accepted_source ?? ''] ?? null;
 
         return [
             'line' => $line,
             'item' => $item,
+            'ranked' => $line->isRanked(),
+            'notes_hidden' => $notesHidden,
             'lump_sum' => $item !== null && UnitGate::isLumpSum($item->unit),
             'candidates' => array_values(array_filter($shown, fn (array $entry) => $entry['figure']->acceptable)),
             'reference' => array_values(array_filter($shown, fn (array $entry) => ! $entry['figure']->acceptable)),

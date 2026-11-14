@@ -21,8 +21,10 @@ use Symfony\Component\HttpFoundation\Response;
  * can always finish what was already read.
  *
  * Used by class name with one word:
- *   RequireAiReader::class.':consent'  the call sends a page, a photo, document text or spoken words
- *   RequireAiReader::class.':text'     the call sends only labels and descriptions the code prepared
+ *   RequireAiReader::class.':consent'  the call sends a page, a photo, document text, spoken words or notes
+ *                                      a person wrote (AiDocumentConsent::covers)
+ *   RequireAiReader::class.':text'     the call sends line descriptions and labels, never a rate, a quantity or
+ *                                      an amount of a record; the consent notice names these as not under its switch
  *
  * The first checks are the parts of AiSpend::readersOn(), the one test of whether the readers are on
  * that the website, the consent switch, the menu and the phone's status answer use, taken one at a

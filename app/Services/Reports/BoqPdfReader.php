@@ -2,6 +2,8 @@
 
 namespace App\Services\Reports;
 
+use App\Models\User;
+use App\Services\BoqScan\BoqScanScreen;
 use App\Services\DocumentReading\AiSpend;
 use Illuminate\Support\Facades\Route;
 use Smalot\PdfParser\Config;
@@ -133,7 +135,7 @@ final class BoqPdfReader
 
         // A scan carries no text at all, or only a page number or a stamp on each page.
         if ($pieces <= 2 * count($read)) {
-            return BoqPdfRead::failed(__('This PDF has no text in it, so it is a scanned copy or a picture. Its figures cannot be read. Please upload the Excel file of the estimate instead.'), scanned: true);
+            return BoqPdfRead::failed($this->noText(), scanned: true);
         }
 
         // Text is there, but on at least one page a machine wrote it over the picture of the page.
@@ -405,12 +407,19 @@ final class BoqPdfReader
 
     /**
      * Whether a scan can be read for the person asking: the reader for scans and photos is part of this
-     * installation and the readers are on for their company's BOQ reader, by the same test every other
-     * place uses (AiSpend::readersOn). A message names it only then.
+     * installation, the readers are on for their company's BOQ reader, by the same test every other
+     * place uses (AiSpend::readersOn), and the person is one the scan is offered to: they may use the AI
+     * agents and work with the BOQ's money (BoqScanScreen::mayScan). A message names it only then, so it
+     * says what the offer beside it says.
      */
     public static function hasScanReader(): bool
     {
-        return Route::has(self::SCAN_READER_ROUTE) && app(AiSpend::class)->readersOn(auth()->user()?->organization, 'boq');
+        $user = auth()->user();
+
+        return $user instanceof User
+            && Route::has(self::SCAN_READER_ROUTE)
+            && app(AiSpend::class)->readersOn($user->organization, 'boq')
+            && BoqScanScreen::mayScan($user);
     }
 
     private static function stream(Page $page): string
@@ -457,6 +466,14 @@ final class BoqPdfReader
     private function unreadable(): string
     {
         return __('This file could not be read as a PDF. It may be damaged or password-protected. Open it in a PDF viewer, save a fresh copy, or upload the Excel file instead.');
+    }
+
+    /** Said when the PDF has no text at all: a scan or a picture. */
+    private function noText(): string
+    {
+        return self::hasScanReader()
+            ? __('This PDF has no text in it, so it is a scanned copy or a picture. Its figures cannot be read as typed text. Read it as a scan, or upload the Excel file of the estimate instead.')
+            : __('This PDF has no text in it, so it is a scanned copy or a picture. Its figures cannot be read. Please upload the Excel file of the estimate instead.');
     }
 
     /** Said when the PDF has text that cannot be taken as typed. */

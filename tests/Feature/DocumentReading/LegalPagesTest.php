@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\DocumentReading;
 
+use App\Http\Middleware\RequireAiReader;
 use App\Services\DocumentReading\AiDocumentConsent;
 use App\Services\DocumentReading\ReaderSettings;
 use App\Services\Notify\CompanyDeletionService;
@@ -23,8 +24,8 @@ use Tests\Feature\Website\BannedWording;
 class LegalPagesTest extends ReadingTestCase
 {
     private const READER_SENTENCES = [
-        'The AI agents on the website and the AI readers use an AI model provider, Anthropic',
-        'When you use an AI agent or reader, what it needs is processed',
+        'The AI agents on the website, the AI readers and the other AI features use an AI model provider, Anthropic',
+        'When you use an AI agent, a reader or another AI feature, what it needs is processed',
         'Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.',
         'Pages, photos and document text sent to an AI reader, and what the reader read from them, are part of the company\'s records.',
     ];
@@ -51,16 +52,18 @@ class LegalPagesTest extends ReadingTestCase
      */
     private const WHO_AGENTS = 'Your project records are visible only to people in your company account, and to anyone who has a link your company shares: a client sign-off link for a bill, or a link to a daily report, a quotation or a weekly update. Anyone with such a link can open what it shows until the link stops working after a set number of days, and a quotation or weekly update link can be withdrawn sooner. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website use an AI model provider, Anthropic: when a company uses the agents, what is asked of them and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that does not use the agents.';
 
-    private const WHO_READERS = 'Your project records are visible only to people in your company account, and to anyone who has a link your company shares: a client sign-off link for a bill, or a link to a daily report, a quotation or a weekly update. Anyone with such a link can open what it shows until the link stops working after a set number of days, and a quotation or weekly update link can be withdrawn sooner. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website and the AI readers use an AI model provider, Anthropic: when a company uses them, what is asked of them, the pages, photos and text sent to a reader, and the records they read to answer are sent to Anthropic. Nothing is sent to it for a company that uses neither.';
+    private const WHO_READERS = 'Your project records are visible only to people in your company account, and to anyone who has a link your company shares: a client sign-off link for a bill, or a link to a daily report, a quotation or a weekly update. Anyone with such a link can open what it shows until the link stops working after a set number of days, and a quotation or weekly update link can be withdrawn sooner. We use service providers for hosting, file storage, payments and phone notifications (Google Firebase Cloud Messaging), and they handle data only so that we can run the service. The AI agents on the website, the AI readers and the other AI features use an AI model provider, Anthropic: when a company uses them, what is asked of them, the pages, photos and text sent to a reader, and the records they read to answer are sent to Anthropic. The other AI features suggest rates, translate quotation lines and write sentences for letters, quotations, weekly updates and bill checks when someone in the company asks for that; they send the descriptions and labels they work on, but not the rates, quantities or amounts of the company\'s records. Nothing is sent to Anthropic for a company that uses none of them.';
 
     private const WHERE_AGENTS = 'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, what it needs is processed on the provider\'s servers outside India. '.self::RETENTION;
 
-    private const WHERE_READERS = 'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent or reader, what it needs is processed on the provider\'s servers outside India. '.self::RETENTION.' Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.';
+    private const WHERE_READERS = 'Data is currently hosted on Laravel Cloud in the Asia Pacific (Singapore) region. When you use an AI agent, a reader or another AI feature, what it needs is processed on the provider\'s servers outside India. '.self::RETENTION.' Pages and photos sent to a reader are sent as they are, after location and phone details inside the photo file are removed.';
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->withoutVite();
+        // The stand-in reader below is the only one, so each test decides whether a reader is deployed.
+        $this->withoutShippedReaders();
         // Showing a public page must never reach the AI provider.
         Http::fake();
         // A key is saved in these tests, so a reader is named once it is deployed and released. Without one the readers
@@ -163,6 +166,43 @@ class LegalPagesTest extends ReadingTestCase
     }
 
     /**
+     * Once the readers are released, the AI features that are neither agents nor readers can be used too. Every
+     * route that has the AI write or rank something from a company's text is named in the policy with what it
+     * sends, and the policy no longer says that nothing is sent for a company that uses neither agents nor readers.
+     */
+    public function test_the_policy_names_every_other_ai_feature_that_sends_text_once_they_can_be_used(): void
+    {
+        $named = [
+            'rate-suggestions.rank' => 'suggest rates',
+            'quotations.translate' => 'translate quotation lines',
+            'quotations.draft' => 'quotations',
+            'owner-updates.draft' => 'weekly updates',
+            'site-diary.letters.draft' => 'letters',
+            'bill-checks.explain' => 'bill checks',
+        ];
+        $textCalls = collect(Route::getRoutes()->getRoutes())
+            ->filter(fn ($route) => in_array(RequireAiReader::class.':'.RequireAiReader::TEXT, $route->gatherMiddleware(), true))
+            ->map(fn ($route) => $route->getName())->values()->all();
+        $this->assertEqualsCanonicalizing(array_keys($named), $textCalls, 'Each route that makes a text call is named in the policy.');
+
+        $this->release();
+        $this->deployReader();
+        $text = $this->text('/privacy');
+        $features = 'The other AI features suggest rates, translate quotation lines and write sentences for letters, quotations, weekly updates and bill checks when someone in the company asks for that; they send the descriptions and labels they work on, but not the rates, quantities or amounts of the company\'s records.';
+
+        $this->assertStringContainsString($features, $text);
+
+        foreach ($named as $route => $words) {
+            $this->assertStringContainsString($words, $features, $route);
+        }
+
+        $this->assertStringContainsString('Nothing is sent to Anthropic for a company that uses none of them.', $text);
+        $this->assertStringNotContainsString('uses neither', $text);
+        $this->assertStringContainsString('When you use an AI agent, a reader or another AI feature, what it needs is processed on the provider\'s servers outside India.', $text);
+        $this->assertStringContainsString('AI agents, AI readers and the other AI features can be wrong.', $this->text('/terms'));
+    }
+
+    /**
      * Every sentence about how long the provider keeps what it receives, and whether it trains on it, says
      * what its own pages say (see RETENTION and USE), in each state of the page, in each language, and in
      * the notice a company agrees to. The older line named only flagged content as kept longer, and said
@@ -229,7 +269,7 @@ class LegalPagesTest extends ReadingTestCase
         }
 
         // A new wording of the notice is a new version, so no company stays agreed to the older one.
-        $this->assertSame('ai-docs-v2', AiDocumentConsent::VERSION);
+        $this->assertSame('ai-docs-v3', AiDocumentConsent::VERSION);
     }
 
     public function test_voice_notes_are_named_only_once_they_are_offered(): void
@@ -267,7 +307,7 @@ class LegalPagesTest extends ReadingTestCase
 
         $this->release();
         $this->deployReader();
-        $this->assertStringContainsString('AI agents and readers'.$rest, $this->text('/terms'));
+        $this->assertStringContainsString('AI agents, AI readers and the other AI features can be wrong. What they prepare is saved as a draft or shown as a suggestion, and marked as such. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.', $this->text('/terms'));
     }
 
     public function test_what_the_pages_said_about_deleting_an_account_is_still_there(): void
@@ -372,7 +412,7 @@ class LegalPagesTest extends ReadingTestCase
                 self::WHERE_READERS,
                 'Pages, photos and document text sent to an AI reader, and what the reader read from them, are part of the company\'s records. They stay with the company when one person\'s account is deleted, and are erased with the company.',
             ],
-            'terms' => ['AI agents and readers can be wrong. What they prepare is saved as a draft and marked as one. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.'],
+            'terms' => ['AI agents, AI readers and the other AI features can be wrong. What they prepare is saved as a draft or shown as a suggestion, and marked as such. Nothing is approved, posted to stock, billed to your client or sent outside your company until a person in your company confirms it.'],
         ];
 
         $this->release();
@@ -410,6 +450,6 @@ class LegalPagesTest extends ReadingTestCase
 
         // An override is the admin's own text: it must be saved again to say what the built-in text now says.
         $this->get('/privacy')->assertOk()->assertSee('Our policy')->assertDontSee('Anthropic');
-        $this->get('/terms')->assertOk()->assertSee('Our terms')->assertDontSee('AI agents and readers can be wrong');
+        $this->get('/terms')->assertOk()->assertSee('Our terms')->assertDontSee('AI agents, AI readers and the other AI features can be wrong');
     }
 }

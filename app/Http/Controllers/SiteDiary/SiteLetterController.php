@@ -5,16 +5,22 @@ namespace App\Http\Controllers\SiteDiary;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\SiteLetter;
+use App\Services\DocumentReading\ReadRefused;
+use App\Services\DocumentReading\SpendRefused;
+use App\Services\SiteDiary\LetterDrafts;
 use App\Services\SiteDiary\LetterFacts;
 use App\Services\SiteDiary\LetterLayout;
 use App\Services\SiteDiary\SiteLetters;
 use App\Support\Money;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class SiteLetterController extends Controller
 {
+    use AnswersAiRefusals;
+
     public function __construct(private SiteLetters $letters, private LetterFacts $facts) {}
 
     public function index(Request $request, Project $project): View
@@ -48,7 +54,7 @@ class SiteLetterController extends Controller
             ->with('success', __('Draft prepared from your records. Check every figure before you finalise it.'));
     }
 
-    public function show(Request $request, SiteLetter $letter): View
+    public function show(Request $request, SiteLetter $letter, LetterDrafts $drafts): View
     {
         $project = $this->projectOf($letter);
         $this->mustRead($letter->type, $request);
@@ -63,8 +69,30 @@ class SiteLetterController extends Controller
             'entries' => $draft && ! $letter->carriesMoney() ? $this->facts->citable($project, $letter->type, today()) : collect(),
             'bills' => $draft && $letter->carriesMoney() ? $this->facts->unpaidBills($project) : collect(),
             'today' => today(),
+            // Asking the AI for the three sentences that state no figure, and how the latest request went.
+            'ai' => $drafts->state($letter, $request->user()),
             ...$this->names(),
         ]);
+    }
+
+    /** Ask the AI to write the opening, the linking sentence and the close of a draft. */
+    public function draft(Request $request, SiteLetter $letter, LetterDrafts $drafts): JsonResponse|RedirectResponse
+    {
+        $this->projectOf($letter);
+        $this->mustRead($letter->type, $request);
+
+        try {
+            $call = $drafts->ask($letter, $request->user());
+        } catch (SpendRefused|ReadRefused $refused) {
+            return $this->refusal($request, $refused);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['call_id' => $call->id, 'status' => $call->status], 202);
+        }
+
+        return redirect()->route('site-diary.letters.show', $letter)
+            ->with('success', __('The AI is writing the three sentences that state no figure. The page shows them when they are ready.'));
     }
 
     public function update(Request $request, SiteLetter $letter): RedirectResponse

@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\DocumentReading\ReaderSettings;
+use App\Services\DocumentReading\TrialRetention;
 
 /*
  * Reading scanned and photographed documents. This file starts with the word lists the code parsers
@@ -29,6 +30,13 @@ return [
      * id and must be part of every entry; an entry without it is ignored.
      */
     'purge_directories' => ['org-{org}/document-reads'],
+
+    /*
+     * Classes that delete what is kept only for a time. The command that tends document reads runs
+     * each one every minute. This one deletes the files of the platform admin's dry runs, and what
+     * the model returned for them, 24 hours after a dry run was made.
+     */
+    'retention' => [TrialRetention::class],
 
     /*
      * How a unit is printed, onto how the app writes it. The app's own spellings (config

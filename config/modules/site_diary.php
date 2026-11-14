@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\SiteLetter;
+use App\Services\SiteDiary\HindranceGrouping;
+use App\Services\SiteDiary\LetterWording;
 use App\Services\SiteDiary\NoticeDeadlineSource;
 
 /*
@@ -72,4 +75,23 @@ return [
 
     // Daily reports offered on the register at one time, newest first.
     'candidates_shown' => 200,
+
+    /*
+     * The two calls this module may make to the AI model, on the ai_agents feature. The model, its limits and the
+     * daily budgets of each are in config/modules/document_reading.php under "purposes" and "budgets".
+     * - hindrance_groups: the AI groups the hindrance notes of daily reports into entries waiting to be confirmed.
+     * - wording: the AI writes the three sentences of a draft letter that state no figure.
+     */
+    'text_calls' => [
+        HindranceGrouping::PURPOSE => HindranceGrouping::class,
+        'wording' => [SiteLetter::class => LetterWording::class],
+    ],
+
+    // How much one grouping request sends: the latest reports with a note no entry cites, each note cut to this
+    // many characters, and how long a title the AI writes may be. Limits on the request, not periods of any kind.
+    'grouping' => [
+        'most_reports' => 40,
+        'note_chars' => 500,
+        'title_chars' => 160,
+    ],
 ];

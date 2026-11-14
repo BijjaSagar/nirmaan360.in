@@ -1,14 +1,23 @@
 <?php
 
+use App\Http\Controllers\OwnerPack\OwnerPackAiController;
 use App\Http\Controllers\OwnerPack\OwnerUpdateController;
 use App\Http\Controllers\OwnerPack\OwnerUpdateShareController;
 use App\Http\Controllers\OwnerPack\QuotationController;
 use App\Http\Controllers\OwnerPack\QuotationShareController;
 use App\Http\Controllers\OwnerPack\QuotationStageController;
+use App\Http\Controllers\OwnerPack\QuotationTranslationController;
 use App\Http\Controllers\OwnerPack\SharedPackController;
+use App\Http\Middleware\RequireAiReader;
 use Illuminate\Support\Facades\Route;
 
 // Home-owner pack. This file is included inside the signed-in, active-user group of routes/web.php.
+//
+// Three routes send something to the AI model and carry its guards: the AI plan, agents.use, RequireAiReader and
+// the "ai-text" throttle, a counter of its own. Writing the two sentences of a cover note or an update sends only
+// what each sentence is for and the names of the figures around it; translating sends the descriptions of a
+// quotation's lines, which the company wrote for its own bill of quantities. Neither sends what staff wrote in
+// daily reports, so both are ':text'. Accepting a translation calls no model and carries none of these guards.
 
 // A quotation is nothing but money, so every route needs money.view beside the module's own permission.
 Route::middleware(['feature:owner_pack', 'can:money.view'])->group(function () {
@@ -29,6 +38,15 @@ Route::middleware(['feature:owner_pack', 'can:money.view'])->group(function () {
 
         Route::post('/quotations/{quotation}/share', [QuotationShareController::class, 'share'])->name('quotations.share');
         Route::post('/quotations/{quotation}/share/revoke', [QuotationShareController::class, 'revoke'])->name('quotations.share.revoke');
+
+        // A translation of a line's description is printed only once a person has accepted it, beside the description.
+        Route::scopeBindings()->group(function () {
+            Route::post('/quotations/{quotation}/items/{item}/translation/accept', [QuotationTranslationController::class, 'accept'])->name('quotations.translation.accept');
+            Route::post('/quotations/{quotation}/items/{item}/translation/withdraw', [QuotationTranslationController::class, 'withdraw'])->name('quotations.translation.withdraw');
+        });
+
+        Route::post('/quotations/{quotation}/draft', [OwnerPackAiController::class, 'quotation'])->middleware(['feature:ai_agents', 'can:agents.use', RequireAiReader::class.':text', 'throttle:20,1,ai-text'])->name('quotations.draft');
+        Route::post('/quotations/{quotation}/translate', [OwnerPackAiController::class, 'translate'])->middleware(['feature:ai_agents', 'can:agents.use', RequireAiReader::class.':text', 'throttle:20,1,ai-text'])->name('quotations.translate');
     });
 });
 
@@ -43,6 +61,7 @@ Route::middleware('feature:owner_pack')->group(function () {
         Route::post('/projects/{project}/owner-updates', [OwnerUpdateController::class, 'store'])->name('owner-updates.store');
         Route::get('/owner-updates/{update}', [OwnerUpdateController::class, 'show'])->name('owner-updates.show');
         Route::patch('/owner-updates/{update}', [OwnerUpdateController::class, 'update'])->name('owner-updates.update');
+        Route::post('/owner-updates/{update}/draft', [OwnerPackAiController::class, 'update'])->middleware(['feature:ai_agents', 'can:agents.use', RequireAiReader::class.':text', 'throttle:20,1,ai-text'])->name('owner-updates.draft');
     });
 
     Route::middleware(['can:owner_pack.manage', 'can:money.view'])->group(function () {

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\ClientQuotation;
 use App\Models\Party;
 use App\Models\Project;
+use App\Services\OwnerPack\PackDrafts;
 use App\Services\OwnerPack\QuotationDocument;
 use App\Services\OwnerPack\QuotationService;
 use App\Services\OwnerPack\QuotationShareService;
+use App\Services\OwnerPack\QuotationTranslations;
 use App\Services\OwnerPack\ShownText;
 use App\Services\Wording\ReviewedLanguages;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +47,7 @@ class QuotationController extends Controller
         return redirect()->route('quotations.show', $quotation)->with('success', __('Draft quotation prepared. Add the payment stages, check every figure, then issue it.'));
     }
 
-    public function show(ClientQuotation $quotation, QuotationDocument $document, QuotationShareService $shares): View
+    public function show(Request $request, ClientQuotation $quotation, QuotationDocument $document, QuotationShareService $shares, PackDrafts $drafts, QuotationTranslations $translations): View
     {
         $project = $quotation->project;
         [$sheet, $note] = $this->service->review($quotation);
@@ -53,7 +55,7 @@ class QuotationController extends Controller
         return view('modules.owner_pack.quotations.show', [
             'quotation' => $quotation->load('issuedBy'),
             'project' => $project,
-            'items' => $quotation->items,
+            'items' => $quotation->items()->with('acceptedBy')->get(),
             'stages' => $quotation->stages()->with('reachedBy')->get(),
             'note' => $note,
             'tickList' => $note === null ? [] : $document->tickList($note, $sheet),
@@ -66,6 +68,9 @@ class QuotationController extends Controller
             'whatsappUrl' => $shares->whatsappUrl($quotation, (string) $quotation->organization?->name),
             'boqItems' => $quotation->isDraft() ? $project->boqItems()->orderBy('sort')->orderBy('id')->get() : collect(),
             'clients' => $quotation->isDraft() ? $this->clients() : collect(),
+            // The AI: the two sentences of the cover note that state no figure, and translations of the descriptions.
+            'ai' => $drafts->state($quotation, $request->user()),
+            'translation' => $translations->state($quotation, $request->user()),
         ]);
     }
 

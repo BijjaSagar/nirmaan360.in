@@ -1,10 +1,17 @@
 <?php
 
+use App\Models\ClientQuotation;
+use App\Models\OwnerUpdate;
+use App\Services\OwnerPack\DescriptionTranslation;
+use App\Services\OwnerPack\OwnerUpdateWording;
+use App\Services\OwnerPack\QuotationWording;
+
 /*
  * Home-owner pack: a quotation with a payment schedule and a weekly update that a contractor gives
  * a client, each shared as a link the contractor sends himself. Every figure is worked out by code
- * from the company's own records; no model is called by this part of the module, and the app sends
- * nothing to a client.
+ * from the company's own records, and the app sends nothing to a client. On the AI plan a model may
+ * write the two sentences of each that state no figure, and translate a quotation's line descriptions
+ * for a person to accept (text_calls below); every document stands complete without it.
  */
 return [
     'feature' => 'owner_pack',
@@ -47,4 +54,31 @@ return [
     // weekly update has shown (App\Services\OwnerPack\SharedPhoto::COPIES). No table row names those files,
     // so the folder is deleted whole when the company is erased.
     'purge_directories' => ['org-{org}/owner-pack'],
+
+    /*
+     * The calls this module may make to the AI model, on the ai_agents feature. The model, its limits and the
+     * daily budgets of each are in config/modules/document_reading.php under "purposes" and "budgets".
+     * - wording: the AI writes the opening and the closing of a quotation's cover note or of a weekly update.
+     * - translate: the AI translates the descriptions of a draft quotation's lines into its language, Hindi or
+     *   Marathi. Each translation waits on its line until a person accepts it.
+     */
+    'text_calls' => [
+        'wording' => [ClientQuotation::class => QuotationWording::class, OwnerUpdate::class => OwnerUpdateWording::class],
+        DescriptionTranslation::PURPOSE => [ClientQuotation::class => DescriptionTranslation::class],
+    ],
+
+    /*
+     * How much one translation request sends: the lines that wait for a translation, at most "most_lines" of them,
+     * and only descriptions up to "description_chars" characters (a longer one prints in its own words).
+     * The whole answer comes back in one piece, so the lines also stop once their translations would fill more than
+     * "answer_share" of what the translate purpose may write (its max_tokens in config/modules/document_reading.php);
+     * the rest is room for the model's thinking. A translation is planned as "growth" times as long as its
+     * description, at the tokens a character the readers price text at. Lines that do not fit go with the next request.
+     */
+    'translation' => [
+        'most_lines' => 20,
+        'description_chars' => 1000,
+        'answer_share' => '0.6',
+        'growth' => '1.5',
+    ],
 ];

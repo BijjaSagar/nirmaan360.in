@@ -27,7 +27,7 @@ final class OwnerUpdateDocument
 {
     public const TYPE = 'owner_update';
 
-    /** The free sentences a person may rewrite, by slot id. A later slice lets the model write these two and no others. */
+    /** The free sentences a person may rewrite, by slot id. The AI may write these two and no others (PackDrafts). */
     public const FREE_SLOTS = ['opening', 'closing'];
 
     /** The contractor's own words about next week. Kept in next_week_text, never in the slots column, and never written by a model. */
@@ -156,10 +156,12 @@ final class OwnerUpdateDocument
      *
      * @param  array<string, ?string>  $typed  Slot id => what the form sent.
      * @param  array<string, mixed>|null  $stored
+     * @param  ?string  $storedLanguage  The language the stored sentences were written for, when it may differ from $language.
      * @return array<string, array{text: string, source: string}>
      */
-    public function withTyped(string $language, FactSheet $sheet, ?array $stored, array $typed): array
+    public function withTyped(string $language, FactSheet $sheet, ?array $stored, array $typed, ?string $storedLanguage = null): array
     {
+        [$stored, $typed] = AiSentences::forLanguage(self::FREE_SLOTS, $stored, $typed, $storedLanguage !== null && $storedLanguage !== $language);
         $kept = $this->freeTexts($stored);
         $standing = $this->render($language, $sheet, $stored, null)->freeTexts();
         $code = $this->codeTexts();

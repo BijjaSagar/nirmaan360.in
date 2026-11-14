@@ -27,6 +27,7 @@ use App\Services\Access\TeamAccessService;
 use App\Services\ApprovalService;
 use App\Services\MeasurementService;
 use App\Services\RaBillService;
+use App\Support\PlatformSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Middleware\ThrottleRequests;
@@ -185,6 +186,8 @@ class ProjectScopingTest extends TestCase
     public function test_an_owner_reaches_every_one_of_those_routes(): void
     {
         $this->withoutMiddleware(ThrottleRequests::class);
+        // The BOQ scan screen is there only while the readers are on (AiSpend::readersOn), so they are on for this walk.
+        app(PlatformSettings::class)->set(['ai_readers_released' => '1', 'ai_tier_monthly_cap_usd' => '1000', 'anthropic_api_key' => 'test-key-value']);
         $checked = 0;
 
         foreach ($this->routesReaching() as $route) {

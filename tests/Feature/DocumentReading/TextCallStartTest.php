@@ -441,6 +441,24 @@ class TextCallStartTest extends TextCallTestCase
     {
         $forReads = new class extends FakeTextHandler {};
 
+        // The handlers the real modules register (the pre-check's explanation, the rate ranking, the letters, the
+        // grouping of hindrances, the quotation's wording and translation, and the spoken report's "voice") are
+        // each found for what they are registered for.
+        $real = app(TextCallHandlers::class);
+
+        foreach ($real->all() as $purpose => $classes) {
+            foreach ($classes as $subject => $class) {
+                $this->assertInstanceOf($class, $real->get($purpose, $subject === '*' ? null : $subject));
+            }
+        }
+
+        $this->assertContains('voice', $real->purposes());
+
+        // Then they are set aside, so only the stand-ins count below.
+        foreach (array_keys(config('modules', [])) as $module) {
+            config(["modules.{$module}.text_calls" => []]);
+        }
+
         config(['modules.text_stand_ins.text_calls' => ['rate_match' => FakeTextHandler::class, 'wording' => [DocumentRead::class => $forReads::class]]]);
         config(['modules.more_stand_ins.text_calls' => ['rate_match' => FakeTextHandler::class, 'wording' => ['App\Models\SiteLetter' => FakeTextHandler::class]]]);
 

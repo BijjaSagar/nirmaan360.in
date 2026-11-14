@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', __('AI document readers'))
 @section('content')
-    <x-page-header :title="__('AI document readers')" :subtitle="__('Whether pages, photos and text of your company may be sent to the AI service, and how much may be spent.')" />
+    <x-page-header :title="__('AI document readers')" :subtitle="__('Whether the readers may send your company\'s pages, photos and text to the AI service, and how much each AI feature may spend.')" />
 
     <div class="max-w-3xl space-y-5">
         @if (! $offered && ! $consent['enabled'])
@@ -16,7 +16,7 @@
                     <h2 class="card-title">{{ __('Sending documents to the AI service') }}</h2>
                 </div>
                 <div class="space-y-3 p-4">
-                    <p class="text-sm">{{ __('No reader is available for your company right now, so nothing is sent to the AI service. Your company\'s agreement stays on record and counts again when a reader is back, unless the notice has changed. Switch the readers off here to withdraw it.') }}</p>
+                    <p class="text-sm">{{ __('No reader is available for your company right now, so no reader sends anything to the AI service. Your company\'s agreement stays on record and counts again when a reader is back, unless the notice has changed. Switch the readers off here to withdraw it.') }}</p>
                     @include('modules.document_reading._switch_off')
                 </div>
             </section>
@@ -45,7 +45,7 @@
                         </p>
                     @else
                         @if ($consent['enabled'])
-                            <p class="rounded-[3px] border border-haldi bg-haldi/15 px-3 py-2 text-sm" role="alert">{{ __('This notice has changed since your company agreed to it. Nothing is sent until an owner or admin agrees to it again.') }}</p>
+                            <p class="rounded-[3px] border border-haldi bg-haldi/15 px-3 py-2 text-sm" role="alert">{{ __('This notice has changed since your company agreed to it. The readers send nothing until an owner or admin agrees to it again.') }}</p>
                         @endif
 
                         <form method="POST" action="{{ route('ai-documents.update') }}" class="space-y-3 border-t border-rule pt-3">

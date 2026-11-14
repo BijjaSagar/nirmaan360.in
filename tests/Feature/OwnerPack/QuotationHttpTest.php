@@ -50,6 +50,7 @@ class QuotationHttpTest extends TestCase
     {
         $stage = $draft->stages()->first();
         $issuedStage = $issued->stages()->first();
+        $line = $draft->items()->first();
 
         return [
             'index' => ['get', route('quotations.index', $this->project), []],
@@ -65,6 +66,11 @@ class QuotationHttpTest extends TestCase
             'stage reached' => ['post', route('quotation-stages.reached', $issuedStage), ['reached' => '1']],
             'share' => ['post', route('quotations.share', $issued), []],
             'revoke' => ['post', route('quotations.share.revoke', $issued), []],
+            // The AI's sentences and translations (QuotationAiDraftTest, DescriptionTranslationTest), and a person's accepting of a translation.
+            'draft' => ['post', route('quotations.draft', $draft), []],
+            'translate' => ['post', route('quotations.translate', $draft), []],
+            'translation accept' => ['post', route('quotations.translation.accept', [$draft, $line]), ['seen' => str_repeat('a', 64)]],
+            'translation withdraw' => ['post', route('quotations.translation.withdraw', [$draft, $line]), []],
         ];
     }
 

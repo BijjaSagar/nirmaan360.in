@@ -108,7 +108,18 @@ class ReviewedLanguagesTest extends TestCase
             }
         }
 
-        $this->assertEqualsCanonicalizing(['OwnerPack', 'SiteDiary'], array_keys($writers), 'The modules that write documents from fixed sentences.');
+        // The bill pre-check explains its findings to the company's own people, in the reader's language, as
+        // the class says: it is not a document for a client and is not held. It never asks, and that is checked.
+        $internal = ['BillCheck'];
+
+        foreach ($internal as $module) {
+            $this->assertArrayHasKey($module, $writers);
+            $this->assertStringNotContainsString('ReviewedLanguages::', collect(File::allFiles($writers[$module]))->map(fn ($file) => $file->getContents())->implode("\n"));
+        }
+
+        $writers = array_diff_key($writers, array_flip($internal));
+
+        $this->assertEqualsCanonicalizing(['OwnerPack', 'SiteDiary'], array_keys($writers), 'The modules that write documents for a client or another party from fixed sentences.');
 
         foreach ($writers as $module => $folder) {
             $code = collect([...File::allFiles($folder), ...File::allFiles(app_path("Http/Controllers/{$module}"))])
