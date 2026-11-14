@@ -1,0 +1,21 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | Provisional sum for sample electrical connection | LS | qty 1 | rate 30000 | serial
+  4 line | 3 | - | Sample shifting of a pole (Non SOR Item) | nos | qty 2 | rate 4000 | serial
+  5 adjustment | Recovery of sample bricks from dismantling
+  6 note | Credit for taking away of useful material obtained from abov…
+  7 adjustment | Provision for Contingency (+) @
+  8 adjustment | Seigniorage Charges
+  9 adjustment | Add OHC & Contractor's Profit 10%
+  10 adjustment | Escalation and Tender Premium @5%
+  11 adjustment | Miscellaneous and Rounding off
+lines: 3 | lines total 58800.00 | with adjustments 70132.00 | sheet subtotal - | sheet total -
+adjustment: 5 | Recovery of sample bricks from dismantling | -% | comes to -1000.00 | sheet -1000 | amount
+adjustment: 7 | Provision for Contingency (+) @ | -% | comes to 2000.00 | sheet 2000 | amount
+adjustment: 8 | Seigniorage Charges | -% | comes to 1500.00 | sheet 1500 | amount
+adjustment: 9 | Add OHC & Contractor's Profit 10% | 10% | comes to 5880.00 | sheet 5880 | amount
+adjustment: 10 | Escalation and Tender Premium @5% | 5% | comes to 2940.00 | sheet 2940 | amount
+adjustment: 11 | Miscellaneous and Rounding off | -% | comes to 12.00 | sheet 12 | amount
+note: 0 | 2 lines are provisional sums or items outside the schedule of rates (rows 3, 4). They are imported; check them.

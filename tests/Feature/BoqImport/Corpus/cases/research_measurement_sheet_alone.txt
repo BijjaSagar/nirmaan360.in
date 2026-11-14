@@ -1,0 +1,13 @@
+file: xlsx | sheets: Measurement * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) G=qty(heading) H=unit(heading)
+rows:
+  2 spec | Sample excavation for footings
+  3 line | 1(1) | - | Footing F1 - Sample excavation for footings | cum | qty 10.8 | rate 0 | made
+  4 line | 1(2) | - | Footing F2 - Sample excavation for footings | cum | qty 3.456 | rate 0 | made
+  5 subtotal | Total Qty
+lines: 2 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+total: 5 | subtotal | Total Qty | sheet - | lines 0.00 | no figure
+problem: 0 - | This is a measurement sheet: it has length, breadth and depth or height columns. Measurement rows are never BOQ lines. Import the abstract, which gives each item's quantity: choose its sheet above, or upload it.
+note: 0 | 2 lines have a quantity but no rate (rows 3, 4). They are read at rate 0; fill in the rates later.
+note: 0 | Columns C (Nos), D (L), E (B), F (D) hold figures but are not read. If one of them is the quantity, rate or amount, choose it under Read as.

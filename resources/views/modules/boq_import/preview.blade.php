@@ -9,7 +9,7 @@
             'carried' => __('Carried forward'), 'say' => __('Say'), 'words' => __('In words'), 'adjustment' => __('Adjustment'),
             'note' => __('Note'), 'skipped' => __('Left out'), 'after_total' => __('After the total'),
             'column_numbers' => __('Column numbers'), 'heading_repeat' => __('Heading again'),
-            'error' => __('Problem'), 'excluded' => __('Left out by you'),
+            'error' => __('Problem'), 'excluded' => __('Left out by you'), 'furniture' => __('Page or signature line'),
         ];
         $hows = ['heading' => __('From the heading'), 'values' => __('From the values'), 'saved' => __('Saved layout'), 'chosen' => __('Your choice')];
         $errorFields = $fields;
@@ -159,6 +159,9 @@
                 <x-stat :label="__('Rate-only lines')" :value="count($preview['rate_only'])" />
                 <x-stat :label="__('Adjustments, not imported')" :value="count($preview['adjustments'])" />
                 <x-stat :label="__('Rows left out')" :value="$preview['left_out']" />
+                @if ($preview['plan']['update'] > 0)
+                    <x-stat :label="__('Will update items already in the project')" :value="$preview['plan']['update']" :note="__('Will add :count new items.', ['count' => $preview['plan']['add']])" />
+                @endif
                 @if ($money)
                     <x-stat :label="__('The lines add up to')" :value="inr($preview['lines_total'])" />
                     @if ($preview['file_subtotal'] !== null)
@@ -226,7 +229,12 @@
                             <td>{{ $line['unit'] }}</td>
                             <td class="num r">{{ fmt_qty($line['qty']) }}</td>
                             @if ($money)
-                                <td class="num r">{{ inr($line['rate']) }}</td>
+                                <td class="num r">
+                                    {{ inr($line['rate']) }}
+                                    @if (($line['per'] ?? null) !== null)
+                                        <span class="block text-xs text-ink-3">{{ __(':rate per :per in the sheet, so this is the rate per :unit.', ['rate' => inr($line['file_rate']), 'per' => $line['per'], 'unit' => $line['unit']]) }}</span>
+                                    @endif
+                                </td>
                                 <td class="num r">{{ $line['amount'] === null ? '—' : inr($line['amount']) }}</td>
                             @endif
                         </tr>
@@ -243,7 +251,7 @@
                 <h2 class="card-title">{{ __('Lines given a new item code') }}</h2>
                 <span class="num text-sm text-ink-3">{{ count($preview['renumbered']) }}</span>
             </div>
-            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('These lines have no item code in the file. The number they would get is already used in the project by another item, so they get a new code and that item is not changed.') }}</p>
+            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('These lines have no item code of their own in the file. The number they would get is already used in the project by a different item, so they are added under a new code and that item is not changed.') }}</p>
             <div class="overflow-x-auto p-4">
                 <table class="ledger">
                     <thead><tr><th class="w-14">{{ __('Row') }}</th><th>{{ __('Item code') }}</th><th>{{ __('New item code') }}</th><th>{{ __('Item already in the project') }}</th></tr></thead>
@@ -268,7 +276,7 @@
                 <h2 class="card-title">{{ __('Lines that change an item already in the project') }}</h2>
                 <span class="num text-sm text-ink-3">{{ count($preview['updates']) }}</span>
             </div>
-            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('The file gives these lines an item code the project already has, so importing changes that item. Check that it is the same item.') }}</p>
+            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('These lines have an item code, or a serial number with the same unit and much the same words, that an item in the project already has, so importing changes that item in place. Check that each is the same item.') }}</p>
             <div class="overflow-x-auto p-4">
                 <table class="ledger">
                     <thead><tr><th class="w-14">{{ __('Row') }}</th><th>{{ __('Item code') }}</th><th>{{ __('In the project now') }}</th><th>{{ __('After the import') }}</th></tr></thead>
@@ -333,7 +341,7 @@
                 <h2 class="card-title">{{ __('Rate-only lines') }}</h2>
                 <span class="num text-sm text-ink-3">{{ count($preview['rate_only']) }}</span>
             </div>
-            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('The sheet gives a rate but no quantity (QRO, rate only, or a blank quantity). They are imported with quantity 0; no quantity is made up. Measurements against them go for approval as beyond the BOQ.') }}</p>
+            <p class="px-4 pt-3 text-sm text-ink-3">{{ __('The sheet gives no quantity for these lines (QRO, rate only, a blank quantity, or an item to be priced with neither quantity nor rate). They are imported with quantity 0; no quantity or rate is made up. Measurements against them go for approval as beyond the BOQ.') }}</p>
             <div class="overflow-x-auto p-4">
                 <table class="ledger">
                     <thead><tr><th class="w-14">{{ __('Row') }}</th><th>{{ __('Item code') }}</th><th>{{ __('Description') }}</th><th>{{ __('Unit') }}</th>@if ($money)<th class="r">{{ __('Rate') }}</th>@endif</tr></thead>

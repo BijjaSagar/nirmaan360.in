@@ -40,58 +40,107 @@ final class BoqHeadings
     private const SAMPLE_ROWS = 80;
 
     /**
-     * Phrases that name each field, in English, Hindi and Marathi, compared after normalise(). The
-     * template's and the PDF reader's own headings (BoqExcelService::ALIASES) are added to these.
+     * Phrases that name each field, compared after normalise(): the headings seen printed on schedules, estimates
+     * and tender BOQs across India (central, state and private), their common English variants and misspellings,
+     * and the Hindi, Marathi and other words seen on a source. The template's and the PDF reader's own headings
+     * (BoqExcelService::ALIASES) are added to these.
      */
     private const PHRASES = [
         'serial' => [
-            'sr no', 'sr', 's no', 'sl no', 'sl', 's n', 'serial', 'serial no', 'serial number', 'item no', 'item number', 'items no',
-            'no', 'sr no of item', 'अ क्र', 'क्र', 'क्रमांक', 'क्र सं', 'क्रम सं', 'क्रम संख्या', 'अनु क्र', 'अनुक्रमांक', 'अनु क्रमांक',
-            'अनुक्रम', 'अ नं', 'क्र नं', 'अनु', 'क्रमांक नं',
+            'sr no', 'sr', 's no', 'sl no', 'sl', 'slno', 's n', 'srl no', 'si no', 'serial', 'serial no', 'serial number', 'item no', 'item number',
+            'items no', 'item no of boq', 'no', 'sr no of item', 'order', 'अ क्र', 'अं क्र',
         ],
         'code' => [
             'code', 'item code', 'code no', 'dsr code', 'dsr no', 'dsr item no', 'dsr item', 'dsr ref', 'dsr reference', 'sor no', 'sor code',
-            'sor item', 'sor item no', 'sor ref', 'ssr no', 'ssr item no', 'ssr code', 'csr no', 'cpwd item no', 'cpwd code', 'cpwd ref', 'ref',
-            'ref no', 'reference', 'reference no', 'item ref', 'schedule item no', 'schedule no', 'कोड', 'संदर्भ', 'संदर्भ क्र', 'डीएसआर क्र',
+            'sor item', 'sor item no', 'sor ref', 'ssr no', 'ssr item no', 'ssr code', 'csr no', 'csr ref', 'cpwd item no', 'cpwd code', 'cpwd ref',
+            'bsr item no', 'hsr item no', 'apwd sor no', 'djb item code', 'material code', 'ref', 'ref no', 'reference', 'reference no',
+            'rate reference', 'ref page no', 'chapter no item no', 'item ref', 'schedule item no', 'schedule no',
         ],
         'description' => [
-            'description', 'item description', 'description of item', 'description of items', 'description of work', 'description of works',
-            'particulars', 'particular', 'particulars of work', 'particulars of items', 'name of work', 'name of item', 'name of the work',
-            'details of work', 'details of item', 'details of items', 'item', 'items', 'item of work', 'work', 'nature of work', 'work description',
-            'scope of work', 'specification', 'तपशील', 'तपशिल', 'कामाचा तपशील', 'कामाचे नाव', 'कामाचे वर्णन', 'वर्णन', 'विवरण', 'कार्य का विवरण',
-            'कार्य विवरण', 'कार्य', 'काम', 'बाब', 'मद', 'मद का विवरण', 'कामाचा प्रकार', 'कार्य का नाम',
+            'description', 'descriptions', 'discription', 'item description', 'item desccription', 'item description in brief', 'short description',
+            'description of item', 'description of items', 'description of the item', 'description of an item', 'description s of items',
+            'amended description of item', 'description of work', 'description of works', 'description of the work', 'description of work item s',
+            'particulars', 'particular', 'particulars of work', 'particulars of items', 'particulars of item of work', 'name of work', 'name of item',
+            'name of the work', 'item name', 'work name', 'main item', 'details of work', 'details of item', 'details of items', 'item', 'items',
+            'item of work', 'work', 'nature of work', 'work description', 'scope of work', 'activity name', 'activity taken', 'material description',
+            'description of materials', 'common items', 'category description item size', 'specification', 'विवरण', 'कामाचे नाव', 'मालाचे नाव',
+            'খরচের খাত', 'উপকরণ',
         ],
-        'unit' => ['unit', 'units', 'uom', 'u o m', 'unit of measurement', 'unit of measure', 'एकक', 'इकाई', 'युनिट', 'मापन एकक', 'परिमाण', 'प्रमाण'],
+        'unit' => ['unit', 'units', 'per unit', 'uom', 'u o m', 'unit of measurement', 'unit of measure', 'ईकाई', 'इकाई'],
         'qty' => [
-            'qty', 'quantity', 'quantities', 'total qty', 'total quantity', 'boq qty', 'boq quantity', 'estimated qty', 'estimated quantity',
-            'est qty', 'tender qty', 'tender quantity', 'नग', 'प्रमाण', 'मात्रा', 'संख्या', 'परिमाण', 'एकूण नग', 'एकूण प्रमाण', 'कुल मात्रा',
+            'qty', 'qnty', 'quantity', 'quantities', 'total qty', 'total quantity', 'boq qty', 'boq quantity', 'estimated qty', 'estimated quantity',
+            'est qty', 'tender qty', 'tender quantity', 'approximate quantity', 'no of qty', 'total units size qty', 'मात्रा', 'नग', 'আনুমানিক পরিমাণ',
         ],
         'rate' => [
             'rate', 'rates', 'unit rate', 'rate in rs', 'rate rs', 'rate inr', 'rate in inr', 'rate per unit', 'rate rupees', 'rate in rupees',
-            'unit price', 'price', 'price per unit', 'basic rate', 'quoted rate', 'दर', 'दर रुपये', 'प्रति एकक दर', 'भाव', 'रुपये', 'रुपए', 'दर रु',
+            'rate per unit size', 'unit cost', 'unit price', 'price', 'price per unit', 'basic rate', 'quoted rate', 'labour rate', 'completed rate',
+            'csr deptt rates', 'rate to be quoted by contractor', 'rate with labour cess', 'rate as per sor', 'rate after gst', 'final rate',
+            'दर', 'रेट', 'ధర', 'ದರ', 'রেট',
         ],
         'amount' => [
-            'amount', 'amt', 'total', 'total amount', 'amount in rs', 'amount rs', 'amount inr', 'amount in inr', 'amount in rupees', 'value',
-            'total value', 'cost', 'total cost', 'रक्कम', 'एकूण रक्कम', 'एकूण', 'राशि', 'राशी', 'कुल', 'कुल राशि', 'रकम', 'किंमत', 'रुपये', 'रुपए',
+            'amount', 'amt', 'total', 'total amount', 'amount in rs', 'amount rs', 'amount inr', 'amount in inr', 'amount in rupees', 'amount i c gst',
+            'amount after escallation', 'value', 'total value', 'cost', 'total cost', 'total inr', 'total charges', 'items amount', 'all charges',
+            'राशि', 'राशी', 'रक्कम', 'தொகை', 'మొత్తం', 'মোট', 'টাকা', 'আনুমানিক খরচ',
         ],
-        'remark' => ['remark', 'remarks', 'note', 'notes', 'comments', 'शेरा', 'टिप्पणी', 'अभिप्राय', 'टीप'],
-        'section' => ['section', 'section name', 'chapter', 'group', 'sub head', 'subhead', 'विभाग'],
+        'remark' => ['remark', 'remarks', 'note', 'notes', 'comments', 'drawing ref', 'item code make'],
+        'section' => ['section', 'section name', 'chapter', 'group', 'sub head', 'subhead'],
         'category' => ['category', 'work category', 'type of work', 'head of work', 'trade'],
-        'details' => ['details', 'detail', 'item details', 'specification', 'specifications', 'spec', 'make'],
+        'details' => ['details', 'detail', 'item details', 'specification', 'specifications', 'spec', 'make', 'additional specification', 'brand is std'],
         // What the rate is for, when it is not one unit: "100 Sqm", "10 Cum", "Qtl".
-        'per' => ['per', 'per unit', 'प्रति', 'प्रति एकक'],
+        'per' => ['per'],
+        // A handbook or specification reference beside the schedule code, kept in the line's details.
+        'reference' => ['reference no', 'reference', 'ref no', 'specification no', 'spec no', 'morth spc no', 'apss spc no', 'sor reference'],
+    ];
+
+    /**
+     * Heading words no source was seen to print as a column heading: the Hindi, Marathi and other local words a
+     * contractor may still use. A column headed with one is read only when the values under it agree with that
+     * meaning, and the page says it was read from the values, never from a known heading.
+     */
+    private const UNCONFIRMED = [
+        'serial' => ['क्र', 'क्रमांक', 'क्र सं', 'क्रम सं', 'क्रम संख्या', 'अनु क्र', 'अनुक्रमांक', 'अनु क्रमांक', 'अनुक्रम', 'अ नं', 'क्र नं', 'अनु', 'क्रमांक नं', 'ક્રમ', 'ক্রমিক নং', 'ಕ್ರ ಸಂ', 'வ எண்', 'క్ర సం', 'ക്രമ നമ്പർ'],
+        'code' => ['कोड', 'संदर्भ', 'संदर्भ क्र', 'डीएसआर क्र'],
+        'description' => [
+            'तपशील', 'तपशिल', 'कामाचा तपशील', 'कामाचे वर्णन', 'वर्णन', 'कार्य का विवरण', 'कार्य विवरण', 'कार्य', 'काम', 'बाब', 'मद', 'मद का विवरण', 'कामाचा प्रकार',
+            'कार्य का नाम', 'વિગત', 'ಕಾಮಗಾರಿಯ ವಿವರ', 'விவரம்', 'పని వివరము', 'বিবরণ', 'ବିବରଣୀ',
+        ],
+        'unit' => ['एकक', 'युनिट', 'मापन एकक', 'એકમ', 'ಘಟಕ', 'அலகு', 'యూనిట్', 'একক', 'ଏକକ'],
+        'qty' => ['संख्या', 'परिमाण', 'एकूण नग', 'एकूण प्रमाण', 'कुल मात्रा', 'જથ્થો', 'ಪ್ರಮಾಣ', 'அளவு', 'పరిమాణము', 'পরিমাণ', 'ପରିମାଣ', 'അളവ്'],
+        'rate' => ['दर रुपये', 'प्रति एकक दर', 'भाव', 'दर रु', 'ભાવ', 'દર', 'விலை', 'வீதம்', 'రేటు', 'നിരക്ക്'],
+        'amount' => ['एकूण रक्कम', 'एकूण', 'कुल', 'कुल राशि', 'रकम', 'किंमत', 'धनराशि', 'રકમ', 'ಮೊತ್ತ', 'തുക'],
+        'remark' => ['शेरा', 'टिप्पणी', 'अभिप्राय', 'टीप'],
+        'section' => ['विभाग'],
+        'per' => ['प्रति', 'प्रति एकक'],
     ];
 
     /** Phrases that name a field only loosely. A column headed this way loses to one headed plainly. */
-    private const WEAK = ['item', 'items', 'work', 'specification', 'काम', 'कार्य', 'no', 'sl', 'sr', 'price', 'value', 'cost', 'total', 'group', 'अनु', 'make', 'spec'];
+    private const WEAK = ['item', 'items', 'work', 'specification', 'काम', 'कार्य', 'no', 'sl', 'sr', 'price', 'value', 'cost', 'total', 'group', 'अनु', 'make', 'spec', 'order'];
 
-    /** Words that mean one of two fields. The values in the column decide which. */
-    private const AMBIGUOUS = ['प्रमाण' => ['qty', 'unit'], 'परिमाण' => ['qty', 'unit'], 'रुपये' => ['rate', 'amount'], 'रुपए' => ['rate', 'amount']];
+    /**
+     * Words that mean one of two fields. The values in the column decide which: प्रमाण and परिमाण a unit or a
+     * quantity, रुपये a rate or an amount, "Items" a schedule code (short figures, as 11010) or the description,
+     * "Specification" the description (long text) or a reference ("APSS No. 402"), "Nos" the quantity when the
+     * amount is it times the rate.
+     */
+    private const AMBIGUOUS = [
+        'प्रमाण' => ['qty', 'unit'], 'परिमाण' => ['qty', 'unit'], 'रुपये' => ['rate', 'amount'], 'रुपए' => ['rate', 'amount'],
+        'items' => ['description', 'code'], 'specification' => ['description', 'reference'],
+    ];
+
+    /** Headings of a table that gives material per unit of work, not quantities of work: never the quantity, rate or amount. */
+    private const COEFFICIENT = '/per unit quantity of work|cement qty|unit for cement payment|coefficient|consumption|cement bags|bitumen/u';
+
+    /** Headings of a measurement sheet's dimension columns: length, breadth, and depth or height. */
+    private const DIMENSIONS = [
+        'length' => ['l', 'length', 'l m', 'len'],
+        'breadth' => ['b', 'breadth', 'width', 'w', 'b m', 'breadth width'],
+        'depth' => ['d', 'depth', 'h', 'height', 'd h', 'h d', 'h m', 'd m', 'height depth', 'depth height', 'thickness'],
+    ];
 
     /** How much finding each field counts towards a heading row. */
     private const WEIGHTS = [
         'description' => 3.0, 'qty' => 2.0, 'rate' => 2.0, 'amount' => 1.6, 'unit' => 1.6, 'code' => 1.2, 'serial' => 1.2,
-        'remark' => 0.8, 'section' => 0.8, 'category' => 0.6, 'details' => 0.6, 'per' => 0.6,
+        'remark' => 0.8, 'section' => 0.8, 'category' => 0.6, 'details' => 0.6, 'per' => 0.6, 'reference' => 0.6,
     ];
 
     /**
@@ -115,10 +164,10 @@ final class BoqHeadings
         'में', 'मध्ये', 'का', 'की', 'के', 'चे', 'ची', 'चा', 'च्या', 'रु', 'प्रति', 'प्रत्येकी', 'आणि', 'और', 'व',
     ];
 
-    /** @var array<string, array{0: list<array{tokens: list<string>, compact: string, weak: bool}>, 1: array<string, true>}>|null */
+    /** @var array<string, array{0: list<array{tokens: list<string>, compact: string, weak: bool, unconfirmed: bool}>, 1: array<string, true>}>|null */
     private static ?array $fields = null;
 
-    /** @var array<string, array{scores: array<string, float>, units: ?string}> */
+    /** @var array<string, array{scores: array<string, float>, units: ?string, unconfirmed: array<string, true>}> */
     private static array $cache = [];
 
     /** @var array<string, array{filled: int, numbers: float, units: float, text: float, length: float}> What the values under a column look like, for the sheet being read. */
@@ -138,13 +187,17 @@ final class BoqHeadings
     }
 
     /**
-     * How strongly one heading cell names each field. Empty when it names none.
+     * How strongly one heading cell names each field, by the heading words seen on sources. Empty when it names
+     * none. With $unconfirmed, words no source was seen to print count too: only to find where a table is, as
+     * the PDF reader does, never to say what a column holds.
      *
      * @return array<string, float>
      */
-    public static function scores(string $heading): array
+    public static function scores(string $heading, bool $unconfirmed = false): array
     {
-        return self::read($heading)['scores'];
+        $read = self::read($heading);
+
+        return $unconfirmed ? $read['scores'] : array_diff_key($read['scores'], $read['unconfirmed']);
     }
 
     /** The unit a quantity, rate or amount heading names, such as cum in "Quantity (Cum)". */
@@ -203,7 +256,7 @@ final class BoqHeadings
             return SheetLayout::none();
         }
 
-        return $this->extend($grid, $merged, $best, $rows);
+        return $this->extend($grid, $merged, $best, $rows, $merges);
     }
 
     /**
@@ -322,10 +375,17 @@ final class BoqHeadings
             }
 
             foreach ($read['scores'] as $field => $score) {
-                $score *= $this->plausible($field, $this->profile($grid, $column, $last));
+                $profile = $this->profile($grid, $column, $last);
+                $score *= $this->plausible($field, $profile);
+                $unconfirmed = isset($read['unconfirmed'][$field]);
+
+                // A word no source printed as this heading counts only when the values under it agree.
+                if ($unconfirmed && ! self::agrees($field, $profile)) {
+                    continue;
+                }
 
                 if ($score > 0.2) {
-                    $triples[] = [$score, $column, $field];
+                    $triples[] = [$score * ($unconfirmed ? 0.9 : 1.0), $column, $field, $unconfirmed];
                 }
             }
         }
@@ -336,13 +396,13 @@ final class BoqHeadings
         $taken = [];
         $score = 0.0;
 
-        foreach ($triples as [$value, $column, $field]) {
+        foreach ($triples as [$value, $column, $field, $unconfirmed]) {
             if ($fields[$column] !== null || isset($taken[$field]) || isset($ambiguous[$column])) {
                 continue;
             }
 
             $fields[$column] = $field;
-            $how[$column] = 'heading';
+            $how[$column] = $unconfirmed ? 'values' : 'heading';
             $taken[$field] = $column;
             $score += $value;
         }
@@ -459,7 +519,7 @@ final class BoqHeadings
     {
         $score = 0.0;
 
-        foreach (['unit', 'description', 'rate', 'amount'] as $wanted) {
+        foreach (['unit', 'description', 'rate', 'amount', 'qty'] as $wanted) {
             if (isset($taken[$wanted])) {
                 continue;
             }
@@ -476,6 +536,8 @@ final class BoqHeadings
                     // The amount is the quantity times this column.
                     'rate' => isset($taken['qty'], $taken['amount']) && $profile['numbers'] >= 0.6 && $this->product($grid, $taken['amount'], $taken['qty'], $column, $last) >= 0.6,
                     'amount' => isset($taken['qty'], $taken['rate']) && $profile['numbers'] >= 0.6 && $this->product($grid, $column, $taken['qty'], $taken['rate'], $last) >= 0.6,
+                    // A column headed "Nos" or naming nothing, which the amount is the rate times: the quantity.
+                    'qty' => isset($taken['rate'], $taken['amount']) && $profile['filled'] >= 2 && $profile['numbers'] >= 0.6 && $this->product($grid, $taken['amount'], $column, $taken['rate'], $last) >= 0.6,
                 };
 
                 if ($fits) {
@@ -548,6 +610,16 @@ final class BoqHeadings
 
         if ($choices === ['qty', 'unit']) {
             return $profile['units'] >= 0.5 && $profile['units'] > $profile['numbers'] ? 'unit' : 'qty';
+        }
+
+        // "Items" holding short figures (11010, 22031) holds schedule codes; holding text, the description.
+        if ($choices === ['description', 'code']) {
+            return $profile['numbers'] >= 0.6 || ($profile['text'] > 0 && $profile['length'] < 10) ? 'code' : 'description';
+        }
+
+        // "Specification" holding long text is the description; holding short references, a reference.
+        if ($choices === ['description', 'reference']) {
+            return $profile['length'] >= 25 ? 'description' : 'reference';
         }
 
         // रुपये: an amount when it is the quantity times another column, a rate otherwise.
@@ -675,13 +747,14 @@ final class BoqHeadings
      *
      * @param  list<int>  $rows
      */
-    private function extend(array $grid, array $merged, SheetLayout $layout, array $rows): SheetLayout
+    private function extend(array $grid, array $merged, SheetLayout $layout, array $rows, array $merges = []): SheetLayout
     {
         while ($layout->span < self::MAX_SPAN) {
             $index = array_search($layout->lastRow(), $rows, true);
             $next = $index === false ? null : ($rows[$index + 1] ?? null);
 
-            if ($next === null || $next !== $layout->lastRow() + 1 || ! $this->finishesHeading($grid[$next] ?? [], $layout)) {
+            if ($next === null || $next !== $layout->lastRow() + 1
+                || (! $this->finishesHeading($grid[$next] ?? [], $layout) && ! $this->underMergedHeadings($grid[$next] ?? [], $layout, $merges))) {
                 break;
             }
 
@@ -695,6 +768,46 @@ final class BoqHeadings
         }
 
         return $layout;
+    }
+
+    /**
+     * A row of words, each under a heading merged across several columns, as "Supply" and "Installation" under a
+     * "Rate" spread over two: the second level of a two-level heading.
+     *
+     * @param  list<array{0: int, 1: int, 2: int, 3: int}>  $merges
+     */
+    private function underMergedHeadings(array $cells, SheetLayout $layout, array $merges): bool
+    {
+        $any = false;
+
+        foreach ($cells as $column => $value) {
+            $text = CellValues::text($value);
+
+            if ($text === '') {
+                continue;
+            }
+
+            if (CellValues::isNumber($value) || mb_strlen($text) > 40) {
+                return false;
+            }
+
+            $under = false;
+
+            foreach ($merges as [$top, $left, $bottom, $right]) {
+                if ($right > $left && $top >= ($layout->row ?? 0) && $bottom <= $layout->lastRow() && $column >= $left && $column <= $right) {
+                    $under = true;
+                    break;
+                }
+            }
+
+            if (! $under) {
+                return false;
+            }
+
+            $any = true;
+        }
+
+        return $any;
     }
 
     /** Words that only finish a heading written above them: "No." under "Sr.", "Rs." under "Amount in", "(Cum)" under "Qty". */
@@ -741,33 +854,52 @@ final class BoqHeadings
         return $any;
     }
 
-    /** The row of column numbers some sheets print under the heading: 1, 2, 3, 4... */
+    /**
+     * The row of column numbers or letters some sheets print under the heading: "1 2 3 4 5 6", "1 2 4 5 13 53 55"
+     * (a tender template numbers only some columns), "(A) (B) (C)", "I II III IV", "A B C D E F=(D*E)". Every cell
+     * holds such a label and nothing else; a row with a description is never one.
+     */
     public function isColumnNumbers(array $cells): bool
     {
-        $numbers = [];
+        $texts = [];
 
         foreach ($cells as $value) {
             $text = CellValues::text($value);
 
-            if ($text === '') {
-                continue;
+            if ($text !== '') {
+                $texts[] = $text;
             }
+        }
 
-            $number = CellValues::number($value);
+        if (count($texts) < 3) {
+            return false;
+        }
 
-            if ($number === null || ! ctype_digit($number) || (int) $number > 40) {
-                return false;
+        $numbers = [];
+
+        foreach ($texts as $text) {
+            $number = CellValues::number($text);
+
+            if ($number === null || ! ctype_digit($number) || (int) $number > 99) {
+                $numbers = null;
+                break;
             }
 
             $numbers[] = (int) $number;
         }
 
-        if (count($numbers) < 3) {
-            return false;
+        if ($numbers !== null) {
+            foreach ($numbers as $index => $number) {
+                if ($index > 0 && $number <= $numbers[$index - 1]) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
-        foreach ($numbers as $index => $number) {
-            if ($index > 0 && $number !== $numbers[$index - 1] + 1) {
+        foreach ($texts as $text) {
+            if (preg_match('/^\(?(?:[A-Z]{1,2}|[IVXL]{1,6}|\d{1,2})\)?(?:\s*=\s*[\(\)A-Z0-9*+\-\/xX ]+)?$/u', $text) !== 1) {
                 return false;
             }
         }
@@ -823,9 +955,14 @@ final class BoqHeadings
         }
 
         $tokens = $key === '' ? [] : explode(' ', $key);
-        $result = ['scores' => [], 'units' => null];
+        $result = ['scores' => [], 'units' => null, 'unconfirmed' => []];
 
         if ($tokens === [] || count($tokens) > 14) {
+            return self::$cache[$key] = $result;
+        }
+
+        // A column of cement or bitumen per unit of work is a coefficient, never a quantity, rate or amount.
+        if (preg_match(self::COEFFICIENT, $key) === 1) {
             return self::$cache[$key] = $result;
         }
 
@@ -834,6 +971,7 @@ final class BoqHeadings
 
         foreach (self::fields() as $field => [$phrases, $vocabulary]) {
             $best = 0.0;
+            $confirmed = false;
 
             foreach ($phrases as $phrase) {
                 $length = count($phrase['tokens']);
@@ -868,6 +1006,10 @@ final class BoqHeadings
 
                 $score = self::WEIGHTS[$field] * ($phrase['weak'] ? 0.6 : 1.0) * (0.5 + 0.5 * $coverage) * (1 + 0.15 * ($length - 1));
 
+                if (! $phrase['unconfirmed']) {
+                    $confirmed = true;
+                }
+
                 if ($score > $best) {
                     $best = $score;
 
@@ -879,7 +1021,17 @@ final class BoqHeadings
 
             if ($best > 0) {
                 $result['scores'][$field] = round($best, 4);
+
+                // Named only by words no source printed as a heading: read only when the values agree.
+                if (! $confirmed) {
+                    $result['unconfirmed'][$field] = true;
+                }
             }
+        }
+
+        // "Item Code / Make" is a portal's own number for the item, not a schedule code.
+        if (self::contains($tokens, ['code', 'make'])) {
+            unset($result['scores']['code'], $result['unconfirmed']['code']);
         }
 
         foreach ($leftover as $field => $text) {
@@ -891,12 +1043,58 @@ final class BoqHeadings
 
         // "Amount in words" holds words, not the amount.
         if (array_intersect($tokens, self::IN_WORDS) !== []) {
-            unset($result['scores']['qty'], $result['scores']['rate'], $result['scores']['amount']);
+            unset($result['scores']['qty'], $result['scores']['rate'], $result['scores']['amount'], $result['unconfirmed']['remark']);
             $result['scores']['remark'] = max($result['scores']['remark'] ?? 0, self::WEIGHTS['remark']);
             $result['units'] = null;
         }
 
         return self::$cache[$key] = $result;
+    }
+
+    /**
+     * Whether the values under a column agree with a meaning its heading gave only by a word no source printed:
+     * numbers under a quantity, rate or amount, units under a unit, text under a description, short numbers or
+     * labels under a serial. Two values at least are needed to say so.
+     *
+     * @param  array{filled: int, numbers: float, units: float, text: float, length: float}  $profile
+     */
+    private static function agrees(string $field, array $profile): bool
+    {
+        if ($profile['filled'] < 2) {
+            return false;
+        }
+
+        return match ($field) {
+            'qty', 'rate', 'amount' => $profile['numbers'] >= 0.6,
+            'unit' => $profile['units'] >= 0.5,
+            'description' => $profile['text'] >= 0.6 && $profile['length'] >= 4 && $profile['units'] < 0.5,
+            'serial', 'code' => $profile['numbers'] >= 0.5 || ($profile['text'] > 0 && $profile['length'] <= 12),
+            'per' => $profile['units'] >= 0.5 || $profile['numbers'] >= 0.6,
+            default => $profile['text'] >= 0.5,
+        };
+    }
+
+    /**
+     * Whether a sheet's headings are those of a measurement sheet: a length, a breadth, and a depth or height
+     * column. Its rows are measurements, never BOQ lines.
+     *
+     * @param  array<int, string>  $headings
+     */
+    public static function isMeasurement(array $headings): bool
+    {
+        $found = [];
+
+        foreach ($headings as $heading) {
+            $key = self::normalise($heading);
+
+            foreach (self::DIMENSIONS as $dimension => $words) {
+                if (in_array($key, $words, true)) {
+                    $found[$dimension] = true;
+                }
+            }
+        }
+
+        return count($found) === 3;
     }
 
     /** @return list<string> The fields whose phrases use this word. */
@@ -948,16 +1146,17 @@ final class BoqHeadings
         foreach ($phrases as $field => $list) {
             $entries = [];
             $vocabulary = [];
+            $all = array_fill_keys(array_unique($list), false) + array_fill_keys(self::UNCONFIRMED[$field] ?? [], true);
 
-            foreach (array_unique($list) as $phrase) {
-                $normal = self::normalise($phrase);
+            foreach ($all as $phrase => $unconfirmed) {
+                $normal = self::normalise((string) $phrase);
 
                 if ($normal === '') {
                     continue;
                 }
 
                 $tokens = explode(' ', $normal);
-                $entries[] = ['tokens' => $tokens, 'compact' => implode('', $tokens), 'weak' => in_array($normal, self::WEAK, true)];
+                $entries[] = ['tokens' => $tokens, 'compact' => implode('', $tokens), 'weak' => in_array($normal, self::WEAK, true), 'unconfirmed' => $unconfirmed];
 
                 foreach ($tokens as $token) {
                     $vocabulary[$token] = true;

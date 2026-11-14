@@ -1,0 +1,13 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=rate(heading) E=unit(heading) F=amount(heading)
+rows:
+  2 section | EARTH WORK
+  3 line | A.1 | EARTH WORK | Sample trench digging | cum | qty 50 | rate 200 | serial
+  4 section | REINFORCEMENT
+  5 line | B.2 | REINFORCEMENT | Sample HYSD bars 12 mm | kg | qty 300 | rate 60 | serial
+  6 line | B.3 | REINFORCEMENT | Sample HYSD bars 16 mm | kg | qty 400 | rate 60 | serial
+  7 section | MS WORKS
+  8 line | C.4 | MS WORKS | Sample MS railing | kg | qty 150 | rate 120 | serial
+  9 section | SUNDRIES
+  10 line | D.5 | SUNDRIES | Sample nails and wire | kg | qty 20 | rate 90 | serial
+lines: 5 | lines total 71800.00 | with adjustments 71800.00 | sheet subtotal - | sheet total -

@@ -1,0 +1,11 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=unit(heading) E=rate(heading) F=per(heading) G=amount(heading)
+rows:
+  2 line | 1 | - | Sample brickwork | cum | qty 45 | rate 6100 | serial
+  3 line | 2 | - | Sample whitewash | sqm | qty 900 | rate 4.5 | serial | per 100 Sqm
+  4 line | 3 | - | Sample steel | kg | qty 1500 | rate 65 | serial | per Qtl
+  5 subtotal | Total
+lines: 3 | lines total 376050.00 | with adjustments 376050.00 | sheet subtotal 376050 | sheet total -
+total: 5 | subtotal | Total | sheet 376050 | lines 376050.00 | matches
+note: 3 | The rate in the file is for 100 Sqm. It was divided by 100 to give the rate per sqm.
+note: 4 | The rate in the file is for Qtl. It was divided by 100 to give the rate per kg.

@@ -29,16 +29,18 @@ class BoqHeadingsTest extends TestCase
 
     public function test_headings_are_matched_by_words_in_english_hindi_and_marathi(): void
     {
+        // Headings seen printed on schedules, estimates and BOQs.
         $cases = [
-            'Sr.No' => 'serial', 'S.No.' => 'serial', 'Sl. No.' => 'serial', 'अ.क्र.' => 'serial', 'क्र.सं.' => 'serial', 'अनु. क्र.' => 'serial',
-            'Item Code' => 'code', 'DSR Code' => 'code', 'SOR No' => 'code', 'CPWD item no' => 'code',
+            'Sr.No' => 'serial', 'S.No.' => 'serial', 'Sl. No.' => 'serial', 'SLNo' => 'serial', 'Srl. No.' => 'serial', 'अ.क्र.' => 'serial',
+            'Item Code' => 'code', 'DSR Code' => 'code', 'SOR No' => 'code', 'CPWD item no' => 'code', 'BSR Item No.' => 'code', 'Rate Reference' => 'code',
             'Item Description' => 'description', 'Particulars' => 'description', 'Name of Work/Item' => 'description', 'Details of Work' => 'description',
-            'तपशील' => 'description', 'विवरण' => 'description', 'कामाचे नाव' => 'description', 'कार्य का विवरण' => 'description',
-            'UOM' => 'unit', 'एकक' => 'unit', 'इकाई' => 'unit',
-            'Quantity (Cum)' => 'qty', 'Total Qty' => 'qty', 'BOQ Qty' => 'qty', 'मात्रा' => 'qty', 'नग' => 'qty', 'संख्या' => 'qty',
-            'Unit Rate' => 'rate', 'Rate in Rs.' => 'rate', 'Rate per unit' => 'rate', 'दर' => 'rate',
-            'Amount in Rs.' => 'amount', 'Total Amount' => 'amount', 'रक्कम' => 'amount', 'राशि' => 'amount', 'एकूण' => 'amount',
-            'Remarks' => 'remark',
+            'Discription' => 'description', 'Description of Work / Item (S)' => 'description', 'विवरण' => 'description', 'कामाचे नाव' => 'description',
+            'कार्य का विवरण' => 'description',
+            'UOM' => 'unit', 'Per Unit' => 'unit', 'इकाई' => 'unit',
+            'Quantity (Cum)' => 'qty', 'Total Qty' => 'qty', 'BOQ Qty' => 'qty', 'Qnty' => 'qty', 'Approximate Quantity' => 'qty', 'मात्रा' => 'qty', 'नग' => 'qty',
+            'Unit Rate' => 'rate', 'Rate in Rs.' => 'rate', 'Rate per unit' => 'rate', 'Unit Cost' => 'rate', 'दर' => 'rate',
+            'Amount in Rs.' => 'amount', 'Total Amount' => 'amount', 'Amount after escallation' => 'amount', 'रक्कम' => 'amount', 'राशि' => 'amount',
+            'Remarks' => 'remark', 'Item Code / Make' => 'remark', 'Reference No.' => 'code',
         ];
 
         foreach ($cases as $heading => $field) {
@@ -46,6 +48,19 @@ class BoqHeadingsTest extends TestCase
             arsort($scores);
             $this->assertSame($field, array_key_first($scores), $heading);
         }
+
+        // Words no source printed as a heading name nothing by themselves; the column's values decide (see the corpus).
+        $unconfirmed = ['क्र.सं.' => 'serial', 'अनु. क्र.' => 'serial', 'तपशील' => 'description', 'एकक' => 'unit', 'संख्या' => 'qty', 'एकूण' => 'amount'];
+
+        foreach ($unconfirmed as $heading => $field) {
+            $this->assertArrayNotHasKey($field, BoqHeadings::scores($heading), $heading);
+            $scores = BoqHeadings::scores($heading, unconfirmed: true);
+            arsort($scores);
+            $this->assertSame($field, array_key_first($scores), $heading);
+        }
+
+        // A cement coefficient column is never a quantity.
+        $this->assertSame([], BoqHeadings::scores('Quantity of cement per unit quantity of work (Quintals)'));
 
         $this->assertSame([], BoqHeadings::scores('Providing and laying cement concrete in foundation and plinth'));
         $this->assertSame('cum', BoqHeadings::unitIn('Quantity (Cum)'));

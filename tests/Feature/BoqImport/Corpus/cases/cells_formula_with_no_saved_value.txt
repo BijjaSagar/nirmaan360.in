@@ -1,0 +1,9 @@
+file: xlsx | sheets: BOQ * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 error | Sample brick masonry
+  3 error | Sample plaster
+lines: 0 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+problem: 2 qty | Quantity is a formula with no saved value. Paste it as a value and try again.
+problem: 3 rate | Rate is a formula with no saved value. Paste it as a value and try again.

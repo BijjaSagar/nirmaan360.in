@@ -1,0 +1,7 @@
+heading: row 1
+columns: A=description(heading) B=unit(heading) C=qty(heading) D=rate(heading) E=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | made
+  3 spec | Plaster with 2% compound below plinth
+  4 line | 2 | - | 15 mm thick - Plaster with 2% compound below plinth | sqm | qty 40 | rate 260 | made
+lines: 2 | lines total 31200.00 | with adjustments 31200.00 | sheet subtotal - | sheet total -

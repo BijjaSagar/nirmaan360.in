@@ -1,0 +1,8 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=unit(heading) E=rate(heading) G=amount(values) H=remark(heading)
+rows:
+  2 line | 1 | - | Sample earthwork in excavation by mechanical means | cum | qty 1200 | rate 180 | serial
+  3 line | 2 | - | Sample cement concrete 1:2:4 in drain bed | cum | qty 80 | rate 6450 | serial
+lines: 2 | lines total 732000.00 | with adjustments 732000.00 | sheet subtotal - | sheet total -
+note: 0 | Column F is also headed "TOTAL AMOUNT With Taxes" and holds figures. Column G is read as the amount; to read F instead, choose it under Read as.

@@ -1,0 +1,8 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 spec | Providing and laying sample reinforced cement concrete M20 i…
+  3 line | 4(1) | - | Footing - Providing and laying sample reinforced cement conc… | cum | qty 10 | rate 6000 | made
+  4 line | 4(2) | - | Columns - Providing and laying sample reinforced cement conc… | cum | qty 4 | rate 7000 | made
+  5 line | 5 | - | Sample painting | sqm | qty 300 | rate 120 | serial
+lines: 3 | lines total 124000.00 | with adjustments 124000.00 | sheet subtotal - | sheet total -

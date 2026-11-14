@@ -1,0 +1,8 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=description(heading) D=unit(heading) E=qty(heading) F=rate(heading) G=amount(heading)
+rows:
+  2 spec | Providing sample cement plaster in CM 1:4 on walls
+  3 line | 1a | - | 12 mm thick inside - Providing sample cement plaster in CM 1… | sqm | qty 600 | rate 230 | serial
+  4 line | 1b | - | 20 mm thick outside - Providing sample cement plaster in CM… | sqm | qty 300 | rate 280 | serial
+  5 line | 2 | - | Sample painting with acrylic emulsion | sqm | qty 900 | rate 120 | serial
+lines: 3 | lines total 330000.00 | with adjustments 330000.00 | sheet subtotal - | sheet total -

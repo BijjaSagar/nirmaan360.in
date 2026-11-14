@@ -1,0 +1,12 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  3 spec | Providing and laying sample reinforced concrete M20 in :
+  4 line | 2(1) | - | Footings - Providing and laying sample reinforced concrete M… | cum | qty 10 | rate 6000 | made
+  5 line | 2(2) | - | Columns - Providing and laying sample reinforced concrete M2… | cum | qty 4 | rate 7000 | made
+  6 line | 2(3) | - | Beams - Providing and laying sample reinforced concrete M20… | cum | qty 3 | rate 7200 | made
+  7 spec | Providing sample flooring in :
+  8 line | 3(1) | - | Living room - Providing sample flooring in | sqm | qty 30 | rate 900 | made
+  9 line | 3(2) | - | Bed room - Providing sample flooring in | sqm | qty 20 | rate 900 | made
+lines: 6 | lines total 175400.00 | with adjustments 175400.00 | sheet subtotal - | sheet total -

@@ -1,0 +1,7 @@
+heading: row 1
+columns: A=description(values) B=unit(values) C=qty(heading) D=rate(heading) E=amount(values)
+rows:
+  2 line | 1 | - | काम एक | nos | qty 4 | rate 100 | made
+  3 line | 2 | - | काम दोन | nos | qty 5 | rate 200 | made
+  4 line | 3 | - | काम तीन | nos | qty 6 | rate 300 | made
+lines: 3 | lines total 3200.00 | with adjustments 3200.00 | sheet subtotal - | sheet total -

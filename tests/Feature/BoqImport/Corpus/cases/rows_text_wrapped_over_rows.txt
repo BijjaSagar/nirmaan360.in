@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 spec | Cement concrete 1:4:8 of sample
+  3 spec | aggregate in foundation including
+  4 line | 1 | - | Cement concrete 1:4:8 of sample aggregate in foundation incl… | cum | qty 12 | rate 5400 | serial
+  5 spec | Brick masonry in cement mortar
+  6 line | 2 | - | Brick masonry in cement mortar 1:6 in superstructure complet… | cum | qty 45 | rate 6100 | serial
+lines: 2 | lines total 339300.00 | with adjustments 339300.00 | sheet subtotal - | sheet total -

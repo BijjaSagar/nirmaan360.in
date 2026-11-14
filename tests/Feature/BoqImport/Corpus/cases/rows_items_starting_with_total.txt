@@ -1,0 +1,12 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Brick masonry sample | cum | qty 40 | rate 5000 | serial
+  3 rate_only | 2 | - | Total station survey of the sample plot | day | qty 0 | rate 4500 | serial
+  4 line | 3 | - | Total station survey, second visit | day | qty 2 | rate 0 | serial
+  5 line | 4 | - | Totalizer flow meter supply | nos | qty 1 | rate 3000 | serial
+  6 subtotal | Total
+lines: 4 | lines total 203000.00 | with adjustments 203000.00 | sheet subtotal 203000 | sheet total -
+total: 6 | subtotal | Total | sheet 203000 | lines 203000.00 | matches
+note: 0 | 1 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.
+note: 0 | 1 lines have a quantity but no rate (rows 4). They are read at rate 0; fill in the rates later.

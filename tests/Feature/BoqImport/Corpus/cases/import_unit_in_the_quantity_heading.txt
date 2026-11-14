@@ -1,0 +1,6 @@
+heading: row 1
+columns: A=description(heading) B=qty(heading) [sqm] C=rate(heading) [sqm] D=amount(heading)
+rows:
+  2 line | 1 | - | Vitrified tile flooring 600 x 600 | sqm | qty 120 | rate 1100 | made
+  3 line | 2 | - | Ceramic wall tiles in toilets | sqm | qty 80 | rate 900 | made
+lines: 2 | lines total 204000.00 | with adjustments 204000.00 | sheet subtotal - | sheet total -

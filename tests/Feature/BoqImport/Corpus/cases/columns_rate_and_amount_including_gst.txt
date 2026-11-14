@@ -1,0 +1,6 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Providing and laying sample cement concrete 1:4:8 in foundat… | cum | qty 12 | rate 5400 | serial
+  3 line | 2 | - | Providing sample brick masonry in cement mortar 1:6 in super… | cum | qty 45 | rate 6100 | serial
+lines: 2 | lines total 339300.00 | with adjustments 339300.00 | sheet subtotal - | sheet total -

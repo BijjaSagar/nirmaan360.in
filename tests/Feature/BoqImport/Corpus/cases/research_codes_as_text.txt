@@ -1,0 +1,12 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=code(heading) C=description(heading) D=unit(heading) E=qty(heading) F=rate(heading) G=amount(heading)
+rows:
+  2 line | 011010 | - | Sample earthwork in embankment | cum | qty 100 | rate 180 | code
+  3 line | 011020 | - | Sample earthwork in cutting | cum | qty 50 | rate 200 | code
+  4 line | 21.30 | - | Sample signage boards | nos | qty 6 | rate 1500 | code
+  5 line | 13.48A | - | Sample textured paint | sqm | qty 100 | rate 150 | code
+  6 line | 17.28.1 | - | Sample PVC water tank | ltr | qty 1000 | rate 9 | code
+  7 line | A 9.80 | - | Sample hill area item | sqm | qty 10 | rate 500 | code
+  8 line | WG-PW/PW | - | Sample point wiring | point | qty 20 | rate 900 | code
+lines: 7 | lines total 84000.00 | with adjustments 84000.00 | sheet subtotal - | sheet total -

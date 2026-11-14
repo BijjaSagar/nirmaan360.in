@@ -1,0 +1,8 @@
+file: xls | sheets: BoQ1 * | picked: only
+heading: row 2
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=unit(heading) E=rate(heading) F=amount(heading) G=remark(heading)
+rows:
+  3 line | 1 | - | Sample earthwork in excavation by mechanical means in all ki… | cum | qty 1200 | rate 180 | serial
+  4 line | 2 | - | Sample cement concrete 1:2:4 in drain bed including curing | cum | qty 80 | rate 6450 | serial
+  5 line | 3 | - | Sample stone pitching on drain sides with cement mortar | sqm | qty 600 | rate 260 | serial
+lines: 3 | lines total 888000.00 | with adjustments 888000.00 | sheet subtotal - | sheet total -

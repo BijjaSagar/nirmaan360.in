@@ -1,0 +1,7 @@
+heading: row 1
+columns: A=serial(heading) B=description(values) C=qty(values) D=rate(heading) E=amount(heading)
+rows:
+  2 line | 1 | - | नमुना खोदकाम | - | qty 10 | rate 350 | serial
+  3 line | 2 | - | नमुना बांधकाम | - | qty 12 | rate 500 | serial
+  4 line | 3 | - | नमुना गिलावा | - | qty 30 | rate 200 | serial
+lines: 3 | lines total 15500.00 | with adjustments 15500.00 | sheet subtotal - | sheet total -

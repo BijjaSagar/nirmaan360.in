@@ -1,0 +1,20 @@
+heading: row 1
+columns: A=serial(heading) B=code(heading) C=description(heading) D=qty(heading) E=rate(heading) F=unit(heading) G=amount(heading)
+rows:
+  2 section | FOUNDATION
+  3 line | S-2.1 | FOUNDATION | Sample digging of trenches in ordinary soil | cum | qty 40 | rate 250 | code
+  4 section | FRAME
+  5 line | S-5.3 | FRAME | Sample RCC M25 in the frame | cum | qty 12 | rate 7500 | code
+  6 line | S-5.9 | FRAME | Sample HYSD bars for the frame | kg | qty 2500 | rate 40 | code
+  7 subtotal | Subtotal
+  8 adjustment | Deduct 4% below the schedule for the town area
+  9 adjustment | Water supply works 2.5%
+  10 adjustment | Drainage works 2.5%
+  11 subtotal | Total
+  12 say | SAY Rs 2.02 lakh only
+lines: 3 | lines total 200000.00 | with adjustments 202000.00 | sheet subtotal 200000 | sheet total 202000
+adjustment: 8 | Deduct 4% below the schedule for the town area | -4% | comes to -8000.00 | sheet -8000 | amount
+adjustment: 9 | Water supply works 2.5% | 2.5% | comes to 5000.00 | sheet 5000 | amount
+adjustment: 10 | Drainage works 2.5% | 2.5% | comes to 5000.00 | sheet 5000 | amount
+total: 7 | subtotal | Subtotal | sheet 200000 | lines 200000.00 | matches
+total: 11 | subtotal | Total | sheet 202000 | lines 202000.00 | matches

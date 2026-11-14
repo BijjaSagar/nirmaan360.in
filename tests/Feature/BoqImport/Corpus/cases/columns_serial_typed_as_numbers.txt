@@ -1,0 +1,18 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1.10 | - | Sample item 1 | nos | qty 1 | rate 10 | serial
+  3 line | 1.20 | - | Sample item 2 | nos | qty 1 | rate 10 | serial
+  4 line | 1.30 | - | Sample item 3 | nos | qty 1 | rate 10 | serial
+  5 line | 1.40 | - | Sample item 4 | nos | qty 1 | rate 10 | serial
+  6 line | 1.50 | - | Sample item 5 | nos | qty 1 | rate 10 | serial
+  7 line | 1.60 | - | Sample item 6 | nos | qty 1 | rate 10 | serial
+  8 line | 1.70 | - | Sample item 7 | nos | qty 1 | rate 10 | serial
+  9 line | 1.80 | - | Sample item 8 | nos | qty 1 | rate 10 | serial
+  10 line | 1.90 | - | Sample item 9 | nos | qty 1 | rate 10 | serial
+  11 line | 1.10.1 | - | Sample item 10 | nos | qty 1 | rate 10 | made
+  12 line | 1.11 | - | Sample item 11 | nos | qty 1 | rate 10 | serial
+  13 line | 1.12 | - | Sample item 12 | nos | qty 1 | rate 10 | serial
+lines: 12 | lines total 120.00 | with adjustments 120.00 | sheet subtotal - | sheet total -
+note: 11 | Item code 1.10 is used more than once in the file. This line was given 1.10.1.

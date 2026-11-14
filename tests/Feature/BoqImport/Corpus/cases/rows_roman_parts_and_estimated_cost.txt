@@ -1,0 +1,13 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 section | BUILDING WORK
+  3 line | I.1 | BUILDING WORK | Sample footing concrete | cum | qty 10 | rate 5000 | serial
+  4 subtotal | Estimated cost of Building Work
+  5 section | COMPOUND WALL
+  6 line | II.1 | COMPOUND WALL | Sample wall masonry | cum | qty 20 | rate 4000 | serial
+  7 total | Grand Total
+  8 after_total | Prepared by: Sample Engineer
+lines: 2 | lines total 130000.00 | with adjustments 130000.00 | sheet subtotal 130000 | sheet total 130000
+total: 4 | subtotal | Estimated cost of Building Work | sheet 50000 | lines 50000.00 | matches
+total: 7 | total | Grand Total | sheet 130000 | lines 130000.00 | matches

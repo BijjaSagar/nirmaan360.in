@@ -1,0 +1,10 @@
+heading: row 1
+columns: A=serial(heading) B=code(heading) C=description(heading) D=qty(heading) E=rate(heading) F=unit(heading) G=amount(heading)
+rows:
+  2 section | TILE WORK :
+  3 spec | Providing and fixing sample glazed wall tiles of approved sh…
+  4 line | S-14.2 | TILE WORK | Dado: - Providing and fixing sample glazed wall tiles of app… | sqm | qty 70 | rate 640 | code
+  5 line | S-14.3 | TILE WORK | Dado in wash areas: - Providing and fixing sample glazed wal… | sqm | qty 15 | rate 690 | code
+  6 line | S-14.9 | TILE WORK | Providing sample marble sill 20 mm thick over the window wal… | sqm | qty 12 | rate 1150 | code
+  7 line | I.5 | TILE WORK | Coving: | sqm | qty 9 | rate 410 | serial
+lines: 4 | lines total 72640.00 | with adjustments 72640.00 | sheet subtotal - | sheet total -

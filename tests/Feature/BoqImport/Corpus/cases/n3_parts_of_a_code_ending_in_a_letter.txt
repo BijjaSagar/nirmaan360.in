@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=code(heading) B=description(heading) C=unit(heading) D=rate(heading)
+rows:
+  2 rate_only | 13.48 | - | Sample finishing walls with acrylic paint | sqm | qty 0 | rate 95 | code
+  3 spec | Sample finishing walls with textured paint of :
+  4 rate_only | 13.48A(a) | - | one coat - Sample finishing walls with textured paint of | sqm | qty 0 | rate 110 | code
+  5 rate_only | 13.48A(b) | - | two coats - Sample finishing walls with textured paint of | sqm | qty 0 | rate 150 | code
+lines: 3 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+note: 0 | 3 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.

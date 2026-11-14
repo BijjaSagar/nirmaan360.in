@@ -1,0 +1,6 @@
+heading: row 1 to 2
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  3 line | 1 | - | Brick masonry in cement mortar 1:6 | cum | qty 12.5 | rate 5200 | serial
+  4 line | 2 | - | Plaster 12 mm thick in cement mortar 1:4 | sqm | qty 300 | rate 240 | serial
+lines: 2 | lines total 137000.00 | with adjustments 137000.00 | sheet subtotal - | sheet total -

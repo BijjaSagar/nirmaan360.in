@@ -1,0 +1,8 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample cement plaster 12 mm thick on inside walls | sqm | qty 100 | rate 250 | serial
+  3 line | 2 | - | Sample cement plaster 12 mm thick on inside walls | sqm | qty 40 | rate 250 | serial
+  4 line | 3 | - | Sample painting | sqm | qty 300 | rate 120 | serial
+lines: 3 | lines total 71000.00 | with adjustments 71000.00 | sheet subtotal - | sheet total -
+note: 3 | The description says "-do-". The description of row 2 was used.

@@ -1,0 +1,5 @@
+heading: row 15
+columns: B=description(heading) C=qty(heading) D=rate(heading)
+rows:
+  16 line | 1 | - | Sample work | nos | qty 2 | rate 3 | made
+lines: 1 | lines total 6.00 | with adjustments 6.00 | sheet subtotal - | sheet total -

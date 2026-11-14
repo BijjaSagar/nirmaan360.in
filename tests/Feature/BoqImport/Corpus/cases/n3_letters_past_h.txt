@@ -1,0 +1,15 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 spec | Providing sample PVC pipes of the following diameters :
+  3 line | 7a | - | 20 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 100 | serial
+  4 line | 7b | - | 25 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 110 | serial
+  5 line | 7c | - | 30 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 120 | serial
+  6 line | 7d | - | 35 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 130 | serial
+  7 line | 7e | - | 40 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 140 | serial
+  8 line | 7f | - | 45 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 150 | serial
+  9 line | 7g | - | 50 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 160 | serial
+  10 line | 7h | - | 55 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 170 | serial
+  11 line | 7i | - | 60 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 180 | serial
+  12 line | 7j | - | 65 mm dia - Providing sample PVC pipes of the following diam… | rmt | qty 10 | rate 190 | serial
+lines: 10 | lines total 14500.00 | with adjustments 14500.00 | sheet subtotal - | sheet total -

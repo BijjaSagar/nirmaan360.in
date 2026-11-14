@@ -1,0 +1,29 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | Sample PCC 1:4:8 | cum | qty 12 | rate 5400 | serial
+  4 subtotal | Sub‐Total
+  5 adjustment | Add GST @ 18%
+  6 adjustment | Add 1% labour cess
+  7 adjustment | Add 3% contingencies
+  8 subtotal | Total
+  9 say | Say Rs.
+  10 words | Rupees One Lakh Four Thousand Five Hundred Only
+  11 words | (Rupees ………Only)
+  12 words | INR Zero Only
+  13 note | Quoted Rate in Figures
+  14 note | I/We agree to carry out the below work at _______% (In figur…
+  15 note | Terms & Conditions :-
+  16 note | The Rates are based on PWD BSR for Building works-2026.
+  17 note | This NIT contains pages 12 as per Index amounting to Rs. 1,0…
+  18 furniture | Signature of Contractor
+  19 furniture | CONTRACTOR EXECUTIVE ENGINEER
+  20 furniture | Page 3 of 7
+  21 furniture | Correction – Nil Insertion – Nil Deletion – Nil AE(P) EE (P)…
+lines: 2 | lines total 85600.00 | with adjustments 104432.00 | sheet subtotal 85600 | sheet total 104432
+adjustment: 5 | Add GST @ 18% | 18% | comes to 15408.00 | sheet 15408 | amount
+adjustment: 6 | Add 1% labour cess | 1% | comes to 856.00 | sheet 856 | amount
+adjustment: 7 | Add 3% contingencies | 3% | comes to 2568.00 | sheet 2568 | amount
+total: 4 | subtotal | Sub‐Total | sheet 85600 | lines 85600.00 | matches
+total: 8 | subtotal | Total | sheet 104432 | lines 104432.00 | matches

@@ -55,6 +55,9 @@ final class SheetFile
     /** Rows past the limit looked at in one go for a value, so a sheet formatted far down is never loaded whole. */
     private const WINDOW_ROWS = 5000;
 
+    /** Rows from the top whose text past the last column read is kept, so a heading out there can be named. */
+    private const BEYOND_HEADING_ROWS = 60;
+
     /** What kind of file this is, by its content, or null when it is none of the kinds read here. */
     public static function sniff(string $path): ?string
     {
@@ -95,9 +98,12 @@ final class SheetFile
      * Every sheet of the file as a grid, or an error to show the person.
      *
      * "truncated" is true when the sheet has a value in a row past $maxRows (and the heading rows allowed
-     * above them), "wide" when it has one in a column past MAX_COLUMNS.
+     * above them), "wide" when it has one in a column past MAX_COLUMNS; "beyond" holds the text near the top of
+     * such columns (column letter => text), so a heading cut off there can be named. "texts" holds number cells as
+     * the sheet shows them where a zero format adds digits (21.3 shown as 21.30, 11010 as 011010), so an item code
+     * keeps its zeros. Hidden sheets are read too; macros are never run.
      *
-     * @return array{format: ?string, sheets: list<array{name: string, grid: array<int, array<int, mixed>>, missing: array<int, array<int, true>>, merges: list<array{0:int,1:int,2:int,3:int}>, truncated: bool, wide: bool, hidden: bool}>, error: ?string}
+     * @return array{format: ?string, sheets: list<array{name: string, grid: array<int, array<int, mixed>>, missing: array<int, array<int, true>>, merges: list<array{0:int,1:int,2:int,3:int}>, truncated: bool, wide: bool, hidden: bool, texts: array<int, array<int, string>>, beyond: array<string, string>}>, error: ?string}
      */
     public static function read(string $path, int $maxRows): array
     {
@@ -173,6 +179,7 @@ final class SheetFile
                     $values = self::valuesBeyond($path, $format, $sheet->getTitle(), $limit, $offered);
                     $read['truncated'] = $offered['rows'] && $values['rows'];
                     $read['wide'] = $offered['columns'] && $values['columns'];
+                    $read['beyond'] = $read['wide'] ? $values['headings'] : [];
                 }
 
                 if ($read['grid'] !== []) {
@@ -210,7 +217,7 @@ final class SheetFile
             return self::xlsxValuesBeyond($path, $sheetName, $limit);
         }
 
-        $found = ['rows' => false, 'columns' => false];
+        $found = ['rows' => false, 'columns' => false, 'headings' => []];
         $windows = $offered['columns'] ? [[1, $limit]] : [];
 
         for ($from = $limit + 1; $offered['rows'] && $from <= $offered['last']; $from += self::WINDOW_ROWS) {
@@ -252,6 +259,10 @@ final class SheetFile
                     [$column, $row] = Coordinate::coordinateFromString($coordinate);
                     $found['rows'] = $found['rows'] || (int) $row > $limit;
                     $found['columns'] = $found['columns'] || Coordinate::columnIndexFromString($column) > self::MAX_COLUMNS;
+
+                    if (Coordinate::columnIndexFromString($column) > self::MAX_COLUMNS && (int) $row <= self::BEYOND_HEADING_ROWS && is_string($value)) {
+                        $found['headings'][$column] = trim(($found['headings'][$column] ?? '').' '.mb_substr(trim($value), 0, 80));
+                    }
                 }
             } finally {
                 $book->disconnectWorksheets();
@@ -269,17 +280,17 @@ final class SheetFile
      * The xlsx sheet's XML read as a stream for a value past the limits. A shared string is looked up, since
      * the cell holds only its number in the list of strings: a space typed far down is not a value.
      *
-     * @return array{rows: bool, columns: bool}
+     * @return array{rows: bool, columns: bool, headings: array<string, string>}
      */
     private static function xlsxValuesBeyond(string $path, string $sheetName, int $limit): array
     {
-        $found = ['rows' => false, 'columns' => false];
+        $found = ['rows' => false, 'columns' => false, 'headings' => []];
         $entry = self::xlsxSheetEntry($path, $sheetName);
         $xml = new XMLReader;
 
         if ($entry === null || ! @$xml->open('zip://'.$path.'#'.$entry, null, LIBXML_NONET | LIBXML_COMPACT)) {
             // When the sheet cannot be looked into, what the filter was offered stands.
-            return ['rows' => true, 'columns' => true];
+            return ['rows' => true, 'columns' => true, 'headings' => []];
         }
 
         $row = 0;
@@ -287,6 +298,8 @@ final class SheetFile
         $type = '';
         /** @var array<int, array{rows: bool, columns: bool}> Shared string number => where cells holding it are. */
         $shared = [];
+        /** @var array<int, list<string>> Shared string number => columns past the last read, near the top, that hold it. */
+        $headingStrings = [];
 
         try {
             while (@$xml->read()) {
@@ -307,13 +320,22 @@ final class SheetFile
                         $shared[(int) $text]['rows'] = ($shared[(int) $text]['rows'] ?? false) || $row > $limit;
                         $shared[(int) $text]['columns'] = ($shared[(int) $text]['columns'] ?? false) || $column > self::MAX_COLUMNS;
 
+                        if ($column > self::MAX_COLUMNS && $row <= self::BEYOND_HEADING_ROWS) {
+                            $headingStrings[(int) $text][] = Coordinate::stringFromColumnIndex($column);
+                        }
+
                         continue;
                     }
 
                     $found['rows'] = $found['rows'] || $row > $limit;
                     $found['columns'] = $found['columns'] || $column > self::MAX_COLUMNS;
 
-                    if ($found['rows'] && $found['columns']) {
+                    if ($column > self::MAX_COLUMNS && $row <= self::BEYOND_HEADING_ROWS && ($type === 'inlineStr' || $type === 'str')) {
+                        $letter = Coordinate::stringFromColumnIndex($column);
+                        $found['headings'][$letter] = trim(($found['headings'][$letter] ?? '').' '.mb_substr($text, 0, 80));
+                    }
+
+                    if ($found['rows'] && $found['columns'] && $row > self::BEYOND_HEADING_ROWS) {
                         break;
                     }
                 }
@@ -322,23 +344,29 @@ final class SheetFile
             $xml->close();
         }
 
-        if ($shared === [] || ($found['rows'] && $found['columns'])) {
+        if ($shared === [] || ($found['rows'] && $found['columns'] && $headingStrings === [])) {
             return $found;
         }
 
-        foreach (self::sharedStringsWithText($path, $shared) as $index) {
+        foreach (self::sharedStringsWithText($path, $shared) as $index => $text) {
             $found['rows'] = $found['rows'] || $shared[$index]['rows'];
             $found['columns'] = $found['columns'] || $shared[$index]['columns'];
+
+            foreach ($headingStrings[$index] ?? [] as $letter) {
+                $found['headings'][$letter] = trim(($found['headings'][$letter] ?? '').' '.mb_substr($text, 0, 80));
+            }
         }
+
+        ksort($found['headings']);
 
         return $found;
     }
 
     /**
-     * Which of these shared strings of an xlsx hold more than spaces.
+     * Which of these shared strings of an xlsx hold more than spaces, with their text.
      *
      * @param  array<int, mixed>  $wanted  Shared string number => anything.
-     * @return list<int>
+     * @return array<int, string>
      */
     private static function sharedStringsWithText(string $path, array $wanted): array
     {
@@ -346,7 +374,7 @@ final class SheetFile
 
         if (! @$xml->open('zip://'.$path.'#xl/sharedStrings.xml', null, LIBXML_NONET | LIBXML_COMPACT)) {
             // When the strings cannot be looked into, every cell holding one counts as a value.
-            return array_keys($wanted);
+            return array_fill_keys(array_keys($wanted), '');
         }
 
         $last = max(array_keys($wanted));
@@ -361,8 +389,8 @@ final class SheetFile
 
                 $index++;
 
-                if (isset($wanted[$index]) && trim($xml->readString()) !== '') {
-                    $withText[] = $index;
+                if (isset($wanted[$index]) && ($text = trim($xml->readString())) !== '') {
+                    $withText[$index] = $text;
                 }
 
                 if ($index >= $last) {
@@ -419,6 +447,10 @@ final class SheetFile
     {
         $grid = [];
         $missing = [];
+        $texts = [];
+        /** @var array<int, array{0: int, 1: int}|null> Cell style => the zero format it has, as [digits before the point, digits after]. */
+        $formats = [];
+        $book = $sheet->getParent();
         $highest = $sheet->getHighestDataRow();
 
         foreach ($sheet->getRowIterator(1, max(1, min($highest, $limit))) as $row) {
@@ -443,6 +475,19 @@ final class SheetFile
                 }
 
                 $grid[$row->getRowIndex()][$column] = is_bool($value) ? ($value ? 'TRUE' : 'FALSE') : $value;
+
+                // A number shown with zeros its value does not keep, as an item code 21.30 or 011010.
+                if ((is_int($value) || is_float($value)) && $book !== null) {
+                    $xf = $cell->getXfIndex();
+
+                    if (! array_key_exists($xf, $formats)) {
+                        $formats[$xf] = self::zeroFormat((string) $book->getCellXfByIndex($xf)->getNumberFormat()->getFormatCode());
+                    }
+
+                    if ($formats[$xf] !== null && ($shown = self::shown($value, $formats[$xf])) !== null) {
+                        $texts[$row->getRowIndex()][$column] = $shown;
+                    }
+                }
             }
         }
 
@@ -467,7 +512,34 @@ final class SheetFile
             'truncated' => false,
             'wide' => false,
             'hidden' => $sheet->getSheetState() !== Worksheet::SHEETSTATE_VISIBLE,
+            'texts' => $texts,
+            'beyond' => [],
         ];
+    }
+
+    /** @return array{0: int, 1: int}|null A number format of zeros only ("0.00", "000000"): the digits before the point and after it. */
+    private static function zeroFormat(string $code): ?array
+    {
+        return preg_match('/^(0+)(?:\.(0+))?$/', trim($code), $match) === 1 ? [strlen($match[1]), strlen($match[2] ?? '')] : null;
+    }
+
+    /** A number as such a format shows it, when that differs from the number itself and is not a whole number with zeros after the point. */
+    private static function shown(int|float $value, array $format): ?string
+    {
+        if ($value < 0 || ! is_finite((float) $value)) {
+            return null;
+        }
+
+        [$before, $after] = $format;
+        $text = number_format((float) $value, $after, '.', '');
+        [$whole] = explode('.', $text);
+        $text = str_pad($whole, $before, '0', STR_PAD_LEFT).substr($text, strlen($whole));
+
+        if ($text === CellValues::text($value) || preg_match('/^\d+\.0+$/', $text) === 1) {
+            return null;
+        }
+
+        return $text;
     }
 
     /** One sheet from a CSV file. The separator is a comma, a semicolon or a tab, whichever the first lines use. */
@@ -519,7 +591,7 @@ final class SheetFile
 
         fclose($handle);
 
-        return $grid === [] ? [] : [['name' => 'CSV', 'grid' => $grid, 'missing' => [], 'merges' => [], 'truncated' => $truncated, 'wide' => $wide, 'hidden' => false]];
+        return $grid === [] ? [] : [['name' => 'CSV', 'grid' => $grid, 'missing' => [], 'merges' => [], 'truncated' => $truncated, 'wide' => $wide, 'hidden' => false, 'texts' => [], 'beyond' => []]];
     }
 
     /** Text with no control bytes in its first part, in any of the encodings a CSV comes in: what a CSV file is. */

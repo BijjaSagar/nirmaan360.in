@@ -1,0 +1,8 @@
+heading: row 3
+columns: A=serial(heading) B=description(values) C=unit(values) D=qty(values) E=rate(heading) F=amount(heading)
+rows:
+  4 line | 1 | - | पायासाठी खोदकाम | cum | qty 10 | rate 350 | serial
+  5 line | 2 | - | विटांचे बांधकाम | cum | qty 12.5 | rate 5200 | serial
+  6 line | 3 | - | गिलावा | sqm | qty 300 | rate 240 | serial
+lines: 3 | lines total 140500.00 | with adjustments 140500.00 | sheet subtotal - | sheet total -
+note: 0 | Units read from spellings that schedules do not print: चौ.मी. as sqm (rows 6). Check that each is right.

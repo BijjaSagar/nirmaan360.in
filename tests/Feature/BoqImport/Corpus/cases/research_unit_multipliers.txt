@@ -1,0 +1,17 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample whitewash on walls | sqm | qty 900 | rate 4.5 | serial | per 100 Sqm
+  3 line | 2 | - | Sample bricks of first class | nos | qty 12000 | rate 8 | serial | per 1000 Nos
+  4 line | 3 | - | Sample distemper on ceiling | sqm | qty 200 | rate 30 | serial | per PER TEN SQUARE (metre)
+  5 line | 4 | - | Sample door stoppers | nos | qty 24 | rate 50 | serial | per Dozen
+  6 line | 5 | - | Sample painting of grills | 100 sqm | qty 3 | rate 2500 | serial
+  7 line | 6 | - | Sample cleaning of drains | rmt | qty 450 | rate 12 | serial | per 100 Rmt
+lines: 6 | lines total 120150.00 | with adjustments 120150.00 | sheet subtotal - | sheet total -
+note: 2 | The rate in the file is for 100 Sqm. It was divided by 100 to give the rate per sqm.
+note: 3 | The rate in the file is for 1000 Nos. It was divided by 1000 to give the rate per nos.
+note: 4 | The rate in the file is for PER TEN SQUARE (metre). It was divided by 10 to give the rate per sqm.
+note: 5 | The rate in the file is for Dozen. It was divided by 12 to give the rate per nos.
+note: 6 | The amount in the file is the quantity times the rate per 100 Sqm, so the quantity is counted in 100 Sqm. The line keeps the unit 100 sqm; nothing was divided.
+note: 7 | The rate in the file is for 100 Rmt. It was divided by 100 to give the rate per rmt.
+note: 7 | No amount on the row says whether the quantity is in single units or in 100 Rmt; it was taken as single units. Check it.

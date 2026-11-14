@@ -1,0 +1,9 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) Z=qty(heading) AA=rate(heading) AB=amount(heading)
+rows:
+  2 line | 1 | - | Sample item 1 | cum | qty 22 | rate 100 | serial
+  3 line | 2 | - | Sample item 2 | cum | qty 44 | rate 200 | serial
+  4 line | 3 | - | Sample item 3 | cum | qty 66 | rate 300 | serial
+lines: 3 | lines total 30800.00 | with adjustments 30800.00 | sheet subtotal - | sheet total -
+note: 0 | Columns D (Floor 1), E (Floor 2), F (Floor 3), G (Floor 4), H (Floor 5), I (Floor 6), … hold figures but are not read. If one of them is the quantity, rate or amount, choose it under Read as.

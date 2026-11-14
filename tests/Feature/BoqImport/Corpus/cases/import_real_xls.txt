@@ -1,0 +1,8 @@
+file: xls | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading)
+rows:
+  2 line | 1 | - | Sample work A | cum | qty 2 | rate 100 | serial
+  3 line | 2 | - | Sample work B | sqm | qty 3 | rate 50 | serial
+  4 line | 3 | - | Sample work C | nos | qty 1 | rate 10 | serial
+lines: 3 | lines total 360.00 | with adjustments 360.00 | sheet subtotal - | sheet total -

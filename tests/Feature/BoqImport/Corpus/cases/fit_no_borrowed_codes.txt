@@ -1,0 +1,12 @@
+heading: row 1
+columns: A=serial(heading) B=code(heading) C=description(heading) D=qty(heading) E=rate(heading) F=unit(heading) G=amount(heading)
+rows:
+  2 section | JOINERY
+  3 line | S-9.4 | JOINERY | Sample hard wood door frames | nos | qty 6 | rate 4200 | code
+  4 line | R4 | JOINERY | Sample flush door shutters for the frames | nos | qty 6 | rate 3800 | made
+  5 section | FLOORS
+  6 line | S-11.2 | FLOORS | Sample kota stone flooring | sqm | qty 60 | rate 900 | code
+  7 line | R7 | FLOORS | Sample kota stone treads for the steps | sqm | qty 8 | rate 1100 | made
+lines: 4 | lines total 110800.00 | with adjustments 110800.00 | sheet subtotal - | sheet total -
+note: 4 | This row has no item number of its own in the file. It was given the code R4; it does not take the number of the line above.
+note: 7 | This row has no item number of its own in the file. It was given the code R7; it does not take the number of the line above.

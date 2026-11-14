@@ -1,0 +1,7 @@
+file: csv | sheets: CSV * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(values) C=unit(values) D=qty(values) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | पायासाठी खोदकाम करणे | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | साधे काँक्रीट टाकणे | cum | qty 12 | rate 5400 | serial
+lines: 2 | lines total 85600.00 | with adjustments 85600.00 | sheet subtotal - | sheet total -

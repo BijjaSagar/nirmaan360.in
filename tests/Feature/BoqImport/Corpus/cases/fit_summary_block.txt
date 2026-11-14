@@ -1,0 +1,24 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 section | CIVIL
+  3 line | A.1 | CIVIL | Sample excavation | cum | qty 80 | rate 260 | serial
+  4 line | A.2 | CIVIL | Sample PCC | cum | qty 12 | rate 5400 | serial
+  5 subtotal | Total of Part A
+  6 section | ELECTRICAL
+  7 line | B.3 | ELECTRICAL | Sample point wiring | point | qty 40 | rate 900 | serial
+  8 subtotal | Total of Part B
+  9 subheading | SUMMARY
+  10 subtotal | Civil works
+  11 subtotal | Electrical works
+  12 subtotal | Total
+  13 adjustment | GST @ 18%
+  14 total | Grand Total
+lines: 3 | lines total 121600.00 | with adjustments 143488.00 | sheet subtotal 121600 | sheet total 143488
+adjustment: 13 | GST @ 18% | 18% | comes to 21888.00 | sheet 21888 | amount
+total: 5 | subtotal | Total of Part A | sheet 85600 | lines 85600.00 | matches
+total: 8 | subtotal | Total of Part B | sheet 36000 | lines 121600.00 | matches
+total: 10 | subtotal | Civil works | sheet 85600 | lines 121600.00 | matches
+total: 11 | subtotal | Electrical works | sheet 36000 | lines 121600.00 | matches
+total: 12 | subtotal | Total | sheet 121600 | lines 121600.00 | matches
+total: 14 | total | Grand Total | sheet 143488 | lines 143488.00 | matches

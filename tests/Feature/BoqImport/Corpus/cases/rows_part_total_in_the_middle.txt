@@ -1,0 +1,18 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 section | CIVIL WORKS
+  3 line | A.1 | CIVIL WORKS | Sample excavation | cum | qty 80 | rate 260 | serial
+  4 line | A.2 | CIVIL WORKS | Sample PCC 1:4:8 | cum | qty 12 | rate 5400 | serial
+  5 subtotal | Total Amount of Part A
+  6 section | FINISHING WORKS
+  7 spec | Providing and applying sample plaster in cement mortar 1:4 o…
+  8 line | B.3a | FINISHING WORKS | 12 mm thick on inside walls - Providing and applying sample… | sqm | qty 600 | rate 230 | serial
+  9 line | B.3b | FINISHING WORKS | 20 mm thick on outside walls - Providing and applying sample… | sqm | qty 300 | rate 280 | serial
+  10 line | B.4 | FINISHING WORKS | Sample painting | sqm | qty 900 | rate 120 | serial
+  11 total | Total Amount of Part B
+  12 total | Grand Total (A+B)
+lines: 5 | lines total 415600.00 | with adjustments 415600.00 | sheet subtotal 415600 | sheet total 415600
+total: 5 | subtotal | Total Amount of Part A | sheet 85600 | lines 85600.00 | matches
+total: 11 | total | Total Amount of Part B | sheet 330000 | lines 415600.00 | matches
+total: 12 | total | Grand Total (A+B) | sheet 415600 | lines 415600.00 | matches

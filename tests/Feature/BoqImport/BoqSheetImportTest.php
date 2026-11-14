@@ -210,7 +210,7 @@ class BoqSheetImportTest extends BoqImportTestCase
         $this->assertSame([3, 4, 5], array_column($preview['rate_only'], 'row'));
         $this->assertSame(['subtotal', 'carried', 'total'], array_column($preview['others'], 'kind'));
         $this->assertSame('66000.00', $preview['lines_total']);
-        $this->get(route('boq.sheet.preview', $project))->assertSee('Rate-only lines')->assertSee('no quantity is made up');
+        $this->get(route('boq.sheet.preview', $project))->assertSee('Rate-only lines')->assertSee('no quantity or rate is made up');
 
         $this->confirm($project)->assertSessionHas('success');
 
@@ -378,15 +378,15 @@ class BoqSheetImportTest extends BoqImportTestCase
         ];
 
         $preview = $this->staged($project, $this->sheet($rows));
-        $this->assertNull($this->columnOf($preview, 'qty'));
-        $this->assertContains('No quantity in the file. It was worked out as amount divided by rate.', array_column($preview['notes'], 'message'));
+        // "Nos" names nothing by itself, but the amount is it times the rate: the values say it is the quantity.
+        $this->assertSame(['E', 'values'], [$this->columnOf($preview, 'qty'), collect($preview['columns'])->firstWhere('letter', 'E')['how']]);
+        $this->assertNotContains('No quantity in the file. It was worked out as amount divided by rate.', array_column($preview['notes'], 'message'));
 
-        // Column E holds the numbers of doors: read it as the quantity, and keep the reference in the details.
+        // Column C holds references, not item codes: read it so, and keep the reference in the details.
         $this->choose($project, ['fields' => [1 => 'serial', 2 => 'description', 3 => 'reference', 4 => 'unit', 5 => 'qty', 6 => 'rate', 7 => 'amount']]);
         $preview = $this->preview($project);
-        $this->assertSame('E', $this->columnOf($preview, 'qty'));
-        $this->assertSame('chosen', collect($preview['columns'])->firstWhere('letter', 'E')['how']);
-        $this->assertNotContains('No quantity in the file. It was worked out as amount divided by rate.', array_column($preview['notes'], 'message'));
+        $this->assertSame(['E', 'C'], [$this->columnOf($preview, 'qty'), $this->columnOf($preview, 'reference')]);
+        $this->assertSame('chosen', collect($preview['columns'])->firstWhere('letter', 'C')['how']);
 
         // A heading row picked by hand is read afresh.
         $this->choose($project, ['row' => 1, 'span' => 1]);
@@ -431,7 +431,7 @@ class BoqSheetImportTest extends BoqImportTestCase
         $otherProject = $this->makeProject($other);
         $preview = $this->staged($otherProject, $this->sheet([$heading, ['1', 'Sample frames', 'D-1', 'nos', 2, 100, 200]]), $otherPm);
         $this->assertNull($preview['saved']);
-        $this->assertNull($this->columnOf($preview, 'qty'));
+        $this->assertSame(['C', null], [$this->columnOf($preview, 'code'), $this->columnOf($preview, 'reference')]);
     }
 
     public function test_saved_layouts_are_listed_and_removed_by_whoever_can_import_the_boq(): void

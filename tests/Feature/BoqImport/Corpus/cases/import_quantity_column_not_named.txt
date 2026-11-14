@@ -1,0 +1,6 @@
+heading: row 2
+columns: A=serial(heading) B=description(heading) C=code(heading) D=unit(heading) E=qty(values) F=rate(heading) G=amount(heading)
+rows:
+  3 line | D-14 | - | Sample door frames in hard wood | nos | qty 6 | rate 3200 | code
+  4 line | W-03 | - | Sample window grills | nos | qty 4 | rate 1800 | code
+lines: 2 | lines total 26400.00 | with adjustments 26400.00 | sheet subtotal - | sheet total -

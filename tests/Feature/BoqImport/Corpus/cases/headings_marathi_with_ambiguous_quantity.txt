@@ -1,0 +1,8 @@
+heading: row 1
+columns: A=description(values) B=unit(values) C=qty(values) D=rate(heading)
+rows:
+  2 line | 1 | - | काम एक | cum | qty 4 | rate 100 | made
+  3 line | 2 | - | काम दोन | sqm | qty 5 | rate 200 | made
+  4 line | 3 | - | काम तीन | nos | qty 6 | rate 300 | made
+lines: 3 | lines total 3200.00 | with adjustments 3200.00 | sheet subtotal - | sheet total -
+note: 0 | Units read from spellings that schedules do not print: चौ.मी. as sqm (rows 3). Check that each is right.

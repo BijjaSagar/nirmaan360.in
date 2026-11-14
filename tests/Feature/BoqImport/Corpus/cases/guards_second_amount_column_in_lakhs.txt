@@ -1,0 +1,8 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | Sample PCC | cum | qty 12 | rate 5400 | serial
+lines: 2 | lines total 85600.00 | with adjustments 85600.00 | sheet subtotal - | sheet total -
+note: 0 | Column G is also headed "Amount (Rs. in lakhs)" and holds figures. Column F is read as the amount; to read G instead, choose it under Read as.

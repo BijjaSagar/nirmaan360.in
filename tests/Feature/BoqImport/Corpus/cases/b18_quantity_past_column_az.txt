@@ -1,0 +1,5 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: not found
+rows:
+lines: 0 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+problem: 0 - | No heading with a description and a quantity or rate column was found in columns A to AZ. Column BA, headed "Total Qty", lies past column AZ, and columns after AZ are not read. Move the BOQ's columns nearer the start of the sheet, or delete the empty columns between them, and upload the file again.

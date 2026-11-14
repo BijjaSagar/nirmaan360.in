@@ -244,6 +244,7 @@ final class BoqSheetImport
             'skip' => $entry['skip'] ?? [],
             'renumbered' => $reading['renumbered'],
             'updates' => $reading['updates'],
+            'plan' => $reading['plan'],
             'counts' => array_count_values(array_column($reading['kinds'], 'kind')),
             'adjustments' => $reading['adjustments'],
             'totals' => $reading['totals'],
@@ -384,7 +385,7 @@ final class BoqSheetImport
             [$grid, $columns, $header] = [$sheet['grid'], $layout->columns(), $layout->lastRow()];
         } else {
             // A unit typed for an earlier file in this layout is not used here: nobody would see it applied.
-            $reading = (new BoqSheetRows)->classify($sheet['grid'], $layout, null, ['missing' => $sheet['missing'], 'merges' => $sheet['merges']]);
+            $reading = (new BoqSheetRows)->classify($sheet['grid'], $layout, null, ['missing' => $sheet['missing'], 'merges' => $sheet['merges'], 'texts' => $sheet['texts'] ?? []]);
 
             if ($reading['errors'] !== []) {
                 return ['rows' => [], 'error' => array_map(fn (array $error) => __('Row :row', ['row' => $error['row']]).': '.$error['message'], array_slice($reading['errors'], 0, 10))];
@@ -428,14 +429,84 @@ final class BoqSheetImport
     {
         $sheet = $entry['sheets'][$entry['sheet']];
         $layout = SheetLayout::fromArray($entry['layout']);
+        $read = $this->sheetReading($sheet, $layout, $entry['unit'], $entry['skip'] ?? []);
+
+        if ($read['stopped']) {
+            return $read;
+        }
+
+        [$renumbered, $updates, $plan] = $this->matchExisting($project, $read);
+        [$rows, $errors] = $this->excel->checkRows($project, $read['grid'], $read['header_row'], $read['columns']);
+        // A row that cannot be read is the problem to show; with every row refused, "the file has no rows" is not.
+        $rowErrors = array_values(array_filter($read['errors'], fn (array $error) => $error['row'] > 0));
+        $errors = $rowErrors === [] ? $errors : [...$rowErrors, ...array_values(array_filter($errors, fn (array $error) => $error['row'] > 0 && ! in_array($error['row'], array_column($rowErrors, 'row'), true)))];
+
+        if ($read['needs_unit']) {
+            $errors = array_values(array_filter($errors, fn (array $error) => $error['field'] !== 'unit'));
+        }
+
+        // The sheet's own problems (no unit, two columns read as one field) come first, then those of its rows.
+        $errors = [...array_values(array_filter($read['errors'], fn (array $error) => $error['row'] === 0)), ...$errors];
+
+        return [...$read, 'rows' => $rows, 'errors' => $errors, 'renumbered' => $renumbered, 'updates' => $updates, 'plan' => $plan];
+    }
+
+    /**
+     * What a file says, read as the column check would read it on upload, with no project: the sheet picked, its
+     * heading and columns, every row's kind, the lines, adjustments and totals, and the notes and problems of the
+     * sheet itself. Nothing is written and nothing is staged.
+     *
+     * @return array<string, mixed>
+     */
+    public function inspect(int $organizationId, string $path): array
+    {
+        $read = SheetFile::read($path, BoqExcelService::MAX_ROWS);
+
+        if ($read['error'] !== null) {
+            return ['format' => $read['format'], 'error' => $read['error']];
+        }
+
+        $choice = $this->firstChoice($organizationId, $read['sheets']);
+        $sheet = $read['sheets'][$choice['sheet']];
+
+        return [
+            'format' => $read['format'],
+            'error' => null,
+            'sheets' => array_map(fn (array $sheet) => ['name' => $sheet['name'], 'hidden' => $sheet['hidden']], $read['sheets']),
+            'sheet' => $choice['sheet'],
+            'picked' => $choice['picked'],
+            'layout' => $choice['layout'],
+            ...$this->sheetReading($sheet, $choice['layout'], null, []),
+        ];
+    }
+
+    /**
+     * One sheet read with a layout, before any project is looked at: what each row is, the lines, and the notes
+     * and problems the sheet itself raises. "stopped" when no line can be read at all (no heading, too many rows).
+     *
+     * @param  list<int>  $skip
+     * @return array<string, mixed>
+     */
+    private function sheetReading(array $sheet, SheetLayout $layout, ?string $unit, array $skip): array
+    {
         $empty = [
             'kinds' => [], 'lines' => [], 'adjustments' => [], 'totals' => [], 'mismatches' => [], 'notes' => [], 'rows' => [], 'rate_only' => [],
             'lines_total' => '0.00', 'adjustments_total' => '0.00', 'with_adjustments' => '0.00', 'file_subtotal' => null, 'file_total' => null,
-            'needs_unit' => false, 'renumbered' => [], 'updates' => [],
+            'needs_unit' => false, 'renumbered' => [], 'updates' => [], 'plan' => ['update' => 0, 'add' => 0], 'grid' => [], 'columns' => [], 'header_row' => 0,
+            'stopped' => true,
         ];
 
+        $last = Coordinate::stringFromColumnIndex(SheetFile::MAX_COLUMNS);
+        $cut = $this->cutOff($sheet);
+
         if (! $layout->found()) {
-            return [...$empty, 'errors' => [['row' => 0, 'field' => null, 'message' => __('Choose the row that holds the headings, then the column with the description and the column with the quantity or the rate.')]]];
+            $message = match (true) {
+                $cut !== [] => __('No heading with a description and a quantity or rate column was found in columns A to :last. Column :column, headed ":heading", lies past column :last, and columns after :last are not read. Move the BOQ\'s columns nearer the start of the sheet, or delete the empty columns between them, and upload the file again.', ['last' => $last, ...$cut[0]]),
+                $sheet['wide'] ?? false => __('No heading with a description and a quantity or rate column was found in columns A to :column, and this sheet has values past column :column, which are not read. If the quantity or rate is out there, move those columns nearer the description and upload the file again; otherwise choose the heading row.', ['column' => $last]),
+                default => __('Choose the row that holds the headings, then the column with the description and the column with the quantity or the rate.'),
+            };
+
+            return [...$empty, 'errors' => [['row' => 0, 'field' => null, 'message' => $message]]];
         }
 
         if ($sheet['truncated']) {
@@ -444,22 +515,18 @@ final class BoqSheetImport
 
         // Every sheet on the column check is read by its own headings, one laid out like the template too:
         // its section, part and total rows are what the person came here for.
-        $read = (new BoqSheetRows)->classify($sheet['grid'], $layout, $entry['unit'], ['missing' => $sheet['missing'], 'merges' => $sheet['merges'], 'skip' => $entry['skip'] ?? []]);
-        [$renumbered, $updates] = $this->matchExisting($project, $read);
-        [$rows, $errors] = $this->excel->checkRows($project, $read['grid'], $read['header_row'], $read['columns']);
-        // A row that cannot be read is the problem to show; with every row refused, "the file has no rows" is not.
-        $errors = $read['errors'] === [] ? $errors : [...$read['errors'], ...array_values(array_filter($errors, fn (array $error) => $error['row'] > 0 && ! in_array($error['row'], array_column($read['errors'], 'row'), true)))];
-
+        $read = (new BoqSheetRows)->classify($sheet['grid'], $layout, $unit, ['missing' => $sheet['missing'], 'merges' => $sheet['merges'], 'skip' => $skip, 'texts' => $sheet['texts'] ?? []]);
+        $errors = $read['errors'];
         $needsUnit = ! isset($layout->columns()['unit']) && $layout->headingUnit() === null && in_array('', array_column($read['lines'], 'unit'), true);
 
         if ($needsUnit) {
-            $errors = array_values(array_filter($errors, fn (array $error) => $error['field'] !== 'unit'));
             array_unshift($errors, ['row' => 0, 'field' => 'unit', 'message' => __('This sheet has no unit column. Type the unit for its lines above.')]);
         }
 
         $notes = $read['notes'];
+        $unreadFigures = $this->unreadFigures($sheet['grid'], $layout);
 
-        foreach ($this->unreadFigures($sheet['grid'], $layout) as $unread) {
+        foreach ($unreadFigures as $unread) {
             if ($unread['field'] === 'amount') {
                 // Only checked against the quantity times the rate: said, never a reason to stop.
                 $notes[] = ['row' => 0, 'message' => __('Column :column is also headed ":heading" and holds figures. Column :taken is read as the amount; to read :column instead, choose it under Read as.', $unread)];
@@ -467,45 +534,101 @@ final class BoqSheetImport
                 $errors[] = ['row' => 0, 'field' => $unread['field'], 'message' => __('Column :column is also headed ":heading" and holds figures, like column :taken. Only one of them can be read: choose it, and set the others to Leave out. For a rate split into parts, such as supply and installation, read the total amount column as the amount and leave the rate columns out.', $unread)];
             }
         }
-        $unread = array_filter($this->unreadFigures($sheet['grid'], $layout), fn (array $column) => $column['field'] === null);
+
+        $unread = array_filter($unreadFigures, fn (array $column) => $column['field'] === null);
 
         if ($unread !== []) {
             $named = array_map(fn (array $column) => $column['heading'] === '' ? $column['column'] : $column['column'].' ('.Str::limit($column['heading'], 30).')', array_slice($unread, 0, 6));
             $notes[] = ['row' => 0, 'message' => __('Columns :columns hold figures but are not read. If one of them is the quantity, rate or amount, choose it under Read as.', ['columns' => implode(', ', $named).(count($unread) > 6 ? ', …' : '')])];
         }
 
-        if ($sheet['wide'] ?? false) {
-            $notes[] = ['row' => 0, 'message' => __('This sheet has values past column :column. Only columns A to :column are read.', ['column' => Coordinate::stringFromColumnIndex(SheetFile::MAX_COLUMNS)])];
+        foreach ($cut as $column) {
+            // A quantity or rate out past the columns read, with none read before it: the lines would come in without it.
+            if (in_array($column['field'], ['qty', 'rate'], true) && ! isset($layout->columns()[$column['field']])) {
+                $errors[] = ['row' => 0, 'field' => $column['field'], 'message' => __('Column :column is headed ":heading" but lies past column :last, and columns after :last are not read, so the lines would come in without it. Move the BOQ\'s columns nearer the start of the sheet, or delete the empty columns between them, and upload the file again.', ['last' => $last, ...$column])];
+            } else {
+                $notes[] = ['row' => 0, 'message' => __('Column :column, headed ":heading", lies past column :last and is not read.', ['last' => $last, ...$column]), 'weight' => 1];
+            }
+        }
+
+        if (($sheet['wide'] ?? false) && $cut === []) {
+            $notes[] = ['row' => 0, 'message' => __('This sheet has values past column :column. Only columns A to :column are read.', ['column' => $last])];
         }
 
         return [
             ...$read,
-            'rows' => $rows,
+            'rows' => [],
             'errors' => $errors,
-            'notes' => $notes,
+            'notes' => self::importantFirst($notes),
             'needs_unit' => $needsUnit,
-            'renumbered' => $renumbered,
-            'updates' => $updates,
+            'renumbered' => [],
+            'updates' => [],
+            'plan' => ['update' => 0, 'add' => count($read['lines'])],
             'rate_only' => array_keys(array_filter($read['lines'], fn (array $line) => $line['kind'] === 'rate_only')),
+            'stopped' => false,
         ];
     }
 
     /**
-     * Lines whose item code is already in the project for a different item. A code the file gives updates that
-     * item, as the template always has, and is listed. A code made up here, from a serial number or the order
-     * of the rows, never does: the line gets the next free code instead (1 becomes 1-2), or the code it got the
-     * last time the same item came in, and is listed.
+     * Headings past the last column read that name a column of the BOQ: what was cut off.
      *
-     * @return array{0: list<array{row: int, from: string, to: string, existing: string}>, 1: list<array{row: int, code: string, now: string, after: string}>}
+     * @return list<array{column: string, heading: string, field: string}>
+     */
+    private function cutOff(array $sheet): array
+    {
+        $cut = [];
+
+        foreach ($sheet['beyond'] ?? [] as $letter => $text) {
+            $scores = BoqHeadings::scores((string) $text);
+            arsort($scores);
+            $field = array_key_first($scores);
+
+            if (in_array($field, ['description', 'unit', 'qty', 'rate', 'amount'], true)) {
+                $cut[] = ['column' => (string) $letter, 'heading' => Str::limit((string) $text, 60), 'field' => $field];
+            }
+        }
+
+        return $cut;
+    }
+
+    /**
+     * The notes in the order they matter: what says the figures do not agree with the sheet's own first, then
+     * what touches many lines, then the notes of single rows in the order of the sheet.
+     *
+     * @param  list<array{row: int, message: string, weight?: int}>  $notes
+     * @return list<array{row: int, message: string}>
+     */
+    private static function importantFirst(array $notes): array
+    {
+        $order = array_keys($notes);
+        usort($order, fn (int $a, int $b) => ($notes[$b]['weight'] ?? 0) <=> ($notes[$a]['weight'] ?? 0) ?: (($notes[$a]['row'] === 0) === ($notes[$b]['row'] === 0) ? $a <=> $b : ($notes[$a]['row'] === 0 ? -1 : 1)));
+
+        return array_map(fn (int $index) => ['row' => $notes[$index]['row'], 'message' => $notes[$index]['message']], $order);
+    }
+
+    /**
+     * Which lines update an item already in the project and which are added, before anything is written.
+     *
+     * - A line whose code is the sheet's own item code updates the item with that code, as the template always has,
+     *   and a change of wording is listed.
+     * - A line whose code comes from the sheet's serial numbers (2, A.1, 2a, 2(ii)) updates the item with that code
+     *   when it is plainly the same item reworded, as in a revised BOQ in the same layout: the same unit and most of
+     *   the words alike; that change is listed too. Otherwise, as another sheet numbered from 1 again would be, it
+     *   is a different item: the line gets the next free code (1 becomes 1-2), and is listed.
+     * - A code made up here (from the order of the rows, a dash, or a row with no number) updates an item only when
+     *   the wording is the same; otherwise it gets the next free code, and is listed.
+     * So a line never overwrites a different item, and the page says how many lines update and how many are added.
+     *
+     * @return array{0: list<array{row: int, from: string, to: string, existing: string}>, 1: list<array{row: int, code: string, now: string, after: string}>, 2: array{update: int, add: int}}
      */
     private function matchExisting(Project $project, array &$read): array
     {
         // Every scope is lifted to read the project's lines inside the import's lock, so deleted lines are left out here.
         $existing = BoqItem::withoutGlobalScopes()->where('organization_id', $project->organization_id)->where('project_id', $project->id)
-            ->whereNull('deleted_at')->orderBy('id')->get(['id', 'code', 'description'])->unique('code')->keyBy('code');
+            ->whereNull('deleted_at')->orderBy('id')->get(['id', 'code', 'description', 'unit'])->unique('code')->keyBy('code');
 
         if ($existing->isEmpty()) {
-            return [[], []];
+            return [[], [], ['update' => 0, 'add' => count($read['lines'])]];
         }
 
         $same = fn (BoqItem $item, array $line) => self::plain((string) $item->description) === self::plain((string) $line['description']);
@@ -513,19 +636,33 @@ final class BoqSheetImport
         $codeColumn = $read['columns']['code'];
         $renumbered = [];
         $updates = [];
+        $plan = ['update' => 0, 'add' => 0];
 
         foreach ($read['lines'] as $row => $line) {
             $item = $existing->get($line['code']);
 
-            if ($item === null || $same($item, $line)) {
+            if ($item === null) {
+                $plan['add']++;
+
                 continue;
             }
 
-            if (! $line['generated']) {
+            if ($same($item, $line)) {
+                $plan['update']++;
+
+                continue;
+            }
+
+            $origin = $line['origin'] ?? 'made';
+
+            if ($origin === 'code' || ($origin === 'serial' && self::reworded($item, $line))) {
                 $updates[] = ['row' => $row, 'code' => (string) $line['code'], 'now' => (string) $item->description, 'after' => (string) $line['description']];
+                $plan['update']++;
 
                 continue;
             }
+
+            $plan['add']++;
 
             for ($suffix = 2; ; $suffix++) {
                 $code = mb_substr((string) $line['code'], 0, 28).'-'.$suffix;
@@ -542,7 +679,27 @@ final class BoqSheetImport
             $read['grid'][$row][$codeColumn] = $code;
         }
 
-        return [$renumbered, $updates];
+        return [$renumbered, $updates, $plan];
+    }
+
+    /**
+     * Whether a line is plainly the item already there, reworded: the same unit, and at least 60% of the words of
+     * the shorter text found in the other (words of three letters or more).
+     */
+    private static function reworded(BoqItem $item, array $line): bool
+    {
+        if (mb_strtolower((string) $item->unit) !== mb_strtolower((string) $line['unit'])) {
+            return false;
+        }
+
+        $words = fn (string $text) => array_values(array_unique(array_filter(preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($text)) ?: [], fn (string $word) => mb_strlen($word) >= 3)));
+        [$before, $after] = [$words((string) $item->description), $words((string) $line['description'])];
+
+        if ($before === [] || $after === []) {
+            return false;
+        }
+
+        return count(array_intersect($before, $after)) >= 0.6 * min(count($before), count($after));
     }
 
     private static function plain(string $text): string
@@ -677,9 +834,16 @@ final class BoqSheetImport
 
         foreach ($sheets as $index => $sheet) {
             $layout = $detector->detect($sheet['grid'], $sheet['merges']);
-            // Priced rows first; a measurement sheet with quantities only comes after any sheet with rates.
-            $priced = $detector->pricedRows($sheet['grid'], $layout) * 10000 + $detector->pricedRows($sheet['grid'], $layout, 'qty') * 2
-                + ($layout->found() ? 1 : 0) - ($sheet['hidden'] ? 5000 : 0);
+            // A sheet with a table first; then one that is not a rate analysis, coefficient table or measurement sheet; then
+            // priced rows; then a visible sheet before a hidden one (a template's data sheet can be the hidden one, and is
+            // read); then quantities.
+            $priced = [
+                $layout->found() ? 1 : 0,
+                self::isAnalysis($sheet, $layout) ? 0 : 1,
+                $detector->pricedRows($sheet['grid'], $layout),
+                $sheet['hidden'] ? 0 : 1,
+                $detector->pricedRows($sheet['grid'], $layout, 'qty'),
+            ];
 
             if ($best === null || $priced > $best['priced']) {
                 $best = ['sheet' => $index, 'layout' => $layout, 'priced' => $priced];
@@ -687,6 +851,29 @@ final class BoqSheetImport
         }
 
         return ['sheet' => $best['sheet'], 'layout' => $best['layout'], 'unit' => null, 'saved_id' => null, 'picked' => count($sheets) > 1 ? 'priced' : 'only'];
+    }
+
+    /**
+     * Whether a sheet is a rate analysis, a basic-rate or coefficient table, or a measurement sheet, by its name, the
+     * title above its table or its headings: tables that look like a BOQ but are not one.
+     */
+    private static function isAnalysis(array $sheet, SheetLayout $layout): bool
+    {
+        if (BoqHeadings::isMeasurement($layout->headings)) {
+            return true;
+        }
+
+        $title = $sheet['name'];
+
+        foreach ($sheet['grid'] as $number => $cells) {
+            if ($layout->row !== null && $number >= $layout->row) {
+                break;
+            }
+
+            $title .= ' '.implode(' ', array_map(fn ($value) => CellValues::text($value), $cells));
+        }
+
+        return preg_match('/rate\s*analysis|analysis\s+of\s+rates?|basic\s+rates?|coefficients?|consumption|lead\s+statement|measurement\s+(sheet|book)|details?\s+of\s+measurement/iu', $title) === 1;
     }
 
     private function near(string $first, string $second): bool

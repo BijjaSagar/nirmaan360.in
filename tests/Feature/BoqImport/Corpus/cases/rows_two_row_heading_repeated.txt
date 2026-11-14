@@ -1,0 +1,16 @@
+heading: row 4 to 5
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  6 line | 1 | - | Invented item number 1 of the work | cum | qty 1 | rate 101 | serial
+  7 line | 2 | - | Invented item number 2 of the work | cum | qty 2 | rate 102 | serial
+  8 line | 3 | - | Invented item number 3 of the work | cum | qty 3 | rate 103 | serial
+  9 heading_repeat | Sr. Description Unit Quantity Rate Amount
+  10 heading_repeat | No. of Item (Rs.) (Rs.)
+  11 line | 4 | - | Invented item number 4 of the work | cum | qty 4 | rate 104 | serial
+  12 line | 5 | - | Invented item number 5 of the work | cum | qty 5 | rate 105 | serial
+  13 line | 6 | - | Invented item number 6 of the work | cum | qty 6 | rate 106 | serial
+  14 heading_repeat | Sr. Description Unit Quantity Rate Amount
+  15 heading_repeat | No. of Item (Rs.) (Rs.)
+  16 line | 7 | - | Invented item number 7 of the work | cum | qty 7 | rate 107 | serial
+  17 line | 8 | - | Invented item number 8 of the work | cum | qty 8 | rate 108 | serial
+lines: 8 | lines total 3804.00 | with adjustments 3804.00 | sheet subtotal - | sheet total -

@@ -1,0 +1,6 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading)
+rows:
+  2 line | 1 | - | Sample plaster | sqm | qty 400 | rate 230 | serial
+  3 line | 2 | - | Sample shelving | nos | qty 10 | rate 1500 | serial
+lines: 2 | lines total 107000.00 | with adjustments 107000.00 | sheet subtotal - | sheet total -

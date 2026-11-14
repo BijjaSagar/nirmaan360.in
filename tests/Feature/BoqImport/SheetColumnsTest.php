@@ -195,7 +195,8 @@ class SheetColumnsTest extends BoqImportTestCase
         $project = $this->makeProject($this->org);
         $preview = $this->staged($project, new UploadedFile($path, 'serials.xlsx', null, null, true));
 
-        $this->assertContains('Item code 1.1 is used more than once in the file. This line was given 1.1.1.', array_column(array_filter($preview['notes'], fn (array $note) => $note['row'] === 11), 'message'));
+        // The sheet shows 1.1 and 1.10 alike, as 1.10: read as the sheet shows them, the repeat is named.
+        $this->assertContains('Item code 1.10 is used more than once in the file. This line was given 1.10.1.', array_column(array_filter($preview['notes'], fn (array $note) => $note['row'] === 11), 'message'));
     }
 
     public function test_a_heading_far_down_the_sheet_can_be_found_or_typed(): void

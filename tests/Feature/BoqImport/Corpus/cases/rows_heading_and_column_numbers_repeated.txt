@@ -1,0 +1,27 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 column_numbers | 
+  3 line | 1 | - | Sample item 1 | nos | qty 2 | rate 101 | serial
+  4 line | 2 | - | Sample item 2 | nos | qty 3 | rate 102 | serial
+  5 line | 3 | - | Sample item 3 | nos | qty 4 | rate 103 | serial
+  6 line | 4 | - | Sample item 4 | nos | qty 5 | rate 104 | serial
+  7 carried | Carried over
+  8 heading_repeat | Sr. No. Description of Item Unit Qty Rate Amount
+  9 column_numbers | 
+  10 carried | Brought forward
+  11 line | 5 | - | Sample item 5 | nos | qty 1 | rate 105 | serial
+  12 line | 6 | - | Sample item 6 | nos | qty 2 | rate 106 | serial
+  13 line | 7 | - | Sample item 7 | nos | qty 3 | rate 107 | serial
+  14 line | 8 | - | Sample item 8 | nos | qty 4 | rate 108 | serial
+  15 carried | Carried over
+  16 heading_repeat | Sr. No. Description of Item Unit Qty Rate Amount
+  17 column_numbers | 
+  18 carried | Brought forward
+  19 line | 9 | - | Sample item 9 | nos | qty 5 | rate 109 | serial
+  20 line | 10 | - | Sample item 10 | nos | qty 1 | rate 110 | serial
+  21 line | 11 | - | Sample item 11 | nos | qty 2 | rate 111 | serial
+  22 line | 12 | - | Sample item 12 | nos | qty 3 | rate 112 | serial
+  23 subtotal | Total
+lines: 12 | lines total 3723.00 | with adjustments 3723.00 | sheet subtotal 3723 | sheet total -
+total: 23 | subtotal | Total | sheet 3723 | lines 3723.00 | matches

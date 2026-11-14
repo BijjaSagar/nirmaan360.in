@@ -1,0 +1,11 @@
+file: xlsx | sheets: Macros, BoQ1 (hidden) * | picked: priced
+heading: row 6
+columns: A=serial(heading) B=description(heading) C=remark(heading) D=qty(heading) E=unit(heading) F=rate(heading) G=amount(heading)
+rows:
+  7 line | 1 | - | Sample earth work in excavation | cum | qty 120 | rate 210 | serial
+  8 line | 2 | - | Sample brick work in cement mortar | cum | qty 30 | rate 6000 | serial
+  9 adjustment | Add GST difference @12% on DSR 2026
+  10 subtotal | Total in Figures
+lines: 2 | lines total 205200.00 | with adjustments 229824.00 | sheet subtotal - | sheet total 205212
+adjustment: 9 | Add GST difference @12% on DSR 2026 | 12% | comes to 24624.00 | sheet 12 | other
+total: 10 | subtotal | Total in Figures | sheet 205212 | lines 229824.00 | matches

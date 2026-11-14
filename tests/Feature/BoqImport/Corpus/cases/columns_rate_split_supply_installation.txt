@@ -1,0 +1,13 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1 to 2
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) G=amount(values)
+rows:
+  3 line | 1 | - | Sample 25 mm CPVC pipe | rmt | qty 100 | rate 180 | serial
+  4 line | 2 | - | Sample ball valve 25 mm | nos | qty 10 | rate 900 | serial
+  5 line | 3 | - | Sample wash basin | nos | qty 4 | rate 3500 | serial
+  6 subtotal | Total
+lines: 3 | lines total 41000.00 | with adjustments 41000.00 | sheet subtotal 41000 | sheet total -
+total: 6 | subtotal | Total | sheet 41000 | lines 41000.00 | matches
+problem: 0 rate | Column F is also headed "Rate (Rs.) Installation" and holds figures, like column E. Only one of them can be read: choose it, and set the others to Leave out. For a rate split into parts, such as supply and installation, read the total amount column as the amount and leave the rate columns out.
+note: 0 | Column H is also headed "Amount (Rs.) Installation" and holds figures. Column G is read as the amount; to read H instead, choose it under Read as.
+note: 0 | Column I is also headed "Amount (Rs.) Total" and holds figures. Column G is read as the amount; to read I instead, choose it under Read as.
