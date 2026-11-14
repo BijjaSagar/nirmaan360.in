@@ -96,6 +96,45 @@ class BoqPageUploadTest extends BoqImportTestCase
         $this->assertSame(1, BoqItem::where('project_id', $project->id)->count());
     }
 
+    public function test_our_own_csv_saved_without_a_file_ending_still_imports_at_once(): void
+    {
+        $project = $this->makeProject($this->org);
+        $csv = "section,code,description,unit,qty,rate\n,7,Sample line,cum,3,150\n";
+
+        // A real file on disk, so its type is read from what is in it, as for an upload from a browser.
+        $path = tempnam(sys_get_temp_dir(), 'csv');
+        file_put_contents($path, $csv);
+
+        $this->actingAs($this->pm)->post(route('boq.import', $project), ['file' => new UploadedFile($path, 'boq-export', null, null, true)])
+            ->assertSessionHasNoErrors()->assertSessionMissing(BoqSheetImport::SESSION);
+        $this->assertSame(1, BoqItem::where('project_id', $project->id)->count());
+    }
+
+    public function test_an_upload_that_is_not_one_file_is_refused_with_a_field_error(): void
+    {
+        $project = $this->makeProject($this->org);
+
+        $this->actingAs($this->pm)->post(route('boq.import', $project), ['file' => [$this->sheet($this->ownLayout()), $this->sheet($this->ownLayout())]])
+            ->assertSessionHasErrors('file');
+        $this->post(route('boq.import', $project), [])->assertSessionHasErrors('file');
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
+    }
+
+    public function test_a_file_with_one_endless_first_line_is_not_taken_for_our_csv_and_costs_one_short_read(): void
+    {
+        $project = $this->makeProject($this->org);
+        $long = str_repeat('sample,', 200000)."\n";
+
+        $this->actingAs($this->pm)->post(route('boq.import', $project), ['file' => $this->csvFile($long, 'long.csv')])
+            ->assertRedirect();
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
+    }
+
+    public function test_the_boq_page_box_has_the_same_limit_on_tries_as_the_import_it_hands_over_to(): void
+    {
+        $this->assertContains('throttle:20,1', app('router')->getRoutes()->getByName('boq.import')->gatherMiddleware());
+    }
+
     public function test_another_companys_project_is_not_reached_through_the_boq_page_box(): void
     {
         $other = $this->tenant('Other Example Co', 'business');

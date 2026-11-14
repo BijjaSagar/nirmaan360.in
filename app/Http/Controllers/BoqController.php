@@ -11,10 +11,12 @@ use App\Services\BoqValues;
 use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ProjectSetup\BoqCategories;
 use App\Services\ProjectSetup\BoqRevisions;
+use App\Services\Reports\BoqPdfReader;
 use App\Support\Dec;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -91,8 +93,13 @@ class BoqController extends Controller
 
         // Anything that is not our own CSV (an Excel sheet, a PDF, a CSV in the contractor's own columns) is read
         // by its own headings and shown first, where the company's plan has that import.
-        if ($request->hasFile('file') && $this->readsAnyLayout($request) && ! $this->isTemplateCsv($request, $columns)) {
-            return app(BoqExcelController::class)->import($request, $project);
+        if ($this->readsAnyLayout($request)) {
+            // One file, no bigger than the largest that import takes, before anything in it is read.
+            $request->validate(['file' => ['required', 'file', 'max:'.(BoqPdfReader::MAX_BYTES / 1024)]]);
+
+            if (! $this->isTemplateCsv($request->file('file'), $columns)) {
+                return app(BoqExcelController::class)->import($request, $project);
+            }
         }
 
         $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
@@ -179,11 +186,6 @@ class BoqController extends Controller
         }, 'boq-template.csv', ['Content-Type' => 'text/csv']);
     }
 
-    /**
-     * Site staff work with quantities only: the rate column is left out of their files, both ways.
-     *
-     * @return list<string>
-     */
     /** Whether this company's plan has the import that reads any sheet or PDF by its headings. */
     private function readsAnyLayout(Request $request): bool
     {
@@ -191,15 +193,14 @@ class BoqController extends Controller
     }
 
     /**
-     * Whether the upload is a CSV in the template's own columns: the file this page exports and has always imported.
+     * Whether the upload is a CSV in the template's own columns: the file this page exports and has always
+     * imported. It is told by its first line, not its name, so our CSV saved without an extension still counts.
      *
      * @param  list<string>  $columns
      */
-    private function isTemplateCsv(Request $request, array $columns): bool
+    private function isTemplateCsv(UploadedFile $file, array $columns): bool
     {
-        $file = $request->file('file');
-
-        if (! $file->isValid() || ! in_array(strtolower((string) $file->getClientOriginalExtension()), ['csv', 'txt'], true)) {
+        if (in_array(strtolower((string) $file->getClientOriginalExtension()), ['xlsx', 'xlsm', 'xls', 'ods', 'pdf'], true)) {
             return false;
         }
 
@@ -209,13 +210,23 @@ class BoqController extends Controller
             return false;
         }
 
-        $header = fgetcsv($handle, 0, ',', '"', '');
+        // The heading line of our template is short. Reading a bounded piece keeps a file with one endless line cheap.
+        $first = (string) fgets($handle, 4096);
         fclose($handle);
-        $header = array_map(fn ($cell) => strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))), $header ?: []);
+
+        $header = array_map(
+            fn ($cell) => strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))),
+            str_getcsv(rtrim($first, "\r\n"), ',', '"', ''),
+        );
 
         return array_diff($columns, $header) === [];
     }
 
+    /**
+     * Site staff work with quantities only: the rate column is left out of their files, both ways.
+     *
+     * @return list<string>
+     */
     private function columnsFor(Request $request): array
     {
         return Money::visible($request->user()) ? self::COLUMNS : array_values(array_diff(self::COLUMNS, ['rate']));
