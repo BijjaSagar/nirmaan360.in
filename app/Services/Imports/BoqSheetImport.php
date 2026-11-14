@@ -347,11 +347,13 @@ final class BoqSheetImport
      *
      * "filled" names the figures the file does not give, which come as 0 (no rate column, a blank cell, words in
      * place of a figure, a rate-only line's quantity): a row that updates a line already there keeps that line's own.
+     * "derived" names the figures worked out from the amount rather than read (a quantity as amount over rate, a rate as
+     * amount over quantity, 1 unit at the amount, and the unit LS put in with it): such a row keeps the line's own too.
      * "origin" says where the code came from, as on a line of the column check: "code" for the sheet's own item code
      * (every code of a sheet in the template's columns), "serial" for one made from its serial numbers, "made" for one
      * made up here. Only an item code says which line it is; a serial number is only where the line stands.
      *
-     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string, filled: list<string>, origin: string}>, error: string|list<string>|null}
+     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string, filled: list<string>, derived: list<string>, origin: string}>, error: string|list<string>|null}
      */
     public function rowsFor(int $organizationId, string $path, int $maxRows): array
     {
@@ -397,7 +399,7 @@ final class BoqSheetImport
                 return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
             }
 
-            [$grid, $columns, $header, $filled, $origins] = [$sheet['grid'], $layout->columns(), $layout->lastRow(), [], []];
+            [$grid, $columns, $header, $filled, $derived, $origins] = [$sheet['grid'], $layout->columns(), $layout->lastRow(), [], [], []];
         } else {
             // A unit typed for an earlier file in this layout is not used here: nobody would see it applied.
             $reading = (new BoqSheetRows)->classify($sheet['grid'], $layout, null, ['missing' => $sheet['missing'], 'merges' => $sheet['merges'], 'texts' => $sheet['texts'] ?? []]);
@@ -410,9 +412,10 @@ final class BoqSheetImport
                 return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
             }
 
-            [$grid, $columns, $header, $filled, $origins] = [
+            [$grid, $columns, $header, $filled, $derived, $origins] = [
                 $reading['grid'], $reading['columns'], $reading['header_row'],
-                array_map(fn (array $line) => $line['filled'], $reading['lines']), array_map(fn (array $line) => $line['origin'], $reading['lines']),
+                array_map(fn (array $line) => $line['filled'], $reading['lines']), array_map(fn (array $line) => $line['derived'], $reading['lines']),
+                array_map(fn (array $line) => $line['origin'], $reading['lines']),
             ];
         }
 
@@ -431,7 +434,7 @@ final class BoqSheetImport
             }
 
             if (implode('', $row) !== '') {
-                $rows[$number] = [...$row, 'filled' => $filled[$number] ?? [], 'origin' => $layout->isTemplate() ? 'code' : ($origins[$number] ?? 'made')];
+                $rows[$number] = [...$row, 'filled' => $filled[$number] ?? [], 'derived' => $derived[$number] ?? [], 'origin' => $layout->isTemplate() ? 'code' : ($origins[$number] ?? 'made')];
             }
         }
 
@@ -455,7 +458,18 @@ final class BoqSheetImport
 
         [$renumbered, $updates, $plan, $matched] = $this->matchExisting($project, $read);
         $kept = self::keepFigures($read, $matched);
+        $own = self::keepCategoryAndDetails($read, $matched);
         [$rows, $errors] = $this->excel->checkRows($project, $read['grid'], $read['header_row'], $read['columns']);
+
+        // A row whose item keeps its category or details does not carry them, as a template with no such column does not:
+        // BoqExcelService::write() then leaves them as the item has them.
+        foreach ($rows as $index => $row) {
+            foreach ($own as $field => $keeping) {
+                if (isset($keeping[$row['row']])) {
+                    unset($rows[$index][$field]);
+                }
+            }
+        }
         // A row that cannot be read is the problem to show; with every row refused, "the file has no rows" is not.
         $rowErrors = array_values(array_filter($read['errors'], fn (array $error) => $error['row'] > 0));
         $errors = $rowErrors === [] ? $errors : [...$rowErrors, ...array_values(array_filter($errors, fn (array $error) => $error['row'] > 0 && ! in_array($error['row'], array_column($rowErrors, 'row'), true)))];
@@ -482,8 +496,7 @@ final class BoqSheetImport
      * (no such column, a blank cell, words in place of a figure, a rate-only line's quantity), as the CSV import keeps
      * the rates when its file has no rate column: a 0 the reader put in for a missing figure never overwrites one the
      * item has, and a quantity is never cut under work measured or billed that way. A figure the file gives is used.
-     * A line that keeps the item's quantity no longer says in its details that the file gives none ("To be priced",
-     * "Rate only"): those words would be saved on an item whose figures say otherwise.
+     * (What such a line's details say, "To be priced" or "Rate only" among them, is keepCategoryAndDetails()'s.)
      *
      * @param  array<int, BoqItem>  $matched  Sheet row => the item its line updates.
      * @return array{qty: list<int>, rate: list<int>} The rows that keep each figure.
@@ -493,23 +506,58 @@ final class BoqSheetImport
         $kept = ['qty' => [], 'rate' => []];
 
         foreach ($matched as $row => $item) {
-            $line = $read['lines'][$row];
-
-            foreach ($line['filled'] ?? [] as $field) {
+            foreach ($read['lines'][$row]['filled'] ?? [] as $field) {
                 $value = $field === 'qty' ? Dec::qty($item->qty) : Dec::money($item->rate);
                 $read['lines'][$row][$field] = $value;
                 $read['grid'][$row][$read['columns'][$field]] = $value;
                 $kept[$field][] = $row;
             }
-
-            if (in_array('qty', $line['filled'] ?? [], true) && ($line['figure_details'] ?? []) !== []) {
-                $read['lines'][$row]['details'] = array_values(array_diff_key($line['details'], array_flip($line['figure_details'])));
-                $read['lines'][$row]['figure_details'] = [];
-                $read['grid'][$row][$read['columns']['details']] = BoqSheetRows::detailsText($read['lines'][$row]);
-            }
         }
 
         return $kept;
+    }
+
+    /**
+     * A line that updates an item already in the project keeps the item's category and details unless the file gives
+     * them, as the template and the CSV import leave both alone when the file has no such column. The reader puts a
+     * category on every line, from the file's category cell or guessed from the words, and its own words in the details;
+     * neither may re-file an item under another budget head or wipe the details typed on it.
+     *
+     * - The category changes only to one the line's category cell names. A guess, a blank cell or no category column
+     *   leaves the item's.
+     * - The details change only when the line carries text taken from the file: its details, reference or remark cell,
+     *   a specification above it, the whole of a long description, a break-up in the rows below. They are then that
+     *   text alone. What this reader says of the line ("To be priced", "Rate only", a rate per 100 divided, a provisional
+     *   sum, the file's own code) never replaces an item's details; a line that is added still says it.
+     *
+     * @param  array<int, BoqItem>  $matched  Sheet row => the item its line updates.
+     * @return array{category: array<int, true>, details: array<int, true>} The rows whose item keeps each, as keys.
+     */
+    private static function keepCategoryAndDetails(array &$read, array $matched): array
+    {
+        $own = ['category' => [], 'details' => []];
+
+        foreach ($matched as $row => $item) {
+            $line = $read['lines'][$row];
+
+            if (! ($line['file_category'] ?? false)) {
+                $read['lines'][$row]['category'] = $item->category;
+                $own['category'][$row] = true;
+            }
+
+            $read['lines'][$row]['details'] = array_values(array_intersect_key($line['details'] ?? [], array_flip($line['file_details'] ?? [])));
+            $read['lines'][$row]['figure_details'] = [];
+
+            if ($read['lines'][$row]['details'] === [] && ($line['parts'] ?? []) === [] && ($line['remarks'] ?? []) === []) {
+                $own['details'][$row] = true;
+
+                continue;
+            }
+
+            $read['grid'][$row][$read['columns']['details']] = BoqSheetRows::detailsText($read['lines'][$row]);
+        }
+
+        return $own;
     }
 
     /**
@@ -751,7 +799,7 @@ final class BoqSheetImport
     {
         // Every scope is lifted to read the project's lines inside the import's lock, so deleted lines are left out here.
         $existing = BoqItem::withoutGlobalScopes()->where('organization_id', $project->organization_id)->where('project_id', $project->id)
-            ->whereNull('deleted_at')->orderBy('id')->get(['id', 'code', 'description', 'unit', 'qty', 'rate'])->unique('code')->keyBy('code');
+            ->whereNull('deleted_at')->orderBy('id')->get(['id', 'code', 'description', 'unit', 'qty', 'rate', 'category', 'details'])->unique('code')->keyBy('code');
 
         if ($existing->isEmpty()) {
             return [[], [], ['update' => 0, 'add' => count($read['lines'])], []];

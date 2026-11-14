@@ -42,6 +42,14 @@ class TenderBoqController extends Controller
         $result = $this->service->import($tender, $file->getRealPath(), $file->getClientOriginalExtension());
         $message = __(':count BOQ rows imported.', ['count' => $result['count']]);
 
+        if ($result['kept'] !== []) {
+            // Nor does a line already on the tender change a figure silently: the result says which kept their own.
+            $message .= ' '.__(':count lines already on the tender kept their own quantity or rate, because the file gives none or only an amount to work it out from (:codes).', [
+                'count' => count($result['kept']),
+                'codes' => implode(', ', array_slice($result['kept'], 0, 10)).(count($result['kept']) > 10 ? ', …' : ''),
+            ]);
+        }
+
         if ($result['renumbered'] !== []) {
             // There is no preview on this page: the result says which lines did not update the line with their number.
             $codes = array_map(fn (array $line) => $line['from'].' → '.$line['to'], array_slice($result['renumbered'], 0, 10));

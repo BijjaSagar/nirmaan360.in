@@ -940,8 +940,14 @@ final class BoqSheetRows extends EstimateSheet
         $details = [];
         // The figures the file does not give, read as 0 here: a line that updates an item keeps the item's own (BoqSheetImport).
         $filled = [];
+        // The figures worked out here from the amount, and the unit put in with them, rather than read from the file: the
+        // tender BOQ, which has no preview, keeps a line's own in their place too (TenderBoqService::import).
+        $derived = [];
         // Which of the details only say that the file gives no quantity, for a line that keeps the item's to drop.
         $figureDetails = [];
+        // Which of the details are text taken from the file (its details, reference or remark cell, a specification,
+        // the whole description), not words of this reader: only such text replaces an item's own details (BoqSheetImport).
+        $fileDetails = [];
         $unitText = $row['unit'];
         $qtyText = CellValues::text($row['qty_raw']);
 
@@ -991,14 +997,17 @@ final class BoqSheetRows extends EstimateSheet
             $filled = ['qty'];
         } elseif ($qty === null && $rate !== null && $amount !== null && ! Dec::of($rate)->isZero()) {
             $qty = (string) Dec::of($amount)->dividedBy(Dec::of($rate), 3, RoundingMode::HalfUp);
+            $derived = ['qty'];
             $notes[] = __('No quantity in the file. It was worked out as amount divided by rate.');
         } elseif ($qty === null && $rate === null && $amount !== null) {
             $qty = '1';
             $rate = $amount;
+            $derived = $unitText === '' ? ['qty', 'rate', 'unit'] : ['qty', 'rate'];
             $unitText = $unitText !== '' ? $unitText : 'LS';
             $notes[] = __('Only an amount in the file. It was read as 1 lump sum at that amount.');
         } elseif ($qty !== null && $rate === null && $amount !== null && ! Dec::of($qty)->isZero()) {
             $rate = (string) Dec::of($amount)->dividedBy(Dec::of($qty), 2, RoundingMode::HalfUp);
+            $derived = ['rate'];
             $notes[] = __('No rate in the file. It was worked out as amount divided by quantity.');
         } elseif ($qty !== null && $rate === null) {
             $rate = '0';
@@ -1079,12 +1088,14 @@ final class BoqSheetRows extends EstimateSheet
 
                 foreach ([...$outer, $spec['text']] as $level) {
                     $details[] = __('Specification: :text', ['text' => $level]);
+                    $fileDetails[] = array_key_last($details);
                 }
             }
         }
 
         if (mb_strlen($description) > self::MAX_DESCRIPTION) {
             $details[] = __('Full description: :text', ['text' => $description]);
+            $fileDetails[] = array_key_last($details);
             $description = mb_substr($description, 0, self::MAX_DESCRIPTION - 1).'…';
             $notes[] = __('The description is longer than :max characters. It was shortened, and the whole of it is in the details.', ['max' => self::MAX_DESCRIPTION]);
         }
@@ -1092,6 +1103,7 @@ final class BoqSheetRows extends EstimateSheet
         foreach (['details' => null, 'reference' => __('Reference: :text', ['text' => $row['reference']])] as $field => $wording) {
             if ($row[$field] !== '') {
                 $details[] = $wording ?? $row[$field];
+                $fileDetails[] = array_key_last($details);
             }
         }
 
@@ -1135,12 +1147,16 @@ final class BoqSheetRows extends EstimateSheet
             'qty' => $qty,
             'rate' => $rate,
             'filled' => $filled,
+            'derived' => $derived,
             'amount' => $amount,
             'per' => $fileRate === null ? null : CellValues::text($per),
             'file_rate' => $fileRate,
             'category' => BoqCategories::fromText($row['category']) ?? $this->category($description.' '.($spec['text'] ?? '')),
+            // Whether the category is the one the file's category cell names, not one guessed from the words.
+            'file_category' => BoqCategories::fromText($row['category']) !== null,
             'details' => $details,
             'figure_details' => $figureDetails,
+            'file_details' => $fileDetails,
             'parts' => [],
             'remarks' => $row['remark'] === '' ? [] : [$row['remark']],
             'spec_row' => $spec['row'] ?? null,

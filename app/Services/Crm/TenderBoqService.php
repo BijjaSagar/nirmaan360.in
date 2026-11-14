@@ -86,9 +86,12 @@ class TenderBoqService
      * A sheet in its own layout may not give a line's rate or quantity (no such column, a blank cell, a rate-only
      * line); it is read as 0. A line that updates one already there keeps that line's own figure then, so a
      * department's revised schedule or corrigendum, which has no rates, updates the quantities and never wipes the
-     * rates quoted on the tender, nor gives a line the rate quoted for another.
+     * rates quoted on the tender, nor gives a line the rate quoted for another. So does a figure the reader works out
+     * from the amount (quantity as amount over rate, rate as amount over quantity, 1 lump sum at the amount): the
+     * department's estimated amount over the quantity is its own rate, not the one quoted. A line that is added takes
+     * such figures, as on the column check. The result names the lines that kept their own.
      *
-     * @return array{count: int, renumbered: list<array{from: string, to: string}>} The rows imported, and the lines added under a new code.
+     * @return array{count: int, renumbered: list<array{from: string, to: string}>, kept: list<string>} The rows imported, the lines added under a new code, and the codes of the lines already there that kept their own quantity or rate.
      */
     public function import(CrmTender $tender, string $path, string $extension): array
     {
@@ -101,6 +104,7 @@ class TenderBoqService
             $used = array_flip(array_map(fn (array $row) => (string) $row['code'], $rows));
             $sameLine = fn (?CrmTenderBoqItem $line, array $row) => $line !== null && BoqSheetImport::sameWording((string) $line->description, (string) $row['description']);
             $renumbered = [];
+            $kept = [];
 
             foreach ($rows as $row) {
                 $existing = $byCode->get((string) $row['code']);
@@ -116,7 +120,13 @@ class TenderBoqService
                 $values = $this->values($row);
 
                 if ($existing !== null) {
-                    $existing->update(array_diff_key($values, array_flip($row['filled'])));
+                    // What the file does not give, and what was worked out from its amount, stays as the line has it.
+                    $own = [...$row['filled'], ...$row['derived']];
+                    $existing->update(array_diff_key($values, array_flip($own)));
+
+                    if (array_intersect($own, ['qty', 'rate']) !== []) {
+                        $kept[] = (string) $row['code'];
+                    }
 
                     continue;
                 }
@@ -130,7 +140,7 @@ class TenderBoqService
                 ]));
             }
 
-            return ['count' => count($rows), 'renumbered' => $renumbered];
+            return ['count' => count($rows), 'renumbered' => $renumbered, 'kept' => $kept];
         });
     }
 
@@ -166,7 +176,7 @@ class TenderBoqService
         ];
     }
 
-    /** @return list<array<string, mixed>> Each row's fields, in "filled" the figures (qty, rate) the file does not give, and in "origin" where its code came from (BoqSheetImport::rowsFor). */
+    /** @return list<array<string, mixed>> Each row's fields, in "filled" the figures (qty, rate) the file does not give, in "derived" those worked out from its amount (and a unit put in with them), and in "origin" where its code came from (BoqSheetImport::rowsFor). */
     private function readRows(CrmTender $tender, string $path): array
     {
         $matrix = match (SheetFile::sniff($path)) {
@@ -205,8 +215,9 @@ class TenderBoqService
 
         foreach ($candidates as $line => $row) {
             $row['section'] ??= '';
-            // Only the sheet reader says which figures the file left out; a template row gives every figure it has.
+            // Only the sheet reader says which figures the file left out or it worked out; a template row gives every figure it has.
             $row['filled'] = array_values(array_intersect(is_array($row['filled'] ?? null) ? $row['filled'] : [], ['qty', 'rate']));
+            $row['derived'] = array_values(array_intersect(is_array($row['derived'] ?? null) ? $row['derived'] : [], ['qty', 'rate', 'unit']));
             // A code no reader vouches for is not taken as an item code.
             $row['origin'] = in_array($row['origin'] ?? null, ['code', 'serial'], true) ? $row['origin'] : 'made';
             $row['qty'] = str_replace([',', ' '], '', (string) $row['qty']);
