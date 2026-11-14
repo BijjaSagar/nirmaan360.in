@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Project;
 use App\Models\User;
 use App\Support\Dec;
+use App\Support\Money;
 use Brick\Math\BigDecimal;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,13 @@ final class BoqPdfImport
 
     /** Session key holding the token of the preview the person was sent to. */
     public const SESSION = 'boq_pdf_import';
+
+    /**
+     * Flashed when a preview ends because it was confirmed or discarded: this one, or a sheet's column check
+     * (BoqSheetImportController). The BOQ in Excel page the person comes back to then tells the browser to
+     * forget its own copy of the PDF, which has no more use.
+     */
+    public const ENDED = 'boq_pdf_import_ended';
 
     private const CACHE = 'boq-pdf-import:';
 
@@ -192,8 +200,9 @@ final class BoqPdfImport
             ? __('Imported from a PDF file')
             : __('Imported from a PDF file. The total written in the file does not match the lines. Reason given: :reason', ['reason' => $answers['total_reason']]);
 
-        $result = DB::transaction(function () use ($project, $entry, $preview, $answers, $reason) {
-            $result = $this->excel->importGrid($project, $entry['grid'], [], $reason, 'pdf_import');
+        $result = DB::transaction(function () use ($project, $user, $entry, $preview, $answers, $reason) {
+            // Someone who may not see rates cannot set them either: the PDF's rates are not written for them.
+            $result = $this->excel->importGrid($project, $entry['grid'], [], $reason, 'pdf_import', Money::visible($user));
 
             if ($result->ok()) {
                 AuditLog::record('boq.pdf_import_confirmed', $project, null, [

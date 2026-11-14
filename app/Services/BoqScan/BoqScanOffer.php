@@ -9,7 +9,8 @@ use App\Services\DocumentReading\ReadKinds;
 /**
  * Whether the field app may offer this person "Scan BOQ pages": this module's BOQ reader is deployed, the
  * company's plan has reports, and the person manages the BOQ and may see money, as every route of
- * the module asks.
+ * the module asks. While the readers are off for the company (AiSpend::readersOn) the status answer
+ * says false here without asking (ReaderAvailability::can).
  */
 class BoqScanOffer implements ReaderOffer
 {

@@ -18,9 +18,10 @@ interface ReaderOffer
 {
     /**
      * Whether this person may use the feature: the feature's own permissions, and the plan feature
-     * of the module it belongs to. The AI plan feature and "agents.use" are already checked before
-     * this is asked, and whether the readers are released, connected and consented to is reported
-     * beside it, so none of that belongs here.
+     * of the module it belongs to. The AI plan feature, "agents.use" and whether the readers are on
+     * (AiSpend::readersOn) are already checked before this is asked, and an offer is never true while
+     * the readers are off. Whether they are connected and consented to is reported beside it, so none
+     * of that belongs here.
      */
     public function allows(User $user): bool;
 }

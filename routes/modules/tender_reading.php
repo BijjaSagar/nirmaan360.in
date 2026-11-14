@@ -26,7 +26,9 @@ Route::middleware('feature:crm')->prefix('crm')->group(function () {
 
     Route::get('/tender-reads/{read}', [TenderReadController::class, 'show'])->middleware('can:crm.view')->name('tender-reads.view');
 
-    // The sheet. Reading it and working through it never depend on the AI service, its limits or the consent switch.
+    // The sheet. While no fact was read for the tender it is there only while the readers are on, as the scanned BOQ
+    // screen (TenderSheet::open). Once one was, reading it and working through it never depend on the AI service, its
+    // limits or the consent switch.
     Route::get('/tenders/{tender}/facts', [TenderFactController::class, 'index'])->middleware('can:crm.view')->name('tender-facts.index');
 
     Route::middleware('can:crm.manage')->controller(TenderFactController::class)->group(function () {

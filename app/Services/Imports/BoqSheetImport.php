@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\BoqImportResult;
 use App\Support\Dec;
+use App\Support\Money;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -198,9 +199,10 @@ final class BoqSheetImport
     /**
      * Everything the column check shows. Nothing is written.
      *
+     * @param  bool  $rates  Whether the person may set rates (Money::visible). Without, the file's rates are not written: see BoqExcelService::write().
      * @return array<string, mixed>
      */
-    public function preview(Project $project, array $entry): array
+    public function preview(Project $project, array $entry, bool $rates = true): array
     {
         $sheet = $entry['sheets'][$entry['sheet']];
         $layout = SheetLayout::fromArray($entry['layout']);
@@ -210,6 +212,12 @@ final class BoqSheetImport
         $lines = array_filter($reading['kinds'], fn (array $kind) => in_array($kind['kind'], BoqSheetRows::LINE_KINDS, true));
         $others = array_filter($reading['kinds'], fn (array $kind) => ! in_array($kind['kind'], BoqSheetRows::LINE_KINDS, true));
         $lineRows = array_values(array_filter(array_keys($lines), fn (int $row) => isset($reading['lines'][$row])));
+        $rateOnly = array_values(array_filter($reading['rate_only'], fn (int $row) => isset($reading['lines'][$row])));
+
+        // Said before the confirm, as the import says it after: a rate in the file that would change a line is not written.
+        if (! $rates && array_filter($reading['lines'], fn (array $line, int $row) => ! Dec::of($line['rate'])->isEqualTo(Dec::of(($reading['matched'][$row] ?? null)?->rate ?? 0)), ARRAY_FILTER_USE_BOTH) !== []) {
+            array_unshift($reading['notes'], ['row' => 0, 'message' => BoqExcelService::ratesNotImported()]);
+        }
 
         return [
             'file' => $entry['file'],
@@ -237,7 +245,8 @@ final class BoqSheetImport
             'saved' => $saved === null ? null : ['id' => $saved->id, 'at' => $saved->last_used_at ?? $saved->created_at, 'uses' => $saved->uses, 'file' => $saved->file_name],
             'lines' => array_slice(array_map(fn (int $row) => ['row' => $row, ...$reading['lines'][$row]], $lineRows), 0, self::SHOWN_LINES),
             'line_count' => count($lines),
-            'rate_only' => array_values(array_map(fn (int $row) => ['row' => $row, ...$reading['lines'][$row]], array_keys(array_filter($lines, fn (array $kind) => $kind['kind'] === 'rate_only')))),
+            // A rate-only line that updates an item keeps the item's quantity, so it does not come in at quantity 0.
+            'rate_only' => array_map(fn (int $row) => ['row' => $row, ...$reading['lines'][$row]], $rateOnly),
             'others' => array_slice(array_map(fn (int $row, array $kind) => ['row' => $row, ...$kind], array_keys($others), $others), 0, self::SHOWN_OTHERS),
             'other_count' => count($others),
             'left_out' => count(array_filter($others, fn (array $kind) => in_array($kind['kind'], BoqSheetRows::LEFT_OUT_KINDS, true))),
@@ -289,7 +298,7 @@ final class BoqSheetImport
                 $summary = $reading;
 
                 return [$reading['rows'], $reading['errors'], $reading['notes']];
-            }, __('Imported from :file after checking its columns', ['file' => $entry['file']]), 'excel_import');
+            }, __('Imported from :file after checking its columns', ['file' => $entry['file']]), 'excel_import', Money::visible($user));
 
             if (! $result->ok()) {
                 return $result;
@@ -336,7 +345,15 @@ final class BoqSheetImport
      * the column check would ask the person about refuses the file: a row that cannot be read, a unit that
      * only an earlier file gave, figures in a column that is not read.
      *
-     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string}>, error: string|list<string>|null}
+     * "filled" names the figures the file does not give, which come as 0 (no rate column, a blank cell, words in
+     * place of a figure, a rate-only line's quantity): a row that updates a line already there keeps that line's own.
+     * "derived" names the figures worked out from the amount rather than read (a quantity as amount over rate, a rate as
+     * amount over quantity, 1 unit at the amount, and the unit LS put in with it): such a row keeps the line's own too.
+     * "origin" says where the code came from, as on a line of the column check: "code" for the sheet's own item code
+     * (every code of a sheet in the template's columns), "serial" for one made from its serial numbers, "made" for one
+     * made up here. Only an item code says which line it is; a serial number is only where the line stands.
+     *
+     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string, filled: list<string>, derived: list<string>, origin: string}>, error: string|list<string>|null}
      */
     public function rowsFor(int $organizationId, string $path, int $maxRows): array
     {
@@ -382,7 +399,7 @@ final class BoqSheetImport
                 return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
             }
 
-            [$grid, $columns, $header] = [$sheet['grid'], $layout->columns(), $layout->lastRow()];
+            [$grid, $columns, $header, $filled, $derived, $origins] = [$sheet['grid'], $layout->columns(), $layout->lastRow(), [], [], []];
         } else {
             // A unit typed for an earlier file in this layout is not used here: nobody would see it applied.
             $reading = (new BoqSheetRows)->classify($sheet['grid'], $layout, null, ['missing' => $sheet['missing'], 'merges' => $sheet['merges'], 'texts' => $sheet['texts'] ?? []]);
@@ -395,7 +412,11 @@ final class BoqSheetImport
                 return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
             }
 
-            [$grid, $columns, $header] = [$reading['grid'], $reading['columns'], $reading['header_row']];
+            [$grid, $columns, $header, $filled, $derived, $origins] = [
+                $reading['grid'], $reading['columns'], $reading['header_row'],
+                array_map(fn (array $line) => $line['filled'], $reading['lines']), array_map(fn (array $line) => $line['derived'], $reading['lines']),
+                array_map(fn (array $line) => $line['origin'], $reading['lines']),
+            ];
         }
 
         $rows = [];
@@ -413,7 +434,7 @@ final class BoqSheetImport
             }
 
             if (implode('', $row) !== '') {
-                $rows[$number] = $row;
+                $rows[$number] = [...$row, 'filled' => $filled[$number] ?? [], 'derived' => $derived[$number] ?? [], 'origin' => $layout->isTemplate() ? 'code' : ($origins[$number] ?? 'made')];
             }
         }
 
@@ -432,11 +453,23 @@ final class BoqSheetImport
         $read = $this->sheetReading($sheet, $layout, $entry['unit'], $entry['skip'] ?? []);
 
         if ($read['stopped']) {
-            return $read;
+            return [...$read, 'notes' => self::plainNotes($read['notes']), 'matched' => [], 'kept' => ['qty' => [], 'rate' => []]];
         }
 
-        [$renumbered, $updates, $plan] = $this->matchExisting($project, $read);
+        [$renumbered, $updates, $plan, $matched] = $this->matchExisting($project, $read);
+        $kept = self::keepFigures($read, $matched);
+        $own = self::keepCategoryAndDetails($read, $matched);
         [$rows, $errors] = $this->excel->checkRows($project, $read['grid'], $read['header_row'], $read['columns']);
+
+        // A row whose item keeps its category or details does not carry them, as a template with no such column does not:
+        // BoqExcelService::write() then leaves them as the item has them.
+        foreach ($rows as $index => $row) {
+            foreach ($own as $field => $keeping) {
+                if (isset($keeping[$row['row']])) {
+                    unset($rows[$index][$field]);
+                }
+            }
+        }
         // A row that cannot be read is the problem to show; with every row refused, "the file has no rows" is not.
         $rowErrors = array_values(array_filter($read['errors'], fn (array $error) => $error['row'] > 0));
         $errors = $rowErrors === [] ? $errors : [...$rowErrors, ...array_values(array_filter($errors, fn (array $error) => $error['row'] > 0 && ! in_array($error['row'], array_column($rowErrors, 'row'), true)))];
@@ -448,7 +481,143 @@ final class BoqSheetImport
         // The sheet's own problems (no unit, two columns read as one field) come first, then those of its rows.
         $errors = [...array_values(array_filter($read['errors'], fn (array $error) => $error['row'] === 0)), ...$errors];
 
-        return [...$read, 'rows' => $rows, 'errors' => $errors, 'renumbered' => $renumbered, 'updates' => $updates, 'plan' => $plan];
+        return [
+            ...$read,
+            'rows' => $rows, 'errors' => $errors, 'renumbered' => $renumbered, 'updates' => $updates, 'plan' => $plan,
+            'notes' => self::plainNotes(self::afterKeeping($read['notes'], $kept)),
+            'rate_only' => array_values(array_diff($read['rate_only'], $kept['qty'])),
+            'matched' => $matched,
+            'kept' => $kept,
+        ];
+    }
+
+    /**
+     * A line that updates an item already in the project keeps the item's quantity or rate where the file gives none
+     * (no such column, a blank cell, words in place of a figure, a rate-only line's quantity), as the CSV import keeps
+     * the rates when its file has no rate column: a 0 the reader put in for a missing figure never overwrites one the
+     * item has, and a quantity is never cut under work measured or billed that way. A figure the file gives is used.
+     * (What such a line's details say, "To be priced" or "Rate only" among them, is keepCategoryAndDetails()'s.)
+     *
+     * @param  array<int, BoqItem>  $matched  Sheet row => the item its line updates.
+     * @return array{qty: list<int>, rate: list<int>} The rows that keep each figure.
+     */
+    private static function keepFigures(array &$read, array $matched): array
+    {
+        $kept = ['qty' => [], 'rate' => []];
+
+        foreach ($matched as $row => $item) {
+            foreach ($read['lines'][$row]['filled'] ?? [] as $field) {
+                $value = $field === 'qty' ? Dec::qty($item->qty) : Dec::money($item->rate);
+                $read['lines'][$row][$field] = $value;
+                $read['grid'][$row][$read['columns'][$field]] = $value;
+                $kept[$field][] = $row;
+            }
+        }
+
+        return $kept;
+    }
+
+    /**
+     * A line that updates an item already in the project keeps the item's category and details unless the file gives
+     * them, as the template and the CSV import leave both alone when the file has no such column. The reader puts a
+     * category on every line, from the file's category cell or guessed from the words, and its own words in the details;
+     * neither may re-file an item under another budget head or wipe the details typed on it.
+     *
+     * - The category changes only to one the line's category cell names. A guess, a blank cell or no category column
+     *   leaves the item's.
+     * - The details change only when the line carries text taken from the file: its details, reference or remark cell,
+     *   a specification above it, the whole of a long description, a break-up in the rows below. They are then that
+     *   text alone. What this reader says of the line ("To be priced", "Rate only", a rate per 100 divided, a provisional
+     *   sum, the file's own code) never replaces an item's details; a line that is added still says it.
+     *
+     * @param  array<int, BoqItem>  $matched  Sheet row => the item its line updates.
+     * @return array{category: array<int, true>, details: array<int, true>} The rows whose item keeps each, as keys.
+     */
+    private static function keepCategoryAndDetails(array &$read, array $matched): array
+    {
+        $own = ['category' => [], 'details' => []];
+
+        foreach ($matched as $row => $item) {
+            $line = $read['lines'][$row];
+
+            if (! ($line['file_category'] ?? false)) {
+                $read['lines'][$row]['category'] = $item->category;
+                $own['category'][$row] = true;
+            }
+
+            $read['lines'][$row]['details'] = array_values(array_intersect_key($line['details'] ?? [], array_flip($line['file_details'] ?? [])));
+            $read['lines'][$row]['figure_details'] = [];
+
+            if ($read['lines'][$row]['details'] === [] && ($line['parts'] ?? []) === [] && ($line['remarks'] ?? []) === []) {
+                $own['details'][$row] = true;
+
+                continue;
+            }
+
+            $read['grid'][$row][$read['columns']['details']] = BoqSheetRows::detailsText($read['lines'][$row]);
+        }
+
+        return $own;
+    }
+
+    /**
+     * The notes once lines keep their items' figures: a row's own note that a figure came in as 0 is dropped for a row
+     * that keeps it, a note on many rows is said again for the rows still at 0 (and dropped when none is), and a note
+     * says which lines keep the item's quantity and which its rate, where the first such note stood.
+     *
+     * @param  list<array<string, mixed>>  $notes
+     * @param  array{qty: list<int>, rate: list<int>}  $kept
+     * @return list<array<string, mixed>>
+     */
+    private static function afterKeeping(array $notes, array $kept): array
+    {
+        if ($kept['qty'] === [] && $kept['rate'] === []) {
+            return $notes;
+        }
+
+        $keeping = [];
+
+        if ($kept['rate'] !== []) {
+            $keeping[] = ['row' => 0, 'message' => __(':count lines update an item already in the project, and the file gives no rate for them (rows :rows). They keep the rate the item has.', ['count' => count($kept['rate']), 'rows' => BoqSheetRows::rows($kept['rate'])])];
+        }
+
+        if ($kept['qty'] !== []) {
+            $keeping[] = ['row' => 0, 'message' => __(':count lines update an item already in the project, and the file gives no quantity for them (rows :rows). They keep the quantity the item has.', ['count' => count($kept['qty']), 'rows' => BoqSheetRows::rows($kept['qty'])])];
+        }
+
+        $out = [];
+
+        foreach ($notes as $note) {
+            $filled = $note['filled'] ?? [];
+            // A line keeps every figure it lacks, so the first figure a note names says whether its rows keep them.
+            $left = $filled === [] ? null : array_values(array_diff($note['rows'], $kept[$filled[0]]));
+
+            if ($left === null || $left === $note['rows']) {
+                $out[] = $note;
+
+                continue;
+            }
+
+            array_push($out, ...$keeping);
+            $keeping = [];
+
+            if ($left !== [] && isset($note['about'])) {
+                $out[] = BoqSheetRows::zeroNote($note['about'], $left);
+            }
+        }
+
+        return [...$out, ...$keeping];
+    }
+
+    /**
+     * Notes as the page and the import's result show them: the row and the words.
+     *
+     * @param  list<array<string, mixed>>  $notes
+     * @return list<array{row: int, message: string}>
+     */
+    private static function plainNotes(array $notes): array
+    {
+        return array_map(fn (array $note) => ['row' => $note['row'], 'message' => $note['message']], $notes);
     }
 
     /**
@@ -468,6 +637,7 @@ final class BoqSheetImport
 
         $choice = $this->firstChoice($organizationId, $read['sheets']);
         $sheet = $read['sheets'][$choice['sheet']];
+        $reading = $this->sheetReading($sheet, $choice['layout'], null, []);
 
         return [
             'format' => $read['format'],
@@ -476,7 +646,8 @@ final class BoqSheetImport
             'sheet' => $choice['sheet'],
             'picked' => $choice['picked'],
             'layout' => $choice['layout'],
-            ...$this->sheetReading($sheet, $choice['layout'], null, []),
+            ...$reading,
+            'notes' => self::plainNotes($reading['notes']),
         ];
     }
 
@@ -595,15 +766,17 @@ final class BoqSheetImport
      * The notes in the order they matter: what says the figures do not agree with the sheet's own first, then
      * what touches many lines, then the notes of single rows in the order of the sheet.
      *
+     * A note that a figure came in as 0 keeps what it is about ("filled", "rows", "about"), for afterKeeping().
+     *
      * @param  list<array{row: int, message: string, weight?: int}>  $notes
-     * @return list<array{row: int, message: string}>
+     * @return list<array<string, mixed>>
      */
     private static function importantFirst(array $notes): array
     {
         $order = array_keys($notes);
         usort($order, fn (int $a, int $b) => ($notes[$b]['weight'] ?? 0) <=> ($notes[$a]['weight'] ?? 0) ?: (($notes[$a]['row'] === 0) === ($notes[$b]['row'] === 0) ? $a <=> $b : ($notes[$a]['row'] === 0 ? -1 : 1)));
 
-        return array_map(fn (int $index) => ['row' => $notes[$index]['row'], 'message' => $notes[$index]['message']], $order);
+        return array_map(fn (int $index) => ['row' => $notes[$index]['row'], 'message' => $notes[$index]['message'], ...array_intersect_key($notes[$index], array_flip(['filled', 'rows', 'about']))], $order);
     }
 
     /**
@@ -618,25 +791,27 @@ final class BoqSheetImport
      * - A code made up here (from the order of the rows, a dash, or a row with no number) updates an item only when
      *   the wording is the same; otherwise it gets the next free code, and is listed.
      * So a line never overwrites a different item, and the page says how many lines update and how many are added.
+     * The last element is the item each updating line changes, by its sheet row.
      *
-     * @return array{0: list<array{row: int, from: string, to: string, existing: string}>, 1: list<array{row: int, code: string, now: string, after: string}>, 2: array{update: int, add: int}}
+     * @return array{0: list<array{row: int, from: string, to: string, existing: string}>, 1: list<array{row: int, code: string, now: string, after: string}>, 2: array{update: int, add: int}, 3: array<int, BoqItem>}
      */
     private function matchExisting(Project $project, array &$read): array
     {
         // Every scope is lifted to read the project's lines inside the import's lock, so deleted lines are left out here.
         $existing = BoqItem::withoutGlobalScopes()->where('organization_id', $project->organization_id)->where('project_id', $project->id)
-            ->whereNull('deleted_at')->orderBy('id')->get(['id', 'code', 'description', 'unit'])->unique('code')->keyBy('code');
+            ->whereNull('deleted_at')->orderBy('id')->get(['id', 'code', 'description', 'unit', 'qty', 'rate', 'category', 'details'])->unique('code')->keyBy('code');
 
         if ($existing->isEmpty()) {
-            return [[], [], ['update' => 0, 'add' => count($read['lines'])]];
+            return [[], [], ['update' => 0, 'add' => count($read['lines'])], []];
         }
 
-        $same = fn (BoqItem $item, array $line) => self::plain((string) $item->description) === self::plain((string) $line['description']);
+        $same = fn (BoqItem $item, array $line) => self::sameWording((string) $item->description, (string) $line['description']);
         $used = array_flip(array_map('strval', array_column($read['lines'], 'code')));
         $codeColumn = $read['columns']['code'];
         $renumbered = [];
         $updates = [];
         $plan = ['update' => 0, 'add' => 0];
+        $matched = [];
 
         foreach ($read['lines'] as $row => $line) {
             $item = $existing->get($line['code']);
@@ -649,6 +824,7 @@ final class BoqSheetImport
 
             if ($same($item, $line)) {
                 $plan['update']++;
+                $matched[$row] = $item;
 
                 continue;
             }
@@ -658,28 +834,20 @@ final class BoqSheetImport
             if ($origin === 'code' || ($origin === 'serial' && self::reworded($item, $line))) {
                 $updates[] = ['row' => $row, 'code' => (string) $line['code'], 'now' => (string) $item->description, 'after' => (string) $line['description']];
                 $plan['update']++;
+                $matched[$row] = $item;
 
                 continue;
             }
 
             $plan['add']++;
-
-            for ($suffix = 2; ; $suffix++) {
-                $code = mb_substr((string) $line['code'], 0, 28).'-'.$suffix;
-                $other = $existing->get($code);
-
-                if (! isset($used[$code]) && ($other === null || $same($other, $line))) {
-                    break;
-                }
-            }
-
+            $code = self::nextCode((string) $line['code'], $used, fn (string $code) => ($other = $existing->get($code)) === null || $same($other, $line));
             $used[$code] = true;
             $renumbered[] = ['row' => $row, 'from' => (string) $line['code'], 'to' => $code, 'existing' => (string) $item->description];
             $read['lines'][$row]['code'] = $code;
             $read['grid'][$row][$codeColumn] = $code;
         }
 
-        return [$renumbered, $updates, $plan];
+        return [$renumbered, $updates, $plan, $matched];
     }
 
     /**
@@ -700,6 +868,30 @@ final class BoqSheetImport
         }
 
         return count(array_intersect($before, $after)) >= 0.6 * min(count($before), count($after));
+    }
+
+    /** Whether two descriptions say the same, whatever their case and spacing: the one test of "the same item" by wording. */
+    public static function sameWording(string $first, string $second): bool
+    {
+        return self::plain($first) === self::plain($second);
+    }
+
+    /**
+     * The code a line gets when its own belongs to a different item: its code with -2, -3 … after it (1 becomes 1-2),
+     * the first that no line of the file uses and that $free says no different item holds.
+     *
+     * @param  array<string, mixed>  $used  The codes the file's lines use, as keys.
+     * @param  callable(string): bool  $free
+     */
+    public static function nextCode(string $code, array $used, callable $free): string
+    {
+        for ($suffix = 2; ; $suffix++) {
+            $next = mb_substr($code, 0, 28).'-'.$suffix;
+
+            if (! isset($used[$next]) && $free($next)) {
+                return $next;
+            }
+        }
     }
 
     private static function plain(string $text): string

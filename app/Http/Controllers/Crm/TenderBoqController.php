@@ -39,8 +39,26 @@ class TenderBoqController extends Controller
         $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:csv,txt,tsv,xlsx,xlsm,xls,ods']]);
 
         $file = $request->file('file');
-        $count = $this->service->import($tender, $file->getRealPath(), $file->getClientOriginalExtension());
+        $result = $this->service->import($tender, $file->getRealPath(), $file->getClientOriginalExtension());
+        $message = __(':count BOQ rows imported.', ['count' => $result['count']]);
 
-        return redirect()->to(route('crm.tenders.show', $tender).'#boq')->with('success', __(':count BOQ rows imported.', ['count' => $count]));
+        if ($result['kept'] !== []) {
+            // Nor does a line already on the tender change a figure silently: the result says which kept their own.
+            $message .= ' '.__(':count lines already on the tender kept their own quantity or rate, because the file gives none or only an amount to work it out from (:codes).', [
+                'count' => count($result['kept']),
+                'codes' => implode(', ', array_slice($result['kept'], 0, 10)).(count($result['kept']) > 10 ? ', …' : ''),
+            ]);
+        }
+
+        if ($result['renumbered'] !== []) {
+            // There is no preview on this page: the result says which lines did not update the line with their number.
+            $codes = array_map(fn (array $line) => $line['from'].' → '.$line['to'], array_slice($result['renumbered'], 0, 10));
+            $message .= ' '.__(':count lines carry the number of a different line already on the tender, so they were added as new lines (:codes). The lines already there were left as they were: check them, and delete any line the file replaces.', [
+                'count' => count($result['renumbered']),
+                'codes' => implode(', ', $codes).(count($result['renumbered']) > 10 ? ', …' : ''),
+            ]);
+        }
+
+        return redirect()->to(route('crm.tenders.show', $tender).'#boq')->with('success', $message);
     }
 }

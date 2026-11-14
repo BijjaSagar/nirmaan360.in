@@ -309,5 +309,6 @@
     "Open the PDF beside this page and compare each row with it.": "PDF या पानाच्या शेजारी उघडा आणि प्रत्येक ओळ तिच्याशी ताडून पाहा.",
     "I compared these rows with the pages of the PDF": "मी या ओळी PDF च्या पानांशी ताडून पाहिल्या आहेत",
     "Any BOQ, estimate or tender sheet in your own layout works too: its headings are read, and you check each column and the lines before anything is saved.": "तुमच्या स्वतःच्या मांडणीतील कोणतीही BOQ, अंदाजपत्रक किंवा निविदा शीटही चालते: तिची शीर्षके वाचली जातात, आणि काहीही जतन होण्यापूर्वी तुम्ही प्रत्येक स्तंभ आणि ओळी तपासता.",
-    "BOQ file (.xlsx, .xls, .ods, .csv or .pdf)": "BOQ फाइल (.xlsx, .xls, .ods, .csv किंवा .pdf)"
+    "BOQ file (.xlsx, .xls, .ods, .csv or .pdf)": "BOQ फाइल (.xlsx, .xls, .ods, .csv किंवा .pdf)",
+    "Your role does not see rates, so the rates in this file are not imported. Items already in the BOQ keep their rates; new items come in at rate 0, for someone who sees rates to price them.": "तुमच्या भूमिकेला दर दिसत नाहीत, म्हणून या फाइलमधील दर इम्पोर्ट होत नाहीत. BOQ मध्ये आधीपासून असलेल्या आयटमचे दर तसेच राहतात; नवीन आयटम दर 0 वर येतात, दर पाहू शकणाऱ्या कोणीतरी त्यांचा दर ठरवण्यासाठी."
 }

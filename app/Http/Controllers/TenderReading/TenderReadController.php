@@ -18,6 +18,7 @@ use App\Services\TenderReading\TenderFields;
 use App\Services\TenderReading\TenderReadKind;
 use App\Services\TenderReading\TenderReads;
 use App\Services\TenderReading\TenderReadWords;
+use App\Services\TenderReading\TenderSheet;
 use App\Services\TenderReading\TenderTextRefused;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -35,7 +36,7 @@ class TenderReadController extends Controller
 {
     use ChecksParent;
 
-    public function __construct(private TenderReads $reads, private ReadKinds $kinds, private ModelGateway $gateway) {}
+    public function __construct(private TenderReads $reads, private ReadKinds $kinds, private ModelGateway $gateway, private TenderSheet $sheet) {}
 
     public function store(Request $request, CrmTender $tender, CrmTenderDocument $document): JsonResponse|RedirectResponse
     {
@@ -98,6 +99,8 @@ class TenderReadController extends Controller
             'textPages' => $this->textPages($read),
             'range' => (array) ($read->options['range'] ?? []),
             // A PDF read as pictures may not know how many pages the whole document has; the pages it reads are its count.
+            // A read that found nothing while the readers are off since has no sheet to open (TenderSheet::open).
+            'sheetOpen' => $this->sheet->open($tender, $request->user()),
             'readTotal' => $source === TenderReads::SOURCE_PICTURES ? max(count(TenderReads::picturePages($read)), (int) $read->pages_read + (int) $read->pages_failed)
                 : max((int) $read->pages_total, (int) $read->pages_read + (int) $read->pages_failed),
         ]);

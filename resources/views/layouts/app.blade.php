@@ -149,7 +149,9 @@
                         <p class="text-[13px] font-semibold">{{ auth()->user()->name }}</p>
                         <p class="text-[11px] text-ink-3">{{ __(auth()->user()->roleLabel()) }}</p>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-ghost">{{ __('Sign out') }}</button></form>
+                    <form method="POST" action="{{ route('logout') }}" data-sign-out>@csrf<button class="btn btn-ghost">{{ __('Sign out') }}</button></form>
+                    {{-- Before the sign-out leaves, the browser deletes the copies of uploaded PDFs it kept for the BOQ import. --}}
+                    @includeIf('modules.boq_scan._sign_out')
                 </div>
             </div>
         </header>

@@ -160,7 +160,7 @@ class BoqExcelService
      * template uses, found as before, and not an engineer's estimate. Null for any other file, which goes to
      * the column check (App\Services\Imports\BoqSheetImport) instead.
      */
-    public function importTemplate(Project $project, string $path): ?BoqImportResult
+    public function importTemplate(Project $project, string $path, bool $rates = true): ?BoqImportResult
     {
         [$grid, $missingValue, $fileError] = $this->read($path);
 
@@ -174,28 +174,34 @@ class BoqExcelService
             return null;
         }
 
-        return $this->importGrid($project, $grid, $missingValue);
+        return $this->importGrid($project, $grid, $missingValue, rates: $rates);
     }
 
     /**
      * @param  array<int, array<int, mixed>>  $grid  Row => column => saved value.
      * @param  array<int, array<int, true>>  $missingValue  Formula cells that have no saved value.
      * @param  string|null  $reason  What the BOQ history shows for this import. Excel by default; the PDF import names itself.
+     * @param  bool  $rates  Whether the person may set rates (Money::visible); see write().
      */
-    public function importGrid(Project $project, array $grid, array $missingValue = [], ?string $reason = null, string $source = 'excel_import'): BoqImportResult
+    public function importGrid(Project $project, array $grid, array $missingValue = [], ?string $reason = null, string $source = 'excel_import', bool $rates = true): BoqImportResult
     {
-        return $this->write($project, fn (Project $locked) => $this->checkGrid($locked, $grid, $missingValue), $reason, $source);
+        return $this->write($project, fn (Project $locked) => $this->checkGrid($locked, $grid, $missingValue), $reason, $source, $rates);
     }
 
     /**
      * Check and write in one transaction, with the project locked. Nothing is written unless every row is clean.
      *
+     * Rates are money: someone who may not see them cannot set them either, as in BoqController. Without $rates the
+     * file's rates are not written: an item already in the BOQ keeps its rate, and a new line comes in at 0 for
+     * someone who sees rates to price it. The file is still read and checked as a whole.
+     *
      * @param  callable(Project): array  $check  Returns the clean rows, the errors and the notes, as checkGrid() does.
      * @param  string|null  $reason  What the BOQ history shows for this import.
+     * @param  bool  $rates  Whether the person may set rates: Money::visible() of the person importing.
      */
-    public function write(Project $project, callable $check, ?string $reason = null, string $source = 'excel_import'): BoqImportResult
+    public function write(Project $project, callable $check, ?string $reason = null, string $source = 'excel_import', bool $rates = true): BoqImportResult
     {
-        return DB::transaction(function () use ($project, $check, $reason, $source) {
+        return DB::transaction(function () use ($project, $check, $reason, $source, $rates) {
             // The same lock BoqService::create takes, so an import and a hand-added line cannot race for sort order.
             $project = Project::lockForUpdate()->findOrFail($project->id);
 
@@ -206,21 +212,31 @@ class BoqExcelService
             }
 
             $existing = $this->existingByCode($project);
+
+            // Said only when a rate in the file would have changed a line.
+            if (! $rates && array_filter($rows, fn (array $row) => ! Dec::of($row['rate'])->isEqualTo(Dec::of($existing->get($row['code'])?->rate ?? 0))) !== []) {
+                $notes[] = ['row' => 0, 'message' => self::ratesNotImported()];
+            }
+
             $sort = (int) $project->boqItems()->max('sort');
             $created = $updated = $unchanged = 0;
 
-            BoqRevisions::with($reason ?? __('Imported from an Excel file'), $source, function () use ($rows, $project, $existing, &$sort, &$created, &$updated, &$unchanged) {
+            BoqRevisions::with($reason ?? __('Imported from an Excel file'), $source, function () use ($rows, $project, $existing, $rates, &$sort, &$created, &$updated, &$unchanged) {
                 foreach ($rows as $row) {
                     $values = [
                         'boq_section_id' => $this->boq->sectionId($project, $row['section']),
                         'description' => $row['description'],
                         'unit' => $row['unit'],
                         'qty' => Dec::qty($row['qty']),
-                        'rate' => Dec::money($row['rate']),
+                        'rate' => Dec::money($rates ? $row['rate'] : 0),
                         ...Arr::only($row, self::OPTIONAL),
                     ];
 
                     if ($item = $existing->get($row['code'])) {
+                        if (! $rates) {
+                            unset($values['rate']);
+                        }
+
                         $item->update($values);
                         $item->wasChanged() ? $updated++ : $unchanged++;
 
@@ -240,6 +256,12 @@ class BoqExcelService
 
             return new BoqImportResult([], $created, $updated, $unchanged, $notes);
         });
+    }
+
+    /** What an import says when the person may not see rates and the file has some: they are not imported (write()). */
+    public static function ratesNotImported(): string
+    {
+        return __('Your role does not see rates, so the rates in this file are not imported. Items already in the BOQ keep their rates; new items come in at rate 0, for someone who sees rates to price them.');
     }
 
     /**
@@ -304,6 +326,7 @@ class BoqExcelService
         $approved = MeasurementEntry::withoutGlobalScope(OrganizationScope::class)
             ->where('organization_id', $project->organization_id)->where('project_id', $project->id)->where('status', 'APPROVED')
             ->selectRaw('boq_item_id, sum(qty) as total')->groupBy('boq_item_id')->pluck('total', 'boq_item_id');
+        $done = $existing->isEmpty() ? [] : $this->boq->workDone($existing->pluck('id')->all());
 
         $rows = [];
         $errors = [];
@@ -390,12 +413,16 @@ class BoqExcelService
                 $seen[$text['code']] ??= $number;
             }
 
-            // The same rule as editing a line by hand: the BOQ cannot go below what is already approved.
+            // The BOQ cannot go below what is already approved. A cut is also held to the work measured, waiting for
+            // approval included, and billed to the client, as editing the line by hand is (BoqService::update).
             if (isset($numbers['qty']) && ($item = $existing->get($text['code']))) {
                 $approvedQty = Dec::of($approved->get($item->id) ?? 0);
+                $qty = Dec::of($numbers['qty']);
 
-                if ($approvedQty->isGreaterThan(Dec::of($numbers['qty']))) {
+                if ($approvedQty->isGreaterThan($qty)) {
                     $fail('qty', __('Quantity cannot be lower than the approved quantity (:qty) for item :code.', ['qty' => fmt_qty($approvedQty), 'code' => $text['code']]));
+                } elseif ($qty->isLessThan(Dec::of($item->qty)) && ($refusal = $this->boq->cutRefusal($done[$item->id], $qty)) !== null) {
+                    $fail('qty', $refusal);
                 }
             }
 

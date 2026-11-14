@@ -24,6 +24,8 @@ class TenderFactController extends Controller
 
     public function index(Request $request, CrmTender $tender): View
     {
+        abort_unless($this->sheet->open($tender, $request->user()), 404);
+
         return view('modules.tender_reading.sheet', [
             'tender' => $tender,
             'sheet' => $this->sheet->build($tender, $request->user()),

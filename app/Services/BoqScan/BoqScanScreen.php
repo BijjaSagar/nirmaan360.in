@@ -27,6 +27,9 @@ use Illuminate\Support\Facades\Route;
  */
 class BoqScanScreen
 {
+    /** The browser's IndexedDB database that holds the kept copies (partials.kept-pdf), deleted whole at sign-out (partials.sign-out). */
+    public const KEPT_DATABASE = 'nirmaan-boq-scan';
+
     /** Reads of a project listed on the scan screen, newest first. */
     private const LISTED = 10;
 
@@ -202,7 +205,8 @@ class BoqScanScreen
         return [
             'pages' => (int) $this->kinds->get(BoqReadKind::KEY)->limits()['max_pages'],
             'pdf_bytes' => (int) config('modules.document_reading.upload.source_kb') * 1024,
-            // How long the browser keeps its copy of a PDF uploaded on the BOQ in Excel page: as long as the preview of it lasts.
+            // How long the browser uses its copy of a PDF uploaded on the BOQ in Excel page: as long as the preview of it lasts.
+            // An older copy is deleted by the next page that carries the copy's script (partials.kept-pdf).
             'minutes' => BoqPdfImport::TTL_MINUTES,
         ];
     }
@@ -231,6 +235,12 @@ class BoqScanScreen
      */
     public static function keptKey(User $user, Project|int $project): string
     {
-        return 'boq-pdf:'.$user->id.':'.($project instanceof Project ? $project->id : $project);
+        return self::keptPrefix($user).($project instanceof Project ? $project->id : $project);
+    }
+
+    /** How every name of this person's kept copies begins. A copy under any other name was left by someone else. */
+    public static function keptPrefix(User $user): string
+    {
+        return 'boq-pdf:'.$user->id.':';
     }
 }

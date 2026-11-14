@@ -216,12 +216,12 @@ class ReadTending
                     $page = new DocumentReadPage(['page_no' => 1, 'pass' => $pass, 'part' => 'full', 'model' => ReaderRequest::figures($key, $pass)['model']]);
                     $page->setRelation('documentRead', $read);
 
-                    // The page itself is taken out again before counting, so an empty picture or an empty text stands in for it.
-                    try {
-                        $body = $this->call->body($kind, $page, '', null);
-                    } catch (Throwable) {
-                        $body = $this->call->body($kind, $page, null, ReaderRequest::pages([1 => '']));
-                    }
+                    // Each pass is counted with what it is really sent: a picture for a pass that reads one, text for
+                    // any other, since a kind can word the two differently (the tender reader does). The page itself is
+                    // taken out again before counting, so an empty picture or an empty text stands in for it.
+                    $body = in_array($pass, ReadIntake::picturePasses($key), true)
+                        ? $this->call->body($kind, $page, '', null)
+                        : $this->call->body($kind, $page, null, ReaderRequest::pages([1 => '']));
 
                     $this->quote->measurePrompt($key, $pass, ReaderRequest::withoutPage($body));
                     $measured++;

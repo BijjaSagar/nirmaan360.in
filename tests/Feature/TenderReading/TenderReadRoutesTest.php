@@ -5,6 +5,7 @@ namespace Tests\Feature\TenderReading;
 use App\Jobs\TenderReading\PrepareTenderText;
 use App\Models\CrmTender;
 use App\Models\CrmTenderDocument;
+use App\Models\CrmTenderFact;
 use App\Models\DocumentRead;
 use App\Models\DocumentReadPage;
 use App\Models\User;
@@ -402,14 +403,25 @@ class TenderReadRoutesTest extends TenderReadingTestCase
         $this->assertTrue($read->refresh()->options['matches']);
     }
 
-    public function test_a_company_whose_plan_has_no_ai_sees_the_sheet_but_cannot_start_a_read(): void
+    public function test_a_company_whose_plan_has_no_ai_cannot_start_a_read_and_sees_a_sheet_only_of_what_was_read(): void
     {
+        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()->assertSee('Nothing has been read from this tender yet.');
+
         $this->organization->update(['plan' => 'contractor']);
         $document = $this->storeDocument($this->tender);
 
-        $this->startRead($this->owner, $document)->assertForbidden();
-        $this->actingAs($this->owner)->get(route('tender-facts.index', $this->tender))->assertOk()->assertSee('Nothing has been read from this tender yet.');
-        $this->actingAs($this->owner)->get(route('crm.tenders.show', $this->tender))->assertOk()->assertDontSee('Read this document');
+        $this->startRead($this->owner->fresh(), $document)->assertForbidden();
+        // The readers are off for the company, and nothing was read: no sheet, as no scan screen (TenderSheet::open).
+        $this->actingAs($this->owner->fresh())->get(route('tender-facts.index', $this->tender))->assertNotFound();
+        $this->actingAs($this->owner->fresh())->get(route('crm.tenders.show', $this->tender))->assertOk()->assertDontSee('Read this document')->assertDontSee('Open the tender sheet');
+
+        // What was read while the plan had them stays on its sheet.
+        CrmTenderFact::withoutGlobalScopes()->create([
+            'organization_id' => $this->organization->id, 'tender_id' => $this->tender->id, 'field' => 'emd_amount', 'value_raw' => 'Rs. 61,500/-',
+            'value_kind' => 'amount', 'page' => 2, 'quote' => 'Earnest Money Deposit: Rs. 61,500/- by online payment', 'source' => 'text',
+        ]);
+        $this->actingAs($this->owner->fresh())->get(route('tender-facts.index', $this->tender))->assertOk()->assertSee('Rs. 61,500/-');
+        $this->actingAs($this->owner->fresh())->get(route('crm.tenders.show', $this->tender))->assertOk()->assertSee('Open the tender sheet')->assertDontSee('Read this document');
     }
 
     public function test_without_consent_or_with_the_reader_not_deployed_nothing_starts(): void

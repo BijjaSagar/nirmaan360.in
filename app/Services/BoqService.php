@@ -143,37 +143,70 @@ class BoqService
      */
     private function assertQtyCoversWorkDone(BoqItem $item, BigDecimal $qty): void
     {
-        $entries = DB::table('measurement_entries')->where('boq_item_id', $item->id)->where('status', '!=', 'REJECTED')->get(['status', 'qty']);
-        $measured = $this->total($entries
-            ->filter(fn (object $entry) => $entry->status === 'APPROVED' || Dec::of($entry->qty)->isPositive())
-            ->pluck('qty'));
+        $refusal = $this->cutRefusal($this->workDone([$item->id])[$item->id], $qty);
 
-        if ($measured->isGreaterThan($qty)) {
-            throw ValidationException::withMessages(['qty' => __('Quantity cannot be lower than the quantity already measured (:qty).', ['qty' => fmt_qty($measured)])]);
-        }
-
-        $billed = $this->total(DB::table('ra_bill_items')
-            ->join('ra_bills', 'ra_bills.id', '=', 'ra_bill_items.ra_bill_id')
-            ->where('ra_bill_items.boq_item_id', $item->id)
-            ->where('ra_bills.type', 'client')
-            ->where('ra_bills.status', '!=', 'CANCELLED')
-            ->pluck('ra_bill_items.current_qty'));
-
-        if ($billed->isGreaterThan($qty)) {
-            throw ValidationException::withMessages(['qty' => __('Quantity cannot be lower than the quantity already billed (:qty).', ['qty' => fmt_qty($billed)])]);
+        if ($refusal !== null) {
+            throw ValidationException::withMessages(['qty' => $refusal]);
         }
     }
 
-    /** @param  iterable<mixed>  $values */
-    private function total(iterable $values): BigDecimal
+    /**
+     * Why a line cannot be cut to $qty, given the work done on it (workDone()), or null when it can. Only a cut is held
+     * to the work done: the caller asks only when $qty is below the line's quantity, as update() does.
+     *
+     * @param  array{measured: BigDecimal, billed: BigDecimal}  $done
+     */
+    public function cutRefusal(array $done, BigDecimal $qty): ?string
     {
-        $sum = BigDecimal::zero();
-
-        foreach ($values as $value) {
-            $sum = $sum->plus(Dec::of($value));
+        if ($done['measured']->isGreaterThan($qty)) {
+            return __('Quantity cannot be lower than the quantity already measured (:qty).', ['qty' => fmt_qty($done['measured'])]);
         }
 
-        return $sum;
+        if ($done['billed']->isGreaterThan($qty)) {
+            return __('Quantity cannot be lower than the quantity already billed (:qty).', ['qty' => fmt_qty($done['billed'])]);
+        }
+
+        return null;
+    }
+
+    /**
+     * The work a cut of each line is held to, counted as assertQtyCoversWorkDone describes: what is measured and what
+     * is billed to the client. Read for many lines at once, so a BOQ import checks every line it cuts the same way a
+     * hand edit is checked. A line with neither has zero of both.
+     *
+     * @param  list<int>  $itemIds
+     * @return array<int, array{measured: BigDecimal, billed: BigDecimal}>
+     */
+    public function workDone(array $itemIds): array
+    {
+        $done = [];
+
+        foreach (array_chunk(array_values(array_unique($itemIds)), 500) as $ids) {
+            foreach ($ids as $id) {
+                $done[$id] = ['measured' => BigDecimal::zero(), 'billed' => BigDecimal::zero()];
+            }
+
+            $entries = DB::table('measurement_entries')->whereIn('boq_item_id', $ids)->where('status', '!=', 'REJECTED')->get(['boq_item_id', 'status', 'qty']);
+
+            foreach ($entries as $entry) {
+                if ($entry->status === 'APPROVED' || Dec::of($entry->qty)->isPositive()) {
+                    $done[(int) $entry->boq_item_id]['measured'] = $done[(int) $entry->boq_item_id]['measured']->plus(Dec::of($entry->qty));
+                }
+            }
+
+            $billed = DB::table('ra_bill_items')
+                ->join('ra_bills', 'ra_bills.id', '=', 'ra_bill_items.ra_bill_id')
+                ->whereIn('ra_bill_items.boq_item_id', $ids)
+                ->where('ra_bills.type', 'client')
+                ->where('ra_bills.status', '!=', 'CANCELLED')
+                ->get(['ra_bill_items.boq_item_id', 'ra_bill_items.current_qty']);
+
+            foreach ($billed as $line) {
+                $done[(int) $line->boq_item_id]['billed'] = $done[(int) $line->boq_item_id]['billed']->plus(Dec::of($line->current_qty));
+            }
+        }
+
+        return $done;
     }
 
     /**

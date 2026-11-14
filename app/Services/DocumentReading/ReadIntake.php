@@ -58,6 +58,29 @@ class ReadIntake
     }
 
     /**
+     * The passes of this kind that read a page picture: the pass an uploaded picture is read with, and
+     * every pass that follows it on the same page ("then" in the kind's figures), which the page reader
+     * gives the same picture. Every other pass of the kind reads the text of its pages.
+     *
+     * @return list<string>
+     */
+    public static function picturePasses(string $kind): array
+    {
+        $first = self::picturePass($kind);
+        $passes = $first === null ? [] : [$first];
+
+        for ($at = 0; $at < count($passes); $at++) {
+            foreach ((array) config("modules.document_reading.kinds.{$kind}.passes.{$passes[$at]}.then", []) as $next) {
+                if (is_string($next) && ! in_array($next, $passes, true) && is_array(config("modules.document_reading.kinds.{$kind}.passes.{$next}"))) {
+                    $passes[] = $next;
+                }
+            }
+        }
+
+        return $passes;
+    }
+
+    /**
      * Where a half of a page lies on the whole page, in parts per thousand from the top.
      *
      * @return array{top:int, height:int}

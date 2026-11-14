@@ -60,7 +60,8 @@ class BoqExcelController extends Controller
         $request->validate(['file' => ['required', 'file', 'extensions:'.implode(',', self::SHEET_EXTENSIONS), 'max:5120']]);
 
         $file = $request->file('file');
-        $result = $this->service->importTemplate($project, $file->getRealPath());
+        // Someone who may not see rates cannot set them either: their file's rates are not written.
+        $result = $this->service->importTemplate($project, $file->getRealPath(), Money::visible($request->user()));
 
         if ($result?->ok()) {
             return redirect()->route('boq.excel.index', $project)

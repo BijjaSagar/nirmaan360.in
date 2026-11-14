@@ -8,8 +8,8 @@ use App\Services\DocumentReading\ReadKinds;
 
 /**
  * The field app's "Read from photo" on the challan form: this module's challan reader is deployed, the
- * company's plan has site control, and the person may enter a challan. Whether the readers are on for the
- * company is the status answer's "released" beside it (AiSpend::readersOn).
+ * company's plan has site control, and the person may enter a challan. While the readers are off for the
+ * company (AiSpend::readersOn) the status answer says false here without asking (ReaderAvailability::can).
  */
 class SlipChallanOffer implements ReaderOffer
 {
