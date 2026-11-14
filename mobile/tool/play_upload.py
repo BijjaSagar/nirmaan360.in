@@ -133,6 +133,16 @@ def describe(track: dict) -> str:
     return '\n'.join(lines) or '  (no releases)'
 
 
+def version_name() -> str:
+    """The app's version from pubspec.yaml ("1.0.2" of "version: 1.0.2+20"), for the release's label in Play Console."""
+    pubspec = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'pubspec.yaml')
+    with open(pubspec, encoding='utf-8') as lines:
+        for line in lines:
+            if line.startswith('version:'):
+                return line.split(':', 1)[1].strip().split('+', 1)[0]
+    sys.exit('No version line in pubspec.yaml')
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('action', choices=['check', 'upload'])
@@ -166,7 +176,7 @@ def main() -> None:
     bundle = play.upload_bundle(edit, args.aab)
     code = int(bundle['versionCode'])
     print(f'Uploaded bundle: version code {code}')
-    play.set_release(edit, args.track, code, f'1.0.0 ({code})', args.notes, args.language)
+    play.set_release(edit, args.track, code, f'{version_name()} ({code})', args.notes, args.language)
     play.validate(edit)
     print(f'Edit is valid: {args.track} would get version {code} at 100%.')
     if not args.commit:
