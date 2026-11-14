@@ -130,6 +130,203 @@ Both go through `BoqService`, as the web BOQ page does, and each change is kept 
 - **403** `{"message": "Only the company owner can delete a BOQ item."}` for anyone else, an admin included.
 - **422** `errors.boq`, one message per kind of record that holds the line: measurements, work in a daily report that is not deleted, a contractor tender, a work order that is not deleted, an RA bill, site progress entries, labour. The website's remove refuses the same records.
 
+## BOQ file import
+
+The website's column check, for the field app: a BOQ sheet in any layout (`.xlsx`, `.xlsm`, `.xls`, `.ods`, `.csv`) is read by its own headings and staged, the app shows how it was read, the person changes a column if needed, and only a confirm writes BOQ lines. It runs through the same `BoqSheetImport` as the website, so the lines, the checks, the BOQ history (`excel_import`, "Imported from … after checking its columns") and the remembered layouts are the same.
+
+| Method and path | Answers |
+| --- | --- |
+| `POST /projects/{project}/boq-imports` | 201 with the check, or 422 |
+| `GET /projects/{project}/boq-imports/{token}` | 200 with the check |
+| `PATCH /projects/{project}/boq-imports/{token}` | 200 with the check as changed |
+| `POST /projects/{project}/boq-imports/{token}/confirm` | 200 with what was imported, 409 or 422 |
+| `DELETE /projects/{project}/boq-imports/{token}` | 204, no body |
+
+**Who.** Every route needs `boq.manage` (403 without it) and the `reports` plan feature, which carries the website's any-layout import (403 with the plan wording, see Plan refusals). A project of another company, or one the person is not given, is 404, as on the other project routes. Offer the import when `GET /me` has `can["boq.manage"]` true and `organization.features` holds `reports`.
+
+**Limits a minute**, each on its own counter outside the 120 all requests share: upload 20, change 60, confirm 20, set aside 20. The same numbers as the website.
+
+**Nothing is written before the confirm**, whatever the file. A file laid out like our own template (`template: true`) is checked and confirmed too, where the website imports it straight away.
+
+**The token.** 40 letters and digits, tied to the person who uploaded, the project and the company. The check is kept for 30 minutes from the upload or the last change; `expires_at` says until when. A token that never was, one that expired, one that was confirmed or set aside, and anyone else's, all answer the same 404, on every route:
+
+```json
+{"message": "This preview has expired or belongs to someone else. Previews are kept for 30 minutes. Please upload the file again.", "code": "import_not_found"}
+```
+
+A 404 without `code` is the project itself.
+
+**Codes.** A refusal the app should branch on carries `code` beside `message`. `message` is for the person, in their language; branch on `code`:
+
+| `code` | Status | Route | Meaning |
+| --- | --- | --- | --- |
+| `unreadable` | 422 | upload | The file cannot be read as a BOQ. |
+| `pdf_scanned` | 422 | upload | A scanned PDF: the website's scan reader. |
+| `pdf_on_website` | 422 | upload | A PDF with text: the website's BOQ import. |
+| `import_not_found` | 404 | every route with a token | No such check for this person on this project, any more. |
+| `version_changed` | 409 | confirm | The check changed after the one seen. |
+| `confirming` | 409 | confirm | A confirm of this token is running. |
+| `import_refused` | 422 | confirm | A row or the sheet has a problem. Nothing written. |
+
+**PDFs** are not taken here yet. A PDF's own check on the website asks for a statement the column check does not (the language it is printed in, that its rows were compared with its pages, a tick on every note, a reason when its total disagrees). A PDF is told by its name or by its first bytes, read only to say why, and refused with 422:
+- `pdf_scanned`: a scanned copy or a picture, a PDF whose text a scanner added, or one in an old Marathi or Hindi font. `scan_reader` (bool) says whether the website offers this person its reader for scans; the message says the same in words. Send the person to the website.
+- `pdf_on_website`: a PDF with text. It imports on the website's BOQ import page.
+- `unreadable`: a damaged PDF, one with no table found, one too long. The reader's own words, as the website gives them.
+
+### `POST /projects/{project}/boq-imports`
+
+`multipart/form-data` with the file as `file`.
+
+| Field | Rules |
+| --- | --- |
+| `file` | required, one file. A PDF up to 10 MB (refused, as above). Any other file named `.xlsx`, `.xlsm`, `.xls`, `.ods`, `.csv`, `.txt` or `.tsv`, up to 5 MB: the website's rules. Its content decides how it is read, so an `.xls` saved as `.xlsx` is fine. |
+
+- **201** `{"data": {...}}`, the check, below.
+- **422** in Laravel's shape on `errors.file`, with no `code`, for a missing file, two files, another kind of name or a file too large.
+- **422** with a `code` when the file was looked at and cannot be taken. `message` and `errors.file[0]` are the same words for the person:
+
+```json
+{"message": "This file is not a spreadsheet that can be read. Upload an Excel workbook (.xlsx or .xls), an OpenDocument sheet (.ods) or a CSV file.",
+ "code": "unreadable", "errors": {"file": ["This file is not a spreadsheet that can be read. Upload an Excel workbook (.xlsx or .xls), an OpenDocument sheet (.ods) or a CSV file."]}}
+{"message": "This PDF has no text in it, so it is a scanned copy or a picture. …", "code": "pdf_scanned", "scan_reader": false, "errors": {"file": ["…"]}}
+```
+
+`code` is `unreadable` (not a sheet, no sheet with anything in it, no table, a damaged or oversized workbook, or a PDF the reader refused), `pdf_scanned` or `pdf_on_website`. `scan_reader` comes only with `pdf_scanned`.
+
+A sheet with no heading the reader recognises is still staged (201, `found: false`) so the person can choose the heading row.
+
+### `GET /projects/{project}/boq-imports/{token}`
+
+**200** `{"data": {...}}`, the check as it stands. It does not make the check last longer.
+
+### `PATCH /projects/{project}/boq-imports/{token}`
+
+JSON with any of these, the choices and rules of the website's form:
+
+| Field | Rules | What it does |
+| --- | --- | --- |
+| `sheet` | integer 0 to 50 | Read another sheet (`sheets[].index`). Its heading is found afresh and the rows left out start again. |
+| `row` | integer 1 to 100000 | The heading row, from `heading_candidates`. Read with `span`. |
+| `row_typed` | integer 1 to 100000 | A heading row typed by the person. Wins over `row`. |
+| `span` | integer 1 to 3 | How many rows the heading takes. It counts only with `row` or `row_typed`: to change only the span, send the current `heading_row` with it. |
+| `fields` | object, at most 52 entries, column number => key from `fields`, each a string up to 20 or null | What columns hold, as `{"5": "rate", "7": null}`. null is "Leave out", and so is a key not in `fields`. A field goes to one column: giving it to one takes it from any other. Columns not named keep their meaning. |
+| `unit` | string up to 16, or null | The unit for lines whose row has none. Sent as null or "" it is cleared; not sent, it stays. |
+| `skip` | integer 1 to 100000 | Leave this row of the sheet out. Only a row below the heading counts. |
+| `keep` | integer 1 to 100000 | Put a row left out back (`other_rows[].can_put_back`). |
+
+One change at a time is read, in this order: a new `sheet`; else a new heading (`row` or `row_typed`, with `span`); else `fields`. `skip`, `keep` and `unit` apply on top. Anything that does not fit (a sheet or row that is not there) is ignored, as on the website.
+
+- **200** `{"data": {...}}`. Every PATCH adds 1 to `version`, and the check lasts 30 minutes from now.
+- **422** in Laravel's shape for a field outside its rules. Nothing changes.
+
+### `POST /projects/{project}/boq-imports/{token}/confirm`
+
+```json
+{"version": 3}
+```
+
+`version` is required, an integer from 1: the `version` of the check the person looked at. It imports the file as that check showed it.
+
+- **200** what was imported:
+
+```json
+{"message": "3 BOQ rows imported.",
+ "data": {"created": 2, "updated": 1, "unchanged": 0, "rows": 3,
+          "notes": [{"row": 0, "message": "1 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ."}],
+          "notes_count": 1, "repeated": false}}
+```
+
+`created`, `updated` and `unchanged` count the BOQ lines added, changed and matched with nothing to change; `rows` is their sum. `notes` are the reader's notes on the file, at most 200, with `notes_count` counting all of them. `repeated` is false the first time.
+- **200** with `repeated: true` and the same counts when this token was already imported by this person on this project, within 30 minutes of that. Nothing more is written. So a confirm can be sent again after a lost reply.
+- **409** `{"message": "How the file is read was changed in another window. Check the lines again and confirm.", "code": "version_changed", "version": 4, "data": {...}}` when the check changed after the one the person saw. `version` and `data` are the check as it is now. Nothing is written: show it again.
+- **409** `{"message": "This file is being imported now. Wait a moment, then confirm again to see what was imported.", "code": "confirming"}` while a confirm of the same token is running. Confirm again in a moment: that answers what the first one imported, with `repeated: true`.
+- **422** `{"message": "This file cannot be imported as it is", "code": "import_refused", "errors": {"import": ["Row 2: Quantity cannot be lower than the approved quantity (50.000) for item 2.1."]}, "data": {...}}` when a row or the sheet has a problem. `errors.import` holds at most 200 problems as text, row first; `data` is the check, whose `errors` list them by row and field. Nothing is written. The check stays: change a column or leave a row out, then confirm again.
+- **422** in Laravel's shape on `errors.version` for a missing or bad version.
+
+A confirm runs under a lock on the token, and what it imported is kept for 30 minutes under that token, tied to the person and the project. A second confirm, at the same time or later, writes nothing: it answers `confirming` or the first result.
+
+### `DELETE /projects/{project}/boq-imports/{token}`
+
+Sets the file aside. **204** with no body. Nothing is imported. Afterwards the token is 404, so a 404 to a repeated delete means it is already gone.
+
+### The check
+
+Every key is always sent. Quantities are strings with three decimals and money strings with two, as elsewhere. Row numbers are the sheet's own, counting from 1; row 0 in a note or a problem is the file as a whole.
+
+An example, with its lists shortened, and `renumbered` and `errors` filled in to show their rows (a check with a problem in `errors` has `can_confirm: false`):
+
+```json
+{"data": {
+  "token": "W5DQ9J43yotJHpNvdVKCEcPhGkQGrJDv3vzBiucx", "kind": "sheet", "file": "site-works.xlsx", "format": "xlsx",
+  "version": 1, "expires_at": "2026-11-14T13:56:39+05:30", "money": true, "can_confirm": true,
+  "found": true, "template": false, "picked": "only", "saved_layout": null,
+  "sheets": [{"index": 0, "name": "Worksheet", "rows": 8, "priced_rows": 5, "hidden": false}],
+  "sheet": 0, "heading_row": 2, "span": 1,
+  "heading_candidates": [{"row": 1, "text": "BILL OF QUANTITIES"}, {"row": 2, "text": "Sl. No. | Particulars | UOM | Qty | Unit Rate | Total Amount | Remarks"}],
+  "columns": [
+    {"column": 1, "letter": "A", "heading": "Sl. No.", "field": "serial", "source": "heading", "unit": null, "samples": ["A", "1.1", "1.2"]},
+    {"column": 5, "letter": "E", "heading": "Unit Rate", "field": "rate", "source": "heading", "unit": null, "samples": ["12", "340", "45"]}
+  ],
+  "fields": [{"key": null, "label": "Leave out"}, {"key": "serial", "label": "Serial number"}, {"key": "rate", "label": "Rate"}],
+  "kinds": [{"key": "line", "label": "Line"}, {"key": "rate_only", "label": "Rate only"}],
+  "sources": [{"key": "heading", "label": "From the heading"}, {"key": "chosen", "label": "Your choice"}],
+  "unit": null, "suggested_unit": null, "heading_unit": null, "needs_unit": false,
+  "counts": {"lines": 3, "rows": 3, "create": 2, "update": 1, "rate_only": 1, "adjustments": 1, "renumbered": 0,
+             "wording_changes": 1, "left_out": 0, "other_rows": 3, "notes": 3, "errors": 0},
+  "lines": [
+    {"row": 4, "kind": "line", "section": "SITE WORK", "code": "1.1", "renumbered_from": null, "description": "Clearing the site of shrubs",
+     "unit": "sqm", "qty": "400.000", "rate": "12.00", "amount": "4800.00", "per": null, "file_rate": null, "category": "other",
+     "details": [], "notes": [], "action": "create"},
+    {"row": 6, "kind": "rate_only", "section": "SITE WORK", "code": "1.3", "renumbered_from": null, "description": "Anti-termite treatment",
+     "unit": "sqm", "qty": "0.000", "rate": "45.00", "amount": null, "per": null, "file_rate": null, "category": "other",
+     "details": ["Rate only: the file gives no quantity."], "notes": [], "action": "create"}
+  ],
+  "rate_only": [{"row": 6, "code": "1.3", "description": "Anti-termite treatment", "unit": "sqm", "rate": "45.00"}],
+  "renumbered": [{"row": 9, "from": "1", "to": "1-2", "existing": "Brick masonry in CM 1:6"}],
+  "wording_changes": [{"row": 5, "code": "1.2", "now": "Earth filling in plinth", "after": "Earth filling in plinth with approved soil"}],
+  "adjustments": [{"row": 8, "label": "Add GST 18%", "percent": "18", "effect": "4536.00", "amount": "4464.00", "shows": "other"}],
+  "other_rows": [{"row": 3, "kind": "section", "text": "SITE WORK", "reason": null, "can_put_back": false}],
+  "excluded_rows": [],
+  "notes": [{"row": 0, "message": "The lines add up to ₹25,200.00 but the total written in the file is ₹24,800.00. The lines are taken as they are, so please check that total."}],
+  "errors": [{"row": 5, "field": "qty", "message": "Quantity cannot be lower than the approved quantity (50.000) for item 1.2."}],
+  "totals": {"lines": "25200.00", "adjustments": "4536.00", "with_adjustments": "29736.00",
+             "file_subtotal": "24800.00", "subtotal_matches": false, "file_total": null, "total_matches": null,
+             "rows": [{"row": 7, "label": "Total", "kind": "subtotal", "amount": "24800.00", "comes_to": "25200.00", "matches": false}]},
+  "mismatches": [{"row": 5, "description": "Earth filling in plinth with approved soil", "qty": "60.000", "rate": "340.00", "computed": "20400.00", "amount": "20000.00"}]
+}}
+```
+
+The file and how it is read:
+- `token` (string), `kind` (always `sheet` for now; a PDF check, if one comes, will be another kind), `file` (the name uploaded, at most 120 characters), `format` (`xlsx`, `xls`, `ods` or `csv`, by content).
+- `version` (int): send it with the confirm. `expires_at` (ISO 8601, Asia/Kolkata).
+- `money` (bool): whether this person sees money. False means the money keys below are null, not zero.
+- `can_confirm` (bool): `found`, no `errors`, and at least one row to write; the website shows its import button only then.
+- `found` (bool): a heading row with a description and a quantity or rate column. While false, `errors` says to choose the heading row.
+- `template` (bool): laid out like our own template or export.
+- `picked`: how the sheet was chosen: `only` (the file has one), `priced` (the most priced rows), `saved` (a layout the company confirmed before matched it) or `chosen` (the person chose it).
+- `saved_layout`: null, or the company's remembered layout this file matched, `{id, file, uses, last_used_at}` (`file` the name of the file it was saved from, `last_used_at` ISO 8601 or null). Columns were set from it; the person still checks and confirms.
+- `sheets`: every sheet read (at most 12), `{index, name, rows, priced_rows, hidden}`; `sheet` is the `index` read now.
+- `heading_row` (int or null) and `span` (1 to 3). `heading_candidates`: rows the person can pick as the heading, `{row, text}`, the text the start of the row's cells joined by " | ".
+- `columns`: every column with a heading or a value, left to right: `column` (number from 1, the key for `fields` in a PATCH), `letter`, `heading` (as written, "" when none), `field` (a key of `fields`, or null for left out), `source` (how the meaning was decided: a key of `sources`, or null), `unit` (a unit the heading names, as in "Qty (Cum)", or null) and `samples` (up to three values under it, as text).
+- `fields`: what a column can be read as, `{key, label}`, "Leave out" first with `key` null. `kinds`: what a row can be read as, for `lines[].kind` and `other_rows[].kind`. `sources`: the labels of `columns[].source`. Labels are in the person's language.
+- `unit` (the unit typed for lines with none, or null), `suggested_unit` (the unit typed for the last file in this layout, only offered; null), `heading_unit` (a unit the quantity or rate heading names, used for lines with none; null), `needs_unit` (bool: some lines have no unit and none is typed or named; the confirm is refused until one is).
+
+What would be imported, and what would not:
+- `counts`: `lines` (lines read, rate-only ones among them), `rows` (rows that pass every check: all are written on confirm when `errors` is 0), `create` and `update` (lines added and lines that match an item already in the project, by code, as the website counts them), `rate_only`, `adjustments`, `renumbered`, `wording_changes`, `left_out` (rows not imported, of the kinds `skipped`, `after_total`, `note`, `column_numbers`, `heading_repeat`, `excluded` and `furniture`), `other_rows` (every row that is not a line), `notes` and `errors`. A line that matches an item and changes nothing is counted under `update` here: whether anything changes is known when it is written, and the confirm reply says it.
+- `lines`: the first 20 lines as they would come in: `row`, `kind` (`line` or `rate_only`), `section` (or null), `code` (the code it is written under), `renumbered_from` (the code the file gave, when it had to take a new one; else null), `description`, `unit`, `qty`, `rate`, `amount` (the amount written in the sheet, or null), `per` (what the file's rate is for when it is not one unit, as "100 sqm"; else null), `file_rate` (that rate as the file gives it; else null), `category` (or null), `details` (texts kept with the line), `notes` (the reader's notes on this row) and `action`: `create` or `update` (an item with this code is in the project and the line is written over it).
+- `rate_only`: lines with no quantity in the file, imported at quantity 0, at most 100: `{row, code, description, unit, rate}`.
+- `renumbered`: lines whose code is taken by a different item, so they are added under a new one, at most 200: `{row, from, to, existing}` (`existing` is that item's description).
+- `wording_changes`: lines that change the description of an item already in the project, at most 200: `{row, code, now, after}`.
+- `adjustments`: percentages and amounts added to or taken off the work (contingencies, a rebate, tax, round-off). They are not lines and are not imported: `row`, `label`, `percent` (a decimal string as written, or null), `effect` (what it comes to on the lines), `amount` (the figure in the sheet, or null) and `shows` (`amount`: the figure is the adjustment; `total`: it is the total after it; `other`; or null).
+- `other_rows`: rows that are not lines, at most 300: `row`, `kind`, `text` (the row's words), `reason` (why, or null) and `can_put_back` (true for a row the person left out: `keep` puts it back). Sections and specifications are carried into the lines under them.
+- `excluded_rows`: the rows the person left out.
+- `notes`: things to check, `{row, message}`, at most 200, those about the file as a whole first.
+- `errors`: what stops the import, `{row, field, message}`, at most 200 (`counts.errors` counts all). `field` is a key of `fields` or null.
+- `totals`: `lines` (what the lines add up to), `adjustments`, `with_adjustments`, `file_subtotal` and `file_total` (written in the sheet, or null), `subtotal_matches` and `total_matches` (bool, or null with nothing to compare), and `rows`: each total row of the sheet, `{row, label, kind, amount, comes_to, matches}`, `kind` being `subtotal`, `total` or `section`, `comes_to` what the lines above it add up to, `matches` a bool or null.
+- `mismatches`: lines whose amount in the sheet is not quantity times rate: `{row, description, qty, rate, computed, amount}`. The quantity and rate are imported as the sheet gives them.
+
+**Money.** Without `money.view`, as on the website's page: `rate`, `amount` and `file_rate` of every line, `rate_only[].rate`, `adjustments[].effect`, `amount` and `shows`, and the whole of `totals` and `mismatches` are null. A note or a line's detail that quotes a money figure is left out as well (`counts.notes` counts what is sent), such as the lines' total against the sheet's or a rate the reader divided. What the file itself holds is shown as the website shows it, the `samples` under each column and the `text` of `heading_candidates` among them, since a person cannot say what a column is without seeing it. The confirm takes the file's rates from anyone who may manage the BOQ, as the website's column check does.
+
 ## A project's advance in lines, and its recovery percentage
 
 The mobilisation advance can be several lines, each with an amount, the date it came in and a note, and the advance recovery percentage can be worked out from the advance and the contract value. These are additions to `GET` and `PATCH /projects/{project}`: no key is renamed or changes type, and a request that sends neither new field behaves as before. `advance_amount` and `advance_recovery_pct` stay the figures RA bills use, so a bill already made keeps the terms saved on it and new bills use the new ones.
