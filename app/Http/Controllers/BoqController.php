@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Reports\BoqExcelController;
 use App\Http\Presenters\ContractorControlPresenter;
 use App\Models\BoqItem;
 use App\Models\Project;
@@ -16,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -85,9 +87,16 @@ class BoqController extends Controller
 
     public function import(Request $request, Project $project): RedirectResponse
     {
+        $columns = $this->columnsFor($request);
+
+        // Anything that is not our own CSV (an Excel sheet, a PDF, a CSV in the contractor's own columns) is read
+        // by its own headings and shown first, where the company's plan has that import.
+        if ($request->hasFile('file') && $this->readsAnyLayout($request) && ! $this->isTemplateCsv($request, $columns)) {
+            return app(BoqExcelController::class)->import($request, $project);
+        }
+
         $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
 
-        $columns = $this->columnsFor($request);
         $rows = $this->readCsv($request->file('file')->getRealPath(), $columns);
 
         DB::transaction(function () use ($rows, $project) {
@@ -175,6 +184,38 @@ class BoqController extends Controller
      *
      * @return list<string>
      */
+    /** Whether this company's plan has the import that reads any sheet or PDF by its headings. */
+    private function readsAnyLayout(Request $request): bool
+    {
+        return Route::has('boq.excel.import') && (bool) $request->user()->organization?->allowsFeature('reports');
+    }
+
+    /**
+     * Whether the upload is a CSV in the template's own columns: the file this page exports and has always imported.
+     *
+     * @param  list<string>  $columns
+     */
+    private function isTemplateCsv(Request $request, array $columns): bool
+    {
+        $file = $request->file('file');
+
+        if (! $file->isValid() || ! in_array(strtolower((string) $file->getClientOriginalExtension()), ['csv', 'txt'], true)) {
+            return false;
+        }
+
+        $handle = @fopen($file->getRealPath(), 'r');
+
+        if ($handle === false) {
+            return false;
+        }
+
+        $header = fgetcsv($handle, 0, ',', '"', '');
+        fclose($handle);
+        $header = array_map(fn ($cell) => strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))), $header ?: []);
+
+        return array_diff($columns, $header) === [];
+    }
+
     private function columnsFor(Request $request): array
     {
         return Money::visible($request->user()) ? self::COLUMNS : array_values(array_diff(self::COLUMNS, ['rate']));
