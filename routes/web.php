@@ -127,7 +127,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/boq-template.csv', [BoqController::class, 'template'])->name('boq.template');
     Route::middleware('can:boq.manage')->group(function () {
         Route::post('/projects/{project}/boq/items', [BoqController::class, 'store'])->name('boq.store');
-        Route::post('/projects/{project}/boq/import', [BoqController::class, 'import'])->name('boq.import');
+        Route::post('/projects/{project}/boq/import', [BoqController::class, 'import'])->middleware('throttle:20,1')->name('boq.import');
         Route::patch('/boq-items/{item}', [BoqController::class, 'update'])->name('boq.update');
         Route::delete('/boq-items/{item}', [BoqController::class, 'destroy'])->name('boq.destroy');
     });

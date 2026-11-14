@@ -80,7 +80,7 @@
                     <p class="text-sm text-ink-3">{{ \App\Services\Reports\BoqPdfReader::hasScanReader()
                         ? __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so read it as a scan instead, or upload the Excel file.')
                         : __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so upload the Excel file for those.') }}</p>
-                    <x-field :label="__('BOQ file (.xlsx, .xls, .ods, .csv or .pdf)')" name="file"><input id="file" name="file" type="file" accept=".xlsx,.xlsm,.xls,.ods,.csv,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet,text/csv" class="input" required></x-field>
+                    <x-field :label="__('BOQ file (.xlsx, .xls, .ods, .csv or .pdf)')" name="file"><input id="file" name="file" type="file" class="input" required></x-field>
                     <div class="flex items-center justify-between gap-2">
                         <a href="{{ route('boq.excel.template') }}" class="link text-sm">{{ __('Download template') }}</a>
                         <button class="btn btn-primary">{{ __('Import') }}</button>

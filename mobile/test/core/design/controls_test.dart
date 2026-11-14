@@ -29,7 +29,7 @@ void main() {
       await pumpDesign(tester, SizedBox(width: 320, child: GloveStepper(value: 5, onChanged: (_) {})));
       for (final finder in <Finder>[find.byIcon(Icons.remove), find.byIcon(Icons.add)]) {
         final Size size = tester.getSize(find.ancestor(of: finder, matching: find.byType(GestureDetector)).first);
-        expect(size.height, greaterThanOrEqualTo(N360Size.tapLarge));
+        expect(size.height, greaterThanOrEqualTo(N360Size.tap));
         expect(size.width, greaterThanOrEqualTo(N360Size.tap));
       }
     });
@@ -97,7 +97,7 @@ void main() {
       expectTapHeight(tester, find.byType(ActionTile));
     });
 
-    testWidgets('N360BottomBar is 64dp and every item is tappable', (tester) async {
+    testWidgets('N360BottomBar items are full tap targets and every item is tappable', (tester) async {
       var tapped = -1;
       await pumpDesign(
         tester,

@@ -41,6 +41,32 @@
         </section>
     @endif
 
+    @if ($advances !== [])
+        {{-- The mobilisation advance, line by line. Money, so the controller sends none to anyone without money.view. --}}
+        <section class="card mt-5">
+            <div class="card-head"><h2 class="card-title">{{ __('Mobilisation advance') }}</h2></div>
+            <div class="overflow-x-auto">
+                <table class="ledger">
+                    <thead><tr><th>{{ __('Date received') }}</th><th>{{ __('Note') }}</th><th class="r">{{ __('Amount') }}</th></tr></thead>
+                    <tbody>
+                    @foreach ($advances as $advance)
+                        <tr>
+                            <td class="num">{{ $advance['received_on'] ? \Illuminate\Support\Carbon::parse($advance['received_on'])->format('d M Y') : '—' }}</td>
+                            <td>{{ $advance['note'] ?? '—' }}</td>
+                            <td class="r num">{{ inr($advance['amount']) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                    <tfoot><tr><th colspan="2">{{ __('Total') }}</th><th class="r num">{{ inr($project->advance_amount) }}</th></tr></tfoot>
+                </table>
+            </div>
+            <p class="border-t border-rule px-4 py-2.5 text-sm">
+                {{ __('Advance recovery') }} <span class="num font-medium">{{ $project->advance_recovery_pct }}%</span>
+                <span class="text-ink-3">· {{ $project->advance_recovery_auto ? __('worked out') : __('set by hand') }}</span>
+            </p>
+        </section>
+    @endif
+
     <div class="mt-5 grid gap-5 lg:grid-cols-2">
         <section class="card">
             <div class="card-head"><h2 class="card-title">{{ __('Latest daily reports') }}</h2></div>

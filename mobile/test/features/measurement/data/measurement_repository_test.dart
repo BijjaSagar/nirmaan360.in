@@ -60,14 +60,8 @@ void main() {
   });
 
   test('refuses nos or dimensions the server would refuse', () async {
-    expect(
-      () => repo.create(entry(nos: '0')),
-      throwsA(isA<ValidationFailure>()),
-    );
-    expect(
-      () => repo.create(entry(length: '0')),
-      throwsA(isA<ValidationFailure>()),
-    );
+    expect(() => repo.create(entry(nos: '0')), throwsA(isA<ValidationFailure>()));
+    expect(() => repo.create(entry(length: '0')), throwsA(isA<ValidationFailure>()));
     expect(await app.db.select(app.db.outbox).get(), isEmpty);
   });
 
@@ -105,11 +99,7 @@ void main() {
     final uuid = await repo.create(entry());
     await repo.sendForApproval(uuid);
     await app.sync();
-    app.api.setServerStatus(
-      app.api.measurementByUuid(uuid),
-      'RETURNED',
-      returnRemark: 'Check',
-    );
+    app.api.setServerStatus(app.api.measurementByUuid(uuid), 'RETURNED', returnRemark: 'Check');
     await app.sync();
 
     await repo.edit(uuid, entry(nos: '3.000'));
@@ -136,9 +126,7 @@ void main() {
     await app.sync();
 
     final all = await repo.watchByProject(1).first;
-    final inReview = await repo
-        .watchByProject(1, status: DocStatus.inReview)
-        .first;
+    final inReview = await repo.watchByProject(1, status: DocStatus.inReview).first;
 
     expect(all, hasLength(2));
     expect(inReview.single.record.clientUuid, sent);

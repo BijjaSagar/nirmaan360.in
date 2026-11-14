@@ -1,0 +1,260 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nirmaan360/core/design/design.dart';
+import 'package:nirmaan360/core/design/internal/soft_surface.dart';
+
+import 'test_helpers.dart';
+
+BuildingArtPainter _artPainter(WidgetTester tester) => tester
+    .widget<CustomPaint>(find.descendant(of: find.byType(BuildingProgressArt), matching: find.byType(CustomPaint)))
+    .painter! as BuildingArtPainter;
+
+void main() {
+  setUpAll(loadRealFonts);
+
+  group('BuildingProgressArt', () {
+    testWidgets('reduced motion: final state on the first frame, no animation', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: BuildingProgressArt(fraction: 0.7)), disableAnimations: true);
+      expect(_artPainter(tester).fraction, closeTo(0.7, 0.0001));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('animated: rises from nothing built to the fraction, then is still', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: BuildingProgressArt(fraction: 0.7)));
+      expect(_artPainter(tester).fraction, 0);
+      await tester.pump(const Duration(milliseconds: 500));
+      final double mid = _artPainter(tester).fraction;
+      expect(mid, greaterThan(0));
+      expect(mid, lessThanOrEqualTo(0.7));
+      await tester.pump(const Duration(seconds: 2));
+      expect(_artPainter(tester).fraction, closeTo(0.7, 0.0001));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('a changed fraction animates from where it was', (tester) async {
+      final v = ValueNotifier<double>(0.2);
+      addTearDown(v.dispose);
+      await pumpDesign(
+        tester,
+        SizedBox(
+          width: 300,
+          child: ValueListenableBuilder<double>(
+            valueListenable: v,
+            builder: (_, value, _) => BuildingProgressArt(fraction: value, animateEntry: false),
+          ),
+        ),
+      );
+      expect(_artPainter(tester).fraction, closeTo(0.2, 0.0001));
+      v.value = 0.9;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(_artPainter(tester).fraction, greaterThan(0.2));
+      await tester.pump(const Duration(seconds: 2));
+      expect(_artPainter(tester).fraction, closeTo(0.9, 0.0001));
+    });
+
+    testWidgets('sits in a RepaintBoundary and repaints only on a new fraction', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: BuildingProgressArt(fraction: 1)), disableAnimations: true);
+      expect(find.descendant(of: find.byType(BuildingProgressArt), matching: find.byType(RepaintBoundary)), findsOneWidget);
+      const a = BuildingArtPainter(fraction: 0.5);
+      expect(a.shouldRepaint(const BuildingArtPainter(fraction: 0.5)), isFalse);
+      expect(a.shouldRepaint(const BuildingArtPainter(fraction: 0.6)), isTrue);
+    });
+
+    testWidgets('draws at the sizes Home uses without throwing', (tester) async {
+      for (final width in <double>[150, 240, 340]) {
+        await pumpDesign(tester, SizedBox(width: width, child: const BuildingProgressArt(fraction: 0.36)), disableAnimations: true);
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets('an out-of-range fraction is held to the ends', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 200, child: BuildingProgressArt(fraction: 2)), disableAnimations: true);
+      expect(_artPainter(tester).fraction, 1);
+    });
+  });
+
+  group('HatchedProgressBar', () {
+    testWidgets('reduced motion: at its final state on the first frame', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: HatchedProgressBar(fraction: 0.5, markerLabel: 'Today')), disableAnimations: true);
+      expect(tester.hasRunningAnimations, isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('speaks the percent and the marker', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpDesign(tester, const SizedBox(width: 300, child: HatchedProgressBar(fraction: 0.5, markerLabel: 'Today')), disableAnimations: true);
+      expect(find.bySemanticsLabel('50%, Today'), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('animated: runs in and settles', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: HatchedProgressBar(fraction: 0.5)));
+      expect(tester.hasRunningAnimations, isTrue);
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('edge fractions do not throw', (tester) async {
+      for (final f in <double>[0, 1, -1, 3]) {
+        await pumpDesign(tester, SizedBox(width: 300, child: HatchedProgressBar(fraction: f, markerLabel: 'Today')), disableAnimations: true);
+        expect(tester.takeException(), isNull);
+      }
+    });
+  });
+
+  group('small data widgets', () {
+    testWidgets('TickGauge paints, speaks, and takes a tick count', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpDesign(tester, const SizedBox(width: 300, child: TickGauge(fraction: 0.25, ticks: 20)));
+      expect(find.bySemanticsLabel('25%'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      handle.dispose();
+    });
+
+    testWidgets('SquarePercent shows its label, is a 44dp tile, and fills on entry', (tester) async {
+      await pumpDesign(tester, const SquarePercent(fraction: 0.9, label: '90%'), disableAnimations: true);
+      expect(find.text('90%'), findsOneWidget);
+      expect(tester.getSize(find.byType(SquarePercent)), const Size.square(N360Size.tile));
+      expect(tester.hasRunningAnimations, isFalse);
+
+      await pumpDesign(tester, const SquarePercent(fraction: 0.9, label: '90%'));
+      expect(tester.hasRunningAnimations, isTrue, reason: 'the gold line draws round once');
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('IconTile paints a 44dp tile inside a 56dp target, named, tappable, with a badge', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      var taps = 0;
+      await pumpDesign(tester, IconTile(icon: Icons.home, semanticLabel: 'Home', badge: '3', onTap: () => taps++));
+      expect(tester.getSize(find.byType(IconTile)), const Size.square(N360Size.tap));
+      final Size painted = tester.getSize(find.descendant(of: find.byType(IconTile), matching: find.byType(CustomPaint)).first);
+      expect(painted, const Size.square(N360Size.tile));
+      expect(find.text('3'), findsOneWidget);
+      expect(find.bySemanticsLabel('Home, 3'), findsOneWidget);
+      await tester.tap(find.byType(IconTile));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(taps, 1);
+      handle.dispose();
+
+      await pumpDesign(tester, const IconTile(icon: Icons.home, semanticLabel: 'Home'));
+      expect(tester.getSize(find.byType(IconTile)), const Size.square(N360Size.tile),
+          reason: 'a decorative tile takes only its visible size');
+    });
+
+    testWidgets('TickGauge lights up once on entry and is still with reduced motion', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 300, child: TickGauge(fraction: 0.5)), disableAnimations: true);
+      expect(tester.hasRunningAnimations, isFalse);
+      await pumpDesign(tester, const SizedBox(width: 300, child: TickGauge(fraction: 0.5)));
+      expect(tester.hasRunningAnimations, isTrue);
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('StatTile is at least its minimum height and keeps the value as text', (tester) async {
+      var taps = 0;
+      await pumpDesign(
+        tester,
+        SizedBox(
+          width: 170,
+          child: StatTile(title: 'Finishing work', value: '67%', caption: '25 Nov', onTap: () => taps++),
+        ),
+      );
+      expect(tester.getSize(find.byType(StatTile)).height, greaterThanOrEqualTo(StatTile.minHeight));
+      expect(tester.getSize(find.byType(StatTile)).height, greaterThanOrEqualTo(N360Size.tap));
+      expect(find.text('67%'), findsOneWidget);
+      await tester.tap(find.text('67%'));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(taps, 1);
+    });
+
+    testWidgets('an emphasised StatTile is the primary colour with white on it', (tester) async {
+      await pumpDesign(tester, const SizedBox(width: 170, child: StatTile(title: 'Work', value: '42%', emphasized: true)));
+      expect(tester.widget<Text>(find.text('42%')).style!.color, N360Colors.onPrimary);
+    });
+  });
+
+  group('rules that shape the look', () {
+    SoftSurfacePainter cardPainter(WidgetTester tester) => tester
+        .widget<CustomPaint>(find.descendant(of: find.byType(LedgerCard), matching: find.byType(CustomPaint)).first)
+        .painter! as SoftSurfacePainter;
+
+    testWidgets('a card is white with a hairline and no shadow, flat or not', (tester) async {
+      await pumpDesign(tester, const LedgerCard(child: Text('Card')));
+      expect(cardPainter(tester).shadow, isFalse);
+      expect(cardPainter(tester).edge, N360Colors.rule);
+      expect(cardPainter(tester).fill, N360Colors.sheet);
+
+      await pumpDesign(tester, const LedgerCard(flat: true, child: Text('Card')));
+      expect(cardPainter(tester).shadow, isFalse);
+      expect(cardPainter(tester).edge, N360Colors.rule);
+    });
+
+    testWidgets('LedgerList lays rows out with hairlines between them, and tiles are tap targets', (tester) async {
+      var taps = 0;
+      await pumpDesign(
+        tester,
+        SizedBox(
+          width: 340,
+          child: LedgerList(
+            header: const Text('Open'),
+            children: <Widget>[
+              LedgerListTile(
+                title: 'Shuttering plates short',
+                subtitle: 'Store yard',
+                status: const StatusPill(kind: StampKind.rejected, label: 'Critical'),
+                onTap: () => taps++,
+              ),
+              const LedgerListTile(title: 'Honeycombing at C7', subtitle: 'Grid C7'),
+            ],
+          ),
+        ),
+      );
+      expect(find.byType(RuledDivider), findsNWidgets(2));
+      expectTapHeight(tester, find.byType(LedgerListTile).first);
+      await tester.tap(find.text('Shuttering plates short'));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(taps, 1);
+      expect(find.text('Critical'), findsOneWidget);
+    });
+
+    testWidgets('the bottom bar keeps a word under every icon and shows badges', (tester) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await pumpDesign(
+        tester,
+        SizedBox(
+          width: 360,
+          child: N360BottomBar(
+            currentIndex: 1,
+            onTap: (_) {},
+            items: const <N360BarItem>[
+              N360BarItem(icon: Icons.home, label: 'Home'),
+              N360BarItem(icon: Icons.approval, label: 'Approve', badge: '4'),
+            ],
+          ),
+        ),
+      );
+      final Rect homeIcon = tester.getRect(find.byIcon(Icons.home));
+      final Rect homeWord = tester.getRect(find.text('Home'));
+      expect(homeWord.top, greaterThanOrEqualTo(homeIcon.bottom - 1));
+      expect(find.text('4'), findsOneWidget);
+      expect(find.bySemanticsLabel('Approve, 4'), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('PressTarget is exported from the barrel', (tester) async {
+      var taps = 0;
+      await pumpDesign(
+        tester,
+        PressTarget(
+          onTap: () => taps++,
+          builder: (context, depth, child) => const SizedBox(width: 80, height: 80),
+        ),
+      );
+      await tester.tap(find.byType(PressTarget));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(taps, 1);
+    });
+  });
+}

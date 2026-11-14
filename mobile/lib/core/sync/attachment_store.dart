@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -22,6 +23,14 @@ abstract interface class AttachmentStore {
   Future<bool> exists(String relativePath);
 
   Future<void> delete(String relativePath);
+
+  /// Stores [bytes] as `<folder>/<fileName>`, replacing any earlier copy.
+  Future<void> writeFile(Uint8List bytes, {required String folder, required String fileName});
+
+  /// Null when there is no such file.
+  Future<Uint8List?> readFile({required String folder, required String fileName});
+
+  Future<void> deleteFile({required String folder, required String fileName});
 
   /// Removes every stored attachment. Used only by a confirmed sign-out.
   Future<void> deleteAll();
@@ -73,6 +82,25 @@ class DirectoryAttachmentStore implements AttachmentStore {
   }
 
   @override
+  Future<void> writeFile(Uint8List bytes, {required String folder, required String fileName}) async {
+    final target = File(await absolutePath(p.join(_root, folder, fileName)));
+    await target.parent.create(recursive: true);
+    final temporary = File('${target.path}.tmp');
+    await temporary.writeAsBytes(bytes, flush: true);
+    await temporary.rename(target.path);
+  }
+
+  @override
+  Future<Uint8List?> readFile({required String folder, required String fileName}) async {
+    final file = File(await absolutePath(p.join(_root, folder, fileName)));
+    return await file.exists() ? file.readAsBytes() : null;
+  }
+
+  @override
+  Future<void> deleteFile({required String folder, required String fileName}) =>
+      delete(p.join(_root, folder, fileName));
+
+  @override
   Future<void> deleteAll() async {
     final directory = Directory(p.join(await _baseDirectory(), _root));
     if (await directory.exists()) await directory.delete(recursive: true);
@@ -82,6 +110,7 @@ class DirectoryAttachmentStore implements AttachmentStore {
 /// Keeps nothing on disk. For widget tests that do not exercise uploads.
 class InMemoryAttachmentStore implements AttachmentStore {
   final Set<String> files = {};
+  final Map<String, Uint8List> contents = {};
 
   @override
   Future<String> importFile(
@@ -106,5 +135,24 @@ class InMemoryAttachmentStore implements AttachmentStore {
   Future<void> delete(String relativePath) async => files.remove(relativePath);
 
   @override
-  Future<void> deleteAll() async => files.clear();
+  Future<void> writeFile(Uint8List bytes, {required String folder, required String fileName}) async {
+    files.add('$folder/$fileName');
+    contents['$folder/$fileName'] = bytes;
+  }
+
+  @override
+  Future<Uint8List?> readFile({required String folder, required String fileName}) async =>
+      contents['$folder/$fileName'];
+
+  @override
+  Future<void> deleteFile({required String folder, required String fileName}) async {
+    files.remove('$folder/$fileName');
+    contents.remove('$folder/$fileName');
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    files.clear();
+    contents.clear();
+  }
 }

@@ -71,11 +71,13 @@ class SessionController {
   }
 
   /// Applies a fresh user object from a pull, e.g. changed permissions.
+  ///
+  /// Only for the person signed in now: a pull that was already on its way when
+  /// they signed out, or deleted their account, must not bring them back.
   Future<void> updateUser(CurrentUser user) async {
+    if (_state.status != SessionStatus.signedIn || _state.user?.id != user.id) return;
     await _writeCachedUser(user);
-    if (_state.status == SessionStatus.signedIn) {
-      _set(SessionState(SessionStatus.signedIn, user));
-    }
+    _set(SessionState(SessionStatus.signedIn, user));
   }
 
   /// A 401 was received. Drops the token only; nothing local is touched.
@@ -86,6 +88,16 @@ class SessionController {
     }
     await _tokens.clear();
     _set(SessionState(SessionStatus.expired, _state.user));
+  }
+
+  /// Takes up the user the last pull saved, so a permission granted or taken
+  /// away on the website applies at once rather than at the next launch.
+  Future<void> reloadUser() async {
+    if (_state.status != SessionStatus.signedIn) return;
+    final CurrentUser? saved = await _readCachedUser();
+    if (saved == null || saved.id != _state.user?.id) return;
+    if (jsonEncode(saved.toJson()) == jsonEncode(_state.user?.toJson())) return;
+    _set(SessionState(SessionStatus.signedIn, saved));
   }
 
   /// Ends the session completely. The caller has dealt with unsent work.

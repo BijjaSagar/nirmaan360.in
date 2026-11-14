@@ -1,0 +1,323 @@
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
+
+import '../core/design/design.dart';
+import '../features/announcements/view/announcements_screen.dart';
+import '../features/approvals/view/approval_detail_screen.dart';
+import '../features/approvals/view/approvals_inbox_screen.dart';
+import '../features/attendance/view/attendance_screen.dart';
+import '../features/attendance/view/scan_attendance_screen.dart';
+import '../features/attendance/view/selfie_screen.dart';
+import '../features/auth/view/sign_in_screen.dart';
+import '../features/auth/view/sign_up_screen.dart';
+import '../features/contractor_control/view/contract_detail_screen.dart';
+import '../features/contractor_control/view/contractor_screen.dart';
+import '../features/contractor_control/view/payment_form_screen.dart';
+import '../features/contractor_portal/view/portal_bill_screen.dart';
+import '../features/contractor_portal/view/portal_contract_screen.dart';
+import '../features/contractor_portal/view/portal_home_screen.dart';
+import '../features/contractor_portal/view/portal_lists_screen.dart';
+import '../features/dpr/view/dpr_detail_screen.dart';
+import '../features/dpr/view/dpr_form_screen.dart';
+import '../features/dpr/view/dpr_list_screen.dart';
+import '../features/home/view/home_screen.dart';
+import '../features/inspections/view/inspection_detail_screen.dart';
+import '../features/inspections/view/inspection_fill_screen.dart';
+import '../features/inspections/view/inspections_screen.dart';
+import '../features/issues/view/issue_detail_screen.dart';
+import '../features/issues/view/issue_form_screen.dart';
+import '../features/issues/view/issue_list_screen.dart';
+import '../features/machine_logs/view/machine_log_form_screen.dart';
+import '../features/machine_logs/view/machine_logs_screen.dart';
+import '../features/material_control/bloc/material_form_cubit.dart';
+import '../features/material_control/view/issue_stock_screen.dart';
+import '../features/material_control/view/material_form_screen.dart';
+import '../features/material_control/view/material_loop_screens.dart';
+import '../features/material_control/view/material_screen.dart';
+import '../features/material_control/view/receive_order_screen.dart';
+import '../features/measurement/view/measurement_detail_screen.dart';
+import '../features/measurement/view/measurement_form_screen.dart';
+import '../features/measurement/view/measurement_list_screen.dart';
+import '../features/notifications/view/notification_settings_screen.dart';
+import '../features/petty_cash/view/expense_form_screen.dart';
+import '../features/petty_cash/view/petty_cash_screen.dart';
+import '../features/petty_cash/view/top_up_screen.dart';
+import '../features/petty_cash/view/wallet_form_screen.dart';
+import '../features/price_watch/view/price_material_screen.dart';
+import '../features/price_watch/view/price_watch_screen.dart';
+import '../features/projects/view/boq_edit_screen.dart';
+import '../features/projects/view/boq_form_screen.dart';
+import '../features/projects/view/boq_screen.dart';
+import '../features/projects/view/project_form_screen.dart';
+import '../features/projects/view/project_picker_screen.dart';
+import '../features/settings/view/account_deletion_screen.dart';
+import '../features/settings/view/settings_screen.dart';
+import '../features/site_alerts/bloc/site_alerts_cubit.dart';
+import '../features/site_alerts/view/site_dashboard_screen.dart';
+import '../features/site_progress/view/floor_plan_screen.dart';
+import '../features/site_progress/view/floor_progress_screen.dart';
+import '../features/site_progress/view/floor_setup_screen.dart';
+import '../features/site_progress/view/floor_split_screen.dart';
+import '../features/site_progress/view/progress_form_screen.dart';
+import '../features/site_progress/view/progress_screen.dart';
+import '../features/site_progress/view/progress_week_screen.dart';
+import '../features/site_progress/view/stage_row_screen.dart';
+import '../features/site_tools/view/site_tools_screen.dart';
+import '../features/sync_center/view/sync_center_screen.dart';
+import '../features/tenders/view/award_form_screen.dart';
+import '../features/tenders/view/line_tenders_screen.dart';
+import '../features/tenders/view/quote_form_screen.dart';
+import 'app_gate.dart';
+import 'routes.dart';
+import 'shell/home_shell.dart';
+
+Page<void> _page(GoRouterState state, Widget child) => N360Page<void>(key: state.pageKey, child: child);
+
+GoRoute _route(String path, Widget Function(GoRouterState state) screen, {GlobalKey<NavigatorState>? parent, List<RouteBase> routes = const <RouteBase>[]}) {
+  return GoRoute(
+    path: path,
+    parentNavigatorKey: parent,
+    pageBuilder: (context, state) => _page(state, screen(state)),
+    routes: routes,
+  );
+}
+
+/// Every path in [Routes]. `form` routes come before `:uuid` routes, or the
+/// `:uuid` route would swallow them.
+GoRouter buildRouter(AppGate gate, {String initialLocation = Routes.home}) {
+  final root = GlobalKey<NavigatorState>(debugLabel: 'root');
+
+  return GoRouter(
+    navigatorKey: root,
+    initialLocation: initialLocation,
+    refreshListenable: gate.refreshListenable,
+    redirect: (context, state) => gate.redirect(state.uri),
+    routes: <RouteBase>[
+      _route(Routes.signIn, (_) => const SignInScreen()),
+      _route(Routes.signUp, (_) => const SignUpScreen()),
+      _route(
+        Routes.projects,
+        (_) => const ProjectPickerScreen(),
+        routes: <RouteBase>[
+          _route('new', (_) => const ProjectFormScreen()),
+          _route('edit', (s) => ProjectFormScreen(projectId: int.tryParse(s.uri.queryParameters['id'] ?? '') ?? 0)),
+        ],
+      ),
+      _route(
+        Routes.boq,
+        (_) => const BoqScreen(),
+        routes: <RouteBase>[
+          _route('form', (_) => const BoqFormScreen()),
+          _route(':item/edit', (s) => BoqEditScreen(boqItemId: int.parse(s.pathParameters['item']!))),
+          _route(
+            ':item/tenders',
+            (s) => LineTendersScreen(boqItemId: int.parse(s.pathParameters['item']!)),
+            routes: <RouteBase>[
+              _route(
+                ':tender/quote',
+                (s) => QuoteFormScreen(
+                  boqItemId: int.parse(s.pathParameters['item']!),
+                  tenderId: int.parse(s.pathParameters['tender']!),
+                ),
+              ),
+              _route(
+                ':tender/award',
+                (s) => AwardFormScreen(
+                  boqItemId: int.parse(s.pathParameters['item']!),
+                  tenderId: int.parse(s.pathParameters['tender']!),
+                  bidId: int.tryParse(s.uri.queryParameters['bid'] ?? '') ?? 0,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      _route(
+        Routes.settings,
+        (_) => const SettingsScreen(),
+        routes: <RouteBase>[
+          _route('notifications', (_) => const NotificationSettingsScreen()),
+          _route('announcements', (s) => AnnouncementsScreen(highlightId: int.tryParse(s.uri.queryParameters['id'] ?? ''))),
+          _route('delete-account', (_) => const AccountDeletionScreen()),
+        ],
+      ),
+      // The contractor portal: all a contractor login can open. `payments`,
+      // `bills` and `contracts/:id` come before nothing that would swallow them.
+      _route(
+        Routes.portal,
+        (_) => const PortalHomeScreen(),
+        routes: <RouteBase>[
+          _route('payments', (_) => const PortalPaymentsScreen()),
+          _route('bills', (_) => const PortalBillsScreen()),
+          _route('bills/:id', (s) => PortalBillScreen(billId: int.parse(s.pathParameters['id']!))),
+          _route('contracts/:id', (s) => PortalContractScreen(workOrderId: int.parse(s.pathParameters['id']!))),
+        ],
+      ),
+      StatefulShellRoute.indexedStack(
+        pageBuilder: (context, state, shell) => _page(state, HomeShell(navigationShell: shell)),
+        branches: <StatefulShellBranch>[
+          StatefulShellBranch(routes: <RouteBase>[_route(Routes.home, (_) => const HomeScreen())]),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              _route(
+                Routes.measurements,
+                (_) => const MeasurementListScreen(),
+                routes: <RouteBase>[
+                  _route(
+                    'form',
+                    (s) => MeasurementFormScreen(clientUuid: s.uri.queryParameters['uuid']),
+                    parent: root,
+                  ),
+                  _route(
+                    ':uuid',
+                    (s) => MeasurementDetailScreen(clientUuid: s.pathParameters['uuid']!),
+                    parent: root,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              _route(
+                Routes.approvals,
+                (_) => const ApprovalsInboxScreen(),
+                routes: <RouteBase>[
+                  _route(
+                    ':id',
+                    (s) => ApprovalDetailScreen(approvalId: int.parse(s.pathParameters['id']!)),
+                    parent: root,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(routes: <RouteBase>[_route(Routes.outbox, (_) => const SyncCenterScreen())]),
+        ],
+      ),
+      _route(
+        Routes.dprList,
+        (_) => const DprListScreen(),
+        routes: <RouteBase>[
+          _route(
+            'form',
+            (s) => DprFormScreen(
+              clientUuid: s.uri.queryParameters['uuid'],
+              date: s.uri.queryParameters['date'],
+            ),
+          ),
+          _route(':uuid', (s) => DprDetailScreen(clientUuid: s.pathParameters['uuid']!)),
+        ],
+      ),
+      _route(
+        Routes.attendance,
+        (_) => const AttendanceScreen(),
+        routes: <RouteBase>[
+          _route('scan', (_) => const ScanAttendanceScreen()),
+          _route('selfie', (_) => const SelfieScreen()),
+        ],
+      ),
+      _route(
+        Routes.contractors,
+        (_) => const ContractorScreen(),
+        routes: <RouteBase>[
+          _route('request', (s) => PaymentFormScreen(workOrderId: int.tryParse(s.uri.queryParameters['work_order'] ?? ''))),
+          _route(':id', (s) => ContractDetailScreen(workOrderId: int.parse(s.pathParameters['id']!))),
+        ],
+      ),
+      _route(Routes.siteTools, (_) => const SiteToolsScreen()),
+      _route(
+        Routes.machines,
+        (_) => const MachineLogsScreen(),
+        routes: <RouteBase>[
+          _route('form', (s) => MachineLogFormScreen(machineId: int.tryParse(s.uri.queryParameters['asset'] ?? ''))),
+        ],
+      ),
+      _route(
+        Routes.inspections,
+        (_) => const InspectionsScreen(),
+        routes: <RouteBase>[
+          _route('fill', (s) => InspectionFillScreen(uuid: s.uri.queryParameters['uuid'] ?? '')),
+          _route(':key', (s) => InspectionDetailScreen(inspectionKey: s.pathParameters['key']!)),
+        ],
+      ),
+      _route(
+        Routes.siteDashboard,
+        (s) => SiteDashboardScreen(tab: s.uri.queryParameters['tab'] == 'alerts' ? SiteTab.alerts : SiteTab.dashboard),
+      ),
+      _route(
+        Routes.prices,
+        (_) => const PriceWatchScreen(),
+        routes: <RouteBase>[
+          _route(':id', (s) => PriceMaterialScreen(materialId: int.parse(s.pathParameters['id']!))),
+        ],
+      ),
+      _route(
+        Routes.material,
+        (_) => const MaterialScreen(),
+        routes: <RouteBase>[
+          for (final (path, kind) in <(String, MaterialFormKind)>[
+            ('receive', MaterialFormKind.receive),
+            ('use', MaterialFormKind.use),
+            ('count', MaterialFormKind.count),
+          ])
+            _route(
+              path,
+              (s) => MaterialFormScreen(kind: kind, materialId: int.tryParse(s.uri.queryParameters['material'] ?? '')),
+            ),
+          _route('receive-order', (s) => ReceiveOrderScreen(orderId: int.tryParse(s.uri.queryParameters['order'] ?? ''))),
+          _route('issue', (s) => IssueStockScreen(materialId: int.tryParse(s.uri.queryParameters['material'] ?? ''))),
+          _route('challan', (s) => ChallanScreen(challanId: int.tryParse(s.uri.queryParameters['id'] ?? ''))),
+          _route('bills', (_) => const BillsScreen()),
+          _route('wastage', (_) => const WastageScreen()),
+        ],
+      ),
+      _route(
+        Routes.progress,
+        (_) => const ProgressScreen(),
+        routes: <RouteBase>[
+          _route('form', (s) => ProgressFormScreen(floorId: int.tryParse(s.uri.queryParameters['floor'] ?? ''))),
+          _route(
+            'floor/:id',
+            (s) => FloorProgressScreen(floorId: int.parse(s.pathParameters['id']!)),
+            routes: <RouteBase>[
+              _route('before-finishing', (s) => BeforeFinishingScreen(floorId: int.parse(s.pathParameters['id']!))),
+            ],
+          ),
+          _route(
+            'stage/:id/:trade',
+            (s) => StageRowScreen(floorId: int.parse(s.pathParameters['id']!), tradeKey: s.pathParameters['trade']!),
+          ),
+        ],
+      ),
+      _route(
+        Routes.issues,
+        (_) => const IssueListScreen(),
+        routes: <RouteBase>[
+          _route('form', (_) => const IssueFormScreen()),
+          _route(':uuid', (s) => IssueDetailScreen(clientUuid: s.pathParameters['uuid']!)),
+        ],
+      ),
+      _route(
+        Routes.pettyCash,
+        (_) => const PettyCashScreen(),
+        routes: <RouteBase>[
+          _route('form', (_) => const ExpenseFormScreen()),
+          _route('wallet', (_) => const WalletFormScreen()),
+          _route('top-up', (_) => const TopUpScreen()),
+        ],
+      ),
+      // Floors and segments set up from the phone. `split` comes before
+      // `:floor/plan`, which would otherwise never see it.
+      _route(
+        Routes.floorSetup,
+        (_) => const FloorSetupScreen(),
+        routes: <RouteBase>[
+          _route('split', (_) => const FloorSplitScreen()),
+          _route(':floor/plan', (s) => FloorPlanScreen(floorId: int.parse(s.pathParameters['floor']!))),
+        ],
+      ),
+      _route(Routes.progressWeek, (s) => ProgressWeekScreen(date: s.uri.queryParameters['date'])),
+    ],
+  );
+}

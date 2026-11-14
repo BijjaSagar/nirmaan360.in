@@ -1,12 +1,737 @@
 {
   "@@locale": "en",
+  "accountDeleteBusy": "Deleting your account…",
+  "accountDeleteCancelButton": "Cancel the deletion",
+  "accountDeleteCancelled": "Deletion cancelled. Your company stays as it is.",
+  "accountDeleteChanged": "Something changed in your company. Check what will happen, then try again.",
+  "accountDeleteCompanyErases": "You are the only owner of {company}, so deleting your account erases the company: every project, bill, photo, worker and user.",
+  "@accountDeleteCompanyErases": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteCompanyTitle": "Delete your account and company",
+  "accountDeleteCompanyWhen": "It is erased after {date}. Until then the company keeps working, and you can cancel by signing in again and opening Settings, Delete account.",
+  "@accountDeleteCompanyWhen": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteConfirmName": "Type {company} to confirm",
+  "@accountDeleteConfirmName": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteExport": "Want a copy first? An owner can export the company's data on the website, under Account, Company data.",
+  "accountDeleteHandOver": "To keep the company going without you, make another member an owner on the website (Team) first, then delete your account here.",
+  "accountDeleteHold": "Hold to delete my account",
+  "accountDeleteLoading": "Checking what will happen",
+  "accountDeleteMemberNow": "Your sign-in, name, email and mobile number are removed now. You cannot undo this.",
+  "accountDeleteMemberWork": "Work you recorded for {company} — reports, measurements, bills, attendance and photos — stays with the company, shown as “Deleted user”.",
+  "@accountDeleteMemberWork": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeleteOfflineBody": "Connect and try again.",
+  "accountDeleteOfflineTitle": "Deleting an account needs the internet.",
+  "accountDeleteOthers": "{count, plural, =0{No one else uses this company.} =1{1 other person will lose access.} other{{count} other people will lose access.}}",
+  "@accountDeleteOthers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeletePassword": "Your password",
+  "accountDeletePendingBody": "{company} will be erased after {date}.",
+  "@accountDeletePendingBody": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletePendingTitle": "Your company is set to be erased",
+  "accountDeletePhoneCleared": "This phone is signed out and its Nirmaan360 data is cleared.",
+  "accountDeleteSpoken": "Delete my account",
+  "accountDeleteTaxRecords": "Records of payments your company made to Nirmaan360 are kept, as Indian tax law requires.",
+  "accountDeleteTile": "Delete account",
+  "accountDeleteTileSubtitle": "Remove your sign-in and personal details",
+  "accountDeleteUnsent": "{count, plural, =1{1 item on this phone has not reached the server. It will be lost.} other{{count} items on this phone have not reached the server. They will be lost.}}",
+  "@accountDeleteUnsent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountDeleteWrongName": "Type the company name exactly as shown.",
+  "accountDeleteWrongPassword": "That password is not right.",
+  "accountDeletedCompanyToast": "Your company will be erased after {date}. Sign in before then to cancel.",
+  "@accountDeletedCompanyToast": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "accountDeletedToast": "Your account has been deleted.",
+  "alertsDashboardEmpty": "No figures for this project yet.",
+  "alertsHomeCriticalCount": "{count} critical",
+  "@alertsHomeCriticalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsHomeDashboardOnly": "Dashboard for this site",
+  "alertsHomeOpen": "{count} open",
+  "@alertsHomeOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsHomeOverview": "Dashboard and alerts for this site",
+  "alertsHomeTitle": "Site alerts",
+  "alertsListRefusedMessage": "Alerts are not open to your role. Ask your office if you need them.",
+  "alertsLoading": "Loading site overview",
+  "alertsNoDataMessage": "Connect to the internet once to load this project's overview. After that it opens offline.",
+  "alertsNoneMessage": "When something on this site needs a look, it will show here.",
+  "alertsNoneTitle": "Nothing needs attention",
+  "alertsRefusedMessage": "The site overview is not open to your role. Ask your office if you need it.",
+  "alertsRefusedTitle": "Not part of your role",
+  "alertsScanDone": "Scanned. {added} new, {open} open, {resolved} cleared.",
+  "@alertsScanDone": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "open": {
+        "type": "int"
+      },
+      "resolved": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsScanFailed": "The scan did not go through. Try again in a moment.",
+  "alertsScanNow": "Scan now",
+  "alertsScanOffline": "Scanning needs the internet. Connect and try again.",
+  "alertsScanRefused": "The server said: {message}",
+  "@alertsScanRefused": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsScanWait": "Try again in {seconds} seconds.",
+  "@alertsScanWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsScanning": "Scanning the site…",
+  "alertsSeverityCritical": "Critical",
+  "alertsSeverityInfo": "For information",
+  "alertsSeverityWarning": "Warning",
+  "alertsShowingSome": "Showing the {shown} most urgent of {total}. The rest are on the website.",
+  "@alertsShowingSome": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "alertsSince": "Since {date}",
+  "@alertsSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsTabAlerts": "Alerts",
+  "alertsTabDashboard": "Dashboard",
+  "alertsTitle": "Site overview",
+  "announcementsEmptyMessage": "News and reminders from your company show here.",
+  "announcementsEmptyTitle": "No announcements yet",
+  "announcementsFailedMessage": "Try again in a moment.",
+  "announcementsFailedTitle": "Could not read announcements",
+  "announcementsLoading": "Reading announcements",
+  "announcementsMore": "Show older",
+  "announcementsOfflineMessage": "Announcements are kept on the server. Connect and try again.",
+  "announcementsOfflineTitle": "Needs the internet",
+  "announcementsReminder": "Reminder",
+  "announcementsRetry": "Try again",
+  "announcementsSettingsSubtitle": "News and reminders sent to you",
+  "announcementsTitle": "Announcements",
   "appName": "Nirmaan360",
+  "approvalsActionApproved": "Approved",
+  "approvalsActionRejected": "Rejected",
+  "approvalsActionReturned": "Sent back",
+  "approvalsActionSubmitted": "Submitted",
+  "approvalsApprove": "Approve",
+  "approvalsBackToInbox": "Back to approvals",
+  "approvalsBillNumber": "Bill number",
+  "approvalsBillType": "Type",
+  "approvalsChainNext": "After that",
+  "approvalsChainTitle": "Approval trail",
+  "approvalsChainWaiting": "Waiting now",
+  "approvalsCouldNotRefresh": "Could not refresh. Please try again.",
+  "approvalsCouldNotRefreshOffline": "Could not reach the server. Showing what was last fetched.",
+  "approvalsDaysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@approvalsDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalsDeductions": "Deductions",
+  "approvalsDeviation": "Deviation",
+  "approvalsDeviationBody": "Goes over the BOQ quantity plus tolerance. Project manager must approve.",
+  "approvalsDocBill": "RA bill",
+  "approvalsDocBillNote": "Credit or debit note",
+  "approvalsDocContractorPayment": "Contractor payment",
+  "approvalsDocDpr": "Daily report",
+  "approvalsDocIndent": "Indent",
+  "approvalsDocMeasurement": "Measurement",
+  "approvalsDocOther": "Document",
+  "approvalsDocRfi": "RFI",
+  "approvalsDocVendorBill": "Vendor bill",
+  "approvalsEmptyBody": "New approvals will appear here.",
+  "approvalsEmptyTitle": "Nothing waiting",
+  "approvalsFailOfflineBody": "Your decision was not sent. Nothing was queued. Try again when connected.",
+  "approvalsFailOfflineTitle": "No network",
+  "approvalsFailRaceBody": "Someone else acted on this first. Refresh to see what is waiting now.",
+  "approvalsFailRaceTitle": "Already decided",
+  "approvalsFailRejectedTitle": "The server refused this",
+  "approvalsFailServerBody": "Something went wrong on the server. Your decision was not recorded. Try again.",
+  "approvalsFailServerTitle": "Could not send",
+  "approvalsFailSessionBody": "Your session has ended. Your decision was not sent.",
+  "approvalsFailSessionTitle": "Please sign in again",
+  "approvalsForYou": "Waiting for you",
+  "approvalsGoneBody": "Someone has already decided this one.",
+  "approvalsGoneTitle": "No longer waiting",
+  "approvalsGross": "Gross value of work",
+  "approvalsGst": "GST",
+  "approvalsHindrances": "Hindrances",
+  "approvalsHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@approvalsHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalsIndentForLine": "For BOQ line {code}",
+  "@approvalsIndentForLine": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsIndentItems": "Material asked for",
+  "approvalsIndentLines": "materials",
+  "approvalsIndentRequiredBy": "Needed by",
+  "approvalsIndentStore": "Store",
+  "approvalsJustNow": "just now",
+  "approvalsManpower": "Manpower",
+  "approvalsMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "@approvalsMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalsNeedsNetwork": "Approve and Send back need network. Nothing is queued.",
+  "approvalsNetPayable": "Net payable",
+  "approvalsNoteAgainstBill": "Against bill",
+  "approvalsNoteCredit": "Credit note",
+  "approvalsNoteDebit": "Debit note",
+  "approvalsNoteEffect": "Effect on bill",
+  "approvalsNoteNumber": "Note number",
+  "approvalsNoteReason": "Reason",
+  "approvalsNoteTaxable": "Taxable amount",
+  "approvalsNoteTotal": "Note total",
+  "approvalsOffline": "No network.",
+  "approvalsOfflineDetail": "You can read these, but approvals need network.",
+  "approvalsOnOthers": "Waiting on others",
+  "approvalsOpen": "Open",
+  "approvalsOpenOnWeb": "This document cannot be shown on the phone yet. Please review and approve it on the website.",
+  "approvalsParty": "Party",
+  "approvalsPayAhead": "Approving puts payment {gap} points ahead of the work done.",
+  "@approvalsPayAhead": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayContractor": "Contractor",
+  "approvalsPayInStep": "Approving keeps payment within the work done.",
+  "approvalsPayNoValue": "This contract has no value, so no payment on it is covered by work done.",
+  "approvalsPayOverLimit": "That is beyond this project's limit of {limit} points.",
+  "@approvalsPayOverLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayOverrideApprove": "Approve with override",
+  "approvalsPayOverrideOwnerTitle": "Your written override is needed",
+  "approvalsPayOverrideReasonHelp": "Write at least one full sentence. It is kept with the payment and in the audit log.",
+  "approvalsPayOverrideReasonLabel": "Owner's reason",
+  "approvalsPayOverrideReasonTitle": "Why may this payment go ahead of the work done?",
+  "approvalsPayOverrideShort": "At least 4 words and 20 letters.",
+  "approvalsPayOverrideTitle": "Only the owner can approve this",
+  "approvalsPayPaidAfter": "Paid if approved",
+  "approvalsPayPaidNow": "Paid so far",
+  "approvalsPayRatio": "Paid {paid}, work {work}",
+  "@approvalsPayRatio": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "work": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalsPayWorkValue": "Value of work done",
+  "approvalsPayWorkVsPaid": "Work against paid",
+  "approvalsPeriod": "Period",
+  "approvalsPhotos": "Photos",
+  "approvalsRaisedBy": "Raised by",
+  "approvalsReasonAmounts": "Amounts do not match",
+  "approvalsReasonBillMissing": "Bill or receipt is missing",
+  "approvalsReasonDeductions": "Check the deductions",
+  "approvalsReasonDimensions": "Check the dimensions",
+  "approvalsReasonDuplicate": "Already paid, or asked for twice",
+  "approvalsReasonIndentMaterial": "Wrong material or unit",
+  "approvalsReasonIndentNotNeeded": "Not needed now",
+  "approvalsReasonIndentStock": "Stock is already in the store",
+  "approvalsReasonLocation": "Write the location clearly",
+  "approvalsReasonManpower": "Manpower count is wrong",
+  "approvalsReasonNote": "Reason is not clear",
+  "approvalsReasonPaymentAhead": "Payment is ahead of the work done",
+  "approvalsReasonPeriod": "Billing period is wrong",
+  "approvalsReasonPhotos": "Add photos",
+  "approvalsReasonQuantityHigh": "Quantity looks too high",
+  "approvalsReasonRfiAnswered": "Already answered, or not needed",
+  "approvalsReasonRfiDrawing": "Drawing reference is missing",
+  "approvalsReasonRfiUnclear": "The question is not clear",
+  "approvalsReasonVbNotReceived": "Material or service was not received",
+  "approvalsReasonVbTax": "GST or TDS is wrong",
+  "approvalsReasonWorkDetail": "Add more work detail",
+  "approvalsReasonWorkNotDone": "The work for this is not done yet",
+  "approvalsReasonWrongItem": "Wrong BOQ line",
+  "approvalsRefresh": "Refresh",
+  "approvalsRefreshing": "Refreshing",
+  "approvalsReject": "Reject",
+  "approvalsRejectHelp": "A rejected document is closed for good. It cannot be corrected and sent again. Pick a reason or write your own.",
+  "approvalsRejectHint": "Why it is rejected",
+  "approvalsRejectTitle": "Why reject it?",
+  "approvalsRejectedToast": "Rejected with your remark.",
+  "approvalsRemarkHint": "What needs fixing",
+  "approvalsRemarkLabel": "Remark",
+  "approvalsRemarks": "Remarks",
+  "approvalsReportDate": "Report date",
+  "approvalsRfiAddressedTo": "Addressed to",
+  "approvalsRfiAnswerBy": "Answer needed by",
+  "approvalsRfiDrawing": "Drawing",
+  "approvalsRfiQuestion": "Question",
+  "approvalsRoleAccounts": "Accounts",
+  "approvalsRoleAdmin": "Admin",
+  "approvalsRoleClient": "Client",
+  "approvalsRoleEngineer": "Site engineer",
+  "approvalsRoleOwner": "Owner",
+  "approvalsRolePm": "Project manager",
+  "approvalsRoleQs": "Estimator / QS",
+  "approvalsSendBack": "Send back",
+  "approvalsSendBackHelp": "Tell them what to fix. Pick one or write your own.",
+  "approvalsSendBackTitle": "Why send it back?",
+  "approvalsSentBackToast": "Sent back with your remark.",
+  "approvalsSessionExpired": "Please sign in again.",
+  "approvalsSummary": "Summary of work",
+  "approvalsTitle": "Approvals",
+  "approvalsTotal": "Total",
+  "approvalsVbBillDate": "Bill date",
+  "approvalsVbBillTotal": "Bill total",
+  "approvalsVbCostHead": "Cost head",
+  "approvalsVbDescription": "Description",
+  "approvalsVbDueDate": "Pay by",
+  "approvalsVbTds": "TDS",
+  "approvalsWeather": "Weather",
+  "approvalsWorkDone": "Work done",
+  "approvalsWorkers": "workers",
+  "attendanceAddFirstWorker": "Add first worker",
+  "attendanceAddWorker": "Add worker",
+  "attendanceAllMarked": "Everyone is marked",
+  "attendanceAllPresent": "All present ({count})",
+  "@attendanceAllPresent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceAllPresentDone": "{count} marked present",
+  "@attendanceAllPresentDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceAllPresentHelper": "Skips anyone already marked.",
+  "attendanceChooseProject": "Choose a project",
+  "attendanceDateTitle": "Attendance for {date}",
+  "@attendanceDateTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceDayToday": "Today",
+  "attendanceDayYesterday": "Yesterday",
+  "attendanceEyebrow": "Muster roll",
+  "attendanceGroupProgress": "{marked} of {total}",
+  "@attendanceGroupProgress": {
+    "placeholders": {
+      "marked": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceHoursUnit": "h",
+  "attendanceLeft": "Unmarked",
+  "attendanceLoadFailedMessage": "Your marks are safe on this phone. Try again.",
+  "attendanceLoadFailedTitle": "Could not open the muster",
+  "attendanceLoading": "Loading the muster",
+  "attendanceMarkedSoFar": "Marked so far",
+  "attendanceNoProjectMessage": "Choose a project first, then mark the muster here.",
+  "attendanceNoProjectTitle": "No project chosen",
+  "attendanceNoWorkersAsk": "Ask the office to add the workers.",
+  "attendanceNoWorkersMessage": "Add your first worker to start the muster.",
+  "attendanceNoWorkersTitle": "No workers on the muster",
+  "attendanceOtHours": "Overtime hours",
+  "attendanceOtLess": "Half hour less",
+  "attendanceOtMore": "Half hour more",
+  "attendanceSaveFailed": "That mark was not saved. Tap it again.",
+  "attendanceScanCard": "Scan card",
+  "attendanceSelfie": "Selfie",
+  "attendanceSheetDone": "{name} added to the muster",
+  "@attendanceSheetDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceSheetFailed": "The worker could not be added. Try again.",
+  "attendanceSheetName": "Worker's name",
+  "attendanceSheetNameHint": "As on the muster",
+  "attendanceSheetNameRequired": "Write the worker's name.",
+  "attendanceSheetOfflineError": "No network. Try again when the phone is back online.",
+  "attendanceSheetOfflineMessage": "Attendance still works without network. Add this worker when the phone is back online.",
+  "attendanceSheetOfflineTitle": "Adding a worker needs network",
+  "attendanceSheetTitle": "New worker",
+  "attendanceSheetTrade": "Trade",
+  "attendanceSheetTradeRequired": "Choose the trade.",
+  "attendanceSheetWageFor": "Daily wage for {name}",
+  "@attendanceSheetWageFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "attendanceSheetWageHelper": "Leave blank if you do not know it.",
+  "attendanceTitle": "Attendance",
+  "attendanceTodayTitle": "Today's attendance",
+  "boqAddItem": "Add item",
+  "boqAmountLabel": "Amount",
+  "boqBalance": "Balance {qty} {unit}",
+  "@boqBalance": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "boqBalanceLabel": "Balance",
+  "boqBalanceValueLabel": "Balance value",
+  "boqDeleteAction": "Delete this item",
+  "boqDeleteBody": "It will be taken out of the BOQ for everyone. The BOQ history keeps it with your name and reason. It cannot be brought back from the app.",
+  "boqDeleteConfirm": "Delete item",
+  "boqDeleteDone": "Item {code} deleted from the BOQ.",
+  "@boqDeleteDone": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "boqDeleteFailed": "The item could not be deleted. Try again.",
+  "boqDeleteKeep": "Keep it",
+  "boqDeleteOffline": "Deleting needs the internet.",
+  "boqDeleteOwnerNote": "Only the company owner can delete BOQ items. An item with measurements, daily report work, tenders or bills cannot be deleted.",
+  "boqDeleteOwnerOnly": "Only the company owner can delete a BOQ item.",
+  "boqDeleteReason": "Why is it being deleted?",
+  "boqDeleteReasonRequired": "Write why it is being deleted.",
+  "boqDeleteRefusedTitle": "This item cannot be deleted",
+  "boqDeleteTitle": "Delete item {code}?",
+  "@boqDeleteTitle": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "boqDeleteUnsent": "This phone has work on this item that has not been sent yet. Send it first, then delete.",
+  "boqEditAction": "Edit item",
+  "boqEditChanged": "Someone changed this item after you opened it. It now shows as the office has it. Check it and save again.",
+  "boqEditCode": "Item code",
+  "boqEditCodeRequired": "Enter the item code.",
+  "boqEditGone": "This item is no longer in the BOQ.",
+  "boqEditMeasured": "Measured so far: {qty} {unit}. The quantity cannot go below what is measured or billed.",
+  "@boqEditMeasured": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "boqEditNotAllowed": "You cannot change the BOQ. Ask the office.",
+  "boqEditOfflineDetail": "BOQ items can be changed only online.",
+  "boqEditQtyInvalid": "Enter the quantity as a number with up to 3 decimals, like 120.5.",
+  "boqEditRateInvalid": "Enter the rate as a number with up to 2 decimals, like 450.00.",
+  "boqEditReason": "Why is it changing?",
+  "boqEditReasonHelper": "Kept in the BOQ history with your name. Measurements and bills already made do not change.",
+  "boqEditReasonHint": "e.g. Revised drawing from the architect",
+  "boqEditReasonRequired": "Write why it is changing.",
+  "boqEditSave": "Save changes",
+  "boqEditSaved": "BOQ item saved.",
+  "boqEditTitle": "Edit BOQ item",
+  "boqEmptyAsk": "A BOQ is the list of work on this project. Ask the office to add it.",
+  "boqEmptyExplain": "A BOQ is the list of work on this project, with quantity and rate.",
+  "boqEmptyTitle": "No BOQ lines yet",
+  "boqFormAdded": "Line added. Add the next one.",
+  "boqFormAmount": "Amount",
+  "boqFormCode": "Code (optional)",
+  "boqFormCodeHelper": "Leave blank to get the next number.",
+  "boqFormDescription": "Work description",
+  "boqFormDescriptionHint": "e.g. M25 concrete in slab",
+  "boqFormDescriptionRequired": "Write the work description.",
+  "boqFormFailed": "The line could not be saved. Try again.",
+  "boqFormFinish": "Save and finish",
+  "boqFormQty": "Quantity",
+  "boqFormQtyRequired": "Enter the quantity.",
+  "boqFormRate": "Rate",
+  "boqFormRateRequired": "Enter the rate.",
+  "boqFormSaveAnother": "Save and add another",
+  "boqFormSection": "Section (optional)",
+  "boqFormSectionHint": "e.g. Superstructure",
+  "boqFormTitle": "Add BOQ item",
+  "boqFormUnit": "Unit",
+  "boqFormUnitRequired": "Choose the unit.",
+  "boqItemCode": "Item {code}",
+  "@boqItemCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "boqLinesAdded": "{count} {count, plural, =1{line} other{lines}} added",
+  "@boqLinesAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "boqLoading": "Loading BOQ",
+  "boqMeasuredShare": "{percent}% measured",
+  "@boqMeasuredShare": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "boqMissingAsk": "Ask the office to add them. If they are added already, connect to the network once.",
+  "boqMissingManage": "Add the lines, then pick them here.",
+  "boqMissingTitle": "This project has no BOQ lines yet",
+  "boqNoMatchMessage": "Try another code or word.",
+  "boqNoMatchTitle": "Nothing found",
+  "boqNoProjectMessage": "Choose a project first to see its BOQ.",
+  "boqNoProjectTitle": "No project chosen",
+  "boqNoSection": "Other lines",
+  "boqOfflineDetail": "BOQ lines can be saved only online.",
+  "boqOfflineTitle": "No network.",
+  "boqOpenAction": "Open BOQ",
+  "boqOver": "Over by {qty} {unit}",
+  "@boqOver": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "boqOverLabel": "Over by",
+  "boqOverValueLabel": "Value over BOQ",
+  "boqRefreshFailed": "Could not update. Showing what is on this phone.",
+  "boqSearchHint": "Code or work",
+  "boqSearchLabel": "Search lines",
+  "boqShownTotalTitle": "Total of lines shown",
+  "boqTitle": "BOQ",
+  "boqTotalTitle": "BOQ total",
   "commonBack": "Back",
   "commonCancel": "Cancel",
   "commonDone": "Done",
   "commonRetry": "Try again",
   "commonSave": "Save",
   "commonToday": "Today",
+  "contractorAdvance": "Advance",
+  "contractorAgainst": "Against",
+  "contractorAgainstLine": "A BOQ line",
+  "contractorAgainstPart": "A part",
+  "contractorAgainstWhole": "Whole contract",
+  "contractorAmount": "Amount (₹)",
+  "contractorAmountError": "Enter an amount above zero, with at most two decimal places.",
+  "contractorAmountLabel": "Amount",
+  "contractorApprovalNote": "This goes for approval. Nothing counts as paid until it is approved.",
+  "contractorBalance": "Balance to pay",
+  "contractorBillFailed": "Could not load the bill. Check your internet.",
+  "contractorBillNotPicture": "This bill is not a picture. Open it on the website.",
+  "contractorBillPhoto": "Add bill photo",
+  "contractorClosed": "Closed",
+  "contractorContract": "Contract",
+  "contractorContractChoose": "Choose a contract",
+  "contractorContractClosed": "This contract is closed.",
+  "contractorContractSearch": "Search contracts",
+  "contractorEmptyMessage": "Work orders for this project will show here.",
+  "contractorEmptyTitle": "No contracts yet",
+  "contractorEnteredBy": "Entered by",
+  "contractorHomeAhead": "{count} paid ahead of work",
+  "@contractorHomeAhead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contractorHomeCount": "{count, plural, =1{1 contract} other{{count} contracts}}",
+  "@contractorHomeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contractorHomeInStep": "All in step with work",
+  "contractorHomeOver": "{count} over the limit",
+  "@contractorHomeOver": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contractorHomeOverview": "Work done against each contract",
+  "contractorImpactAfter": "If approved",
+  "contractorImpactLine": "This line",
+  "contractorImpactNow": "Now",
+  "contractorInStep": "In step with work",
+  "contractorKind": "This payment is",
+  "contractorKindAdvance": "An advance",
+  "contractorKindWork": "For work done",
+  "contractorLatestOnly": "Showing the latest 50. The rest are on the website.",
+  "contractorLineChoose": "Choose a BOQ line",
+  "contractorLines": "Work lines",
+  "contractorLinesLoadOnline": "BOQ lines and parts load once this contract has been opened online.",
+  "contractorLoading": "Loading contracts",
+  "contractorMode": "Paid by",
+  "contractorModeBank": "Bank",
+  "contractorModeCash": "Cash",
+  "contractorModeRequired": "Choose how it was paid.",
+  "contractorModeUpi": "UPI",
+  "contractorNoDataMessage": "Connect to the internet once to load this project's contracts. After that they open offline.",
+  "contractorNoPaymentsMessage": "Requests you raise will show here with their status.",
+  "contractorNoPaymentsTitle": "No payment requests yet",
+  "contractorNotes": "Notes",
+  "contractorOptional": "Optional",
+  "contractorOtherDate": "Other date",
+  "contractorOverLimit": "Over the limit",
+  "contractorPaid": "Paid",
+  "contractorPaidAhead": "Paid ahead of work",
+  "contractorPaidOn": "Paid on",
+  "contractorPaidTo": "Paid to",
+  "contractorPaidToHint": "Leave blank for the contractor",
+  "contractorPartChoose": "Choose a part",
+  "contractorPartDone": "Done",
+  "contractorPartNotDone": "Not done",
+  "contractorPartNotPaid": "Not paid",
+  "contractorPartOver": "Paid more than the part",
+  "contractorPartPaid": "Paid",
+  "contractorPartPartPaid": "Part paid",
+  "contractorParts": "Parts",
+  "contractorReference": "Reference",
+  "contractorRefusedMessage": "Contracts are not open to your role. Ask your office if you need them.",
+  "contractorRefusedTitle": "Not part of your role",
+  "contractorRequest": "Request payment",
+  "contractorReversal": "Reversal",
+  "contractorSearchNone": "Nothing matches",
+  "contractorSend": "Send request",
+  "contractorShortBy": "Short by",
+  "contractorTabContracts": "Contracts",
+  "contractorTabPayments": "Payments",
+  "contractorTitle": "Contractors",
+  "contractorValue": "Contract value",
+  "contractorViewBill": "View bill",
+  "contractorWorkDone": "Work done",
+  "contractorWorkLeft": "Work left",
+  "contractorWorkLeftValue": "Value of work left",
   "designAttendanceAbsent": "Absent",
   "designAttendanceHalf": "Half day",
   "designAttendanceOvertime": "Overtime",
@@ -46,6 +771,2315 @@
   "designWeatherHot": "Hot",
   "designWeatherRain": "Rain",
   "designWeatherWindy": "Windy",
+  "dprAdd": "Add",
+  "dprAddNotes": "Add hindrances or notes",
+  "dprAddWork": "Add work",
+  "dprAddedTag": "Added",
+  "dprApproverRemark": "Approver's remark",
+  "dprAttentionBody": "This report could not be sent. Open Outbox to fix it.",
+  "dprBalance": "Balance",
+  "dprBoqDonePercent": "{percent} percent of BOQ measured",
+  "@dprBoqDonePercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "dprBoqEmpty": "No BOQ items found.",
+  "dprCameraFailed": "Could not open the camera. Allow camera in phone settings.",
+  "dprCanStillSend": "You can still send.",
+  "dprChooseAnother": "Change item",
+  "dprCorrectAndSend": "Correct and send again",
+  "dprEdit": "Edit",
+  "dprEmptyMessage": "Your first report starts this book.",
+  "dprEmptyTitle": "No reports yet",
+  "dprFilledFromYesterday": "Filled from yesterday",
+  "dprFormTitle": "Daily report",
+  "dprFutureDate": "The report date cannot be in the future.",
+  "dprHindrances": "Hindrances",
+  "dprHindrancesHint": "Material late, rain, power cut",
+  "dprListTitle": "Daily reports",
+  "dprLoading": "Loading",
+  "dprLocked": "This report has gone for approval and cannot be changed now.",
+  "dprMissedDays": "Missed days",
+  "dprMoreRows": "and {count} more",
+  "@dprMoreRows": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dprMoreTrades": "More trades ({count})",
+  "@dprMoreTrades": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dprNeedWeather": "Choose today's weather.",
+  "dprNeedWorkers": "Enter the workers who came.",
+  "dprNoPhotosYet": "No photos added.",
+  "dprNoProject": "Pick a project first",
+  "dprNoWorkYet": "No work added.",
+  "dprNotSaved": "Not saved",
+  "dprNotes": "Notes",
+  "dprNotesHint": "Anything else from today",
+  "dprNothingRecorded": "Nothing recorded",
+  "dprOfDays": "of {days} days",
+  "@dprOfDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dprOpenOutbox": "Open Outbox",
+  "dprOpenToday": "Open today's report",
+  "dprOptional": "Optional",
+  "dprOverBalance": "More than the BOQ balance. Check the figure.",
+  "dprPhotoFailed": "Could not add this photo. Try again.",
+  "dprPhotoMissing": "Not available",
+  "dprPhotosCount": "{count, plural, =1{1 photo} other{{count} photos}}",
+  "@dprPhotosCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dprPhotosFull": "A report can hold 10 photos.",
+  "dprQtyShort": "Qty",
+  "dprQuantity": "Quantity",
+  "dprRemove": "Remove",
+  "dprRemoved": "Removed",
+  "dprReportsThisMonth": "Reports this month",
+  "dprReturnedNoRemark": "Please correct and send again.",
+  "dprReturnedTitle": "Sent back for correction",
+  "dprReviewOffline": "No network now. The report stays on this phone and goes by itself when network returns.",
+  "dprReviewTitle": "Check and send",
+  "dprRowsCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@dprRowsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dprSameAsYesterday": "Same as yesterday ({count})",
+  "@dprSameAsYesterday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dprSavedOnPhone": "Saved on phone",
+  "dprSavedSendingNow": "Saved on phone, sending now",
+  "dprSavedWillSend": "Saved on phone, will send when network returns",
+  "dprSaving": "Saving on phone",
+  "dprSearchBoq": "Search BOQ",
+  "dprSearchHint": "Code or description",
+  "dprSectionNotes": "Hindrances and notes",
+  "dprSectionPhotos": "Photos",
+  "dprSectionWeather": "Weather",
+  "dprSectionWork": "Work done",
+  "dprSectionWorkers": "Workers",
+  "dprSend": "Send",
+  "dprSendAgain": "Send again",
+  "dprSendFailed": "Could not save this report. Try again.",
+  "dprSendReport": "Send report",
+  "dprShareAfterSend": "You can share this report once it has reached the office.",
+  "dprShareFailed": "Could not get the report. Try again.",
+  "dprShareLinkNote": "{days, plural, =1{The WhatsApp link opens the PDF for 1 day. Anyone who has the link can open it.} other{The WhatsApp link opens the PDF for {days} days. Anyone who has the link can open it.}}",
+  "@dprShareLinkNote": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dprShareNeedsInternet": "Sharing needs internet.",
+  "dprShareNotAllowed": "This report cannot be shared from your account.",
+  "dprSharePdf": "Share PDF",
+  "dprShareTitle": "Share this report",
+  "dprShareWhatsApp": "Share on WhatsApp",
+  "dprSiteClosedWrite": "Site closed? Write the reason",
+  "dprSyncAttention": "Needs attention",
+  "dprSyncPhoneOnly": "Phone only",
+  "dprSyncSending": "Sending",
+  "dprSyncWaiting": "Not sent yet",
+  "dprTakePhoto": "Take photo",
+  "dprTotalWorkers": "Total workers",
+  "dprUndo": "Undo",
+  "dprWorkersCount": "{count, plural, =1{1 worker} other{{count} workers}}",
+  "@dprWorkersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dprWorkersOnSite": "Workers on site",
+  "dprWorkersWord": "{count, plural, =1{worker} other{workers}}",
+  "@dprWorkersWord": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dprWriteFor": "Write report for {date}",
+  "@dprWriteFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dprWriteToday": "Write today's report",
+  "dprYesterdayLabel": "Yesterday",
+  "dprYesterdayTag": "Yesterday",
+  "floorPlanBoqQty": "BOQ {qty} {unit}",
+  "@floorPlanBoqQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanEmptyMessage": "Add BOQ lines to the project first.",
+  "floorPlanEmptyTitle": "No BOQ lines",
+  "floorPlanFloorDone": "{percent} done on this floor",
+  "@floorPlanFloorDone": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanNoMatch": "No line matches",
+  "floorPlanNotPlanned": "Not planned here",
+  "floorPlanPlanned": "Planned {planned} {unit} · done {done}",
+  "@floorPlanPlanned": {
+    "placeholders": {
+      "planned": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "done": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanQty": "Planned quantity on this floor ({unit})",
+  "@floorPlanQty": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "floorPlanQtyHelp": "Enter 0 to remove it.",
+  "floorPlanQtyInvalid": "Enter a quantity from zero up, with at most three decimals.",
+  "floorPlanSaved": "Planned quantity saved.",
+  "floorPlanSearch": "Search by code or name",
+  "floorPlanTitle": "Planned quantities",
+  "floorSetupAddFloor": "Add floor",
+  "floorSetupAddSegments": "Split into segments",
+  "floorSetupAdded": "{name} added.",
+  "@floorSetupAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupChooseDate": "Choose a date",
+  "floorSetupClearDate": "Clear",
+  "floorSetupDays": "Planned days",
+  "floorSetupDaysInvalid": "Enter whole days, from 1 to 5000.",
+  "floorSetupDeadline": "Deadline",
+  "floorSetupDelete": "Remove floor",
+  "floorSetupDeleteBody": "The floor and the quantities planned on it are removed. A floor with work recorded on it, or with segments under it, cannot be removed.",
+  "floorSetupDeleteConfirm": "Remove",
+  "floorSetupDeleteKeep": "Keep it",
+  "floorSetupDeleteTitle": "Remove {name}?",
+  "@floorSetupDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupDeleted": "{name} removed.",
+  "@floorSetupDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupEmptyMessage": "Add the floors of this building. Split a floor into flats or segments to track each one.",
+  "floorSetupEmptyTitle": "No floors yet",
+  "floorSetupFailed": "Could not save. Try again.",
+  "floorSetupFloorName": "Floor name",
+  "floorSetupFloorNameHint": "For example: Ground floor",
+  "floorSetupForbidden": "You are not allowed to do this.",
+  "floorSetupLoadFailed": "Could not load the floors.",
+  "floorSetupLoading": "Loading floors",
+  "floorSetupNameRequired": "Enter a name.",
+  "floorSetupNotPlanned": "Nothing planned yet",
+  "floorSetupOffline": "No internet. Floors are set up online only.",
+  "floorSetupOpen": "Set up floors",
+  "floorSetupOwnerNote": "Only the company owner can remove a floor.",
+  "floorSetupPlan": "Plan quantities",
+  "floorSetupPlannedCount": "{count, plural, =1{1 BOQ line planned} other{{count} BOQ lines planned}}",
+  "@floorSetupPlannedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSetupRename": "Rename",
+  "floorSetupRenameTitle": "Rename {name}",
+  "@floorSetupRenameTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupRenamed": "Name saved.",
+  "floorSetupRetry": "Try again",
+  "floorSetupSave": "Save",
+  "floorSetupSegmentCount": "{count, plural, =1{1 segment} other{{count} segments}}",
+  "@floorSetupSegmentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSetupSegmentsAdded": "{count, plural, =1{1 segment added.} other{{count} segments added.}}",
+  "@floorSetupSegmentsAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSetupSegmentsHint": "Flat 101\nFlat 102",
+  "floorSetupSegmentsLabel": "Segment names, one per line",
+  "floorSetupSegmentsNotAdded": "Not added: {names}",
+  "@floorSetupSegmentsNotAdded": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupSegmentsTitle": "Segments of {name}",
+  "@floorSetupSegmentsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupShare": "Share BOQ across floors",
+  "floorSetupStart": "Start date",
+  "floorSetupTimeFrame": "Time frame",
+  "floorSetupTimeFrameNone": "Not set",
+  "floorSetupTimeFrameSaved": "Time frame saved.",
+  "floorSetupTimeFrameSummary": "Start {start} · {days} days · deadline {deadline}",
+  "@floorSetupTimeFrameSummary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      },
+      "deadline": {
+        "type": "String"
+      }
+    }
+  },
+  "floorSetupTitle": "Floors and segments",
+  "floorSplitAllLines": "All BOQ lines",
+  "floorSplitDone": "{count, plural, =1{1 BOQ line shared.} other{{count} BOQ lines shared.}}",
+  "@floorSplitDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "floorSplitExplain": "Each chosen BOQ line is shared equally across the chosen floors and segments. What was planned for these lines on other floors is replaced.",
+  "floorSplitFloors": "Floors and segments",
+  "floorSplitLines": "BOQ lines",
+  "floorSplitNeedFloor": "Choose at least one floor.",
+  "floorSplitNeedLine": "Choose at least one BOQ line.",
+  "floorSplitSubmit": "Share equally",
+  "floorSplitTitle": "Share BOQ across floors",
+  "inspectionCategoryGeneral": "General",
+  "inspectionCategoryPourCard": "Pour card",
+  "inspectionCategoryPpe": "PPE",
+  "inspectionCategoryReinforcement": "Reinforcement",
+  "inspectionCategorySafety": "Safety",
+  "inspectionCategoryShuttering": "Shuttering",
+  "inspectionDiscard": "Discard",
+  "inspectionDiscardBody": "What you marked so far will be lost.",
+  "inspectionDiscardTitle": "Discard this inspection?",
+  "inspectionFillChoose": "Choose Pass, Fail or Not applicable",
+  "inspectionFillDate": "Inspection date",
+  "inspectionFillLocation": "Location",
+  "inspectionFillLocationHint": "For example Slab L3 or Gate 2. Optional.",
+  "inspectionFillLockedNote": "Once finished, an inspection cannot be changed.",
+  "inspectionFillMarked": "{done} of {total} marked",
+  "@inspectionFillMarked": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillNeedRemark": "{count, plural, =1{1 failed item needs a reason} other{{count} failed items need a reason}}",
+  "@inspectionFillNeedRemark": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillUnmarked": "{count, plural, =1{1 item still has no result} other{{count} items still have no result}}",
+  "@inspectionFillUnmarked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionFillWrong": "What is wrong?",
+  "inspectionFillWrongRequired": "Write what is wrong. A failed item needs this.",
+  "inspectionFinish": "Finish inspection",
+  "inspectionGoneMessage": "This inspection was finished or discarded.",
+  "inspectionGoneTitle": "Not on this phone",
+  "inspectionItemsNotLoaded": "The items are not on this phone yet. Connect to the internet to load them.",
+  "inspectionNotOnPhone": "Connect to the internet to load it.",
+  "inspectionOpenNote": "This inspection was started on the website and is not finished. Finish it there.",
+  "inspectionOpenOutbox": "Open the sending list",
+  "inspectionResultFail": "Fail",
+  "inspectionResultNa": "Not applicable",
+  "inspectionResultPass": "Pass",
+  "inspectionResultPending": "No result yet",
+  "inspectionStatusFailed": "Failed",
+  "inspectionStatusOpen": "In progress",
+  "inspectionStatusPassed": "Passed",
+  "inspectionWaitingNote": "Saved on this phone. It will be sent when you are online, and cannot be changed after that.",
+  "inspectionsChecklistSearch": "Search checklists",
+  "inspectionsDraftWord": "Not finished",
+  "inspectionsDraftsHeading": "Being filled in",
+  "inspectionsEmptyMessage": "Start one from a checklist. It is saved on this phone and sent when you are online.",
+  "inspectionsEmptyTitle": "No inspections yet",
+  "inspectionsFailedCount": "{count} failed",
+  "@inspectionsFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionsItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@inspectionsItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectionsLatestOnly": "Showing the latest 25. The rest are on the website.",
+  "inspectionsLoading": "Loading inspections",
+  "inspectionsNoDataMessage": "Connect to the internet once to load this project's checklists. After that they open offline.",
+  "inspectionsRecentHeading": "Recent",
+  "inspectionsRefusedMessage": "Checklists are not open to your role. Ask your office if you need them.",
+  "inspectionsRefusedTitle": "Not part of your role",
+  "inspectionsSearchNone": "No checklist matches",
+  "inspectionsStart": "Start an inspection",
+  "inspectionsTitle": "Inspections",
+  "issuesActionClose": "Close issue",
+  "issuesActionReopen": "Reopen",
+  "issuesActionResolve": "Mark resolved",
+  "issuesActionStart": "Start work",
+  "issuesAssignedUnknown": "Assigned",
+  "issuesAssigneeSheetTitle": "Assign to",
+  "issuesDetailAssignee": "Assigned to",
+  "issuesDetailDescription": "Details",
+  "issuesDetailDue": "Due date",
+  "issuesDetailMissingMessage": "It may have been removed. Go back to the list.",
+  "issuesDetailMissingTitle": "This issue is not on this phone",
+  "issuesDetailPriority": "Priority",
+  "issuesDetailRaisedBy": "Raised by",
+  "issuesDetailResolvedOn": "Resolved on",
+  "issuesDueOn": "Due {date}",
+  "@issuesDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "issuesDueToday": "Due today",
+  "issuesEmptyFilterMessage": "No issues with this status.",
+  "issuesEmptyFilterTitle": "Nothing here",
+  "issuesEmptyMessage": "If something is wrong on site, raise it here so it gets fixed.",
+  "issuesEmptyTitle": "No issues on this site",
+  "issuesEyebrow": "Site issues",
+  "issuesFilterAll": "All",
+  "issuesFormAssignee": "Who will fix it? (optional)",
+  "issuesFormDue": "Fix by (optional)",
+  "issuesFormDueClear": "Tap the chosen day again to clear it.",
+  "issuesFormDueThree": "3 days",
+  "issuesFormDueToday": "Today",
+  "issuesFormDueWeek": "1 week",
+  "issuesFormEyebrow": "New issue",
+  "issuesFormLocation": "Where on site? (optional)",
+  "issuesFormLocationHint": "e.g. Grid C, third floor",
+  "issuesFormPhotos": "Photos of the problem (optional)",
+  "issuesFormPriority": "How urgent is it?",
+  "issuesFormSave": "Save issue",
+  "issuesFormTitle": "Raise an issue",
+  "issuesFormWhat": "What is wrong?",
+  "issuesFormWhatHint": "e.g. Crack in column C3",
+  "issuesFormWhatRequired": "Write what is wrong.",
+  "issuesLoading": "Loading issues",
+  "issuesNoDueDate": "No due date",
+  "issuesNoProjectMessage": "Choose a project first, then raise issues here.",
+  "issuesNoProjectTitle": "No project chosen",
+  "issuesOverdue": "Overdue by {days} {days, plural, =1{day} other{days}}",
+  "@issuesOverdue": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "issuesPhotoAddAfter": "Add after photo",
+  "issuesPhotoAddBefore": "Add before photo",
+  "issuesPhotoFailed": "Could not add the photo. Try again.",
+  "issuesPhotoSavedOffline": "Photo saved on phone. Sends when network returns.",
+  "issuesPhotoSavedOnline": "Photo saved. Sending now.",
+  "issuesPhotosAfter": "After",
+  "issuesPhotosBefore": "Before",
+  "issuesPhotosNone": "No photos yet",
+  "issuesPhotosTitle": "Photos",
+  "issuesRaise": "Raise issue",
+  "issuesRefreshFailed": "Could not update. Showing what is on this phone.",
+  "issuesResolvedOn": "Resolved {date}",
+  "@issuesResolvedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "issuesSaveFailed": "Could not save the issue. Try again.",
+  "issuesSavedOffline": "Saved on phone. Sends when network returns.",
+  "issuesSavedOnline": "Saved. Sending now.",
+  "issuesStatusFailed": "Could not change the status. Try again.",
+  "issuesSyncAttention": "Needs attention",
+  "issuesSyncSending": "Sending",
+  "issuesTitle": "Issues",
+  "issuesUnassigned": "Not assigned",
+  "machineCategoryBackhoe": "JCB / Backhoe loader",
+  "machineCategoryCompressor": "Compressor",
+  "machineCategoryCrane": "Crane",
+  "machineCategoryDgSet": "DG set",
+  "machineCategoryExcavator": "Excavator",
+  "machineCategoryFormwork": "Shuttering / Formwork",
+  "machineCategoryMixer": "Concrete mixer",
+  "machineCategoryOther": "Other",
+  "machineCategoryPump": "Concrete pump",
+  "machineCategoryRoller": "Roller / Compactor",
+  "machineCategoryScaffolding": "Scaffolding",
+  "machineCategoryTipper": "Tipper / Truck",
+  "machineCategoryTools": "Tools and small plant",
+  "machineCategoryTransitMixer": "Transit mixer",
+  "machineCategoryVehicle": "Vehicle",
+  "machineFormBreakdown": "Hours lost to breakdown",
+  "machineFormChoose": "Choose a machine",
+  "machineFormClosing": "Closing reading",
+  "machineFormClosingBelow": "The closing reading cannot be lower than the opening reading",
+  "machineFormDate": "Date",
+  "machineFormHours": "Hours worked",
+  "machineFormHoursError": "Enter hours from 0 to 24, with one decimal at most",
+  "machineFormHoursHint": "One decimal at most, like 7.5",
+  "machineFormKm": "Km run",
+  "machineFormKmError": "Enter km from 0 to 99,999",
+  "machineFormLogged": "Already logged that day: {hours} h. One machine cannot pass 24 h in a day.",
+  "@machineFormLogged": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machineFormMachine": "Machine",
+  "machineFormMachineRequired": "Choose the machine first",
+  "machineFormNoMachinesTitle": "No machines to log against",
+  "machineFormNoneMatch": "No machine matches",
+  "machineFormNothing": "Enter the hours or km worked, or the hours lost to breakdown",
+  "machineFormOpening": "Opening reading",
+  "machineFormOperator": "Operator",
+  "machineFormReadingError": "Enter a number from 0 to 99,999,999",
+  "machineFormReadingsHintHours": "Leave Hours worked blank and the hours are worked out from the two readings.",
+  "machineFormReadingsHintKm": "Leave Km run blank and the km are worked out from the two readings.",
+  "machineFormRemarks": "Remarks",
+  "machineFormSave": "Save log",
+  "machineFormSearch": "Search by code or name",
+  "machinesAdd": "Add a log",
+  "machinesBreakdownValue": "Breakdown {hours} h",
+  "@machinesBreakdownValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesEmptyMessage": "A day's work of a machine on this project will show here.",
+  "machinesEmptyTitle": "No logs yet",
+  "machinesHoursValue": "{hours} h",
+  "@machinesHoursValue": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesKmValue": "{km} km",
+  "@machinesKmValue": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesLatestOnly": "Showing the latest 50. The rest are on the website.",
+  "machinesLoading": "Loading machine logs",
+  "machinesNoDataMessage": "Connect to the internet once to load the machines. After that the log opens offline.",
+  "machinesNoMachinesMessage": "Machines are added on the website. They show here after that.",
+  "machinesNoMachinesTitle": "No machines yet",
+  "machinesOperatorValue": "Operator {name}",
+  "@machinesOperatorValue": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesRefusedMessage": "The machine log is not open to your role. Ask your office if you need it.",
+  "machinesRefusedTitle": "Not part of your role",
+  "machinesTitle": "Machine log",
+  "machinesUnderRepair": "Under repair",
+  "machinesUnknownMachine": "Machine no. {id}",
+  "@machinesUnknownMachine": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "materialActualUsed": "Used",
+  "materialAdd": "Add entry",
+  "materialAgainstNorm": "Against the norm",
+  "materialAllowed": "Allowed",
+  "materialAllowedWastage": "Allowed wastage",
+  "materialAsPerNorm": "As per norm",
+  "materialBasisApproved": "Approved measurements",
+  "materialBasisDpr": "Daily reports",
+  "materialBasisMeasured": "Measurement book",
+  "materialBeyondAllowed": "{qty} beyond what is allowed",
+  "@materialBeyondAllowed": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "materialBillAmount": "Amount",
+  "materialBillAmountInvalid": "Enter an amount above 0 with up to 2 decimals.",
+  "materialBillAttach": "Attach bill",
+  "materialBillAttached": "Bill attached",
+  "materialBillAttachedBy": "Attached by {name}",
+  "@materialBillAttachedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "materialBillDate": "Bill date",
+  "materialBillFailed": "Could not load the bill. Check your internet.",
+  "materialBillFromGallery": "From gallery",
+  "materialBillHeading": "Bill",
+  "materialBillNeeded": "Add a photo of the bill.",
+  "materialBillNeededOrNumber": "Add a photo of the bill, or enter its number.",
+  "materialBillNo": "Bill no.",
+  "materialBillNotPicture": "This bill is a PDF. Open it on the website.",
+  "materialBillPending": "Bill pending",
+  "materialBillPhoto": "Photo of the bill",
+  "materialBillRemovePhoto": "Remove photo",
+  "materialBillReplace": "Replace bill",
+  "materialBillReplaceNote": "A new file replaces the one attached.",
+  "materialBillSaved": "Bill attached.",
+  "materialBillSend": "Save bill",
+  "materialBillTakePhoto": "Take photo",
+  "materialBillView": "View bill",
+  "materialBillWaiting": "Waiting for the bill.",
+  "materialBillsAlertNote": "An alert goes out after {days} days without a bill.",
+  "@materialBillsAlertNote": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "materialBillsDays": "{days, plural, =0{Came today} =1{1 day waiting} other{{days} days waiting}}",
+  "@materialBillsDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "materialBillsLoadFailed": "Could not load the bills. Pull down to try again.",
+  "materialBillsNoneAttached": "No bills attached yet",
+  "materialBillsNoneMessage": "Challans taken on site show here until their bill is attached.",
+  "materialBillsNonePending": "No bills pending",
+  "materialBillsOffline": "Connect to the internet to see the bills.",
+  "materialBillsOverdue": "Overdue",
+  "materialBillsRefused": "Bills are not open to your role.",
+  "materialBillsTitle": "Bills against challans",
+  "materialBillsWaitingCount": "{count, plural, =0{No bill waiting} =1{1 waiting for a bill} other{{count} waiting for a bill}}",
+  "@materialBillsWaitingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "materialBoqForWork": "BOQ for work done",
+  "materialChallanLoadFailed": "Could not load this challan. Pull down to try again.",
+  "materialChallanNo": "Challan no. (optional)",
+  "materialChallanNoShort": "Challan no.",
+  "materialChallanOffline": "Connect to the internet to open this challan.",
+  "materialChallanOpen": "Open challan",
+  "materialChallanPhoto": "Photo of challan",
+  "materialChallanRefused": "This challan is not open to you.",
+  "materialChallanTitle": "Challan",
+  "materialChoose": "Choose material",
+  "materialCount": "Count stock",
+  "materialCountHint": "Stock is corrected to what you counted. Any missing quantity shows as unaccounted.",
+  "materialDate": "Date",
+  "materialDifference": "Difference {qty}",
+  "@materialDifference": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "materialEmptyMessage": "Entries for material received and used will show here.",
+  "materialEmptyTitle": "Nothing to check yet",
+  "materialEnteredBy": "Entered by",
+  "materialExtraRequired": "Say what the extra work was",
+  "materialExtraWhat": "What was the extra work?",
+  "materialFlagsTitle": "Questions to answer",
+  "materialInStock": "In stock",
+  "materialLastCounted": "Last counted",
+  "materialLoading": "Loading material",
+  "materialMoreFailed": "Could not load more. Try again.",
+  "materialName": "Material",
+  "materialNeedsNetwork": "This needs the internet. Connect and try again.",
+  "materialNoCountsTitle": "No counts yet",
+  "materialNoDataMessage": "Connect to the internet once to load this project's material. After that it works offline.",
+  "materialNoDeliveriesTitle": "No challans yet",
+  "materialNoPhoto": "No photo was attached.",
+  "materialNoUseTitle": "No material used yet",
+  "materialNorm": "Norm",
+  "materialNormPer": "{qty} {unit} per {workUnit}",
+  "@materialNormPer": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "workUnit": {
+        "type": "String"
+      }
+    }
+  },
+  "materialNotAllowed": "Your role cannot do this. Ask your office.",
+  "materialOnBoq": "BOQ work",
+  "materialOnChallan": "On challan",
+  "materialOnExtra": "Extra work",
+  "materialOnSite": "Stock on site",
+  "materialOptional": "Optional",
+  "materialOverStock": "This is more than the stock shown here. The server may refuse it.",
+  "materialPhotoFailed": "Could not load the photo. Check your internet.",
+  "materialQtyCounted": "Counted quantity",
+  "materialQtyIssued": "Quantity issued",
+  "materialQtyOnChallan": "Quantity written on challan (optional)",
+  "materialQtyOnChallanHint": "If less arrived than the challan says, enter the challan figure.",
+  "materialQtyReceived": "Quantity received",
+  "materialQtyRequired": "Enter the quantity",
+  "materialQtyUsed": "Quantity used",
+  "materialReasonAnswered": "Answered",
+  "materialReasonEmpty": "Write the reason first.",
+  "materialReasonFrom": "Reason from {name}",
+  "@materialReasonFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "materialReasonHint": "Say what happened on site. If the gap grows, it will ask again.",
+  "materialReasonLabel": "Why is there a gap?",
+  "materialReasonNotYours": "The engineer, store keeper, QS or project manager writes the reason.",
+  "materialReasonSaved": "Reason saved.",
+  "materialReasonSend": "Save reason",
+  "materialReasonTooLong": "Keep the reason to 2000 characters.",
+  "materialReasonWrite": "Write the reason",
+  "materialReceived": "Material received",
+  "materialReceivedShort": "Received",
+  "materialRemarks": "Remarks",
+  "materialReorderHeading": "Below reorder level",
+  "materialReorderLine": "{balance} of {level} {unit}",
+  "@materialReorderLine": {
+    "placeholders": {
+      "balance": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "materialReversedNote": "Reversed by {name} on {date}: {reason}",
+  "@materialReversedNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "materialSearch": "Search material",
+  "materialSearchNone": "Nothing matches",
+  "materialSendFailed": "Could not save. Try again.",
+  "materialShort": "Short delivered",
+  "materialShortAsk": "Delivered short?",
+  "materialShortAtGate": "Found at the gate",
+  "materialShortBy": "Short by ({unit})",
+  "@materialShortBy": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "materialShortFoundOn": "Found on",
+  "materialShortHeading": "Short deliveries",
+  "materialShortHint": "This takes the quantity out of stock and counts against the supplier.",
+  "materialShortLater": "Found later",
+  "materialShortNote": "Note",
+  "materialShortNoteTooLong": "Keep the note to 500 characters.",
+  "materialShortQtyInvalid": "Enter a quantity above 0 with up to 3 decimals.",
+  "materialShortSaved": "Short delivery recorded against the supplier.",
+  "materialShortSend": "Record short delivery",
+  "materialShouldBe": "Should be in stock",
+  "materialShowMore": "Show more",
+  "materialStage": "Stage (optional)",
+  "materialStageHint": "Such as slab 3",
+  "materialStatusNoNorm": "No norm set",
+  "materialStatusNoWork": "Issued, no work yet",
+  "materialStatusOk": "Within norm",
+  "materialStatusUnder": "Under norm",
+  "materialStatusWastage": "Wastage",
+  "materialStore": "Store",
+  "materialSupplier": "Supplier",
+  "materialSupplierChoose": "Choose supplier",
+  "materialSupplierFromList": "Choose from list",
+  "materialSupplierName": "Supplier name",
+  "materialSupplierNew": "New supplier",
+  "materialSupplierRequired": "Say who supplied it",
+  "materialSupplierSearch": "Search supplier",
+  "materialTabCounts": "Counts",
+  "materialTabDeliveries": "Challans",
+  "materialTabStock": "Stock",
+  "materialTabUsed": "Used",
+  "materialTitle": "Material",
+  "materialToAnswer": "{count} to answer",
+  "@materialToAnswer": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "materialUnaccounted": "Unaccounted",
+  "materialUnplannedHeading": "Issued without a BOQ line",
+  "materialUsed": "Material used",
+  "materialUsedShort": "Used",
+  "materialVehicle": "Vehicle no.",
+  "materialVehicleNo": "Vehicle no. (optional)",
+  "materialViewPhoto": "View challan photo",
+  "materialWastageBasis": "Work done from",
+  "materialWastageEmptyMessage": "Norms are set on the website. Issue material against BOQ lines to see it here.",
+  "materialWastageEmptyTitle": "Nothing to reconcile yet",
+  "materialWastageHint": "Allowed = work done × norm, plus the norm's wastage %. Norms are set on the website.",
+  "materialWastageLoadFailed": "Could not load the wastage. Pull down to try again.",
+  "materialWastageOffline": "Connect to the internet to see wastage against the BOQ.",
+  "materialWastageOverCount": "{count, plural, =0{No line over its allowance} =1{1 line over its allowance} other{{count} lines over their allowance}}",
+  "@materialWastageOverCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "materialWastageRefused": "Wastage against the BOQ is not open to your role.",
+  "materialWastageTile": "Wastage against BOQ norms",
+  "materialWastageTileHint": "Material used on each BOQ line against what its norm allows",
+  "materialWastageTitle": "Wastage against BOQ",
+  "materialWorkDone": "Work done",
+  "measurementAdd": "Add",
+  "measurementAddEntry": "Add measurement",
+  "measurementAllLines": "All lines",
+  "measurementApprovedLockedBody": "Corrections are made on the web as a reversal entry.",
+  "measurementApprovedLockedTitle": "Approved and locked",
+  "measurementApproverSaid": "Approver's remark",
+  "measurementAttentionBody": "The server refused this entry. It is safe on your phone.",
+  "measurementAttentionTitle": "Could not send",
+  "measurementBalance": "Balance",
+  "measurementBalanceAfter": "Balance after this",
+  "measurementBookTitle": "Measurement book",
+  "measurementBoqProgress": "BOQ used",
+  "measurementBoqQty": "BOQ",
+  "measurementBoqUsed": "{percent} of BOQ used",
+  "@measurementBoqUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "measurementBreadth": "Breadth",
+  "measurementBreadthShort": "× B",
+  "measurementChange": "Change",
+  "measurementChangeLine": "Change BOQ line",
+  "measurementChooseLine": "Choose BOQ line",
+  "measurementClose": "Close",
+  "measurementDateLabel": "Measured on",
+  "measurementDeduct": "Deduct",
+  "measurementDelete": "Delete",
+  "measurementDepth": "Depth",
+  "measurementDepthShort": "× D",
+  "measurementDescriptionHint": "What was measured",
+  "measurementDescriptionLabel": "Description",
+  "measurementDetailTitle": "Measurement",
+  "measurementDetailsShort": "Location, date",
+  "measurementDetailsTitle": "Location, note and date",
+  "measurementDeviation": "Deviation",
+  "measurementDeviationBody": "Over BOQ + {percent}%. It will need PM approval.",
+  "@measurementDeviationBody": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "measurementDeviationDetail": "This entry goes over the BOQ quantity plus tolerance, so the project manager must approve it.",
+  "measurementDraftsLeft": "{count, plural, =1{1 row kept as a draft. Send it from the book.} other{{count} rows kept as drafts. Send them from the book.}}",
+  "@measurementDraftsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "measurementEdit": "Edit",
+  "measurementEmptyBody": "Your first entry starts this book.",
+  "measurementEmptyFilteredBody": "No entries have this status.",
+  "measurementEmptyFilteredTitle": "Nothing here",
+  "measurementEmptyTitle": "No measurements yet",
+  "measurementFilterAll": "All",
+  "measurementFixLast": "Fix last",
+  "measurementFormulaHint": "Enter Nos to begin",
+  "measurementGoneBody": "It may have been deleted on the web.",
+  "measurementGoneTitle": "Entry not found",
+  "measurementInReviewBody": "With the approver. It cannot be changed until they decide.",
+  "measurementItem": "Item",
+  "measurementLeaveBody": "The figures typed for this row will be lost.",
+  "measurementLeaveGo": "Leave",
+  "measurementLeaveKeep": "Keep entering",
+  "measurementLeaveTitle": "Leave without saving?",
+  "measurementLength": "Length",
+  "measurementLengthShort": "× L",
+  "measurementLoading": "Loading",
+  "measurementLocationHint": "Grid, floor, footing",
+  "measurementLocationLabel": "Location",
+  "measurementLockedBody": "It has been approved or is under review.",
+  "measurementLockedTitle": "This entry cannot be changed",
+  "measurementNet": "net",
+  "measurementNext": "Next",
+  "measurementNoMatchTitle": "Nothing matches",
+  "measurementNos": "Nos",
+  "measurementOffline": "No network.",
+  "measurementOfflineDetail": "Entries stay on this phone and go when network returns.",
+  "measurementOtherDate": "Other date",
+  "measurementPhotoAdd": "Add photo",
+  "measurementPhotoFailed": "Could not add the photo. Try again.",
+  "measurementPhotoSaved": "Photo saved. Sending now.",
+  "measurementPhotoSavedOffline": "Photo saved on phone. Sends when network returns.",
+  "measurementPhotosLocked": "Photos cannot be added once the entry is with the approver.",
+  "measurementPhotosNone": "No photos yet",
+  "measurementPhotosTitle": "Photos",
+  "measurementPreviewNote": "Figures on this phone are a preview. The office's figures are final.",
+  "measurementPreviewTag": "preview",
+  "measurementProblemFuture": "The date cannot be in the future.",
+  "measurementProblemLocked": "This entry has already been sent for approval.",
+  "measurementProblemNoLine": "Choose the BOQ line first.",
+  "measurementProblemNos": "Enter Nos. It is required.",
+  "measurementProblemPositive": "This figure must be more than zero.",
+  "measurementProblemTooLarge": "This figure is too large.",
+  "measurementProblemUnknown": "Could not save. Please try again.",
+  "measurementQuantity": "Quantity",
+  "measurementRecentLines": "Recent",
+  "measurementRejectedBody": "This entry was rejected and will not count. Make a new entry if the work needs measuring again.",
+  "measurementSavedOffline": "Saved on phone. It will go when network returns.",
+  "measurementSavedOnPhone": "Saved on phone.",
+  "measurementSearchHint": "e.g. 2.1 or slab",
+  "measurementSearchLines": "Search code or description",
+  "measurementSendAgain": "Send again",
+  "measurementSendCount": "Send {count} for approval",
+  "@measurementSendCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "measurementSendForApproval": "Send for approval",
+  "measurementSendsWhenOnline": "Not sent yet. It will go for approval when network returns.",
+  "measurementShareOfBoq": "Share of BOQ",
+  "measurementSheetAction": "Sheet PDF",
+  "measurementSheetFailed": "Could not get the sheet. Try again.",
+  "measurementSheetFrom": "From",
+  "measurementSheetHint": "Approved measurements for the dates you choose, grouped by BOQ item.",
+  "measurementSheetNeedsInternet": "The sheet needs internet.",
+  "measurementSheetNotAllowed": "This sheet cannot be shared from your account.",
+  "measurementSheetShare": "Share PDF",
+  "measurementSheetTitle": "Measurement sheet PDF",
+  "measurementSheetTo": "To",
+  "measurementSheetTooLong": "Too many measurements in these dates. Choose a shorter period.",
+  "measurementStampSent": "Sent",
+  "measurementSubmitWaitingTitle": "Waiting to go for approval",
+  "measurementSyncAttention": "Needs a look",
+  "measurementSyncSending": "Sending",
+  "measurementTally": "{count, plural, =1{1 row saved on phone} other{{count} rows saved on phone}}",
+  "@measurementTally": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "measurementYesterday": "Yesterday",
+  "pettyCashAddExpense": "Add expense",
+  "pettyCashAddMoney": "Add money",
+  "pettyCashAmount": "Amount",
+  "pettyCashAmountRequired": "Enter an amount above zero.",
+  "pettyCashBalance": "Balance",
+  "pettyCashBalanceAfter": "Balance after this: {amount}",
+  "@pettyCashBalanceAfter": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashBillAdded": "Bill photo added",
+  "pettyCashBillFailed": "Could not open the camera. Try again.",
+  "pettyCashBillLabel": "Bill",
+  "pettyCashBillRetake": "Take again",
+  "pettyCashCategory": "What was it for?",
+  "pettyCashCategoryRequired": "Choose what it was for.",
+  "pettyCashChooseProject": "Choose a project",
+  "pettyCashConfirmed": "Confirmed",
+  "pettyCashCreateWallet": "Create wallet",
+  "pettyCashDate": "Date",
+  "pettyCashDayToday": "Today",
+  "pettyCashDayYesterday": "Yesterday",
+  "pettyCashEntries": "Entries",
+  "pettyCashEntriesEmptyMessage": "Expenses you add will show here.",
+  "pettyCashEntriesEmptyTitle": "No entries yet",
+  "pettyCashEyebrow": "Cash book",
+  "pettyCashFinalAfterSync": "The final balance comes after sync.",
+  "pettyCashFormEyebrow": "New expense",
+  "pettyCashFormTitle": "Add an expense",
+  "pettyCashLoading": "Loading the cash book",
+  "pettyCashNoProjectMessage": "Choose a project first, then record expenses here.",
+  "pettyCashNoProjectTitle": "No project chosen",
+  "pettyCashNoWalletManageMessage": "Create one to record site expenses here.",
+  "pettyCashNoWalletManageTitle": "No wallet on this project yet",
+  "pettyCashNoWalletMessage": "Ask your project manager or the accounts office to open one for you.",
+  "pettyCashNoWalletTitle": "You have no wallet on this project",
+  "pettyCashNote": "Note (optional)",
+  "pettyCashNoteHint": "Diesel for the mixer",
+  "pettyCashOpeningAmount": "Opening amount",
+  "pettyCashOpeningHelper": "Leave blank if there is no money yet.",
+  "pettyCashOpeningNote": "Opening balance",
+  "pettyCashOverBalance": "More than the wallet balance of {balance}. Ask the office for a top-up.",
+  "@pettyCashOverBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashPhotoBill": "Photo of bill",
+  "pettyCashProvisional": "Provisional",
+  "pettyCashSave": "Save expense",
+  "pettyCashSaveFailed": "Could not save the expense. Try again.",
+  "pettyCashSavedOffline": "Saved on phone. It will send when network returns.",
+  "pettyCashSavedOnline": "Saved on phone. Sending now.",
+  "pettyCashSyncAttention": "Needs attention",
+  "pettyCashSyncSending": "Sending",
+  "pettyCashTapToChange": "Tap to change",
+  "pettyCashTitle": "Petty cash",
+  "pettyCashTopUpEyebrow": "Money into the wallet",
+  "pettyCashTopUpFailed": "Could not save the money. Try again.",
+  "pettyCashTopUpNoteHint": "Cash from office",
+  "pettyCashTopUpSave": "Save money received",
+  "pettyCashTopup": "Top-up",
+  "pettyCashUnsent": "Not sent yet",
+  "pettyCashWallet": "Wallet",
+  "pettyCashWalletCreateKey": "Create",
+  "pettyCashWalletCreated": "Wallet created",
+  "pettyCashWalletCreatedMoney": "Wallet created. {amount} saved on phone, sending now.",
+  "@pettyCashWalletCreatedMoney": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletCreatedOffline": "Wallet created. {amount} saved on phone, sends when network returns.",
+  "@pettyCashWalletCreatedOffline": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletDefaultName": "{code} site cash",
+  "@pettyCashWalletDefaultName": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletFailed": "The wallet could not be created. Try again.",
+  "pettyCashWalletFormEyebrow": "New wallet",
+  "pettyCashWalletHolder": "Who holds the cash?",
+  "pettyCashWalletMoneyFailed": "Wallet created, but the money was not saved. Add it again.",
+  "pettyCashWalletName": "Wallet name",
+  "pettyCashWalletNameRequired": "Write a name for the wallet.",
+  "pettyCashWalletOffline": "No network.",
+  "pettyCashWalletOfflineDetail": "A wallet can be created only online.",
+  "photosClose": "Close",
+  "photosDocument": "PDF, on the website",
+  "photosNeedNetwork": "Needs network",
+  "photosNotSent": "Not sent",
+  "photosOpen": "Open photo",
+  "photosWaiting": "Waiting to send",
+  "portalBillDeductions": "Deductions",
+  "portalBillFinal": "Final bill",
+  "portalBillGross": "Gross amount",
+  "portalBillGst": "GST",
+  "portalBillLineQty": "{qty} {unit} at {rate}",
+  "@portalBillLineQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "portalBillLineSoFar": "So far {qty} {unit}",
+  "@portalBillLineSoFar": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "portalBillLines": "Work billed",
+  "portalBillLinesOnline": "The lines of this bill load once it has been opened online.",
+  "portalBillNet": "Net payable",
+  "portalBillPeriod": "Period",
+  "portalBillPeriodRange": "{from} to {to}",
+  "@portalBillPeriodRange": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "portalBillRetentionReleased": "Retention released",
+  "portalBillsCount": "{count, plural, =1{1 bill} other{{count} bills}}",
+  "@portalBillsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalBillsTitle": "Bills",
+  "portalDaysLeft": "{count, plural, =1{1 day left} other{{count} days left}}",
+  "@portalDaysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalDeadlineLabel": "Deadline",
+  "portalDueToday": "Due today",
+  "portalLineDone": "{done} of {total} {unit} done",
+  "@portalLineDone": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLineRate": "{rate} per {unit}",
+  "@portalLineRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLineWorth": "Worth {done} of {total}",
+  "@portalLineWorth": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLoading": "Loading your contracts",
+  "portalNoBillsMessage": "Bills the company has approved will show here.",
+  "portalNoBillsTitle": "No bills yet",
+  "portalNoContractsMessage": "Work orders given to you will show here.",
+  "portalNoDataMessage": "Connect to the internet once to load your contracts. After that they open offline.",
+  "portalNoPaymentsMessage": "Payments the company has approved will show here.",
+  "portalNoPaymentsTitle": "No payments yet",
+  "portalNotFoundMessage": "Connect to the internet to load it.",
+  "portalNotFoundTitle": "Not on this phone yet",
+  "portalOverdueBy": "{count, plural, =1{1 day late} other{{count} days late}}",
+  "@portalOverdueBy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalPaidVsWork": "Paid {paid} · Work done {work}",
+  "@portalPaidVsWork": {
+    "placeholders": {
+      "paid": {
+        "type": "String"
+      },
+      "work": {
+        "type": "String"
+      }
+    }
+  },
+  "portalPaymentsCount": "{count, plural, =1{1 payment} other{{count} payments}}",
+  "@portalPaymentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalPaymentsTitle": "Payments",
+  "portalRefusedMessage": "This login cannot open the contractor portal right now. Ask the company that gave you this login.",
+  "portalRefusedTitle": "Portal not open",
+  "portalSavedAgo": "Updated {ago}",
+  "@portalSavedAgo": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "portalTitle": "Contractor portal",
+  "portalWorkComplete": "Work complete",
+  "portalYourContracts": "All your contracts",
+  "priceWatchAbove": "{diff} above the BOQ rate ({pct})",
+  "@priceWatchAbove": {
+    "placeholders": {
+      "diff": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchBasisNorms": "from the BOQ norms",
+  "priceWatchBasisTyped": "quantity typed in for this project",
+  "priceWatchBelow": "{diff} below the BOQ rate ({pct})",
+  "@priceWatchBelow": {
+    "placeholders": {
+      "diff": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchBeyond": "Beyond the margin",
+  "priceWatchBoqRate": "BOQ rate",
+  "priceWatchBoqValue": "BOQ value",
+  "priceWatchBudget": "Budget",
+  "priceWatchBudgetNoData": "Connect to the internet once to load the budget effect for this project.",
+  "priceWatchBudgetNote": "If the rest of each material is bought at its latest recorded price instead of the BOQ rate.",
+  "priceWatchBudgetRefused": "The budget effect is not open to your role.",
+  "priceWatchBudgetTitle": "Effect on the budget",
+  "priceWatchChecked": "Checked {ago}",
+  "@priceWatchChecked": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchDown": "Down {pct} from {rate} on {date}",
+  "@priceWatchDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchEmptyMessage": "Materials your company watches will show here with their recorded prices.",
+  "priceWatchEmptyTitle": "No materials on the board",
+  "priceWatchFresh": "From prices not out of date",
+  "priceWatchGapNoBoqRate": "No BOQ rate set for this project",
+  "priceWatchGapNoQty": "No quantity to work it out from",
+  "priceWatchGapUnit": "The price unit does not match the BOQ unit",
+  "priceWatchHistory": "Every recorded price",
+  "priceWatchLatest": "Latest",
+  "priceWatchLess": "{amount} less",
+  "@priceWatchLess": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchLevel": "Same as the BOQ rate",
+  "priceWatchLoading": "Loading recorded prices",
+  "priceWatchMaterialMissing": "This material is not on the board.",
+  "priceWatchMore": "{amount} more",
+  "@priceWatchMore": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchNoDataMessage": "Connect to the internet once to load the recorded prices. After that they open offline.",
+  "priceWatchNoEffect": "No effect",
+  "priceWatchNone": "No price recorded yet",
+  "priceWatchNote": "Prices your company wrote down, each with the date it was recorded. Nothing here updates by itself.",
+  "priceWatchNotedBy": "Noted by {name}",
+  "@priceWatchNotedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchOnlyOne": "Only one price recorded",
+  "priceWatchPerUnit": "per {unit}",
+  "@priceWatchPerUnit": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchProjected": "BOQ at these prices",
+  "priceWatchRecordedOn": "Recorded {date}",
+  "@priceWatchRecordedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchRecordedRate": "Latest recorded",
+  "priceWatchRefusedMessage": "Recorded prices are not open to your role. Ask your office if you need them.",
+  "priceWatchRefusedTitle": "Not open to your role",
+  "priceWatchSame": "Same as {rate} on {date}",
+  "@priceWatchSame": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchShareBoq": "Share of the BOQ value",
+  "priceWatchShareBudget": "Share of the budget",
+  "priceWatchStale": "{days, plural, =1{Older than 1 day} other{Older than {days} days}}",
+  "@priceWatchStale": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "priceWatchStillToBuy": "Still to buy {qty} {unit}",
+  "@priceWatchStillToBuy": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchTabBudget": "Effect on budget",
+  "priceWatchTabPrices": "Prices",
+  "priceWatchTile": "Prices",
+  "priceWatchTitle": "Recorded prices",
+  "priceWatchUp": "Up {pct} from {rate} on {date}",
+  "@priceWatchUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceWatchWithin": "Within the margin",
+  "procurementAccepted": "Received and accepted",
+  "procurementActivity": "Or the activity",
+  "procurementActivityHint": "Such as slab 3 shuttering",
+  "procurementAddItem": "Add another item",
+  "procurementForBoq": "BOQ item",
+  "procurementInStore": "In this store {qty}",
+  "@procurementInStore": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementIssueStock": "Issue from store",
+  "procurementIssuedTo": "Issued to (optional)",
+  "procurementIssuedToHint": "A person or a gang",
+  "procurementItemN": "Item {number}",
+  "@procurementItemN": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "procurementNoOrdersMessage": "An order shows here once the office has sent it to the supplier and goods can be received against it.",
+  "procurementNoOrdersTitle": "No open purchase orders",
+  "procurementNoReceiptsTitle": "No receipts yet",
+  "procurementNoStoreMessage": "Ask your office to add a store on the website, then try again.",
+  "procurementNoStoreTitle": "No store on this project",
+  "procurementNothingReceived": "Enter what was accepted on at least one line",
+  "procurementOpenOrders": "Open orders",
+  "procurementOrder": "Purchase order",
+  "procurementOrderChoose": "Choose purchase order",
+  "procurementOrderDue": "{count} items still due",
+  "@procurementOrderDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "procurementOrderRequired": "Choose the purchase order",
+  "procurementOrderSearch": "Search by number or supplier",
+  "procurementOrdered": "Ordered {qty}",
+  "@procurementOrdered": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementOverDue": "Only {qty} is still due on this order",
+  "@procurementOverDue": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementPartialNote": "Part of an order is fine. Leave a line empty if nothing came on it, and the order stays open for the rest.",
+  "procurementQtyInvalid": "Enter a number",
+  "procurementReceiveOrder": "Receive against order",
+  "procurementReceivedHeading": "Received",
+  "procurementRejected": "Turned away (optional)",
+  "procurementRejectedFigure": "Turned away {qty}",
+  "@procurementRejectedFigure": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementRejectedHint": "Goods you did not accept. They are not added to stock and are still due from the supplier.",
+  "procurementRejectedOnly": "Turned-away goods need some accepted quantity on the same line. For a delivery that was all turned away, use the website.",
+  "procurementRemarks": "Note (optional)",
+  "procurementRemarksHint": "Such as why goods were turned away",
+  "procurementRemoveItem": "Remove",
+  "procurementReversed": "Reversed",
+  "procurementStillDue": "Still due {qty}",
+  "@procurementStillDue": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "procurementTabReceipts": "Order receipts",
+  "procurementTooManyDecimals": "Use at most 3 decimal places",
+  "procurementWorkRequired": "Choose a BOQ item or write the activity",
+  "progressAdd": "Add today's work",
+  "progressBeforeFinishing": "Before finishing check",
+  "progressBehind": "Behind by {percent}",
+  "@progressBehind": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "progressCorrect": "Correct",
+  "progressCorrectFailed": "Could not save the correction. Please try again.",
+  "progressCorrectHint": "The first entry stays. A correction is added beside it.",
+  "progressCorrectNow": "Counted now: {qty}",
+  "@progressCorrectNow": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "progressCorrectQty": "What it should have been",
+  "progressCorrectQtyInvalid": "Enter a quantity from zero up",
+  "progressCorrectRemark": "Why is it being corrected?",
+  "progressCorrectRemarkRequired": "Say why it is being corrected",
+  "progressCorrectSame": "That is already the quantity",
+  "progressCorrectSave": "Save correction",
+  "progressCorrectSavedOffline": "Correction saved on this phone. It will send when you are online.",
+  "progressCorrectSavedOnline": "Correction saved. Sending now.",
+  "progressCorrectTakenBack": "Correction taken back.",
+  "progressCorrectTitle": "Correct this entry",
+  "progressCorrectionNotSent": "Correction not sent yet",
+  "progressEntryBy": "by {name}",
+  "@progressEntryBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "progressEntryCorrectedFrom": "Corrected from {qty}",
+  "@progressEntryCorrectedFrom": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "progressFinishingHint": "Read this before plaster, POP or paint starts.",
+  "progressFinishingPending": "Pending work",
+  "progressFinishingUnfinished": "Not finished yet",
+  "progressFloorBalance": "Balance",
+  "progressFloorDone": "Done",
+  "progressFloorFlats": "Flats",
+  "progressFloorLines": "Work on this floor",
+  "progressFloorNoLines": "No quantities planned for this floor yet.",
+  "progressFloorOffline": "Connect to the internet once to see this floor.",
+  "progressFloorPendingHeading": "Pending here",
+  "progressFloorPlanned": "Planned",
+  "progressFloorStages": "Plumbing and electrical stages",
+  "progressFloorTitle": "Floor progress",
+  "progressFormBalance": "Balance {qty}",
+  "@progressFormBalance": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
+  "progressFormDate": "Date",
+  "progressFormFloor": "Floor or flat",
+  "progressFormFloorNone": "Whole project",
+  "progressFormItem": "BOQ item",
+  "progressFormItemChoose": "Choose an item",
+  "progressFormItemNone": "No item matches",
+  "progressFormItemSearch": "Search by code or name",
+  "progressFormKindPending": "Only pending",
+  "progressFormKindWork": "Work done",
+  "progressFormOverBalance": "This is more than the BOQ balance. You can still save it.",
+  "progressFormPendingRemark": "What is pending?",
+  "progressFormPhoto": "Add photo",
+  "progressFormQty": "Quantity done",
+  "progressFormQtyRequired": "Enter the quantity done",
+  "progressFormRemark": "Remark (optional)",
+  "progressFormRemarkRequired": "Say what is pending",
+  "progressFormRemovePhoto": "Remove photo",
+  "progressFormSave": "Save work",
+  "progressFormTitle": "Add work",
+  "progressFormToday": "Today",
+  "progressFormWhose": "Whose work is this?",
+  "progressFormWhoseRequired": "Choose the contractor",
+  "progressFormYesterday": "Yesterday",
+  "progressLoading": "Loading progress",
+  "progressNoDataMessage": "Connect to the internet once to load this project's progress. After that it works offline.",
+  "progressNoDataTitle": "Not loaded yet",
+  "progressNoFloorsMessage": "Ask your project manager to add floors and flats.",
+  "progressNoFloorsTitle": "No floors added yet",
+  "progressNoPendingMessage": "Items marked pending on site will show here.",
+  "progressNoPendingTitle": "Nothing pending",
+  "progressNoProjectMessage": "Choose a project first.",
+  "progressNoProjectTitle": "No project selected",
+  "progressNotSent": "Not sent yet",
+  "progressOnTrack": "On track",
+  "progressPendingCount": "{count} pending",
+  "@progressPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressReadyMessage": "All plumbing and electrical stages are done here.",
+  "progressReadyTitle": "Ready for finishing",
+  "progressRecentEntries": "Recent entries on this floor",
+  "progressRefreshFailed": "Could not refresh. Showing what this phone has.",
+  "progressResolveRemark": "Remark (optional)",
+  "progressResolveSave": "Resolve",
+  "progressResolveTitle": "Mark as resolved",
+  "progressResolveWait": "This entry has not reached the office yet. Try again after it is sent.",
+  "progressResolved": "Marked as resolved",
+  "progressSaveFailed": "Could not save. Please try again.",
+  "progressSavedOffline": "Saved on this phone. It will send when you are online.",
+  "progressSavedOnline": "Saved. Sending now.",
+  "progressStageEarlierPending": "An earlier stage is still pending",
+  "progressStageNote": "Note (optional)",
+  "progressStageSave": "Save",
+  "progressStageSaved": "Stage saved",
+  "progressStageStatus": "Status",
+  "progressStagesDone": "{done} of {total} done",
+  "@progressStagesDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "progressTabFloors": "Floors",
+  "progressTabPending": "Pending",
+  "progressTabStages": "Stages",
+  "progressTimeUsed": "Time used {percent}",
+  "@progressTimeUsed": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "progressTitle": "Site progress",
+  "progressWeekDone": "Done this week",
+  "progressWeekEntries": "{count, plural, =1{1 entry} other{{count} entries}}",
+  "@progressWeekEntries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressWeekFailed": "Could not load the week.",
+  "progressWeekLeft": "{left} {unit} left · {percent} done",
+  "@progressWeekLeft": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "progressWeekMore": "And {count} more",
+  "@progressWeekMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressWeekNext": "Next week",
+  "progressWeekNotStarted": "{count, plural, =1{1 BOQ line not started} other{{count} BOQ lines not started}}",
+  "@progressWeekNotStarted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressWeekNothingDone": "No work entered this week.",
+  "progressWeekOffline": "No internet. The weekly view needs a connection.",
+  "progressWeekOpen": "This week",
+  "progressWeekPending": "Pending",
+  "progressWeekPrevious": "Previous week",
+  "progressWeekQty": "{qty} {unit} this week",
+  "@progressWeekQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "progressWeekRange": "{start} to {end}",
+  "@progressWeekRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "progressWeekTitle": "Week",
+  "progressWeekUnderWay": "Under way",
+  "progressWorkDone": "Work done",
+  "projectEditLoading": "Opening the project…",
+  "projectEditOffline": "A project can only be changed with network. Try again when you have signal.",
+  "projectEditRowSubtitle": "Name, place, dates and value by phase",
+  "projectEditSave": "Save changes",
+  "projectEditSaving": "Saving…",
+  "projectEditTitle": "Edit project",
+  "projectPhaseAdd": "Add phase",
+  "projectPhaseAmount": "Amount",
+  "projectPhaseAmountRequired": "Enter the amount",
+  "projectPhaseName": "Phase name",
+  "projectPhaseNameHint": "For example Foundation",
+  "projectPhaseNameRequired": "Name this phase",
+  "projectPhaseNumbered": "Phase {number}",
+  "@projectPhaseNumbered": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "projectPhaseRemove": "Remove {phase}",
+  "@projectPhaseRemove": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "projectPhaseShare": "{share} of the total",
+  "@projectPhaseShare": {
+    "placeholders": {
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "projectPhaseTotal": "Total",
+  "projectPhasesHint": "Enter the value phase by phase. Each phase's share is worked out for you.",
+  "pushPrefsAlerts": "Site alerts",
+  "pushPrefsAlertsHint": "New alerts on your projects, such as work falling behind. Critical ones reach you at any hour.",
+  "pushPrefsAnnouncements": "Announcements and reminders",
+  "pushPrefsAnnouncementsHint": "News and reminders from your company or from Nirmaan360. They wait for quiet hours to end.",
+  "pushPrefsApprovals": "Approvals",
+  "pushPrefsApprovalsHint": "Something waits for your approval, or a decision was made on what you sent.",
+  "pushPrefsContractor": "My payments and bills",
+  "pushPrefsContractorHint": "A payment to you was approved, or one of your bills was paid.",
+  "pushPrefsEmail": "Email",
+  "pushPrefsEmailHint": "The same updates by email.",
+  "pushPrefsFailedMessage": "Try again in a moment.",
+  "pushPrefsFailedTitle": "Could not read your settings",
+  "pushPrefsIssues": "Issues",
+  "pushPrefsIssuesHint": "An issue was assigned to you, raised as urgent, or changed status.",
+  "pushPrefsLoading": "Reading your notification settings",
+  "pushPrefsMaterial": "Material checks",
+  "pushPrefsMaterialHint": "A material gap or a short delivery needs a written reason.",
+  "pushPrefsNotConnected": "The office has not connected notifications yet. Your choices are kept for when it does.",
+  "pushPrefsOfflineMessage": "Your notification settings are kept on the server. Connect and try again.",
+  "pushPrefsOfflineTitle": "Needs the internet",
+  "pushPrefsOtherSection": "Other ways to reach you",
+  "pushPrefsPayments": "Contractor payments",
+  "pushPrefsPaymentsHint": "A contractor payment needs your approval, or one you raised was decided.",
+  "pushPrefsPush": "Push notifications",
+  "pushPrefsPushHint": "For all your phones. Off stops every kind below.",
+  "pushPrefsQuiet": "Hold notifications at night",
+  "pushPrefsQuietFrom": "From",
+  "pushPrefsQuietHint": "Between these hours they wait for the morning. Critical site alerts still come at once.",
+  "pushPrefsQuietSection": "Quiet hours",
+  "pushPrefsQuietUntil": "Until",
+  "pushPrefsRetry": "Try again",
+  "pushPrefsSaveFailed": "Not saved. Check the internet and try again.",
+  "pushPrefsSection": "On your phones",
+  "pushPrefsTitle": "Notifications",
+  "pushPrefsWhatsapp": "WhatsApp",
+  "pushPrefsWhatsappHint": "The same updates on WhatsApp.",
+  "pushPromptBody": "We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.",
+  "pushPromptBodyContractor": "We tell you when a payment to you is approved and when one of your bills is paid. You can change this any time in Settings.",
+  "pushPromptNotNow": "Not now",
+  "pushPromptTitle": "Get alerts on this phone?",
+  "pushPromptTurnOn": "Turn on alerts",
+  "pushSettingsBlocked": "Open your phone's Settings, allow notifications for Nirmaan360, then come back. Tap Turn on to check again.",
+  "pushSettingsBlockedShort": "Not allowed on this phone",
+  "pushSettingsIsOn": "On",
+  "pushSettingsOff": "Off. Tap to turn on.",
+  "pushSettingsOn": "On. Approvals and alerts reach this phone.",
+  "pushSettingsOnContractor": "On. Payments and bills reach this phone.",
+  "pushSettingsTitle": "Phone alerts",
+  "pushSettingsTurnOn": "Turn on",
+  "readerCompanyLimit": "The AI reader is switched off for your company. Please contact support.",
+  "readerConsentRequired": "Your company has not agreed to the notice for sending documents to the AI service. An owner or admin can do that in Settings on the website.",
+  "readerDailyBudget": "Your company's AI budget for today is used up. Try again tomorrow.",
+  "readerNeedsInternet": "Reading a document needs the internet.",
+  "readerNoCredits": "Your company has no AI credits left.",
+  "readerNotConnected": "The AI service is not available right now. Try again later.",
+  "readerNotReleased": "The AI reader is not switched on yet.",
+  "readerOverLimit": "Only {count} pages fit the limit. Choose fewer pages.",
+  "@readerOverLimit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerPagesMissing": "Some pages are not sent yet. Send them, then start again.",
+  "readerPausedMonth": "The AI reader is paused for this month.",
+  "readerPausedToday": "The AI reader is paused for today. Try again tomorrow.",
+  "readerPhotoMirrored": "This photo is saved mirrored. Take it again.",
+  "readerPhotoTooSmall": "This photo is too small to read. Take it closer.",
+  "readerPhotoUnreadable": "This photo cannot be read. Take it again.",
+  "readerProblem": "Something went wrong. Try again.",
+  "readerRetriesUsed": "This page cannot be read again.",
+  "readerServerBusy": "The server cannot process pictures right now. Nothing was stored. Try again later.",
+  "readerStillWorking": "Still working. Pull to refresh.",
+  "readerTooManyRequests": "Too many requests. Wait a minute and try again.",
+  "readerWrongState": "This cannot be done with the document as it is now. Refresh and try again.",
+  "scanAlready": "{name} is already marked {status} today",
+  "@scanAlready": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "scanAlreadyUnknown": "Already marked today",
+  "scanCameraFailedMessage": "Close this page and open it again. You can still mark attendance by hand.",
+  "scanCameraFailedTitle": "The camera did not start",
+  "scanCameraOffMessage": "Allow the camera for Nirmaan360 in your phone's settings, then come back. You can still mark attendance by hand.",
+  "scanCameraOffTitle": "The camera is off",
+  "scanCameraStarting": "Starting the camera",
+  "scanCount": "{count} scanned in this sitting",
+  "@scanCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scanFailed": "Not marked. Try again.",
+  "scanHint": "Hold the camera over the QR on a worker's card.",
+  "scanMarked": "{name} marked present",
+  "@scanMarked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanMarkedUnknown": "Marked present",
+  "scanNotACard": "This is not a worker card.",
+  "scanQueued": "Saved on this phone. {name} will be marked when you are online.",
+  "@scanQueued": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "scanQueuedNote": "A saved scan is sent today only. After today, mark that day by hand.",
+  "scanQueuedUnknown": "Saved on this phone. It will be marked when you are online.",
+  "scanStatusAbsent": "absent",
+  "scanStatusHalf": "half day",
+  "scanStatusOvertime": "overtime",
+  "scanStatusPresent": "present",
+  "scanTitle": "Scan worker card",
+  "selfieConsentAgree": "The worker agrees",
+  "selfieConsentAsk": "Read this to the worker. Take the photo only if they agree.",
+  "selfieConsentNeedsNetwork": "Connect to the internet once to load the consent note. It has to be shown before the first photo.",
+  "selfieConsentRead": "Read the consent note",
+  "selfieConsentTitle": "Before the first photo",
+  "selfieConsentVersion": "Consent note {version}",
+  "@selfieConsentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieFailed": "Could not save. Please try again.",
+  "selfieIntro": "Take a photo of the worker at the site. The phone notes where it was taken, and the server checks that it was near the site.",
+  "selfieLocating": "Finding your location",
+  "selfieLocationDenied": "Location is off for this app. Turn it on in your phone's settings, then take the photo again. Without it the photo cannot be checked.",
+  "selfieLocationFailed": "Could not find your location. Move to open sky and try again.",
+  "selfieLocationNote": "Location noted, accurate to about {metres} m",
+  "@selfieLocationNote": {
+    "placeholders": {
+      "metres": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieLocationOff": "The phone's location is switched off. Switch it on, then take the photo again.",
+  "selfieLocationWhy": "The phone asks for your location only now, to note where this photo was taken. It is not tracked in the background.",
+  "selfieMarked": "{name} marked present. {distance} m from the site centre, {radius} m allowed.",
+  "@selfieMarked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "int"
+      },
+      "radius": {
+        "type": "int"
+      }
+    }
+  },
+  "selfieMarkedPlain": "{name} marked present",
+  "@selfieMarkedPlain": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieNoCamera": "The camera could not open. Allow the camera in your phone's settings.",
+  "selfieNoSiteMessage": "A photo is checked against a site's map position. Ask your office to add a site on the website.",
+  "selfieNoSiteTitle": "This project has no site",
+  "selfiePhotoRequired": "Take the photo first",
+  "selfieQueued": "Saved on this phone. {name} will be marked when you are online, and the server will check the location then.",
+  "@selfieQueued": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieQueuedNote": "A saved photo is sent within 7 days. After that the server refuses it.",
+  "selfieRefused": "Not marked: {reason}",
+  "@selfieRefused": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "selfieRetake": "Take again",
+  "selfieSend": "Mark present",
+  "selfieSite": "Site",
+  "selfieTakePhoto": "Take photo",
+  "selfieTitle": "Attendance by photo",
+  "selfieWorker": "Worker",
+  "selfieWorkerChoose": "Choose worker",
+  "selfieWorkerRequired": "Choose the worker",
+  "selfieWorkerSearch": "Search worker",
+  "shellCaptionMarked": "marked",
+  "shellCaptionOpen": "open",
+  "shellCaptionToAnswer": "to answer",
+  "shellCaptionToday": "today",
+  "shellCaptionWorkDone": "work done",
+  "shellCopyLink": "Copy link",
+  "shellDiscardBody": "It has not reached the server. It will be removed from this phone.",
+  "shellDiscardConfirm": "Yes, throw away",
+  "shellDiscardKeep": "Keep it",
+  "shellDiscardTitle": "Throw away this entry?",
+  "shellLinkCopied": "Link copied",
+  "shellLinkFailedBody": "Copy the link and open it in your browser.",
+  "shellLinkFailedTitle": "The page did not open",
+  "shellOfflineApprovals": "Approvals need network.",
+  "shellOfflineDetail": "Entries wait on phone.",
+  "shellOfflineLabel": "Offline",
+  "shellOutboxAllSentBody": "Nothing is left on this phone.",
+  "shellOutboxAllSentStamp": "All sent",
+  "shellOutboxAttention": "{count, plural, =1{1 needs your attention} other{{count} need your attention}}",
+  "@shellOutboxAttention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellOutboxLoading": "Loading the outbox",
+  "shellOutboxLogTitle": "Not applied",
+  "shellOutboxNeverSynced": "Not synced yet",
+  "shellOutboxServerError": "The server is having trouble. Your work is safe and will send later.",
+  "shellOutboxTitle": "Outbox",
+  "shellOutboxTrayLabel": "on phone",
+  "shellOutboxWaitingLabel": "waiting to send",
+  "shellPickerCurrent": "Current",
+  "shellPickerEmptyBody": "Ask your office to add you to a project, then try again.",
+  "shellPickerEmptyTitle": "No projects yet",
+  "shellPickerEyebrow": "Your projects",
+  "shellPickerFirstBody": "Add your project and run its work from this phone.",
+  "shellPickerFirstButton": "Create your first project",
+  "shellPickerFirstTitle": "Let's set up your first site",
+  "shellPickerLoading": "Getting your projects…",
+  "shellPickerTitle": "Which site today?",
+  "shellPillAllSent": "All sent",
+  "shellPillAttention": "needs a look",
+  "shellPillSending": "sending",
+  "shellPillWaiting": "waiting",
+  "shellProgressBasis": "By value of approved work",
+  "shellProgressDaysLate": "Days late",
+  "shellProgressDaysLeft": "Days left",
+  "shellProgressEmptyBody": "Progress will show here once the BOQ is added.",
+  "shellProgressEmptyTitle": "No BOQ yet",
+  "shellProgressEnd": "End",
+  "shellProgressNoEnd": "Not set",
+  "shellProgressNothingYet": "No approved work yet",
+  "shellProgressSemantics": "{percent} percent complete",
+  "@shellProgressSemantics": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "shellProgressTitle": "Construction progress",
+  "shellProjectChoose": "Choose",
+  "shellProjectCreate": "Create project",
+  "shellProjectCreating": "Creating…",
+  "shellProjectEnd": "End date",
+  "shellProjectEndBeforeStart": "End date must be after the start date",
+  "shellProjectFormTitle": "New project",
+  "shellProjectLocation": "Location",
+  "shellProjectName": "Project name",
+  "shellProjectNameRequired": "Enter a name for the project",
+  "shellProjectOffline": "A project can only be created with network. Try again when you have signal.",
+  "shellProjectPlanBody": "This company has reached the number of projects its plan allows.",
+  "shellProjectPlanTitle": "Project limit reached",
+  "shellProjectStart": "Start date",
+  "shellProjectValue": "Contract value (optional)",
+  "shellProjectValueEmpty": "Tap to enter",
+  "shellReportAttention": "Needs a look",
+  "shellReportNotStarted": "Not started",
+  "shellReportSaved": "Saved",
+  "shellReturnedDpr": "Daily report · {date}",
+  "@shellReturnedDpr": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "shellReturnedFix": "Fix",
+  "shellReturnedMeasurement": "Measurement {code} · {qty} {unit}",
+  "@shellReturnedMeasurement": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "shellReturnedNoRemark": "No remark given",
+  "shellReturnedRemarkLabel": "Remark",
+  "shellReturnedTitle": "Returned to you",
+  "shellSettings": "Settings",
+  "shellSettingsLanguage": "Language",
+  "shellSettingsSignedIn": "Signed in as",
+  "shellSettingsVersion": "App version",
+  "shellSetupBoq": "BOQ items",
+  "shellSetupNext": "Next: {step}",
+  "@shellSetupNext": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
+  "shellSetupStepSemantics": "{step}: {count}",
+  "@shellSetupStepSemantics": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSetupTitle": "Set up your site",
+  "shellSetupWallet": "Petty cash wallet",
+  "shellSetupWorkers": "Workers",
+  "shellSignInBusy": "Signing in…",
+  "shellSignInButton": "Sign in",
+  "shellSignInEmail": "Email",
+  "shellSignInEmailRequired": "Enter your email",
+  "shellSignInExpired": "You were signed out. Nothing is lost: your work is safe on this phone. Sign in to send it.",
+  "shellSignInHide": "Hide",
+  "shellSignInNetworkBody": "Check your signal and try again.",
+  "shellSignInNetworkTitle": "No network",
+  "shellSignInNewCompany": "New company? Create an account",
+  "shellSignInOtherUserBody": "This phone has {count} unsent entries from another person. They must sign in and send them first.",
+  "@shellSignInOtherUserBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSignInOtherUserTitle": "Someone else's work is waiting",
+  "shellSignInPassword": "Password",
+  "shellSignInPasswordRequired": "Enter your password",
+  "shellSignInServerBody": "It is not your phone. Try again in a few minutes.",
+  "shellSignInServerTitle": "Server is not responding",
+  "shellSignInShow": "Show",
+  "shellSignInTooManyBody": "Wait a minute and try again.",
+  "shellSignInTooManyTitle": "Too many tries",
+  "shellSignInWelcome": "Welcome",
+  "shellSignInWrongBody": "Check both and try again.",
+  "shellSignInWrongTitle": "Wrong email or password",
+  "shellSignOut": "Sign out",
+  "shellSignOutConfirmBody": "You will need network to sign in again.",
+  "shellSignOutConfirmTitle": "Sign out of this phone?",
+  "shellSignOutDiscard": "Sign out and lose them",
+  "shellSignOutHold": "Press and hold to lose them",
+  "shellSignOutSendFirst": "Send them first",
+  "shellSignOutUnsentBody": "If you sign out now they are deleted from this phone and cannot be brought back. Send them first.",
+  "shellSignOutUnsentTitle": "{count, plural, =1{1 entry not sent} other{{count} entries not sent}}",
+  "@shellSignOutUnsentTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSignUpBusy": "Creating your account…",
+  "shellSignUpButton": "Create account",
+  "shellSignUpClosedBody": "Try again later.",
+  "shellSignUpClosedTitle": "New companies can't be started from the app right now",
+  "shellSignUpCompany": "Company name",
+  "shellSignUpCompanyMissing": "Enter the company name",
+  "shellSignUpConfirm": "Confirm password",
+  "shellSignUpConsent": "By creating an account you agree to the {terms} and the {privacy}.",
+  "@shellSignUpConsent": {
+    "placeholders": {
+      "terms": {
+        "type": "String"
+      },
+      "privacy": {
+        "type": "String"
+      }
+    }
+  },
+  "shellSignUpEmailInvalid": "Enter an email like name@example.com",
+  "shellSignUpEmailTakenBody": "Sign in with it instead, or use another email.",
+  "shellSignUpEmailTakenTitle": "This email already has an account",
+  "shellSignUpFieldInvalid": "Check this and try again",
+  "shellSignUpHaveAccount": "Already have an account? Sign in",
+  "shellSignUpIntro": "This starts a new company on Nirmaan360 with you as its owner. If your company already uses Nirmaan360, ask your office to invite you instead.",
+  "shellSignUpName": "Your name",
+  "shellSignUpNameMissing": "Enter your name",
+  "shellSignUpPasswordHelper": "At least 8 characters.",
+  "shellSignUpPasswordMismatch": "The two passwords are not the same",
+  "shellSignUpPasswordShort": "Use at least 8 characters",
+  "shellSignUpPhone": "Mobile number (optional)",
+  "shellSignUpPhoneTaken": "This mobile number is used by another account.",
+  "shellSignUpPrivacy": "Privacy policy",
+  "shellSignUpTerms": "Terms",
+  "shellSignUpTitle": "Create an account",
+  "shellSignUpTooLong": "Keep it to {max} characters or fewer",
+  "@shellSignUpTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "shellSlipSending": "Sending",
+  "shellSlipWaiting": "Waiting",
+  "shellSwitchProject": "Switch project",
+  "shellSyncingLabel": "Sending and updating",
+  "shellTabApprovals": "Approvals",
+  "shellTabHome": "Home",
+  "shellTabMeasure": "Measure",
+  "shellTabOutbox": "Outbox",
+  "shellTileApprovals": "Approvals",
+  "shellTileAttendance": "Attendance",
+  "shellTileDaily": "Daily report",
+  "shellTileExpenses": "Expenses",
+  "shellTileIssues": "Issues",
+  "shellTileMaterial": "Material",
+  "shellTileMeasure": "Measure",
+  "shellTilePetty": "Petty cash",
+  "shellTileProgress": "Progress",
+  "shellTimeDays": "{count} days ago",
+  "@shellTimeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellTimeHours": "{count} hr ago",
+  "@shellTimeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellTimeJustNow": "just now",
+  "shellTimeMinutes": "{count} min ago",
+  "@shellTimeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shellTimeYesterday": "yesterday",
+  "shellTodayAttendance": "Attendance",
+  "shellTodayExpenses": "Spent",
+  "shellTodayMeasured": "Measured",
+  "shellTodayReport": "Report",
+  "shellTodaySemantics": "{label}: {value}",
+  "@shellTodaySemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "siteToolsInspectionsHint": "Fill a checklist for a pour, shuttering or a safety round",
+  "siteToolsMachinesHint": "Record what a machine worked today, in hours or km",
+  "siteToolsTitle": "Site tools",
   "statusApproved": "Approved",
   "statusDraft": "Draft",
   "statusInReview": "In review",
@@ -102,6 +3136,7 @@
   "syncReasonInReview": "This record is with the approver. Your change was not applied.",
   "syncReasonParentMissing": "The record this file belongs to was not found on the server.",
   "syncReasonPlanFeature": "Your plan does not include this module.",
+  "syncReasonProjectGone": "You no longer have access to this project. Ask your office to add you back, then try again.",
   "syncReasonRejected": "This record was rejected. Your change was not applied.",
   "syncReasonUnexpected": "The server sent an unexpected reply.",
   "syncReasonValidation": "The server could not accept this entry. Please correct it.",
@@ -109,13 +3144,287 @@
   "syncSignInAgain": "Sign in again to keep sending. Your work is safe.",
   "syncStaleLog": "A newer change was already on the server, so this one was not applied.",
   "syncTypeAttendance": "Attendance",
+  "syncTypeAttendanceScan": "Card scan",
+  "syncTypeAttendanceSelfie": "Attendance photo",
+  "syncTypeContractorPayment": "Contractor payment request",
   "syncTypeDpr": "Daily report",
   "syncTypeDprPhoto": "Report photo",
   "syncTypeDprSubmit": "Report submission",
+  "syncTypeGoodsReceipt": "Goods receipt",
+  "syncTypeInspection": "Inspection",
   "syncTypeIssue": "Issue",
+  "syncTypeIssuePhoto": "Issue photo",
   "syncTypeIssueStatus": "Issue status",
+  "syncTypeMachineLog": "Machine log",
+  "syncTypeMaterialIssue": "Store issue",
   "syncTypeMeasurement": "Measurement",
+  "syncTypeMeasurementPhoto": "Measurement photo",
   "syncTypeMeasurementSubmit": "Measurement submission",
   "syncTypePettyBill": "Bill photo",
-  "syncTypePettyCash": "Petty cash entry"
+  "syncTypePettyCash": "Petty cash entry",
+  "syncTypeProgress": "Site progress",
+  "syncTypeProgressCorrection": "Progress correction",
+  "syncTypeProgressPhoto": "Progress photo",
+  "syncTypeProgressResolve": "Pending item resolved",
+  "syncTypeStage": "Stage update",
+  "syncTypeStagePhoto": "Stage photo",
+  "tenderAddQuote": "Add a quote",
+  "tenderAdvance": "Advance (₹)",
+  "tenderAdvanceError": "Enter 0 or more, with two decimals at most.",
+  "tenderAdvanceRecovery": "Advance recovery %",
+  "tenderAmountError": "Enter an amount above zero, with two decimals at most.",
+  "tenderAwardExplain": "A work order is made at this quote's rates. Measurements, RA bills and payments then run on it.",
+  "tenderAwardSend": "Create work order",
+  "tenderAwardTitle": "Select this contractor",
+  "tenderAwarded": "Work order made",
+  "tenderBasisGross": "Gross",
+  "tenderBasisRunning": "Balance",
+  "tenderBoqAmount": "BOQ amount {amount}",
+  "@tenderBoqAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderBoqQty": "BOQ {qty} {unit}",
+  "@tenderBoqQty": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderBoqRate": "BOQ rate {rate}",
+  "@tenderBoqRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderClosed": "This tender is closed, so it takes no more quotes.",
+  "tenderCompletionDays": "Days to finish",
+  "tenderContractor": "Contractor",
+  "tenderContractorAdd": "Add a contractor",
+  "tenderContractorChoose": "Choose a contractor",
+  "tenderContractorName": "Name",
+  "tenderContractorNameRequired": "Enter the contractor's name.",
+  "tenderContractorNone": "No contractor by that name",
+  "tenderContractorPerson": "Contact person",
+  "tenderContractorPhone": "Phone",
+  "tenderContractorRequired": "Choose who quoted.",
+  "tenderContractorSave": "Add contractor",
+  "tenderContractorSearch": "Search contractors",
+  "tenderContractorsFailed": "The contractor list could not be loaded.",
+  "tenderCount": "{count, plural, =1{1 tender} other{{count} tenders}}",
+  "@tenderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderDays": "{days, plural, =1{1 day} other{{days} days}}",
+  "@tenderDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderDaysError": "Enter whole days, 1 to 3650.",
+  "tenderDeductionBasis": "Deductions on",
+  "tenderDeductionOrder": "Deduction order",
+  "tenderDue": "Quotes due {date}",
+  "@tenderDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderEndDate": "Finish by",
+  "tenderEndError": "Finish by cannot be before the start.",
+  "tenderEnteredBy": "Entered by {name}",
+  "@tenderEnteredBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderFieldDue": "Quotes due by",
+  "tenderFieldScope": "Scope of work",
+  "tenderFieldTitle": "Title",
+  "tenderGst": "GST %",
+  "tenderIncludesMaterial": "Material included in the rate",
+  "tenderLineAmount": "{qty} {unit} × rate = {amount}",
+  "@tenderLineAmount": {
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderLinkEmpty": "Tenders · Get quotes from contractors",
+  "tenderLoadFailed": "Tenders could not be loaded. Pull down to try again.",
+  "tenderLoading": "Loading tenders",
+  "tenderLowest": "Lowest {rate}",
+  "@tenderLowest": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderLowestBy": "Lowest {rate} · {contractor}",
+  "@tenderLowestBy": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "contractor": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderMaterialIn": "Material included",
+  "tenderMaterialOut": "Labour only",
+  "tenderMoneyHidden": "Rates, terms and files are shown only to those who may see money.",
+  "tenderNew": "New tender",
+  "tenderNewContractorTitle": "New contractor",
+  "tenderNewTitle": "New tender",
+  "tenderNoDate": "No date",
+  "tenderNoQuantity": "This line has no quantity yet, so it cannot be put out to tender. Enter the quantity in the BOQ first, so quotes can be compared.",
+  "tenderNoneAsk": "No one has asked contractors for quotes on this line yet.",
+  "tenderNoneStart": "Start a tender to collect quotes from contractors for this line.",
+  "tenderNoneTitle": "No tender yet",
+  "tenderNote": "Note",
+  "tenderOfflineMessage": "Quotes and awards are read from the office as they are now. Connect, then pull down to try again.",
+  "tenderOfflineTitle": "Tenders need the internet",
+  "tenderOpenElsewhere": "Open in another app",
+  "tenderOptional": "Optional",
+  "tenderOrderAdvanceFirst": "Advance → Retention → Material → TDS",
+  "tenderOrderRetentionFirst": "Retention → Advance → Material → TDS",
+  "tenderOrderTdsFirst": "TDS → Retention → Advance → Material",
+  "tenderOtherLines": "{count, plural, =1{Also 1 other line} other{Also {count} other lines}}",
+  "@tenderOtherLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderPaymentTerms": "Payment terms",
+  "tenderPctError": "Enter 0 to 100, with two decimals at most.",
+  "tenderPerUnit": "{rate} per {unit}",
+  "@tenderPerUnit": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderPickDate": "Pick a date",
+  "tenderQuotationFailed": "The quotation could not be opened.",
+  "tenderQuotationNotPicture": "This quotation is a file, not a photo. Open it in another app.",
+  "tenderQuotationPhoto": "Photo of the quotation",
+  "tenderQuoteCount": "{count, plural, =0{no quotes} =1{1 quote} other{{count} quotes}}",
+  "@tenderQuoteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tenderQuoteGone": "This quote is no longer in the tender. Go back and choose again.",
+  "tenderQuoteSaved": "Quote saved",
+  "tenderQuoteTitle": "Add a quote",
+  "tenderQuotedAmount": "Quoted amount (₹)",
+  "tenderQuotesNone": "No quotes yet",
+  "tenderRateError": "Enter a rate above zero, with two decimals at most.",
+  "tenderRatePer": "Rate per {unit}",
+  "@tenderRatePer": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderReceived": "Received {date}",
+  "@tenderReceived": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderReceivedOn": "Received on",
+  "tenderRefusedMessage": "Ask your office if you need to see tenders.",
+  "tenderRefusedTitle": "Not for your role",
+  "tenderRemarks": "Remarks",
+  "tenderRetention": "Retention %",
+  "tenderSaveFailed": "Could not save. Check the connection and try again.",
+  "tenderSaveQuote": "Save quote",
+  "tenderSelect": "Select this contractor",
+  "tenderStart": "Start tender",
+  "tenderStartDate": "Start date",
+  "tenderStarted": "Tender started",
+  "tenderStatusAwarded": "Awarded",
+  "tenderStatusCancelled": "Cancelled",
+  "tenderStatusOpen": "Open",
+  "tenderTagLowest": "Lowest",
+  "tenderTagReplaced": "Replaced",
+  "tenderTagSelected": "Selected",
+  "tenderTds": "TDS %",
+  "tenderTitle": "Tenders",
+  "tenderTitleRequired": "Give the tender a title.",
+  "tenderTotal": "Quoted total {amount}",
+  "@tenderTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderValidError": "Valid till cannot be before the day it was received.",
+  "tenderValidTill": "Valid till",
+  "tenderValidUntil": "Valid till {date}",
+  "@tenderValidUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderViewQuotation": "View quotation",
+  "tenderVsBoq": "{pct}% vs BOQ",
+  "@tenderVsBoq": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "tenderWorkOrder": "Work order {number}",
+  "@tenderWorkOrder": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  }
 }

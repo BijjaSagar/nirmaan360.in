@@ -4,12 +4,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../haptics.dart';
+import '../internal/soft_surface.dart';
 import '../motion.dart';
 import '../signature/rolling_number.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// Big minus and plus around a rolling figure, for headcounts and similar.
+/// Minus and plus around a rolling figure, for headcounts and similar.
 ///
 /// A tap steps once, on release, so a thumb brushing it while scrolling changes
 /// nothing. Holding repeats, faster the longer it is held, and the step grows
@@ -39,6 +40,9 @@ class GloveStepper extends StatefulWidget {
   /// Spoken only, so translate if you can.
   final String decreaseLabel;
   final String increaseLabel;
+
+  /// Width of each key. Height is [N360Size.tap].
+  static const double keyWidth = 64;
 
   @override
   State<GloveStepper> createState() => _GloveStepperState();
@@ -84,10 +88,10 @@ class _GloveStepperState extends State<GloveStepper> {
               Row(
                 children: <Widget>[
                   if (widget.icon != null) ...<Widget>[
-                    Icon(widget.icon, size: 22, color: N360Colors.ink2),
+                    Icon(widget.icon, size: N360IconSize.md, color: N360Colors.ink2),
                     const SizedBox(width: N360Space.sm),
                   ],
-                  Expanded(child: Text(widget.label!, style: N360Type.label)),
+                  Expanded(child: Text(widget.label!, style: N360Type.fit(N360Type.label, widget.label!))),
                 ],
               ),
               const SizedBox(height: N360Space.xs),
@@ -103,9 +107,9 @@ class _GloveStepperState extends State<GloveStepper> {
                 ),
                 Expanded(
                   child: SizedBox(
-                    height: N360Size.tapLarge,
+                    height: N360Size.tap,
                     child: Center(
-                      child: RollingNumber(value: '$_value', style: N360Type.figureLarge.copyWith(fontSize: 34)),
+                      child: RollingNumber(value: '$_value', style: N360Type.figureLarge.copyWith(fontSize: 26, letterSpacing: 0)),
                     ),
                   ),
                 ),
@@ -207,15 +211,16 @@ class _StepKeyState extends State<_StepKey> with SingleTickerProviderStateMixin 
   @override
   Widget build(BuildContext context) {
     final bool on = widget.enabled;
-    final Color face = !on
-        ? N360Colors.paper2
-        : (widget.filled ? N360Colors.ink : N360Colors.sheet);
-    final Color edge = !on
-        ? N360Colors.rule
-        : (widget.filled ? N360Colors.inkEdge : N360Colors.ink2);
+    final SoftSurfacePainter surface = !on
+        ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.paper2)
+        : widget.filled
+            ? const SoftSurfacePainter(radius: N360Radius.tile, fill: N360Colors.primary)
+            : const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.ruleStrong);
     final Color ink = !on
-        ? N360Colors.ink3
-        : (widget.filled ? N360Colors.sheet : N360Colors.ink);
+        ? N360Colors.inkLabel
+        : widget.filled
+            ? N360Colors.onPrimary
+            : N360Colors.ink;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -223,59 +228,19 @@ class _StepKeyState extends State<_StepKey> with SingleTickerProviderStateMixin 
       onTapUp: on ? (_) => _up() : null,
       onTapCancel: on ? _cancel : null,
       child: SizedBox(
-        width: 76,
-        height: N360Size.tapLarge,
+        width: GloveStepper.keyWidth,
+        height: N360Size.tap,
         child: AnimatedBuilder(
           animation: _depth,
-          builder: (context, child) {
-            final double sink = _depth.value * (N360Size.edge - 1);
-            return CustomPaint(
-              painter: StepKeyPainter(face: face, edge: edge, sink: sink, outlined: !widget.filled && on),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: N360Size.edge),
-                child: Transform.translate(
-                  offset: Offset(0, sink),
-                  child: Center(child: Icon(widget.icon, size: 34, color: ink)),
-                ),
-              ),
-            );
-          },
+          builder: (context, child) => Transform.scale(
+            scale: pressedScale(_depth.value),
+            child: CustomPaint(
+              painter: surface,
+              child: Center(child: Icon(widget.icon, size: N360IconSize.xxl, color: ink)),
+            ),
+          ),
         ),
       ),
     );
   }
-}
-
-/// A chunky square key with a visible block under its face.
-class StepKeyPainter extends CustomPainter {
-  const StepKeyPainter({required this.face, required this.edge, required this.sink, this.outlined = true});
-
-  final Color face;
-  final Color edge;
-  final double sink;
-  final bool outlined;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const radius = Radius.circular(N360Radius.small);
-    canvas.drawRRect(
-      RRect.fromLTRBR(0, N360Size.edge, size.width, size.height, radius),
-      Paint()..color = edge,
-    );
-    final RRect top = RRect.fromLTRBR(0, sink, size.width, size.height - N360Size.edge + sink, radius);
-    canvas.drawRRect(top, Paint()..color = face);
-    if (outlined) {
-      canvas.drawRRect(
-        top.deflate(0.75),
-        Paint()
-          ..color = N360Colors.ink2
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(StepKeyPainter oldDelegate) =>
-      oldDelegate.face != face || oldDelegate.edge != edge || oldDelegate.sink != sink || oldDelegate.outlined != outlined;
 }

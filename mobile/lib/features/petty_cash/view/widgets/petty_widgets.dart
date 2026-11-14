@@ -1,0 +1,267 @@
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+
+import 'package:intl/intl.dart';
+
+import '../../../../core/design/design.dart';
+import '../../../../l10n/generated/app_localizations.dart';
+import '../../../attendance/view/widgets/field_kit.dart';
+import '../../bloc/expense_form_cubit.dart' show formatTypedAmount;
+import '../../data/petty_cash_repository.dart' show LocalSyncState;
+
+/// Nothing once sent; a pill saying where the entry is otherwise.
+class PettySyncStamp extends StatelessWidget {
+  const PettySyncStamp({super.key, required this.state});
+
+  final LocalSyncState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return switch (state) {
+      LocalSyncState.synced => const SizedBox.shrink(),
+      LocalSyncState.queued => StatusPill(
+        kind: StampKind.queued,
+        label: l.statusQueued,
+      ),
+      LocalSyncState.sending => StatusPill(
+        kind: StampKind.inReview,
+        label: l.pettyCashSyncSending,
+      ),
+      LocalSyncState.attention => StatusPill(
+        kind: StampKind.rejected,
+        label: l.pettyCashSyncAttention,
+      ),
+    };
+  }
+}
+
+/// A small bill preview: the picture when it can be shown, otherwise a labelled
+/// placeholder. Decoding is capped with `cacheWidth` so a list of receipts stays
+/// cheap on a low-end phone.
+class BillThumbnail extends StatelessWidget {
+  const BillThumbnail({super.key, required this.load, required this.size});
+
+  /// Bytes of the image, or null when there is nothing to show.
+  final Future<Uint8List>? load;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final int cacheWidth = (size * MediaQuery.devicePixelRatioOf(context))
+        .round()
+        .clamp(40, 400);
+
+    final Widget placeholder = ColoredBox(
+      color: N360Colors.paper2,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          const Icon(
+            Icons.receipt_long,
+            size: N360IconSize.lg,
+            color: N360Colors.ink2,
+          ),
+          Text(
+            l.pettyCashBillLabel,
+            style: N360Type.fit(
+              N360Type.caption,
+              l.pettyCashBillLabel,
+            ).copyWith(height: 1.1, color: N360Colors.ink2),
+          ),
+        ],
+      ),
+    );
+
+    return SizedBox.square(
+      dimension: size,
+      child: ClipRRect(
+        borderRadius: N360Radius.sm,
+        child: load == null
+            ? placeholder
+            : FutureBuilder<Uint8List>(
+                future: load,
+                builder: (context, snapshot) {
+                  final Uint8List? bytes = snapshot.data;
+                  if (bytes == null || bytes.length < 16) return placeholder;
+                  return Image.memory(
+                    bytes,
+                    fit: BoxFit.cover,
+                    cacheWidth: cacheWidth,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, _, _) => placeholder,
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+/// The amount being typed on the keypad, as the screen's main figure.
+class PettyAmountCard extends StatelessWidget {
+  const PettyAmountCard({
+    super.key,
+    required this.label,
+    required this.typed,
+    this.footer,
+    this.color = N360Colors.ink,
+  });
+
+  final String label;
+
+  /// Exactly what the keypad holds.
+  final String typed;
+
+  /// A line under the figure: a balance, a helper or a warning.
+  final Widget? footer;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return LedgerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(label, style: N360Type.fit(N360Type.heading, label)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: RollingMoney(
+              value: formatTypedAmount(typed),
+              style: N360Type.figureHero.copyWith(color: color),
+            ),
+          ),
+          if (footer != null) ...<Widget>[
+            const SizedBox(height: N360Space.xs),
+            footer!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The amount already typed, on the second step of a form, as one tappable
+/// row. The line under the word says it can be changed, because a card with a
+/// figure on it does not look like a button.
+class PettyAmountSummary extends StatelessWidget {
+  const PettyAmountSummary({
+    super.key,
+    required this.amount,
+    required this.onTap,
+    this.walletName,
+  });
+
+  /// The amount as `Money.indian` writes it, or null when nothing is typed.
+  final String? amount;
+
+  /// Goes back to the keypad.
+  final VoidCallback onTap;
+
+  /// Named only when the project has more than one wallet, so the choice made
+  /// on the first step stays in sight.
+  final String? walletName;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String hint = walletName == null || walletName!.isEmpty
+        ? l.pettyCashTapToChange
+        : '$walletName · ${l.pettyCashTapToChange}';
+    final String figure = amount ?? '0.00';
+
+    return LedgerCard(
+      onTap: onTap,
+      semanticsLabel: '${l.pettyCashAmount} ₹$figure. $hint',
+      padding: const EdgeInsets.symmetric(
+        horizontal: N360Space.card,
+        vertical: N360Space.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Text(
+                l.pettyCashAmount,
+                style: N360Type.fit(N360Type.heading, l.pettyCashAmount),
+              ),
+              const SizedBox(width: N360Space.sm),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: RollingMoney(
+                      value: figure,
+                      style: N360Type.figureLarge,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Text(
+            hint,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: N360Type.fit(N360Type.caption, hint),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Today or yesterday, default today.
+class PettyDateChoice extends StatelessWidget {
+  const PettyDateChoice({
+    super.key,
+    required this.today,
+    required this.yesterday,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String today;
+  final String yesterday;
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String locale = Localizations.localeOf(context).toString();
+    String shortDay(String iso) =>
+        DateFormat('d MMM', locale).format(DateTime.parse(iso));
+
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: FieldChoiceTile(
+            width: double.infinity,
+            label: l.pettyCashDayToday,
+            detail: shortDay(today),
+            selected: value == today,
+            onTap: () => onChanged(today),
+          ),
+        ),
+        const SizedBox(width: N360Space.sm),
+        Expanded(
+          child: FieldChoiceTile(
+            width: double.infinity,
+            label: l.pettyCashDayYesterday,
+            detail: shortDay(yesterday),
+            selected: value == yesterday,
+            onTap: () => onChanged(yesterday),
+          ),
+        ),
+      ],
+    );
+  }
+}

@@ -50,9 +50,13 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Take site photos for daily reports and bill photos for expenses.</string>
+	<string>Take site photos and bill photos, and scan a worker's attendance card.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Nirmaan360 only uses location while you take a worker's attendance photo, to show it was taken at the site. It never follows you in the background.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>When you take a worker's attendance photo, the phone notes where it was taken, so the office can see it was taken at the site. It is asked only then.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Attach an existing photo to a daily report or an expense.</string>
+	<string>Nirmaan360 takes site and bill photos with the camera only. It does not open or read your photo library.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
@@ -66,7 +70,12 @@
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
+		<string>remote-notification</string>
 	</array>
+	<!-- Firebase stays unregistered, and learns nothing about the phone, until a member of staff
+	     has signed in and agreed to alerts. The app turns it on then (see PushService). -->
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UILaunchStoryboardName</key>

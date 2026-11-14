@@ -92,6 +92,18 @@ class OutboxDao {
         );
   }
 
+  /// Tells files waiting on [parentUuid] which server row they belong to.
+  Future<void> setParentId(String parentUuid, int parentId) async {
+    final rows = await (db.select(db.outbox)
+          ..where((t) => t.parentUuid.equals(parentUuid) & t.status.equals(OutboxStatus.done.name).not()))
+        .get();
+    for (final row in rows) {
+      final data = (jsonDecode(row.payload) as Map).cast<String, dynamic>()..['parent_id'] = parentId;
+      await (db.update(db.outbox)..where((t) => t.id.equals(row.id)))
+          .write(OutboxCompanion(payload: Value(jsonEncode(data))));
+    }
+  }
+
   /// Every row not yet finished, oldest first.
   Future<List<OutboxRow>> unfinished() {
     return (db.select(db.outbox)

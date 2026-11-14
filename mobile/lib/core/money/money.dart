@@ -130,6 +130,10 @@ final class Qty extends ScaledDecimal<Qty> {
     return parsed == null ? null : Qty.of(parsed);
   }
 
+  /// True when [input] has more decimal places than a quantity holds (three),
+  /// so parsing it would round what someone typed.
+  static bool hasExtraDecimals(String? input) => (_parseUserText(input)?.scale ?? 0) > 3;
+
   static final Qty zero = Qty.of(Decimal.zero);
   static final Qty one = Qty.of(Decimal.one);
 
@@ -163,6 +167,10 @@ final class Money extends ScaledDecimal<Money> {
     final parsed = _parseUserText(input);
     return parsed == null ? null : Money.of(parsed);
   }
+
+  /// True when [input] has more decimal places than money holds, so parsing it
+  /// would round what someone typed.
+  static bool hasExtraDecimals(String? input) => (_parseUserText(input)?.scale ?? 0) > 2;
 
   /// Quantity times rate, rounded to money precision like `BoqItem::amount`.
   factory Money.fromQtyRate(Qty qty, Money rate) =>
@@ -198,6 +206,10 @@ final class Hours extends ScaledDecimal<Hours> {
     final parsed = _parseUserText(input);
     return parsed == null ? null : Hours.of(parsed);
   }
+
+  /// True when [input] has more decimal places than hours hold, so parsing it
+  /// would round what someone typed.
+  static bool hasExtraDecimals(String? input) => (_parseUserText(input)?.scale ?? 0) > 1;
 
   static final Hours zero = Hours.of(Decimal.zero);
 

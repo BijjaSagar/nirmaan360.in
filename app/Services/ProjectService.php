@@ -6,6 +6,7 @@ use App\Exceptions\PlanLimitReachedException;
 use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\Project;
+use App\Models\ProjectAdvance;
 use App\Models\ProjectValuePhase;
 use App\Models\User;
 use App\Services\ProjectSetup\StarterBoq;
@@ -14,6 +15,7 @@ use App\Support\Dec;
 use App\Support\Money;
 use App\Support\Shares;
 use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +27,9 @@ class ProjectService
 {
     /** More phases than this is a list of BOQ lines, not a split of the value. */
     public const MAX_PHASES = 50;
+
+    /** The most mobilisation advance lines one project takes. */
+    public const MAX_ADVANCES = 20;
 
     /** The largest figure decimal(15,2) holds. */
     private const LARGEST_VALUE = '9999999999999.99';
@@ -49,10 +54,42 @@ class ProjectService
             'retention_pct' => ['required', 'numeric', 'between:0,100'],
             'tds_pct' => ['required', 'numeric', 'between:0,100'],
             'gst_pct' => ['required', 'numeric', 'between:0,100'],
-            'advance_amount' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
+            // One figure, or the sum of the advance lines when they are sent, in which case this is ignored.
+            'advance_amount' => ['required_without:advances', 'numeric', 'min:0', 'max:9999999999999'],
+            // Ignored while the percentage is worked out from the advance and the contract value.
             'advance_recovery_pct' => ['required', 'numeric', 'between:0,100'],
+            'advance_recovery_auto' => ['boolean'],
+            ...$this->advanceRules(),
             'measurement_tolerance_pct' => ['required', 'numeric', 'between:0,100'],
             'deduction_basis' => ['required', Rule::in(['gross', 'running'])],
+        ];
+    }
+
+    /**
+     * The mobilisation advance as lines, each with an amount, the date it came in and a note. A line
+     * with no amount is left out, with whatever else it holds. When lines are sent the advance is their sum.
+     */
+    public function advanceRules(): array
+    {
+        return [
+            'advances' => ['sometimes', 'array', 'max:'.self::MAX_ADVANCES],
+            'advances.*' => ['array'],
+            'advances.*.amount' => ['nullable', 'numeric', 'gt:0', 'max:9999999999999'],
+            'advances.*.received_on' => ['exclude_without:advances.*.amount', 'nullable', 'date'],
+            'advances.*.note' => ['exclude_without:advances.*.amount', 'nullable', 'string', 'max:255'],
+        ];
+    }
+
+    /** Messages for a line of the advance, which say what to fix on that line. */
+    public function advanceMessages(): array
+    {
+        return [
+            'advances.max' => __('A project can have at most :max advances.'),
+            'advances.*.amount.numeric' => __('Enter the amount in rupees.'),
+            'advances.*.amount.gt' => __('An advance must be more than zero.'),
+            'advances.*.amount.max' => __('This amount is more than a project can hold.'),
+            'advances.*.received_on.date' => __('Enter the date the advance came in.'),
+            'advances.*.note.max' => __('Keep the note to :max characters.'),
         ];
     }
 
@@ -113,8 +150,9 @@ class ProjectService
     public function updateRules(User $user, Project $project): array
     {
         $money = Money::visible($user);
+        $moneyFields = ['contract_value', 'advance_amount', 'advance_recovery_auto', ...array_keys($this->advanceRules())];
         $rules = [
-            ...Arr::except($this->rules($user, $project), $money ? [] : ['contract_value', 'advance_amount']),
+            ...Arr::except($this->rules($user, $project), $money ? [] : $moneyFields),
             'end_date' => ['nullable', 'date'],
             'status' => ['required', Rule::in(config('buildos.project_statuses'))],
             ...($money ? $this->phaseRules() : []),
@@ -145,13 +183,16 @@ class ProjectService
     public function create(array $data, User $user): Project
     {
         $phases = $this->cleanPhases($data['phases'] ?? null);
-        unset($data['phases']);
+        $advances = $this->cleanAdvances($data['advances'] ?? null);
+        unset($data['phases'], $data['advances']);
 
         if ($phases) {
             $data['contract_value'] = $this->valueOf($phases, $data['contract_value'] ?? null);
         }
 
-        return DB::transaction(function () use ($data, $user, $phases) {
+        $data = $this->withAdvanceTerms(null, $data, $advances);
+
+        return DB::transaction(function () use ($data, $user, $phases, $advances) {
             $organization = Organization::lockForUpdate()->findOrFail($user->organization_id);
             $uuid = $data['client_uuid'] ?? null;
 
@@ -180,6 +221,10 @@ class ProjectService
                 $this->replacePhases($project, $phases, $user);
             }
 
+            if ($advances) {
+                $this->replaceAdvances($project, $advances, $user);
+            }
+
             // Those defaults are not on the model until it is read back.
             return $project->refresh();
         });
@@ -189,13 +234,16 @@ class ProjectService
      * Change a project, from the website's form or the app. Phases, when sent, replace the saved
      * ones and set the contract value to their sum. While a project has phases its value changes
      * only through them: a different contract_value on its own is refused, so the two never part.
+     * Advance lines work the same way for advance_amount, and a worked-out recovery percentage
+     * follows both.
      */
     public function update(Project $project, array $data, User $user): Project
     {
         $phases = array_key_exists('phases', $data) ? $this->cleanPhases($data['phases'] ?? []) : null;
-        unset($data['phases']);
+        $advances = array_key_exists('advances', $data) ? $this->cleanAdvances($data['advances'] ?? []) : null;
+        unset($data['phases'], $data['advances']);
 
-        return DB::transaction(function () use ($project, $data, $phases, $user) {
+        return DB::transaction(function () use ($project, $data, $phases, $advances, $user) {
             $project = Project::lockForUpdate()->findOrFail($project->id);
 
             if ($phases) {
@@ -210,6 +258,8 @@ class ProjectService
                 $data['contract_value'] = Dec::money($data['contract_value']);
             }
 
+            $data = $this->withAdvanceTerms($project, $data, $advances);
+
             $start = array_key_exists('start_date', $data) ? $data['start_date'] : $project->start_date?->toDateString();
             $end = array_key_exists('end_date', $data) ? $data['end_date'] : $project->end_date?->toDateString();
 
@@ -223,8 +273,98 @@ class ProjectService
                 $this->replacePhases($project, $phases, $user);
             }
 
+            if ($advances !== null) {
+                $this->replaceAdvances($project, $advances, $user);
+            }
+
             return $project->refresh();
         });
+    }
+
+    /**
+     * The share of the contract value the advance is, in percent, which is how much of each bill is
+     * held back until the advance is recovered. Rounded half up to two places, never above 100, and
+     * 0 when there is no advance or no contract value. The project form works it out the same way.
+     */
+    public static function recoveryPct(mixed $advance, mixed $contractValue): string
+    {
+        $advance = Dec::of($advance);
+        $value = Dec::of($contractValue);
+
+        if (! $advance->isPositive() || ! $value->isPositive()) {
+            return '0.00';
+        }
+
+        $pct = $advance->multipliedBy(100)->dividedBy($value, 2, RoundingMode::HalfUp);
+
+        return Dec::money($pct->isGreaterThan(100) ? BigDecimal::of(100) : $pct);
+    }
+
+    /**
+     * The saved advance lines, in order.
+     *
+     * @return list<array{id:int,amount:string,received_on:?string,note:?string}>
+     */
+    public function advancesOf(Project $project): array
+    {
+        return $project->advances()->get()->map(fn (ProjectAdvance $advance) => [
+            'id' => $advance->id,
+            'amount' => Dec::money($advance->amount),
+            'received_on' => $advance->received_on?->toDateString(),
+            'note' => $advance->note,
+        ])->values()->all();
+    }
+
+    /**
+     * The advance as lines for the form and the project page. A project saved before advances came
+     * in lines has one figure: that figure is its first line, with no date, so a save keeps it.
+     *
+     * @return list<array{id:?int,amount:string,received_on:?string,note:?string}>
+     */
+    public function advanceLines(Project $project): array
+    {
+        $lines = $project->exists ? $this->advancesOf($project) : [];
+
+        if ($lines === [] && $project->exists && Dec::of($project->advance_amount)->isPositive()) {
+            return [['id' => null, 'amount' => Dec::money($project->advance_amount), 'received_on' => null, 'note' => null]];
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Sets the advance and its recovery percentage in what is saved. Lines that are sent make the
+     * advance their sum, whatever advance_amount came with them. A different advance_amount on its
+     * own is refused while the project has lines, so the two never part. While the percentage is
+     * worked out, it is worked out again here from the advance and contract value being saved, and
+     * a percentage that was sent is ignored.
+     */
+    private function withAdvanceTerms(?Project $project, array $data, ?array $advances): array
+    {
+        if ($advances !== null) {
+            $data['advance_amount'] = $this->advanceTotal($advances);
+        } elseif (array_key_exists('advance_amount', $data)) {
+            if ($project?->advances()->exists() && ! Dec::of($data['advance_amount'])->isEqualTo(Dec::of($project->advance_amount))) {
+                throw ValidationException::withMessages([
+                    'advance_amount' => __('This is the total of the project\'s advances. Change the advances to change it.'),
+                ]);
+            }
+
+            $data['advance_amount'] = Dec::money($data['advance_amount']);
+        }
+
+        if (array_key_exists('advance_recovery_auto', $data)) {
+            $data['advance_recovery_auto'] = (bool) $data['advance_recovery_auto'];
+        }
+
+        if ($data['advance_recovery_auto'] ?? (bool) $project?->advance_recovery_auto) {
+            $data['advance_recovery_pct'] = self::recoveryPct(
+                $data['advance_amount'] ?? $project?->advance_amount,
+                $data['contract_value'] ?? $project?->contract_value,
+            );
+        }
+
+        return $data;
     }
 
     /**
@@ -287,6 +427,83 @@ class ProjectService
         }
 
         AuditLog::record('project.phases_changed', $project, $before === [] ? null : ['phases' => $before], $phases === [] ? null : ['phases' => $phases], $user);
+    }
+
+    /**
+     * The advance lines that have an amount, in the order sent, with amounts at money precision, the
+     * date as Y-m-d and the note trimmed. An amount that rounds to nothing is an error on its line.
+     *
+     * @return list<array{amount:string,received_on:?string,note:?string}>|null
+     */
+    private function cleanAdvances(?array $lines): ?array
+    {
+        if ($lines === null) {
+            return null;
+        }
+
+        $clean = [];
+
+        foreach ($lines as $index => $line) {
+            if (! is_array($line) || blank($line['amount'] ?? null)) {
+                continue;
+            }
+
+            $amount = Dec::money($line['amount']);
+
+            if (! Dec::of($amount)->isPositive()) {
+                throw ValidationException::withMessages(["advances.{$index}.amount" => __('An advance must be more than zero.')]);
+            }
+
+            $note = trim((string) ($line['note'] ?? ''));
+
+            $clean[] = [
+                'amount' => $amount,
+                'received_on' => filled($line['received_on'] ?? null) ? Carbon::parse($line['received_on'])->toDateString() : null,
+                'note' => $note === '' ? null : $note,
+            ];
+        }
+
+        return $clean;
+    }
+
+    /** The sum of the advance lines, which becomes the project's advance_amount. */
+    private function advanceTotal(array $advances): string
+    {
+        $total = array_reduce($advances, fn (BigDecimal $sum, array $line) => $sum->plus(Dec::of($line['amount'])), BigDecimal::zero());
+
+        if ($total->isGreaterThan(self::LARGEST_VALUE)) {
+            throw ValidationException::withMessages(['advances' => __('The advances add up to more than a project can hold.')]);
+        }
+
+        return Dec::money($total);
+    }
+
+    /**
+     * Puts the lines in place of the saved ones and audits the change, when there is one. The audit
+     * keeps each line's amount and date and whether it has a note, never the note itself, which is
+     * free text and may name a person.
+     */
+    private function replaceAdvances(Project $project, array $lines, User $user): void
+    {
+        $before = array_map(fn (array $line) => Arr::except($line, 'id'), $this->advancesOf($project));
+
+        if ($before === $lines) {
+            return;
+        }
+
+        $project->advances()->delete();
+
+        foreach ($lines as $sort => $line) {
+            ProjectAdvance::create([...$line, 'organization_id' => $project->organization_id, 'project_id' => $project->id, 'sort' => $sort]);
+        }
+
+        $audit = fn (array $lines) => $lines === [] ? null : ['advances' => array_map(fn (array $line) => [
+            'amount' => $line['amount'],
+            'received_on' => $line['received_on'],
+            'has_note' => $line['note'] !== null,
+        ], $lines)];
+
+        AuditLog::record('project.advances_changed', $project, $audit($before), $audit($lines), $user);
     }
 
     /** Trashed rows count: the unique key still holds their client_uuid. */

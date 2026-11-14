@@ -5,9 +5,11 @@ import '../../../core/db/app_database.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/failures.dart';
 import '../../../core/sync/ids.dart';
+import '../../../core/sync/record_photos.dart';
 import '../../../core/sync/record_sync.dart';
 
 export '../../../core/db/app_database.dart' show IssueRow;
+export '../../../core/sync/record_photos.dart' show RecordPhoto, ServerPhoto, IssuePhotoKind, RecordPhotos;
 export '../../../core/sync/record_sync.dart' show SyncedRecord, LocalSyncState;
 
 class IssueRepository {
@@ -17,7 +19,8 @@ class IssueRepository {
 
   AppDatabase get _db => _ctx.db;
 
-  /// Records a new issue and queues it. Returns its uuid.
+  /// Records a new issue and queues it, with its before photos behind it.
+  /// Returns its uuid.
   Future<String> raise({
     required int projectId,
     required String title,
@@ -27,7 +30,8 @@ class IssueRepository {
     int? assignedTo,
     String? dueDate,
     int? siteId,
-  }) {
+    List<String> photoPaths = const <String>[],
+  }) async {
     if (title.trim().isEmpty) {
       throw const ValidationFailure(
         'A title is required.',
@@ -36,6 +40,7 @@ class IssueRepository {
         },
       );
     }
+    final staged = await _ctx.photos.stage(photoPaths.take(RecordPhotos.maxPerKind).toList());
     return _db.transaction(() async {
       final uuid = newUuid();
       final stamp = _ctx.nextStamp(const []);
@@ -74,9 +79,30 @@ class IssueRepository {
         title: title,
         coalesce: true,
       );
+      await _ctx.photos.queue(
+        PhotoOwner.issue,
+        staged,
+        parentUuid: uuid,
+        projectId: projectId,
+        parentKnownToServer: false,
+        kind: IssuePhotoKind.before,
+        title: title,
+      );
       return uuid;
     });
   }
+
+  /// The issue's photos: the server's, then those waiting to be sent.
+  Stream<List<RecordPhoto>> watchPhotos(String clientUuid) => _ctx.photos.watch(PhotoOwner.issue, clientUuid);
+
+  /// Reads the server's list of photos again. Throws when it cannot be reached.
+  Future<void> refreshPhotos(String clientUuid) => _ctx.photos.refresh(PhotoOwner.issue, clientUuid);
+
+  /// Queues photos taken for an issue that is already on the phone.
+  Future<void> addPhotos(String clientUuid, List<String> paths, {required String kind}) =>
+      _ctx.photos.add(PhotoOwner.issue, clientUuid, paths, kind: kind);
+
+  Future<Uint8List> photoBytes(ServerPhoto photo) => _ctx.photos.bytes(PhotoOwner.issue, photo);
 
   /// Sets the issue's status and queues the change.
   Future<void> changeStatus(String clientUuid, String status) {

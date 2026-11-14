@@ -1,0 +1,19 @@
+{
+  "projectEditTitle": { "en": "Edit project", "mr": "प्रकल्प बदला", "hi": "परियोजना बदलें" },
+  "projectEditRowSubtitle": { "en": "Name, place, dates and value by phase", "mr": "नाव, ठिकाण, तारखा आणि टप्प्यानुसार रक्कम", "hi": "नाम, स्थान, तारीखें और चरण के अनुसार राशि" },
+  "projectEditSave": { "en": "Save changes", "mr": "बदल जतन करा", "hi": "बदलाव सहेजें" },
+  "projectEditSaving": { "en": "Saving…", "mr": "जतन होत आहे…", "hi": "सहेजा जा रहा है…" },
+  "projectEditLoading": { "en": "Opening the project…", "mr": "प्रकल्प उघडत आहे…", "hi": "परियोजना खुल रही है…" },
+  "projectEditOffline": { "en": "A project can only be changed with network. Try again when you have signal.", "mr": "नेटवर्क असतानाच प्रकल्प बदलता येतो. सिग्नल आल्यावर पुन्हा प्रयत्न करा.", "hi": "परियोजना सिर्फ़ नेटवर्क होने पर बदलती है। सिग्नल आने पर फिर कोशिश करें।" },
+  "projectPhaseAdd": { "en": "Add phase", "mr": "टप्पा जोडा", "hi": "चरण जोड़ें" },
+  "projectPhasesHint": { "en": "Enter the value phase by phase. Each phase's share is worked out for you.", "mr": "रक्कम टप्प्यानुसार भरा. प्रत्येक टप्प्याचा हिस्सा आपोआप मोजला जातो.", "hi": "राशि चरण के अनुसार भरें। हर चरण का हिस्सा अपने आप निकलता है।" },
+  "projectPhaseNumbered": { "en": "Phase {number}", "mr": "टप्पा {number}", "hi": "चरण {number}", "placeholders": { "number": { "type": "int" } } },
+  "projectPhaseName": { "en": "Phase name", "mr": "टप्प्याचे नाव", "hi": "चरण का नाम" },
+  "projectPhaseNameHint": { "en": "For example Foundation", "mr": "उदा. पाया", "hi": "जैसे नींव" },
+  "projectPhaseAmount": { "en": "Amount", "mr": "रक्कम", "hi": "राशि" },
+  "projectPhaseNameRequired": { "en": "Name this phase", "mr": "या टप्प्याचे नाव लिहा", "hi": "इस चरण का नाम लिखें" },
+  "projectPhaseAmountRequired": { "en": "Enter the amount", "mr": "रक्कम भरा", "hi": "राशि भरें" },
+  "projectPhaseTotal": { "en": "Total", "mr": "एकूण", "hi": "कुल" },
+  "projectPhaseShare": { "en": "{share} of the total", "mr": "एकूणपैकी {share}", "hi": "कुल का {share}", "placeholders": { "share": { "type": "String" } } },
+  "projectPhaseRemove": { "en": "Remove {phase}", "mr": "{phase} काढा", "hi": "{phase} हटाएँ", "placeholders": { "phase": { "type": "String" } } }
+}

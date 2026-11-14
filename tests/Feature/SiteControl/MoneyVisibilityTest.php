@@ -65,7 +65,8 @@ class MoneyVisibilityTest extends TestCase
     private const OWNER_SEES = [
         'dashboard' => ['contract_value'],
         'projects.index' => ['contract_value'],
-        'projects.show' => ['contract_value'],
+        // The advance shows in its own section, as one line here: the fixture's project has a single figure.
+        'projects.show' => ['contract_value', 'advance_amount'],
         'boq.index' => ['boq_rate', 'bid'],
         'boq.tenders.show' => ['boq_rate', 'bid'],
         'boq.export' => ['boq_rate'],

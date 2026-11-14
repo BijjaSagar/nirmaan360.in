@@ -62,8 +62,10 @@ class ProjectPhasesWebTest extends ProjectSetupTestCase
             ->assertSee('value="20000000.00" class="input num" readonly', false)
             ->assertSee('The total of 3 phases.');
 
+        // A new project's value is typed. (Its recovery percentage is read-only while it is worked out, which is another field.)
         $this->actingAs($this->pm)->get(route('projects.create'))->assertOk()
-            ->assertDontSee('readonly', false);
+            ->assertSee('min="0" value="0" class="input num" required>', false)
+            ->assertDontSee('class="input num" readonly', false);
     }
 
     public function test_saving_the_form_keeps_the_phases_and_their_total(): void

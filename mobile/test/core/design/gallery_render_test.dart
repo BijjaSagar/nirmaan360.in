@@ -3,7 +3,9 @@
 // flutter test test/core/design/gallery_render_test.dart \
 //   --dart-define=N360_GALLERY_DIR=/absolute/output/dir
 //
-// Without the define the PNGs are skipped, so a normal test run writes nothing.
+// Every section is shot at 360dp and 390dp, in English and Marathi, plus a few
+// frames caught mid-motion. Without the define the PNGs are skipped, so a
+// normal test run writes nothing.
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,18 +17,18 @@ import 'test_helpers.dart';
 
 const String _dir = String.fromEnvironment('N360_GALLERY_DIR');
 
-const Size _phone = Size(360, 800);
+const List<double> _widths = <double>[360, 390];
 
-Widget _app(Widget home, {double textScale = 1, bool disableAnimations = true}) {
+Widget _app(Widget home, {double textScale = 1, bool disableAnimations = true, bool devanagari = false}) {
   return MaterialApp(
-    theme: buildN360Theme(),
+    theme: buildN360Theme(devanagari: devanagari),
     debugShowCheckedModeBanner: false,
     builder: (context, navigator) => MediaQuery(
       data: MediaQuery.of(context).copyWith(
         textScaler: TextScaler.linear(textScale),
         disableAnimations: disableAnimations,
       ),
-      child: LedgerPaper.root(child: navigator),
+      child: N360TextScaling(child: LedgerPaper.root(child: navigator)),
     ),
     home: home,
   );
@@ -39,18 +41,25 @@ void main() {
     if (_dir.isNotEmpty) await Directory(_dir).create(recursive: true);
   });
 
-  testWidgets('every gallery page renders in both languages with no overflow', (tester) async {
+  testWidgets('every gallery page renders at both widths in both languages with no overflow', (tester) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(360, 1800);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    for (final marathi in <bool>[false, true]) {
-      for (final scale in <double>[1, 1.3]) {
-        for (final section in GallerySection.values) {
-          await tester.pumpWidget(_app(DesignGallery(section: section, marathi: marathi), textScale: scale));
-          await tester.pump(const Duration(milliseconds: 800));
-          expect(tester.takeException(), isNull, reason: 'section ${section.name} marathi=$marathi scale=$scale');
+    for (final width in _widths) {
+      tester.view.physicalSize = Size(width, 1800);
+      for (final marathi in <bool>[false, true]) {
+        for (final scale in <double>[1, 1.3]) {
+          for (final section in GallerySection.values) {
+            await tester.pumpWidget(_app(
+              DesignGallery(section: section, marathi: marathi),
+              textScale: scale,
+              devanagari: marathi,
+            ));
+            await tester.pump(const Duration(milliseconds: 800));
+            expect(tester.takeException(), isNull,
+                reason: 'section ${section.name} width=$width marathi=$marathi scale=$scale');
+          }
         }
       }
     }
@@ -59,30 +68,73 @@ void main() {
   if (_dir.isEmpty) return;
 
   testWidgets('capture PNGs', (tester) async {
-    Future<void> shot(String name, Widget home, {double textScale = 1, double? tall}) async {
+    Future<void> shot(String name, Widget home,
+        {double textScale = 1, double? tall, double width = 360, bool devanagari = false}) async {
       tester.view.devicePixelRatio = 2.5;
-      tester.view.physicalSize = Size(_phone.width, tall ?? _phone.height) * 2.5;
+      tester.view.physicalSize = Size(width, tall ?? 800) * 2.5;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(_app(home, textScale: textScale));
+      await tester.pumpWidget(_app(home, textScale: textScale, devanagari: devanagari));
       await tester.pump(const Duration(milliseconds: 900));
       await tester.runAsync(() => capturePng(tester, _dir, name));
     }
 
-    for (final section in GallerySection.values) {
-      final double? tall = section == GallerySection.choices ? 980 : null;
-      await shot('en_${section.name}', DesignGallery(section: section), tall: tall);
-      await shot('mr_${section.name}', DesignGallery(section: section, marathi: true), tall: tall);
+    for (final width in _widths) {
+      final String w = width.round().toString();
+      for (final section in GallerySection.values) {
+        final double? tall = switch (section) {
+          GallerySection.choices => 1040,
+          GallerySection.art => 1100,
+          GallerySection.progress ||
+          GallerySection.plan ||
+          GallerySection.buttons ||
+          GallerySection.loading =>
+            900,
+          _ => null,
+        };
+        await shot('${w}_en_${section.name}', DesignGallery(section: section), tall: tall, width: width);
+        await shot('${w}_mr_${section.name}', DesignGallery(section: section, marathi: true),
+            tall: tall, width: width, devanagari: true);
+      }
     }
-    await shot('mr_muster_scaled', const DesignGallery(section: GallerySection.muster, marathi: true), textScale: 1.3, tall: 900);
-    await shot('mr_buttons_scaled', const DesignGallery(section: GallerySection.buttons, marathi: true), textScale: 1.3, tall: 900);
+    await shot('360_mr_muster_scaled', const DesignGallery(section: GallerySection.muster, marathi: true),
+        textScale: 1.3, tall: 900, devanagari: true);
+    await shot('360_mr_buttons_scaled', const DesignGallery(section: GallerySection.buttons, marathi: true),
+        textScale: 1.3, tall: 1000, devanagari: true);
+    await shot('360_mr_progress_scaled', const DesignGallery(section: GallerySection.progress, marathi: true),
+        textScale: 1.3, tall: 1000, devanagari: true);
   });
 
   testWidgets('capture motion frames', (tester) async {
     tester.view.devicePixelRatio = 2.5;
-    tester.view.physicalSize = _phone * 2.5;
+    tester.view.physicalSize = const Size(360, 800) * 2.5;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    // The progress page entering: hero counting up, bar and building filling,
+    // bottom bar tile settling. All start at t = 0.
+    await tester.pumpWidget(_app(
+      const DesignGallery(section: GallerySection.progress),
+      disableAnimations: false,
+    ));
+    await tester.pump();
+    var at = 0;
+    for (final ms in <int>[0, 120, 300, 600, 1200]) {
+      await tester.pump(Duration(milliseconds: ms - at));
+      at = ms;
+      await tester.runAsync(() => capturePng(tester, _dir, 'frame_entry_${ms}ms'));
+    }
+    await tester.pump(const Duration(seconds: 1));
+
+    // Loading placeholders mid-sheen.
+    await tester.pumpWidget(_app(
+      const DesignGallery(section: GallerySection.loading),
+      disableAnimations: false,
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() => capturePng(tester, _dir, 'frame_skeleton_500ms'));
+    await tester.pumpWidget(const SizedBox.shrink());
 
     await tester.pumpWidget(_app(
       const _RollingFrames(),
@@ -151,6 +203,19 @@ void main() {
     }
     await tester.pump(const Duration(seconds: 1));
 
+    // The page turn, caught a third of the way: the new page carries its paper,
+    // the old one has drifted back beneath it.
+    await tester.pumpWidget(_app(const _PageFrames(), disableAnimations: false));
+    await tester.pump();
+    final _PageFramesState pages = tester.state(find.byType(_PageFrames));
+    pages.push();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 110));
+    await tester.runAsync(() => capturePng(tester, _dir, 'frame_page_110ms'));
+    await tester.pump(const Duration(milliseconds: 110));
+    await tester.runAsync(() => capturePng(tester, _dir, 'frame_page_220ms'));
+    await tester.pump(const Duration(seconds: 1));
+
     // The stamp on its own.
     await tester.pumpWidget(_app(
       const Scaffold(
@@ -163,6 +228,37 @@ void main() {
     await tester.pump(const Duration(milliseconds: 90));
     await tester.runAsync(() => capturePng(tester, _dir, 'frame_stamp_90ms'));
   });
+}
+
+class _PageFrames extends StatefulWidget {
+  const _PageFrames();
+
+  @override
+  State<_PageFrames> createState() => _PageFramesState();
+}
+
+class _PageFramesState extends State<_PageFrames> {
+  bool _second = false;
+
+  void push() => setState(() => _second = true);
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      pages: <Page<void>>[
+        const N360Page<void>(
+          key: ValueKey<String>('first'),
+          child: DesignGallery(section: GallerySection.progress),
+        ),
+        if (_second)
+          const N360Page<void>(
+            key: ValueKey<String>('second'),
+            child: DesignGallery(section: GallerySection.installed),
+          ),
+      ],
+      onDidRemovePage: (_) {},
+    );
+  }
 }
 
 class _SlipFrames extends StatefulWidget {

@@ -82,7 +82,7 @@ class PullApplier {
     await _db.batch((batch) {
       batch.insertAllOnConflictUpdate(
         _db.projects,
-        projects.map(_projectCompanion).toList(),
+        projects.map(projectCompanion).toList(),
       );
       batch.insertAllOnConflictUpdate(
         _db.sites,
@@ -90,7 +90,7 @@ class PullApplier {
       );
       batch.insertAllOnConflictUpdate(
         _db.boqItems,
-        boqItems.map(_boqCompanion).toList(),
+        boqItems.map(boqItemCompanion).toList(),
       );
       batch.insertAllOnConflictUpdate(
         _db.workers,
@@ -117,11 +117,12 @@ class PullApplier {
     // `wallets` is always the full list.
     await _db.delete(_db.wallets).go();
     await _db.batch((batch) {
-      batch.insertAll(_db.wallets, wallets.map(_walletCompanion).toList());
+      batch.insertAll(_db.wallets, wallets.map(walletCompanion).toList());
     });
   }
 
-  ProjectsCompanion _projectCompanion(Json j) => ProjectsCompanion(
+  /// One row in the `projects` pull shape, also returned by `POST /projects`.
+  static ProjectsCompanion projectCompanion(Json j) => ProjectsCompanion(
     id: Value(_int(j['id'])),
     code: Value(j['code'] as String),
     name: Value(j['name'] as String),
@@ -133,6 +134,7 @@ class PullApplier {
       _str(j['measurement_tolerance_pct']) ?? '5.00',
     ),
     updatedAt: Value(parseServerTime(j['updated_at'])),
+    imageUrl: Value(j['image_url'] as String?),
   );
 
   SitesCompanion _siteCompanion(Json j) => SitesCompanion(
@@ -143,7 +145,7 @@ class PullApplier {
     updatedAt: Value(parseServerTime(j['updated_at'])),
   );
 
-  BoqItemsCompanion _boqCompanion(Json j) => BoqItemsCompanion(
+  static BoqItemsCompanion boqItemCompanion(Json j) => BoqItemsCompanion(
     id: Value(_int(j['id'])),
     projectId: Value(_int(j['project_id'])),
     section: Value(j['section'] as String?),
@@ -175,7 +177,7 @@ class PullApplier {
     role: Value(j['role'] as String?),
   );
 
-  WalletsCompanion _walletCompanion(Json j) => WalletsCompanion(
+  static WalletsCompanion walletCompanion(Json j) => WalletsCompanion(
     id: Value(_int(j['id'])),
     projectId: Value(_int(j['project_id'])),
     name: Value(j['name'] as String),
@@ -545,6 +547,17 @@ class PullApplier {
 
     for (final id in ids('projects')) {
       await (_db.delete(_db.projects)..where((t) => t.id.equals(id))).go();
+      await _db.deleteMeta(MetaKey.progressOverview(id));
+      await _db.deleteMeta(MetaKey.progressLastPick(id));
+      await _db.deleteMeta(MetaKey.materialOverview(id));
+      await _db.deleteMeta(MetaKey.siteOverview(id));
+      await _db.deleteMeta(MetaKey.contractorOverview(id));
+      await _db.deleteMeta(MetaKey.inspections(id));
+      await _db.deleteMeta(MetaKey.inspectionDrafts(id));
+      await _db.deleteMeta(MetaKey.machines(id));
+      await _db.deleteMeta(MetaKey.priceWatchProject(id));
+      await _db.deleteMeta(MetaKey.recordPhotos(id));
+      await _db.deleteMeta(MetaKey.floorEntries(id));
     }
     for (final id in ids('boq_items')) {
       await (_db.delete(_db.boqItems)..where((t) => t.id.equals(id))).go();
@@ -606,6 +619,44 @@ class PullApplier {
       } else {
         await _db.writeMeta(MetaKey.tombstones, jsonEncode(tombstones));
       }
+    }
+
+    await _dropRemovedProjectData(unsent);
+  }
+
+  /// Clears what the phone still holds for projects it no longer has, whether
+  /// deleted or taken away from this person. Work that never reached the
+  /// server stays until it is sent or discarded, then the next pull clears it.
+  Future<void> _dropRemovedProjectData(Set<String> unsent) async {
+    final known = _db.selectOnly(_db.projects)..addColumns([_db.projects.id]);
+
+    await (_db.delete(_db.sites)..where((t) => t.projectId.isNotInQuery(known))).go();
+    await (_db.delete(_db.boqItems)..where((t) => t.projectId.isNotInQuery(known))).go();
+    await (_db.delete(_db.wallets)..where((t) => t.projectId.isNotInQuery(known))).go();
+
+    await (_db.delete(_db.measurements)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+    await (_db.delete(_db.issues)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+    await (_db.delete(_db.attendanceMarks)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+    await (_db.delete(_db.pettyCashEntries)
+          ..where((t) => t.projectId.isNotInQuery(known) & t.clientUuid.isNotIn(unsent)))
+        .go();
+
+    final dprs = await (_db.select(_db.dprs)
+          ..where(
+            (t) =>
+                t.projectId.isNotInQuery(known) &
+                t.localDraft.equals(false) &
+                t.clientUuid.isNotIn(unsent),
+          ))
+        .get();
+    for (final row in dprs) {
+      await _deleteDpr(row.clientUuid);
     }
   }
 
@@ -713,7 +764,9 @@ ApprovalsInboxCompanion approvalCompanion(Json j) {
     currentRole: Value(j['current_role'] as String?),
     currentRoleLabel: Value(j['current_role_label'] as String?),
     canAct: Value(j['can_act'] as bool? ?? false),
-    document: Value((j['document'] as Map?)?.cast<String, dynamic>() ?? const {}),
+    // The server sends an empty list, not null, for a kind of document it does
+    // not describe, such as a contractor payment.
+    document: Value(j['document'] is Map ? (j['document'] as Map).cast<String, dynamic>() : const {}),
     steps: Value((j['steps'] as List?) ?? const []),
   );
 }

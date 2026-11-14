@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart'
     show DatabaseConnection, driftRuntimeOptions;
@@ -6,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirmaan360/core/app_services.dart';
 import 'package:nirmaan360/core/db/app_database.dart';
+import 'package:nirmaan360/core/push/push_messaging.dart';
 import 'package:nirmaan360/core/session/current_user.dart';
 import 'package:nirmaan360/core/session/token_store.dart';
 import 'package:nirmaan360/core/sync/attachment_store.dart';
@@ -95,6 +97,7 @@ class TestApp {
     required this.connectivity,
     required this.tokens,
     required this.attachments,
+    required this.tempDirectory,
   });
 
   final AppServices services;
@@ -103,6 +106,10 @@ class TestApp {
   final FakeConnectivity connectivity;
   final InMemoryTokenStore tokens;
   final AttachmentStore attachments;
+
+  /// This app's own temporary folder, so a sign-out clearing its temporary
+  /// files never touches another test's.
+  final Directory tempDirectory;
 
   AppDatabase get db => services.db;
 
@@ -117,20 +124,24 @@ class TestApp {
     FakeConnectivity? connectivity,
     AttachmentStore? attachments,
     AppDatabase? db,
+    PushMessaging? pushMessaging,
   }) async {
     final fakeApi = api ?? FakeApi();
     final fakeClock = clock ?? FakeClock();
     final fakeConnectivity = connectivity ?? FakeConnectivity();
     final store = attachments ?? InMemoryAttachmentStore();
     final tokens = InMemoryTokenStore();
+    final Directory temp = Directory.systemTemp.createTempSync('n360_app_');
 
     final services = AppServices.forTesting(
+      tempDirectory: () async => temp.path,
       db: db ?? newTestDatabase(),
       api: fakeApi,
       tokens: tokens,
       clock: fakeClock,
       connectivity: fakeConnectivity,
       attachments: store,
+      pushMessaging: pushMessaging,
     );
 
     final app = TestApp._(
@@ -140,6 +151,7 @@ class TestApp {
       connectivity: fakeConnectivity,
       tokens: tokens,
       attachments: store,
+      tempDirectory: temp,
     );
 
     if (signedIn) {
@@ -159,7 +171,14 @@ class TestApp {
   Future<void> sync() => services.sync.syncNow();
 
   /// Closes everything. Register with `addTearDown(app.dispose)`.
-  Future<void> dispose() => services.dispose();
+  Future<void> dispose() async {
+    await services.dispose();
+    try {
+      if (tempDirectory.existsSync()) tempDirectory.deleteSync(recursive: true);
+    } on FileSystemException {
+      // Already gone, or held by the OS for a moment: the system clears it later.
+    }
+  }
 }
 
 /// Lets Drift stream results reach widgets, without `pumpAndSettle` hanging

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- What the phone's notification settings call the channels Nirmaan360 posts to. -->
+    <string name="notification_channel_critical_name">Urgent alerts</string>
+    <string name="notification_channel_critical_description">Site alerts that need someone to act now.</string>
+    <string name="notification_channel_updates_name">Approvals and updates</string>
+    <string name="notification_channel_updates_description">Work waiting for your approval, payments, material checks and issues.</string>
+</resources>

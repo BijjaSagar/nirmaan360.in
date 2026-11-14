@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Reports\BoqExcelController;
 use App\Http\Presenters\ContractorControlPresenter;
 use App\Models\BoqItem;
 use App\Models\Project;
@@ -10,12 +11,15 @@ use App\Services\BoqValues;
 use App\Services\ContractorControl\BoqLineTenders;
 use App\Services\ProjectSetup\BoqCategories;
 use App\Services\ProjectSetup\BoqRevisions;
+use App\Services\Reports\BoqPdfReader;
 use App\Support\Dec;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -85,9 +89,21 @@ class BoqController extends Controller
 
     public function import(Request $request, Project $project): RedirectResponse
     {
+        $columns = $this->columnsFor($request);
+
+        // Anything that is not our own CSV (an Excel sheet, a PDF, a CSV in the contractor's own columns) is read
+        // by its own headings and shown first, where the company's plan has that import.
+        if ($this->readsAnyLayout($request)) {
+            // One file, no bigger than the largest that import takes, before anything in it is read.
+            $request->validate(['file' => ['required', 'file', 'max:'.(BoqPdfReader::MAX_BYTES / 1024)]]);
+
+            if (! $this->isTemplateCsv($request->file('file'), $columns)) {
+                return app(BoqExcelController::class)->import($request, $project);
+            }
+        }
+
         $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
 
-        $columns = $this->columnsFor($request);
         $rows = $this->readCsv($request->file('file')->getRealPath(), $columns);
 
         DB::transaction(function () use ($rows, $project) {
@@ -168,6 +184,42 @@ class BoqController extends Controller
             fputcsv($out, ['Superstructure', '2.1', 'RCC M25 in slab including shuttering', 'cum', '120.000', '7450.00', 'rcc', 'M25 grade, 150 mm thick, with centering and shuttering.'], ',', '"', '');
             fclose($out);
         }, 'boq-template.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /** Whether this company's plan has the import that reads any sheet or PDF by its headings. */
+    private function readsAnyLayout(Request $request): bool
+    {
+        return Route::has('boq.excel.import') && (bool) $request->user()->organization?->allowsFeature('reports');
+    }
+
+    /**
+     * Whether the upload is a CSV in the template's own columns: the file this page exports and has always
+     * imported. It is told by its first line, not its name, so our CSV saved without an extension still counts.
+     *
+     * @param  list<string>  $columns
+     */
+    private function isTemplateCsv(UploadedFile $file, array $columns): bool
+    {
+        if (in_array(strtolower((string) $file->getClientOriginalExtension()), ['xlsx', 'xlsm', 'xls', 'ods', 'pdf'], true)) {
+            return false;
+        }
+
+        $handle = @fopen($file->getRealPath(), 'r');
+
+        if ($handle === false) {
+            return false;
+        }
+
+        // The heading line of our template is short. Reading a bounded piece keeps a file with one endless line cheap.
+        $first = (string) fgets($handle, 4096);
+        fclose($handle);
+
+        $header = array_map(
+            fn ($cell) => strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))),
+            str_getcsv(rtrim($first, "\r\n"), ',', '"', ''),
+        );
+
+        return array_diff($columns, $header) === [];
     }
 
     /**

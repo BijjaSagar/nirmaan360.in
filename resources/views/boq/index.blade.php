@@ -41,10 +41,19 @@
                 </form>
                 <form method="POST" action="{{ route('boq.import', $project) }}" enctype="multipart/form-data" class="card">
                     @csrf
-                    <div class="card-head"><h2 class="card-title">{{ __('Import CSV') }}</h2></div>
+                    {{-- No accept list on the file box: a phone greys out every file outside it, and the server checks the file itself. --}}
+                    @php
+                        $anyLayout = \Illuminate\Support\Facades\Route::has('boq.excel.import') && auth()->user()->organization->allowsFeature('reports');
+                    @endphp
+                    <div class="card-head"><h2 class="card-title">{{ $anyLayout ? __('Import') : __('Import CSV') }}</h2></div>
                     <div class="space-y-3 p-4">
                         <p class="text-sm text-ink-3">{{ __('Rows with an existing item code are updated. If any row has a problem, nothing is imported.') }}</p>
-                        <x-field :label="__('CSV file')" name="file"><input id="file" name="file" type="file" accept=".csv,text/csv" class="input" required></x-field>
+                        @if ($anyLayout)
+                            <p class="text-sm text-ink-3">{{ __('Any BOQ, estimate or tender sheet in your own layout works too: its headings are read, and you check each column and the lines before anything is saved.') }}</p>
+                            <x-field :label="__('BOQ file (.xlsx, .xls, .ods, .csv or .pdf)')" name="file"><input id="file" name="file" type="file" class="input" required></x-field>
+                        @else
+                            <x-field :label="__('CSV file')" name="file"><input id="file" name="file" type="file" class="input" required></x-field>
+                        @endif
                         <div class="flex items-center justify-between gap-2">
                             <a href="{{ route('boq.template') }}" class="link text-sm">{{ __('Download template') }}</a>
                             <button class="btn btn-ghost">{{ __('Import') }}</button>

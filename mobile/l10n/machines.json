@@ -1,0 +1,312 @@
+{
+  "machinesTitle": {
+    "en": "Machine log",
+    "mr": "यंत्र नोंदवही",
+    "hi": "मशीन लॉग"
+  },
+  "machinesLoading": {
+    "en": "Loading machine logs",
+    "mr": "यंत्र नोंदी लोड होत आहेत",
+    "hi": "मशीन लॉग लोड हो रहे हैं"
+  },
+  "machinesNoDataMessage": {
+    "en": "Connect to the internet once to load the machines. After that the log opens offline.",
+    "mr": "यंत्रे लोड करण्यासाठी एकदा इंटरनेटशी जोडा. त्यानंतर नोंदवही ऑफलाइनही उघडेल.",
+    "hi": "मशीनें लोड करने के लिए एक बार इंटरनेट से जुड़ें। उसके बाद लॉग ऑफ़लाइन भी खुलेगा।"
+  },
+  "machinesRefusedTitle": {
+    "en": "Not part of your role",
+    "mr": "तुमच्या भूमिकेत हे नाही",
+    "hi": "यह आपकी भूमिका में नहीं है"
+  },
+  "machinesRefusedMessage": {
+    "en": "The machine log is not open to your role. Ask your office if you need it.",
+    "mr": "यंत्र नोंदवही तुमच्या भूमिकेसाठी उपलब्ध नाही. गरज असल्यास ऑफिसला विचारा.",
+    "hi": "मशीन लॉग आपकी भूमिका के लिए उपलब्ध नहीं है। ज़रूरत हो तो ऑफ़िस से पूछें।"
+  },
+  "machinesEmptyTitle": {
+    "en": "No logs yet",
+    "mr": "अजून नोंदी नाहीत",
+    "hi": "अभी कोई लॉग नहीं"
+  },
+  "machinesEmptyMessage": {
+    "en": "A day's work of a machine on this project will show here.",
+    "mr": "या प्रकल्पावरील यंत्राचे दिवसाचे काम इथे दिसेल.",
+    "hi": "इस प्रोजेक्ट की मशीन का दिन भर का काम यहाँ दिखेगा।"
+  },
+  "machinesNoMachinesTitle": {
+    "en": "No machines yet",
+    "mr": "अजून यंत्रे नाहीत",
+    "hi": "अभी कोई मशीन नहीं"
+  },
+  "machinesNoMachinesMessage": {
+    "en": "Machines are added on the website. They show here after that.",
+    "mr": "यंत्रे वेबसाइटवर जोडली जातात. त्यानंतर ती इथे दिसतील.",
+    "hi": "मशीनें वेबसाइट पर जोड़ी जाती हैं। उसके बाद वे यहाँ दिखेंगी।"
+  },
+  "machinesAdd": {
+    "en": "Add a log",
+    "mr": "नोंद करा",
+    "hi": "लॉग जोड़ें"
+  },
+  "machinesLatestOnly": {
+    "en": "Showing the latest 50. The rest are on the website.",
+    "mr": "नवीन 50 दाखवल्या आहेत. बाकीच्या वेबसाइटवर आहेत.",
+    "hi": "नए 50 दिखाए हैं। बाकी वेबसाइट पर हैं।"
+  },
+  "machinesHoursValue": {
+    "en": "{hours} h",
+    "mr": "{hours} तास",
+    "hi": "{hours} घंटे",
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesKmValue": {
+    "en": "{km} km",
+    "mr": "{km} किमी",
+    "hi": "{km} किमी",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesBreakdownValue": {
+    "en": "Breakdown {hours} h",
+    "mr": "बिघाड {hours} तास",
+    "hi": "खराबी {hours} घंटे",
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesOperatorValue": {
+    "en": "Operator {name}",
+    "mr": "ऑपरेटर {name}",
+    "hi": "ऑपरेटर {name}",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "machinesUnknownMachine": {
+    "en": "Machine no. {id}",
+    "mr": "यंत्र क्र. {id}",
+    "hi": "मशीन नं. {id}",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "machinesUnderRepair": {
+    "en": "Under repair",
+    "mr": "दुरुस्तीत",
+    "hi": "मरम्मत में"
+  },
+  "machineFormMachine": {
+    "en": "Machine",
+    "mr": "यंत्र",
+    "hi": "मशीन"
+  },
+  "machineFormChoose": {
+    "en": "Choose a machine",
+    "mr": "यंत्र निवडा",
+    "hi": "मशीन चुनें"
+  },
+  "machineFormSearch": {
+    "en": "Search by code or name",
+    "mr": "कोड किंवा नावाने शोधा",
+    "hi": "कोड या नाम से खोजें"
+  },
+  "machineFormNoneMatch": {
+    "en": "No machine matches",
+    "mr": "एकही यंत्र जुळत नाही",
+    "hi": "कोई मशीन नहीं मिली"
+  },
+  "machineFormMachineRequired": {
+    "en": "Choose the machine first",
+    "mr": "आधी यंत्र निवडा",
+    "hi": "पहले मशीन चुनें"
+  },
+  "machineFormDate": {
+    "en": "Date",
+    "mr": "दिनांक",
+    "hi": "तारीख"
+  },
+  "machineFormHours": {
+    "en": "Hours worked",
+    "mr": "कामाचे तास",
+    "hi": "काम के घंटे"
+  },
+  "machineFormHoursHint": {
+    "en": "One decimal at most, like 7.5",
+    "mr": "जास्तीत जास्त एक दशांश, उदा. 7.5",
+    "hi": "ज़्यादा से ज़्यादा एक दशमलव, जैसे 7.5"
+  },
+  "machineFormHoursError": {
+    "en": "Enter hours from 0 to 24, with one decimal at most",
+    "mr": "0 ते 24 तास लिहा, जास्तीत जास्त एक दशांश",
+    "hi": "0 से 24 घंटे लिखें, ज़्यादा से ज़्यादा एक दशमलव"
+  },
+  "machineFormKm": {
+    "en": "Km run",
+    "mr": "धावलेले किमी",
+    "hi": "चले किमी"
+  },
+  "machineFormKmError": {
+    "en": "Enter km from 0 to 99,999",
+    "mr": "0 ते 99,999 किमी लिहा",
+    "hi": "0 से 99,999 किमी लिखें"
+  },
+  "machineFormOpening": {
+    "en": "Opening reading",
+    "mr": "सुरुवातीचे रीडिंग",
+    "hi": "शुरुआती रीडिंग"
+  },
+  "machineFormClosing": {
+    "en": "Closing reading",
+    "mr": "शेवटचे रीडिंग",
+    "hi": "अंतिम रीडिंग"
+  },
+  "machineFormReadingError": {
+    "en": "Enter a number from 0 to 99,999,999",
+    "mr": "0 ते 99,999,999 पर्यंत संख्या लिहा",
+    "hi": "0 से 99,999,999 तक की संख्या लिखें"
+  },
+  "machineFormClosingBelow": {
+    "en": "The closing reading cannot be lower than the opening reading",
+    "mr": "शेवटचे रीडिंग सुरुवातीच्या रीडिंगपेक्षा कमी असू शकत नाही",
+    "hi": "अंतिम रीडिंग शुरुआती रीडिंग से कम नहीं हो सकती"
+  },
+  "machineFormReadingsHintHours": {
+    "en": "Leave Hours worked blank and the hours are worked out from the two readings.",
+    "mr": "कामाचे तास रिकामे सोडा, दोन रीडिंगवरून तास काढले जातील.",
+    "hi": "काम के घंटे खाली छोड़ें, दो रीडिंग से घंटे निकाले जाएँगे।"
+  },
+  "machineFormReadingsHintKm": {
+    "en": "Leave Km run blank and the km are worked out from the two readings.",
+    "mr": "धावलेले किमी रिकामे सोडा, दोन रीडिंगवरून किमी काढले जातील.",
+    "hi": "चले किमी खाली छोड़ें, दो रीडिंग से किमी निकाले जाएँगे।"
+  },
+  "machineFormBreakdown": {
+    "en": "Hours lost to breakdown",
+    "mr": "बिघाडात गेलेले तास",
+    "hi": "खराबी में गए घंटे"
+  },
+  "machineFormNothing": {
+    "en": "Enter the hours or km worked, or the hours lost to breakdown",
+    "mr": "कामाचे तास किंवा किमी, किंवा बिघाडात गेलेले तास लिहा",
+    "hi": "काम के घंटे या किमी, या खराबी में गए घंटे लिखें"
+  },
+  "machineFormOperator": {
+    "en": "Operator",
+    "mr": "ऑपरेटर",
+    "hi": "ऑपरेटर"
+  },
+  "machineFormRemarks": {
+    "en": "Remarks",
+    "mr": "शेरा",
+    "hi": "टिप्पणी"
+  },
+  "machineFormSave": {
+    "en": "Save log",
+    "mr": "नोंद जतन करा",
+    "hi": "लॉग सेव करें"
+  },
+  "machineFormLogged": {
+    "en": "Already logged that day: {hours} h. One machine cannot pass 24 h in a day.",
+    "mr": "त्या दिवशी आधीच नोंदवले: {hours} तास. एका यंत्राचे दिवसाचे तास 24 पेक्षा जास्त होऊ शकत नाहीत.",
+    "hi": "उस दिन पहले से दर्ज: {hours} घंटे। एक मशीन के दिन के घंटे 24 से ज़्यादा नहीं हो सकते।",
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "machineFormNoMachinesTitle": {
+    "en": "No machines to log against",
+    "mr": "नोंद करण्यासाठी यंत्रे नाहीत",
+    "hi": "लॉग करने के लिए मशीनें नहीं"
+  },
+  "machineCategoryExcavator": {
+    "en": "Excavator",
+    "mr": "एक्सकॅव्हेटर",
+    "hi": "एक्सकेवेटर"
+  },
+  "machineCategoryBackhoe": {
+    "en": "JCB / Backhoe loader",
+    "mr": "JCB / बॅकहो लोडर",
+    "hi": "JCB / बैकहो लोडर"
+  },
+  "machineCategoryCrane": {
+    "en": "Crane",
+    "mr": "क्रेन",
+    "hi": "क्रेन"
+  },
+  "machineCategoryMixer": {
+    "en": "Concrete mixer",
+    "mr": "काँक्रीट मिक्सर",
+    "hi": "कंक्रीट मिक्सर"
+  },
+  "machineCategoryTransitMixer": {
+    "en": "Transit mixer",
+    "mr": "ट्रान्झिट मिक्सर",
+    "hi": "ट्रांज़िट मिक्सर"
+  },
+  "machineCategoryPump": {
+    "en": "Concrete pump",
+    "mr": "काँक्रीट पंप",
+    "hi": "कंक्रीट पंप"
+  },
+  "machineCategoryRoller": {
+    "en": "Roller / Compactor",
+    "mr": "रोलर / कॉम्पॅक्टर",
+    "hi": "रोलर / कॉम्पैक्टर"
+  },
+  "machineCategoryTipper": {
+    "en": "Tipper / Truck",
+    "mr": "टिपर / ट्रक",
+    "hi": "टिपर / ट्रक"
+  },
+  "machineCategoryDgSet": {
+    "en": "DG set",
+    "mr": "DG सेट",
+    "hi": "DG सेट"
+  },
+  "machineCategoryCompressor": {
+    "en": "Compressor",
+    "mr": "कंप्रेसर",
+    "hi": "कंप्रेसर"
+  },
+  "machineCategoryVehicle": {
+    "en": "Vehicle",
+    "mr": "वाहन",
+    "hi": "गाड़ी"
+  },
+  "machineCategoryFormwork": {
+    "en": "Shuttering / Formwork",
+    "mr": "शटरिंग / फॉर्मवर्क",
+    "hi": "शटरिंग / फ़ॉर्मवर्क"
+  },
+  "machineCategoryScaffolding": {
+    "en": "Scaffolding",
+    "mr": "स्कॅफोल्डिंग",
+    "hi": "स्कैफ़ोल्डिंग"
+  },
+  "machineCategoryTools": {
+    "en": "Tools and small plant",
+    "mr": "हत्यारे आणि छोटी यंत्रे",
+    "hi": "औज़ार और छोटी मशीनें"
+  },
+  "machineCategoryOther": {
+    "en": "Other",
+    "mr": "इतर",
+    "hi": "अन्य"
+  }
+}
