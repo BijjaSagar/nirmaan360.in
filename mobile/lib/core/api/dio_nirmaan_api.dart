@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show jsonDecode, utf8;
 import 'dart:io' show HttpDate;
 import 'dart:typed_data';
 
@@ -91,6 +92,125 @@ class DioNirmaanApi implements NirmaanApi {
   }
 
   @override
+  Future<LoginResult> register({
+    required String company,
+    required String name,
+    required String email,
+    String? phone,
+    required String password,
+    required String passwordConfirmation,
+    required String deviceName,
+    required String locale,
+  }) async {
+    final body = await _call(
+      () => _dio.post(
+        '/auth/register',
+        data: {
+          'company': company,
+          'name': name,
+          'email': email,
+          'phone': ?phone,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+          'device_name': deviceName,
+          'locale': locale,
+        },
+      ),
+      treat401AsExpired: false,
+    );
+    return LoginResult(
+      token: body['token'] as String,
+      user: (body['user'] as Map).cast<String, dynamic>(),
+    );
+  }
+
+  @override
+  Future<AccountDeletionPreview> accountDeletionPreview() async {
+    final body = await _call(() => _dio.get('/auth/account/deletion'));
+    return AccountDeletionPreview.fromJson(_data(body));
+  }
+
+  @override
+  Future<AccountDeletionResult> deleteAccount({
+    required AccountDeletionMode mode,
+    required String password,
+    String? confirmName,
+  }) async {
+    final body = await _call(
+      () => _dio.post(
+        '/auth/account/deletion',
+        data: {
+          'mode': mode.name,
+          'password': password,
+          if (mode == AccountDeletionMode.company) 'confirm_name': confirmName ?? '',
+        },
+      ),
+    );
+    return AccountDeletionResult.fromJson(_data(body));
+  }
+
+  @override
+  Future<bool> cancelCompanyDeletion() async {
+    final body = await _call(() => _dio.delete('/auth/account/deletion'));
+    return _data(body)['result'] == 'cancelled';
+  }
+
+  /// The `data` object of a reply, or an empty map.
+  static Map<String, dynamic> _data(Map<String, dynamic> body) {
+    final Object? data = body['data'];
+    return data is Map ? data.cast<String, dynamic>() : const <String, dynamic>{};
+  }
+
+  @override
+  Future<DeviceRegistration> registerDevice({
+    required String token,
+    required String platform,
+    String? previousToken,
+    String? appVersion,
+    String? locale,
+    String? deviceName,
+    bool portal = false,
+  }) async {
+    final body = await _call(
+      () => _dio.post(
+        _notify('/devices', portal),
+        data: {
+          'token': token,
+          'platform': platform,
+          'previous_token': ?previousToken,
+          'app_version': ?appVersion,
+          'locale': ?locale,
+          'device_name': ?deviceName,
+        },
+      ),
+    );
+    return DeviceRegistration(pushConnected: body['push_connected'] == true);
+  }
+
+  @override
+  Future<void> unregisterDevice(String token, {bool portal = false}) async {
+    await _call(() => _dio.delete(_notify('/devices', portal), data: {'token': token}));
+  }
+
+  @override
+  Future<Map<String, dynamic>> notificationPreferences({bool portal = false}) =>
+      _getData(_notify('/notification-preferences', portal));
+
+  @override
+  Future<Map<String, dynamic>> updateNotificationPreferences(Map<String, Object?> changes, {bool portal = false}) async {
+    final body = await _call(() => _dio.put(_notify('/notification-preferences', portal), data: changes));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> announcements({int page = 1, String? locale, bool portal = false}) => _call(
+    () => _dio.get(_notify('/announcements', portal), queryParameters: <String, dynamic>{'page': page, 'locale': ?locale}),
+  );
+
+  /// A contractor login reaches the notification routes under its portal.
+  static String _notify(String path, bool portal) => portal ? '/contractor-portal$path' : path;
+
+  @override
   Future<Map<String, dynamic>> me() async {
     final body = await _call(() => _dio.get('/me'));
     return (body['user'] as Map).cast<String, dynamic>();
@@ -169,11 +289,18 @@ class DioNirmaanApi implements NirmaanApi {
     required String action,
     required String clientUuid,
     String? remark,
+    String? overrideReason,
   }) async {
     final body = await _call(
       () => _dio.post(
         '/approvals/$approvalId/act',
-        data: {'action': action, 'remark': remark, 'client_uuid': clientUuid},
+        data: {
+          'action': action,
+          'remark': remark,
+          'client_uuid': clientUuid,
+          // Only on the owner's approval of a contractor payment ahead of the work done.
+          'override_reason': ?overrideReason,
+        },
       ),
     );
     return (body['data'] as Map).cast<String, dynamic>();
@@ -186,6 +313,7 @@ class DioNirmaanApi implements NirmaanApi {
     required String trade,
     String? phone,
     String type = 'own',
+    String? dailyWage,
   }) async {
     final body = await _call(
       () => _dio.post(
@@ -196,9 +324,119 @@ class DioNirmaanApi implements NirmaanApi {
           'trade': trade,
           'phone': phone,
           'type': type,
+          'daily_wage': ?dailyWage,
         },
       ),
     );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> createProject({
+    required String clientUuid,
+    required String name,
+    String? location,
+    String? startDate,
+    String? endDate,
+    String? contractValue,
+    String? code,
+    List<Map<String, String>>? phases,
+  }) {
+    return _createRow('/projects', {
+      'client_uuid': clientUuid,
+      'name': name,
+      'location': ?location,
+      'start_date': ?startDate,
+      'end_date': ?endDate,
+      'contract_value': ?contractValue,
+      'code': ?code,
+      'phases': ?phases,
+    });
+  }
+
+  @override
+  Future<Map<String, dynamic>> projectDetail(int projectId) => _getData('/projects/$projectId');
+
+  @override
+  Future<Map<String, dynamic>> updateProject(int projectId, Map<String, dynamic> fields) async {
+    final body = await _call(() => _dio.patch('/projects/$projectId', data: fields));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> addBoqItem({
+    required int projectId,
+    required String clientUuid,
+    required String description,
+    required String unit,
+    required String qty,
+    required String rate,
+    String? code,
+    String? section,
+  }) {
+    return _createRow('/projects/$projectId/boq-items', {
+      'client_uuid': clientUuid,
+      'description': description,
+      'unit': unit,
+      'qty': qty,
+      'rate': rate,
+      'code': ?code,
+      'section': ?section,
+    });
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateBoqItem({
+    required int boqItemId,
+    required String code,
+    required String description,
+    required String unit,
+    required String qty,
+    String? rate,
+    required String reason,
+    String? updatedAt,
+  }) async {
+    final body = await _call(
+      () => _dio.patch(
+        '/boq-items/$boqItemId',
+        data: {
+          'code': code,
+          'description': description,
+          'unit': unit,
+          'qty': qty,
+          'rate': ?rate,
+          'reason': reason,
+          'updated_at': ?updatedAt,
+        },
+      ),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<void> deleteBoqItem({required int boqItemId, required String reason}) async {
+    await _call(() => _dio.delete('/boq-items/$boqItemId', data: {'reason': reason}));
+  }
+
+  @override
+  Future<Map<String, dynamic>> createWallet({
+    required int projectId,
+    required String clientUuid,
+    required String name,
+    int? userId,
+  }) {
+    return _createRow('/projects/$projectId/wallets', {
+      'client_uuid': clientUuid,
+      'name': name,
+      'user_id': ?userId,
+    });
+  }
+
+  Future<Map<String, dynamic>> _createRow(
+    String path,
+    Map<String, dynamic> data,
+  ) async {
+    final body = await _call(() => _dio.post(path, data: data));
     return (body['data'] as Map).cast<String, dynamic>();
   }
 
@@ -209,6 +447,483 @@ class DioNirmaanApi implements NirmaanApi {
   @override
   Future<Uint8List> pettyBillBytes(int entryId) =>
       _bytes('/petty-entries/$entryId/bill');
+
+  /// The token goes only to our own API: the path is taken from the address
+  /// and asked of the configured server, wherever the address points.
+  @override
+  Future<Uint8List> projectImageBytes(String imageUrl) {
+    final Uri uri = Uri.parse(imageUrl);
+    final int at = uri.path.indexOf('/projects/');
+    if (at < 0) throw const ServerFailure('Not a project photo.', statusCode: 404);
+    return _bytes('${uri.path.substring(at)}${uri.hasQuery ? '?${uri.query}' : ''}');
+  }
+
+  Future<Map<String, dynamic>> _getData(String path) async {
+    final body = await _call(() => _dio.get(path));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  Future<List<Map<String, dynamic>>> _getRows(String path) async {
+    final body = await _call(() => _dio.get(path));
+    return (body['data'] as List).map((row) => (row as Map).cast<String, dynamic>()).toList();
+  }
+
+  Future<Map<String, dynamic>> _postData(String path, Map<String, dynamic> data) async {
+    final body = await _call(() => _dio.post(path, data: data));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> progressSummary(int projectId) =>
+      _getData('/projects/$projectId/progress/summary');
+
+  @override
+  Future<List<Map<String, dynamic>>> progressFloors(int projectId) =>
+      _getRows('/projects/$projectId/floors');
+
+  @override
+  Future<List<Map<String, dynamic>>> progressItems(int projectId) =>
+      _getRows('/projects/$projectId/progress/items');
+
+  @override
+  Future<List<Map<String, dynamic>>> progressPending(int projectId) =>
+      _getRows('/projects/$projectId/progress/pending');
+
+  @override
+  Future<Map<String, dynamic>> stageMatrix(int projectId) => _getData('/projects/$projectId/stages');
+
+  @override
+  Future<Map<String, dynamic>> floorProgress(int floorId) => _getData('/floors/$floorId/progress');
+
+  @override
+  Future<Map<String, dynamic>> postProgressEntry(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/progress/entries', body);
+
+  @override
+  Future<Map<String, dynamic>> resolveProgress(int entryId, Map<String, dynamic> body) =>
+      _postData('/progress/entries/$entryId/resolve', body);
+
+  @override
+  Future<Map<String, dynamic>> correctProgress(int entryId, Map<String, dynamic> body) =>
+      _postData('/progress/entries/$entryId/corrections', body);
+
+  @override
+  Future<Map<String, dynamic>> progressEntries(int projectId, {int? floorId, int page = 1}) => _call(
+    () => _dio.get(
+      '/projects/$projectId/progress/entries',
+      queryParameters: <String, dynamic>{'project_floor_id': ?floorId, 'page': page},
+    ),
+  );
+
+  @override
+  Future<Map<String, dynamic>> postStageCell(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/stages/cells', body);
+
+  @override
+  Future<Map<String, dynamic>> uploadFieldPhoto(
+    String path, {
+    required String filePath,
+    required String clientUuid,
+    String? caption,
+    String? takenAt,
+    String fileField = 'photo',
+    Map<String, String> fields = const <String, String>{},
+  }) async {
+    final body = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        ...fields,
+        'client_uuid': clientUuid,
+        'caption': ?caption,
+        'taken_at': ?takenAt,
+        fileField: await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fieldPhotoList(String path) => _getRows(path);
+
+  @override
+  Future<Uint8List> fieldPhotoBytes(String path) => _bytes(path);
+
+  @override
+  Future<List<Map<String, dynamic>>> contractorBoard(int projectId) => _getRows('/projects/$projectId/contractor-control');
+
+  @override
+  Future<Map<String, dynamic>> contractorContract(int workOrderId) => _getData('/work-orders/$workOrderId/contractor-control');
+
+  @override
+  Future<Map<String, dynamic>> contractorPayments(int projectId) =>
+      _call(() => _dio.get('/projects/$projectId/contractor-payments'));
+
+  @override
+  Future<Map<String, dynamic>> contractorPayment(int paymentId) => _getData('/contractor-payments/$paymentId');
+
+  @override
+  Future<Uint8List> contractorPaymentBill(int paymentId) => _bytes('/contractor-payments/$paymentId/bill');
+
+  @override
+  Future<Map<String, dynamic>> postContractorPayment(
+    int workOrderId,
+    Map<String, dynamic> body, {
+    String? filePath,
+  }) async {
+    final path = '/work-orders/$workOrderId/contractor-payments';
+    if (filePath == null) return _postData(path, body);
+    final reply = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        for (final entry in body.entries)
+          if (entry.value != null) entry.key: entry.value,
+        'bill': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (reply['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> boqWithTenders(int projectId) => _getRows('/projects/$projectId/boq');
+
+  @override
+  Future<Map<String, dynamic>> boqLineTenders(int boqItemId) => _getData('/boq-items/$boqItemId/tenders');
+
+  @override
+  Future<Map<String, dynamic>> createLineTender(int boqItemId, Map<String, dynamic> body) =>
+      _postData('/boq-items/$boqItemId/tenders', body);
+
+  /// Ten pages of 100 is more subcontractors than any site has to choose from.
+  static const int _contractorPages = 10;
+
+  @override
+  Future<List<Map<String, dynamic>>> subcontractors({String? query}) async {
+    final rows = <Map<String, dynamic>>[];
+    for (var page = 1; page <= _contractorPages; page++) {
+      final body = await _call(
+        () => _dio.get(
+          '/contractors',
+          queryParameters: <String, dynamic>{if (query != null && query.isNotEmpty) 'q': query, 'page': page},
+        ),
+      );
+      rows.addAll((body['data'] as List).map((row) => (row as Map).cast<String, dynamic>()));
+      final last = (body['last_page'] as num?)?.toInt() ?? page;
+      if (page >= last) break;
+    }
+    return rows;
+  }
+
+  @override
+  Future<Map<String, dynamic>> createSubcontractor(Map<String, dynamic> body) => _postData('/contractors', body);
+
+  @override
+  Future<Map<String, dynamic>> tenderComparison(int tenderId) => _getData('/tenders/$tenderId');
+
+  @override
+  Future<Map<String, dynamic>> postTenderQuote(int tenderId, Map<String, dynamic> body, {String? filePath}) async {
+    final path = '/tenders/$tenderId/bids';
+    final reply = await _call(() async {
+      // Always multipart, as the server reads it, so `rates[12]` arrives as a map.
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData();
+      for (final entry in body.entries) {
+        final Object? value = entry.value;
+        if (value == null) continue;
+        if (value is Map) {
+          for (final rate in value.entries) {
+            if (rate.value != null) form.fields.add(MapEntry('${entry.key}[${rate.key}]', '${rate.value}'));
+          }
+        } else {
+          form.fields.add(MapEntry(entry.key, '$value'));
+        }
+      }
+      if (filePath != null) {
+        form.files.add(MapEntry('quotation', await MultipartFile.fromFile(filePath, filename: p.basename(filePath))));
+      }
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return reply;
+  }
+
+  @override
+  Future<Uint8List> quotationBytes(int bidId) => _bytes('/bids/$bidId/quotation');
+
+  @override
+  Future<Map<String, dynamic>> awardTender(int tenderId, Map<String, dynamic> body) =>
+      _call(() => _dio.post('/tenders/$tenderId/award', data: body));
+
+  @override
+  Future<List<Map<String, dynamic>>> checklistTemplates() => _getRows('/checklist-templates');
+
+  @override
+  Future<Map<String, dynamic>> inspections(int projectId, {int page = 1}) => _call(
+    () => _dio.get('/projects/$projectId/inspections', queryParameters: <String, dynamic>{'page': page}),
+  );
+
+  @override
+  Future<Map<String, dynamic>> inspection(int inspectionId) => _getData('/inspections/$inspectionId');
+
+  @override
+  Future<Map<String, dynamic>> postInspection(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/inspections', body);
+
+  @override
+  Future<Map<String, dynamic>> machineAssets({int page = 1}) =>
+      _call(() => _dio.get('/assets', queryParameters: <String, dynamic>{'page': page}));
+
+  @override
+  Future<Map<String, dynamic>> machineLogs(int projectId, {int page = 1}) => _call(
+    () => _dio.get('/machine-logs', queryParameters: <String, dynamic>{'project_id': projectId, 'page': page}),
+  );
+
+  @override
+  Future<Map<String, dynamic>> postMachineLog(Map<String, dynamic> body) => _postData('/machine-logs', body);
+
+  @override
+  Future<Map<String, dynamic>> siteDashboard(int projectId) => _getData('/projects/$projectId/site-dashboard');
+
+  @override
+  Future<Map<String, dynamic>> siteAlerts(int projectId) =>
+      _call(() => _dio.get('/projects/$projectId/alerts', queryParameters: <String, String>{'status': 'open'}));
+
+  @override
+  Future<Map<String, dynamic>> scanSiteAlerts(int projectId) =>
+      _postData('/projects/$projectId/alerts/scan', const <String, dynamic>{});
+
+  @override
+  Future<Map<String, dynamic>> priceBoard() => _call(() => _dio.get('/price-watch'));
+
+  @override
+  Future<Map<String, dynamic>> priceMaterial(int materialId) => _call(() => _dio.get('/price-watch/materials/$materialId'));
+
+  @override
+  Future<Map<String, dynamic>> priceProject(int projectId) => _call(() => _dio.get('/projects/$projectId/price-watch'));
+
+  @override
+  Future<Map<String, dynamic>> portalOverview() => _getData('/contractor-portal');
+
+  @override
+  Future<Map<String, dynamic>> portalContract(int workOrderId) => _getData('/contractor-portal/work-orders/$workOrderId');
+
+  @override
+  Future<List<Map<String, dynamic>>> portalPayments() => _getRows('/contractor-portal/payments');
+
+  @override
+  Future<List<Map<String, dynamic>>> portalBills() => _getRows('/contractor-portal/bills');
+
+  @override
+  Future<Map<String, dynamic>> portalBill(int billId) => _getData('/contractor-portal/bills/$billId');
+
+  @override
+  Future<Map<String, dynamic>> materialCheck(int projectId) =>
+      _getData('/projects/$projectId/material-control/check');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialChallans(int projectId) =>
+      _getRows('/projects/$projectId/material-control/challans');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialConsumption(int projectId) =>
+      _getRows('/projects/$projectId/material-control/consumption');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialStockChecks(int projectId) =>
+      _getRows('/projects/$projectId/material-control/stock-checks');
+
+  @override
+  Future<List<Map<String, dynamic>>> materialSuppliers() => _getRows('/material-control/suppliers');
+
+  @override
+  Future<Map<String, dynamic>> procurementSnapshot(int projectId) async {
+    final body = await _call(() => _dio.get('/projects/$projectId/procurement/snapshot'));
+    return ((body['data'] ?? body) as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMaterialChallan(
+    int projectId,
+    Map<String, dynamic> body, {
+    String? filePath,
+  }) async {
+    final path = '/projects/$projectId/material-control/challans';
+    if (filePath == null) return _postData(path, body);
+    final reply = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        for (final entry in body.entries)
+          if (entry.value != null) entry.key: entry.value,
+        'photo': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (reply['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMaterialUse(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-control/consumption', body);
+
+  @override
+  Future<Map<String, dynamic>> postStockCount(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-control/stock-checks', body);
+
+  @override
+  Future<Map<String, dynamic>> attendanceSelfieConsent() => _getData('/attendance/selfie-consent');
+
+  @override
+  Future<Map<String, dynamic>> postAttendanceScan(int projectId, Map<String, dynamic> body) =>
+      _call(() => _dio.post('/projects/$projectId/attendance/scan', data: body));
+
+  @override
+  Future<List<Map<String, dynamic>>> procurementReceipts(int projectId) => _getRows('/projects/$projectId/grns');
+
+  @override
+  Future<Map<String, dynamic>> postGoodsReceipt(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/grns', body);
+
+  @override
+  Future<Map<String, dynamic>> postMaterialIssue(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-issues', body);
+
+  @override
+  Future<ReaderAvailability> readerAvailability() async =>
+      ReaderAvailability.fromJson(await _call(() => _dio.get('/document-reading/status')));
+
+  @override
+  Future<DocumentReadStatus> documentRead(int readId) async =>
+      DocumentReadStatus.fromJson(await _call(() => _dio.get('/document-reads/$readId')));
+
+  @override
+  Future<StoredReadPage> uploadReadPage(
+    int readId, {
+    required int pageNo,
+    required String filePath,
+    ReadPagePart part = ReadPagePart.full,
+  }) async {
+    final body = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        'page_no': pageNo,
+        'part': part.wire,
+        'image': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        '/document-reads/$readId/pages',
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return StoredReadPage.fromJson(body);
+  }
+
+  @override
+  Future<ReadQuote> quoteRead(int readId, {int? pageFrom, int? pageTo}) async => ReadQuote.fromJson(
+    await _call(() => _dio.post('/document-reads/$readId/quote', data: {'page_from': ?pageFrom, 'page_to': ?pageTo})),
+  );
+
+  @override
+  Future<DocumentReadStatus> startRead(
+    int readId, {
+    String? cap,
+    int? pageFrom,
+    int? pageTo,
+    List<int> skipPages = const <int>[],
+  }) => _readStep(
+    '/document-reads/$readId/start',
+    {'cap': ?cap, 'page_from': ?pageFrom, 'page_to': ?pageTo, if (skipPages.isNotEmpty) 'skip_pages': skipPages},
+  );
+
+  @override
+  Future<DocumentReadStatus> resumeRead(int readId, {String? cap}) =>
+      _readStep('/document-reads/$readId/resume', {'cap': ?cap});
+
+  @override
+  Future<DocumentReadStatus> retryReadPage(int readId, int pageId, {bool stronger = false, String? cap}) =>
+      _readStep('/document-reads/$readId/pages/$pageId/retry', {'stronger': stronger, 'cap': ?cap});
+
+  @override
+  Future<DocumentReadStatus> splitReadPage(int readId, int pageId, {String? cap}) =>
+      _readStep('/document-reads/$readId/pages/$pageId/split', {'cap': ?cap});
+
+  @override
+  Future<DocumentReadStatus> cancelRead(int readId) => _readStep('/document-reads/$readId/cancel', const {});
+
+  @override
+  Future<Uint8List> readPageImage(int readId, int pageId) => _bytes('/document-reads/$readId/pages/$pageId/image');
+
+  /// A step that answers with where the read stands now.
+  Future<DocumentReadStatus> _readStep(String path, Map<String, dynamic> data) async =>
+      DocumentReadStatus.fromJson(await _call(() => _dio.post(path, data: data)));
+
+  // Closing the material loop from site ----------------------------------------
+
+  @override
+  Future<Map<String, dynamic>> postMaterialReason(int projectId, Map<String, dynamic> body) =>
+      _postData('/projects/$projectId/material-control/reasons', body);
+
+  @override
+  Future<Map<String, dynamic>> deliveryChallan(int challanId) => _getData('/delivery-challans/$challanId');
+
+  @override
+  Future<Uint8List> deliveryChallanPhoto(int challanId) => _bytes('/delivery-challans/$challanId/photo');
+
+  @override
+  Future<Map<String, dynamic>> attachChallanBill(int challanId, Map<String, dynamic> body, {String? filePath}) async {
+    final path = '/delivery-challans/$challanId/bill';
+    if (filePath == null) return _postData(path, body);
+    final reply = await _call(() async {
+      // A FormData cannot be reused, so build it fresh inside the attempt.
+      final form = FormData.fromMap({
+        for (final entry in body.entries)
+          if (entry.value != null) entry.key: entry.value,
+        'bill': await MultipartFile.fromFile(filePath, filename: p.basename(filePath)),
+      });
+      return _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: _uploadSendTimeout, receiveTimeout: _uploadReceiveTimeout),
+      );
+    });
+    return (reply['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Uint8List> challanBillBytes(int challanId) => _bytes('/delivery-challans/$challanId/bill');
+
+  @override
+  Future<Map<String, dynamic>> postChallanShort(int challanId, Map<String, dynamic> body) =>
+      _call(() => _dio.post('/delivery-challans/$challanId/short', data: body));
+
+  @override
+  Future<Map<String, dynamic>> challanBills(int projectId, {bool attached = false, int page = 1}) => _call(
+    () => _dio.get(
+      '/projects/$projectId/material-control/bills',
+      queryParameters: <String, dynamic>{if (attached) 'show': 'attached', if (page > 1) 'page': page},
+    ),
+  );
+
+  @override
+  Future<Map<String, dynamic>> materialReconciliation(int projectId, {String? basis}) => _getData(
+    '/projects/$projectId/material-reconciliation${basis == null ? '' : '?basis=${Uri.encodeQueryComponent(basis)}'}',
+  );
 
   Future<Uint8List> _bytes(String path) async {
     try {
@@ -266,8 +981,14 @@ class DioNirmaanApi implements NirmaanApi {
       _onUnauthorized?.call();
       return const AuthExpired();
     }
+    final Object? code = data is Map ? data['code'] : null;
     if (status == 429) {
-      return RateLimited(retryAfter: _retryAfter(e.response));
+      return RateLimited(
+        retryAfter: _retryAfter(e.response),
+        serverMessage: data is Map && data['message'] is String && (data['message'] as String).trim().isNotEmpty
+            ? (data['message'] as String).trim()
+            : null,
+      );
     }
     if (status == 422) {
       return ValidationFailure(
@@ -275,9 +996,16 @@ class DioNirmaanApi implements NirmaanApi {
         errors: data is Map
             ? parseValidationErrors(data['errors'])
             : const {},
+        code: code is String ? code : null,
+        data: data is Map ? data.cast<String, dynamic>() : null,
       );
     }
-    return ServerFailure(message, statusCode: status);
+    return ServerFailure(
+      message,
+      statusCode: status,
+      code: code is String ? code : null,
+      data: data is Map ? data.cast<String, dynamic>() : null,
+    );
   }
 
   /// `Retry-After` is either a number of seconds or an HTTP date.
@@ -293,6 +1021,110 @@ class DioNirmaanApi implements NirmaanApi {
       return wait.isNegative ? Duration.zero : wait;
     } on Exception {
       return null;
+    }
+  }
+
+  // Setting up floors and segments (online only).
+
+  @override
+  Future<Map<String, dynamic>> addFloor(int projectId, {required String name, int? parentId, required String clientUuid}) =>
+      _postData('/projects/$projectId/floors', {'name': name, 'parent_id': parentId, 'client_uuid': clientUuid});
+
+  @override
+  Future<Map<String, dynamic>> renameFloor(int floorId, {required String name}) async {
+    final body = await _call(() => _dio.patch('/floors/$floorId', data: {'name': name}));
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> setFloorTarget(int floorId, {required int boqItemId, required String plannedQty}) async {
+    final body = await _call(
+      () => _dio.put('/floors/$floorId/target', data: {'boq_item_id': boqItemId, 'planned_qty': plannedQty}),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> splitFloors(
+    int projectId, {
+    required List<int> floorIds,
+    List<int> boqItemIds = const <int>[],
+    bool allItems = false,
+  }) => _postData('/projects/$projectId/floors/split', {
+    'floor_ids': floorIds,
+    if (allItems) 'all_items': true else 'boq_item_ids': boqItemIds,
+  });
+
+  @override
+  Future<void> deleteFloor(int floorId) async {
+    await _call(() => _dio.delete('/floors/$floorId'));
+  }
+
+  @override
+  Future<Map<String, dynamic>> setProgressTimeFrame(int projectId, {String? startDate, int? plannedDays, String? deadlineDate}) async {
+    final body = await _call(
+      () => _dio.patch(
+        '/projects/$projectId/progress/time-frame',
+        data: {'start_date': startDate, 'planned_days': plannedDays, 'deadline_date': deadlineDate},
+      ),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  @override
+  Future<Map<String, dynamic>> progressWeek(int projectId, {String? date}) async {
+    final body = await _call(
+      () => _dio.get('/projects/$projectId/progress/week', queryParameters: {'date': ?date}),
+    );
+    return (body['data'] as Map).cast<String, dynamic>();
+  }
+
+  // Report files (routes/api_modules/reports.php). -----------------------------
+
+  @override
+  Future<Uint8List> dprPdfBytes(int dprId) => _reportBytes('/dprs/$dprId/pdf');
+
+  @override
+  Future<Map<String, dynamic>> dprShareLink(int dprId, {String? locale}) =>
+      _postData('/dprs/$dprId/share-link', <String, dynamic>{'locale': ?locale});
+
+  @override
+  Future<Uint8List> measurementSheetBytes(int projectId, {required String from, required String to}) =>
+      _reportBytes('/projects/$projectId/measurement-sheet.pdf', query: <String, dynamic>{'from': from, 'to': to});
+
+  /// A generated file. A refusal comes back as JSON even though bytes were
+  /// asked for, so it is read as JSON first and translated like any other.
+  Future<Uint8List> _reportBytes(String path, {Map<String, dynamic>? query}) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        queryParameters: query,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(response.data ?? const []);
+    } on DioException catch (e) {
+      final Response<dynamic>? response = e.response;
+      final Object? body = response?.data;
+      if (response != null && body is List<int>) {
+        Object? decoded;
+        try {
+          decoded = jsonDecode(utf8.decode(body));
+        } on FormatException {
+          decoded = null;
+        }
+        throw _translate(
+          e.copyWith(
+            response: Response<dynamic>(
+              requestOptions: response.requestOptions,
+              data: decoded,
+              statusCode: response.statusCode,
+              statusMessage: response.statusMessage,
+              headers: response.headers,
+            ),
+          ),
+        );
+      }
+      throw _translate(e);
     }
   }
 }

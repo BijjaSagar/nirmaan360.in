@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
 import '../haptics.dart';
+import '../internal/soft_surface.dart';
 import '../motion.dart';
 import '../surfaces/ledger_paper.dart';
 import '../tokens.dart';
@@ -13,11 +14,16 @@ import '../typography.dart';
 
 enum StampKind { draft, inReview, approved, returned, rejected, queued, synced }
 
+/// How a status is shown.
+///
+/// [small] and [medium] are quiet pills: straight, a dot and the word, for
+/// lists and headers. [large] and [hero] are the one real stamp, kept for the
+/// approval moment ([showStampThud]) and a document's final state.
 enum StampSize {
-  small(fontSize: 13.5, stroke: 1.4, gap: 1.2, hPad: 7, vPad: 1.5, tilt: 3),
-  medium(fontSize: 18, stroke: 1.9, gap: 1.6, hPad: 11, vPad: 3, tilt: 6),
-  large(fontSize: 26, stroke: 2.5, gap: 2, hPad: 15, vPad: 5, tilt: 10),
-  hero(fontSize: 44, stroke: 4, gap: 3, hPad: 22, vPad: 7, tilt: 18);
+  small(fontSize: 12, stroke: 1.5, gap: 1.2, hPad: 8, vPad: 2, tilt: 0),
+  medium(fontSize: 12, stroke: 1.5, gap: 1.2, hPad: 9, vPad: 3, tilt: 0),
+  large(fontSize: 18, stroke: 2, gap: 1.6, hPad: 12, vPad: 4, tilt: 6),
+  hero(fontSize: 30, stroke: 3, gap: 2.4, hPad: 18, vPad: 6, tilt: 10);
 
   const StampSize({
     required this.fontSize,
@@ -36,11 +42,14 @@ enum StampSize {
 
   /// Vertical room reserved for the corners of the rotated face.
   final double tilt;
+
+  /// True for the quiet pill form.
+  bool get isPill => this == small || this == medium;
 }
 
-const double _restAngle = -7 * math.pi / 180;
-const double _liftedAngle = -14 * math.pi / 180;
-const double _liftedScale = 2.2;
+const double _restAngle = -4 * math.pi / 180;
+const double _liftedAngle = -10 * math.pi / 180;
+const double _liftedScale = 2.0;
 
 extension StampKindInk on StampKind {
   /// Every kind stays at 4.5:1 or better on paper, sheet and paper2.
@@ -53,14 +62,19 @@ extension StampKindInk on StampKind {
         StampKind.queued => N360Colors.ink2,
         StampKind.synced => N360Colors.mossInk,
       };
+
+  /// The pill's fill: a faint, opaque wash of the ink on white.
+  Color get washColor => Color.alphaBlend(inkColor.withValues(alpha: 0.1), N360Colors.sheet);
 }
 
-/// A status pressed into the page at a slight angle. Colour is never the only
-/// signal: the caller's translated [label] is always on the face.
+/// A status. Colour is never the only signal: the caller's translated [label]
+/// is always on the face.
 ///
-/// With [animate] it lands with a thud: lifted large and turned further, then
-/// pressed down past its resting size and released. It is opaque from the first
-/// frame, because a status must never depend on an animation to be read.
+/// At [StampSize.small] or [StampSize.medium] this is a quiet pill and
+/// [animate] does nothing. At [StampSize.large] or [StampSize.hero] it is the
+/// stamp: with [animate] it lands with a thud, lifted and turned, then pressed
+/// down past its resting size and released. It is opaque from the first frame,
+/// because a status must never depend on an animation to be read.
 class RubberStamp extends StatefulWidget {
   const RubberStamp({
     super.key,
@@ -76,11 +90,23 @@ class RubberStamp extends StatefulWidget {
   final StampSize size;
   final bool animate;
 
-  /// Called once, as the stamp first touches the page.
+  /// Called once, as the stamp first touches the page. A pill calls it on its
+  /// first frame.
   final VoidCallback? onLanded;
 
   @override
   State<RubberStamp> createState() => _RubberStampState();
+}
+
+/// The quiet status pill, by its own name for screen authors.
+class StatusPill extends StatelessWidget {
+  const StatusPill({super.key, required this.kind, required this.label});
+
+  final StampKind kind;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => RubberStamp(kind: kind, label: label, size: StampSize.small);
 }
 
 class _RubberStampState extends State<RubberStamp> with SingleTickerProviderStateMixin {
@@ -94,19 +120,22 @@ class _RubberStampState extends State<RubberStamp> with SingleTickerProviderStat
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.animate && _thud == null && !context.motion.reduced) {
-      _play();
-    } else if (widget.animate && _thud == null && !_landed) {
-      _landed = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onLanded?.call());
+    if (!widget.animate || _landed && _thud == null) return;
+    if (widget.size.isPill || context.motion.reduced) {
+      if (_thud == null && !_landed) {
+        _landed = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => widget.onLanded?.call());
+      }
+      return;
     }
+    if (_thud == null) _play();
   }
 
   @override
   void didUpdateWidget(covariant RubberStamp oldWidget) {
     super.didUpdateWidget(oldWidget);
     final bool changed = oldWidget.kind != widget.kind || oldWidget.label != widget.label;
-    if (widget.animate && (!oldWidget.animate || changed) && !context.motion.reduced) {
+    if (widget.animate && (!oldWidget.animate || changed) && !widget.size.isPill && !context.motion.reduced) {
       _play();
     }
   }
@@ -133,6 +162,7 @@ class _RubberStampState extends State<RubberStamp> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    if (widget.size.isPill) return _PillFace(kind: widget.kind, label: widget.label, size: widget.size);
     final Widget face = _StampFace(kind: widget.kind, label: widget.label, size: widget.size);
     final thud = _thud;
     if (thud == null || !widget.animate) return face;
@@ -152,36 +182,87 @@ class _RubberStampState extends State<RubberStamp> with SingleTickerProviderStat
   }
 }
 
-class _StampFace extends StatelessWidget {
-  const _StampFace({required this.kind, required this.label, required this.size, this.onSlip = false});
+/// The quiet pill: a faint wash, a dot in the status ink, and the word as the
+/// caller wrote it. Queued shows a ring instead of a dot: not there yet.
+class _PillFace extends StatelessWidget {
+  const _PillFace({required this.kind, required this.label, required this.size});
 
   final StampKind kind;
   final String label;
   final StampSize size;
 
-  /// Painted over ruled lines on the hero slip, so the ink wear matches.
-  final bool onSlip;
+  @override
+  Widget build(BuildContext context) {
+    final Color ink = kind.inkColor;
+    final bool hollow = kind == StampKind.queued;
+    return Semantics(
+      container: true,
+      label: label,
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: kind.washColor,
+            borderRadius: const BorderRadius.all(Radius.circular(N360Size.pill)),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: size.hPad, vertical: size.vPad),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SizedBox.square(
+                  dimension: 7,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: hollow ? null : ink,
+                      border: hollow ? Border.all(color: ink, width: 1.5) : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: N360Type.fit(N360Type.caption, label).copyWith(color: ink, height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The one real stamp: capitals in a double ring, pressed at a slight angle.
+/// Clean ink, no distressing.
+class _StampFace extends StatelessWidget {
+  const _StampFace({required this.kind, required this.label, required this.size});
+
+  final StampKind kind;
+  final String label;
+  final StampSize size;
 
   @override
   Widget build(BuildContext context) {
     final Color ink = kind.inkColor;
-    final String text = N360Type.eyebrowText(label);
+    final String text = N360Type.stampText(label);
     final bool dashed = kind == StampKind.queued;
     final double inset = size.stroke + size.gap + 1;
 
     final TextStyle style = TextStyle(
-      fontFamily: N360Type.khand,
-      fontFamilyFallback: const <String>[N360Type.mukta],
+      fontFamily: N360Type.mukta,
       fontSize: size.fontSize,
       fontWeight: FontWeight.w700,
-      height: 1.34,
+      height: 1.35,
       leadingDistribution: TextLeadingDistribution.even,
       decoration: TextDecoration.none,
-      letterSpacing: N360Type.trackingFor(label, size.fontSize * 0.06),
+      letterSpacing: N360Type.trackingFor(label, size.fontSize * 0.08),
       color: ink,
     );
 
-    final TextScaler scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.3);
+    final TextScaler scaler = N360TextScale.of(context);
 
     return Semantics(
       container: true,
@@ -193,7 +274,6 @@ class _StampFace extends StatelessWidget {
             angle: _restAngle,
             child: CustomPaint(
               painter: _StampBorderPainter(color: ink, stroke: size.stroke, gap: size.gap, dashed: dashed),
-              foregroundPainter: _StampWearPainter(seed: label.hashCode, onSlip: onSlip),
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: size.hPad + inset, vertical: size.vPad + inset),
                 child: Text(text, style: style, textScaler: scaler, maxLines: 1, softWrap: false),
@@ -221,6 +301,7 @@ class _StampBorderPainter extends CustomPainter {
       const Radius.circular(N360Radius.small),
     );
     final inner = outer.deflate(stroke / 2 + gap + 0.5);
+
     final Paint paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -261,34 +342,7 @@ class _StampBorderPainter extends CustomPainter {
       oldDelegate.color != color || oldDelegate.stroke != stroke || oldDelegate.dashed != dashed;
 }
 
-/// Knocks a few flecks out of the ink so the impression looks pressed, not
-/// printed. The positions come from the label, so a stamp never shimmers.
-class _StampWearPainter extends CustomPainter {
-  const _StampWearPainter({required this.seed, required this.onSlip});
-
-  final int seed;
-  final bool onSlip;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = (onSlip ? N360Colors.sheet : N360Colors.paper).withValues(alpha: 0.82);
-    var s = (seed & 0x7fffffff) | 1;
-    int next() => s = (s * 1103515245 + 12345) & 0x7fffffff;
-    final bool small = size.height < 36;
-    final count = small ? 5 + (size.width / 26).floor() : 10 + (size.width / 18).floor();
-    for (var i = 0; i < count; i++) {
-      final dx = (next() % 1000) / 1000 * size.width;
-      final dy = (next() % 1000) / 1000 * size.height;
-      final radius = 0.3 + (next() % 100) / 100 * (size.height > 60 ? 1.5 : (small ? 0.35 : 0.6));
-      canvas.drawCircle(Offset(dx, dy), radius, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_StampWearPainter oldDelegate) => oldDelegate.seed != seed;
-}
-
-/// Slams a stamp onto a slip in the middle of the screen, for approvals and
+/// Slams the stamp onto a slip in the middle of the screen, for approvals and
 /// submissions. The page behind jolts on impact and a heavy haptic fires at
 /// that same moment, never at the start. Clears itself in under a second and
 /// the returned future completes when it has gone.
@@ -414,7 +468,7 @@ class _StampThudMomentState extends State<_StampThudMoment> with SingleTickerPro
   Widget build(BuildContext context) {
     final Size screen = MediaQuery.sizeOf(context);
     final Widget slip = _ThudSlip(
-      child: _StampFace(kind: widget.kind, label: widget.label, size: StampSize.hero, onSlip: true),
+      child: _StampFace(kind: widget.kind, label: widget.label, size: StampSize.hero),
     );
 
     if (_reduced) {
@@ -449,7 +503,6 @@ class _StampThudMomentState extends State<_StampThudMoment> with SingleTickerPro
                             kind: widget.kind,
                             label: widget.label,
                             size: StampSize.hero,
-                            onSlip: true,
                           ),
                         ),
                       ),
@@ -465,7 +518,7 @@ class _StampThudMomentState extends State<_StampThudMoment> with SingleTickerPro
   }
 }
 
-/// The sheet the stamp lands on: ruled, with a red margin, like a torn page.
+/// The white card the stamp lands on.
 class _ThudSlip extends StatelessWidget {
   const _ThudSlip({required this.child});
 
@@ -474,49 +527,15 @@ class _ThudSlip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: const _ThudSlipPainter(),
+      painter: const SoftSurfacePainter(edge: N360Colors.rule),
       child: SizedBox(
-        width: 300,
-        height: 216,
+        width: 280,
+        height: 176,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(N360Space.lg, N360Space.lg, N360Space.lg, N360Space.lg + N360Space.sm),
+          padding: const EdgeInsets.all(N360Space.lg),
           child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: child)),
         ),
       ),
     );
   }
-}
-
-class _ThudSlipPainter extends CustomPainter {
-  const _ThudSlipPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const edge = 5.0;
-    final face = Rect.fromLTWH(0, 0, size.width, size.height - edge);
-    canvas.drawRect(Rect.fromLTWH(3, edge, size.width - 3, size.height - edge), Paint()..color = N360Colors.paperEdge);
-    canvas.drawRect(face, Paint()..color = N360Colors.sheet);
-
-    final rule = Paint()
-      ..color = N360Colors.rule
-      ..strokeWidth = 1;
-    for (double y = 35.5; y < face.height; y += 36) {
-      canvas.drawLine(Offset(0, y), Offset(face.width, y), rule);
-    }
-    final margin = Paint()
-      ..color = N360Colors.marginRed
-      ..strokeWidth = 1;
-    canvas.drawLine(const Offset(34.5, 0), Offset(34.5, face.height), margin);
-    canvas.drawLine(const Offset(37.5, 0), Offset(37.5, face.height), margin);
-    canvas.drawRect(
-      face.deflate(0.5),
-      Paint()
-        ..color = N360Colors.ruleStrong
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

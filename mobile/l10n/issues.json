@@ -1,0 +1,332 @@
+{
+  "issuesTitle": {
+    "en": "Issues",
+    "mr": "समस्या",
+    "hi": "समस्याएँ"
+  },
+  "issuesEyebrow": {
+    "en": "Site issues",
+    "mr": "साइटवरील समस्या",
+    "hi": "साइट की समस्याएँ"
+  },
+  "issuesFilterAll": {
+    "en": "All",
+    "mr": "सर्व",
+    "hi": "सभी"
+  },
+  "issuesRaise": {
+    "en": "Raise issue",
+    "mr": "समस्या नोंदवा",
+    "hi": "समस्या दर्ज करें"
+  },
+  "issuesEmptyTitle": {
+    "en": "No issues on this site",
+    "mr": "या साइटवर एकही समस्या नाही",
+    "hi": "इस साइट पर कोई समस्या नहीं"
+  },
+  "issuesEmptyMessage": {
+    "en": "If something is wrong on site, raise it here so it gets fixed.",
+    "mr": "साइटवर काही बिघडले असेल तर इथे नोंदवा, म्हणजे ते दुरुस्त होईल.",
+    "hi": "साइट पर कुछ गड़बड़ हो तो यहाँ दर्ज करें, ताकि ठीक हो सके।"
+  },
+  "issuesEmptyFilterTitle": {
+    "en": "Nothing here",
+    "mr": "इथे काही नाही",
+    "hi": "यहाँ कुछ नहीं"
+  },
+  "issuesEmptyFilterMessage": {
+    "en": "No issues with this status.",
+    "mr": "या स्थितीत एकही समस्या नाही.",
+    "hi": "इस स्थिति में कोई समस्या नहीं।"
+  },
+  "issuesNoProjectTitle": {
+    "en": "No project chosen",
+    "mr": "प्रकल्प निवडलेला नाही",
+    "hi": "कोई प्रोजेक्ट नहीं चुना"
+  },
+  "issuesNoProjectMessage": {
+    "en": "Choose a project first, then raise issues here.",
+    "mr": "आधी प्रकल्प निवडा, मग इथे समस्या नोंदवा.",
+    "hi": "पहले प्रोजेक्ट चुनें, फिर यहाँ समस्या दर्ज करें।"
+  },
+  "issuesDueOn": {
+    "en": "Due {date}",
+    "mr": "मुदत {date}",
+    "hi": "समय सीमा {date}",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "issuesDueToday": {
+    "en": "Due today",
+    "mr": "आजच मुदत",
+    "hi": "आज तक"
+  },
+  "issuesOverdue": {
+    "en": "Overdue by {days} {days, plural, =1{day} other{days}}",
+    "mr": "{days} दिवस उशीर",
+    "hi": "{days} दिन की देरी",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "issuesNoDueDate": {
+    "en": "No due date",
+    "mr": "मुदत नाही",
+    "hi": "कोई समय सीमा नहीं"
+  },
+  "issuesUnassigned": {
+    "en": "Not assigned",
+    "mr": "कोणाकडेही नाही",
+    "hi": "किसी को नहीं सौंपा"
+  },
+  "issuesSyncSending": {
+    "en": "Sending",
+    "mr": "पाठवत आहे",
+    "hi": "भेज रहे हैं"
+  },
+  "issuesSyncAttention": {
+    "en": "Needs attention",
+    "mr": "लक्ष द्या",
+    "hi": "ध्यान दें"
+  },
+  "issuesFormEyebrow": {
+    "en": "New issue",
+    "mr": "नवीन समस्या",
+    "hi": "नई समस्या"
+  },
+  "issuesFormTitle": {
+    "en": "Raise an issue",
+    "mr": "समस्या नोंदवा",
+    "hi": "समस्या दर्ज करें"
+  },
+  "issuesFormWhat": {
+    "en": "What is wrong?",
+    "mr": "काय बिघडले आहे?",
+    "hi": "क्या गड़बड़ है?"
+  },
+  "issuesFormWhatHint": {
+    "en": "e.g. Crack in column C3",
+    "mr": "उदा. कॉलम C3 ला भेग",
+    "hi": "जैसे: कॉलम C3 में दरार"
+  },
+  "issuesFormWhatRequired": {
+    "en": "Write what is wrong.",
+    "mr": "काय बिघडले ते लिहा.",
+    "hi": "क्या गड़बड़ है, लिखें।"
+  },
+  "issuesFormPriority": {
+    "en": "How urgent is it?",
+    "mr": "किती तातडीचे आहे?",
+    "hi": "कितना ज़रूरी है?"
+  },
+  "issuesFormLocation": {
+    "en": "Where on site? (optional)",
+    "mr": "साइटवर कुठे? (ऐच्छिक)",
+    "hi": "साइट पर कहाँ? (वैकल्पिक)"
+  },
+  "issuesFormLocationHint": {
+    "en": "e.g. Grid C, third floor",
+    "mr": "उदा. ग्रिड C, तिसरा मजला",
+    "hi": "जैसे: ग्रिड C, तीसरी मंज़िल"
+  },
+  "issuesFormAssignee": {
+    "en": "Who will fix it? (optional)",
+    "mr": "कोण दुरुस्त करेल? (ऐच्छिक)",
+    "hi": "कौन ठीक करेगा? (वैकल्पिक)"
+  },
+  "issuesFormDue": {
+    "en": "Fix by (optional)",
+    "mr": "कधीपर्यंत दुरुस्त करायचे? (ऐच्छिक)",
+    "hi": "कब तक ठीक करना है? (वैकल्पिक)"
+  },
+  "issuesFormDueToday": {
+    "en": "Today",
+    "mr": "आज",
+    "hi": "आज"
+  },
+  "issuesFormDueThree": {
+    "en": "3 days",
+    "mr": "3 दिवस",
+    "hi": "3 दिन"
+  },
+  "issuesFormDueWeek": {
+    "en": "1 week",
+    "mr": "1 आठवडा",
+    "hi": "1 हफ़्ता"
+  },
+  "issuesFormSave": {
+    "en": "Save issue",
+    "mr": "समस्या जतन करा",
+    "hi": "समस्या सेव करें"
+  },
+  "issuesAssigneeSheetTitle": {
+    "en": "Assign to",
+    "mr": "कोणाकडे सोपवायचे",
+    "hi": "किसे सौंपें"
+  },
+  "issuesSavedOffline": {
+    "en": "Saved on phone. Sends when network returns.",
+    "mr": "फोनवर जतन झाले. नेटवर्क आल्यावर पाठवले जाईल.",
+    "hi": "फ़ोन पर सेव हुआ। नेटवर्क आने पर भेजा जाएगा।"
+  },
+  "issuesSavedOnline": {
+    "en": "Saved. Sending now.",
+    "mr": "जतन झाले. आता पाठवत आहे.",
+    "hi": "सेव हुआ। अभी भेज रहे हैं।"
+  },
+  "issuesSaveFailed": {
+    "en": "Could not save the issue. Try again.",
+    "mr": "समस्या जतन करता आली नाही. पुन्हा प्रयत्न करा.",
+    "hi": "समस्या सेव नहीं हुई। फिर से कोशिश करें।"
+  },
+  "issuesDetailPriority": {
+    "en": "Priority",
+    "mr": "प्राधान्य",
+    "hi": "प्राथमिकता"
+  },
+  "issuesDetailDue": {
+    "en": "Due date",
+    "mr": "अंतिम तारीख",
+    "hi": "अंतिम तारीख़"
+  },
+  "issuesDetailAssignee": {
+    "en": "Assigned to",
+    "mr": "सोपवले",
+    "hi": "सौंपा गया"
+  },
+  "issuesDetailRaisedBy": {
+    "en": "Raised by",
+    "mr": "नोंदवणारे",
+    "hi": "दर्ज करने वाले"
+  },
+  "issuesDetailResolvedOn": {
+    "en": "Resolved on",
+    "mr": "सोडवल्याची तारीख",
+    "hi": "हल होने की तारीख़"
+  },
+  "issuesDetailDescription": {
+    "en": "Details",
+    "mr": "तपशील",
+    "hi": "विवरण"
+  },
+  "issuesDetailMissingTitle": {
+    "en": "This issue is not on this phone",
+    "mr": "ही समस्या या फोनवर नाही",
+    "hi": "यह समस्या इस फ़ोन पर नहीं है"
+  },
+  "issuesDetailMissingMessage": {
+    "en": "It may have been removed. Go back to the list.",
+    "mr": "ती काढली गेली असावी. यादीकडे परत जा.",
+    "hi": "शायद हटा दी गई हो। सूची पर वापस जाएँ।"
+  },
+  "issuesActionStart": {
+    "en": "Start work",
+    "mr": "काम सुरू करा",
+    "hi": "काम शुरू करें"
+  },
+  "issuesActionResolve": {
+    "en": "Mark resolved",
+    "mr": "सोडवले म्हणून नोंदवा",
+    "hi": "हल हुआ दर्ज करें"
+  },
+  "issuesActionClose": {
+    "en": "Close issue",
+    "mr": "समस्या बंद करा",
+    "hi": "समस्या बंद करें"
+  },
+  "issuesActionReopen": {
+    "en": "Reopen",
+    "mr": "पुन्हा उघडा",
+    "hi": "फिर से खोलें"
+  },
+  "issuesStatusFailed": {
+    "en": "Could not change the status. Try again.",
+    "mr": "स्थिती बदलता आली नाही. पुन्हा प्रयत्न करा.",
+    "hi": "स्थिति नहीं बदली। फिर से कोशिश करें।"
+  },
+  "issuesAssignedUnknown": {
+    "en": "Assigned",
+    "mr": "सोपवलेले",
+    "hi": "सौंपा गया"
+  },
+  "issuesFormDueClear": {
+    "en": "Tap the chosen day again to clear it.",
+    "mr": "निवडलेल्या दिवसावर पुन्हा टॅप करून तो काढा.",
+    "hi": "चुने हुए दिन पर फिर से टैप करके उसे हटाएँ।"
+  },
+  "issuesLoading": {
+    "en": "Loading issues",
+    "mr": "समस्या लोड होत आहेत",
+    "hi": "समस्याएँ लोड हो रही हैं"
+  },
+  "issuesRefreshFailed": {
+    "en": "Could not update. Showing what is on this phone.",
+    "mr": "अपडेट करता आले नाही. फोनवर आहे तेच दाखवत आहे.",
+    "hi": "अपडेट नहीं हो सका। फ़ोन पर जो है वही दिखा रहे हैं।"
+  },
+  "issuesResolvedOn": {
+    "en": "Resolved {date}",
+    "mr": "सोडवले {date}",
+    "hi": "हल हुआ {date}",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "issuesPhotosTitle": {
+    "en": "Photos",
+    "mr": "फोटो",
+    "hi": "फ़ोटो"
+  },
+  "issuesPhotosBefore": {
+    "en": "Before",
+    "mr": "आधी",
+    "hi": "पहले"
+  },
+  "issuesPhotosAfter": {
+    "en": "After",
+    "mr": "नंतर",
+    "hi": "बाद में"
+  },
+  "issuesPhotosNone": {
+    "en": "No photos yet",
+    "mr": "अजून फोटो नाहीत",
+    "hi": "अभी कोई फ़ोटो नहीं"
+  },
+  "issuesPhotoAddBefore": {
+    "en": "Add before photo",
+    "mr": "आधीचा फोटो जोडा",
+    "hi": "पहले की फ़ोटो जोड़ें"
+  },
+  "issuesPhotoAddAfter": {
+    "en": "Add after photo",
+    "mr": "नंतरचा फोटो जोडा",
+    "hi": "बाद की फ़ोटो जोड़ें"
+  },
+  "issuesPhotoSavedOffline": {
+    "en": "Photo saved on phone. Sends when network returns.",
+    "mr": "फोटो फोनवर जतन झाला. नेटवर्क आल्यावर पाठवला जाईल.",
+    "hi": "फ़ोटो फ़ोन पर सेव हुई। नेटवर्क आने पर भेजी जाएगी।"
+  },
+  "issuesPhotoSavedOnline": {
+    "en": "Photo saved. Sending now.",
+    "mr": "फोटो जतन झाला. आता पाठवत आहे.",
+    "hi": "फ़ोटो सेव हुई। अभी भेज रहे हैं।"
+  },
+  "issuesPhotoFailed": {
+    "en": "Could not add the photo. Try again.",
+    "mr": "फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "फ़ोटो जोड़ी नहीं जा सकी। फिर से कोशिश करें।"
+  },
+  "issuesFormPhotos": {
+    "en": "Photos of the problem (optional)",
+    "mr": "समस्येचे फोटो (ऐच्छिक)",
+    "hi": "समस्या की फ़ोटो (वैकल्पिक)"
+  }
+}

@@ -13,8 +13,14 @@ import '../session/session_controller.dart';
 import 'attachment_store.dart';
 import 'clock.dart';
 import 'connectivity.dart';
+import 'contractor_payments.dart';
+import 'floor_entries.dart';
 import 'ids.dart';
+import 'inspection_cache.dart';
+import 'machine_cache.dart';
+import 'material_cache.dart';
 import 'pull_applier.dart';
+import 'record_photos.dart';
 import 'sync_status.dart';
 
 /// Pushes the outbox and pulls server changes.
@@ -53,6 +59,10 @@ class SyncEngine {
   /// Uploads answered with 404 this many times stop retrying and ask a person.
   final int parentMissingAttempts;
 
+  /// Runs after a successful pull. Failures here never fail the sync. The
+  /// argument is true when this run sent something.
+  Future<void> Function(bool sentSomething)? afterPull;
+
   /// Used when a 429 has no usable `Retry-After`: the limit's one-minute window.
   static const _defaultRateLimitWait = Duration(seconds: 60);
 
@@ -62,6 +72,12 @@ class SyncEngine {
   final AttachmentStore _attachments;
   final SessionController? _session;
   final OutboxDao _outbox;
+  late final RecordPhotos _photos = RecordPhotos(db: _db, api: _api, attachments: _attachments, clock: _clock);
+  late final FloorEntries _floorEntries = FloorEntries(db: _db, api: _api);
+  late final ContractorPayments _contractorPayments = ContractorPayments(_db);
+  late final InspectionCache _inspectionCache = InspectionCache(_db);
+  late final MachineCache _machineCache = MachineCache(_db);
+  late final MaterialCache _materialCache = MaterialCache(_db);
   final String _instanceId;
 
   late final StreamSubscription<bool> _connectivitySub;
@@ -141,7 +157,27 @@ class SyncEngine {
     return result;
   }
 
+  /// A contractor login has no sites: the server refuses its push and its pull
+  /// with a 403, and there is nothing of its own to send. Every way in to a
+  /// sync (the timer, a write, connectivity, resume, the sign-in, the
+  /// background task, the outbox screen) ends here, so this is the one place
+  /// that has to know. The portal reads itself; see `PortalRepository`.
+  Future<bool> _isContractorLogin() async {
+    final CurrentUser? signedIn = _session?.user;
+    if (signedIn != null) return signedIn.isContractor;
+    // The background task has no session of its own, only the saved user.
+    try {
+      final raw = await _db.readMeta(MetaKey.sessionUser);
+      if (raw == null) return false;
+      return CurrentUser.fromJson((jsonDecode(raw) as Map).cast<String, dynamic>()).isContractor;
+    } on Object {
+      return false;
+    }
+  }
+
   Future<SyncRunResult> _runOnce() async {
+    if (await _isContractorLogin()) return const SyncRunResult(SyncOutcome.success);
+
     final wait = await _rateLimitRemaining();
     if (wait != null) {
       _issue = SyncIssue.rateLimited;
@@ -164,7 +200,14 @@ class SyncEngine {
       await _pushAll();
 
       await _pull();
+      await _session?.reloadUser();
       _online = true;
+
+      try {
+        await afterPull?.call(_sentThisRun > 0);
+      } on Object catch (e) {
+        debugPrint('After-pull step failed: $e');
+      }
 
       final now = _clock.now();
       await _db.writeMeta(
@@ -287,12 +330,17 @@ class SyncEngine {
       if (heads.isEmpty) return;
 
       final batch = heads
-          .where((r) => !r.type.isFile)
+          .where((r) => !r.type.isFile && !r.type.isDirect)
           .take(batchSize)
           .toList();
       if (batch.isNotEmpty) {
         _setPhase(SyncPhase.pushing, _currentProgress());
         await _sendBatch(batch, deferredGroups);
+      }
+
+      for (final row in heads.where((r) => r.type.isDirect)) {
+        _setPhase(SyncPhase.pushing, _currentProgress(label: row.title));
+        await _sendDirect(row);
       }
 
       final files = heads.where((r) => r.type.isFile).toList();
@@ -437,6 +485,24 @@ class SyncEngine {
         return row?.serverId;
       case OutboxType.dprPhoto:
       case OutboxType.pettyBill:
+      case OutboxType.progressEntry:
+      case OutboxType.progressResolve:
+      case OutboxType.progressPhoto:
+      case OutboxType.stageCell:
+      case OutboxType.stagePhoto:
+      case OutboxType.materialChallan:
+      case OutboxType.materialUse:
+      case OutboxType.stockCount:
+      case OutboxType.issuePhoto:
+      case OutboxType.measurementPhoto:
+      case OutboxType.progressCorrection:
+      case OutboxType.contractorPayment:
+      case OutboxType.inspection:
+      case OutboxType.machineLog:
+      case OutboxType.goodsReceipt:
+      case OutboxType.materialIssue:
+      case OutboxType.attendanceScan:
+      case OutboxType.attendanceSelfie:
         return null;
     }
   }
@@ -472,11 +538,15 @@ class SyncEngine {
           reason: _conflictReason(result.reason),
         );
       case 'error':
+        // The project itself was refused, so nothing in the entry can fix it.
+        final projectGone = result.errors?.containsKey('project_id') ?? false;
         await _outbox.markAttention(
           row.id,
           resultStatus: 'error',
-          code: AttentionCode.validation,
-          reason: _validationReason(result.errors, result.reason),
+          code: projectGone ? AttentionCode.projectGone : AttentionCode.validation,
+          reason: projectGone
+              ? 'You no longer have access to this project.'
+              : _validationReason(result.errors, result.reason),
           errors: result.errors,
         );
       case 'forbidden':
@@ -554,8 +624,322 @@ class SyncEngine {
             );
       case OutboxType.dprPhoto:
       case OutboxType.pettyBill:
+      case OutboxType.progressEntry:
+      case OutboxType.progressResolve:
+      case OutboxType.progressPhoto:
+      case OutboxType.stageCell:
+      case OutboxType.stagePhoto:
+      case OutboxType.materialChallan:
+      case OutboxType.materialUse:
+      case OutboxType.stockCount:
+      case OutboxType.issuePhoto:
+      case OutboxType.measurementPhoto:
+      case OutboxType.progressCorrection:
+      case OutboxType.contractorPayment:
+      case OutboxType.inspection:
+      case OutboxType.machineLog:
+      case OutboxType.goodsReceipt:
+      case OutboxType.materialIssue:
+      case OutboxType.attendanceScan:
+      case OutboxType.attendanceSelfie:
         break;
     }
+  }
+
+  // Direct posts --------------------------------------------------------------
+
+  /// Sends one site progress or material row to its own endpoint.
+  ///
+  /// A row whose answer is lost is sent again with the same `client_uuid`, and
+  /// the server returns the first copy.
+  Future<void> _sendDirect(OutboxRow row) async {
+    final relativePath = row.filePath;
+    if (relativePath != null && !await _attachments.exists(relativePath)) {
+      await _outbox.markSending([row.id], _clock.now());
+      await _outbox.markAttention(
+        row.id,
+        resultStatus: 'error',
+        code: AttentionCode.fileMissing,
+        reason: 'The photo file is missing from this phone.',
+      );
+      _sentThisRun++;
+      _notifyProgress();
+      return;
+    }
+
+    await _outbox.markSending([row.id], _clock.now());
+
+    final Map<String, dynamic> stored;
+    try {
+      stored = await _postDirect(row);
+    } on ValidationFailure catch (e) {
+      await _outbox.markAttention(
+        row.id,
+        resultStatus: 'error',
+        code: AttentionCode.validation,
+        reason: _validationReason(e.errors, e.message),
+        errors: e.errors,
+      );
+      _sentThisRun++;
+      _notifyProgress();
+      return;
+    } on ServerFailure catch (e) {
+      if (e.statusCode == 403) {
+        await _outbox.markAttention(
+          row.id,
+          resultStatus: 'forbidden',
+          code: AttentionCode.forbidden,
+          reason: 'You do not have permission to do this.',
+        );
+      } else if (e.statusCode == 404) {
+        await _markNotFound(row);
+      } else if (e.statusCode == 409) {
+        // The record was approved or sent for review while this waited. The
+        // server's words are all that tell the two apart.
+        final inReview = e.message.toLowerCase().contains('review');
+        await _outbox.markAttention(
+          row.id,
+          resultStatus: 'conflict',
+          code: inReview ? AttentionCode.inReview : AttentionCode.approved,
+          reason: e.message,
+        );
+      } else {
+        await _outbox.releaseSending([row.id]);
+        rethrow;
+      }
+      _sentThisRun++;
+      _notifyProgress();
+      return;
+    } catch (_) {
+      await _outbox.releaseSending([row.id]);
+      rethrow;
+    }
+
+    _online = true;
+    final serverId = (stored['id'] as num?)?.toInt();
+    final PhotoOwner? owner = PhotoOwner.forType(row.type);
+    await _db.transaction(() async {
+      // A scan of a card already marked is the server saying nothing changed.
+      final String resultStatus = row.type == OutboxType.attendanceScan && stored['already_marked'] == true ? 'duplicate' : 'created';
+      if (!await _outbox.markDone(row.id, resultStatus, _clock.now())) return;
+      if (serverId != null) await _outbox.setParentId(row.recordUuid, serverId);
+      // The photo joins the record's list in the same moment its row is
+      // finished, so a screen never sees it twice or not at all.
+      if (owner != null) await _photos.remember(owner, row.projectId, stored, localRelativePath: relativePath);
+      // The same for an entry or a correction: the floor lists it at once.
+      if (row.type == OutboxType.progressEntry || row.type == OutboxType.progressCorrection) {
+        await _floorEntries.remember(row.projectId, stored);
+      }
+      // And for a payment request, so it never vanishes between being sent
+      // and the next read, when someone might raise it again.
+      if (row.type == OutboxType.contractorPayment) {
+        await _contractorPayments.remember(row.projectId, stored);
+      }
+      // An inspection too: it is locked on the server, so it must stay in the list.
+      if (row.type == OutboxType.inspection) {
+        await _inspectionCache.remember(row.projectId, stored);
+      }
+      // A machine log the same way, so it is listed from the moment it is stored.
+      if (row.type == OutboxType.machineLog) {
+        await _machineCache.remember(row.projectId, stored);
+      }
+      // A receipt or an issue moves what is due on the order and what the store holds,
+      // so the copy of material takes it in the same moment.
+      if (row.type == OutboxType.goodsReceipt) {
+        await _materialCache.rememberReceipt(row.projectId, stored);
+      }
+      if (row.type == OutboxType.materialIssue) {
+        await _materialCache.rememberIssue(row.projectId, stored);
+      }
+    });
+    _sentThisRun++;
+    _notifyProgress();
+
+    // Only now, with the upload confirmed and recorded, is the file removed.
+    if (relativePath != null) await _attachments.delete(relativePath);
+  }
+
+  Future<Map<String, dynamic>> _postDirect(OutboxRow row) async {
+    final data = (jsonDecode(row.payload) as Map).cast<String, dynamic>();
+    final body = <String, dynamic>{...data, 'client_uuid': row.wireUuid};
+
+    Future<Map<String, dynamic>> photo(
+      String path, {
+      String fileField = 'photo',
+      Map<String, String> fields = const <String, String>{},
+    }) async => _api.uploadFieldPhoto(
+      path,
+      filePath: await _attachments.absolutePath(row.filePath!),
+      clientUuid: row.wireUuid,
+      caption: data['caption'] as String?,
+      takenAt: data['taken_at'] as String?,
+      fileField: fileField,
+      fields: fields,
+    );
+
+    switch (row.type) {
+      case OutboxType.progressEntry:
+        return _api.postProgressEntry(row.projectId, body);
+      case OutboxType.progressResolve:
+        final entryId = (data['entry_id'] as num).toInt();
+        return _api.resolveProgress(entryId, {'remark': data['remark'], 'client_uuid': row.wireUuid});
+      case OutboxType.progressCorrection:
+        final correctedId = (data['entry_id'] as num).toInt();
+        return _api.correctProgress(correctedId, {
+          'qty_done': data['qty_done'],
+          'remark': data['remark'],
+          'client_uuid': row.wireUuid,
+        });
+      case OutboxType.stageCell:
+        return _api.postStageCell(row.projectId, body);
+      case OutboxType.progressPhoto:
+        return photo('/progress/entries/${_parentId(data)}/photos');
+      case OutboxType.stagePhoto:
+        return photo('/stage-cells/${_parentId(data)}/photos');
+      case OutboxType.issuePhoto:
+        return photo(
+          PhotoOwner.issue.listPath(await _recordId(OutboxType.issue, row)),
+          fileField: PhotoOwner.issue.fileField,
+          fields: <String, String>{'kind': data['kind'] as String? ?? IssuePhotoKind.before},
+        );
+      case OutboxType.measurementPhoto:
+        return photo(
+          PhotoOwner.measurement.listPath(await _recordId(OutboxType.measurement, row)),
+          fileField: PhotoOwner.measurement.fileField,
+          fields: <String, String>{'kind': data['kind'] as String? ?? MeasurementPhotoKind.photo},
+        );
+      case OutboxType.materialChallan:
+        final file = row.filePath;
+        return _api.postMaterialChallan(
+          row.projectId,
+          body,
+          filePath: file == null ? null : await _attachments.absolutePath(file),
+        );
+      case OutboxType.materialUse:
+        return _api.postMaterialUse(row.projectId, body);
+      case OutboxType.stockCount:
+        return _api.postStockCount(row.projectId, body);
+      case OutboxType.contractorPayment:
+        final int workOrderId = (data['work_order_id'] as num).toInt();
+        final file = row.filePath;
+        return _api.postContractorPayment(
+          workOrderId,
+          <String, dynamic>{...body}..remove('work_order_id'),
+          filePath: file == null ? null : await _attachments.absolutePath(file),
+        );
+      case OutboxType.inspection:
+        await _checkChecklistUnchanged(data);
+        // `local` is what the phone shows while it waits. The server needs the rest.
+        return _api.postInspection(row.projectId, <String, dynamic>{...body}..remove('local'));
+      case OutboxType.machineLog:
+        return _api.postMachineLog(body);
+      case OutboxType.goodsReceipt:
+        // `local` is what the phone shows while it waits. The server needs the rest.
+        return _api.postGoodsReceipt(row.projectId, <String, dynamic>{...body}..remove('local'));
+      case OutboxType.materialIssue:
+        return _api.postMaterialIssue(row.projectId, <String, dynamic>{...body}..remove('local'));
+      case OutboxType.attendanceSelfie:
+        await _checkConsentUnchanged(data);
+        return _api.uploadFieldPhoto(
+          '/projects/${row.projectId}/attendance/selfies',
+          filePath: await _attachments.absolutePath(row.filePath!),
+          clientUuid: row.wireUuid,
+          fileField: 'selfie',
+          fields: <String, String>{
+            for (final key in const <String>['site_id', 'worker_id', 'lat', 'lng', 'accuracy_m', 'captured_at', 'consent_version'])
+              if (data[key] != null) key: '${data[key]}',
+            'consent': '1',
+          },
+        );
+      case OutboxType.attendanceScan:
+        _checkScanIsToday(data);
+        return _api.postAttendanceScan(row.projectId, <String, dynamic>{'code': data['code'], 'client_uuid': row.wireUuid});
+      default:
+        throw StateError('${row.type} is not a direct row.');
+    }
+  }
+
+  /// The server marks a scanned card present for the day it receives the scan, and
+  /// the call has no date. A scan made yesterday and sent after midnight would put
+  /// the worker, and a day's wage, on the wrong day. So a queued scan is sent only
+  /// on the day it was made; after that it waits for a person, who marks that day by hand.
+  void _checkScanIsToday(Map<String, dynamic> data) {
+    final Object? scanned = data['scan_date'];
+    if (scanned is! String || scanned == istDate(_clock.now())) return;
+    final String message =
+        'This scan was made on $scanned. The server marks a scan on the day it receives it, so it was not sent. Mark attendance for $scanned by hand.';
+    throw ValidationFailure(message, errors: {'code': [message]});
+  }
+
+  /// The server stores its own consent version and note with the photo, not what
+  /// the phone showed. A photo taken under one note and sent after the note changed
+  /// would be recorded as agreed to the new one. So it waits for a person, who
+  /// takes it again with the new note.
+  Future<void> _checkConsentUnchanged(Map<String, dynamic> data) async {
+    final Map<String, dynamic> now = await _api.attendanceSelfieConsent();
+    final Object? taken = data['consent_version'];
+    if (taken == null || now['version'] == taken) return;
+    const String message =
+        'The consent note was changed after this photo was taken, so nothing was sent. Show the worker the new note and take the photo again.';
+    throw const ValidationFailure(message, errors: {'consent': [message]});
+  }
+
+  /// An inspection is marked by item position, and the server numbers the items
+  /// of whatever the checklist says when the call arrives. If the checklist was
+  /// edited after the phone copied it, position 3 may now be another check, and a
+  /// pass would be recorded against the wrong thing. A completed inspection cannot
+  /// be corrected afterwards, so this is checked before anything is sent.
+  Future<void> _checkChecklistUnchanged(Map<String, dynamic> data) async {
+    final Object? local = data['local'];
+    final Object? kept = local is Map ? local['items'] : null;
+    if (kept is! List) return;
+    final Object? id = data['checklist_template_id'];
+    final templates = await _api.checklistTemplates();
+    Map<String, dynamic>? current;
+    for (final template in templates) {
+      if (template['id'] == id) current = template;
+    }
+    const String gone = 'This checklist is no longer available. Nothing was sent.';
+    const String changed = 'This checklist was changed after you filled it in, so nothing was sent. Fill it in again.';
+    if (current == null) {
+      throw const ValidationFailure(gone, errors: {'checklist_template_id': [gone]});
+    }
+    final Object? now = current['items'];
+    final bool same = now is List && now.length == kept.length && <bool>[
+      for (var i = 0; i < kept.length; i++) now[i].toString() == kept[i].toString(),
+    ].every((bool equal) => equal);
+    if (!same) throw const ValidationFailure(changed, errors: {'checklist_template_id': [changed]});
+  }
+
+  /// Set when the parent row was accepted, which the group order guarantees
+  /// comes first. Without it the server has nothing to attach the file to.
+  int _parentId(Map<String, dynamic> data) {
+    final id = data['parent_id'];
+    if (id is num) return id.toInt();
+    throw const ServerFailure('The parent record was not found.', statusCode: 404);
+  }
+
+  /// The server id of the record a photo belongs to, read now: it may have
+  /// arrived after the photo was queued, when the record's own row was sent.
+  Future<int> _recordId(OutboxType recordType, OutboxRow row) async {
+    final String? uuid = row.parentUuid;
+    final int? id = uuid == null ? null : await _serverIdFor(recordType, uuid);
+    if (id != null) return id;
+    throw const ServerFailure('The parent record was not found.', statusCode: 404);
+  }
+
+  Future<void> _markNotFound(OutboxRow row) async {
+    final project = await (_db.select(_db.projects)
+          ..where((t) => t.id.equals(row.projectId)))
+        .getSingleOrNull();
+    await _outbox.markAttention(
+      row.id,
+      resultStatus: 'error',
+      code: project == null ? AttentionCode.projectGone : AttentionCode.parentMissing,
+      reason: project == null
+          ? 'You no longer have access to this project.'
+          : 'The record this belongs to was not found on the server.',
+    );
   }
 
   // Uploads -------------------------------------------------------------------
@@ -653,11 +1037,17 @@ class SyncEngine {
     Set<String> deferredGroups,
   ) async {
     if (row.notFoundCount + 1 >= parentMissingAttempts) {
+      final project = await (_db.select(_db.projects)
+            ..where((t) => t.id.equals(row.projectId)))
+          .getSingleOrNull();
+      final projectGone = project == null;
       await _outbox.markAttention(
         row.id,
         resultStatus: 'error',
-        code: AttentionCode.parentMissing,
-        reason: 'The record this file belongs to was not found on the server.',
+        code: projectGone ? AttentionCode.projectGone : AttentionCode.parentMissing,
+        reason: projectGone
+            ? 'You no longer have access to this project.'
+            : 'The record this file belongs to was not found on the server.',
       );
       _sentThisRun++;
     } else {

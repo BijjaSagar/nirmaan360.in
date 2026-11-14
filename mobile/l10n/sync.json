@@ -22,6 +22,7 @@
   "syncReasonPlanFeature": { "en": "Your plan does not include this module.", "mr": "तुमच्या प्लॅनमध्ये हा विभाग नाही.", "hi": "आपके प्लान में यह मॉड्यूल शामिल नहीं है।" },
   "syncReasonFileMissing": { "en": "The photo is missing from this phone.", "mr": "फोटो या फोनवर सापडला नाही.", "hi": "फ़ोटो इस फ़ोन पर नहीं मिली।" },
   "syncReasonParentMissing": { "en": "The record this file belongs to was not found on the server.", "mr": "ही फाइल ज्या नोंदीची आहे ती सर्व्हरवर सापडली नाही.", "hi": "जिस रिकॉर्ड की यह फ़ाइल है वह सर्वर पर नहीं मिला।" },
+  "syncReasonProjectGone": { "en": "You no longer have access to this project. Ask your office to add you back, then try again.", "mr": "या प्रकल्पाचा प्रवेश आता तुमच्याकडे नाही. कार्यालयाला पुन्हा जोडायला सांगा आणि मग पुन्हा प्रयत्न करा.", "hi": "अब इस प्रोजेक्ट की पहुँच आपके पास नहीं है। ऑफ़िस से दोबारा जोड़ने को कहें, फिर से कोशिश करें।" },
   "syncReasonUnexpected": { "en": "The server sent an unexpected reply.", "mr": "सर्व्हरकडून अनपेक्षित उत्तर आले.", "hi": "सर्वर से अप्रत्याशित उत्तर मिला।" },
   "syncTypeDpr": { "en": "Daily report", "mr": "दैनिक अहवाल", "hi": "दैनिक रिपोर्ट" },
   "syncTypeDprPhoto": { "en": "Report photo", "mr": "अहवालाचा फोटो", "hi": "रिपोर्ट फ़ोटो" },
@@ -32,5 +33,19 @@
   "syncTypeIssueStatus": { "en": "Issue status", "mr": "समस्येची स्थिती", "hi": "समस्या की स्थिति" },
   "syncTypeAttendance": { "en": "Attendance", "mr": "हजेरी", "hi": "हाज़िरी" },
   "syncTypePettyCash": { "en": "Petty cash entry", "mr": "किरकोळ रोख नोंद", "hi": "फुटकर नकद प्रविष्टि" },
-  "syncTypePettyBill": { "en": "Bill photo", "mr": "बिलाचा फोटो", "hi": "बिल की फ़ोटो" }
+  "syncTypePettyBill": { "en": "Bill photo", "mr": "बिलाचा फोटो", "hi": "बिल की फ़ोटो" },
+  "syncTypeProgress": { "en": "Site progress", "mr": "साइट प्रगती", "hi": "साइट प्रगति" },
+  "syncTypeProgressResolve": { "en": "Pending item resolved", "mr": "बाकी काम पूर्ण", "hi": "बाकी काम पूरा" },
+  "syncTypeProgressPhoto": { "en": "Progress photo", "mr": "प्रगतीचा फोटो", "hi": "प्रगति की फ़ोटो" },
+  "syncTypeStage": { "en": "Stage update", "mr": "टप्प्याची नोंद", "hi": "चरण की जानकारी" },
+  "syncTypeStagePhoto": { "en": "Stage photo", "mr": "टप्प्याचा फोटो", "hi": "चरण की फ़ोटो" },
+  "syncTypeIssuePhoto": { "en": "Issue photo", "mr": "समस्येचा फोटो", "hi": "समस्या की फ़ोटो" },
+  "syncTypeMeasurementPhoto": { "en": "Measurement photo", "mr": "मोजमापाचा फोटो", "hi": "माप की फ़ोटो" },
+  "syncTypeProgressCorrection": { "en": "Progress correction", "mr": "प्रगतीची दुरुस्ती", "hi": "प्रगति में सुधार" },
+  "syncTypeContractorPayment": { "en": "Contractor payment request", "mr": "ठेकेदार देयक विनंती", "hi": "ठेकेदार भुगतान अनुरोध" },
+  "syncTypeInspection": { "en": "Inspection", "mr": "पाहणी", "hi": "निरीक्षण" },
+  "syncTypeMachineLog": { "en": "Machine log", "mr": "यंत्र नोंद", "hi": "मशीन लॉग" },
+  "syncTypeGoodsReceipt": { "en": "Goods receipt", "mr": "माल स्वीकृती", "hi": "माल की प्राप्ति" },
+  "syncTypeAttendanceScan": { "en": "Card scan", "mr": "कार्ड स्कॅन", "hi": "कार्ड स्कैन" },
+  "syncTypeMaterialIssue": { "en": "Store issue", "mr": "स्टोअरमधून वितरण", "hi": "स्टोर से निकासी" }
 }

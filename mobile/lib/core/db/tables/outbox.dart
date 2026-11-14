@@ -14,7 +14,25 @@ enum OutboxType {
   issueStatus('issue_status'),
   attendance('attendance'),
   pettyCash('petty_cash'),
-  pettyBill('petty_bill');
+  pettyBill('petty_bill'),
+  progressEntry('progress_entry'),
+  progressResolve('progress_resolve'),
+  progressPhoto('progress_photo'),
+  stageCell('stage_cell'),
+  stagePhoto('stage_photo'),
+  materialChallan('material_challan'),
+  materialUse('material_use'),
+  stockCount('stock_count'),
+  issuePhoto('issue_photo'),
+  measurementPhoto('measurement_photo'),
+  progressCorrection('progress_correction'),
+  contractorPayment('contractor_payment'),
+  inspection('inspection'),
+  machineLog('machine_log'),
+  goodsReceipt('goods_receipt'),
+  materialIssue('material_issue'),
+  attendanceScan('attendance_scan'),
+  attendanceSelfie('attendance_selfie');
 
   const OutboxType(this.wire);
 
@@ -22,6 +40,30 @@ enum OutboxType {
 
   /// File uploads go through `/sync/upload`, one at a time.
   bool get isFile => this == OutboxType.dprPhoto || this == OutboxType.pettyBill;
+
+  /// Site progress, material, contractor payments, inspections, machine logs, goods receipts, store issues, card scans, attendance photos and the photos on issues and measurements have their own endpoints. Each row is
+  /// posted on its own, with the same `client_uuid` on every attempt.
+  bool get isDirect => switch (this) {
+    OutboxType.progressEntry ||
+    OutboxType.progressResolve ||
+    OutboxType.progressPhoto ||
+    OutboxType.stageCell ||
+    OutboxType.stagePhoto ||
+    OutboxType.materialChallan ||
+    OutboxType.materialUse ||
+    OutboxType.stockCount ||
+    OutboxType.issuePhoto ||
+    OutboxType.measurementPhoto ||
+    OutboxType.progressCorrection ||
+    OutboxType.contractorPayment ||
+    OutboxType.inspection ||
+    OutboxType.machineLog ||
+    OutboxType.goodsReceipt ||
+    OutboxType.materialIssue ||
+    OutboxType.attendanceScan ||
+    OutboxType.attendanceSelfie => true,
+    _ => false,
+  };
 }
 
 /// One row per user action waiting to reach the server.
@@ -94,5 +136,6 @@ abstract final class AttentionCode {
   static const planFeature = 'plan_feature';
   static const fileMissing = 'file_missing';
   static const parentMissing = 'parent_missing';
+  static const projectGone = 'project_gone';
   static const unexpected = 'unexpected';
 }

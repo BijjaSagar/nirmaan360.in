@@ -6,9 +6,11 @@ import '../../../core/money/money.dart';
 import '../../../core/sync/data_context.dart';
 import '../../../core/sync/failures.dart';
 import '../../../core/sync/ids.dart';
+import '../../../core/sync/record_photos.dart';
 import '../../../core/sync/record_sync.dart';
 
 export '../../../core/db/app_database.dart' show MeasurementRow, DocStatus;
+export '../../../core/sync/record_photos.dart' show RecordPhoto, ServerPhoto, MeasurementPhotoKind, RecordPhotos;
 export '../../../core/sync/record_sync.dart' show SyncedRecord, LocalSyncState;
 
 /// The fields of a measurement entry form.
@@ -25,6 +27,7 @@ class MeasurementInput {
     this.depth,
     this.isDeduction = false,
     this.remarks,
+    this.photoPaths = const <String>[],
   });
 
   final int projectId;
@@ -38,6 +41,9 @@ class MeasurementInput {
   final Qty? depth;
   final bool isDeduction;
   final String? remarks;
+
+  /// Photos taken for this entry, copied in and queued behind it when it is saved.
+  final List<String> photoPaths;
 
   /// Local preview, computed exactly as the server will.
   Qty get qty => computeMeasurementQty(nos, length, breadth, depth, isDeduction);
@@ -54,48 +60,20 @@ class MeasurementRepository {
   ///
   /// Throws [ValidationFailure] for values the server would refuse, so the
   /// engineer can fix them now instead of seeing them rejected a week later.
-  Future<String> create(MeasurementInput input) {
+  Future<String> create(MeasurementInput input) async {
     _validate(input);
+    final List<StagedPhoto> staged = await _stagePhotos(input);
     return _db.transaction(() async {
       final uuid = newUuid();
       final stamp = _ctx.nextStamp(const []);
-      await _db.into(_db.measurements).insert(
-        MeasurementsCompanion.insert(
-          clientUuid: uuid,
-          projectId: input.projectId,
-          boqItemId: input.boqItemId,
-          measuredOn: input.measuredOn,
-          description: Value(input.description),
-          location: Value(input.location),
-          nos: Value(input.nos),
-          length: Value(input.length),
-          breadth: Value(input.breadth),
-          depth: Value(input.depth),
-          isDeduction: Value(input.isDeduction),
-          qty: input.qty,
-          remarks: Value(input.remarks),
-          createdBy: Value(_ctx.currentUserId),
-          clientUpdatedAt: Value(stamp),
-        ),
-      );
-      await _enqueueEntry(uuid, input, stamp);
-      return uuid;
-    });
-  }
-
-  /// Edits a DRAFT or RETURNED entry and queues the change.
-  Future<void> edit(String clientUuid, MeasurementInput input) {
-    _validate(input);
-    return _db.transaction(() async {
-      final entry = await _require(clientUuid);
-      await _assertEditable(entry);
-      final stamp = _ctx.nextStamp([entry.clientUpdatedAt, entry.updatedAt]);
-      await (_db.update(_db.measurements)
-            ..where((t) => t.clientUuid.equals(clientUuid)))
-          .write(
-            MeasurementsCompanion(
-              boqItemId: Value(input.boqItemId),
-              measuredOn: Value(input.measuredOn),
+      await _db
+          .into(_db.measurements)
+          .insert(
+            MeasurementsCompanion.insert(
+              clientUuid: uuid,
+              projectId: input.projectId,
+              boqItemId: input.boqItemId,
+              measuredOn: input.measuredOn,
               description: Value(input.description),
               location: Value(input.location),
               nos: Value(input.nos),
@@ -103,13 +81,78 @@ class MeasurementRepository {
               breadth: Value(input.breadth),
               depth: Value(input.depth),
               isDeduction: Value(input.isDeduction),
-              qty: Value(input.qty),
+              qty: input.qty,
               remarks: Value(input.remarks),
+              createdBy: Value(_ctx.currentUserId),
               clientUpdatedAt: Value(stamp),
             ),
           );
-      await _enqueueEntry(clientUuid, input, stamp);
+      await _enqueueEntry(uuid, input, stamp);
+      await _queuePhotos(staged, uuid, input, serverKnows: false);
+      return uuid;
     });
+  }
+
+  /// Edits a DRAFT or RETURNED entry and queues the change.
+  Future<void> edit(String clientUuid, MeasurementInput input) async {
+    _validate(input);
+    final List<StagedPhoto> staged = await _stagePhotos(input);
+    return _db.transaction(() async {
+      final entry = await _require(clientUuid);
+      await _assertEditable(entry);
+      final stamp = _ctx.nextStamp([entry.clientUpdatedAt, entry.updatedAt]);
+      await (_db.update(_db.measurements)..where((t) => t.clientUuid.equals(clientUuid))).write(
+        MeasurementsCompanion(
+          boqItemId: Value(input.boqItemId),
+          measuredOn: Value(input.measuredOn),
+          description: Value(input.description),
+          location: Value(input.location),
+          nos: Value(input.nos),
+          length: Value(input.length),
+          breadth: Value(input.breadth),
+          depth: Value(input.depth),
+          isDeduction: Value(input.isDeduction),
+          qty: Value(input.qty),
+          remarks: Value(input.remarks),
+          clientUpdatedAt: Value(stamp),
+        ),
+      );
+      await _enqueueEntry(clientUuid, input, stamp);
+      await _queuePhotos(staged, clientUuid, input, serverKnows: entry.serverId != null);
+    });
+  }
+
+  /// The entry's photos: the server's, then those waiting to be sent.
+  Stream<List<RecordPhoto>> watchPhotos(String clientUuid) => _ctx.photos.watch(PhotoOwner.measurement, clientUuid);
+
+  /// Reads the server's list again. Throws when it cannot be reached.
+  Future<void> refreshPhotos(String clientUuid) => _ctx.photos.refresh(PhotoOwner.measurement, clientUuid);
+
+  /// Queues photos for an entry already on the phone. Throws [RecordLocked]
+  /// once the entry is with the approver, approved, or waiting to be sent.
+  Future<void> addPhotos(String clientUuid, List<String> paths) =>
+      _ctx.photos.add(PhotoOwner.measurement, clientUuid, paths, kind: MeasurementPhotoKind.photo);
+
+  Future<Uint8List> photoBytes(ServerPhoto photo) => _ctx.photos.bytes(PhotoOwner.measurement, photo);
+
+  Future<List<StagedPhoto>> _stagePhotos(MeasurementInput input) =>
+      _ctx.photos.stage(input.photoPaths.take(RecordPhotos.maxPerKind).toList());
+
+  Future<void> _queuePhotos(
+    List<StagedPhoto> staged,
+    String uuid,
+    MeasurementInput input, {
+    required bool serverKnows,
+  }) {
+    return _ctx.photos.queue(
+      PhotoOwner.measurement,
+      staged,
+      parentUuid: uuid,
+      projectId: input.projectId,
+      parentKnownToServer: serverKnows,
+      kind: MeasurementPhotoKind.photo,
+      title: input.qty.format(),
+    );
   }
 
   /// Queues the submission. A second call while one is waiting does nothing.
@@ -133,10 +176,7 @@ class MeasurementRepository {
   }
 
   /// By project, optionally one [status], newest first.
-  Stream<List<SyncedRecord<MeasurementRow>>> watchByProject(
-    int projectId, {
-    String? status,
-  }) {
+  Stream<List<SyncedRecord<MeasurementRow>>> watchByProject(int projectId, {String? status}) {
     return _db.watchDerived({_db.measurements, _db.outbox}, () async {
       final rows =
           await (_db.select(_db.measurements)
@@ -147,10 +187,7 @@ class MeasurementRepository {
                   }
                   return condition;
                 })
-                ..orderBy([
-                  (t) => OrderingTerm.desc(t.measuredOn),
-                  (t) => OrderingTerm.desc(t.clientUpdatedAt),
-                ]))
+                ..orderBy([(t) => OrderingTerm.desc(t.measuredOn), (t) => OrderingTerm.desc(t.clientUpdatedAt)]))
               .get();
       final states = await SyncStates.load(_db);
       return [for (final row in rows) states.wrap(row, row.clientUuid)];
@@ -168,12 +205,7 @@ class MeasurementRepository {
 
   void _validate(MeasurementInput input) {
     _ctx.assertNotFuture(input.measuredOn, 'measured_on');
-    final dimensions = {
-      'nos': input.nos,
-      'length': input.length,
-      'breadth': input.breadth,
-      'depth': input.depth,
-    };
+    final dimensions = {'nos': input.nos, 'length': input.length, 'breadth': input.breadth, 'depth': input.depth};
     dimensions.forEach((field, value) {
       if (value != null && value <= Qty.zero) {
         throw ValidationFailure(
@@ -186,11 +218,7 @@ class MeasurementRepository {
     });
   }
 
-  Future<void> _enqueueEntry(
-    String uuid,
-    MeasurementInput input,
-    DateTime stamp,
-  ) {
+  Future<void> _enqueueEntry(String uuid, MeasurementInput input, DateTime stamp) {
     return _ctx.outbox.enqueue(
       type: OutboxType.measurement,
       wireUuid: uuid,
@@ -218,9 +246,7 @@ class MeasurementRepository {
   }
 
   Future<MeasurementRow?> _find(String clientUuid) {
-    return (_db.select(_db.measurements)
-          ..where((t) => t.clientUuid.equals(clientUuid)))
-        .getSingleOrNull();
+    return (_db.select(_db.measurements)..where((t) => t.clientUuid.equals(clientUuid))).getSingleOrNull();
   }
 
   Future<MeasurementRow> _require(String clientUuid) async {
@@ -231,13 +257,12 @@ class MeasurementRepository {
 
   Future<bool> _hasUnsentSubmit(String clientUuid) async {
     final rows =
-        await (_db.select(_db.outbox)
-              ..where(
-                (t) =>
-                    t.recordUuid.equals(clientUuid) &
-                    t.type.equals(OutboxType.measurementSubmit.name) &
-                    t.status.equals(OutboxStatus.done.name).not(),
-              ))
+        await (_db.select(_db.outbox)..where(
+              (t) =>
+                  t.recordUuid.equals(clientUuid) &
+                  t.type.equals(OutboxType.measurementSubmit.name) &
+                  t.status.equals(OutboxStatus.done.name).not(),
+            ))
             .get();
     return rows.isNotEmpty;
   }

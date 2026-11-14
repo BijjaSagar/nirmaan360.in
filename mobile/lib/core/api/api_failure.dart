@@ -21,7 +21,11 @@ class AuthExpired extends ApiFailure {
 /// HTTP 429. The server asked for a pause. Not an error with the data: the
 /// request is simply repeated once [retryAfter] has passed.
 class RateLimited extends ApiFailure {
-  const RateLimited({this.retryAfter}) : super('Too many requests.');
+  const RateLimited({this.retryAfter, this.serverMessage}) : super('Too many requests.');
+
+  /// What the server wrote in the reply, when it wrote anything. A screen that
+  /// has to explain a refusal shows this, in the server's own words.
+  final String? serverMessage;
 
   /// How long the server asked to wait, from `Retry-After`.
   final Duration? retryAfter;
@@ -29,14 +33,28 @@ class RateLimited extends ApiFailure {
 
 /// HTTP 422. [errors] maps field names to messages.
 class ValidationFailure extends ApiFailure {
-  const ValidationFailure(super.message, {this.errors = const {}});
+  const ValidationFailure(super.message, {this.errors = const {}, this.code, this.data});
 
   final Map<String, List<String>> errors;
+
+  /// The reply's machine-readable `code`, when it has one. A document reader
+  /// refuses a page picture this way: a 422 with a `code` such as
+  /// `image_too_big` and no `errors`.
+  final String? code;
+
+  /// The whole reply, for a caller that needs the numbers sent with the [code].
+  final Map<String, dynamic>? data;
 }
 
 /// Any other non-success response, including 403, 404, 409 and 5xx.
 class ServerFailure extends ApiFailure {
-  const ServerFailure(super.message, {this.statusCode});
+  const ServerFailure(super.message, {this.statusCode, this.code, this.data});
 
   final int? statusCode;
+
+  /// The reply's machine-readable `code`, when it has one.
+  final String? code;
+
+  /// The whole reply, for a caller that needs more than the [code].
+  final Map<String, dynamic>? data;
 }

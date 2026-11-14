@@ -11,6 +11,8 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   exclude:
+    # Flutter copies each iOS plugin here to build it. Their own tests are not ours to analyse.
+    - build/**
     - lib/l10n/generated/**
     - '**/*.g.dart'
 

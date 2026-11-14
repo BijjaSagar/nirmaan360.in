@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'connection.dart';
 import 'converters.dart';
 import '../money/money.dart';
+import 'status.dart';
 import 'tables/field_tables.dart';
 import 'tables/masters.dart';
 import 'tables/outbox.dart';
@@ -45,11 +46,23 @@ class AppDatabase extends _$AppDatabase {
   factory AppDatabase.open() => AppDatabase(openAppConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
-  MigrationStrategy get migration =>
-      MigrationStrategy(onCreate: (m) => m.createAll());
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(projects, projects.imageUrl);
+        // Rows already here have not changed, so a delta pull would never
+        // bring their new field.
+        await customStatement(
+          'INSERT OR REPLACE INTO key_values (key, value) VALUES (?, ?)',
+          <Object>[MetaKey.fullRefresh, '1'],
+        );
+      }
+    },
+  );
 
   /// Reads one key-value entry.
   Future<String?> readMeta(String key) async {

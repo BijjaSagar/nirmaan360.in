@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../haptics.dart';
 import '../internal/press_target.dart';
+import '../internal/soft_surface.dart';
 import '../signature/rolling_number.dart';
 import '../tokens.dart';
 import '../typography.dart';
 
-/// One measured dimension: Nos, L, B or D. The active tile carries a drafting
-/// dimension line, the web's `.dim-line`, so the eye knows where digits will go.
+/// One measured dimension: Nos, L, B or D. The active tile has a primary edge
+/// and a thin primary bar under the figure, so the eye knows where digits go.
 class DimensionTile extends StatelessWidget {
   const DimensionTile({
     super.key,
@@ -30,11 +31,14 @@ class DimensionTile extends StatelessWidget {
   /// Shown when [value] is empty.
   final String placeholder;
 
+  static const double _minHeight = 60;
+
   @override
   Widget build(BuildContext context) {
     final bool empty = value.isEmpty;
-    final TextStyle numberStyle = N360Type.figure.copyWith(
-      fontSize: 19,
+    final TextStyle numberStyle = N360Type.figureLarge.copyWith(
+      fontSize: 17,
+      letterSpacing: 0,
       color: empty ? N360Colors.inkLabel : N360Colors.ink,
     );
 
@@ -52,18 +56,18 @@ class DimensionTile extends StatelessWidget {
           children: <Widget>[
             Expanded(
               child: Text(
-                N360Type.eyebrowText(label),
+                label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: N360Type.eyebrowFor(label).copyWith(
-                  color: active ? N360Colors.stampRed : N360Colors.inkLabel,
+                  color: active ? N360Colors.laterite : N360Colors.inkLabel,
                 ),
               ),
             ),
-            if (unit != null) Text(unit!, style: N360Type.caption.copyWith(fontSize: 13)),
+            if (unit != null) Text(unit!, style: N360Type.caption),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1),
         number,
       ],
     );
@@ -71,18 +75,29 @@ class DimensionTile extends StatelessWidget {
     return PressTarget(
       onTap: onTap,
       haptic: N360Haptics.select,
-      minHeight: 72,
+      minHeight: _minHeight,
       semanticsLabel: '$label ${empty ? placeholder : value}${unit == null ? '' : ' $unit'}',
       selected: active,
       child: contents,
       builder: (context, depth, child) {
-        return CustomPaint(
-          painter: _DimensionPainter(active: active, depth: depth),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 72),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(N360Space.sm, N360Space.sm, N360Space.sm, N360Space.md + 2),
-              child: child,
+        return Transform.scale(
+          scale: pressedScale(depth),
+          child: CustomPaint(
+            painter: active
+                ? const SoftSurfacePainter(
+                    radius: N360Radius.tile,
+                    fill: N360Colors.sheet,
+                    edge: N360Colors.primary,
+                    edgeWidth: 1.5,
+                  )
+                : const SoftSurfacePainter(radius: N360Radius.tile, edge: N360Colors.rule),
+            foregroundPainter: active ? const _ActiveBarPainter() : null,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: _minHeight),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(N360Space.sm, 6, 6, N360Space.sm + 2),
+                child: child,
+              ),
             ),
           ),
         );
@@ -91,42 +106,19 @@ class DimensionTile extends StatelessWidget {
   }
 }
 
-class _DimensionPainter extends CustomPainter {
-  const _DimensionPainter({required this.active, required this.depth});
-
-  final bool active;
-  final double depth;
+class _ActiveBarPainter extends CustomPainter {
+  const _ActiveBarPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final RRect tile = RRect.fromRectAndRadius(
-      (Offset.zero & size).deflate(active ? 1 : 0.5),
-      const Radius.circular(N360Radius.small),
-    );
-    canvas.drawRRect(tile, Paint()..color = N360Colors.sheet);
+    const double inset = 8;
+    final Rect bar = Rect.fromLTWH(inset, size.height - 6, size.width - inset * 2, 2);
     canvas.drawRRect(
-      tile,
-      Paint()
-        ..color = active ? N360Colors.laterite : N360Colors.ruleStrong
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = active ? 2 : 1,
+      RRect.fromRectAndRadius(bar, const Radius.circular(1)),
+      Paint()..color = N360Colors.primary,
     );
-    if (!active) return;
-
-    // A dimension line under the figure, with the tilted ticks of a drawing.
-    final Paint line = Paint()
-      ..color = N360Colors.laterite
-      ..strokeWidth = 1.4;
-    final double y = size.height - 8.5;
-    const inset = 9.0;
-    canvas.drawLine(Offset(inset, y), Offset(size.width - inset, y), line);
-    const tick = 5.0;
-    void mark(double x) => canvas.drawLine(Offset(x - 2.6, y + tick), Offset(x + 2.6, y - tick), line);
-    mark(inset);
-    mark(size.width - inset);
   }
 
   @override
-  bool shouldRepaint(_DimensionPainter oldDelegate) =>
-      oldDelegate.active != active || oldDelegate.depth != depth;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_critical_name">तातडीच्या सूचना</string>
+    <string name="notification_channel_critical_description">साइटवरील ज्या सूचनांवर लगेच काही करायला हवे.</string>
+    <string name="notification_channel_updates_name">मंजुरी आणि अपडेट</string>
+    <string name="notification_channel_updates_description">तुमच्या मंजुरीसाठी थांबलेले काम, पेमेंट, साहित्याची तपासणी आणि समस्या.</string>
+</resources>

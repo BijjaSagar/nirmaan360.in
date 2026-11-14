@@ -106,6 +106,17 @@ class $ProjectsTable extends Projects
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageUrlMeta = const VerificationMeta(
+    'imageUrl',
+  );
+  @override
+  late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
+    'image_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -117,6 +128,7 @@ class $ProjectsTable extends Projects
     endDate,
     measurementTolerancePct,
     updatedAt,
+    imageUrl,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -188,6 +200,12 @@ class $ProjectsTable extends Projects
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('image_url')) {
+      context.handle(
+        _imageUrlMeta,
+        imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta),
+      );
+    }
     return context;
   }
 
@@ -233,6 +251,10 @@ class $ProjectsTable extends Projects
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       ),
+      imageUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_url'],
+      ),
     );
   }
 
@@ -252,6 +274,9 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
   final String? endDate;
   final String measurementTolerancePct;
   final DateTime? updatedAt;
+
+  /// Where the project's photo is. Needs the sign-in token. Null when none.
+  final String? imageUrl;
   const ProjectRow({
     required this.id,
     required this.code,
@@ -262,6 +287,7 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
     this.endDate,
     required this.measurementTolerancePct,
     this.updatedAt,
+    this.imageUrl,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -285,6 +311,9 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
     }
+    if (!nullToAbsent || imageUrl != null) {
+      map['image_url'] = Variable<String>(imageUrl);
+    }
     return map;
   }
 
@@ -307,6 +336,9 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
+      imageUrl: imageUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageUrl),
     );
   }
 
@@ -327,6 +359,7 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
         json['measurementTolerancePct'],
       ),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      imageUrl: serializer.fromJson<String?>(json['imageUrl']),
     );
   }
   @override
@@ -344,6 +377,7 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
         measurementTolerancePct,
       ),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'imageUrl': serializer.toJson<String?>(imageUrl),
     };
   }
 
@@ -357,6 +391,7 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
     Value<String?> endDate = const Value.absent(),
     String? measurementTolerancePct,
     Value<DateTime?> updatedAt = const Value.absent(),
+    Value<String?> imageUrl = const Value.absent(),
   }) => ProjectRow(
     id: id ?? this.id,
     code: code ?? this.code,
@@ -368,6 +403,7 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
     measurementTolerancePct:
         measurementTolerancePct ?? this.measurementTolerancePct,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
   );
   ProjectRow copyWithCompanion(ProjectsCompanion data) {
     return ProjectRow(
@@ -382,6 +418,7 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
           ? data.measurementTolerancePct.value
           : this.measurementTolerancePct,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
     );
   }
 
@@ -396,7 +433,8 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('measurementTolerancePct: $measurementTolerancePct, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('imageUrl: $imageUrl')
           ..write(')'))
         .toString();
   }
@@ -412,6 +450,7 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
     endDate,
     measurementTolerancePct,
     updatedAt,
+    imageUrl,
   );
   @override
   bool operator ==(Object other) =>
@@ -425,7 +464,8 @@ class ProjectRow extends DataClass implements Insertable<ProjectRow> {
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
           other.measurementTolerancePct == this.measurementTolerancePct &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.imageUrl == this.imageUrl);
 }
 
 class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
@@ -438,6 +478,7 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
   final Value<String?> endDate;
   final Value<String> measurementTolerancePct;
   final Value<DateTime?> updatedAt;
+  final Value<String?> imageUrl;
   const ProjectsCompanion({
     this.id = const Value.absent(),
     this.code = const Value.absent(),
@@ -448,6 +489,7 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
     this.endDate = const Value.absent(),
     this.measurementTolerancePct = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.imageUrl = const Value.absent(),
   });
   ProjectsCompanion.insert({
     this.id = const Value.absent(),
@@ -459,6 +501,7 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
     this.endDate = const Value.absent(),
     this.measurementTolerancePct = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.imageUrl = const Value.absent(),
   }) : code = Value(code),
        name = Value(name);
   static Insertable<ProjectRow> custom({
@@ -471,6 +514,7 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
     Expression<String>? endDate,
     Expression<String>? measurementTolerancePct,
     Expression<DateTime>? updatedAt,
+    Expression<String>? imageUrl,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -483,6 +527,7 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
       if (measurementTolerancePct != null)
         'measurement_tolerance_pct': measurementTolerancePct,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (imageUrl != null) 'image_url': imageUrl,
     });
   }
 
@@ -496,6 +541,7 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
     Value<String?>? endDate,
     Value<String>? measurementTolerancePct,
     Value<DateTime?>? updatedAt,
+    Value<String?>? imageUrl,
   }) {
     return ProjectsCompanion(
       id: id ?? this.id,
@@ -508,6 +554,7 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
       measurementTolerancePct:
           measurementTolerancePct ?? this.measurementTolerancePct,
       updatedAt: updatedAt ?? this.updatedAt,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -543,6 +590,9 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (imageUrl.present) {
+      map['image_url'] = Variable<String>(imageUrl.value);
+    }
     return map;
   }
 
@@ -557,7 +607,8 @@ class ProjectsCompanion extends UpdateCompanion<ProjectRow> {
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('measurementTolerancePct: $measurementTolerancePct, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('imageUrl: $imageUrl')
           ..write(')'))
         .toString();
   }
@@ -10466,6 +10517,7 @@ typedef $$ProjectsTableCreateCompanionBuilder =
       Value<String?> endDate,
       Value<String> measurementTolerancePct,
       Value<DateTime?> updatedAt,
+      Value<String?> imageUrl,
     });
 typedef $$ProjectsTableUpdateCompanionBuilder =
     ProjectsCompanion Function({
@@ -10478,6 +10530,7 @@ typedef $$ProjectsTableUpdateCompanionBuilder =
       Value<String?> endDate,
       Value<String> measurementTolerancePct,
       Value<DateTime?> updatedAt,
+      Value<String?> imageUrl,
     });
 
 class $$ProjectsTableFilterComposer
@@ -10531,6 +10584,11 @@ class $$ProjectsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -10588,6 +10646,11 @@ class $$ProjectsTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ProjectsTableAnnotationComposer
@@ -10627,6 +10690,9 @@ class $$ProjectsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => column);
 }
 
 class $$ProjectsTableTableManager
@@ -10669,6 +10735,7 @@ class $$ProjectsTableTableManager
                 Value<String?> endDate = const Value.absent(),
                 Value<String> measurementTolerancePct = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
               }) => ProjectsCompanion(
                 id: id,
                 code: code,
@@ -10679,6 +10746,7 @@ class $$ProjectsTableTableManager
                 endDate: endDate,
                 measurementTolerancePct: measurementTolerancePct,
                 updatedAt: updatedAt,
+                imageUrl: imageUrl,
               ),
           createCompanionCallback:
               ({
@@ -10691,6 +10759,7 @@ class $$ProjectsTableTableManager
                 Value<String?> endDate = const Value.absent(),
                 Value<String> measurementTolerancePct = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
               }) => ProjectsCompanion.insert(
                 id: id,
                 code: code,
@@ -10701,6 +10770,7 @@ class $$ProjectsTableTableManager
                 endDate: endDate,
                 measurementTolerancePct: measurementTolerancePct,
                 updatedAt: updatedAt,
+                imageUrl: imageUrl,
               ),
           withReferenceMapper: (p0) => p0
               .map(

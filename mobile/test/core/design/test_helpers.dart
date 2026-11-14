@@ -17,10 +17,10 @@ Future<void> loadRealFonts() async {
     await loader.load();
   }
 
-  await family('Khand', <String>[
-    'assets/fonts/Khand-Medium.ttf',
-    'assets/fonts/Khand-SemiBold.ttf',
-    'assets/fonts/Khand-Bold.ttf',
+  await family('Poppins', <String>[
+    'assets/fonts/Poppins-Medium.ttf',
+    'assets/fonts/Poppins-SemiBold.ttf',
+    'assets/fonts/Poppins-Bold.ttf',
   ]);
   await family('Mukta', <String>[
     'assets/fonts/Mukta-Regular.ttf',

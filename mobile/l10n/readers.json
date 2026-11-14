@@ -1,0 +1,22 @@
+{
+  "readerStillWorking": { "en": "Still working. Pull to refresh.", "mr": "अजून काम चालू आहे. ताजे करण्यासाठी खाली ओढा.", "hi": "अभी भी काम चल रहा है। ताज़ा करने के लिए नीचे खींचें।" },
+  "readerNeedsInternet": { "en": "Reading a document needs the internet.", "mr": "दस्तऐवज वाचण्यासाठी इंटरनेट लागते.", "hi": "दस्तावेज़ पढ़ने के लिए इंटरनेट चाहिए।" },
+  "readerNotReleased": { "en": "The AI reader is not switched on yet.", "mr": "AI वाचक अजून सुरू केलेला नाही.", "hi": "AI रीडर अभी चालू नहीं किया गया है।" },
+  "readerNotConnected": { "en": "The AI service is not available right now. Try again later.", "mr": "AI सेवा सध्या उपलब्ध नाही. नंतर पुन्हा प्रयत्न करा.", "hi": "AI सेवा अभी उपलब्ध नहीं है। बाद में फिर से कोशिश करें।" },
+  "readerConsentRequired": { "en": "Your company has not agreed to the notice for sending documents to the AI service. An owner or admin can do that in Settings on the website.", "mr": "तुमच्या कंपनीने AI सेवेकडे दस्तऐवज पाठवण्याच्या सूचनेला अजून संमती दिलेली नाही. मालक किंवा अ‍ॅडमिन वेबसाइटवरील सेटिंग्जमध्ये ती देऊ शकतात.", "hi": "आपकी कंपनी ने AI सेवा को दस्तावेज़ भेजने की सूचना पर अभी सहमति नहीं दी है। मालिक या एडमिन वेबसाइट की सेटिंग्स में यह कर सकते हैं।" },
+  "readerCompanyLimit": { "en": "The AI reader is switched off for your company. Please contact support.", "mr": "तुमच्या कंपनीसाठी AI वाचक बंद केला आहे. कृपया सपोर्टशी संपर्क करा.", "hi": "आपकी कंपनी के लिए AI रीडर बंद है। कृपया सपोर्ट से संपर्क करें।" },
+  "readerPausedToday": { "en": "The AI reader is paused for today. Try again tomorrow.", "mr": "AI वाचक आजच्या दिवसासाठी थांबवला आहे. उद्या पुन्हा प्रयत्न करा.", "hi": "AI रीडर आज के लिए रोका गया है। कल फिर से कोशिश करें।" },
+  "readerPausedMonth": { "en": "The AI reader is paused for this month.", "mr": "AI वाचक या महिन्यासाठी थांबवला आहे.", "hi": "AI रीडर इस महीने के लिए रोका गया है।" },
+  "readerNoCredits": { "en": "Your company has no AI credits left.", "mr": "तुमच्या कंपनीकडे AI क्रेडिट शिल्लक नाहीत.", "hi": "आपकी कंपनी के पास AI क्रेडिट नहीं बचे हैं।" },
+  "readerDailyBudget": { "en": "Your company's AI budget for today is used up. Try again tomorrow.", "mr": "तुमच्या कंपनीचे आजचे AI बजेट संपले आहे. उद्या पुन्हा प्रयत्न करा.", "hi": "आपकी कंपनी का आज का AI बजट खत्म हो गया है। कल फिर से कोशिश करें।" },
+  "readerPagesMissing": { "en": "Some pages are not sent yet. Send them, then start again.", "mr": "काही पाने अजून पाठवलेली नाहीत. ती पाठवा, मग पुन्हा सुरू करा.", "hi": "कुछ पन्ने अभी भेजे नहीं गए हैं। उन्हें भेजें, फिर दोबारा शुरू करें।" },
+  "readerOverLimit": { "en": "Only {count} pages fit the limit. Choose fewer pages.", "mr": "मर्यादेत फक्त {count} पाने बसतात. कमी पाने निवडा.", "hi": "सीमा में केवल {count} पन्ने आते हैं। कम पन्ने चुनें।", "placeholders": { "count": { "type": "int" } } },
+  "readerWrongState": { "en": "This cannot be done with the document as it is now. Refresh and try again.", "mr": "दस्तऐवज सध्या ज्या स्थितीत आहे त्यात हे करता येत नाही. ताजे करून पुन्हा प्रयत्न करा.", "hi": "दस्तावेज़ की अभी की स्थिति में यह नहीं हो सकता। ताज़ा करके फिर से कोशिश करें।" },
+  "readerRetriesUsed": { "en": "This page cannot be read again.", "mr": "हे पान पुन्हा वाचता येणार नाही.", "hi": "यह पन्ना दोबारा नहीं पढ़ा जा सकता।" },
+  "readerServerBusy": { "en": "The server cannot process pictures right now. Nothing was stored. Try again later.", "mr": "सर्व्हर सध्या फोटोवर प्रक्रिया करू शकत नाही. काहीही जतन झाले नाही. नंतर पुन्हा प्रयत्न करा.", "hi": "सर्वर अभी फ़ोटो प्रोसेस नहीं कर सकता। कुछ भी सेव नहीं हुआ। बाद में फिर से कोशिश करें।" },
+  "readerPhotoTooSmall": { "en": "This photo is too small to read. Take it closer.", "mr": "हा फोटो वाचण्यासाठी खूप लहान आहे. जवळून काढा.", "hi": "यह फ़ोटो पढ़ने के लिए बहुत छोटी है। पास से लें।" },
+  "readerPhotoMirrored": { "en": "This photo is saved mirrored. Take it again.", "mr": "हा फोटो उलटा (आरशासारखा) जतन झाला आहे. पुन्हा काढा.", "hi": "यह फ़ोटो उल्टी (आईने जैसी) सेव हुई है। फिर से लें।" },
+  "readerPhotoUnreadable": { "en": "This photo cannot be read. Take it again.", "mr": "हा फोटो वाचता येत नाही. पुन्हा काढा.", "hi": "यह फ़ोटो पढ़ी नहीं जा सकती। फिर से लें।" },
+  "readerTooManyRequests": { "en": "Too many requests. Wait a minute and try again.", "mr": "खूप विनंत्या झाल्या. एक मिनिट थांबा आणि पुन्हा प्रयत्न करा.", "hi": "बहुत ज़्यादा अनुरोध हुए। एक मिनट रुककर फिर से कोशिश करें।" },
+  "readerProblem": { "en": "Something went wrong. Try again.", "mr": "काहीतरी चुकले. पुन्हा प्रयत्न करा.", "hi": "कुछ गलत हो गया। फिर से कोशिश करें।" }
+}

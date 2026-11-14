@@ -13,22 +13,28 @@ double _contrast(Color a, Color b) {
 
 void main() {
   group('outdoor contrast', () {
-    const backgrounds = <Color>[N360Colors.paper, N360Colors.sheet, N360Colors.paper2];
+    const backgrounds = <Color>[N360Colors.paper, N360Colors.sheet, N360Colors.paper2, N360Colors.peach];
 
-    test('body text reaches 7:1 on paper and sheet', () {
-      for (final bg in <Color>[N360Colors.paper, N360Colors.sheet]) {
-        expect(_contrast(N360Colors.ink, bg), greaterThanOrEqualTo(7));
-        expect(_contrast(N360Colors.ink2, bg), greaterThanOrEqualTo(7));
+    test('body text reaches 7:1 on every page surface, the peach foot included', () {
+      for (final bg in backgrounds) {
+        expect(_contrast(N360Colors.ink, bg), greaterThanOrEqualTo(7), reason: 'ink on $bg');
       }
+      expect(N360Type.body.color, N360Colors.ink);
     });
 
-    test('labels reach 4.5:1 on every paper surface', () {
+    test('labels reach 4.5:1 on every page surface', () {
       for (final bg in backgrounds) {
-        expect(_contrast(N360Colors.inkLabel, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.stampRed, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.haldiInk, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.mossInk, bg), greaterThanOrEqualTo(4.5));
-        expect(_contrast(N360Colors.neel, bg), greaterThanOrEqualTo(4.5));
+        for (final ink in <Color>[
+          N360Colors.ink2,
+          N360Colors.inkLabel,
+          N360Colors.stampRed,
+          N360Colors.haldiInk,
+          N360Colors.mossInk,
+          N360Colors.neel,
+          N360Colors.laterite,
+        ]) {
+          expect(_contrast(ink, bg), greaterThanOrEqualTo(4.5), reason: '$ink on $bg');
+        }
       }
     });
 
@@ -36,28 +42,69 @@ void main() {
       expect(_contrast(N360Colors.ink3, N360Colors.paper), lessThan(4.5));
     });
 
-    test('every stamp ink holds 4.5:1 on every paper surface', () {
+    test('every stamp ink holds 4.5:1 on every page surface', () {
       for (final kind in StampKind.values) {
         for (final bg in backgrounds) {
-          expect(
-            _contrast(kind.inkColor, bg),
-            greaterThanOrEqualTo(4.5),
-            reason: '$kind on $bg',
-          );
+          expect(_contrast(kind.inkColor, bg), greaterThanOrEqualTo(4.5), reason: '$kind on $bg');
         }
       }
     });
 
-    test('text on filled controls reaches 4.5:1', () {
-      expect(_contrast(N360Colors.sheet, N360Colors.laterite), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.ink, N360Colors.haldi), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.sheet, N360Colors.moss), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.sheet, N360Colors.neel), greaterThanOrEqualTo(4.5));
-      expect(_contrast(N360Colors.sheet, N360Colors.stampRed), greaterThanOrEqualTo(4.5));
+    test('the primary carries white text at 4.5:1 or better, and the gold data fills carry dark ink', () {
+      expect(_contrast(N360Colors.onPrimary, N360Colors.primary), greaterThanOrEqualTo(4.5));
+      for (final gold in <Color>[N360Colors.amber, N360Colors.haldi, N360Colors.orange]) {
+        expect(_contrast(N360Colors.ink, gold), greaterThanOrEqualTo(4.5), reason: '$gold');
+      }
+      expect(N360Gradients.gold.colors, everyElement(N360Colors.primary), reason: 'the design is flat');
+      expect(N360Gradients.page.colors, everyElement(N360Colors.paper), reason: 'one flat page');
+    });
+
+    test('white on the exact orange is just under 4.5:1, which is why the primary is a deeper cut', () {
+      expect(_contrast(N360Colors.sheet, N360Colors.orange), lessThan(4.5));
+      expect(_contrast(N360Colors.sheet, N360Colors.orange), greaterThan(4.2));
+      expect(_contrast(N360Colors.primary, N360Colors.orange), lessThan(1.15), reason: 'visually the same colour');
+    });
+
+    test('status pill washes keep their ink at 4.5:1', () {
+      for (final kind in StampKind.values) {
+        expect(_contrast(kind.inkColor, kind.washColor), greaterThanOrEqualTo(4.5), reason: '$kind');
+      }
+    });
+
+    test('white text on the filled status colours reaches 4.5:1', () {
+      for (final fill in <Color>[N360Colors.laterite, N360Colors.moss, N360Colors.neel, N360Colors.stampRed]) {
+        expect(_contrast(N360Colors.sheet, fill), greaterThanOrEqualTo(4.5), reason: '$fill');
+      }
     });
   });
 
   group('typography', () {
+    test('one voice: every style is Mukta, and every figure is tabular', () {
+      for (final style in <TextStyle>[
+        N360Type.displayLarge,
+        N360Type.display,
+        N360Type.title,
+        N360Type.heading,
+        N360Type.button,
+        N360Type.bodyLarge,
+        N360Type.body,
+        N360Type.bodyStrong,
+        N360Type.label,
+        N360Type.caption,
+        N360Type.figureSmall,
+        N360Type.figure,
+        N360Type.figureLarge,
+        N360Type.figureHero,
+        N360Type.eyebrowFor('Item'),
+        N360Type.eyebrowFor('बाब'),
+      ]) {
+        expect(style.fontFamily, 'Mukta', reason: '$style');
+      }
+      for (final figure in <TextStyle>[N360Type.figureSmall, N360Type.figure, N360Type.figureLarge, N360Type.figureHero]) {
+        expect(figure.fontFeatures, contains(const FontFeature.tabularFigures()));
+      }
+    });
+
     test('Devanagari line heights are generous', () {
       for (final style in <TextStyle>[
         N360Type.bodyLarge,
@@ -74,20 +121,116 @@ void main() {
         N360Type.heading,
         N360Type.button,
       ]) {
-        expect(style.height, greaterThanOrEqualTo(1.25));
+        expect(style.height, greaterThanOrEqualTo(1.3));
       }
     });
 
-    test('figures fall back to Mukta for the rupee sign and are tabular', () {
-      expect(N360Type.figure.fontFamilyFallback, contains('Mukta'));
+    test('column figures are Mukta with tabular figures, so columns line up', () {
+      expect(N360Type.figure.fontFamily, 'Mukta');
       expect(N360Type.figure.fontFeatures, contains(const FontFeature.tabularFigures()));
     });
 
-    test('eyebrow sets Devanagari without tracking or uppercasing', () {
-      expect(N360Type.eyebrowFor('Item 2.1').letterSpacing, greaterThan(0));
+    test('section labels are calm: no tracking, no capitals', () {
+      expect(N360Type.eyebrowFor('Item 2.1').letterSpacing ?? 0, 0);
       expect(N360Type.eyebrowFor('मोजमाप').letterSpacing ?? 0, 0);
-      expect(N360Type.eyebrowText('item'), 'ITEM');
-      expect(N360Type.eyebrowText('मोजमाप'), 'मोजमाप');
+      expect(N360Type.eyebrowText('Item 2.1'), 'Item 2.1');
+    });
+
+    test('stamps stay in capitals for Latin and leave Devanagari alone', () {
+      expect(N360Type.stampText('Approved'), 'APPROVED');
+      expect(N360Type.stampText('मंजूर'), 'मंजूर');
+    });
+
+    test('the scale sits at the reference proportion and nothing is under 12', () {
+      expect(N360Type.body.fontSize, 14);
+      expect(N360Type.label.fontSize, 13);
+      expect(N360Type.caption.fontSize, 12);
+      expect(N360Type.heading.fontSize, 15);
+      expect(N360Type.title.fontSize, inInclusiveRange(17, 18));
+      expect(N360Type.button.fontSize, 15);
+      expect(N360Type.figureHero.fontSize, inInclusiveRange(30, 36));
+      expect(N360Type.figureLarge.fontSize, inInclusiveRange(20, 24));
+      for (final style in <TextStyle>[
+        N360Type.displayLarge,
+        N360Type.display,
+        N360Type.title,
+        N360Type.heading,
+        N360Type.button,
+        N360Type.bodyLarge,
+        N360Type.body,
+        N360Type.bodyStrong,
+        N360Type.label,
+        N360Type.caption,
+        N360Type.figureSmall,
+        N360Type.figure,
+        N360Type.figureLarge,
+        N360Type.figureHero,
+        N360Type.eyebrowFor('Item'),
+        N360Type.eyebrowFor('बाब'),
+      ]) {
+        expect(style.fontSize, greaterThanOrEqualTo(N360Type.minimumSize), reason: '$style');
+      }
+      for (final size in StampSize.values) {
+        expect(size.fontSize, greaterThanOrEqualTo(N360Type.minimumSize), reason: '$size');
+      }
+    });
+
+    test('Devanagari gets one more point at small sizes and a 1.4 line; Latin is untouched', () {
+      expect(N360Type.fit(N360Type.caption, 'Today').fontSize, 12);
+      expect(N360Type.fit(N360Type.caption, 'आज').fontSize, 13);
+      expect(N360Type.fit(N360Type.body, 'आज').fontSize, 15);
+      expect(N360Type.fit(N360Type.heading, 'आज').fontSize, 16);
+      expect(N360Type.fit(N360Type.heading, 'आज').height, greaterThanOrEqualTo(1.4));
+      expect(N360Type.fit(N360Type.title, 'आज').fontSize, 18, reason: 'larger sizes are left alone');
+      expect(N360Type.fit(N360Type.figureHero, '70.50%'), N360Type.figureHero);
+      expect(N360Type.forDevanagari(N360Type.label).fontSize, 14);
+    });
+
+    test('icons are quiet: 14 to 24, with 18 to 22 for everything on a screen', () {
+      expect(N360IconSize.xs, 14);
+      expect(N360IconSize.md, 18);
+      expect(N360IconSize.tile, inInclusiveRange(18, 22));
+      expect(N360IconSize.button, inInclusiveRange(18, 22));
+      expect(N360IconSize.bar, inInclusiveRange(18, 22));
+      expect(N360IconSize.xxl, lessThanOrEqualTo(24));
+    });
+
+    test('visible sizes are separate from hit areas, and the hit area never drops under 56', () {
+      expect(N360Size.tap, 56);
+      expect(N360Size.tile, inInclusiveRange(40, 46));
+      expect(N360Size.tile, lessThan(N360Size.tap));
+      expect(N360Size.barTile, lessThan(N360Size.bar));
+      expect(N360Size.bar, greaterThanOrEqualTo(N360Size.tap));
+      expect(N360Size.key, greaterThanOrEqualTo(N360Size.tap));
+      expect(N360Space.card, inInclusiveRange(14, 16));
+    });
+
+    testWidgets('N360TextScaling clamps the system text size at the root', (tester) async {
+      late TextScaler seen;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: N360TextScaling(
+            child: Builder(
+              builder: (context) {
+                seen = MediaQuery.textScalerOf(context);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      );
+      expect(seen.scale(10), closeTo(10 * N360TextScale.max, 0.001));
+    });
+
+    test('the theme can be fitted for Devanagari', () {
+      final ThemeData en = buildN360Theme();
+      final ThemeData mr = buildN360Theme(devanagari: true);
+      expect(en.textTheme.bodyMedium!.fontSize, 14);
+      expect(mr.textTheme.bodyMedium!.fontSize, 15);
+      expect(mr.textTheme.bodySmall!.fontSize, 13);
+      expect(mr.textTheme.titleLarge!.fontSize, 18);
+      expect(en.iconTheme.size, N360IconSize.lg);
     });
   });
 
@@ -129,6 +272,53 @@ void main() {
       expect(N360Curves.stamp.transform(0.5), greaterThan(1));
       expect(N360Curves.stamp.transform(1), 1);
       expect(N360Curves.rise.transform(1), 1);
+    });
+
+    test('settle overshoots only a little and exits ease in', () {
+      var peak = 0.0;
+      for (var i = 0; i <= 100; i++) {
+        peak = peak > N360Curves.settle.transform(i / 100) ? peak : N360Curves.settle.transform(i / 100);
+      }
+      expect(peak, greaterThan(1));
+      expect(peak, lessThan(1.06));
+      expect(N360Curves.settle.transform(1), 1);
+      expect(N360Curves.exit.transform(0.5), lessThan(0.5));
+    });
+
+    test('the entry choreography is over within about a second, and the thud outlasts every other moment', () {
+      for (final d in <Duration>[
+        N360Durations.page,
+        N360Durations.rise + N360Durations.riseStep * 10,
+        N360Durations.fill,
+        N360Durations.count,
+      ]) {
+        expect(d, lessThanOrEqualTo(const Duration(milliseconds: 800)));
+      }
+      expect(N360Durations.build, lessThanOrEqualTo(const Duration(milliseconds: 1200)));
+      for (final moment in <Duration>[N360Durations.stamp, N360Durations.tick, N360Durations.toast, N360Durations.sheet]) {
+        expect(N360Durations.thud, greaterThan(moment));
+      }
+      expect(N360Durations.press, lessThan(N360Durations.release));
+    });
+
+    testWidgets('every new duration resolves to zero under reduced motion', (tester) async {
+      late N360Motion reduced;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Builder(
+            builder: (context) {
+              reduced = context.motion;
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      for (final d in <Duration>[reduced.fill, reduced.count, reduced.build, reduced.sheet, reduced.bar]) {
+        expect(d, Duration.zero);
+      }
+      expect(pressedScale(0), 1);
+      expect(pressedScale(1), lessThan(1));
     });
   });
 
@@ -173,12 +363,14 @@ void main() {
       expect(theme.colorScheme.surfaceTint.a, 0);
       expect(theme.appBarTheme.scrolledUnderElevation, 0);
       expect(theme.cardTheme.elevation, 0);
-      expect(theme.splashColor, N360Colors.ink.withValues(alpha: 0.08));
+      expect(theme.splashColor, N360Colors.ink.withValues(alpha: 0.06), reason: 'a quiet ripple');
     });
 
-    test('never uses a blue primary', () {
+    test('the primary is the flat terracotta with white on it', () {
       final ThemeData theme = buildN360Theme();
-      expect(theme.colorScheme.primary, N360Colors.laterite);
+      expect(theme.colorScheme.primary, N360Colors.primary);
+      expect(theme.colorScheme.onPrimary, N360Colors.onPrimary);
+      expect(theme.cardTheme.shape, isA<RoundedRectangleBorder>());
     });
   });
 }

@@ -1,0 +1,17 @@
+{
+  "siteToolsTitle": {
+    "en": "Site tools",
+    "mr": "साइट साधने",
+    "hi": "साइट टूल्स"
+  },
+  "siteToolsInspectionsHint": {
+    "en": "Fill a checklist for a pour, shuttering or a safety round",
+    "mr": "पोअर, शटरिंग किंवा सुरक्षा फेरीसाठी चेकलिस्ट भरा",
+    "hi": "पोर, शटरिंग या सुरक्षा राउंड की चेकलिस्ट भरें"
+  },
+  "siteToolsMachinesHint": {
+    "en": "Record what a machine worked today, in hours or km",
+    "mr": "यंत्र आज किती चालले ते तास किंवा किमीमध्ये नोंदवा",
+    "hi": "मशीन आज कितना चली, घंटों या किमी में दर्ज करें"
+  }
+}

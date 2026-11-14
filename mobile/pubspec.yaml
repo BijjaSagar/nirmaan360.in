@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.2+20
 
 environment:
   sdk: ^3.12.2
@@ -50,6 +50,12 @@ dependencies:
   decimal: ^3.2.6
   intl: ^0.20.2
   workmanager: ^0.10.10
+  share_plus: ^13.3.1
+  mobile_scanner: ^7.5.0
+  geolocator: ^14.0.1
+  firebase_core: ^5.1.0
+  firebase_messaging: ^17.0.1
+  url_launcher: 6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -73,16 +79,12 @@ flutter:
   uses-material-design: true
   generate: true
 
+  assets:
+    - assets/animations/
+    - assets/brand/
+
   # Bundled so every screen renders correctly with no network. All three are OFL.
   fonts:
-    - family: Khand
-      fonts:
-        - asset: assets/fonts/Khand-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Khand-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Khand-Bold.ttf
-          weight: 700
     - family: Mukta
       fonts:
         - asset: assets/fonts/Mukta-Regular.ttf
@@ -92,6 +94,14 @@ flutter:
         - asset: assets/fonts/Mukta-SemiBold.ttf
           weight: 600
         - asset: assets/fonts/Mukta-Bold.ttf
+          weight: 700
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
     - family: DMMono
       fonts:

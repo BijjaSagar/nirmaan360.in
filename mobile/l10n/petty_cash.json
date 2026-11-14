@@ -1,0 +1,367 @@
+{
+  "pettyCashTitle": {
+    "en": "Petty cash",
+    "mr": "किरकोळ रोख",
+    "hi": "फुटकर नकद"
+  },
+  "pettyCashEyebrow": {
+    "en": "Cash book",
+    "mr": "रोख वही",
+    "hi": "नकद बही"
+  },
+  "pettyCashBalance": {
+    "en": "Balance",
+    "mr": "शिल्लक",
+    "hi": "शेष"
+  },
+  "pettyCashProvisional": {
+    "en": "Provisional",
+    "mr": "तात्पुरती",
+    "hi": "अनंतिम"
+  },
+  "pettyCashWallet": {
+    "en": "Wallet",
+    "mr": "पाकीट",
+    "hi": "वॉलेट"
+  },
+  "pettyCashEntries": {
+    "en": "Entries",
+    "mr": "नोंदी",
+    "hi": "प्रविष्टियाँ"
+  },
+  "pettyCashEntriesEmptyTitle": {
+    "en": "No entries yet",
+    "mr": "अजून एकही नोंद नाही",
+    "hi": "अभी कोई प्रविष्टि नहीं"
+  },
+  "pettyCashEntriesEmptyMessage": {
+    "en": "Expenses you add will show here.",
+    "mr": "तुम्ही जोडलेले खर्च इथे दिसतील.",
+    "hi": "आपके जोड़े गए ख़र्च यहाँ दिखेंगे।"
+  },
+  "pettyCashAddExpense": {
+    "en": "Add expense",
+    "mr": "खर्च जोडा",
+    "hi": "ख़र्च जोड़ें"
+  },
+  "pettyCashTopup": {
+    "en": "Top-up",
+    "mr": "रक्कम जमा",
+    "hi": "राशि जोड़ें"
+  },
+  "pettyCashBillLabel": {
+    "en": "Bill",
+    "mr": "बिल",
+    "hi": "बिल"
+  },
+  "pettyCashNoProjectTitle": {
+    "en": "No project chosen",
+    "mr": "प्रकल्प निवडलेला नाही",
+    "hi": "कोई प्रोजेक्ट नहीं चुना"
+  },
+  "pettyCashNoProjectMessage": {
+    "en": "Choose a project first, then record expenses here.",
+    "mr": "आधी प्रकल्प निवडा, मग इथे खर्च नोंदवा.",
+    "hi": "पहले प्रोजेक्ट चुनें, फिर यहाँ ख़र्च दर्ज करें।"
+  },
+  "pettyCashNoWalletTitle": {
+    "en": "You have no wallet on this project",
+    "mr": "या प्रकल्पावर तुमचे पाकीट नाही",
+    "hi": "इस प्रोजेक्ट पर आपका वॉलेट नहीं है"
+  },
+  "pettyCashNoWalletMessage": {
+    "en": "Ask your project manager or the accounts office to open one for you.",
+    "mr": "तुमच्यासाठी पाकीट उघडायला प्रकल्प व्यवस्थापक किंवा अकाउंट्स ऑफिसला सांगा.",
+    "hi": "अपने लिए वॉलेट खुलवाने के लिए प्रोजेक्ट मैनेजर या अकाउंट्स ऑफ़िस से कहें।"
+  },
+  "pettyCashFormEyebrow": {
+    "en": "New expense",
+    "mr": "नवीन खर्च",
+    "hi": "नया ख़र्च"
+  },
+  "pettyCashFormTitle": {
+    "en": "Add an expense",
+    "mr": "खर्च जोडा",
+    "hi": "ख़र्च जोड़ें"
+  },
+  "pettyCashAmount": {
+    "en": "Amount",
+    "mr": "रक्कम",
+    "hi": "रकम"
+  },
+  "pettyCashAmountRequired": {
+    "en": "Enter an amount above zero.",
+    "mr": "शून्यापेक्षा जास्त रक्कम टाका.",
+    "hi": "शून्य से ज़्यादा रकम डालें।"
+  },
+  "pettyCashBalanceAfter": {
+    "en": "Balance after this: {amount}",
+    "mr": "यानंतर शिल्लक: {amount}",
+    "hi": "इसके बाद शेष: {amount}",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashOverBalance": {
+    "en": "More than the wallet balance of {balance}. Ask the office for a top-up.",
+    "mr": "ही रक्कम पाकिटातील {balance} पेक्षा जास्त आहे. ऑफिसकडे रक्कम जमा करायला सांगा.",
+    "hi": "यह रकम वॉलेट के {balance} से ज़्यादा है। ऑफ़िस से राशि जुड़वाएँ।",
+    "placeholders": {
+      "balance": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashCategory": {
+    "en": "What was it for?",
+    "mr": "कशासाठी?",
+    "hi": "किसके लिए?"
+  },
+  "pettyCashCategoryRequired": {
+    "en": "Choose what it was for.",
+    "mr": "कशासाठी ते निवडा.",
+    "hi": "किसके लिए, चुनें।"
+  },
+  "pettyCashPhotoBill": {
+    "en": "Photo of bill",
+    "mr": "बिलाचा फोटो",
+    "hi": "बिल की फ़ोटो"
+  },
+  "pettyCashBillAdded": {
+    "en": "Bill photo added",
+    "mr": "बिलाचा फोटो जोडला",
+    "hi": "बिल की फ़ोटो जुड़ी"
+  },
+  "pettyCashBillRetake": {
+    "en": "Take again",
+    "mr": "पुन्हा काढा",
+    "hi": "फिर से लें"
+  },
+  "pettyCashBillFailed": {
+    "en": "Could not open the camera. Try again.",
+    "mr": "कॅमेरा उघडता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "कैमरा नहीं खुला। फिर से कोशिश करें।"
+  },
+  "pettyCashNote": {
+    "en": "Note (optional)",
+    "mr": "टीप (ऐच्छिक)",
+    "hi": "नोट (वैकल्पिक)"
+  },
+  "pettyCashNoteHint": {
+    "en": "Diesel for the mixer",
+    "mr": "मिक्सरसाठी डिझेल",
+    "hi": "मिक्सर के लिए डीज़ल"
+  },
+  "pettyCashDate": {
+    "en": "Date",
+    "mr": "तारीख",
+    "hi": "तारीख़"
+  },
+  "pettyCashDayToday": {
+    "en": "Today",
+    "mr": "आज",
+    "hi": "आज"
+  },
+  "pettyCashDayYesterday": {
+    "en": "Yesterday",
+    "mr": "काल",
+    "hi": "कल"
+  },
+  "pettyCashSave": {
+    "en": "Save expense",
+    "mr": "खर्च जतन करा",
+    "hi": "ख़र्च सेव करें"
+  },
+  "pettyCashSavedOffline": {
+    "en": "Saved on phone. It will send when network returns.",
+    "mr": "फोनवर जतन झाले. नेटवर्क आल्यावर पाठवले जाईल.",
+    "hi": "फ़ोन पर सेव हुआ। नेटवर्क आने पर भेजा जाएगा।"
+  },
+  "pettyCashSavedOnline": {
+    "en": "Saved on phone. Sending now.",
+    "mr": "फोनवर जतन झाले. आता पाठवत आहे.",
+    "hi": "फ़ोन पर सेव हुआ। अभी भेज रहे हैं।"
+  },
+  "pettyCashSaveFailed": {
+    "en": "Could not save the expense. Try again.",
+    "mr": "खर्च जतन करता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "ख़र्च सेव नहीं हुआ। फिर से कोशिश करें।"
+  },
+  "pettyCashSyncSending": {
+    "en": "Sending",
+    "mr": "पाठवत आहे",
+    "hi": "भेज रहे हैं"
+  },
+  "pettyCashSyncAttention": {
+    "en": "Needs attention",
+    "mr": "लक्ष द्या",
+    "hi": "ध्यान दें"
+  },
+  "pettyCashConfirmed": {
+    "en": "Confirmed",
+    "mr": "पक्की शिल्लक",
+    "hi": "पक्का शेष"
+  },
+  "pettyCashUnsent": {
+    "en": "Not sent yet",
+    "mr": "अजून पाठवले नाहीत",
+    "hi": "अभी भेजे नहीं"
+  },
+  "pettyCashFinalAfterSync": {
+    "en": "The final balance comes after sync.",
+    "mr": "सिंक झाल्यावर अंतिम शिल्लक कळेल.",
+    "hi": "सिंक होने पर अंतिम शेष पता चलेगा।"
+  },
+  "pettyCashCreateWallet": {
+    "en": "Create wallet",
+    "mr": "पाकीट तयार करा",
+    "hi": "वॉलेट बनाएँ"
+  },
+  "pettyCashNoWalletManageTitle": {
+    "en": "No wallet on this project yet",
+    "mr": "या प्रकल्पावर अजून पाकीट नाही",
+    "hi": "इस प्रोजेक्ट पर अभी वॉलेट नहीं है"
+  },
+  "pettyCashNoWalletManageMessage": {
+    "en": "Create one to record site expenses here.",
+    "mr": "साइटचे खर्च इथे नोंदवण्यासाठी पाकीट तयार करा.",
+    "hi": "साइट के ख़र्च यहाँ दर्ज करने के लिए वॉलेट बनाएँ।"
+  },
+  "pettyCashAddMoney": {
+    "en": "Add money",
+    "mr": "पैसे जमा करा",
+    "hi": "पैसे जोड़ें"
+  },
+  "pettyCashWalletFormEyebrow": {
+    "en": "New wallet",
+    "mr": "नवीन पाकीट",
+    "hi": "नया वॉलेट"
+  },
+  "pettyCashWalletName": {
+    "en": "Wallet name",
+    "mr": "पाकिटाचे नाव",
+    "hi": "वॉलेट का नाम"
+  },
+  "pettyCashWalletNameRequired": {
+    "en": "Write a name for the wallet.",
+    "mr": "पाकिटाला नाव द्या.",
+    "hi": "वॉलेट का नाम लिखें।"
+  },
+  "pettyCashWalletDefaultName": {
+    "en": "{code} site cash",
+    "mr": "{code} साइट रोख",
+    "hi": "{code} साइट नकद",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletHolder": {
+    "en": "Who holds the cash?",
+    "mr": "रोख कोणाकडे असेल?",
+    "hi": "नकद किसके पास रहेगा?"
+  },
+  "pettyCashOpeningAmount": {
+    "en": "Opening amount",
+    "mr": "सुरुवातीची रक्कम",
+    "hi": "शुरुआती रकम"
+  },
+  "pettyCashOpeningHelper": {
+    "en": "Leave blank if there is no money yet.",
+    "mr": "अजून पैसे नसतील तर रिकामे ठेवा.",
+    "hi": "अभी पैसे न हों तो खाली छोड़ें।"
+  },
+  "pettyCashOpeningNote": {
+    "en": "Opening balance",
+    "mr": "सुरुवातीची शिल्लक",
+    "hi": "शुरुआती शेष"
+  },
+  "pettyCashWalletCreateKey": {
+    "en": "Create",
+    "mr": "तयार करा",
+    "hi": "बनाएँ"
+  },
+  "pettyCashWalletOffline": {
+    "en": "No network.",
+    "mr": "नेटवर्क नाही.",
+    "hi": "नेटवर्क नहीं है।"
+  },
+  "pettyCashWalletOfflineDetail": {
+    "en": "A wallet can be created only online.",
+    "mr": "पाकीट फक्त ऑनलाइन तयार होते.",
+    "hi": "वॉलेट सिर्फ़ ऑनलाइन बनता है।"
+  },
+  "pettyCashWalletCreated": {
+    "en": "Wallet created",
+    "mr": "पाकीट तयार झाले",
+    "hi": "वॉलेट बन गया"
+  },
+  "pettyCashWalletCreatedMoney": {
+    "en": "Wallet created. {amount} saved on phone, sending now.",
+    "mr": "पाकीट तयार झाले. {amount} फोनवर जतन झाले, आता पाठवत आहे.",
+    "hi": "वॉलेट बन गया। {amount} फ़ोन पर सेव हुए, अभी भेज रहे हैं।",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletCreatedOffline": {
+    "en": "Wallet created. {amount} saved on phone, sends when network returns.",
+    "mr": "पाकीट तयार झाले. {amount} फोनवर जतन झाले, नेटवर्क आल्यावर पाठवले जातील.",
+    "hi": "वॉलेट बन गया। {amount} फ़ोन पर सेव हुए, नेटवर्क आने पर भेजे जाएँगे।",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pettyCashWalletMoneyFailed": {
+    "en": "Wallet created, but the money was not saved. Add it again.",
+    "mr": "पाकीट तयार झाले, पण रक्कम जतन झाली नाही. पुन्हा जमा करा.",
+    "hi": "वॉलेट बन गया, पर रकम सेव नहीं हुई। फिर से जोड़ें।"
+  },
+  "pettyCashWalletFailed": {
+    "en": "The wallet could not be created. Try again.",
+    "mr": "पाकीट तयार करता आले नाही. पुन्हा प्रयत्न करा.",
+    "hi": "वॉलेट नहीं बना। फिर से कोशिश करें।"
+  },
+  "pettyCashTopUpEyebrow": {
+    "en": "Money into the wallet",
+    "mr": "पाकिटात रक्कम",
+    "hi": "वॉलेट में रकम"
+  },
+  "pettyCashTopUpNoteHint": {
+    "en": "Cash from office",
+    "mr": "ऑफिसकडून रोख",
+    "hi": "ऑफ़िस से नकद"
+  },
+  "pettyCashTopUpSave": {
+    "en": "Save money received",
+    "mr": "मिळालेली रक्कम जतन करा",
+    "hi": "मिली रकम सेव करें"
+  },
+  "pettyCashTopUpFailed": {
+    "en": "Could not save the money. Try again.",
+    "mr": "रक्कम जतन करता आली नाही. पुन्हा प्रयत्न करा.",
+    "hi": "रकम सेव नहीं हुई। फिर से कोशिश करें।"
+  },
+  "pettyCashLoading": {
+    "en": "Loading the cash book",
+    "mr": "रोख वही लोड होत आहे",
+    "hi": "नकद बही लोड हो रही है"
+  },
+  "pettyCashTapToChange": {
+    "en": "Tap to change",
+    "mr": "बदलण्यासाठी टॅप करा",
+    "hi": "बदलने के लिए टैप करें"
+  },
+  "pettyCashChooseProject": {
+    "en": "Choose a project",
+    "mr": "प्रकल्प निवडा",
+    "hi": "प्रोजेक्ट चुनें"
+  }
+}

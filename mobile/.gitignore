@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase client config. The console files, and the dart-define JSON that
+# tool/firebase_defines.dart builds from them, never go in the repo.
+google-services.json
+GoogleService-Info.plist
+firebase.defines.json
+firebase.defines.*.json

@@ -1,0 +1,247 @@
+{
+  "pushPromptTitle": {
+    "en": "Get alerts on this phone?",
+    "mr": "या फोनवर सूचना मिळवायच्या का?",
+    "hi": "इस फ़ोन पर अलर्ट चाहिए?"
+  },
+  "pushPromptBody": {
+    "en": "We tell you when something waits for your approval, when a report or measurement is sent back to you, and when a site alert opens. You can change this any time in Settings.",
+    "mr": "एखादी गोष्ट तुमच्या मंजुरीसाठी थांबली, एखादा अहवाल किंवा मोजमाप तुमच्याकडे परत आले, किंवा साइटची नवीन सूचना आली की आम्ही कळवू. हे तुम्ही कधीही सेटिंग्जमध्ये बदलू शकता.",
+    "hi": "जब कोई चीज़ आपकी मंज़ूरी के लिए रुकी हो, कोई रिपोर्ट या माप आपके पास वापस आए, या साइट का नया अलर्ट खुले, तब हम बताएँगे। इसे आप कभी भी सेटिंग्स में बदल सकते हैं।"
+  },
+  "pushPromptTurnOn": {
+    "en": "Turn on alerts",
+    "mr": "सूचना चालू करा",
+    "hi": "अलर्ट चालू करें"
+  },
+  "pushPromptNotNow": {
+    "en": "Not now",
+    "mr": "आत्ता नको",
+    "hi": "अभी नहीं"
+  },
+  "pushSettingsTitle": {
+    "en": "Phone alerts",
+    "mr": "फोनवरील सूचना",
+    "hi": "फ़ोन के अलर्ट"
+  },
+  "pushSettingsOn": {
+    "en": "On. Approvals and alerts reach this phone.",
+    "mr": "चालू. मंजुरी आणि सूचना या फोनवर येतील.",
+    "hi": "चालू। मंज़ूरी और अलर्ट इस फ़ोन पर आएँगे।"
+  },
+  "pushSettingsOff": {
+    "en": "Off. Tap to turn on.",
+    "mr": "बंद. चालू करण्यासाठी दाबा.",
+    "hi": "बंद। चालू करने के लिए दबाएँ।"
+  },
+  "pushSettingsBlocked": {
+    "en": "Open your phone's Settings, allow notifications for Nirmaan360, then come back. Tap Turn on to check again.",
+    "mr": "फोनच्या सेटिंग्जमध्ये Nirmaan360 साठी सूचनांना परवानगी द्या आणि परत या. पुन्हा तपासण्यासाठी चालू करा दाबा.",
+    "hi": "फ़ोन की सेटिंग्स खोलें, Nirmaan360 के लिए नोटिफ़िकेशन की अनुमति दें, फिर वापस आएँ। दोबारा जाँचने के लिए चालू करें दबाएँ।"
+  },
+  "pushSettingsTurnOn": {
+    "en": "Turn on",
+    "mr": "चालू करा",
+    "hi": "चालू करें"
+  },
+  "pushSettingsIsOn": {
+    "en": "On",
+    "mr": "चालू",
+    "hi": "चालू"
+  },
+  "pushSettingsBlockedShort": {
+    "en": "Not allowed on this phone",
+    "mr": "या फोनवर परवानगी नाही",
+    "hi": "इस फ़ोन पर अनुमति नहीं"
+  },
+  "pushPrefsTitle": {
+    "en": "Notifications",
+    "mr": "सूचना",
+    "hi": "सूचनाएँ"
+  },
+  "pushPrefsLoading": {
+    "en": "Reading your notification settings",
+    "mr": "तुमची सूचना सेटिंग वाचत आहोत",
+    "hi": "आपकी सूचना सेटिंग पढ़ रहे हैं"
+  },
+  "pushPrefsOfflineTitle": {
+    "en": "Needs the internet",
+    "mr": "इंटरनेट लागेल",
+    "hi": "इंटरनेट चाहिए"
+  },
+  "pushPrefsOfflineMessage": {
+    "en": "Your notification settings are kept on the server. Connect and try again.",
+    "mr": "तुमची सूचना सेटिंग सर्व्हरवर ठेवलेली असते. इंटरनेट जोडा आणि पुन्हा प्रयत्न करा.",
+    "hi": "आपकी सूचना सेटिंग सर्वर पर रहती है। इंटरनेट जोड़ें और फिर से कोशिश करें।"
+  },
+  "pushPrefsFailedTitle": {
+    "en": "Could not read your settings",
+    "mr": "सेटिंग वाचता आली नाही",
+    "hi": "सेटिंग पढ़ी नहीं जा सकी"
+  },
+  "pushPrefsFailedMessage": {
+    "en": "Try again in a moment.",
+    "mr": "थोड्या वेळाने पुन्हा प्रयत्न करा.",
+    "hi": "थोड़ी देर में फिर से कोशिश करें।"
+  },
+  "pushPrefsRetry": {
+    "en": "Try again",
+    "mr": "पुन्हा प्रयत्न करा",
+    "hi": "फिर से कोशिश करें"
+  },
+  "pushPrefsNotConnected": {
+    "en": "The office has not connected notifications yet. Your choices are kept for when it does.",
+    "mr": "ऑफिसने अजून सूचना जोडलेल्या नाहीत. तुमची निवड तोपर्यंत जपून ठेवली जाईल.",
+    "hi": "ऑफ़िस ने अभी सूचनाएँ नहीं जोड़ी हैं। तब तक आपकी पसंद सँभालकर रखी जाएगी।"
+  },
+  "pushPrefsSection": {
+    "en": "On your phones",
+    "mr": "तुमच्या फोनवर",
+    "hi": "आपके फ़ोन पर"
+  },
+  "pushPrefsPush": {
+    "en": "Push notifications",
+    "mr": "पुश सूचना",
+    "hi": "पुश सूचनाएँ"
+  },
+  "pushPrefsPushHint": {
+    "en": "For all your phones. Off stops every kind below.",
+    "mr": "तुमच्या सर्व फोनसाठी. बंद केल्यास खालील सर्व प्रकार थांबतात.",
+    "hi": "आपके सभी फ़ोन के लिए। बंद करने पर नीचे के सभी प्रकार रुक जाते हैं।"
+  },
+  "pushPrefsAlerts": {
+    "en": "Site alerts",
+    "mr": "साइटच्या सूचना",
+    "hi": "साइट अलर्ट"
+  },
+  "pushPrefsAlertsHint": {
+    "en": "New alerts on your projects, such as work falling behind. Critical ones reach you at any hour.",
+    "mr": "तुमच्या प्रकल्पांवरील नवीन सूचना, जसे काम मागे पडणे. तातडीच्या सूचना कोणत्याही वेळी येतात.",
+    "hi": "आपके प्रोजेक्ट पर नए अलर्ट, जैसे काम पिछड़ना। ज़रूरी अलर्ट किसी भी समय आते हैं।"
+  },
+  "pushPrefsApprovals": {
+    "en": "Approvals",
+    "mr": "मंजुरी",
+    "hi": "मंज़ूरी"
+  },
+  "pushPrefsApprovalsHint": {
+    "en": "Something waits for your approval, or a decision was made on what you sent.",
+    "mr": "काहीतरी तुमच्या मंजुरीसाठी थांबले आहे, किंवा तुम्ही पाठवलेल्यावर निर्णय झाला.",
+    "hi": "कुछ आपकी मंज़ूरी के लिए रुका है, या आपके भेजे पर फ़ैसला हुआ।"
+  },
+  "pushPrefsPayments": {
+    "en": "Contractor payments",
+    "mr": "कंत्राटदार पेमेंट",
+    "hi": "ठेकेदार भुगतान"
+  },
+  "pushPrefsPaymentsHint": {
+    "en": "A contractor payment needs your approval, or one you raised was decided.",
+    "mr": "कंत्राटदाराचे पेमेंट तुमच्या मंजुरीसाठी आहे, किंवा तुम्ही मागितलेल्या पेमेंटवर निर्णय झाला.",
+    "hi": "ठेकेदार का भुगतान आपकी मंज़ूरी के लिए है, या आपके माँगे भुगतान पर फ़ैसला हुआ।"
+  },
+  "pushPrefsMaterial": {
+    "en": "Material checks",
+    "mr": "साहित्य तपासणी",
+    "hi": "सामान की जाँच"
+  },
+  "pushPrefsMaterialHint": {
+    "en": "A material gap or a short delivery needs a written reason.",
+    "mr": "साहित्यातील तफावत किंवा कमी आलेल्या मालासाठी लेखी कारण हवे आहे.",
+    "hi": "सामान के अंतर या कम आई डिलीवरी के लिए लिखित कारण चाहिए।"
+  },
+  "pushPrefsIssues": {
+    "en": "Issues",
+    "mr": "समस्या",
+    "hi": "मुद्दे"
+  },
+  "pushPrefsIssuesHint": {
+    "en": "An issue was assigned to you, raised as urgent, or changed status.",
+    "mr": "समस्या तुम्हाला दिली गेली, तातडीची म्हणून नोंदवली गेली, किंवा तिची स्थिती बदलली.",
+    "hi": "कोई मुद्दा आपको सौंपा गया, ज़रूरी बताया गया, या उसकी स्थिति बदली।"
+  },
+  "pushPrefsContractor": {
+    "en": "My payments and bills",
+    "mr": "माझी पेमेंट आणि बिले",
+    "hi": "मेरे भुगतान और बिल"
+  },
+  "pushPrefsContractorHint": {
+    "en": "A payment to you was approved, or one of your bills was paid.",
+    "mr": "तुम्हाला द्यायचे पेमेंट मंजूर झाले, किंवा तुमचे बिल भरले गेले.",
+    "hi": "आपको होने वाला भुगतान मंज़ूर हुआ, या आपका बिल चुकाया गया।"
+  },
+  "pushPrefsAnnouncements": {
+    "en": "Announcements and reminders",
+    "mr": "घोषणा आणि आठवणी",
+    "hi": "घोषणाएँ और रिमाइंडर"
+  },
+  "pushPrefsAnnouncementsHint": {
+    "en": "News and reminders from your company or from Nirmaan360. They wait for quiet hours to end.",
+    "mr": "तुमच्या कंपनीकडून किंवा Nirmaan360 कडून बातम्या आणि आठवणी. शांत वेळ संपेपर्यंत त्या थांबतात.",
+    "hi": "आपकी कंपनी या Nirmaan360 की ख़बरें और रिमाइंडर। ये शांत समय ख़त्म होने तक रुकते हैं।"
+  },
+  "pushPrefsQuietSection": {
+    "en": "Quiet hours",
+    "mr": "शांत वेळ",
+    "hi": "शांत समय"
+  },
+  "pushPrefsQuiet": {
+    "en": "Hold notifications at night",
+    "mr": "रात्री सूचना थांबवा",
+    "hi": "रात में सूचनाएँ रोकें"
+  },
+  "pushPrefsQuietHint": {
+    "en": "Between these hours they wait for the morning. Critical site alerts still come at once.",
+    "mr": "या वेळेत सूचना सकाळपर्यंत थांबतात. साइटच्या तातडीच्या सूचना मात्र लगेच येतात.",
+    "hi": "इन घंटों में सूचनाएँ सुबह तक रुकती हैं। साइट के ज़रूरी अलर्ट फिर भी तुरंत आते हैं।"
+  },
+  "pushPrefsQuietFrom": {
+    "en": "From",
+    "mr": "पासून",
+    "hi": "से"
+  },
+  "pushPrefsQuietUntil": {
+    "en": "Until",
+    "mr": "पर्यंत",
+    "hi": "तक"
+  },
+  "pushPrefsOtherSection": {
+    "en": "Other ways to reach you",
+    "mr": "तुमच्यापर्यंत पोहोचण्याचे इतर मार्ग",
+    "hi": "आप तक पहुँचने के दूसरे तरीके"
+  },
+  "pushPrefsEmail": {
+    "en": "Email",
+    "mr": "ईमेल",
+    "hi": "ईमेल"
+  },
+  "pushPrefsEmailHint": {
+    "en": "The same updates by email.",
+    "mr": "हीच माहिती ईमेलवर.",
+    "hi": "यही जानकारी ईमेल पर।"
+  },
+  "pushPrefsWhatsapp": {
+    "en": "WhatsApp",
+    "mr": "व्हॉट्सॲप",
+    "hi": "व्हाट्सऐप"
+  },
+  "pushPrefsWhatsappHint": {
+    "en": "The same updates on WhatsApp.",
+    "mr": "हीच माहिती व्हॉट्सॲपवर.",
+    "hi": "यही जानकारी व्हाट्सऐप पर।"
+  },
+  "pushPrefsSaveFailed": {
+    "en": "Not saved. Check the internet and try again.",
+    "mr": "जतन झाले नाही. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
+    "hi": "सहेजा नहीं गया। इंटरनेट देखें और फिर से कोशिश करें।"
+  },
+  "pushSettingsOnContractor": {
+    "en": "On. Payments and bills reach this phone.",
+    "mr": "चालू. पेमेंट आणि बिलांची माहिती या फोनवर येते.",
+    "hi": "चालू। भुगतान और बिल की जानकारी इस फ़ोन पर आती है।"
+  },
+  "pushPromptBodyContractor": {
+    "en": "We tell you when a payment to you is approved and when one of your bills is paid. You can change this any time in Settings.",
+    "mr": "तुम्हाला द्यायचे पेमेंट मंजूर झाले किंवा तुमचे बिल भरले गेले की आम्ही कळवू. सेटिंगमध्ये हे कधीही बदलता येते.",
+    "hi": "आपको होने वाला भुगतान मंज़ूर होने पर या आपका बिल चुकाए जाने पर हम बताएँगे। सेटिंग में इसे कभी भी बदल सकते हैं।"
+  }
+}

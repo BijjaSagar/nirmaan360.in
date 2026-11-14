@@ -27,3 +27,8 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Firebase app config. The repo is public: these stay on the build machine.
+google-services.json
+GoogleService-Info.plist
+firebase.defines.json

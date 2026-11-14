@@ -1,0 +1,567 @@
+{
+  "measurementBookTitle": {
+    "en": "Measurement book",
+    "mr": "मोजमाप पुस्तिका",
+    "hi": "मापन पुस्तिका"
+  },
+  "measurementDetailTitle": {
+    "en": "Measurement",
+    "mr": "मोजमाप",
+    "hi": "माप"
+  },
+  "measurementChooseLine": {
+    "en": "Choose BOQ line",
+    "mr": "BOQ ओळ निवडा",
+    "hi": "BOQ लाइन चुनें"
+  },
+  "measurementChangeLine": {
+    "en": "Change BOQ line",
+    "mr": "BOQ ओळ बदला",
+    "hi": "BOQ लाइन बदलें"
+  },
+  "measurementChange": {
+    "en": "Change",
+    "mr": "बदला",
+    "hi": "बदलें"
+  },
+  "measurementItem": {
+    "en": "Item",
+    "mr": "बाब",
+    "hi": "आइटम"
+  },
+  "measurementBoqQty": {
+    "en": "BOQ",
+    "mr": "BOQ",
+    "hi": "BOQ"
+  },
+  "measurementBalance": {
+    "en": "Balance",
+    "mr": "शिल्लक",
+    "hi": "शेष"
+  },
+  "measurementBalanceAfter": {
+    "en": "Balance after this",
+    "mr": "यानंतर शिल्लक",
+    "hi": "इसके बाद शेष"
+  },
+  "measurementNos": {
+    "en": "Nos",
+    "mr": "नग",
+    "hi": "नग"
+  },
+  "measurementLengthShort": {
+    "en": "× L",
+    "mr": "लांबी",
+    "hi": "लंबाई"
+  },
+  "measurementBreadthShort": {
+    "en": "× B",
+    "mr": "रुंदी",
+    "hi": "चौड़ाई"
+  },
+  "measurementDepthShort": {
+    "en": "× D",
+    "mr": "खोली",
+    "hi": "गहराई"
+  },
+  "measurementLength": {
+    "en": "Length",
+    "mr": "लांबी",
+    "hi": "लंबाई"
+  },
+  "measurementBreadth": {
+    "en": "Breadth",
+    "mr": "रुंदी",
+    "hi": "चौड़ाई"
+  },
+  "measurementDepth": {
+    "en": "Depth",
+    "mr": "खोली",
+    "hi": "गहराई"
+  },
+  "measurementQuantity": {
+    "en": "Quantity",
+    "mr": "प्रमाण",
+    "hi": "मात्रा"
+  },
+  "measurementAdd": {
+    "en": "Add",
+    "mr": "जोडा",
+    "hi": "जोड़ें"
+  },
+  "measurementDeduct": {
+    "en": "Deduct",
+    "mr": "वजा करा",
+    "hi": "घटाएँ"
+  },
+  "measurementNext": {
+    "en": "Next",
+    "mr": "पुढे",
+    "hi": "आगे"
+  },
+  "measurementDelete": {
+    "en": "Delete",
+    "mr": "खोडा",
+    "hi": "मिटाएँ"
+  },
+  "measurementFormulaHint": {
+    "en": "Enter Nos to begin",
+    "mr": "सुरुवातीला नग भरा",
+    "hi": "शुरू करने के लिए नग भरें"
+  },
+  "measurementDeviation": {
+    "en": "Deviation",
+    "mr": "तफावत",
+    "hi": "विचलन"
+  },
+  "measurementDeviationBody": {
+    "en": "Over BOQ + {percent}%. It will need PM approval.",
+    "mr": "BOQ + {percent}% पेक्षा जास्त. प्रकल्प व्यवस्थापकाची मंजुरी लागेल.",
+    "hi": "BOQ + {percent}% से ज़्यादा। प्रोजेक्ट मैनेजर की मंज़ूरी लगेगी।",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "measurementDeviationDetail": {
+    "en": "This entry goes over the BOQ quantity plus tolerance, so the project manager must approve it.",
+    "mr": "ही नोंद BOQ प्रमाण आणि सवलतीपेक्षा जास्त आहे, त्यामुळे प्रकल्प व्यवस्थापकाची मंजुरी लागेल.",
+    "hi": "यह एंट्री BOQ मात्रा और छूट से ज़्यादा है, इसलिए प्रोजेक्ट मैनेजर की मंज़ूरी लगेगी।"
+  },
+  "measurementPreviewNote": {
+    "en": "Figures on this phone are a preview. The office's figures are final.",
+    "mr": "या फोनवरचे आकडे अंदाजी आहेत. ऑफिसचे आकडे अंतिम असतात.",
+    "hi": "इस फ़ोन के आँकड़े अनुमानित हैं। ऑफ़िस के आँकड़े ही अंतिम हैं।"
+  },
+  "measurementOffline": {
+    "en": "No network.",
+    "mr": "नेटवर्क नाही.",
+    "hi": "नेटवर्क नहीं है।"
+  },
+  "measurementOfflineDetail": {
+    "en": "Entries stay on this phone and go when network returns.",
+    "mr": "नोंदी फोनवरच राहतील, नेटवर्क आले की जातील.",
+    "hi": "एंट्री फ़ोन पर रहेंगी, नेटवर्क आते ही चली जाएँगी।"
+  },
+  "measurementSavedOnPhone": {
+    "en": "Saved on phone.",
+    "mr": "फोनवर जतन केले.",
+    "hi": "फ़ोन पर सहेजा गया।"
+  },
+  "measurementSavedOffline": {
+    "en": "Saved on phone. It will go when network returns.",
+    "mr": "फोनवर जतन केले. नेटवर्क आले की जाईल.",
+    "hi": "फ़ोन पर सहेजा गया। नेटवर्क आते ही चला जाएगा।"
+  },
+  "measurementSendsWhenOnline": {
+    "en": "Not sent yet. It will go for approval when network returns.",
+    "mr": "अजून गेले नाही. नेटवर्क आले की मंजुरीसाठी जाईल.",
+    "hi": "अभी नहीं गया। नेटवर्क आते ही मंज़ूरी के लिए जाएगा।"
+  },
+  "measurementSendForApproval": {
+    "en": "Send for approval",
+    "mr": "मंजुरीसाठी पाठवा",
+    "hi": "मंज़ूरी के लिए भेजें"
+  },
+  "measurementSendCount": {
+    "en": "Send {count} for approval",
+    "mr": "{count} मंजुरीसाठी पाठवा",
+    "hi": "{count} मंज़ूरी के लिए भेजें",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "measurementSendAgain": {
+    "en": "Send again",
+    "mr": "पुन्हा पाठवा",
+    "hi": "फिर से भेजें"
+  },
+  "measurementStampSent": {
+    "en": "Sent",
+    "mr": "पाठवले",
+    "hi": "भेजा गया"
+  },
+  "measurementTally": {
+    "en": "{count, plural, =1{1 row saved on phone} other{{count} rows saved on phone}}",
+    "mr": "{count, plural, =1{1 ओळ फोनवर जतन} other{{count} ओळी फोनवर जतन}}",
+    "hi": "{count, plural, =1{1 पंक्ति फ़ोन पर सहेजी गई} other{{count} पंक्तियाँ फ़ोन पर सहेजी गईं}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "measurementNet": {
+    "en": "net",
+    "mr": "निव्वळ",
+    "hi": "कुल"
+  },
+  "measurementApproverSaid": {
+    "en": "Approver's remark",
+    "mr": "मंजूर करणाऱ्याचा शेरा",
+    "hi": "मंज़ूर करने वाले की टिप्पणी"
+  },
+  "measurementDetailsTitle": {
+    "en": "Location, note and date",
+    "mr": "ठिकाण, टीप आणि तारीख",
+    "hi": "स्थान, नोट और तारीख़"
+  },
+  "measurementDetailsShort": {
+    "en": "Location, date",
+    "mr": "ठिकाण, तारीख",
+    "hi": "स्थान, तारीख़"
+  },
+  "measurementPreviewTag": {
+    "en": "preview",
+    "mr": "अंदाजे",
+    "hi": "अनुमानित"
+  },
+  "measurementDateLabel": {
+    "en": "Measured on",
+    "mr": "मोजमापाची तारीख",
+    "hi": "माप की तारीख़"
+  },
+  "measurementYesterday": {
+    "en": "Yesterday",
+    "mr": "काल",
+    "hi": "कल"
+  },
+  "measurementOtherDate": {
+    "en": "Other date",
+    "mr": "दुसरी तारीख",
+    "hi": "दूसरी तारीख़"
+  },
+  "measurementLocationLabel": {
+    "en": "Location",
+    "mr": "ठिकाण",
+    "hi": "स्थान"
+  },
+  "measurementLocationHint": {
+    "en": "Grid, floor, footing",
+    "mr": "ग्रिड, मजला, फूटिंग",
+    "hi": "ग्रिड, मंज़िल, फ़ुटिंग"
+  },
+  "measurementDescriptionLabel": {
+    "en": "Description",
+    "mr": "वर्णन",
+    "hi": "विवरण"
+  },
+  "measurementDescriptionHint": {
+    "en": "What was measured",
+    "mr": "काय मोजले ते लिहा",
+    "hi": "क्या मापा, लिखें"
+  },
+  "measurementRecentLines": {
+    "en": "Recent",
+    "mr": "अलीकडचे",
+    "hi": "हाल के"
+  },
+  "measurementAllLines": {
+    "en": "All lines",
+    "mr": "सर्व ओळी",
+    "hi": "सभी लाइनें"
+  },
+  "measurementClose": {
+    "en": "Close",
+    "mr": "बंद करा",
+    "hi": "बंद करें"
+  },
+  "measurementSearchLines": {
+    "en": "Search code or description",
+    "mr": "कोड किंवा वर्णन शोधा",
+    "hi": "कोड या विवरण खोजें"
+  },
+  "measurementSearchHint": {
+    "en": "e.g. 2.1 or slab",
+    "mr": "उदा. 2.1 किंवा स्लॅब",
+    "hi": "जैसे 2.1 या स्लैब"
+  },
+  "measurementNoMatchTitle": {
+    "en": "Nothing matches",
+    "mr": "काहीही जुळत नाही",
+    "hi": "कुछ नहीं मिला"
+  },
+  "measurementProblemNoLine": {
+    "en": "Choose the BOQ line first.",
+    "mr": "आधी BOQ ओळ निवडा.",
+    "hi": "पहले BOQ लाइन चुनें।"
+  },
+  "measurementProblemNos": {
+    "en": "Enter Nos. It is required.",
+    "mr": "नग भरा. ते आवश्यक आहे.",
+    "hi": "नग भरें। यह ज़रूरी है।"
+  },
+  "measurementProblemPositive": {
+    "en": "This figure must be more than zero.",
+    "mr": "हा आकडा शून्यापेक्षा जास्त हवा.",
+    "hi": "यह आँकड़ा शून्य से ज़्यादा होना चाहिए।"
+  },
+  "measurementProblemTooLarge": {
+    "en": "This figure is too large.",
+    "mr": "हा आकडा खूप मोठा आहे.",
+    "hi": "यह आँकड़ा बहुत बड़ा है।"
+  },
+  "measurementProblemFuture": {
+    "en": "The date cannot be in the future.",
+    "mr": "तारीख भविष्यातील असू शकत नाही.",
+    "hi": "तारीख़ भविष्य की नहीं हो सकती।"
+  },
+  "measurementProblemLocked": {
+    "en": "This entry has already been sent for approval.",
+    "mr": "ही नोंद आधीच मंजुरीसाठी गेली आहे.",
+    "hi": "यह एंट्री पहले ही मंज़ूरी के लिए जा चुकी है।"
+  },
+  "measurementProblemUnknown": {
+    "en": "Could not save. Please try again.",
+    "mr": "जतन झाले नाही. पुन्हा प्रयत्न करा.",
+    "hi": "सहेजा नहीं जा सका। फिर से कोशिश करें।"
+  },
+  "measurementLockedTitle": {
+    "en": "This entry cannot be changed",
+    "mr": "ही नोंद बदलता येणार नाही",
+    "hi": "यह एंट्री बदली नहीं जा सकती"
+  },
+  "measurementLockedBody": {
+    "en": "It has been approved or is under review.",
+    "mr": "ती मंजूर झाली आहे किंवा तपासणीत आहे.",
+    "hi": "यह मंज़ूर हो चुकी है या जाँच में है।"
+  },
+  "measurementApprovedLockedTitle": {
+    "en": "Approved and locked",
+    "mr": "मंजूर आणि बंद",
+    "hi": "मंज़ूर और बंद"
+  },
+  "measurementApprovedLockedBody": {
+    "en": "Corrections are made on the web as a reversal entry.",
+    "mr": "दुरुस्ती वेबवर उलट नोंद करून होते.",
+    "hi": "सुधार वेब पर रिवर्सल एंट्री से होते हैं।"
+  },
+  "measurementSubmitWaitingTitle": {
+    "en": "Waiting to go for approval",
+    "mr": "मंजुरीसाठी जाण्याच्या प्रतीक्षेत",
+    "hi": "मंज़ूरी को जाने की प्रतीक्षा में"
+  },
+  "measurementAttentionTitle": {
+    "en": "Could not send",
+    "mr": "पाठवता आले नाही",
+    "hi": "भेजा नहीं जा सका"
+  },
+  "measurementAttentionBody": {
+    "en": "The server refused this entry. It is safe on your phone.",
+    "mr": "सर्व्हरने ही नोंद स्वीकारली नाही. ती फोनवर सुरक्षित आहे.",
+    "hi": "सर्वर ने यह एंट्री नहीं ली। यह आपके फ़ोन पर सुरक्षित है।"
+  },
+  "measurementGoneTitle": {
+    "en": "Entry not found",
+    "mr": "नोंद सापडली नाही",
+    "hi": "एंट्री नहीं मिली"
+  },
+  "measurementGoneBody": {
+    "en": "It may have been deleted on the web.",
+    "mr": "ती वेबवर काढली असावी.",
+    "hi": "शायद यह वेब पर हटा दी गई है।"
+  },
+  "measurementEdit": {
+    "en": "Edit",
+    "mr": "बदला",
+    "hi": "बदलें"
+  },
+  "measurementSyncSending": {
+    "en": "Sending",
+    "mr": "जात आहे",
+    "hi": "जा रहा है"
+  },
+  "measurementSyncAttention": {
+    "en": "Needs a look",
+    "mr": "पाहणे गरजेचे",
+    "hi": "देखना ज़रूरी"
+  },
+  "measurementFilterAll": {
+    "en": "All",
+    "mr": "सर्व",
+    "hi": "सभी"
+  },
+  "measurementAddEntry": {
+    "en": "Add measurement",
+    "mr": "मोजमाप जोडा",
+    "hi": "माप जोड़ें"
+  },
+  "measurementEmptyTitle": {
+    "en": "No measurements yet",
+    "mr": "अजून मोजमाप नाही",
+    "hi": "अभी कोई माप नहीं"
+  },
+  "measurementEmptyBody": {
+    "en": "Your first entry starts this book.",
+    "mr": "तुमची पहिली नोंद ही पुस्तिका सुरू करेल.",
+    "hi": "आपकी पहली एंट्री से यह पुस्तिका शुरू होगी।"
+  },
+  "measurementEmptyFilteredTitle": {
+    "en": "Nothing here",
+    "mr": "इथे काही नाही",
+    "hi": "यहाँ कुछ नहीं"
+  },
+  "measurementEmptyFilteredBody": {
+    "en": "No entries have this status.",
+    "mr": "या स्थितीच्या नोंदी नाहीत.",
+    "hi": "इस स्थिति की कोई एंट्री नहीं।"
+  },
+  "measurementBoqUsed": {
+    "en": "{percent} of BOQ used",
+    "mr": "BOQ चा {percent} वापरला",
+    "hi": "BOQ का {percent} उपयोग हुआ",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "measurementShareOfBoq": {
+    "en": "Share of BOQ",
+    "mr": "BOQ मधील वाटा",
+    "hi": "BOQ में हिस्सा"
+  },
+  "measurementBoqProgress": {
+    "en": "BOQ used",
+    "mr": "वापरलेला BOQ",
+    "hi": "उपयोग हुआ BOQ"
+  },
+  "measurementLeaveTitle": {
+    "en": "Leave without saving?",
+    "mr": "जतन न करता बाहेर पडायचे?",
+    "hi": "बिना सहेजे बाहर जाएँ?"
+  },
+  "measurementLeaveBody": {
+    "en": "The figures typed for this row will be lost.",
+    "mr": "या ओळीचे भरलेले आकडे जातील.",
+    "hi": "इस पंक्ति के भरे आँकड़े मिट जाएँगे।"
+  },
+  "measurementLeaveKeep": {
+    "en": "Keep entering",
+    "mr": "भरत राहा",
+    "hi": "भरते रहें"
+  },
+  "measurementLeaveGo": {
+    "en": "Leave",
+    "mr": "बाहेर पडा",
+    "hi": "बाहर जाएँ"
+  },
+  "measurementFixLast": {
+    "en": "Fix last",
+    "mr": "शेवटची दुरुस्त करा",
+    "hi": "आख़िरी सुधारें"
+  },
+  "measurementDraftsLeft": {
+    "en": "{count, plural, =1{1 row kept as a draft. Send it from the book.} other{{count} rows kept as drafts. Send them from the book.}}",
+    "mr": "{count, plural, =1{1 ओळ मसुदा म्हणून ठेवली. पुस्तिकेतून पाठवा.} other{{count} ओळी मसुदा म्हणून ठेवल्या. पुस्तिकेतून पाठवा.}}",
+    "hi": "{count, plural, =1{1 पंक्ति मसौदे में रखी। पुस्तिका से भेजें।} other{{count} पंक्तियाँ मसौदे में रखीं। पुस्तिका से भेजें।}}",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "measurementInReviewBody": {
+    "en": "With the approver. It cannot be changed until they decide.",
+    "mr": "मंजूर करणाऱ्याकडे आहे. निर्णय होईपर्यंत बदलता येणार नाही.",
+    "hi": "मंज़ूर करने वाले के पास है। फ़ैसले तक बदला नहीं जा सकता।"
+  },
+  "measurementRejectedBody": {
+    "en": "This entry was rejected and will not count. Make a new entry if the work needs measuring again.",
+    "mr": "ही नोंद नाकारली आहे, ती धरली जाणार नाही. पुन्हा मोजायचे असल्यास नवीन नोंद करा.",
+    "hi": "यह एंट्री अस्वीकृत है, गिनी नहीं जाएगी। फिर मापना हो तो नई एंट्री करें।"
+  },
+  "measurementLoading": {
+    "en": "Loading",
+    "mr": "लोड होत आहे",
+    "hi": "लोड हो रहा है"
+  },
+  "measurementPhotosTitle": {
+    "en": "Photos",
+    "mr": "फोटो",
+    "hi": "फ़ोटो"
+  },
+  "measurementPhotoAdd": {
+    "en": "Add photo",
+    "mr": "फोटो जोडा",
+    "hi": "फ़ोटो जोड़ें"
+  },
+  "measurementPhotosNone": {
+    "en": "No photos yet",
+    "mr": "अजून फोटो नाहीत",
+    "hi": "अभी कोई फ़ोटो नहीं"
+  },
+  "measurementPhotosLocked": {
+    "en": "Photos cannot be added once the entry is with the approver.",
+    "mr": "नोंद मंजुरीसाठी गेल्यावर फोटो जोडता येत नाहीत.",
+    "hi": "एंट्री मंज़ूरी के लिए जाने के बाद फ़ोटो नहीं जोड़ी जा सकतीं।"
+  },
+  "measurementPhotoSaved": {
+    "en": "Photo saved. Sending now.",
+    "mr": "फोटो जतन झाला. आता पाठवत आहे.",
+    "hi": "फ़ोटो सेव हुई। अभी भेज रहे हैं।"
+  },
+  "measurementPhotoSavedOffline": {
+    "en": "Photo saved on phone. Sends when network returns.",
+    "mr": "फोटो फोनवर जतन झाला. नेटवर्क आल्यावर पाठवला जाईल.",
+    "hi": "फ़ोटो फ़ोन पर सेव हुई। नेटवर्क आने पर भेजी जाएगी।"
+  },
+  "measurementPhotoFailed": {
+    "en": "Could not add the photo. Try again.",
+    "mr": "फोटो जोडता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "फ़ोटो जोड़ी नहीं जा सकी। फिर से कोशिश करें।"
+  },
+  "measurementSheetAction": {
+    "en": "Sheet PDF",
+    "mr": "शीट PDF",
+    "hi": "शीट PDF"
+  },
+  "measurementSheetTitle": {
+    "en": "Measurement sheet PDF",
+    "mr": "मोजमाप शीट PDF",
+    "hi": "माप शीट PDF"
+  },
+  "measurementSheetHint": {
+    "en": "Approved measurements for the dates you choose, grouped by BOQ item.",
+    "mr": "निवडलेल्या तारखांची मंजूर मोजमापे, BOQ बाबीनुसार.",
+    "hi": "चुनी गई तारीखों के स्वीकृत माप, BOQ आइटम के अनुसार."
+  },
+  "measurementSheetFrom": {
+    "en": "From",
+    "mr": "पासून",
+    "hi": "से"
+  },
+  "measurementSheetTo": {
+    "en": "To",
+    "mr": "पर्यंत",
+    "hi": "तक"
+  },
+  "measurementSheetShare": {
+    "en": "Share PDF",
+    "mr": "PDF पाठवा",
+    "hi": "PDF भेजें"
+  },
+  "measurementSheetNeedsInternet": {
+    "en": "The sheet needs internet.",
+    "mr": "शीटसाठी इंटरनेट हवे.",
+    "hi": "शीट के लिए इंटरनेट चाहिए."
+  },
+  "measurementSheetFailed": {
+    "en": "Could not get the sheet. Try again.",
+    "mr": "शीट मिळाली नाही. पुन्हा प्रयत्न करा.",
+    "hi": "शीट नहीं मिली. फिर से कोशिश करें."
+  },
+  "measurementSheetTooLong": {
+    "en": "Too many measurements in these dates. Choose a shorter period.",
+    "mr": "या तारखांमध्ये खूप मोजमापे आहेत. कमी कालावधी निवडा.",
+    "hi": "इन तारीखों में बहुत ज़्यादा माप हैं. छोटी अवधि चुनें."
+  },
+  "measurementSheetNotAllowed": {
+    "en": "This sheet cannot be shared from your account.",
+    "mr": "तुमच्या खात्यातून ही शीट पाठवता येत नाही.",
+    "hi": "आपके खाते से यह शीट नहीं भेजी जा सकती."
+  }
+}

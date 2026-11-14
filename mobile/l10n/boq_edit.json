@@ -1,0 +1,175 @@
+{
+  "boqEditAction": {
+    "en": "Edit item",
+    "mr": "आयटम बदला",
+    "hi": "आइटम बदलें"
+  },
+  "boqEditTitle": {
+    "en": "Edit BOQ item",
+    "mr": "BOQ आयटम बदला",
+    "hi": "BOQ आइटम बदलें"
+  },
+  "boqEditCode": {
+    "en": "Item code",
+    "mr": "आयटम कोड",
+    "hi": "आइटम कोड"
+  },
+  "boqEditCodeRequired": {
+    "en": "Enter the item code.",
+    "mr": "आयटम कोड टाका.",
+    "hi": "आइटम कोड डालें।"
+  },
+  "boqEditQtyInvalid": {
+    "en": "Enter the quantity as a number with up to 3 decimals, like 120.5.",
+    "mr": "परिमाण आकड्यात टाका, जास्तीत जास्त 3 दशांश, उदा. 120.5.",
+    "hi": "मात्रा अंकों में डालें, अधिकतम 3 दशमलव, जैसे 120.5।"
+  },
+  "boqEditRateInvalid": {
+    "en": "Enter the rate as a number with up to 2 decimals, like 450.00.",
+    "mr": "दर आकड्यात टाका, जास्तीत जास्त 2 दशांश, उदा. 450.00.",
+    "hi": "दर अंकों में डालें, अधिकतम 2 दशमलव, जैसे 450.00।"
+  },
+  "boqEditMeasured": {
+    "en": "Measured so far: {qty} {unit}. The quantity cannot go below what is measured or billed.",
+    "mr": "आतापर्यंत मोजलेले: {qty} {unit}. मोजलेल्या किंवा बिल केलेल्या परिमाणापेक्षा कमी परिमाण ठेवता येत नाही.",
+    "hi": "अब तक मापा गया: {qty} {unit}। मापी गई या बिल की गई मात्रा से कम मात्रा नहीं रखी जा सकती।",
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "boqEditReason": {
+    "en": "Why is it changing?",
+    "mr": "हे का बदलत आहे?",
+    "hi": "यह क्यों बदल रहा है?"
+  },
+  "boqEditReasonHint": {
+    "en": "e.g. Revised drawing from the architect",
+    "mr": "उदा. आर्किटेक्टचे सुधारित ड्रॉइंग",
+    "hi": "जैसे आर्किटेक्ट की संशोधित ड्रॉइंग"
+  },
+  "boqEditReasonHelper": {
+    "en": "Kept in the BOQ history with your name. Measurements and bills already made do not change.",
+    "mr": "तुमच्या नावासह BOQ इतिहासात राहते. आधी झालेली मोजमापे आणि बिले बदलत नाहीत.",
+    "hi": "आपके नाम के साथ BOQ इतिहास में रहता है। पहले हुए माप और बिल नहीं बदलते।"
+  },
+  "boqEditReasonRequired": {
+    "en": "Write why it is changing.",
+    "mr": "हे का बदलत आहे ते लिहा.",
+    "hi": "यह क्यों बदल रहा है, लिखें।"
+  },
+  "boqEditSave": {
+    "en": "Save changes",
+    "mr": "बदल जतन करा",
+    "hi": "बदलाव सहेजें"
+  },
+  "boqEditSaved": {
+    "en": "BOQ item saved.",
+    "mr": "BOQ आयटम जतन झाला.",
+    "hi": "BOQ आइटम सहेजा गया।"
+  },
+  "boqEditChanged": {
+    "en": "Someone changed this item after you opened it. It now shows as the office has it. Check it and save again.",
+    "mr": "तुम्ही उघडल्यानंतर कोणीतरी हा आयटम बदलला. आता तो ऑफिसमध्ये आहे तसा दिसत आहे. तपासा आणि पुन्हा जतन करा.",
+    "hi": "आपके खोलने के बाद किसी ने यह आइटम बदला। अब यह वैसा दिख रहा है जैसा ऑफिस में है। जाँचें और फिर से सहेजें।"
+  },
+  "boqEditGone": {
+    "en": "This item is no longer in the BOQ.",
+    "mr": "हा आयटम आता BOQ मध्ये नाही.",
+    "hi": "यह आइटम अब BOQ में नहीं है।"
+  },
+  "boqEditNotAllowed": {
+    "en": "You cannot change the BOQ. Ask the office.",
+    "mr": "तुम्ही BOQ बदलू शकत नाही. ऑफिसला विचारा.",
+    "hi": "आप BOQ नहीं बदल सकते। ऑफिस से पूछें।"
+  },
+  "boqEditOfflineDetail": {
+    "en": "BOQ items can be changed only online.",
+    "mr": "BOQ आयटम फक्त ऑनलाइन बदलता येतात.",
+    "hi": "BOQ आइटम केवल ऑनलाइन बदले जा सकते हैं।"
+  },
+  "boqDeleteAction": {
+    "en": "Delete this item",
+    "mr": "हा आयटम काढा",
+    "hi": "यह आइटम हटाएँ"
+  },
+  "boqDeleteOwnerNote": {
+    "en": "Only the company owner can delete BOQ items. An item with measurements, daily report work, tenders or bills cannot be deleted.",
+    "mr": "BOQ आयटम फक्त कंपनीचा मालक काढू शकतो. ज्या आयटमवर मोजमाप, रोजच्या अहवालातील काम, टेंडर किंवा बिले आहेत तो काढता येत नाही.",
+    "hi": "BOQ आइटम केवल कंपनी का मालिक हटा सकता है। जिस आइटम पर माप, रोज़ की रिपोर्ट का काम, टेंडर या बिल हों, उसे हटाया नहीं जा सकता।"
+  },
+  "boqDeleteTitle": {
+    "en": "Delete item {code}?",
+    "mr": "आयटम {code} काढायचा?",
+    "hi": "आइटम {code} हटाएँ?",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "boqDeleteBody": {
+    "en": "It will be taken out of the BOQ for everyone. The BOQ history keeps it with your name and reason. It cannot be brought back from the app.",
+    "mr": "तो सर्वांसाठी BOQ मधून काढला जाईल. BOQ इतिहासात तो तुमच्या नावासह आणि कारणासह राहील. ॲपमधून तो परत आणता येणार नाही.",
+    "hi": "यह सभी के लिए BOQ से हटा दिया जाएगा। BOQ इतिहास में यह आपके नाम और कारण के साथ रहेगा। ऐप से इसे वापस नहीं लाया जा सकता।"
+  },
+  "boqDeleteReason": {
+    "en": "Why is it being deleted?",
+    "mr": "तो का काढला जात आहे?",
+    "hi": "इसे क्यों हटाया जा रहा है?"
+  },
+  "boqDeleteReasonRequired": {
+    "en": "Write why it is being deleted.",
+    "mr": "तो का काढत आहात ते लिहा.",
+    "hi": "इसे क्यों हटा रहे हैं, लिखें।"
+  },
+  "boqDeleteConfirm": {
+    "en": "Delete item",
+    "mr": "आयटम काढा",
+    "hi": "आइटम हटाएँ"
+  },
+  "boqDeleteKeep": {
+    "en": "Keep it",
+    "mr": "ठेवा",
+    "hi": "रहने दें"
+  },
+  "boqDeleteDone": {
+    "en": "Item {code} deleted from the BOQ.",
+    "mr": "आयटम {code} BOQ मधून काढला.",
+    "hi": "आइटम {code} BOQ से हटाया गया।",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "boqDeleteRefusedTitle": {
+    "en": "This item cannot be deleted",
+    "mr": "हा आयटम काढता येत नाही",
+    "hi": "यह आइटम हटाया नहीं जा सकता"
+  },
+  "boqDeleteUnsent": {
+    "en": "This phone has work on this item that has not been sent yet. Send it first, then delete.",
+    "mr": "या फोनवर या आयटमचे काम आहे जे अजून पाठवलेले नाही. आधी ते पाठवा, मग काढा.",
+    "hi": "इस फ़ोन पर इस आइटम का काम है जो अभी भेजा नहीं गया। पहले उसे भेजें, फिर हटाएँ।"
+  },
+  "boqDeleteOwnerOnly": {
+    "en": "Only the company owner can delete a BOQ item.",
+    "mr": "BOQ आयटम फक्त कंपनीचा मालक काढू शकतो.",
+    "hi": "BOQ आइटम केवल कंपनी का मालिक हटा सकता है।"
+  },
+  "boqDeleteOffline": {
+    "en": "Deleting needs the internet.",
+    "mr": "काढण्यासाठी इंटरनेट लागते.",
+    "hi": "हटाने के लिए इंटरनेट चाहिए।"
+  },
+  "boqDeleteFailed": {
+    "en": "The item could not be deleted. Try again.",
+    "mr": "आयटम काढता आला नाही. पुन्हा प्रयत्न करा.",
+    "hi": "आइटम हटाया नहीं जा सका। फिर से कोशिश करें।"
+  }
+}
