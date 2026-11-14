@@ -130,6 +130,28 @@ Both go through `BoqService`, as the web BOQ page does, and each change is kept 
 - **403** `{"message": "Only the company owner can delete a BOQ item."}` for anyone else, an admin included.
 - **422** `errors.boq`, one message per kind of record that holds the line: measurements, work in a daily report that is not deleted, a contractor tender, a work order that is not deleted, an RA bill, site progress entries, labour. The website's remove refuses the same records.
 
+## A project's advance in lines, and its recovery percentage
+
+The mobilisation advance can be several lines, each with an amount, the date it came in and a note, and the advance recovery percentage can be worked out from the advance and the contract value. These are additions to `GET` and `PATCH /projects/{project}`: no key is renamed or changes type, and a request that sends neither new field behaves as before. `advance_amount` and `advance_recovery_pct` stay the figures RA bills use, so a bill already made keeps the terms saved on it and new bills use the new ones.
+
+### `GET /projects/{project}` and the `PATCH` reply
+
+`project.view`. Two keys are added after `budget_margin_pct`:
+
+- `advances`: the lines in their order, `[{"id": 7, "amount": "60000.00", "received_on": "2026-11-02", "note": "NEFT 30218"}]`. `received_on` and `note` may be null. The lines add up to `advance_amount`. An empty list means the advance is one figure, as on every project saved before this. `null` without `money.view`, like `advance_amount`.
+- `advance_recovery_auto` (bool): true while `advance_recovery_pct` is worked out. Sent to everyone, as `advance_recovery_pct` is. False on every project that existed before, so no saved percentage changed by itself.
+
+### `PATCH /projects/{project}`
+
+`project.manage`. Two optional fields are added, both taken only from someone with `money.view`, as `contract_value` and `advance_amount` are; from anyone else they are ignored and the saved values stay.
+
+- `advances`: the whole list, replacing the saved lines. Each line is `{amount, received_on, note}`: `amount` above zero, up to 9999999999999; `received_on` a date or null; `note` up to 255 characters or null. A line whose amount is null or empty is left out, with whatever else it holds. At most 20 lines. `advance_amount` becomes the sum of the lines, and an `advance_amount` sent beside them is ignored. An empty list takes the lines away and sets the advance to 0. While a project has lines, an `advance_amount` sent on its own must equal their sum.
+- `advance_recovery_auto` (bool). While it is true the server sets `advance_recovery_pct` to `advance_amount` ÷ `contract_value` × 100, rounded half up to two places, at most 100, and 0 when either is 0, and works it out again on every change, including a change of `phases` or `contract_value`. A sent `advance_recovery_pct` is then ignored. False keeps the saved percentage until one is sent.
+
+Errors are 422 in the usual shape: `errors["advances.0.amount"]`, `errors["advances.0.received_on"]` or `errors["advances.0.note"]` on the line, `errors.advances` for more than 20 lines or lines that add up to more than a project holds, `errors.advance_amount` for a figure that differs from the lines. Another company's project, or one the person is not given, is 404.
+
+Each change to the lines is in `audit_logs` as `project.advances_changed`, with each line's amount, date and whether it has a note. The note itself is not copied there.
+
 ## Tender API
 
 The app's side of the web page "Tenders for this BOQ line": see which tenders a BOQ line is in, start a tender from the line, add contractors and their quotes, compare the quotes and choose one. Choosing a quote makes the work order at its rates.

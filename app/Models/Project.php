@@ -35,6 +35,7 @@ class Project extends Model
             'gst_pct' => 'decimal:2',
             'advance_amount' => 'decimal:2',
             'advance_recovery_pct' => 'decimal:2',
+            'advance_recovery_auto' => 'boolean',
             'measurement_tolerance_pct' => 'decimal:2',
             'deduction_order' => 'array',
         ];
@@ -49,6 +50,12 @@ class Project extends Model
     public function valuePhases(): HasMany
     {
         return $this->hasMany(ProjectValuePhase::class)->orderBy('sort')->orderBy('id');
+    }
+
+    /** The mobilisation advances, in their order. Empty when the advance is one figure. */
+    public function advances(): HasMany
+    {
+        return $this->hasMany(ProjectAdvance::class)->orderBy('sort')->orderBy('id');
     }
 
     public function sites(): HasMany

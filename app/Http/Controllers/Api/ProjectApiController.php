@@ -9,6 +9,7 @@ use App\Http\Presenters\ContractorControlPresenter;
 use App\Http\Presenters\ProjectPresenter;
 use App\Models\BoqItem;
 use App\Models\Project;
+use App\Models\User;
 use App\Services\BoqService;
 use App\Services\BoqValues;
 use App\Services\ContractorControl\BoqLineTenders;
@@ -51,14 +52,14 @@ class ProjectApiController extends Controller
     /** A project as the edit screen needs it, with the phases of its value. */
     public function show(Request $request, Project $project): JsonResponse
     {
-        return response()->json(['data' => ProjectPresenter::detail($project, $request->user(), $this->projects->phasesOf($project))]);
+        return response()->json(['data' => $this->detail($project, $request->user())]);
     }
 
     /** Changes the fields sent and nothing else. Answers as show() does. */
     public function update(Request $request, Project $project): JsonResponse
     {
         $user = $request->user();
-        $data = $request->validate($this->projects->updateRules($user, $project));
+        $data = $request->validate($this->projects->updateRules($user, $project), $this->projects->advanceMessages());
 
         if (isset($data['deduction_order'])) {
             $data['deduction_order'] = explode(',', $data['deduction_order']);
@@ -66,7 +67,12 @@ class ProjectApiController extends Controller
 
         $project = $this->projects->update($project, $data, $user);
 
-        return response()->json(['data' => ProjectPresenter::detail($project, $user, $this->projects->phasesOf($project))]);
+        return response()->json(['data' => $this->detail($project, $user)]);
+    }
+
+    private function detail(Project $project, User $user): array
+    {
+        return ProjectPresenter::detail($project, $user, $this->projects->phasesOf($project), $this->projects->advancesOf($project));
     }
 
     /**

@@ -30,8 +30,9 @@ final class ProjectPresenter
      * Money is null to anyone who may not see it, and the budget to anyone without the budget.
      *
      * @param  list<array{id:int,name:string,amount:string,share_pct:?string}>  $phases
+     * @param  list<array{id:int,amount:string,received_on:?string,note:?string}>  $advances
      */
-    public static function detail(Project $project, User $user, array $phases): array
+    public static function detail(Project $project, User $user, array $phases, array $advances): array
     {
         $money = Money::visible($user);
         $budget = Money::overview($user);
@@ -56,6 +57,11 @@ final class ProjectPresenter
             'phases' => $money ? $phases : null,
             'budget_amount' => $budget && $project->budget_amount !== null ? Dec::money($project->budget_amount) : null,
             'budget_margin_pct' => $budget ? $project->budget_margin_pct : null,
+            // Added after the 1.0 apps: the advance as lines, in order, which add up to advance_amount.
+            // Empty when the advance is one figure. Money, notes included, as a note may quote a sum.
+            'advances' => $money ? $advances : null,
+            // True while advance_recovery_pct is worked out from advance_amount and contract_value.
+            'advance_recovery_auto' => (bool) $project->advance_recovery_auto,
         ];
     }
 }
