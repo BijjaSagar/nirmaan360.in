@@ -347,8 +347,11 @@ final class BoqSheetImport
      *
      * "filled" names the figures the file does not give, which come as 0 (no rate column, a blank cell, words in
      * place of a figure, a rate-only line's quantity): a row that updates a line already there keeps that line's own.
+     * "origin" says where the code came from, as on a line of the column check: "code" for the sheet's own item code
+     * (every code of a sheet in the template's columns), "serial" for one made from its serial numbers, "made" for one
+     * made up here. Only an item code says which line it is; a serial number is only where the line stands.
      *
-     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string, filled: list<string>}>, error: string|list<string>|null}
+     * @return array{rows: array<int, array{section: ?string, code: string, description: string, unit: string, qty: string, rate: string, filled: list<string>, origin: string}>, error: string|list<string>|null}
      */
     public function rowsFor(int $organizationId, string $path, int $maxRows): array
     {
@@ -394,7 +397,7 @@ final class BoqSheetImport
                 return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
             }
 
-            [$grid, $columns, $header, $filled] = [$sheet['grid'], $layout->columns(), $layout->lastRow(), []];
+            [$grid, $columns, $header, $filled, $origins] = [$sheet['grid'], $layout->columns(), $layout->lastRow(), [], []];
         } else {
             // A unit typed for an earlier file in this layout is not used here: nobody would see it applied.
             $reading = (new BoqSheetRows)->classify($sheet['grid'], $layout, null, ['missing' => $sheet['missing'], 'merges' => $sheet['merges'], 'texts' => $sheet['texts'] ?? []]);
@@ -407,7 +410,10 @@ final class BoqSheetImport
                 return ['rows' => [], 'error' => __('This sheet has no unit column. Add one, with the unit of each line.')];
             }
 
-            [$grid, $columns, $header, $filled] = [$reading['grid'], $reading['columns'], $reading['header_row'], array_map(fn (array $line) => $line['filled'], $reading['lines'])];
+            [$grid, $columns, $header, $filled, $origins] = [
+                $reading['grid'], $reading['columns'], $reading['header_row'],
+                array_map(fn (array $line) => $line['filled'], $reading['lines']), array_map(fn (array $line) => $line['origin'], $reading['lines']),
+            ];
         }
 
         $rows = [];
@@ -425,7 +431,7 @@ final class BoqSheetImport
             }
 
             if (implode('', $row) !== '') {
-                $rows[$number] = [...$row, 'filled' => $filled[$number] ?? []];
+                $rows[$number] = [...$row, 'filled' => $filled[$number] ?? [], 'origin' => $layout->isTemplate() ? 'code' : ($origins[$number] ?? 'made')];
             }
         }
 
@@ -476,6 +482,8 @@ final class BoqSheetImport
      * (no such column, a blank cell, words in place of a figure, a rate-only line's quantity), as the CSV import keeps
      * the rates when its file has no rate column: a 0 the reader put in for a missing figure never overwrites one the
      * item has, and a quantity is never cut under work measured or billed that way. A figure the file gives is used.
+     * A line that keeps the item's quantity no longer says in its details that the file gives none ("To be priced",
+     * "Rate only"): those words would be saved on an item whose figures say otherwise.
      *
      * @param  array<int, BoqItem>  $matched  Sheet row => the item its line updates.
      * @return array{qty: list<int>, rate: list<int>} The rows that keep each figure.
@@ -485,11 +493,19 @@ final class BoqSheetImport
         $kept = ['qty' => [], 'rate' => []];
 
         foreach ($matched as $row => $item) {
-            foreach ($read['lines'][$row]['filled'] ?? [] as $field) {
+            $line = $read['lines'][$row];
+
+            foreach ($line['filled'] ?? [] as $field) {
                 $value = $field === 'qty' ? Dec::qty($item->qty) : Dec::money($item->rate);
                 $read['lines'][$row][$field] = $value;
                 $read['grid'][$row][$read['columns'][$field]] = $value;
                 $kept[$field][] = $row;
+            }
+
+            if (in_array('qty', $line['filled'] ?? [], true) && ($line['figure_details'] ?? []) !== []) {
+                $read['lines'][$row]['details'] = array_values(array_diff_key($line['details'], array_flip($line['figure_details'])));
+                $read['lines'][$row]['figure_details'] = [];
+                $read['grid'][$row][$read['columns']['details']] = BoqSheetRows::detailsText($read['lines'][$row]);
             }
         }
 
@@ -741,7 +757,7 @@ final class BoqSheetImport
             return [[], [], ['update' => 0, 'add' => count($read['lines'])], []];
         }
 
-        $same = fn (BoqItem $item, array $line) => self::plain((string) $item->description) === self::plain((string) $line['description']);
+        $same = fn (BoqItem $item, array $line) => self::sameWording((string) $item->description, (string) $line['description']);
         $used = array_flip(array_map('strval', array_column($read['lines'], 'code')));
         $codeColumn = $read['columns']['code'];
         $renumbered = [];
@@ -776,16 +792,7 @@ final class BoqSheetImport
             }
 
             $plan['add']++;
-
-            for ($suffix = 2; ; $suffix++) {
-                $code = mb_substr((string) $line['code'], 0, 28).'-'.$suffix;
-                $other = $existing->get($code);
-
-                if (! isset($used[$code]) && ($other === null || $same($other, $line))) {
-                    break;
-                }
-            }
-
+            $code = self::nextCode((string) $line['code'], $used, fn (string $code) => ($other = $existing->get($code)) === null || $same($other, $line));
             $used[$code] = true;
             $renumbered[] = ['row' => $row, 'from' => (string) $line['code'], 'to' => $code, 'existing' => (string) $item->description];
             $read['lines'][$row]['code'] = $code;
@@ -813,6 +820,30 @@ final class BoqSheetImport
         }
 
         return count(array_intersect($before, $after)) >= 0.6 * min(count($before), count($after));
+    }
+
+    /** Whether two descriptions say the same, whatever their case and spacing: the one test of "the same item" by wording. */
+    public static function sameWording(string $first, string $second): bool
+    {
+        return self::plain($first) === self::plain($second);
+    }
+
+    /**
+     * The code a line gets when its own belongs to a different item: its code with -2, -3 … after it (1 becomes 1-2),
+     * the first that no line of the file uses and that $free says no different item holds.
+     *
+     * @param  array<string, mixed>  $used  The codes the file's lines use, as keys.
+     * @param  callable(string): bool  $free
+     */
+    public static function nextCode(string $code, array $used, callable $free): string
+    {
+        for ($suffix = 2; ; $suffix++) {
+            $next = mb_substr($code, 0, 28).'-'.$suffix;
+
+            if (! isset($used[$next]) && $free($next)) {
+                return $next;
+            }
+        }
     }
 
     private static function plain(string $text): string

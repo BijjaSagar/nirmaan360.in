@@ -940,6 +940,8 @@ final class BoqSheetRows extends EstimateSheet
         $details = [];
         // The figures the file does not give, read as 0 here: a line that updates an item keeps the item's own (BoqSheetImport).
         $filled = [];
+        // Which of the details only say that the file gives no quantity, for a line that keeps the item's to drop.
+        $figureDetails = [];
         $unitText = $row['unit'];
         $qtyText = CellValues::text($row['qty_raw']);
 
@@ -973,6 +975,7 @@ final class BoqSheetRows extends EstimateSheet
             $filled = ['qty', 'rate'];
             $this->toPrice[] = $number;
             $details[] = __('To be priced: the file gives no quantity and no rate.');
+            $figureDetails[] = array_key_last($details);
         } elseif ($row['rate_only']) {
             $kind = 'rate_only';
             $filled = $rate === null ? ['qty', 'rate'] : ['qty'];
@@ -1109,6 +1112,7 @@ final class BoqSheetRows extends EstimateSheet
 
         if ($kind === 'rate_only' && ! $toPrice) {
             $details[] = __('Rate only: the file gives no quantity.');
+            $figureDetails[] = array_key_last($details);
         }
 
         if (preg_match('/\bprovisional\s+sum\b|\bp\.?\s?c\.?\s+sum\b/iu', $description) === 1) {
@@ -1136,6 +1140,7 @@ final class BoqSheetRows extends EstimateSheet
             'file_rate' => $fileRate,
             'category' => BoqCategories::fromText($row['category']) ?? $this->category($description.' '.($spec['text'] ?? '')),
             'details' => $details,
+            'figure_details' => $figureDetails,
             'parts' => [],
             'remarks' => $row['remark'] === '' ? [] : [$row['remark']],
             'spec_row' => $spec['row'] ?? null,
@@ -2186,16 +2191,6 @@ final class BoqSheetRows extends EstimateSheet
         $rows = [];
 
         foreach ($this->made as $number => $line) {
-            $details = $line['details'];
-
-            if ($line['parts'] !== []) {
-                $details[] = __('Break-up: :parts', ['parts' => implode('; ', $line['parts'])]);
-            }
-
-            if ($line['remarks'] !== []) {
-                $details[] = __('Remark: :text', ['text' => implode('; ', $line['remarks'])]);
-            }
-
             $rows[$number] = [
                 self::OUTPUT['section'] => $line['section'],
                 self::OUTPUT['code'] => $line['code'],
@@ -2204,11 +2199,31 @@ final class BoqSheetRows extends EstimateSheet
                 self::OUTPUT['qty'] => $line['qty'],
                 self::OUTPUT['rate'] => $line['rate'],
                 self::OUTPUT['category'] => $line['category'],
-                self::OUTPUT['details'] => $details === [] ? null : Str::limit(implode("\n", $details), 10000, ''),
+                self::OUTPUT['details'] => self::detailsText($line),
             ];
         }
 
         return $rows;
+    }
+
+    /**
+     * A line's details cell as it is imported: its details, its break-up and its remarks, one to a line.
+     *
+     * @param  array{details: list<string>, parts: list<string>, remarks: list<string>}  $line
+     */
+    public static function detailsText(array $line): ?string
+    {
+        $details = $line['details'];
+
+        if ($line['parts'] !== []) {
+            $details[] = __('Break-up: :parts', ['parts' => implode('; ', $line['parts'])]);
+        }
+
+        if ($line['remarks'] !== []) {
+            $details[] = __('Remark: :text', ['text' => implode('; ', $line['remarks'])]);
+        }
+
+        return $details === [] ? null : Str::limit(implode("\n", $details), 10000, '');
     }
 
     /** A figure without the zeros after its decimal point: 4.50 as 4.5, 100.000000 as 100. */

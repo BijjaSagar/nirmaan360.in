@@ -146,4 +146,69 @@ class KeptFiguresTest extends BoqImportTestCase
         $this->assertSame(['20.000', '50.00'], [$lines['R-9.9']->qty, $lines['R-9.9']->rate]);
         $this->assertSame(['120.000', '0.00'], [$lines['R-4.2']->qty, $lines['R-4.2']->rate]);
     }
+
+    public function test_a_corrigendum_numbered_by_serial_never_gives_a_tender_line_the_rate_quoted_for_another(): void
+    {
+        $this->actingAs($this->owner);
+        $tender = $this->makeTender($this->org);
+        $heading = ['S.No.', 'Description of Work', 'Unit', 'Qty', 'Rate', 'Amount'];
+
+        $this->post(route('crm.boq.import', $tender), ['file' => $this->sheet([
+            $heading,
+            [1, 'Sample granular sub-base with close graded material', 'Cum', '1,250', 950, 1187500],
+            [2, 'Sample road marking with hot thermoplastic paint', 'Sqm', 20, 45, 900],
+        ], 'priced.xlsx')])->assertSessionHasNoErrors()->assertSessionHas('success', '2 BOQ rows imported.');
+
+        // The corrigendum adds an item at S.No. 2, so road marking moves to 3; it gives no rates.
+        $response = $this->post(route('crm.boq.import', $tender), ['file' => $this->sheet([
+            $heading,
+            [1, 'Sample granular sub-base with close graded material', 'Cum', '1,300', null, null],
+            [2, 'Sample precast kerb stones new item', 'Rmt', 120, null, null],
+            [3, 'Sample road marking with hot thermoplastic paint', 'Sqm', 25, null, null],
+        ], 'corrigendum.xlsx')])->assertSessionHasNoErrors();
+
+        $lines = CrmTenderBoqItem::where('tender_id', $tender->id)->orderBy('sort')->get()->keyBy('code');
+        $this->assertSame(['1', '2', '2-2', '3'], $lines->keys()->map(fn ($code) => (string) $code)->all());
+        // The same item by its wording keeps its quoted rate.
+        $this->assertSame(['1300.000', '950.00'], [$lines['1']->qty, $lines['1']->rate]);
+        // The line numbered 2 on the tender is another item: it is left as it was, and the kerb stones come in at rate 0.
+        $this->assertSame(['Sample road marking with hot thermoplastic paint', '20.000', '45.00'], [$lines['2']->description, $lines['2']->qty, $lines['2']->rate]);
+        $this->assertSame(['Sample precast kerb stones new item', 'rmt', '120.000', '0.00'], [$lines['2-2']->description, $lines['2-2']->unit, $lines['2-2']->qty, $lines['2-2']->rate]);
+        $this->assertSame(['25.000', '0.00'], [$lines['3']->qty, $lines['3']->rate]);
+        $response->assertSessionHas('success', '3 BOQ rows imported. 1 lines carry the number of a different line already on the tender, so they were added as new lines (2 → 2-2). The lines already there were left as they were: check them, and delete any line the file replaces.');
+
+        // A file with the sheet's own item codes updates the line with that code, its wording changed or not, as it always has.
+        $this->post(route('crm.boq.import', $tender), ['file' => $this->sheet([
+            ['Item Code', 'Description of Work', 'Unit', 'Qty', 'Rate'],
+            ['2', 'Sample road marking with cold plastic paint', 'Sqm', 22, null],
+        ], 'codes.xlsx')])->assertSessionHasNoErrors()->assertSessionHas('success', '1 BOQ rows imported.');
+        $line = CrmTenderBoqItem::where('tender_id', $tender->id)->where('code', '2')->firstOrFail();
+        $this->assertSame(['Sample road marking with cold plastic paint', '22.000', '45.00'], [$line->description, $line->qty, $line->rate]);
+    }
+
+    public function test_a_line_that_keeps_the_items_quantity_does_not_say_the_file_gives_none(): void
+    {
+        $project = $this->makeProject($this->org);
+        $this->item($project, '1', 'Sample plaster on walls', 'sqm', '400.000', '12.00');
+        $this->item($project, '2', 'Sample PCC 1:4:8', 'cum', '60.000', '340.00');
+
+        $preview = $this->staged($project, $this->sheet([
+            ['Sr No', 'Description', 'Unit', 'Qty', 'Rate', 'Amount'],
+            [1, 'Sample plaster on walls', 'sqm', null, 13, null],
+            [2, 'Sample PCC 1:4:8', 'cum', null, null, null],
+            [3, 'Sample skirting in kota stone', 'sqm', null, 55, null],
+        ]));
+
+        $this->assertSame(['update' => 2, 'add' => 1], $preview['plan']);
+        $this->assertSame([], $preview['errors']);
+        $details = array_map(fn (array $line) => $line['details'], $preview['lines']);
+        $this->assertSame([[], [], ['Rate only: the file gives no quantity.']], $details);
+
+        $this->confirm($project)->assertSessionHas('success');
+        $lines = $this->lines($project);
+        $this->assertSame(['400.000', '13.00', null], [$lines['1']->qty, $lines['1']->rate, $lines['1']->details]);
+        $this->assertSame(['60.000', '340.00', null], [$lines['2']->qty, $lines['2']->rate, $lines['2']->details]);
+        // A line that is added still says it: it comes in at quantity 0.
+        $this->assertSame(['0.000', '55.00', 'Rate only: the file gives no quantity.'], [$lines['3']->qty, $lines['3']->rate, $lines['3']->details]);
+    }
 }

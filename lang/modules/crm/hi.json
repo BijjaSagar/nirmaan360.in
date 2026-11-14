@@ -2,6 +2,7 @@
     ":amount of EMD is still held for this tender. Mark it refunded or adjusted on the tender.": "इस टेंडर का :amount EMD अभी जमा है। टेंडर पर इसे वापस हुआ या समायोजित के रूप में दर्ज करें।",
     ":count BOQ rows imported.": ":count BOQ पंक्तियाँ इम्पोर्ट हुईं।",
     ":count awaiting result (:value)": ":count नतीजे की प्रतीक्षा में (:value)",
+    ":count lines carry the number of a different line already on the tender, so they were added as new lines (:codes). The lines already there were left as they were: check them, and delete any line the file replaces.": ":count पंक्तियों पर टेंडर में पहले से मौजूद किसी दूसरी पंक्ति का नंबर है, इसलिए उन्हें नई पंक्तियों के रूप में जोड़ा गया (:codes)। पहले से मौजूद पंक्तियाँ जैसी थीं वैसी ही छोड़ी गईं: उन्हें जाँचें, और फ़ाइल जिस पंक्ति की जगह लेती है उसे हटा दें।",
     ":count new": ":count नए",
     ":kind of :amount marked :status": ":amount का :kind :status दर्ज किया गया",
     ":kind of :amount put back to paid": ":amount का :kind फिर से भुगतान किया हुआ कर दिया गया",

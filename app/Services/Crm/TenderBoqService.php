@@ -72,33 +72,56 @@ class TenderBoqService
     }
 
     /**
-     * Add or update lines from a BOQ file. A line whose code already exists is updated.
-     * Nothing is saved unless every row is valid. The file's content decides how it is read, not its name.
+     * Add or update lines from a BOQ file. Nothing is saved unless every row is valid. The file's content decides how
+     * it is read, not its name. There is no preview on this page, so a line updates one already on the tender only
+     * when it plainly is that line:
+     *
+     * - its code is the sheet's own item code (every code of a file in the template's columns), as the import always
+     *   took it, or
+     * - its code, read from the sheet's serial numbers or made up from the order of the rows, belongs to a line with
+     *   the same description. A serial number is only where the line stands: when a corrigendum adds or drops an item,
+     *   the numbers after it move to other items. Such a line is added under the next free code (2 becomes 2-2) and
+     *   the line already there is left as it was, as the column check of a project's BOQ does; the result names them.
      *
      * A sheet in its own layout may not give a line's rate or quantity (no such column, a blank cell, a rate-only
-     * line); it is read as 0. An existing line keeps its own figure then, so a department's revised schedule or
-     * corrigendum, which has no rates, updates the quantities and never wipes the rates quoted on the tender. There
-     * is no preview on this page to say otherwise.
+     * line); it is read as 0. A line that updates one already there keeps that line's own figure then, so a
+     * department's revised schedule or corrigendum, which has no rates, updates the quantities and never wipes the
+     * rates quoted on the tender, nor gives a line the rate quoted for another.
+     *
+     * @return array{count: int, renumbered: list<array{from: string, to: string}>} The rows imported, and the lines added under a new code.
      */
-    public function import(CrmTender $tender, string $path, string $extension): int
+    public function import(CrmTender $tender, string $path, string $extension): array
     {
         $rows = $this->readRows($tender, $path);
 
         return DB::transaction(function () use ($tender, $rows) {
             $tender = $this->lockEditable($tender);
             $sort = (int) $tender->boqItems()->max('sort');
-            $byCode = $tender->boqItems()->get()->keyBy('code');
+            $byCode = $tender->boqItems()->get()->keyBy(fn (CrmTenderBoqItem $item) => (string) $item->code);
+            $used = array_flip(array_map(fn (array $row) => (string) $row['code'], $rows));
+            $sameLine = fn (?CrmTenderBoqItem $line, array $row) => $line !== null && BoqSheetImport::sameWording((string) $line->description, (string) $row['description']);
+            $renumbered = [];
 
             foreach ($rows as $row) {
+                $existing = $byCode->get((string) $row['code']);
+
+                if ($existing !== null && $row['origin'] !== 'code' && ! $sameLine($existing, $row)) {
+                    $code = BoqSheetImport::nextCode((string) $row['code'], $used, fn (string $code) => ! $byCode->has($code) || $sameLine($byCode->get($code), $row));
+                    $used[$code] = true;
+                    $renumbered[] = ['from' => (string) $row['code'], 'to' => $code];
+                    $row['code'] = $code;
+                    $existing = $byCode->get($code);
+                }
+
                 $values = $this->values($row);
 
-                if ($existing = $byCode->get($row['code'])) {
+                if ($existing !== null) {
                     $existing->update(array_diff_key($values, array_flip($row['filled'])));
 
                     continue;
                 }
 
-                $byCode->put($row['code'], CrmTenderBoqItem::create([
+                $byCode->put((string) $row['code'], CrmTenderBoqItem::create([
                     ...$values,
                     'organization_id' => $tender->organization_id,
                     'tender_id' => $tender->id,
@@ -107,7 +130,7 @@ class TenderBoqService
                 ]));
             }
 
-            return count($rows);
+            return ['count' => count($rows), 'renumbered' => $renumbered];
         });
     }
 
@@ -143,7 +166,7 @@ class TenderBoqService
         ];
     }
 
-    /** @return list<array<string, mixed>> Each row's fields, and in "filled" the figures (qty, rate) the file does not give. */
+    /** @return list<array<string, mixed>> Each row's fields, in "filled" the figures (qty, rate) the file does not give, and in "origin" where its code came from (BoqSheetImport::rowsFor). */
     private function readRows(CrmTender $tender, string $path): array
     {
         $matrix = match (SheetFile::sniff($path)) {
@@ -163,7 +186,8 @@ class TenderBoqService
                     continue;
                 }
 
-                $candidates[$index + 2] = array_map(fn ($cell) => trim((string) $cell), array_combine($header, $cells));
+                // The template's code column holds the item codes.
+                $candidates[$index + 2] = [...array_map(fn ($cell) => trim((string) $cell), array_combine($header, $cells)), 'origin' => 'code'];
             }
         } else {
             // Not the template: the sheet is read by its own headings.
@@ -183,6 +207,8 @@ class TenderBoqService
             $row['section'] ??= '';
             // Only the sheet reader says which figures the file left out; a template row gives every figure it has.
             $row['filled'] = array_values(array_intersect(is_array($row['filled'] ?? null) ? $row['filled'] : [], ['qty', 'rate']));
+            // A code no reader vouches for is not taken as an item code.
+            $row['origin'] = in_array($row['origin'] ?? null, ['code', 'serial'], true) ? $row['origin'] : 'made';
             $row['qty'] = str_replace([',', ' '], '', (string) $row['qty']);
             $row['rate'] = str_replace([',', ' '], '', (string) $row['rate']);
 
