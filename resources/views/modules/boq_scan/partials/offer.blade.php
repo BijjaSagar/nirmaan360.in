@@ -8,8 +8,9 @@
     2. For everyone who may import: when a PDF is uploaded through the import form, the browser keeps its
        own copy, so the preview can draw the PDF's pages beside the rows it read and the scan screen can
        offer the same file. The copy stays in the browser. When the person comes back here because the
-       import of a PDF was confirmed or discarded (BoqPdfImport::ENDED), the copy is forgotten. After a
-       refusal as a scan it is kept, for the scan screen to offer.
+       import of a PDF, or of a sheet through its column check, was confirmed or discarded
+       (BoqPdfImport::ENDED), the copy is forgotten. After a refusal as a scan it is kept, for the scan
+       screen to offer.
 --}}
 @php
     $scanScreen = app(\App\Services\BoqScan\BoqScanScreen::class);

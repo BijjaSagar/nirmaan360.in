@@ -5,8 +5,8 @@
     anywhere. It is kept under one name per person and project, and replaced by the next upload.
 
     It is deleted:
-    - when the import of the PDF is confirmed or discarded, by the BOQ in Excel page the person comes
-      back to (partials.offer);
+    - when the import of the PDF, or of a sheet through its column check, is confirmed or discarded, by
+      the BOQ in Excel page the person comes back to (partials.offer);
     - at sign-out, with everything this store holds (partials.sign-out, beside every sign-out button);
     - once it is older than $minutes minutes, as long as the preview of the upload lasts: it is never
       used after that, and every page that carries this script deletes every copy that old as the page

@@ -255,6 +255,50 @@ class KeptPdfScriptTest extends BoqScanTestCase
         $this->assertSame($kept, $run['plain']['events'][5]['stored']);
     }
 
+    public function test_the_copy_is_forgotten_too_once_a_sheet_is_confirmed_or_set_aside_through_its_column_check(): void
+    {
+        $excel = $this->parts($this->excelPage());
+        $preview = $this->parts($this->previewPage());
+        // A sheet in the contractor's own layout goes to the column check, not straight in.
+        $sheet = fn () => $this->actingAs($this->pm)->post(route('boq.excel.import', $this->project), [
+            'file' => UploadedFile::fake()->createWithContent('north-block.csv', "Item No,Particulars of work,Unit,Qty,Rate\n1,Sample work A,cum,2,100\n2,Sample work B,sqm,3,50\n"),
+        ])->assertRedirect(route('boq.sheet.preview', $this->project));
+
+        // Set aside.
+        $sheet();
+        $this->actingAs($this->pm)->post(route('boq.sheet.discard', $this->project))
+            ->assertRedirect(route('boq.excel.index', $this->project))->assertSessionHas(BoqPdfImport::ENDED, true);
+        $afterDiscard = $this->parts($this->excelPage());
+
+        // Sent back to the column check, the import has not ended.
+        $sheet();
+        $version = $this->actingAs($this->pm)->get(route('boq.sheet.preview', $this->project))->assertOk()->viewData('preview')['version'];
+        $this->actingAs($this->pm)->post(route('boq.sheet.confirm', $this->project), ['version' => $version + 1])
+            ->assertRedirect(route('boq.sheet.preview', $this->project))->assertSessionMissing(BoqPdfImport::ENDED);
+
+        // Confirmed.
+        $this->actingAs($this->pm)->post(route('boq.sheet.confirm', $this->project), ['version' => $version])
+            ->assertRedirect(route('boq.excel.index', $this->project))->assertSessionHas('success')->assertSessionHas(BoqPdfImport::ENDED, true);
+        $afterConfirm = $this->parts($this->excelPage()->assertSee('Import finished'));
+        $this->assertSame(2, $this->project->boqItems()->count());
+
+        $pages = ['excel' => $excel, 'preview' => $preview, 'discarded' => $afterDiscard, 'confirmed' => $afterConfirm];
+        $flow = fn (string $after) => [
+            ['open', 'excel'], ['choose', 'boq-import-form', $this->pdfFile()], ['submit', 'boq-import-form'],
+            ['open', 'preview'], ['advance', 60], ['open', $after],
+        ];
+
+        $run = $this->browse([
+            ['name' => 'discarded', 'pages' => $pages, 'steps' => $flow('discarded')],
+            ['name' => 'confirmed', 'pages' => $pages, 'steps' => $flow('confirmed')],
+        ]);
+
+        foreach (['discarded', 'confirmed'] as $ended) {
+            $this->assertSame([$this->key => ['name' => 'estimate.pdf', 'minutes' => 1]], $run[$ended]['events'][4]['stored'], "{$ended}: kept until then.");
+            $this->assertSame([], $run[$ended]['events'][5]['stored'], "{$ended}: forgotten.");
+        }
+    }
+
     public function test_every_page_with_the_kept_copy_deletes_copies_too_old_to_use_and_copies_left_by_someone_else(): void
     {
         $excel = $this->parts($this->excelPage());

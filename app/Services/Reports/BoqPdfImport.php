@@ -33,8 +33,9 @@ final class BoqPdfImport
     public const SESSION = 'boq_pdf_import';
 
     /**
-     * Flashed when a preview ends because it was confirmed or discarded. The BOQ in Excel page the person
-     * comes back to then tells the browser to forget its own copy of the PDF, which has no more use.
+     * Flashed when a preview ends because it was confirmed or discarded: this one, or a sheet's column check
+     * (BoqSheetImportController). The BOQ in Excel page the person comes back to then tells the browser to
+     * forget its own copy of the PDF, which has no more use.
      */
     public const ENDED = 'boq_pdf_import_ended';
 

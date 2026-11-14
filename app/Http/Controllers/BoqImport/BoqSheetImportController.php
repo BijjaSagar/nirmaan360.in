@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Services\Imports\BoqImportLayouts;
 use App\Services\Imports\BoqSheetImport;
 use App\Services\Imports\SheetFile;
+use App\Services\Reports\BoqPdfImport;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -79,6 +80,7 @@ class BoqSheetImportController extends Controller
 
         if ($result->ok()) {
             $request->session()->forget(BoqSheetImport::SESSION);
+            $this->ended($request);
 
             return redirect()->route('boq.excel.index', $project)
                 ->with('success', __(':count BOQ rows imported.', ['count' => $result->rows()]))
@@ -92,6 +94,7 @@ class BoqSheetImportController extends Controller
     {
         $this->import->discard($project, $request->user(), $this->token($request));
         $request->session()->forget(BoqSheetImport::SESSION);
+        $this->ended($request);
 
         return redirect()->route('boq.excel.index', $project)->with('success', __('The file was set aside. Nothing was imported.'));
     }
@@ -101,6 +104,16 @@ class BoqSheetImportController extends Controller
         $this->layouts->delete($layout);
 
         return back()->with('success', __('The saved layout was removed. Files in that layout will be read afresh.'));
+    }
+
+    /**
+     * The import ended, confirmed or set aside. The BOQ in Excel page the person comes back to then tells
+     * the browser to forget its own copy of a PDF uploaded there before (BoqPdfImport::ENDED), as after a
+     * PDF's preview: the BOQ was dealt with, and the copy has no more use.
+     */
+    private function ended(Request $request): void
+    {
+        $request->session()->flash(BoqPdfImport::ENDED, true);
     }
 
     private function token(Request $request): ?string
