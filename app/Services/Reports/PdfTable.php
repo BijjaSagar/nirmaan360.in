@@ -2,6 +2,9 @@
 
 namespace App\Services\Reports;
 
+use App\Services\Imports\BoqHeadings;
+use App\Services\Imports\CellValues;
+
 /**
  * Puts a table back together from the pieces of text on PDF pages.
  *
@@ -80,6 +83,14 @@ final class PdfTable
 
     /** @var array<string, array<int, list<int>>> The same, for the lines above the heading on the page of the heading. */
     private array $printedAbove = [];
+
+    /**
+     * The lines that carry a bare page number ("2"), filed by the key of the rest of the line: a letterhead or a footer
+     * numbered only from page 2 on is the same line as the one on page 1 that has no number.
+     *
+     * @var array<string, array<int, list<int>>>
+     */
+    private array $printedBare = [];
 
     /** @var array<int, ?string> printedAgain() of each line, once worked out. */
     private array $again = [];
@@ -251,16 +262,16 @@ final class PdfTable
     {
         foreach ($this->lines as $index => $line) {
             $this->tick();
-            $keys = array_map(fn (array $piece) => self::key($piece['text']), $line['pieces']);
-            $named = array_filter($keys, fn (string $key) => preg_match('/^(descri|particular|item descr)/', $key) === 1);
+            $texts = array_column($line['pieces'], 'text');
+            $named = array_filter($texts, fn (string $text) => preg_match('/^(descri|particular|item descr)/', self::key($text)) === 1 || self::namesDescription($text));
 
-            if ($named === [] || count($this->fields($keys)) < 2) {
+            if ($named === [] || count($this->fields($texts)) < 2) {
                 continue;
             }
 
             $group = [$index];
             $cells = $this->headingCells($group);
-            $found = count($this->fields($this->cellKeys($cells)));
+            $found = count($this->fields($this->cellTexts($cells)));
 
             // "Sr." over "No." and "Amount in" over "Rs." are one heading on two lines. A neighbouring
             // line is taken in only when it names more columns, so a first data row never joins the heading.
@@ -270,9 +281,10 @@ final class PdfTable
                 }
 
                 $with = $this->headingCells([...$group, $neighbour]);
-                $count = count($this->fields($this->cellKeys($with)));
+                $count = count($this->fields($this->cellTexts($with)));
+                $fragments = array_filter(array_column($this->lines[$neighbour]['pieces'], 'text'), fn (string $text) => ! BoqHeadings::isFragment($text)) === [];
 
-                if ($count > $found) {
+                if ($count > $found || ($count === $found && $fragments)) {
                     $group[] = $neighbour;
                     $cells = $with;
                     $found = $count;
@@ -280,7 +292,7 @@ final class PdfTable
             }
 
             sort($group);
-            $fields = $this->fields($this->cellKeys($cells));
+            $fields = $this->fields($this->cellTexts($cells));
 
             if (count($fields) >= 3 && isset($fields['description']) && (isset($fields['qty']) || isset($fields['rate']) || isset($fields['amount']))) {
                 return [$cells, $group];
@@ -360,25 +372,68 @@ final class PdfTable
     }
 
     /** @return list<string> */
-    private function cellKeys(array $cells): array
+    private function cellTexts(array $cells): array
     {
-        return array_map(fn (array $cell) => self::key($cell['text']), $cells);
+        return array_map(fn (array $cell) => $cell['text'], $cells);
     }
 
-    /** @param  list<string>  $keys  @return array<string, true> Fields named by these heading words. */
-    private function fields(array $keys): array
+    /**
+     * Fields named by these heading words: the template's own heading words, as always, and the field the
+     * shared heading detector (BoqHeadings) reads each one as, in English, Hindi or Marathi.
+     *
+     * @param  list<string>  $texts  @return array<string, true>
+     */
+    private function fields(array $texts): array
     {
         $fields = [];
 
-        foreach ($keys as $key) {
+        foreach ($texts as $text) {
+            $key = self::key($text);
+
             foreach (BoqExcelService::ALIASES as $field => $aliases) {
                 if (in_array($key, $aliases, true)) {
                     $fields[$field] = true;
                 }
             }
+
+            if (($field = self::detectedField($text)) !== null) {
+                $fields[$field] = true;
+            }
         }
 
         return $fields;
+    }
+
+    /**
+     * The one field the heading detector reads a heading as. A serial number counts as the code, as the template
+     * has it. A piece that carries a figure, or a label with its value after a colon ("Name of Work: Sample
+     * Hall", "Estimated Cost: Rs. 25,00,000"), is a title block above the table, never a heading.
+     */
+    private static function detectedField(string $text): ?string
+    {
+        if (preg_match('/\d/u', CellValues::asciiDigits($text)) === 1 || preg_match('/\S\s*:\s*\S/u', $text) === 1) {
+            return null;
+        }
+
+        // Words no source printed as a heading count here too: they only say where the table starts. What each
+        // column holds is decided after, by the import's own headings.
+        $scores = BoqHeadings::scores($text, unconfirmed: true);
+        arsort($scores);
+        $field = array_key_first($scores);
+
+        return $field === 'serial' ? 'code' : $field;
+    }
+
+    /** A heading that plainly names the description column, as "Name of Work" or "तपशील" do; "Item" alone is too loose. */
+    private static function namesDescription(string $text): bool
+    {
+        return self::detectedField($text) === 'description' && (BoqHeadings::scores($text, unconfirmed: true)['description'] ?? 0) >= 2.5;
+    }
+
+    /** Whether a heading names this field, by the template's heading words or by the heading detector. */
+    private static function names(string $text, string $field): bool
+    {
+        return in_array(self::key($text), BoqExcelService::ALIASES[$field] ?? [], true) || self::detectedField($text) === $field;
     }
 
     /**
@@ -461,7 +516,7 @@ final class PdfTable
     private function printed(array $headingLines): void
     {
         $first = min($headingLines);
-        $this->shapes = $this->printed = $this->printedAbove = $this->again = [];
+        $this->shapes = $this->printed = $this->printedAbove = $this->printedBare = $this->again = [];
 
         foreach ($this->lines as $n => $line) {
             $this->tick();
@@ -476,9 +531,15 @@ final class PdfTable
             }
 
             $above = $n < $first && $line['page'] === $this->lines[$first]['page'];
-            $this->shapes[$n] = ['page' => $line['page'], 'y' => $line['y'], 'key' => implode("\x1F", $key), 'above' => $above, 'pieces' => $pieces];
+            $rest = array_values(array_filter($pieces, fn (array $piece) => ! self::barePageNumber($piece)));
+            $bare = count($rest) < count($pieces) && $rest !== [] ? implode("\x1F", array_column($rest, 'text')) : null;
+            $this->shapes[$n] = ['page' => $line['page'], 'y' => $line['y'], 'key' => implode("\x1F", $key), 'bare' => $bare, 'above' => $above, 'pieces' => $pieces];
             $height = (int) floor($line['y'] / self::SAME_PLACE);
             $this->printed[$this->shapes[$n]['key']][$height][] = $n;
+
+            if ($bare !== null) {
+                $this->printedBare[$bare][$height][] = $n;
+            }
 
             if ($above) {
                 $this->printedAbove[$this->shapes[$n]['key']][$height][] = $n;
@@ -558,7 +619,9 @@ final class PdfTable
 
     /**
      * Where else line $n is printed in the same place (samePlace()): null when nowhere, 'above' when that is above
-     * the heading on the page of the heading, as a letterhead or a title is, and 'page' otherwise.
+     * the heading on the page of the heading, as a letterhead or a title is, and 'page' otherwise. A line that has a
+     * bare page number on one page and none on another, as a letterhead numbered only from page 2 on, is the same
+     * line (sameButNumbered()).
      */
     private function printedAgain(int $n): ?string
     {
@@ -578,7 +641,80 @@ final class PdfTable
             }
         }
 
+        foreach ($this->numberedElsewhere($n) as $m) {
+            return $this->again[$n] = $this->shapes[$m]['above'] ? 'above' : 'page';
+        }
+
         return $this->again[$n] = null;
+    }
+
+    /**
+     * The lines on other pages that are line $n with a bare page number added or taken away: the same other pieces in
+     * the same places, at the same height, the number on a page being that page's own (counted from 1, or from 0
+     * where the first page is a cover).
+     *
+     * @return list<int>
+     */
+    private function numberedElsewhere(int $n): array
+    {
+        $shape = $this->shapes[$n];
+        $height = (int) floor($shape['y'] / self::SAME_PLACE);
+        $found = [];
+        $candidates = [];
+
+        foreach ([$height - 1, $height, $height + 1] as $step) {
+            // A numbered line looks for the line with no number; a line with no number for its numbered copies.
+            array_push($candidates, ...($shape['bare'] !== null ? ($this->printed[$shape['bare']][$step] ?? []) : ($this->printedBare[$shape['key']][$step] ?? [])));
+        }
+
+        foreach ($candidates as $m) {
+            if ($this->sameButNumbered($n, $m)) {
+                $found[] = $m;
+            }
+        }
+
+        return $found;
+    }
+
+    /** Whether lines $n and $m, on two pages, are one line, one of them with a bare page number of its own page beside it. */
+    private function sameButNumbered(int $n, int $m): bool
+    {
+        $this->tick();
+        $a = $this->shapes[$n];
+        $b = $this->shapes[$m];
+
+        if ($a['page'] === $b['page'] || abs($a['y'] - $b['y']) > self::SAME_PLACE || ($a['bare'] === null) === ($b['bare'] === null)) {
+            return false;
+        }
+
+        [$numbered, $plain] = $a['bare'] !== null ? [$a, $b] : [$b, $a];
+        $rest = [];
+
+        foreach ($numbered['pieces'] as $piece) {
+            if (! self::barePageNumber($piece)) {
+                $rest[] = $piece;
+            } elseif (! in_array($piece['numbers'][0], [$numbered['page'] + 1, $numbered['page']], true)) {
+                return false;
+            }
+        }
+
+        if (count($rest) !== count($plain['pieces'])) {
+            return false;
+        }
+
+        foreach ($rest as $index => $piece) {
+            if ($piece['text'] !== $plain['pieces'][$index]['text'] || abs($piece['x'] - $plain['pieces'][$index]['x']) > self::SAME_PLACE) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** @param  array{text: string, numbers: ?list<int>}  $piece  A piece that is a page number and nothing else, as "2". */
+    private static function barePageNumber(array $piece): bool
+    {
+        return $piece['numbers'] !== null && count($piece['numbers']) === 1 && preg_match('/^[0-9०-९]{1,4}$/u', $piece['text']) === 1;
     }
 
     /** Whether line $n is printed again in the same place exactly, page numbers and all. */
@@ -652,6 +788,21 @@ final class PdfTable
 
         if (in_array(true, $part, true)) {
             $last = max(array_keys(array_filter($part)));
+
+            // Lettered rows after the last row of the table, with nothing between, explain it, wherever they stand: on the
+            // next page or further down this one, as the import joins them ("a. Column footing" under a priced row).
+            for ($index = $last + 1; $index < count($rows); $index++) {
+                if (isset($drop[$index])) {
+                    continue;
+                }
+
+                if (! $this->markedPart($rows[$index], $description)) {
+                    break;
+                }
+
+                $part[$index] = true;
+                $last = $index;
+            }
 
             foreach ($pages as $indexes) {
                 $lastHere = null;
@@ -781,11 +932,9 @@ final class PdfTable
             return false;
         }
 
-        foreach ($this->filedNear($n, $this->printed) as $m) {
-            if (! $this->samePlace($n, $m)) {
-                continue;
-            }
+        $elsewhere = [...array_filter($this->filedNear($n, $this->printed), fn (int $m) => $this->samePlace($n, $m)), ...$this->numberedElsewhere($n)];
 
+        foreach ($elsewhere as $m) {
             // Where nothing is printed over it, the page may hold nothing else, which tells nothing.
             $overThere = $this->lineAbove($m);
 
@@ -806,6 +955,12 @@ final class PdfTable
 
         foreach ($this->filedNear($n, $this->printed) as $m) {
             if (isset($footer[$m]) && $this->samePlace($n, $m)) {
+                return true;
+            }
+        }
+
+        foreach ($this->numberedElsewhere($n) as $m) {
+            if (isset($footer[$m])) {
                 return true;
             }
         }
@@ -903,10 +1058,8 @@ final class PdfTable
         $figures = [];
 
         foreach ($columns as $index => $column) {
-            $key = self::key($column['text']);
-
             foreach (['qty', 'rate', 'amount'] as $field) {
-                if (in_array($key, BoqExcelService::ALIASES[$field], true)) {
+                if (self::names($column['text'], $field)) {
                     $figures[] = $index;
                 }
             }
@@ -1004,6 +1157,12 @@ final class PdfTable
     private function isFigure(?string $text): bool
     {
         return $text !== null && preg_match('/^-?\d+(\.\d+)?$/', str_replace([',', ' ', '₹'], '', $text)) === 1;
+    }
+
+    /** A row whose description starts with a letter or a small roman number marked as a part, "a." or "(ii)", not a word such as "A note". */
+    private function markedPart(array $row, int $description): bool
+    {
+        return preg_match('/^\(?([a-z]|[ivx]{1,4})[.)]\s*\S/iu', (string) $this->cellText($row['cells'][$description] ?? [])) === 1;
     }
 
     /** A row whose description starts with a letter or a small roman number on its own, such as "a." or "(ii)": a part of the row above. */
@@ -1278,13 +1437,24 @@ final class PdfTable
         $rows = [];
         $row = null;
         $previous = null;
+        $left = min(array_column($columns, 'x0'));
+        $right = max(array_column($columns, 'x1'));
 
         foreach ($this->body as $number => $line) {
             $this->tick();
             $cells = [];
 
             foreach ($line['pieces'] as $piece) {
+                // Text wholly outside the columns, as a mark in the margin far from the table, belongs to none of them.
+                if ($piece['x1'] < $left - 1 || $piece['x'] > $right + 1) {
+                    continue;
+                }
+
                 $cells[$this->columnAt($piece['x'], $columns)][] = $piece;
+            }
+
+            if ($cells === []) {
+                continue;
             }
 
             $text = isset($cells[$description]) ? trim(implode(' ', array_column($cells[$description], 'text'))) : '';
@@ -1337,7 +1507,7 @@ final class PdfTable
     private function fieldColumn(array $columns, string $field): ?int
     {
         foreach ($columns as $index => $column) {
-            if (in_array(self::key($column['text']), BoqExcelService::ALIASES[$field], true)) {
+            if (self::names($column['text'], $field)) {
                 return $index;
             }
         }

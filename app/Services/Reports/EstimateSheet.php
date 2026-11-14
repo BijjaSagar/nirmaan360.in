@@ -17,14 +17,17 @@ use Brick\Math\RoundingMode;
  *
  * The rows that come out have the same columns as the BOQ template and keep their Excel row
  * numbers, so the ordinary checks run on them and report against the row the engineer can see.
+ *
+ * App\Services\Imports\BoqSheetRows extends this for the column-checked import of any contractor's
+ * sheet, and shares its helpers. What standardise() does is unchanged by that.
  */
-final class EstimateSheet
+class EstimateSheet
 {
     /** Columns of the rows handed back. */
-    private const OUTPUT = ['section' => 1, 'code' => 2, 'description' => 3, 'unit' => 4, 'qty' => 5, 'rate' => 6, 'category' => 7, 'details' => 8];
+    protected const OUTPUT = ['section' => 1, 'code' => 2, 'description' => 3, 'unit' => 4, 'qty' => 5, 'rate' => 6, 'category' => 7, 'details' => 8];
 
     /** Checked in this order, because one description can name several kinds of work. */
-    private const CATEGORY_PATTERNS = [
+    protected const CATEGORY_PATTERNS = [
         'excavation' => '/excavat/i',
         'filling' => '/^filling/i',
         'other' => '/centering|shuttering|formwork/i',
@@ -44,10 +47,10 @@ final class EstimateSheet
     private array $lines = [];
 
     /** @var list<array{row:int,message:string}> */
-    private array $notes = [];
+    protected array $notes = [];
 
     /** @var array<string, true> */
-    private array $used = [];
+    protected array $used = [];
 
     /** The line or head that lettered rows belong to. */
     private ?array $open = null;
@@ -305,7 +308,7 @@ final class EstimateSheet
     }
 
     /** "b. Slab 40" with 7 in the quantity column means 40 on each of 7 floors. */
-    private function part(array $row): string
+    protected function part(array $row): string
     {
         if ($row['qty'] === null) {
             return $row['description'];
@@ -324,7 +327,7 @@ final class EstimateSheet
         return $this->unique($this->lastSerial ?? '1');
     }
 
-    private function unique(string $code): string
+    protected function unique(string $code): string
     {
         $candidate = $code;
         $repeat = 0;
@@ -355,7 +358,7 @@ final class EstimateSheet
         };
     }
 
-    private function category(string $text): string
+    protected function category(string $text): string
     {
         foreach (self::CATEGORY_PATTERNS as $category => $pattern) {
             if (preg_match($pattern, $text)) {
@@ -366,17 +369,17 @@ final class EstimateSheet
         return 'other';
     }
 
-    private function differs(BigDecimal $first, BigDecimal $second): bool
+    protected function differs(BigDecimal $first, BigDecimal $second): bool
     {
         return $first->minus($second)->abs()->isGreaterThan(1);
     }
 
-    private function note(int $row, string $message): void
+    protected function note(int $row, string $message): void
     {
         $this->notes[] = ['row' => $row, 'message' => $message];
     }
 
-    private function text(mixed $value): string
+    protected function text(mixed $value): string
     {
         if (is_int($value) || is_float($value)) {
             return rtrim(rtrim(number_format((float) $value, 6, '.', ''), '0'), '.');
@@ -386,7 +389,7 @@ final class EstimateSheet
     }
 
     /** An exact decimal string, or null when the cell holds no number. */
-    private function number(mixed $value): ?string
+    protected function number(mixed $value): ?string
     {
         if (is_int($value) || (is_float($value) && is_finite($value))) {
             return $this->text($value);

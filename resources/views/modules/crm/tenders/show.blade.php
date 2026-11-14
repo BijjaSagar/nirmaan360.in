@@ -109,7 +109,7 @@
                             <form method="POST" action="{{ route('crm.boq.import', $tender) }}" enctype="multipart/form-data" class="space-y-3">
                                 @csrf
                                 <p class="text-sm text-ink-3">{{ __('Rows with an existing item code are updated. If any row has a problem, nothing is imported.') }}</p>
-                                <x-field :label="__('CSV or Excel file')" name="file"><input id="file" name="file" type="file" accept=".csv,.xlsx,text/csv" class="input" required></x-field>
+                                <x-field :label="__('CSV or Excel file')" name="file"><input id="file" name="file" type="file" accept=".csv,.xlsx,.xlsm,.xls,.ods,text/csv" class="input" required></x-field>
                                 <div class="flex items-center justify-between gap-2">
                                     <a href="{{ route('boq.template') }}" class="link text-sm">{{ __('Download template') }}</a>
                                     <button class="btn btn-ghost">{{ __('Import') }}</button>

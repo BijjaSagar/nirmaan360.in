@@ -1,0 +1,10 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Brick masonry sample work | cum | qty 40 | rate 5000 | serial
+  3 spec | Plaster with 2% waterproof compound:
+  4 line | 2a | - | Inside walls - Plaster with 2% waterproof compound | sqm | qty 100 | rate 250 | serial
+  5 line | 2b | - | Outside walls - Plaster with 2% waterproof compound | sqm | qty 80 | rate 300 | serial
+  6 subtotal | Total
+lines: 3 | lines total 249000.00 | with adjustments 249000.00 | sheet subtotal 249000 | sheet total -
+total: 6 | subtotal | Total | sheet 249000 | lines 249000.00 | matches

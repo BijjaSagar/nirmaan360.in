@@ -1,0 +1,11 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 4
+columns: A=serial(heading) B=code(heading) C=description(heading) D=qty(heading) E=unit(heading) F=rate(heading) G=amount(heading)
+rows:
+  5 section | ROAD WORK
+  6 line | R-2.1 | ROAD WORK | Sample granular sub-base with close graded material | cum | qty 1250 | rate 0 | code
+  7 line | R-3.4 | ROAD WORK | Sample bituminous macadam 50 mm thick | sqm | qty 3400.5 | rate 0 | code
+  8 rate_only | R-9.9 | ROAD WORK | Sample road marking with hot thermoplastic paint | sqm | qty 0 | rate 0 | code
+lines: 3 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+note: 0 | 1 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.
+note: 0 | 2 lines have a quantity but no rate (rows 6, 7). They are read at rate 0; fill in the rates later.

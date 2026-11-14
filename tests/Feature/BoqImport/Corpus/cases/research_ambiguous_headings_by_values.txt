@@ -1,0 +1,7 @@
+heading: row 1
+columns: A=code(values) B=description(values) C=unit(heading) D=qty(values) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 11010 | - | Sample earthwork in embankment with approved soil | cum | qty 100 | rate 180 | code
+  3 line | 11020 | - | Sample earthwork in cutting in all kinds of soil | cum | qty 50 | rate 200 | code
+  4 line | 52030 | - | Sample bitumen emulsion for the tack coat | ltr | qty 300 | rate 60 | code
+lines: 3 | lines total 46000.00 | with adjustments 46000.00 | sheet subtotal - | sheet total -

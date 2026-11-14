@@ -1,0 +1,16 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | Sample PCC | cum | qty 4 | rate 16207 | serial
+  4 subtotal | Sub Total
+  5 adjustment | Add GST
+  6 adjustment | Round off
+  7 adjustment | Labour welfare cess
+  8 total | Grand Total
+lines: 2 | lines total 85628.00 | with adjustments 101897.28 | sheet subtotal 85628 | sheet total 101897.28
+adjustment: 5 | Add GST | -% | comes to 15413.04 | sheet 15413.04 | amount
+adjustment: 6 | Round off | -% | comes to -0.04 | sheet -0.04 | amount
+adjustment: 7 | Labour welfare cess | -% | comes to 856.28 | sheet 856.28 | amount
+total: 4 | subtotal | Sub Total | sheet 85628 | lines 85628.00 | matches
+total: 8 | total | Grand Total | sheet 101897.28 | lines 101897.28 | matches

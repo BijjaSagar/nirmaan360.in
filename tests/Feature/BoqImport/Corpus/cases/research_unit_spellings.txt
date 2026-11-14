@@ -1,0 +1,49 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample item number 1 | cum | qty 2 | rate 50 | serial
+  3 line | 2 | - | Sample item number 2 | cum | qty 2 | rate 50 | serial
+  4 line | 3 | - | Sample item number 3 | cum | qty 2 | rate 50 | serial
+  5 line | 4 | - | Sample item number 4 | cum | qty 2 | rate 50 | serial
+  6 line | 5 | - | Sample item number 5 | sqm | qty 2 | rate 50 | serial
+  7 line | 6 | - | Sample item number 6 | sqm | qty 2 | rate 50 | serial
+  8 line | 7 | - | Sample item number 7 | sqm | qty 2 | rate 50 | serial
+  9 line | 8 | - | Sample item number 8 | rmt | qty 2 | rate 50 | serial
+  10 line | 9 | - | Sample item number 9 | rmt | qty 2 | rate 50 | serial
+  11 line | 10 | - | Sample item number 10 | rmt | qty 2 | rate 50 | serial
+  12 line | 11 | - | Sample item number 11 | nos | qty 2 | rate 50 | serial
+  13 line | 12 | - | Sample item number 12 | nos | qty 2 | rate 50 | serial
+  14 line | 13 | - | Sample item number 13 | kg | qty 2 | rate 50 | serial
+  15 line | 14 | - | Sample item number 14 | kg | qty 2 | rate 50 | serial
+  16 line | 15 | - | Sample item number 15 | MT | qty 2 | rate 50 | serial
+  17 line | 16 | - | Sample item number 16 | qtl | qty 2 | rate 50 | serial
+  18 line | 17 | - | Sample item number 17 | ltr | qty 2 | rate 50 | serial
+  19 line | 18 | - | Sample item number 18 | ltr | qty 2 | rate 50 | serial
+  20 line | 19 | - | Sample item number 19 | brass | qty 2 | rate 50 | serial
+  21 line | 20 | - | Sample item number 20 | brass | qty 2 | rate 50 | serial
+  22 line | 21 | - | Sample item number 21 | sqft | qty 2 | rate 50 | serial
+  23 line | 22 | - | Sample item number 22 | cft | qty 2 | rate 50 | serial
+  24 line | 23 | - | Sample item number 23 | rft | qty 2 | rate 50 | serial
+  25 line | 24 | - | Sample item number 24 | LS | qty 2 | rate 50 | serial
+  26 line | 25 | - | Sample item number 25 | LS | qty 2 | rate 50 | serial
+  27 line | 26 | - | Sample item number 26 | set | qty 2 | rate 50 | serial
+  28 line | 27 | - | Sample item number 27 | nos | qty 2 | rate 50 | serial
+  29 line | 28 | - | Sample item number 28 | point | qty 2 | rate 50 | serial
+  30 line | 29 | - | Sample item number 29 | cum | qty 2 | rate 50 | serial
+  31 line | 30 | - | Sample item number 30 | cum | qty 2 | rate 50 | serial
+  32 line | 31 | - | Sample item number 31 | sqm | qty 2 | rate 50 | serial
+  33 line | 32 | - | Sample item number 32 | nos | qty 2 | rate 50 | serial
+  34 line | 33 | - | Sample item number 33 | kg | qty 2 | rate 50 | serial
+  35 line | 34 | - | Sample item number 34 | MT | qty 2 | rate 50 | serial
+  36 line | 35 | - | Sample item number 35 | qtl | qty 2 | rate 50 | serial
+  37 line | 36 | - | Sample item number 36 | ltr | qty 2 | rate 50 | serial
+  38 line | 37 | - | Sample item number 37 | nos | qty 2 | rate 50 | serial
+  39 line | 38 | - | Sample item number 38 | cum | qty 2 | rate 50 | serial
+  40 line | 39 | - | Sample item number 39 | sqm | qty 2 | rate 50 | serial
+  41 line | 40 | - | Sample item number 40 | nos | qty 2 | rate 50 | serial
+  42 line | 41 | - | Sample item number 41 | unit | qty 2 | rate 50 | serial
+  43 line | 42 | - | Sample item number 42 | q | qty 2 | rate 50 | serial
+  44 line | 43 | - | Sample item number 43 | Smt | qty 2 | rate 50 | serial
+lines: 43 | lines total 4300.00 | with adjustments 4300.00 | sheet subtotal - | sheet total -
+note: 0 | Units read from spellings that schedules do not print: Each cut as nos (rows 28); चौ.मी. as sqm (rows 40). Check that each is right.
+note: 0 | Units kept as written because they could mean more than one unit: unit (rows 42); q (rows 43); Smt (rows 44). Change them in the file, or on the lines after importing.

@@ -307,5 +307,7 @@
     "Why the total does not match": "बेरीज का जुळत नाही",
     "The total written in the file does not match the lines. Correct the file and upload it again, or write here why it is right to import it as it is. The reason is kept in the BOQ history.": "फाइलमध्ये लिहिलेली बेरीज ओळींशी जुळत नाही. फाइल दुरुस्त करून पुन्हा अपलोड करा, किंवा ती जशी आहे तशी इम्पोर्ट करणे का योग्य आहे ते येथे लिहा. हे कारण BOQ इतिहासात ठेवले जाते.",
     "Open the PDF beside this page and compare each row with it.": "PDF या पानाच्या शेजारी उघडा आणि प्रत्येक ओळ तिच्याशी ताडून पाहा.",
-    "I compared these rows with the pages of the PDF": "मी या ओळी PDF च्या पानांशी ताडून पाहिल्या आहेत"
+    "I compared these rows with the pages of the PDF": "मी या ओळी PDF च्या पानांशी ताडून पाहिल्या आहेत",
+    "Any BOQ, estimate or tender sheet in your own layout works too: its headings are read, and you check each column and the lines before anything is saved.": "तुमच्या स्वतःच्या मांडणीतील कोणतीही BOQ, अंदाजपत्रक किंवा निविदा शीटही चालते: तिची शीर्षके वाचली जातात, आणि काहीही जतन होण्यापूर्वी तुम्ही प्रत्येक स्तंभ आणि ओळी तपासता.",
+    "BOQ file (.xlsx, .xls, .ods, .csv or .pdf)": "BOQ फाइल (.xlsx, .xls, .ods, .csv किंवा .pdf)"
 }

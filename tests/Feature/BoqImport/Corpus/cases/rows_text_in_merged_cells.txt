@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  4 line | 1 | - | Providing and laying sample vitrified tiles of approved make… | sqm | qty 150 | rate 1200 | serial
+  5 line | 2 | - | Sample skirting tiles 100 mm high | rmt | qty 200 | rate 300 | serial
+  7 line | 3 | - | Sample granite sill | rmt | qty 40 | rate 1500 | serial
+  8 subtotal | Total
+lines: 3 | lines total 300000.00 | with adjustments 300000.00 | sheet subtotal 300000 | sheet total -
+total: 8 | subtotal | Total | sheet 300000 | lines 300000.00 | matches

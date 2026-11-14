@@ -1,0 +1,6 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=rate(heading)
+rows:
+  2 line | 1 | - | Sample item one | - | qty 5 | rate 100 | serial
+  3 line | 2 | - | Sample item two | - | qty 6 | rate 200 | serial
+lines: 2 | lines total 1700.00 | with adjustments 1700.00 | sheet subtotal - | sheet total -

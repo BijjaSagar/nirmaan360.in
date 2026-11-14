@@ -969,6 +969,78 @@ class BoqPdfImportTest extends ReportsTestCase
         }
     }
 
+    public function test_a_break_up_under_the_last_priced_row_stays_with_it_on_the_next_page_or_further_down(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['picture' => 'none']), 'estimate.pdf')->getRealPath());
+        [$excavation, $door] = self::LETTERHEAD_ITEMS;
+        $concrete = ['3', 'Providing concrete M-20', '', '4000', 'cu.m', '40000'];
+        $parts = [['', 'a. Column footing', '', '', '', ''], ['', 'b. Slabs', '', '', '', '']];
+        $first = $this->tableCells([self::ESTIMATE_HEADING, $excavation, $door, $concrete]);
+
+        // Lettered rows with no figure that explain the last priced row, with nothing priced after them.
+        foreach ([
+            'on the next page' => [$first, $this->tableCells($parts)],
+            'on the next page, under the heading printed again' => [$first, $this->tableCells([self::ESTIMATE_HEADING, ...$parts])],
+            'more than four lines below it' => [$first.$this->tableCells($parts, 760 - 18 * 4 - 120)],
+        ] as $case => $pages) {
+            $estimate = $read($pages);
+            $this->assertTrue($estimate->ok(), "{$case}: ".$estimate->error);
+            $this->assertSame($this->estimateGrid([$excavation, $door, $concrete, ...$parts]), $estimate->grid, "{$case}: the break-up stays.");
+        }
+
+        // A note below the last row that only starts with a capital is still no part of it.
+        $noted = $read([$first.$this->tableCells([['', 'A note on the rates', '', '', '', '']], 760 - 18 * 4 - 120)]);
+        $this->assertTrue($noted->ok(), (string) $noted->error);
+        $this->assertSame($this->estimateGrid([$excavation, $door, $concrete]), $noted->grid);
+    }
+
+    public function test_a_letterhead_or_footer_numbered_only_from_page_two_on_stays_out(): void
+    {
+        $read = fn (array $pages) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($pages, ['fonts' => ['F2' => 'ABCDEF+Kruti#20Dev#20010'], 'picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $at = fn (string $text, float $x, float $y, string $font = 'F1') => 'BT /'.$font.' 9 Tf 1 0 0 1 '.$x.' '.$y.' Tm ('.$text.') Tj ET'."\n";
+        $items = array_slice(self::LETTERHEAD_ITEMS, 0, 4);
+
+        // The first page carries no page number; the second has a bare "2" on the same line. Every number is invented.
+        $cases = [
+            'on the letterhead' => fn (int $page) => $at('Old font company name', 150, 815, 'F2').($page > 1 ? $at((string) $page, 540, 815) : ''),
+            'on the footer' => fn (int $page) => $at('Old font footer address line', 150, 40, 'F2').($page > 1 ? $at((string) $page, 540, 40) : ''),
+        ];
+
+        foreach ($cases as $case => $furniture) {
+            foreach (['the heading on the first page only' => false, 'the heading on every page' => true] as $how => $repeated) {
+                $estimate = $read([
+                    $furniture(1).$this->tableCells([self::ESTIMATE_HEADING, $items[0], $items[1]]),
+                    $furniture(2).$this->tableCells($repeated ? [self::ESTIMATE_HEADING, $items[2], $items[3]] : [$items[2], $items[3]]),
+                ]);
+
+                $this->assertTrue($estimate->ok(), "{$case}, {$how}: ".$estimate->error);
+                $this->assertSame($this->estimateGrid($items), $estimate->grid, "{$case}, {$how}: only the rows of the table.");
+            }
+        }
+    }
+
+    public function test_text_outside_the_columns_of_the_table_is_put_in_none_of_them(): void
+    {
+        $read = fn (string $page) => app(BoqPdfReader::class)->read($this->upload($this->handPdf($page, ['picture' => 'none']), 'estimate.pdf')->getRealPath());
+        $at = fn (string $text, float $x, float $y) => 'BT /F1 9 Tf 1 0 0 1 '.$x.' '.$y.' Tm ('.$text.') Tj ET'."\n";
+        $columns = [160, 200, 380, 420, 460, 500];
+        $rows = [self::ESTIMATE_HEADING, ...array_slice(self::LETTERHEAD_ITEMS, 0, 3)];
+        $page = '';
+
+        foreach ($rows as $index => $row) {
+            foreach ($row as $column => $cell) {
+                $page .= $at($cell, $columns[$column], 760 - 18 * $index);
+            }
+        }
+
+        // A checker's marks in the left margin, far from the table, beside two of its rows.
+        $page .= $at('Checked', 20, 760 - 18).$at('Sd 7', 20, 760 - 36);
+        $estimate = $read($page);
+
+        $this->assertTrue($estimate->ok(), (string) $estimate->error);
+        $this->assertSame($this->estimateGrid(array_slice(self::LETTERHEAD_ITEMS, 0, 3)), $estimate->grid);
+    }
+
     public function test_putting_the_table_together_takes_time_in_step_with_the_text_and_stops_at_its_deadline(): void
     {
         $piece = fn (string $text, float $x, float $y) => ['x' => $x, 'x1' => $x + PdfTable::width($text, 8), 'y' => $y, 'size' => 8.0, 'text' => $text];
@@ -1317,16 +1389,26 @@ class BoqPdfImportTest extends ReportsTestCase
         $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
     }
 
-    public function test_the_excel_upload_still_imports_straight_away(): void
+    public function test_an_excel_estimate_goes_to_the_column_check_not_the_pdf_preview(): void
     {
         $project = $this->makeProject($this->org);
 
+        // An estimate is not in the template's layout, so it is read by its own headings and shown first.
         $this->uploadAs($this->pm, $project, $this->workbook($this->estimate(), 'estimate.xlsx', 'Sheet1'))
-            ->assertRedirect(route('boq.excel.index', $project))
-            ->assertSessionHas('success');
+            ->assertRedirect(route('boq.sheet.preview', $project));
 
-        $this->assertSame(10, BoqItem::where('project_id', $project->id)->count());
         $this->assertNull($this->token());
+        $this->assertSame(0, BoqItem::where('project_id', $project->id)->count());
+
+        // The elevator row has no unit, so the person names one for such lines before importing.
+        $this->get(route('boq.sheet.preview', $project))->assertOk()->assertDontSee('Import these 8 lines');
+        $this->post(route('boq.sheet.choose', $project), ['unit' => 'nos'])->assertRedirect(route('boq.sheet.preview', $project));
+        $version = $this->get(route('boq.sheet.preview', $project))->assertOk()->assertSee('Import these 8 lines')->viewData('preview')['version'];
+        $this->post(route('boq.sheet.confirm', $project), ['version' => $version])->assertSessionHas('success');
+
+        // The two "Add 6%" rows are adjustments, shown and not imported. The flush door has no number of its own: it gets
+        // one from its row, never the teakwood door's number above it.
+        $this->assertSame(['1', '2', '3a', '3b', '4', 'R10', '5', '6'], BoqItem::where('project_id', $project->id)->orderBy('sort')->pluck('code')->all());
     }
 
     public function test_the_preview_reads_in_hindi(): void

@@ -1,0 +1,11 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=rate(heading)
+rows:
+  2 rate_only | 1 | - | Sample item 1 | cum | qty 0 | rate 100 | serial
+  3 rate_only | 2 | - | Sample item 2 | cum | qty 0 | rate 200 | serial
+lines: 2 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+problem: 0 qty | Column BA is headed "Total Qty" but lies past column AZ, and columns after AZ are not read, so the lines would come in without it. Move the BOQ's columns nearer the start of the sheet, or delete the empty columns between them, and upload the file again.
+note: 0 | Column BB, headed "Amount", lies past column AZ and is not read.
+note: 0 | 2 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.
+note: 0 | Columns E (Floor 1), F (Floor 2), G (Floor 3), H (Floor 4), I (Floor 5), J (Floor 6), … hold figures but are not read. If one of them is the quantity, rate or amount, choose it under Read as.

@@ -1,0 +1,7 @@
+file: xlsx | sheets: Measurement, Abstract * | picked: priced
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Excavation for footings | cum | qty 11.88 | rate 250 | serial
+  3 line | 2 | - | PCC below footings | cum | qty 1.2 | rate 4500 | serial
+lines: 2 | lines total 8370.00 | with adjustments 8370.00 | sheet subtotal - | sheet total -

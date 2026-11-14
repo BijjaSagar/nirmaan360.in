@@ -1,0 +1,27 @@
+heading: row 4
+columns: A=serial(heading) B=code(heading) C=description(heading) D=qty(heading) E=rate(heading) F=unit(heading) G=amount(heading)
+rows:
+  5 section | EARTH WORK:
+  6 spec | Digging trenches for the sample footings in ordinary soil, w…
+  7 line | X-1 2a | EARTH WORK | Dug by hand - Digging trenches for the sample footings in or… | cum | qty 20 | rate 210 | code
+  8 line | X-1 2b | EARTH WORK | Dug by excavator - Digging trenches for the sample footings… | cum | qty 30 | rate 90 | code
+  9 section | CONCRETE WORK:
+  10 spec | Reinforced concrete of grade M-20 cast in the sample buildin…
+  11 line | X-5 3 | CONCRETE WORK | Footings - Reinforced concrete of grade M-20 cast in the sam… | cum | qty 10 | rate 5000 | code
+  12 line | X-5 4 | CONCRETE WORK | Columns - Reinforced concrete of grade M-20 cast in the samp… | cum | qty 4 | rate 6500 | code
+  13 line | B.1 | CONCRETE WORK | Steel bars for the sample frame, cut, bent and tied | kg | qty 1500 | rate 60 | serial
+  15 subtotal | Subtotal
+  16 adjustment | Less 5% on schedule rates
+  17 adjustment | Wiring 3%
+  18 adjustment | Water supply 3%
+  19 subtotal | Subtotal
+  20 total | Total cost of the work
+  21 words | Rupees one lakh seventy four thousand six hundred twenty nin…
+  22 after_total | Prepared by: Sample Engineer
+lines: 5 | lines total 172900.00 | with adjustments 174629.00 | sheet subtotal 172900 | sheet total 174629
+adjustment: 16 | Less 5% on schedule rates | -5% | comes to -8645.00 | sheet 164255 | total
+adjustment: 17 | Wiring 3% | 3% | comes to 5187.00 | sheet 5187 | amount
+adjustment: 18 | Water supply 3% | 3% | comes to 5187.00 | sheet 5187 | amount
+total: 15 | subtotal | Subtotal | sheet 172900 | lines 172900.00 | matches
+total: 19 | subtotal | Subtotal | sheet 174629 | lines 174629.00 | matches
+total: 20 | total | Total cost of the work | sheet 174629 | lines 174629.00 | matches

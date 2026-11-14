@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 error | Sample work A
+  3 error | Sample work B
+  4 line | 3 | - | Sample work C | cum | qty 5 | rate 100 | serial
+lines: 1 | lines total 500.00 | with adjustments 500.00 | sheet subtotal - | sheet total -
+problem: 2 qty | The quantity cell says "approx 10", which is not a number. Write the number alone, or a number and a unit such as 12.5 cum.
+problem: 3 qty | Quantity holds the spreadsheet error #REF!. Fix the formula in the file and upload it again.

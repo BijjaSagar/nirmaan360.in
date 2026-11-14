@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 subheading | EARTH WORK
+  3 line | 1.1 | EARTH WORK | Excavation in foundation trenches in all kinds of soil | cum | qty 80 | rate 260 | serial
+  4 line | 1.2 | EARTH WORK | Filling with excavated earth in layers | cum | qty 40 | rate 150 | serial
+  5 subheading | CONCRETE WORK
+  6 line | 2.1 | CONCRETE WORK | PCC 1:4:8 in foundation and plinth | cum | qty 12 | rate 5400 | serial
+lines: 3 | lines total 91600.00 | with adjustments 91600.00 | sheet subtotal - | sheet total -

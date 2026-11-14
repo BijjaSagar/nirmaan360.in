@@ -1,0 +1,11 @@
+file: xlsx | sheets: SSR * | picked: only
+heading: row 1
+columns: A=serial(heading) B=section(heading) C=code(heading) D=reference(heading) E=description(heading) F=details(heading) G=unit(heading) H=rate(heading)
+rows:
+  2 rate_only | 1.09 | Road Survey and DPR | Sample survey of the road with total station | km | qty 0 | rate 9000 | code
+  3 rate_only | 1.10 | Road Survey and DPR | Sample soil test of the subgrade | Test | qty 0 | rate 1200 | code
+  4 rate_only | 2.01 | Earth Work | Sample excavation in soil by mechanical means | cum | qty 0 | rate 180 | code
+  5 rate_only | 15.146 | Steel Work | Sample structural steel in trusses | MT | qty 0 | rate 98000 | code
+lines: 4 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+problem: 0 rate | Column I is also headed "Labour Rate for 2026-27 excluding GST In Rs." and holds figures, like column H. Only one of them can be read: choose it, and set the others to Leave out. For a rate split into parts, such as supply and installation, read the total amount column as the amount and leave the rate columns out.
+note: 0 | 4 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.

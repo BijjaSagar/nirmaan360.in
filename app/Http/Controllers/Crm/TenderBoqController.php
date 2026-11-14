@@ -36,7 +36,7 @@ class TenderBoqController extends Controller
 
     public function import(Request $request, CrmTender $tender): RedirectResponse
     {
-        $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:csv,txt,xlsx']]);
+        $request->validate(['file' => ['required', 'file', 'max:5120', 'extensions:csv,txt,tsv,xlsx,xlsm,xls,ods']]);
 
         $file = $request->file('file');
         $count = $this->service->import($tender, $file->getRealPath(), $file->getClientOriginalExtension());

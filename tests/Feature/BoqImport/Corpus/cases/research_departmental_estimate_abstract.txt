@@ -1,0 +1,25 @@
+file: xlsx | sheets: Abstract * | picked: only
+heading: row 5
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=unit(heading) E=rate(heading) F=amount(heading)
+rows:
+  6 subheading | EARTH WORK
+  7 spec | Sample earth work in excavation by mechanical means in all k…
+  8 line | 1.1.1 | EARTH WORK | All kinds of soil - Sample earth work in excavation by mecha… | cum | qty 120 | rate 210 | serial
+  9 line | 1.1.2 | EARTH WORK | Ordinary rock - Sample earth work in excavation by mechanica… | cum | qty 30 | rate 480 | serial
+  10 line | 1.2 | EARTH WORK | Sample filling available earth in trenches | cum | qty 60 | rate 150 | serial
+  11 subtotal | Sub‐Total
+  12 subheading | MISCELLANEOUS
+  13 line | 21.29 | MISCELLANEOUS | Sample cleaning of the site | LS | qty 1 | rate 4000 | serial
+  14 line | 21.30 | MISCELLANEOUS | Sample signage boards | nos | qty 6 | rate 1500 | serial
+  15 line | 21.31 | MISCELLANEOUS | Sample bricks of second class | 1000 nos | qty 2 | rate 7000 | serial
+  16 subtotal | Sub‐Total
+  17 subtotal | Total
+  18 adjustment | Modified Estimated Cost after using correction factor on DSR…
+  19 say | Say
+lines: 6 | lines total 75600.00 | with adjustments 83160.00 | sheet subtotal 75600 | sheet total -
+adjustment: 18 | Modified Estimated Cost after using correction factor on DSR… | -% | comes to 7560.00 | sheet 83160 | total
+total: 11 | subtotal | Sub‐Total | sheet 48600 | lines 48600.00 | matches
+total: 16 | subtotal | Sub‐Total | sheet 27000 | lines 75600.00 | matches
+total: 17 | subtotal | Total | sheet 75600 | lines 75600.00 | matches
+note: 14 | Item code 21.3 was read as 21.30, between the codes above and below it: a spreadsheet drops the last zero of a number.
+note: 15 | The amount in the file is the quantity times the rate per 1000 Nos, so the quantity is counted in 1000 Nos. The line keeps the unit 1000 nos; nothing was divided.

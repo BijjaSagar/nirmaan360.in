@@ -1,0 +1,8 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample pipes 110 mm | rmt | qty 120 | rate 450 | serial
+  3 rate_only | 2 | - | Sample extra over for bends | - | qty 0 | rate 300 | serial
+  4 line | 3 | - | Sample valves | nos | qty 10 | rate 1200 | serial
+lines: 3 | lines total 66000.00 | with adjustments 66000.00 | sheet subtotal - | sheet total -
+note: 0 | 1 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.

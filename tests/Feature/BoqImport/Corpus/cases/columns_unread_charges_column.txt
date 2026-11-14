@@ -1,0 +1,8 @@
+file: xlsx | sheets: Sheet1 * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading)
+rows:
+  2 line | 1 | - | Sample work | nos | qty 2 | rate 0 | serial
+lines: 1 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+note: 0 | 1 lines have a quantity but no rate (rows 2). They are read at rate 0; fill in the rates later.
+note: 0 | Columns E (Charges) hold figures but are not read. If one of them is the quantity, rate or amount, choose it under Read as.

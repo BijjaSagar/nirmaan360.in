@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 spec | Providing sample brick masonry in CM 1:6 in superstructure a…
+  3 line | 1(i) | - | ground floor - Providing sample brick masonry in CM 1:6 in s… | cum | qty 30 | rate 6000 | serial
+  4 line | 1(ii) | - | first floor - Providing sample brick masonry in CM 1:6 in su… | cum | qty 25 | rate 6200 | serial
+  5 line | 1(iii) | - | second floor - Providing sample brick masonry in CM 1:6 in s… | cum | qty 20 | rate 6400 | serial
+  6 line | 2 | - | Sample painting | sqm | qty 300 | rate 120 | serial
+lines: 4 | lines total 499000.00 | with adjustments 499000.00 | sheet subtotal - | sheet total -

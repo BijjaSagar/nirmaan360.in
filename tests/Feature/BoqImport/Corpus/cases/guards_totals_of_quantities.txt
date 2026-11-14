@@ -1,0 +1,10 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | Sample excavation in hard soil | cum | qty 40 | rate 300 | serial
+  4 subtotal | Total Qty
+  5 subtotal | Total quantity of excavation
+lines: 2 | lines total 32800.00 | with adjustments 32800.00 | sheet subtotal - | sheet total -
+total: 4 | subtotal | Total Qty | sheet - | lines 32800.00 | no figure
+total: 5 | subtotal | Total quantity of excavation | sheet - | lines 32800.00 | no figure

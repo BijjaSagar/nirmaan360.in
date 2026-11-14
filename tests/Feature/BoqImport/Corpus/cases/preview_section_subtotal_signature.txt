@@ -1,0 +1,11 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 section | SAMPLE WORKS
+  3 line | A.1 | SAMPLE WORKS | Sample work one | cum | qty 10 | rate 100 | serial
+  4 line | A.2 | SAMPLE WORKS | Sample work two | cum | qty 5 | rate 100 | serial
+  5 subtotal | Sub Total
+  6 skipped | Signed: Sample Engineer
+lines: 2 | lines total 1500.00 | with adjustments 1500.00 | sheet subtotal 9000 | sheet total -
+total: 5 | subtotal | Sub Total | sheet 9000 | lines 1500.00 | does not match
+note: 0 | The lines add up to ₹1,500.00 but the total written in the file is ₹9,000.00. The lines are taken as they are, so please check that total.

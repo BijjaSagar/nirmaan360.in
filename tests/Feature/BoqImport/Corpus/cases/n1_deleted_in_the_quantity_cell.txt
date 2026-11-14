@@ -1,0 +1,7 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  3 note | Sample hinges, brass
+  4 line | 3 | - | Sample PCC 1:4:8 | cum | qty 12 | rate 5400 | serial
+lines: 2 | lines total 85600.00 | with adjustments 85600.00 | sheet subtotal - | sheet total -

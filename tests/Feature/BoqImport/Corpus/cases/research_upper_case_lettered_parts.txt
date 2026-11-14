@@ -1,0 +1,10 @@
+heading: row 1
+columns: A=serial(heading) B=qty(heading) C=description(heading) D=unit(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 spec | Providing and casting in situ sample cement concrete of the…
+  3 line | 1a | - | Foundation. - Providing and casting in situ sample cement co… | cum | qty 12 | rate 6000 | serial
+  4 line | 1c | - | Columns and pillars - Providing and casting in situ sample c… | cum | qty 3 | rate 7000 | serial
+  5 line | 1d | - | For electrical cable trench - Providing and casting in situ… | rmt | qty 40 | rate 500 | serial
+  6 subheading | EARTHING
+  7 line | 2 | EARTHING | Sample earthing with GI plate | nos | qty 4 | rate 3000 | serial
+lines: 4 | lines total 125000.00 | with adjustments 125000.00 | sheet subtotal - | sheet total -

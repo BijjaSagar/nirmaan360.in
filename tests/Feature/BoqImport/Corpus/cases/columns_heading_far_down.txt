@@ -1,0 +1,6 @@
+heading: row 47
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  48 line | 1 | - | Sample excavation | cum | qty 80 | rate 260 | serial
+  49 line | 2 | - | Sample PCC | cum | qty 12 | rate 5400 | serial
+lines: 2 | lines total 85600.00 | with adjustments 85600.00 | sheet subtotal - | sheet total -

@@ -1,0 +1,12 @@
+file: xlsx | sheets: Estimate * | picked: only
+heading: row 2
+columns: A=serial(heading) B=code(heading) C=description(heading) D=qty(heading) E=rate(heading) F=unit(heading) G=amount(heading)
+rows:
+  3 spec | Providing and laying sample cement concrete 1:3:6 of the fol…
+  4 line | S-4.1a | - | Raft - Providing and laying sample cement concrete 1:3:6 of… | cum | qty 8 | rate 4500 | code
+  5 line | S-4.1b | - | Retaining wall - Providing and laying sample cement concrete… | cum | qty 3 | rate 4500 | code
+  6 subtotal | Subtotal
+  7 subtotal | Total
+lines: 2 | lines total 49500.00 | with adjustments 49500.00 | sheet subtotal 49500 | sheet total -
+total: 6 | subtotal | Subtotal | sheet 49500 | lines 49500.00 | matches
+total: 7 | subtotal | Total | sheet 49500 | lines 49500.00 | matches

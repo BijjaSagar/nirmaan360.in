@@ -1,0 +1,6 @@
+heading: row 1
+columns: A=serial(values) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | नींव की खुदाई | cum | qty 20 | rate 300 | serial
+  3 line | 2 | - | सीमेंट कंक्रीट | cum | qty 5 | rate 4500 | serial
+lines: 2 | lines total 28500.00 | with adjustments 28500.00 | sheet subtotal - | sheet total -

@@ -1,0 +1,15 @@
+heading: row 1
+columns: A=serial(heading) B=code(values) C=description(heading) D=unit(heading) E=rate(heading) F=qty(heading) G=amount(heading)
+rows:
+  2 line | 011010 | - | Sample earthwork in embankment with good earth | cum | qty 1000 | rate 180 | code
+  3 spec | Sample exploratory drilling in all soils :
+  4 line | 021011 | - | Up to 10 m depth - Sample exploratory drilling in all soils | rmt | qty 40 | rate 900 | code
+  5 line | 021012 | - | Beyond 10 m depth - Sample exploratory drilling in all soils | rmt | qty 20 | rate 1100 | code
+  6 furniture | Signature of tenderer (s) with seal Page 3
+  7 line | NS1 | - | Sample shifting of signal cables | nos | qty 2 | rate 25000 | code
+  8 subtotal | Total (Including GST)
+  9 total | Grand Total Schedule Amount (Including 18% GST)
+lines: 4 | lines total 288000.00 | with adjustments 288000.00 | sheet subtotal 288000 | sheet total 288000
+total: 8 | subtotal | Total (Including GST) | sheet 288000 | lines 288000.00 | matches
+total: 9 | total | Grand Total Schedule Amount (Including 18% GST) | sheet 288000 | lines 288000.00 | matches
+note: 0 | 1 lines are provisional sums or items outside the schedule of rates (rows 7). They are imported; check them.

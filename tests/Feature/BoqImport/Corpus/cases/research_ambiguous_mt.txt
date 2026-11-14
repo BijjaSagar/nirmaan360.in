@@ -1,0 +1,10 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample reinforcement steel bars cut and bent | MT | qty 2 | rate 60000 | serial
+  3 line | 2 | - | Sample GI pipe 25 mm | rmt | qty 40 | rate 300 | serial
+  4 line | 3 | - | Sample sundry work | Mt | qty 3 | rate 100 | serial
+  5 line | 4 | - | Sample cement for the works | MT | qty 5 | rate 7000 | serial
+lines: 4 | lines total 167300.00 | with adjustments 167300.00 | sheet subtotal - | sheet total -
+note: 0 | Units read from spellings that schedules do not print: Mt as MT (rows 2); Mt as rmt (rows 3). Check that each is right.
+note: 0 | Units kept as written because they could mean more than one unit: Mt (rows 4). Change them in the file, or on the lines after importing.

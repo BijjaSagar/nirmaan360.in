@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample work A | cum | qty 10 | rate 100 | serial
+  3 line | 2 | - | Sample work B | cum | qty 5 | rate 0 | serial
+  4 line | 3 | - | Sample work C | cum | qty 4 | rate 0 | serial
+lines: 3 | lines total 1000.00 | with adjustments 1000.00 | sheet subtotal - | sheet total -
+note: 3 | The rate cell says "as per market", which is not a number. The line comes in at rate 0; fill in the rate later.
+note: 0 | 2 lines have a quantity but no rate (rows 3, 4). They are read at rate 0; fill in the rates later.

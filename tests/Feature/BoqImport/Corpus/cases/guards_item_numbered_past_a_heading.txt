@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 subheading | EARTH WORK
+  3 line | 1.1 | EARTH WORK | Excavation | cum | qty 80 | rate 260 | serial
+  4 note | Cement plaster in CM 1:6
+  5 line | 1.3 | EARTH WORK | Sample painting | sqm | qty 900 | rate 120 | serial
+  6 line | 2 | - | Sample lump sum for site clearance | LS | qty 1 | rate 5000 | serial
+lines: 3 | lines total 133800.00 | with adjustments 133800.00 | sheet subtotal - | sheet total -

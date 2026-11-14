@@ -29,6 +29,8 @@
                     <p class="mt-2 text-sm text-ink-3">{{ __('and :count more problems. Fix these first and upload again.', ['count' => $import['more']]) }}</p>
                 @endif
             </div>
+            {{-- A file in the template's headings whose rows do not fit it can be read by its own layout instead. --}}
+            @includeWhen(! empty($import['sheet_preview']), 'modules.boq_import._read_instead', ['project' => $project])
         </section>
     @elseif ($import)
         <section class="card mb-5 border-moss">
@@ -73,11 +75,12 @@
                     <p class="text-sm text-ink-3">{{ __('Rows with an existing item code are updated. If any row has a problem, nothing is imported.') }}</p>
                     <p class="text-sm text-ink-3">{{ __('Quantity cannot go below what is already approved. Use values, not formulas.') }}</p>
                     <p class="text-sm text-ink-3">{{ __('An engineer\'s estimate also works: Sr. No., Description, Qty, Rate, Unit and Amount columns. Part rows, add-on percentages and totals are read for you.') }}</p>
+                    <p class="text-sm text-ink-3">{{ __('Any BOQ, estimate or tender sheet in your own layout works too: its headings are read, and you check each column and the lines before anything is saved.') }}</p>
                     {{-- A scan is pointed to the scan reader only for someone it is offered to, as the refusal of a scanned PDF does. --}}
                     <p class="text-sm text-ink-3">{{ \App\Services\Reports\BoqPdfReader::hasScanReader()
                         ? __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so read it as a scan instead, or upload the Excel file.')
                         : __('A PDF of the estimate can be uploaded too. Its table is read and shown to you first, and nothing is saved until you confirm. A scanned PDF has no text to read, so upload the Excel file for those.') }}</p>
-                    <x-field :label="__('Excel or PDF file (.xlsx, .pdf)')" name="file"><input id="file" name="file" type="file" accept=".xlsx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="input" required></x-field>
+                    <x-field :label="__('BOQ file (.xlsx, .xls, .ods, .csv or .pdf)')" name="file"><input id="file" name="file" type="file" accept=".xlsx,.xlsm,.xls,.ods,.csv,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.oasis.opendocument.spreadsheet,text/csv" class="input" required></x-field>
                     <div class="flex items-center justify-between gap-2">
                         <a href="{{ route('boq.excel.template') }}" class="link text-sm">{{ __('Download template') }}</a>
                         <button class="btn btn-primary">{{ __('Import') }}</button>
@@ -86,4 +89,8 @@
             </form>
         @endcan
     </div>
+
+    @can('boq.manage')
+        @include('modules.boq_import._layouts', ['layouts' => $layouts ?? collect()])
+    @endcan
 @endsection

@@ -199,11 +199,12 @@ class EstimateImportTest extends ReportsTestCase
     {
         $project = $this->makeProject($this->org);
 
+        // An estimate is not in the template's layout, so the upload shows its columns and lines first.
         $this->actingAs($this->pm)
             ->post(route('boq.excel.import', $project), ['file' => $this->workbook($this->sheet('1000000'), 'estimate.xlsx', 'Sheet1')])
-            ->assertRedirect(route('boq.excel.index', $project));
+            ->assertRedirect(route('boq.sheet.preview', $project));
 
-        $this->get(route('boq.excel.index', $project))->assertOk()->assertSee('Please check these')->assertSee('add up to');
+        $this->get(route('boq.sheet.preview', $project))->assertOk()->assertSee('Please check these')->assertSee('add up to');
     }
 
     public function test_supervision_stays_out_of_the_percentage_of_work_and_the_site_list(): void

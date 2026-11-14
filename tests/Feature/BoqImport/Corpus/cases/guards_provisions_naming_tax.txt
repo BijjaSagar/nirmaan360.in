@@ -1,0 +1,12 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | Sample PCC 1:4:8 | cum | qty 12 | rate 5400 | serial
+  4 line | 3 | - | Lump sum provision for electrification including all taxes a… | LS | qty 1 | rate 250000 | serial
+  5 line | 4 | - | Provision for third party inspection charges inclusive of GS… | LS | qty 1 | rate 40000 | serial
+  6 subtotal | Total
+lines: 4 | lines total 375600.00 | with adjustments 375600.00 | sheet subtotal 375600 | sheet total -
+total: 6 | subtotal | Total | sheet 375600 | lines 375600.00 | matches
+note: 4 | Only an amount in the file. It was read as 1 lump sum at that amount.
+note: 5 | Only an amount in the file. It was read as 1 lump sum at that amount.

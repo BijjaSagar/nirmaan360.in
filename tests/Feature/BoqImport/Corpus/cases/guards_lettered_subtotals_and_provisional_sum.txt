@@ -1,0 +1,18 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 section | EARTH WORK
+  3 line | A.1 | EARTH WORK | Sample excavation | cum | qty 80 | rate 260 | serial
+  4 line | A.2 | EARTH WORK | Sample PCC | cum | qty 12 | rate 5400 | serial
+  5 subtotal | Sub Total (A)
+  6 section | MASONRY
+  7 line | B.3 | MASONRY | Sample brickwork | cum | qty 45 | rate 6100 | serial
+  8 subtotal | Sub Total (B)
+  9 line | C | Provisional sum for electrical works | Provisional sum for electrical works | LS | qty 1 | rate 500000 | serial
+  10 total | Grand Total
+lines: 4 | lines total 860100.00 | with adjustments 860100.00 | sheet subtotal 860100 | sheet total 860100
+total: 5 | subtotal | Sub Total (A) | sheet 85600 | lines 85600.00 | matches
+total: 8 | subtotal | Sub Total (B) | sheet 274500 | lines 360100.00 | matches
+total: 10 | total | Grand Total | sheet 860100 | lines 860100.00 | matches
+note: 9 | Only an amount in the file. It was read as 1 lump sum at that amount.
+note: 0 | 1 lines are provisional sums or items outside the schedule of rates (rows 9). They are imported; check them.

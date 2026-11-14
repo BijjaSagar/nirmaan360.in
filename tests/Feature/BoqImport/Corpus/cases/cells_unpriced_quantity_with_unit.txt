@@ -1,0 +1,7 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=amount(heading)
+rows:
+  2 line | 1 | - | Sample doors | nos | qty 12 | rate 0 | serial
+  3 line | 2 | - | Sample flooring | sqm | qty 150 | rate 0 | serial
+lines: 2 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+note: 0 | 2 lines have a quantity but no rate (rows 2, 3). They are read at rate 0; fill in the rates later.

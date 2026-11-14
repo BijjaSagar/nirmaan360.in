@@ -1,0 +1,15 @@
+file: xlsx | sheets: Estimate * | picked: only
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation | cum | qty 80 | rate 260 | serial
+  3 line | 2 | - | Sample PCC | cum | qty 12.000 | rate 5400 | serial
+  4 line | 3 | - | Sample plaster | sqm | qty 100 | rate 250.00 | serial
+  5 line | 4 | - | Sample shifting of a pole | LS | qty 1 | rate 4000 | serial
+  6 subtotal | Total
+lines: 4 | lines total 114600.00 | with adjustments 114600.00 | sheet subtotal 120000 | sheet total -
+total: 6 | subtotal | Total | sheet 120000 | lines 114600.00 | does not match
+note: 0 | The lines add up to ₹1,14,600.00 but the total written in the file is ₹1,20,000.00. The lines are taken as they are, so please check that total.
+note: 3 | No quantity in the file. It was worked out as amount divided by rate.
+note: 4 | No rate in the file. It was worked out as amount divided by quantity.
+note: 5 | Only an amount in the file. It was read as 1 lump sum at that amount.

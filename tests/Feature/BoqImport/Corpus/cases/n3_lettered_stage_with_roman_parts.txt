@@ -1,0 +1,10 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 spec | Providing sample RCC M20 including centering and shuttering…
+  3 line | 5a | - | Footings - Providing sample RCC M20 including centering and… | cum | qty 10 | rate 6000 | serial
+  4 subheading | (b) Columns :
+  5 line | 5b(i) | - | up to plinth (Columns) - Providing sample RCC M20 including… | cum | qty 4 | rate 7000 | serial
+  6 line | 5b(ii) | - | above plinth (Columns) - Providing sample RCC M20 including… | cum | qty 6 | rate 7400 | serial
+  7 line | 6 | - | Sample painting | sqm | qty 300 | rate 120 | serial
+lines: 4 | lines total 168400.00 | with adjustments 168400.00 | sheet subtotal - | sheet total -

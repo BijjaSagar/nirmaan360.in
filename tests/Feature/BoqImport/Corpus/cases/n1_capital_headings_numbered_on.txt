@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 subheading | EARTH WORK
+  3 line | 2 | EARTH WORK | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  4 subheading | CONCRETE WORK
+  5 line | 4 | CONCRETE WORK | Sample PCC 1:4:8 | cum | qty 12 | rate 5400 | serial
+  6 line | 5 | CONCRETE WORK | Sample RCC M20 slab | cum | qty 6 | rate 7200 | serial
+lines: 3 | lines total 128800.00 | with adjustments 128800.00 | sheet subtotal - | sheet total -

@@ -1,0 +1,10 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  3 spec | Providing cement plaster in CM 1:4 mixed with waterproofing…
+  4 line | 2a | - | 12 mm thick on inside walls - Providing cement plaster in CM… | sqm | qty 100 | rate 250 | serial
+  5 line | 2b | - | 20 mm thick on outside walls - Providing cement plaster in C… | sqm | qty 80 | rate 300 | serial
+  6 spec | Cement plaster with 2% waterproofing compound below plinth:
+  7 line | 3a | - | 15 mm thick - Cement plaster with 2% waterproofing compound… | sqm | qty 40 | rate 260 | serial
+lines: 4 | lines total 80200.00 | with adjustments 80200.00 | sheet subtotal - | sheet total -

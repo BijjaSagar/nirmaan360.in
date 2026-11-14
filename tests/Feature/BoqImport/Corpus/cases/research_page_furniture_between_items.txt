@@ -1,0 +1,12 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  3 furniture | Contractor Page 2 of 9 Director
+  4 line | 2 | - | Sample PCC 1:4:8 | cum | qty 12 | rate 5400 | serial
+  5 furniture | Page 4 of 9
+  6 furniture | P a g e | 5
+  7 line | 3 | - | Sample brick masonry | cum | qty 20 | rate 5000 | serial
+  8 note | Note :- Rates include carriage up to 1 km.
+  9 line | 4 | - | Sample plaster | sqm | qty 100 | rate 250 | serial
+lines: 4 | lines total 210600.00 | with adjustments 210600.00 | sheet subtotal - | sheet total -

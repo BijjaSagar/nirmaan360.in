@@ -1,0 +1,12 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=rate(heading) E=amount(heading)
+rows:
+  2 line | 1 | - | Sample brickwork | cum | qty 12.5 | rate 6100 | serial
+  3 line | 2 | - | Sample plaster | sqm | qty 400 | rate 230 | serial
+  4 line | 3 | - | Sample doors | nos | qty 6 | rate 8000 | serial
+  5 line | 4 | - | Sample grill | kg | qty 250 | rate 95 | serial
+  6 line | 5 | - | Sample lump work | LS | qty 1 | rate 25000 | serial
+  7 line | 6 | - | Sample fixing | LS | qty 1 | rate 4000 | serial
+lines: 6 | lines total 269000.00 | with adjustments 269000.00 | sheet subtotal - | sheet total -
+note: 6 | The quantity cell says "L.S.". It was read as 1 lump sum.
+note: 7 | The quantity cell says "1 Job". It was read as 1 lump sum.

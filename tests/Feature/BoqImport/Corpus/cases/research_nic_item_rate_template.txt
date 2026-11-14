@@ -1,0 +1,12 @@
+heading: row 8
+columns: A=serial(heading) B=description(heading) C=qty(heading) D=unit(heading) E=rate(heading) F=amount(heading) G=remark(heading)
+rows:
+  9 column_numbers | 
+  10 subheading | LIGHT ROOF WORK OVER THE STORE
+  11 line | 1.01 | LIGHT ROOF WORK OVER THE STORE | 10.16.1 : Sample steel work in built up tubular trusses incl… | kg | qty 1250 | rate 0 | serial
+  12 line | 1.02 | LIGHT ROOF WORK OVER THE STORE | 12.41.2 : Sample profile sheet roofing 0.50 mm thick | sqm | qty 84 | rate 0 | serial
+  13 subheading | FINISHING
+  14 line | 2.01 | FINISHING | Sample painting with synthetic enamel paint | sqm | qty 120 | rate 0 | serial
+  15 words | Total in Figures INR Zero Only
+  16 note | Quoted Rate in Words INR Zero Only
+lines: 3 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -

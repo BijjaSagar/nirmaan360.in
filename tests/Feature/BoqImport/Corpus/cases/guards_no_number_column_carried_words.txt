@@ -1,0 +1,13 @@
+heading: row 1
+columns: A=description(heading) B=unit(heading) C=qty(heading) D=rate(heading) E=amount(heading)
+rows:
+  2 line | 1 | - | Sample excavation in soft soil | cum | qty 80 | rate 260 | made
+  3 line | 2 | - | Provisional sum for shifting of poles to be carried out by t… | LS | qty 1 | rate 50000 | made
+  4 line | 3 | - | Lump sum provision for electrification including all taxes a… | LS | qty 1 | rate 250000 | made
+  5 line | 4 | - | Testing of samples brought to site | LS | qty 1 | rate 8000 | made
+  6 carried | Carried to next page
+lines: 4 | lines total 328800.00 | with adjustments 328800.00 | sheet subtotal - | sheet total -
+note: 3 | Only an amount in the file. It was read as 1 lump sum at that amount.
+note: 4 | Only an amount in the file. It was read as 1 lump sum at that amount.
+note: 5 | Only an amount in the file. It was read as 1 lump sum at that amount.
+note: 0 | 1 lines are provisional sums or items outside the schedule of rates (rows 3). They are imported; check them.

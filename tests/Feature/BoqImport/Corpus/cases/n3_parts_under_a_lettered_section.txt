@@ -1,0 +1,11 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 section | EARTH WORK
+  3 line | A.1 | EARTH WORK | Sample excavation in soft soil | cum | qty 80 | rate 260 | serial
+  4 section | FINISHING
+  5 spec | Providing sample plaster on walls :
+  6 line | B.1a | FINISHING | inside - Providing sample plaster on walls | sqm | qty 100 | rate 250 | serial
+  7 line | B.1a.1 | FINISHING | inside, second coat - Providing sample plaster on walls | sqm | qty 100 | rate 120 | made
+  8 line | B.1b | FINISHING | outside - Providing sample plaster on walls | sqm | qty 80 | rate 300 | serial
+lines: 4 | lines total 81800.00 | with adjustments 81800.00 | sheet subtotal - | sheet total -

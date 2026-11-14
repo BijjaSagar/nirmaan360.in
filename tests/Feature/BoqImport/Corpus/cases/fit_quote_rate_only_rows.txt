@@ -1,0 +1,14 @@
+heading: row 1
+columns: A=serial(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | 1 | - | Sample pipes 110 mm | rmt | qty 120 | rate 450 | serial
+  3 rate_only | 2 | - | Sample bends 110 mm | nos | qty 0 | rate 300 | serial
+  4 rate_only | 3 | - | Sample tees 110 mm | nos | qty 0 | rate 350 | serial
+  5 rate_only | 4 | - | Sample cutting of old pipes | rmt | qty 0 | rate 80 | serial
+  6 rate_only | 5 | - | Sample end caps | nos | qty 0 | rate 60 | serial
+  7 error | Sample valves
+lines: 5 | lines total 54000.00 | with adjustments 54000.00 | sheet subtotal - | sheet total -
+problem: 7 qty | The quantity cell says "about 10", which is not a number. Write the number alone, or a number and a unit such as 12.5 cum.
+note: 5 | The quantity cell says "As reqd.". The line comes in as rate only, with quantity 0; fill in the quantity later.
+note: 6 | The quantity cell says "Nil". The line comes in as rate only, with quantity 0; fill in the quantity later.
+note: 0 | 4 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ.

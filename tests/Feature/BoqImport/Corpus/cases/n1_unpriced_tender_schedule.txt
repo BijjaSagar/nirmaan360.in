@@ -1,0 +1,9 @@
+heading: row 1
+columns: A=code(heading) B=description(heading) C=unit(heading) D=qty(heading) E=rate(heading) F=amount(heading)
+rows:
+  2 line | R-1.1 | - | Sample granular sub-base | cum | qty 1250 | rate 0 | code
+  3 rate_only | R-1.2 | - | Sample tack coat on the old surface | sqm | qty 0 | rate 0 | code
+  4 line | R-1.3 | - | Sample bituminous macadam 50 mm | sqm | qty 3400 | rate 0 | code
+lines: 3 | lines total 0.00 | with adjustments 0.00 | sheet subtotal - | sheet total -
+note: 0 | 1 items have neither a quantity nor a rate in the file (rows 3). They come in at quantity 0 and rate 0, to be priced later.
+note: 0 | 2 lines have a quantity but no rate (rows 2, 4). They are read at rate 0; fill in the rates later.
