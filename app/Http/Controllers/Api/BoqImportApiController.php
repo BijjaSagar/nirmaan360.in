@@ -29,7 +29,8 @@ class BoqImportApiController extends Controller
         $file = $request->file('file');
 
         if (! AppBoqImport::isPdf($file)) {
-            $request->validate(['file' => ['extensions:'.implode(',', AppBoqImport::SHEET_EXTENSIONS), 'max:'.AppBoqImport::SHEET_MAX_KB]]);
+            // The website's own rules for a sheet (BoqExcelController::import).
+            $request->validate(['file' => ['extensions:'.implode(',', SheetFile::UPLOAD_EXTENSIONS), 'max:'.SheetFile::UPLOAD_MAX_KB]]);
         }
 
         $staged = $this->imports->stage($project, $request->user(), $file);

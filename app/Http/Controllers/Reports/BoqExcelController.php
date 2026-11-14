@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Services\Imports\BoqImportLayouts;
 use App\Services\Imports\BoqSheetImport;
+use App\Services\Imports\SheetFile;
 use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\BoqPdfImport;
 use App\Services\Reports\BoqPdfReader;
@@ -25,9 +26,6 @@ class BoqExcelController extends Controller
 {
     /** Problems shown after an import. The rest are counted, so a huge broken file does not make a huge page. */
     private const SHOWN_ERRORS = 200;
-
-    /** What a BOQ sheet may be called. Its content decides how it is read, so an .xls saved as .xlsx is fine. */
-    private const SHEET_EXTENSIONS = ['xlsx', 'xlsm', 'xls', 'ods', 'csv', 'txt', 'tsv'];
 
     public function __construct(private BoqExcelService $service, private BoqPdfImport $pdf, private BoqSheetImport $sheets, private BoqImportLayouts $layouts) {}
 
@@ -57,7 +55,8 @@ class BoqExcelController extends Controller
             return $this->importPdf($request, $project);
         }
 
-        $request->validate(['file' => ['required', 'file', 'extensions:'.implode(',', self::SHEET_EXTENSIONS), 'max:5120']]);
+        // What a sheet may be called and how large it may be: SheetFile, the one place the field app's upload reads them too.
+        $request->validate(['file' => ['required', 'file', 'extensions:'.implode(',', SheetFile::UPLOAD_EXTENSIONS), 'max:'.SheetFile::UPLOAD_MAX_KB]]);
 
         $file = $request->file('file');
         // Someone who may not see rates cannot set them either: their file's rates are not written.

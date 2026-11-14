@@ -37,6 +37,15 @@ final class SheetFile
 
     public const CSV = 'csv';
 
+    /**
+     * What an uploaded BOQ sheet may be called, on the website and in the field app. Its content decides how it is
+     * read (sniff()), so an .xls saved as .xlsx is fine; the name only keeps other kinds of file out.
+     */
+    public const UPLOAD_EXTENSIONS = ['xlsx', 'xlsm', 'xls', 'ods', 'csv', 'txt', 'tsv'];
+
+    /** The largest BOQ sheet taken for upload, in kilobytes, on the website and in the field app. */
+    public const UPLOAD_MAX_KB = 5120;
+
     /** Columns read from each sheet: A to AZ, so a measurement sheet with a column per floor still has its rate. */
     public const MAX_COLUMNS = 52;
 

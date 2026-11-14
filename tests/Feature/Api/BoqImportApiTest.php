@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Imports\BoqSheetImport;
+use App\Services\Reports\BoqExcelService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -376,7 +377,7 @@ class BoqImportApiTest extends ApiTestCase
 
         $this->confirm($preview['token'], 1)->assertConflict()
             ->assertJsonPath('code', 'version_changed')
-            ->assertJsonPath('message', 'How the file is read was changed in another window. Check the lines again and confirm.')
+            ->assertJsonPath('message', 'How this file is read was changed since you last looked at it. Check the lines again, then confirm.')
             ->assertJsonPath('version', 2)
             ->assertJsonPath('data.version', 2)
             ->assertJsonPath('data.lines.0.rate', '12.00');
@@ -460,15 +461,74 @@ class BoqImportApiTest extends ApiTestCase
         $this->assertNull($changed['lines'][1]['rate']);
     }
 
-    public function test_without_money_view_the_files_rates_are_written_as_the_website_writes_them(): void
+    public function test_without_money_view_no_rate_is_written_and_the_check_says_so_before_the_confirm(): void
     {
-        // The website's column check takes the rates in the file from anyone who may manage the BOQ; so does the app.
+        $plaster = BoqItem::create(['organization_id' => $this->org->id, 'project_id' => $this->project->id, 'code' => '1.1', 'description' => 'Clearing the site of shrubs', 'unit' => 'sqm', 'qty' => '300', 'rate' => '10.00']);
+        $notice = BoqExcelService::ratesNotImported();
+
+        // Someone who sees money: the file's rates are written, and nothing is said about them.
+        $shown = $this->staged($this->sheet($this->pricedRows()));
+        $this->assertSame([true, null, ['qty' => [], 'rate' => [], 'category' => [2], 'details' => [2]]], [$shown['writes_rates'], $shown['rates_message'], $shown['kept']]);
+        $this->discard($shown['token'])->assertNoContent();
+
         $site = $this->holding(['project.view', 'boq.view', 'boq.manage']);
         $this->signIn($site);
         $preview = $this->staged($this->sheet($this->pricedRows()));
 
-        $this->confirm($preview['token'], $preview['version'])->assertOk()->assertJsonPath('data.created', 2);
-        $this->assertSame(['12.00', '340.00'], [$this->lines()['1.1']->rate, $this->lines()['1.2']->rate]);
+        $this->assertFalse($preview['writes_rates']);
+        $this->assertSame($notice, $preview['rates_message']);
+        $this->assertSame($notice, $preview['notes'][0]['message']);
+        // The line that updates the item keeps its rate; the new line is added at the rate the service gives it.
+        $this->assertSame([2], $preview['kept']['rate']);
+        $this->assertSame([['1.1', 'update', ['rate', 'category', 'details']], ['1.2', 'create', []]], array_map(fn (array $line) => [$line['code'], $line['action'], $line['keeps']], $preview['lines']));
+
+        $reply = $this->confirm($preview['token'], $preview['version'])->assertOk()
+            ->assertJsonPath('data.created', 1)->assertJsonPath('data.updated', 1)
+            ->assertJsonPath('data.writes_rates', false)
+            ->assertJsonPath('data.rates_message', $notice)
+            ->json('data');
+        $this->assertContains($notice, array_column($reply['notes'], 'message'));
+
+        $lines = $this->lines();
+        $this->assertSame(['400.000', '10.00'], [$lines['1.1']->qty, $lines['1.1']->rate]);
+        $this->assertSame(['60.000', '0.00'], [$lines['1.2']->qty, $lines['1.2']->rate]);
+        $this->assertSame($plaster->id, $lines['1.1']->id);
+
+        // A repeat says the same.
+        $this->confirm($preview['token'], $preview['version'])->assertOk()
+            ->assertJsonPath('data.repeated', true)->assertJsonPath('data.writes_rates', false)->assertJsonPath('data.rates_message', $notice);
+    }
+
+    public function test_a_line_that_updates_an_item_keeps_the_figures_the_file_does_not_give(): void
+    {
+        BoqItem::create(['organization_id' => $this->org->id, 'project_id' => $this->project->id, 'code' => 'C1', 'description' => 'Sample plaster on walls', 'unit' => 'sqm', 'qty' => '400', 'rate' => '12', 'category' => 'finishing', 'details' => 'Two coats, typed by hand']);
+        BoqItem::create(['organization_id' => $this->org->id, 'project_id' => $this->project->id, 'code' => 'C2', 'description' => 'Sample PCC 1:4:8', 'unit' => 'cum', 'qty' => '60', 'rate' => '340']);
+
+        // No rate column; the second line's quantity is left blank.
+        $preview = $this->staged($this->sheet([
+            ['Item Code', 'Description', 'Unit', 'Qty'],
+            ['C1', 'Sample plaster on walls', 'sqm', 450],
+            ['C2', 'Sample PCC 1:4:8', 'cum', null],
+            ['C3', 'Sample skirting in kota stone', 'sqm', 30],
+        ]));
+
+        $this->assertTrue($preview['writes_rates']);
+        $this->assertSame(['qty' => [3], 'rate' => [2, 3], 'category' => [2, 3], 'details' => [2, 3]], $preview['kept']);
+        $this->assertSame([
+            ['C1', 'update', '450.000', '12.00', ['rate', 'category', 'details']],
+            ['C2', 'update', '60.000', '340.00', ['qty', 'rate', 'category', 'details']],
+            ['C3', 'create', '30.000', '0.00', []],
+        ], array_map(fn (array $line) => [$line['code'], $line['action'], $line['qty'], $line['rate'], $line['keeps']], $preview['lines']));
+        $this->assertSame('finishing', $preview['lines'][0]['category']);
+        $this->assertContains('2 lines update an item already in the project, and the file gives no rate for them (rows 2, 3). They keep the rate the item has.', array_column($preview['notes'], 'message'));
+        $this->assertSame([], $preview['rate_only']);
+
+        $this->confirm($preview['token'], $preview['version'])->assertOk()->assertJsonPath('data.created', 1);
+
+        $lines = $this->lines();
+        $this->assertSame(['450.000', '12.00', 'finishing', 'Two coats, typed by hand'], [$lines['C1']->qty, $lines['C1']->rate, $lines['C1']->category, $lines['C1']->details]);
+        $this->assertSame(['60.000', '340.00'], [$lines['C2']->qty, $lines['C2']->rate]);
+        $this->assertSame(['30.000', '0.00'], [$lines['C3']->qty, $lines['C3']->rate]);
     }
 
     public function test_a_file_that_cannot_be_read_is_refused_with_the_readers_words(): void
@@ -637,7 +697,13 @@ class BoqImportApiTest extends ApiTestCase
         $this->assertDocumentsKeys($section, $this->upload($this->scannedPdf())->json(), 'scanned');
         $this->assertDocumentsKeys($section, $this->confirm($token, $preview['data']['version'])->json(), 'confirm');
 
-        foreach (['/boq-imports', '/boq-imports/{token}', '/boq-imports/{token}/confirm', '`version_changed`', '`import_refused`', '`confirming`', '`pdf_on_website`', '`unreadable`'] as $named) {
+        // A person who may not set rates: the check and the result name it.
+        $this->signIn($this->holding(['project.view', 'boq.view', 'boq.manage']));
+        $hidden = $this->upload($this->sheet($this->pricedRows()))->assertCreated()->json();
+        $this->assertDocumentsKeys($section, $hidden, 'upload without money');
+        $this->assertDocumentsKeys($section, $this->confirm($hidden['data']['token'], $hidden['data']['version'])->json(), 'confirm without money');
+
+        foreach (['/boq-imports', '/boq-imports/{token}', '/boq-imports/{token}/confirm', '`version_changed`', '`import_refused`', '`confirming`', '`pdf_on_website`', '`unreadable`', '`writes_rates`', '`rates_message`', '`kept`', '`keeps`'] as $named) {
             $this->assertStringContainsString($named, $section);
         }
     }

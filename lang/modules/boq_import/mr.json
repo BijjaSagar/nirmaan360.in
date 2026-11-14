@@ -67,6 +67,7 @@
     "Headings": "शीर्षके",
     "How the file is read": "फाइल कशी वाचली",
     "How the file is read was changed in another window. Check the lines again and confirm.": "फाइल वाचण्याची पद्धत दुसऱ्या विंडोमध्ये बदलली. ओळी पुन्हा तपासा आणि खात्री करा.",
+    "How this file is read was changed since you last looked at it. Check the lines again, then confirm.": "तुम्ही मागच्या वेळी पाहिल्यानंतर ही फाइल वाचण्याची पद्धत बदलली. ओळी पुन्हा तपासा, मग खात्री करा.",
     "If this file is a BOQ in your own layout, with section rows, part rows or totals, it can be read by its own headings instead. You check every column and line before anything is saved.": "ही फाइल तुमच्या स्वतःच्या मांडणीतील BOQ असेल, ज्यात विभाग, भाग किंवा बेरजेच्या ओळी आहेत, तर ती तिच्या स्वतःच्या शीर्षकांवरून वाचता येते. काहीही जतन होण्यापूर्वी तुम्ही प्रत्येक स्तंभ आणि ओळ तपासता.",
     "Import these :count lines": "या :count ओळी इम्पोर्ट करा",
     "Imported from :file after checking its columns": "स्तंभ तपासून :file मधून इम्पोर्ट केले",

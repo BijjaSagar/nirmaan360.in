@@ -233,12 +233,12 @@ One change at a time is read, in this order: a new `sheet`; else a new heading (
 {"message": "3 BOQ rows imported.",
  "data": {"created": 2, "updated": 1, "unchanged": 0, "rows": 3,
           "notes": [{"row": 0, "message": "1 lines are priced by rate only. They were read with quantity 0; measurements against them go for approval as beyond the BOQ."}],
-          "notes_count": 1, "repeated": false}}
+          "notes_count": 1, "writes_rates": true, "rates_message": null, "repeated": false}}
 ```
 
-`created`, `updated` and `unchanged` count the BOQ lines added, changed and matched with nothing to change; `rows` is their sum. `notes` are the reader's notes on the file, at most 200, with `notes_count` counting all of them. `repeated` is false the first time.
+`created`, `updated` and `unchanged` count the BOQ lines added, changed and matched with nothing to change; `rows` is their sum. `notes` are the reader's notes on the file, at most 200, with `notes_count` counting all of them. `writes_rates` (bool) is false when the person may not set rates, so none of the file's rates was written; `rates_message` is then the import's sentence saying so, the same as the check's (see Money below), or null when no rate in the file would have changed a line. `repeated` is false the first time.
 - **200** with `repeated: true` and the same counts when this token was already imported by this person on this project, within 30 minutes of that. Nothing more is written. So a confirm can be sent again after a lost reply.
-- **409** `{"message": "How the file is read was changed in another window. Check the lines again and confirm.", "code": "version_changed", "version": 4, "data": {...}}` when the check changed after the one the person saw. `version` and `data` are the check as it is now. Nothing is written: show it again.
+- **409** `{"message": "How this file is read was changed since you last looked at it. Check the lines again, then confirm.", "code": "version_changed", "version": 4, "data": {...}}` when the check changed after the one the person saw. `version` and `data` are the check as it is now. Nothing is written: show it again.
 - **409** `{"message": "This file is being imported now. Wait a moment, then confirm again to see what was imported.", "code": "confirming"}` while a confirm of the same token is running. Confirm again in a moment: that answers what the first one imported, with `repeated: true`.
 - **422** `{"message": "This file cannot be imported as it is", "code": "import_refused", "errors": {"import": ["Row 2: Quantity cannot be lower than the approved quantity (50.000) for item 2.1."]}, "data": {...}}` when a row or the sheet has a problem. `errors.import` holds at most 200 problems as text, row first; `data` is the check, whose `errors` list them by row and field. Nothing is written. The check stays: change a column or leave a row out, then confirm again.
 - **422** in Laravel's shape on `errors.version` for a missing or bad version.
@@ -258,7 +258,8 @@ An example, with its lists shortened, and `renumbered` and `errors` filled in to
 ```json
 {"data": {
   "token": "W5DQ9J43yotJHpNvdVKCEcPhGkQGrJDv3vzBiucx", "kind": "sheet", "file": "site-works.xlsx", "format": "xlsx",
-  "version": 1, "expires_at": "2026-11-14T13:56:39+05:30", "money": true, "can_confirm": true,
+  "version": 1, "expires_at": "2026-11-14T13:56:39+05:30", "money": true,
+  "writes_rates": true, "rates_message": null, "can_confirm": true,
   "found": true, "template": false, "picked": "only", "saved_layout": null,
   "sheets": [{"index": 0, "name": "Worksheet", "rows": 8, "priced_rows": 5, "hidden": false}],
   "sheet": 0, "heading_row": 2, "span": 1,
@@ -276,10 +277,10 @@ An example, with its lists shortened, and `renumbered` and `errors` filled in to
   "lines": [
     {"row": 4, "kind": "line", "section": "SITE WORK", "code": "1.1", "renumbered_from": null, "description": "Clearing the site of shrubs",
      "unit": "sqm", "qty": "400.000", "rate": "12.00", "amount": "4800.00", "per": null, "file_rate": null, "category": "other",
-     "details": [], "notes": [], "action": "create"},
+     "details": [], "notes": [], "action": "create", "keeps": []},
     {"row": 6, "kind": "rate_only", "section": "SITE WORK", "code": "1.3", "renumbered_from": null, "description": "Anti-termite treatment",
      "unit": "sqm", "qty": "0.000", "rate": "45.00", "amount": null, "per": null, "file_rate": null, "category": "other",
-     "details": ["Rate only: the file gives no quantity."], "notes": [], "action": "create"}
+     "details": ["Rate only: the file gives no quantity."], "notes": [], "action": "create", "keeps": []}
   ],
   "rate_only": [{"row": 6, "code": "1.3", "description": "Anti-termite treatment", "unit": "sqm", "rate": "45.00"}],
   "renumbered": [{"row": 9, "from": "1", "to": "1-2", "existing": "Brick masonry in CM 1:6"}],
@@ -287,6 +288,7 @@ An example, with its lists shortened, and `renumbered` and `errors` filled in to
   "adjustments": [{"row": 8, "label": "Add GST 18%", "percent": "18", "effect": "4536.00", "amount": "4464.00", "shows": "other"}],
   "other_rows": [{"row": 3, "kind": "section", "text": "SITE WORK", "reason": null, "can_put_back": false}],
   "excluded_rows": [],
+  "kept": {"qty": [], "rate": [], "category": [5], "details": [5]},
   "notes": [{"row": 0, "message": "The lines add up to ₹25,200.00 but the total written in the file is ₹24,800.00. The lines are taken as they are, so please check that total."}],
   "errors": [{"row": 5, "field": "qty", "message": "Quantity cannot be lower than the approved quantity (50.000) for item 1.2."}],
   "totals": {"lines": "25200.00", "adjustments": "4536.00", "with_adjustments": "29736.00",
@@ -300,11 +302,13 @@ The file and how it is read:
 - `token` (string), `kind` (always `sheet` for now; a PDF check, if one comes, will be another kind), `file` (the name uploaded, at most 120 characters), `format` (`xlsx`, `xls`, `ods` or `csv`, by content).
 - `version` (int): send it with the confirm. `expires_at` (ISO 8601, Asia/Kolkata).
 - `money` (bool): whether this person sees money. False means the money keys below are null, not zero.
+- `writes_rates` (bool): whether a confirm writes the file's rates. False for a person who may not see money: they cannot set rates either, so an item already in the BOQ keeps its rate and a new line comes in at the rate 0, for someone who sees rates to price it. Show it before the confirm.
+- `rates_message` (string or null): the website's sentence for that, "Your role does not see rates, so the rates in this file are not imported. …", when `writes_rates` is false and a rate in the file would have changed a line. It is also the first of `notes`. Null otherwise.
 - `can_confirm` (bool): `found`, no `errors`, and at least one row to write; the website shows its import button only then.
 - `found` (bool): a heading row with a description and a quantity or rate column. While false, `errors` says to choose the heading row.
 - `template` (bool): laid out like our own template or export.
 - `picked`: how the sheet was chosen: `only` (the file has one), `priced` (the most priced rows), `saved` (a layout the company confirmed before matched it) or `chosen` (the person chose it).
-- `saved_layout`: null, or the company's remembered layout this file matched, `{id, file, uses, last_used_at}` (`file` the name of the file it was saved from, `last_used_at` ISO 8601 or null). Columns were set from it; the person still checks and confirms.
+- `saved_layout`: null, or the company's remembered layout this file matched: `id` (int), `file` (the name of the file it was saved from), `uses` (int, how many imports used it) and `last_used_at` (ISO 8601, or null). Columns were set from it; the person still checks and confirms.
 - `sheets`: every sheet read (at most 12), `{index, name, rows, priced_rows, hidden}`; `sheet` is the `index` read now.
 - `heading_row` (int or null) and `span` (1 to 3). `heading_candidates`: rows the person can pick as the heading, `{row, text}`, the text the start of the row's cells joined by " | ".
 - `columns`: every column with a heading or a value, left to right: `column` (number from 1, the key for `fields` in a PATCH), `letter`, `heading` (as written, "" when none), `field` (a key of `fields`, or null for left out), `source` (how the meaning was decided: a key of `sources`, or null), `unit` (a unit the heading names, as in "Qty (Cum)", or null) and `samples` (up to three values under it, as text).
@@ -313,19 +317,20 @@ The file and how it is read:
 
 What would be imported, and what would not:
 - `counts`: `lines` (lines read, rate-only ones among them), `rows` (rows that pass every check: all are written on confirm when `errors` is 0), `create` and `update` (lines added and lines that match an item already in the project, by code, as the website counts them), `rate_only`, `adjustments`, `renumbered`, `wording_changes`, `left_out` (rows not imported, of the kinds `skipped`, `after_total`, `note`, `column_numbers`, `heading_repeat`, `excluded` and `furniture`), `other_rows` (every row that is not a line), `notes` and `errors`. A line that matches an item and changes nothing is counted under `update` here: whether anything changes is known when it is written, and the confirm reply says it.
-- `lines`: the first 20 lines as they would come in: `row`, `kind` (`line` or `rate_only`), `section` (or null), `code` (the code it is written under), `renumbered_from` (the code the file gave, when it had to take a new one; else null), `description`, `unit`, `qty`, `rate`, `amount` (the amount written in the sheet, or null), `per` (what the file's rate is for when it is not one unit, as "100 sqm"; else null), `file_rate` (that rate as the file gives it; else null), `category` (or null), `details` (texts kept with the line), `notes` (the reader's notes on this row) and `action`: `create` or `update` (an item with this code is in the project and the line is written over it).
+- `lines`: the first 20 lines as they would come in: `row`, `kind` (`line` or `rate_only`), `section` (or null), `code` (the code it is written under), `renumbered_from` (the code the file gave, when it had to take a new one; else null), `description`, `unit`, `qty`, `rate`, `amount` (the amount written in the sheet, or null), `per` (what the file's rate is for when it is not one unit, as "100 sqm"; else null), `file_rate` (that rate as the file gives it; else null), `category` (or null), `details` (texts kept with the line), `notes` (the reader's notes on this row), `action`: `create` or `update` (an item with this code is in the project and the line is written over it), and `keeps`: what of that item the line leaves as it is, in this order, any of `qty`, `rate`, `category` and `details` (empty for a new line). `qty` and `rate` are kept where the file gives none for the line (no such column, a blank cell, words in place of a figure, a rate-only line's quantity), and `rate` too on every such line when `writes_rates` is false; `qty` and `rate` above are then the item's own figures. `category` is kept unless the line's category cell names one, and `details` unless the file gives text for them (a details, reference or remark cell, a specification above, a break-up below); `category` and `details` above are then what the line itself would carry.
 - `rate_only`: lines with no quantity in the file, imported at quantity 0, at most 100: `{row, code, description, unit, rate}`.
 - `renumbered`: lines whose code is taken by a different item, so they are added under a new one, at most 200: `{row, from, to, existing}` (`existing` is that item's description).
 - `wording_changes`: lines that change the description of an item already in the project, at most 200: `{row, code, now, after}`.
 - `adjustments`: percentages and amounts added to or taken off the work (contingencies, a rebate, tax, round-off). They are not lines and are not imported: `row`, `label`, `percent` (a decimal string as written, or null), `effect` (what it comes to on the lines), `amount` (the figure in the sheet, or null) and `shows` (`amount`: the figure is the adjustment; `total`: it is the total after it; `other`; or null).
 - `other_rows`: rows that are not lines, at most 300: `row`, `kind`, `text` (the row's words), `reason` (why, or null) and `can_put_back` (true for a row the person left out: `keep` puts it back). Sections and specifications are carried into the lines under them.
 - `excluded_rows`: the rows the person left out.
+- `kept`: every line's `keeps`, by figure, for all lines and not only the 20 shown: `{"qty": [int], "rate": [int], "category": [int], "details": [int]}`, sheet rows in order. The notes say the same for quantity and rate ("2 lines update an item already in the project, and the file gives no rate for them (rows 2, 3). They keep the rate the item has."). A rate-only line that keeps an item's quantity is not in `rate_only`.
 - `notes`: things to check, `{row, message}`, at most 200, those about the file as a whole first.
 - `errors`: what stops the import, `{row, field, message}`, at most 200 (`counts.errors` counts all). `field` is a key of `fields` or null.
 - `totals`: `lines` (what the lines add up to), `adjustments`, `with_adjustments`, `file_subtotal` and `file_total` (written in the sheet, or null), `subtotal_matches` and `total_matches` (bool, or null with nothing to compare), and `rows`: each total row of the sheet, `{row, label, kind, amount, comes_to, matches}`, `kind` being `subtotal`, `total` or `section`, `comes_to` what the lines above it add up to, `matches` a bool or null.
 - `mismatches`: lines whose amount in the sheet is not quantity times rate: `{row, description, qty, rate, computed, amount}`. The quantity and rate are imported as the sheet gives them.
 
-**Money.** Without `money.view`, as on the website's page: `rate`, `amount` and `file_rate` of every line, `rate_only[].rate`, `adjustments[].effect`, `amount` and `shows`, and the whole of `totals` and `mismatches` are null. A note or a line's detail that quotes a money figure is left out as well (`counts.notes` counts what is sent), such as the lines' total against the sheet's or a rate the reader divided. What the file itself holds is shown as the website shows it, the `samples` under each column and the `text` of `heading_candidates` among them, since a person cannot say what a column is without seeing it. The confirm takes the file's rates from anyone who may manage the BOQ, as the website's column check does.
+**Money.** Without `money.view`, as on the website's page: `rate`, `amount` and `file_rate` of every line, `rate_only[].rate`, `adjustments[].effect`, `amount` and `shows`, and the whole of `totals` and `mismatches` are null. A note or a line's detail that quotes a money figure is left out as well (`counts.notes` counts what is sent), such as the lines' total against the sheet's or a rate the reader divided. What the file itself holds is shown as the website shows it, the `samples` under each column and the `text` of `heading_candidates` among them, since a person cannot say what a column is without seeing it. Such a person's import writes no rates, as on the website (`BoqExcelService::write`): `writes_rates` is false and `rates_message` says it before the confirm, which says it again. The sentence itself names no figure and is never left out.
 
 ## A project's advance in lines, and its recovery percentage
 

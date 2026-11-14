@@ -4,6 +4,7 @@ namespace App\Http\Presenters;
 
 use App\Services\Imports\BoqImportLayouts;
 use App\Services\Notify\MoneyMention;
+use App\Services\Reports\BoqExcelService;
 use App\Services\Reports\BoqImportResult;
 use App\Support\Dec;
 use Carbon\CarbonInterface;
@@ -38,6 +39,7 @@ final class BoqImportPresenter
         $renumbered = array_column($preview['renumbered'], 'from', 'row');
         $amount = fn (mixed $value) => $money && $value !== null ? Dec::money($value) : null;
         $notes = array_values(array_filter($preview['notes'], fn (array $note) => self::mayRead($note['message'], $money)));
+        $kept = self::kept($preview);
         $notesByRow = [];
 
         foreach ($notes as $note) {
@@ -54,6 +56,8 @@ final class BoqImportPresenter
             'version' => (int) $preview['version'],
             'expires_at' => $preview['expires_at'],
             'money' => $money,
+            'writes_rates' => (bool) $preview['writes_rates'],
+            'rates_message' => self::ratesMessage($preview['notes']),
             'can_confirm' => $preview['found'] && $preview['errors'] === [] && $preview['rows'] > 0,
             'found' => (bool) $preview['found'],
             'template' => (bool) $preview['template'],
@@ -117,6 +121,7 @@ final class BoqImportPresenter
                 'details' => array_values(array_filter((array) $line['details'], fn (string $detail) => self::mayRead($detail, $money, $line['file_rate']))),
                 'notes' => $notesByRow[$line['row']] ?? [],
                 'action' => isset($existing[(string) $line['code']]) ? 'update' : 'create',
+                'keeps' => array_values(array_keys(array_filter($kept, fn (array $rows) => in_array($line['row'], $rows, true)))),
             ], $preview['lines']),
             'rate_only' => array_map(fn (array $line) => [
                 'row' => $line['row'],
@@ -143,6 +148,7 @@ final class BoqImportPresenter
                 'can_put_back' => $other['kind'] === 'excluded',
             ], $preview['others']),
             'excluded_rows' => array_values(array_map('intval', $preview['skip'])),
+            'kept' => $kept,
             'notes' => array_slice($notes, 0, self::SHOWN_NOTES),
             'errors' => array_map(fn (array $error) => ['row' => $error['row'], 'field' => $error['field'], 'message' => $error['message']], array_slice($preview['errors'], 0, self::SHOWN_ERRORS)),
             'totals' => $money ? self::totals($preview) : null,
@@ -173,8 +179,45 @@ final class BoqImportPresenter
             'rows' => $result['rows'],
             'notes' => array_map(fn (array $note) => ['row' => $note['row'], 'message' => $note['message']], array_slice($notes, 0, self::SHOWN_NOTES)),
             'notes_count' => count($notes),
+            'writes_rates' => (bool) ($result['writes_rates'] ?? true),
+            'rates_message' => self::ratesMessage($result['notes']),
             'repeated' => $repeated,
         ];
+    }
+
+    /**
+     * The rows whose line updates an item already in the project and keeps the item's own quantity, rate, category or
+     * details, as BoqSheetImport reads it: a figure the file does not give, a category it does not name, details it does
+     * not hold. Someone who may not set rates (writes_rates false) keeps every such item's rate.
+     *
+     * @return array{qty: list<int>, rate: list<int>, category: list<int>, details: list<int>}
+     */
+    private static function kept(array $preview): array
+    {
+        $kept = $preview['kept'];
+        $rate = $preview['writes_rates'] ? $kept['rate'] : $preview['matched'];
+
+        $sorted = function (array $rows): array {
+            $rows = array_values(array_unique(array_map('intval', $rows)));
+            sort($rows);
+
+            return $rows;
+        };
+
+        return ['qty' => $sorted($kept['qty']), 'rate' => $sorted($rate), 'category' => $sorted($kept['category']), 'details' => $sorted($kept['details'])];
+    }
+
+    /**
+     * The website's words for an import that writes no rates, when the reader said them: the person may not set rates
+     * and a rate in the file would have changed a line (BoqExcelService::ratesNotImported()). Null otherwise.
+     *
+     * @param  list<array{row: int, message: string}>  $notes
+     */
+    private static function ratesMessage(array $notes): ?string
+    {
+        $message = BoqExcelService::ratesNotImported();
+
+        return in_array($message, array_column($notes, 'message'), true) ? $message : null;
     }
 
     /** @return list<string> A refused import's problems as lines of text, row first, for the "errors" of a 422. */
@@ -213,7 +256,12 @@ final class BoqImportPresenter
      */
     private static function mayRead(string $text, bool $money, ?string $fileRate = null): bool
     {
-        return $money || (! MoneyMention::in($text) && ($fileRate === null || $fileRate === '' || ! str_contains($text, $fileRate)));
+        // The note that this person's import writes no rates is for exactly this person, and names no figure.
+        if ($money || $text === BoqExcelService::ratesNotImported()) {
+            return true;
+        }
+
+        return ! MoneyMention::in($text) && ($fileRate === null || $fileRate === '' || ! str_contains($text, $fileRate));
     }
 
     /**

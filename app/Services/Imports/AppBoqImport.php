@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\Reports\BoqImportResult;
 use App\Services\Reports\BoqPdfReader;
+use App\Support\Money;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -31,13 +32,7 @@ use Illuminate\Validation\ValidationException;
  */
 final class AppBoqImport
 {
-    /** What a sheet may be called, as on the website's upload (BoqExcelController). Its content decides how it is read. */
-    public const SHEET_EXTENSIONS = ['xlsx', 'xlsm', 'xls', 'ods', 'csv', 'txt', 'tsv'];
-
-    /** The website's limit for a sheet, in kilobytes (BoqExcelController::import). */
-    public const SHEET_MAX_KB = 5120;
-
-    /** The website's limit for a PDF, in kilobytes. */
+    /** The website's limit for a PDF, in kilobytes. A sheet's name and size are SheetFile's, as on the website. */
     public const PDF_MAX_KB = BoqPdfReader::MAX_BYTES / 1024;
 
     /** Why an upload was refused, for the app to branch on. */
@@ -103,7 +98,7 @@ final class AppBoqImport
     {
         $entry = $this->sheets->staged($project, $user, $token);
 
-        return $entry === null ? null : $this->shown($project, (string) $token, $entry);
+        return $entry === null ? null : $this->shown($project, $user, (string) $token, $entry);
     }
 
     /**
@@ -122,7 +117,7 @@ final class AppBoqImport
 
         $this->touch((string) $token);
 
-        return $this->shown($project, (string) $token, $entry);
+        return $this->shown($project, $user, (string) $token, $entry);
     }
 
     /**
@@ -159,8 +154,9 @@ final class AppBoqImport
 
             try {
                 $result = $this->sheets->confirm($project, $user, $token, $version);
-            } catch (ValidationException $changed) {
-                return ['outcome' => 'changed', 'message' => (string) collect($changed->errors())->flatten()->first(), 'preview' => $this->preview($project, $user, $token)];
+            } catch (ValidationException) {
+                // The website says "in another window"; on a phone the change came from another screen or another try.
+                return ['outcome' => 'changed', 'message' => __('How this file is read was changed since you last looked at it. Check the lines again, then confirm.'), 'preview' => $this->preview($project, $user, $token)];
             }
 
             if ($result === null) {
@@ -171,7 +167,7 @@ final class AppBoqImport
                 return ['outcome' => 'refused', 'result' => $result, 'preview' => $this->preview($project, $user, $token)];
             }
 
-            $summary = ['created' => $result->created, 'updated' => $result->updated, 'unchanged' => $result->unchanged, 'rows' => $result->rows(), 'notes' => $result->notes];
+            $summary = ['created' => $result->created, 'updated' => $result->updated, 'unchanged' => $result->unchanged, 'rows' => $result->rows(), 'notes' => $result->notes, 'writes_rates' => Money::visible($user)];
 
             Cache::put(self::CACHE.'done:'.$token, [
                 'user_id' => $user->id,
@@ -220,16 +216,22 @@ final class AppBoqImport
         return ['error' => __('A BOQ in a PDF is imported on the website for now. Upload this PDF on the project\'s BOQ import page there, or upload the Excel or CSV file here.'), 'code' => self::PDF_ON_WEBSITE];
     }
 
-    /** @return array<string, mixed> */
-    private function shown(Project $project, string $token, array $entry): array
+    /**
+     * The check for the presenter. Someone who may not see money cannot set rates either (BoqExcelService::write), so the
+     * preview is asked with that, and says so as the website's page does; "writes_rates" carries it for the app.
+     *
+     * @return array<string, mixed>
+     */
+    private function shown(Project $project, User $user, string $token, array $entry): array
     {
-        $preview = $this->sheets->preview($project, $entry);
+        $rates = Money::visible($user);
+        $preview = $this->sheets->preview($project, $entry, $rates);
         $codes = array_values(array_unique(array_map(fn (array $line) => (string) $line['code'], $preview['lines'])));
 
         // The lines shown that a confirm would write over an item already there, by code, as BoqExcelService::write matches them.
         $existing = $codes === [] ? [] : BoqItem::where('project_id', $project->id)->whereIn('code', $codes)->pluck('code')->map(fn ($code) => (string) $code)->all();
 
-        return [...$preview, 'token' => $token, 'expires_at' => $this->expiresAt($token, $entry), 'existing_codes' => array_values(array_unique($existing))];
+        return [...$preview, 'token' => $token, 'expires_at' => $this->expiresAt($token, $entry), 'existing_codes' => array_values(array_unique($existing)), 'writes_rates' => $rates];
     }
 
     /** The preview is kept TTL_MINUTES from its upload or its last change. The service keeps no time, so it is noted here. */

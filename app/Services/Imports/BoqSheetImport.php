@@ -268,6 +268,10 @@ final class BoqSheetImport
             'rows' => count($reading['rows']),
             'errors' => $reading['errors'],
             'notes' => $reading['notes'],
+            // The rows whose line updates an item already in the project, and those whose item keeps its own quantity,
+            // rate, category or details (keepFigures, keepCategoryAndDetails), for the field app (AppBoqImport).
+            'matched' => array_keys($reading['matched']),
+            'kept' => [...$reading['kept'], 'category' => array_keys($reading['own']['category']), 'details' => array_keys($reading['own']['details'])],
         ];
     }
 
@@ -453,7 +457,7 @@ final class BoqSheetImport
         $read = $this->sheetReading($sheet, $layout, $entry['unit'], $entry['skip'] ?? []);
 
         if ($read['stopped']) {
-            return [...$read, 'notes' => self::plainNotes($read['notes']), 'matched' => [], 'kept' => ['qty' => [], 'rate' => []]];
+            return [...$read, 'notes' => self::plainNotes($read['notes']), 'matched' => [], 'kept' => ['qty' => [], 'rate' => []], 'own' => ['category' => [], 'details' => []]];
         }
 
         [$renumbered, $updates, $plan, $matched] = $this->matchExisting($project, $read);
@@ -488,6 +492,7 @@ final class BoqSheetImport
             'rate_only' => array_values(array_diff($read['rate_only'], $kept['qty'])),
             'matched' => $matched,
             'kept' => $kept,
+            'own' => $own,
         ];
     }
 
