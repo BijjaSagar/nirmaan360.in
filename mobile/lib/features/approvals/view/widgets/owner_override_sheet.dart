@@ -28,9 +28,8 @@ class _OwnerOverrideSheet extends StatefulWidget {
 class _OwnerOverrideSheetState extends State<_OwnerOverrideSheet> {
   final TextEditingController _reason = TextEditingController();
 
-  /// The server takes up to 1,000 characters and counts every vowel sign and
-  /// joiner of Devanagari as one, so the field stops well short of that.
-  static const int _limit = 500;
+  /// The server takes up to 1,000 characters.
+  static const int _limit = 1000;
 
   @override
   void initState() {

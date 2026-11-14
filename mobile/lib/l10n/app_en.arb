@@ -294,7 +294,6 @@
   },
   "approvalsPayContractor": "Contractor",
   "approvalsPayInStep": "Approving keeps payment within the work done.",
-  "approvalsPayNoValue": "This contract has no value, so no payment on it is covered by work done.",
   "approvalsPayOverLimit": "That is beyond this project's limit of {limit} points.",
   "@approvalsPayOverLimit": {
     "placeholders": {
@@ -304,7 +303,6 @@
     }
   },
   "approvalsPayOverrideApprove": "Approve with override",
-  "approvalsPayOverrideLaterTitle": "The last approval will need the owner",
   "approvalsPayOverrideOwnerTitle": "Your written override is needed",
   "approvalsPayOverrideReasonHelp": "Write at least one full sentence. It is kept with the payment and in the audit log.",
   "approvalsPayOverrideReasonLabel": "Owner's reason",
@@ -324,7 +322,6 @@
       }
     }
   },
-  "approvalsPayWorkValue": "Value of work done",
   "approvalsPayWorkVsPaid": "Work against paid",
   "approvalsPeriod": "Period",
   "approvalsPhotos": "Photos",

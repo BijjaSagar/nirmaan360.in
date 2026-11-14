@@ -13,7 +13,6 @@ import '../../../core/design/test_helpers.dart' show capturePng, loadRealFonts;
 import '../../measurement/view/book_test_kit.dart';
 import 'contractor_payment_approval_test.dart' show payment;
 import 'other_documents_approval_test.dart' show indent, rfi, vendorBill;
-import 'payment_ahead_rule_test.dart' show noValuePayment, ruled;
 
 const String _dir = String.fromEnvironment('N360_FIELD_DIR');
 
@@ -85,43 +84,6 @@ void main() {
       await pumpBook(tester, app, start: Routes.approvalDetail(row['id'] as int), pixelRatio: 2.5);
       await settle(tester);
       await tester.runAsync(() => capturePng(tester, _dir, 'en_$name'));
-    });
-  }
-
-  // The payment-ahead rule as a manager meets it, with the server's own words.
-  for (final (String name, Map<String, dynamic> row) in <(String, Map<String, dynamic>)>[
-    (
-      'rule_blocked_manager',
-      ruled(60, <String, dynamic>{
-        'needed': true,
-        'allowed': false,
-        'message':
-            'Approving this payment would make it 80% paid against 70% work done, 10 points ahead, beyond this '
-            "project's limit of 5 points. Only the owner can approve it, with a written reason.",
-      }),
-    ),
-    (
-      'rule_no_value',
-      noValuePayment(61, <String, dynamic>{
-        'needed': true,
-        'allowed': false,
-        'message':
-            'This contract has no value, as its lines have no quantity, so no payment on it is covered by work '
-            'done. Only the owner can approve it, with a written reason.',
-      }),
-    ),
-  ]) {
-    testWidgets('payment-ahead rule: $name', (tester) async {
-      final FakeApi api = FakeApi();
-      api.approvalInbox.add(row);
-      final TestApp app = await bookApp(api: api);
-      addTearDown(app.dispose);
-      await pumpBook(tester, app, start: Routes.approvalDetail(row['id'] as int), pixelRatio: 2.5);
-      await settle(tester);
-      await tester.runAsync(() => capturePng(tester, _dir, 'en_$name'));
-      await tester.drag(find.byType(Scrollable).first, const Offset(0, -420));
-      await settle(tester);
-      await tester.runAsync(() => capturePng(tester, _dir, 'en_${name}_lower'));
     });
   }
 }

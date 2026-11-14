@@ -160,13 +160,7 @@ class ApprovalDetailCubit extends Cubit<ApprovalDetailState> {
     } on AuthExpired {
       _failed(ApprovalFailure.session);
     } on ValidationFailure catch (failure) {
-      // The payment-ahead rule answers 422 on `override_reason`, with why in the field's own message.
-      final List<String>? overrideErrors = failure.errors['override_reason'];
-      final bool ruleRefused = overrideErrors != null && overrideErrors.isNotEmpty;
-      _failed(ApprovalFailure.rejected, detail: ruleRefused ? overrideErrors.first : failure.message);
-      // What this phone holds was read before the rule applied (work or payments moved since). Read it again, so
-      // the buttons offer only what the server will take: no Approve for a manager, the reason for the owner.
-      if (ruleRefused) unawaited(_readAgain());
+      _failed(ApprovalFailure.rejected, detail: failure.message);
     } on ServerFailure catch (failure) {
       final int? code = failure.statusCode;
       _failed(code == 403 || code == 404 || code == 409 ? ApprovalFailure.raceLost : ApprovalFailure.server);
@@ -179,16 +173,6 @@ class ApprovalDetailCubit extends Cubit<ApprovalDetailState> {
   void _failed(ApprovalFailure failure, {String? detail}) {
     if (!isClosed) {
       emit(state.copyWith(acting: false, failure: failure, failureDetail: detail));
-    }
-  }
-
-  /// Fetches the inbox without touching the failure on screen. A read that
-  /// fails changes nothing: the server's refusal already says what happened.
-  Future<void> _readAgain() async {
-    try {
-      await _repo.refresh();
-    } on ApiFailure {
-      // Left as it is.
     }
   }
 

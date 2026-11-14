@@ -535,20 +535,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Approving keeps payment within the work done.';
 
   @override
-  String get approvalsPayNoValue =>
-      'This contract has no value, so no payment on it is covered by work done.';
-
-  @override
   String approvalsPayOverLimit(String limit) {
     return 'That is beyond this project\'s limit of $limit points.';
   }
 
   @override
   String get approvalsPayOverrideApprove => 'Approve with override';
-
-  @override
-  String get approvalsPayOverrideLaterTitle =>
-      'The last approval will need the owner';
 
   @override
   String get approvalsPayOverrideOwnerTitle =>
@@ -581,9 +573,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String approvalsPayRatio(String paid, String work) {
     return 'Paid $paid, work $work';
   }
-
-  @override
-  String get approvalsPayWorkValue => 'Value of work done';
 
   @override
   String get approvalsPayWorkVsPaid => 'Work against paid';
