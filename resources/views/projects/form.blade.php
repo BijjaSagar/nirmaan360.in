@@ -140,7 +140,101 @@
 
         @include('modules.project_setup._project-fields')
 
-        <section class="card">
+        @php
+            // The advance lines the form starts with: what came back with errors, else the saved lines
+            // (a project saved with one figure shows it as its first line), else one empty line.
+            $sentAdvances = old('advances');
+            $advanceLines = collect(is_array($sentAdvances) ? $sentAdvances : $advances)
+                ->map(fn ($line, $key) => [
+                    'amount' => (string) (is_array($line) ? ($line['amount'] ?? '') : ''),
+                    'received_on' => (string) (is_array($line) ? ($line['received_on'] ?? '') : ''),
+                    'note' => (string) (is_array($line) ? ($line['note'] ?? '') : ''),
+                    'errors' => array_filter([
+                        'amount' => $errors->first("advances.{$key}.amount"),
+                        'received_on' => $errors->first("advances.{$key}.received_on"),
+                        'note' => $errors->first("advances.{$key}.note"),
+                    ]),
+                ])->values()->all() ?: [['amount' => '', 'received_on' => '', 'note' => '', 'errors' => []]];
+            $advanceTotal = collect($advanceLines)->reduce(fn ($sum, $line) => is_numeric($line['amount']) ? $sum->plus(\App\Support\Dec::money($line['amount'])) : $sum, \App\Support\Dec::of(0));
+            // Worked out by default on a new project. A saved project keeps what it had, so no percentage changes by itself.
+            $recoveryAuto = (bool) old('advance_recovery_auto', $project->exists ? $project->advance_recovery_auto : true);
+            $recoveryPct = (string) old('advance_recovery_pct', $project->advance_recovery_pct ?? 0);
+            $maxAdvances = \App\Services\ProjectService::MAX_ADVANCES;
+        @endphp
+
+        <script>
+            /**
+             * The advance lines and the recovery percentage. Amounts are counted in whole paise and the
+             * percentage is rounded half up to two places, as the server works it out, so what shows is what is saved.
+             */
+            function advanceTerms(lines, auto, pct, max) {
+                const toPaise = (text) => {
+                    const match = /^\s*(\d*)(?:\.(\d*))?\s*$/.exec(String(text ?? ''));
+
+                    if (! match || (match[1] === '' && ! match[2])) return null;
+
+                    const digits = ((match[2] ?? '') + '000').slice(0, 3);
+                    const paise = BigInt(match[1] || '0') * 100n + BigInt(digits.slice(0, 2));
+
+                    return digits[2] >= '5' ? paise + 1n : paise;
+                };
+                const percentOf = (advance, value) => {
+                    if (advance <= 0n || value === null || value <= 0n) return '0.00';
+
+                    const scaled = advance * 10000n;
+                    let hundredths = scaled / value;
+
+                    if ((scaled % value) * 2n >= value) hundredths += 1n;
+                    if (hundredths > 10000n) hundredths = 10000n;
+
+                    return `${hundredths / 100n}.${String(hundredths % 100n).padStart(2, '0')}`;
+                };
+                const rupees = (paise) => {
+                    const whole = String(paise / 100n);
+                    const grouped = whole.length > 3 ? whole.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + whole.slice(-3) : whole;
+
+                    return `₹${grouped}.${String(paise % 100n).padStart(2, '0')}`;
+                };
+                let next = 0;
+                const makeLine = (values = {}) => ({ amount: '', received_on: '', note: '', errors: {}, ...values, key: next++ });
+
+                return {
+                    lines: lines.map((values) => makeLine(values)),
+                    auto,
+                    pct,
+                    max,
+                    contract: '',
+                    init() {
+                        // These rows are for a browser without JavaScript. Here the rows below take their place.
+                        this.$refs.plainAdvances.remove();
+
+                        const value = document.getElementById('contract_value');
+                        this.contract = value?.value ?? '';
+                        value?.addEventListener('input', () => (this.contract = value.value));
+                    },
+                    get total() {
+                        return this.lines.reduce((sum, line) => sum + (toPaise(line.amount) ?? 0n), 0n);
+                    },
+                    get totalText() {
+                        return rupees(this.total);
+                    },
+                    get worked() {
+                        return percentOf(this.total, toPaise(this.contract));
+                    },
+                    add() {
+                        if (this.lines.length < this.max) this.lines.push(makeLine());
+                    },
+                    remove(index) {
+                        this.lines.splice(index, 1);
+
+                        // The form always sends at least one line, so taking the last one away empties it instead.
+                        if (this.lines.length === 0) this.lines.push(makeLine());
+                    },
+                };
+            }
+        </script>
+
+        <section class="card" x-data="advanceTerms(@js($advanceLines), @js($recoveryAuto), @js($recoveryPct), @js($maxAdvances))" x-effect="if (auto) pct = worked">
             <div class="card-head"><h2 class="card-title">{{ __('Client billing terms') }}</h2></div>
             <div class="grid gap-4 p-4 sm:grid-cols-3">
                 <x-field :label="__('Retention %')" name="retention_pct">
@@ -152,11 +246,65 @@
                 <x-field :label="__('GST %')" name="gst_pct" :hint="__('Enter 0 if this contract has no GST.')">
                     <input id="gst_pct" name="gst_pct" type="number" step="0.01" value="{{ old('gst_pct', $project->gst_pct ?? 18) }}" class="input num" required>
                 </x-field>
-                <x-field :label="__('Mobilisation advance (₹)')" name="advance_amount">
-                    <input id="advance_amount" name="advance_amount" type="number" step="0.01" value="{{ old('advance_amount', $project->advance_amount ?? 0) }}" class="input num" required>
-                </x-field>
-                <x-field :label="__('Advance recovery %')" name="advance_recovery_pct">
-                    <input id="advance_recovery_pct" name="advance_recovery_pct" type="number" step="0.01" value="{{ old('advance_recovery_pct', $project->advance_recovery_pct ?? 0) }}" class="input num" required>
+                <div class="sm:col-span-3" role="group" aria-labelledby="advances-label">
+                    <p class="label" id="advances-label">{{ __('Mobilisation advance (₹)') }}</p>
+                    <div class="mb-1 hidden gap-2 text-xs text-ink-3 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_2.5rem]" aria-hidden="true">
+                        <span>{{ __('Amount (₹)') }}</span><span>{{ __('Date received') }}</span><span>{{ __('Note') }}</span><span></span>
+                    </div>
+                    {{-- The lines as plain fields, so the form saves them without JavaScript. Alpine removes these and draws the rows below. --}}
+                    <div x-ref="plainAdvances" class="space-y-2">
+                        @foreach ($advanceLines as $index => $line)
+                            <div class="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_2.5rem]">
+                                <div>
+                                    <input name="advances[{{ $index }}][amount]" value="{{ $line['amount'] }}" type="number" inputmode="decimal" step="0.01" min="0.01" class="input num" aria-label="{{ __('Amount (₹)') }}" placeholder="{{ __('Amount (₹)') }}">
+                                    @isset($line['errors']['amount'])<p class="error">{{ $line['errors']['amount'] }}</p>@endisset
+                                </div>
+                                <div>
+                                    <input name="advances[{{ $index }}][received_on]" value="{{ $line['received_on'] }}" type="date" class="input" aria-label="{{ __('Date received') }}">
+                                    @isset($line['errors']['received_on'])<p class="error">{{ $line['errors']['received_on'] }}</p>@endisset
+                                </div>
+                                <div>
+                                    <input name="advances[{{ $index }}][note]" value="{{ $line['note'] }}" maxlength="255" class="input" aria-label="{{ __('Note') }}" placeholder="{{ __('For example the cheque or transfer number') }}">
+                                    @isset($line['errors']['note'])<p class="error">{{ $line['errors']['note'] }}</p>@endisset
+                                </div>
+                            </div>
+                        @endforeach
+                        <p class="text-sm">{{ __('Total advance') }} <span class="num font-medium">{{ inr($advanceTotal) }}</span></p>
+                    </div>
+                    <div x-cloak class="space-y-2">
+                        <template x-for="(line, index) in lines" :key="line.key">
+                            <div class="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_2.5rem]">
+                                <div>
+                                    <input :name="`advances[${index}][amount]`" x-model="line.amount" type="number" inputmode="decimal" step="0.01" min="0.01" class="input num" aria-label="{{ __('Amount (₹)') }}" placeholder="{{ __('Amount (₹)') }}">
+                                    <p class="error" x-show="line.errors.amount" x-text="line.errors.amount"></p>
+                                </div>
+                                <div>
+                                    <input :name="`advances[${index}][received_on]`" x-model="line.received_on" type="date" class="input" aria-label="{{ __('Date received') }}">
+                                    <p class="error" x-show="line.errors.received_on" x-text="line.errors.received_on"></p>
+                                </div>
+                                <div>
+                                    <input :name="`advances[${index}][note]`" x-model="line.note" maxlength="255" class="input" aria-label="{{ __('Note') }}" placeholder="{{ __('For example the cheque or transfer number') }}">
+                                    <p class="error" x-show="line.errors.note" x-text="line.errors.note"></p>
+                                </div>
+                                <button type="button" class="btn btn-ghost w-10 justify-self-end px-0 sm:w-full" @click="remove(index)" aria-label="{{ __('Remove this advance') }}" title="{{ __('Remove this advance') }}"><x-icon name="x" class="size-4" /></button>
+                            </div>
+                        </template>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <button type="button" class="btn btn-ghost" @click="add()" :disabled="lines.length >= max"><x-icon name="plus" class="size-4" />{{ __('Add advance') }}</button>
+                            <p class="text-sm">{{ __('Total advance') }} <span class="num font-medium" x-text="totalText"></span></p>
+                        </div>
+                        <p class="hint" x-show="lines.length >= max">{{ __('A project can have at most :max advances.', ['max' => $maxAdvances]) }}</p>
+                    </div>
+                    @error('advances')<p class="error">{{ $message }}</p>@enderror
+                    @error('advance_amount')<p class="error">{{ $message }}</p>@enderror
+                </div>
+                <x-field :label="__('Advance recovery %')" name="advance_recovery_pct" :hint="__('This much of each RA bill is held back until the advance is recovered.')">
+                    <input id="advance_recovery_pct" name="advance_recovery_pct" type="number" step="0.01" min="0" max="100" value="{{ $recoveryPct }}" class="input num" required @readonly($recoveryAuto) x-model="pct" :readonly="auto">
+                    <input type="hidden" name="advance_recovery_auto" value="0">
+                    <label class="mt-2 flex items-start gap-2 text-sm">
+                        <input type="checkbox" name="advance_recovery_auto" value="1" class="mt-0.5" @checked($recoveryAuto) x-model="auto">
+                        <span>{{ __('Work it out from the advance and the contract value') }}</span>
+                    </label>
                 </x-field>
                 <x-field :label="__('Measurement tolerance %')" name="measurement_tolerance_pct" :hint="__('Above this, entries are flagged as deviation.')">
                     <input id="measurement_tolerance_pct" name="measurement_tolerance_pct" type="number" step="0.01" value="{{ old('measurement_tolerance_pct', $project->measurement_tolerance_pct ?? 5) }}" class="input num" required>

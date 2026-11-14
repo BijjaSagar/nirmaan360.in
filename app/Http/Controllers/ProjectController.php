@@ -29,7 +29,7 @@ class ProjectController extends Controller
 
     public function create(): View
     {
-        return view('projects.form', ['project' => new Project, 'clients' => $this->clients()]);
+        return view('projects.form', ['project' => new Project, 'clients' => $this->clients(), 'advances' => []]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,12 +69,18 @@ class ProjectController extends Controller
             'recentDprs' => $project->dprs()->with('creator')->latest('report_date')->take(5)->get(),
             'bills' => $project->raBills()->latest('id')->take(5)->get(),
             'phases' => $seesMoney ? $this->service->phasesOf($project) : [],
+            'advances' => $seesMoney ? $this->service->advanceLines($project) : [],
         ]);
     }
 
     public function edit(Project $project): View
     {
-        return view('projects.form', ['project' => $project, 'clients' => $this->clients(), 'phases' => $this->service->phasesOf($project)]);
+        return view('projects.form', [
+            'project' => $project,
+            'clients' => $this->clients(),
+            'phases' => $this->service->phasesOf($project),
+            'advances' => $this->service->advanceLines($project),
+        ]);
     }
 
     public function update(Request $request, Project $project): RedirectResponse
@@ -117,7 +123,7 @@ class ProjectController extends Controller
 
     private function validated(Request $request, ?Project $project = null): array
     {
-        $data = $request->validate([...$this->service->rules($request->user(), $project), ...$this->images->rules()]);
+        $data = $request->validate([...$this->service->rules($request->user(), $project), ...$this->images->rules()], $this->service->advanceMessages());
 
         return [...Arr::except($data, ['image', 'remove_image']), 'deduction_order' => explode(',', $data['deduction_order'])];
     }
